@@ -47,6 +47,7 @@ import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.getCaptureModeToggleState
+import com.google.jetpackcamera.utils.getCurrentCaptureMode
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.isCaptureModeToggleEnabled
@@ -78,10 +79,10 @@ internal class CaptureModeSettingsTest {
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiDevice = UiDevice.getInstance(instrumentation)
-    private fun ComposeTestRule.checkCaptureMode(captureMode: CaptureMode? = null) =
+    private fun ComposeTestRule.checkCaptureModeSettingState(captureMode: CaptureMode? = null) =
         visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
             captureMode?.let {
-                assertThat(getCaptureModeToggleState()).isEqualTo(captureMode)
+                assertThat(getCurrentCaptureMode()).isEqualTo(captureMode)
             }
         }
 
@@ -103,7 +104,7 @@ internal class CaptureModeSettingsTest {
         ) { "capture mode should be IMAGE_ONLY or VIDEO_ONLY." }
         waitForCaptureButton()
 
-        if ((getCaptureModeToggleState()) != captureMode) {
+        if ((getCurrentCaptureMode()) != captureMode) {
             setCaptureMode(captureMode)
         }
 
@@ -120,13 +121,13 @@ internal class CaptureModeSettingsTest {
             composeTestRule.waitForCaptureButton()
             composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
                 setCaptureMode(CaptureMode.IMAGE_ONLY)
-                checkCaptureMode(CaptureMode.IMAGE_ONLY)
+                checkCaptureModeSettingState(CaptureMode.IMAGE_ONLY)
 
                 setCaptureMode(CaptureMode.VIDEO_ONLY)
-                checkCaptureMode(CaptureMode.VIDEO_ONLY)
+                checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
 
                 setCaptureMode(CaptureMode.STANDARD)
-                checkCaptureMode(CaptureMode.STANDARD)
+                checkCaptureModeSettingState(CaptureMode.STANDARD)
             }
         }
     }
@@ -141,7 +142,7 @@ internal class CaptureModeSettingsTest {
                 setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
 
                 // capture mode should now be video only
-                checkCaptureMode(CaptureMode.VIDEO_ONLY)
+                checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
 
                 // should not be able to switch between capture modes
                 onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
@@ -159,7 +160,7 @@ internal class CaptureModeSettingsTest {
                 setConcurrentCameraMode(ConcurrentCameraMode.OFF)
 
                 // capture mode should reset to standard
-                checkCaptureMode(CaptureMode.STANDARD)
+                checkCaptureModeSettingState(CaptureMode.STANDARD)
             }
         }
     }
@@ -174,7 +175,7 @@ internal class CaptureModeSettingsTest {
 
                 // capture mode should now be image only
                 setCaptureMode(CaptureMode.IMAGE_ONLY)
-                checkCaptureMode(CaptureMode.IMAGE_ONLY)
+                checkCaptureModeSettingState(CaptureMode.IMAGE_ONLY)
 
                 searchForQuickSetting(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
                 // should not be able to enable concurrent
@@ -184,7 +185,7 @@ internal class CaptureModeSettingsTest {
 
                 // reset capture mode to standard
                 setCaptureMode(CaptureMode.STANDARD)
-                checkCaptureMode(CaptureMode.STANDARD)
+                checkCaptureModeSettingState(CaptureMode.STANDARD)
 
                 // concurrent should be enabled again
                 searchForQuickSetting(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
@@ -215,7 +216,7 @@ internal class CaptureModeSettingsTest {
             // should not be able to change capture mode
             assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
             composeTestRule.setHdrEnabled(false)
-            composeTestRule.checkCaptureMode(CaptureMode.STANDARD)
+            composeTestRule.checkCaptureModeSettingState(CaptureMode.STANDARD)
         }
     }
 
@@ -234,12 +235,12 @@ internal class CaptureModeSettingsTest {
             composeTestRule.visitQuickSettings {
                 waitForNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
                 // capture mode should be image only
-                checkCaptureMode(CaptureMode.VIDEO_ONLY)
+                checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
             }
             assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
 
             composeTestRule.setHdrEnabled(false)
-            composeTestRule.checkCaptureMode(CaptureMode.STANDARD)
+            composeTestRule.checkCaptureModeSettingState(CaptureMode.STANDARD)
         }
     }
 
@@ -260,16 +261,16 @@ internal class CaptureModeSettingsTest {
                 assertThat(getCaptureModeToggleState()).isEqualTo(CaptureMode.VIDEO_ONLY)
 
                 visitQuickSettings {
-                    checkCaptureMode(CaptureMode.VIDEO_ONLY)
+                    checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
                     setHdrEnabled(false)
 
                     // capture mode should return to standard when we turn off hdr
-                    checkCaptureMode(CaptureMode.STANDARD)
+                    checkCaptureModeSettingState(CaptureMode.STANDARD)
 
                     setCaptureMode(CaptureMode.IMAGE_ONLY)
                     setHdrEnabled(true)
                     // capture mode should remain as image only, since device supports ultrahdr image
-                    checkCaptureMode(CaptureMode.IMAGE_ONLY)
+                    checkCaptureModeSettingState(CaptureMode.IMAGE_ONLY)
                 }
                 // if both are supported, should keep the current, non-standard capture mode
                 assertThat(getCaptureModeToggleState()).isEqualTo(CaptureMode.IMAGE_ONLY)
@@ -280,7 +281,7 @@ internal class CaptureModeSettingsTest {
 
                 visitQuickSettings {
                     // capture mode should be video only now
-                    checkCaptureMode(CaptureMode.VIDEO_ONLY)
+                    checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
                     onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).performClick()
                     onNodeWithTag(
                         BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
@@ -288,7 +289,7 @@ internal class CaptureModeSettingsTest {
                     unFocusQuickSetting()
 
                     setHdrEnabled(false)
-                    checkCaptureMode(CaptureMode.STANDARD)
+                    checkCaptureModeSettingState(CaptureMode.STANDARD)
                 }
             }
         }
@@ -305,7 +306,7 @@ internal class CaptureModeSettingsTest {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitForCaptureButton()
                 composeTestRule.visitQuickSettings {
-                    checkCaptureMode(CaptureMode.IMAGE_ONLY)
+                    checkCaptureModeSettingState(CaptureMode.IMAGE_ONLY)
 
                     // should not be able to change quick settings
                     onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
@@ -328,7 +329,7 @@ internal class CaptureModeSettingsTest {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitForCaptureButton()
                 composeTestRule.visitQuickSettings {
-                    checkCaptureMode(CaptureMode.IMAGE_ONLY)
+                    checkCaptureModeSettingState(CaptureMode.IMAGE_ONLY)
                 }
                 assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
                 assertThat(
@@ -351,7 +352,7 @@ internal class CaptureModeSettingsTest {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitForCaptureButton()
                 composeTestRule.visitQuickSettings {
-                    checkCaptureMode(CaptureMode.VIDEO_ONLY)
+                    checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
 
                     // should not be able to change quick settings
                     onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
@@ -374,7 +375,7 @@ internal class CaptureModeSettingsTest {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitForCaptureButton()
                 composeTestRule.visitQuickSettings {
-                    checkCaptureMode(CaptureMode.VIDEO_ONLY)
+                    checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
                 }
                 assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
                 assertThat(
@@ -413,10 +414,11 @@ internal class CaptureModeSettingsTest {
         composeTestRule.initializeCaptureSwitch()
         val initialCaptureMode = composeTestRule.getCaptureModeToggleState()
         val captureToggleNode = composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
+        val toggleNodeWidth = captureToggleNode.fetchSemanticsNode().size.width.toFloat()
         val offsetToSwitch = when (initialCaptureMode) {
             CaptureMode.STANDARD -> TODO("App should not be in Standard Capture Mode")
-            CaptureMode.VIDEO_ONLY -> -400f // move left to switch to image
-            CaptureMode.IMAGE_ONLY -> 400f // move right to switch to video
+            CaptureMode.VIDEO_ONLY -> -(toggleNodeWidth) // move left to switch to image
+            CaptureMode.IMAGE_ONLY -> toggleNodeWidth // move right to switch to video
         }
 
         captureToggleNode.assertExists()
