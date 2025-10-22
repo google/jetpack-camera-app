@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.res.Configuration
@@ -60,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
 
 private const val DISABLED_ICON_ALPHA = 0.38f
+
 /**
  * A custom Switch component built with Canvas, supporting drag gestures
  * and custom icons for on/off states, styled for the JCA project.
@@ -219,8 +219,20 @@ fun ToggleSwitch(
                 iconPadding = iconPadding,
                 leftIconPainter = offIconPainter,
                 rightIconPainter = onIconPainter,
-                offIconColor = if (enabled) unSelectedIconColor else disableColor.copy(alpha = DISABLED_ICON_ALPHA),
-                onIconColor = if (enabled) selectedIconColor else disableColor.copy(alpha =DISABLED_ICON_ALPHA)
+                offIconColor = if (enabled) {
+                    unSelectedIconColor
+                } else {
+                    disableColor.copy(
+                        alpha = DISABLED_ICON_ALPHA
+                    )
+                },
+                onIconColor = if (enabled) {
+                    selectedIconColor
+                } else {
+                    disableColor.copy(
+                        alpha = DISABLED_ICON_ALPHA
+                    )
+                }
             )
         }
     }

@@ -137,7 +137,7 @@ fun SemanticsNodeInteraction.assume(
 //
 // ////////////////////////////
 
-fun ComposeTestRule.wait(timeoutMillis: Long){
+fun ComposeTestRule.wait(timeoutMillis: Long) {
     try {
         waitUntil(timeoutMillis) { false }
     } catch (e: ComposeTimeoutException) {

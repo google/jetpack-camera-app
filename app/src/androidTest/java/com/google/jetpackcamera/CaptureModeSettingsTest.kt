@@ -18,7 +18,6 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.provider.MediaStore
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.isDisplayed
