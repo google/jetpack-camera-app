@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.utils
+
 import android.content.Context
 import android.util.Log
 import androidx.annotation.StringRes
@@ -135,7 +136,15 @@ fun SemanticsNodeInteraction.assume(
 // idles
 //
 // ////////////////////////////
-fun ComposeTestRule.waitForStartup(timeoutMillis: Long = APP_START_TIMEOUT_MILLIS) {
+
+fun ComposeTestRule.wait(timeoutMillis: Long) {
+    try {
+        waitUntil(timeoutMillis) { false }
+    } catch (e: ComposeTimeoutException) {
+        /* do nothing, we just want to time out*/
+    }
+}
+fun ComposeTestRule.waitForCaptureButton(timeoutMillis: Long = APP_START_TIMEOUT_MILLIS) {
     // Wait for the capture button to be displayed
     waitUntil(timeoutMillis = timeoutMillis) {
         onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
@@ -294,9 +303,9 @@ fun ComposeTestRule.tapStartLockedVideoRecording() {
 // ///////////////////////
 
 /**
- * checks if the hdr capture mode toggle is enabled
+ * checks if the capture mode toggle is enabled
  */
-fun ComposeTestRule.isHdrToggleEnabled(): Boolean =
+fun ComposeTestRule.isCaptureModeToggleEnabled(): Boolean =
     checkComponentStateDescriptionState<Boolean>(CAPTURE_MODE_TOGGLE_BUTTON) { description ->
         when (description) {
             getResString(CaptureR.string.capture_mode_image_capture_content_description),
@@ -309,20 +318,19 @@ fun ComposeTestRule.isHdrToggleEnabled(): Boolean =
                 CaptureR.string.capture_mode_video_recording_content_description_disabled
             ) -> return@checkComponentStateDescriptionState false
 
-            else -> false
+            else -> throw (AssertionError("Unexpected content description: $description"))
         }
     }
 
 /**
  * Returns the current state of the capture mode toggle button
  */
-fun ComposeTestRule.getHdrToggleState(): CaptureMode =
-    checkComponentStateDescriptionState(CAPTURE_MODE_TOGGLE_BUTTON) { description ->
+
+fun ComposeTestRule.getCaptureModeToggleState(): CaptureMode =
+    checkComponentStateDescriptionState<CaptureMode>(CAPTURE_MODE_TOGGLE_BUTTON) { description ->
         when (description) {
             getResString(CaptureR.string.capture_mode_image_capture_content_description),
-            getResString(
-                CaptureR.string.capture_mode_image_capture_content_description_disabled
-            ) ->
+            getResString(CaptureR.string.capture_mode_image_capture_content_description_disabled) ->
                 CaptureMode.IMAGE_ONLY
 
             getResString(CaptureR.string.capture_mode_video_recording_content_description),
@@ -331,7 +339,7 @@ fun ComposeTestRule.getHdrToggleState(): CaptureMode =
             ) ->
                 CaptureMode.VIDEO_ONLY
 
-            else -> null
+            else -> throw (AssertionError("Unexpected content description: $description"))
         }
     }
 
@@ -345,7 +353,7 @@ inline fun <reified T> ComposeTestRule.checkComponentContentDescriptionState(
     crossinline block: (String) -> T?
 ): T {
     waitForNodeWithTag(nodeTag)
-    onNodeWithTag(nodeTag).assume(isEnabled())
+    onNodeWithTag(nodeTag).assume(isEnabled()) { "$nodeTag is not enabled" }
         .fetchSemanticsNode().let { node ->
             node.config[SemanticsProperties.ContentDescription].forEach { description ->
                 val result = block(description)
@@ -360,7 +368,7 @@ inline fun <reified T> ComposeTestRule.checkComponentStateDescriptionState(
     crossinline block: (String) -> T?
 ): T {
     waitForNodeWithTag(nodeTag)
-    onNodeWithTag(nodeTag).assume(isEnabled())
+    onNodeWithTag(nodeTag)
         .fetchSemanticsNode().let { node ->
             val result = block(node.config[SemanticsProperties.StateDescription])
             if (result != null) return result

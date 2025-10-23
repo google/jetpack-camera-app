@@ -46,7 +46,7 @@ import com.google.jetpackcamera.utils.ensureTagNotAppears
 import com.google.jetpackcamera.utils.grantPermissionDialog
 import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
-import com.google.jetpackcamera.utils.waitForStartup
+import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -250,7 +250,7 @@ class PermissionsTest {
                     .isNotDisplayed()
             }
 
-            composeTestRule.waitForStartup()
+            composeTestRule.waitForCaptureButton()
 
             // check for image capture success
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
@@ -293,7 +293,7 @@ class PermissionsTest {
                     .isNotDisplayed()
             }
 
-            composeTestRule.waitForStartup()
+            composeTestRule.waitForCaptureButton()
 
             // check for image capture failure
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
