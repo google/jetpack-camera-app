@@ -241,8 +241,8 @@ fun CaptureModeToggleButton(
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
         checked = toggleState,
-        onCheckedChange = {
-            val newCaptureMode = if (toggleState) CaptureMode.IMAGE_ONLY else CaptureMode.VIDEO_ONLY
+        onCheckedChange = { isChecked ->
+            val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
             onChangeCaptureMode(newCaptureMode)
         },
         onToggleWhenDisabled = {
