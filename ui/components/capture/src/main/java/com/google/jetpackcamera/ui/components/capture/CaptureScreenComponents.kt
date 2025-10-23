@@ -15,8 +15,8 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.content.ContentResolver
 import android.content.pm.ActivityInfo
-import android.content.res.Configuration
 import android.os.Build
 import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
@@ -24,7 +24,6 @@ import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
@@ -32,10 +31,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -44,7 +39,6 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -53,7 +47,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -62,13 +55,16 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoStable
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Videocam
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -89,8 +85,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -104,26 +100,24 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
-import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.findSelectableStateFor
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.findSelectableStateFor
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
-import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
@@ -136,152 +130,299 @@ private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
 
 @Composable
-fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState.Enabled) {
-    Text(
-        modifier = modifier,
-        text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
-            .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
-        textAlign = TextAlign.Center
-    )
+fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
+    if (elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
+        Text(
+            modifier = modifier,
+            text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
+                .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
     onSetPause: (Boolean) -> Unit,
-    size: Float = 55f,
-    currentRecordingState: VideoRecordingState.Active
+    size: Dp = ButtonDefaults.MediumContainerHeight,
+    currentRecordingState: VideoRecordingState
 ) {
-    var buttonClicked by remember { mutableStateOf(false) }
-    // animation value for the toggle icon itself
-    val animatedToggleScale by animateFloatAsState(
-        targetValue = if (buttonClicked) 1.1f else 1f, // Scale up to 110%
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        finishedListener = {
-            buttonClicked = false // Reset the trigger
-        }
-    )
-    Box(
-        modifier = modifier
-    ) {
-        Box(
-            modifier = Modifier
-                .clickable(
-                    onClick = {
-                        buttonClicked = true
-                        onSetPause(currentRecordingState !is VideoRecordingState.Active.Paused)
-                    },
-                    indication = null,
-                    interactionSource = null
+    if (currentRecordingState is VideoRecordingState.Active) {
+        FilledIconToggleButton(
+            checked = currentRecordingState is VideoRecordingState.Active.Recording,
+            onCheckedChange = {
+                onSetPause(
+                    currentRecordingState !is VideoRecordingState.Active.Paused
                 )
-                .size(size = size.dp)
-                .scale(scale = animatedToggleScale)
-                .clip(CircleShape)
-                .background(Color.White),
-            contentAlignment = Alignment.Center
+            },
+            modifier = modifier.size(size)
         ) {
-            // icon
             Icon(
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .size((0.75 * size).dp),
-                tint = Color.Red,
+                    .size(ButtonDefaults.MediumIconSize),
                 imageVector = when (currentRecordingState) {
                     is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
                     is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
                 },
-                contentDescription = "pause resume toggle"
+                contentDescription = stringResource(id = R.string.pause_resume_button_description)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun AmplitudeToggleButton(
+    modifier: Modifier = Modifier,
+    buttonSize: Dp = ButtonDefaults.MediumContainerHeight,
+    audioUiState: AudioUiState,
+    onToggleAudio: () -> Unit
+) {
+    val currentUiState = rememberUpdatedState(audioUiState)
+
+    // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
+    val animatedAudioAlpha by animateFloatAsState(
+        targetValue = EaseOutExpo.transform(
+            (currentUiState.value.amplitude.toFloat()).coerceIn(
+                0f,
+                1f
+            )
+        ),
+        label = "AudioAnimation"
+    )
+    Box(contentAlignment = Alignment.Center) {
+        FilledIconToggleButton(
+            modifier = modifier
+                .size(buttonSize)
+                .apply {
+                    if (audioUiState is AudioUiState.Enabled.On) {
+                        testTag(AMPLITUDE_HOT_TAG)
+                    } else {
+                        testTag(AMPLITUDE_NONE_TAG)
+                    }
+                }
+                .drawBehind {
+                    if (audioUiState is AudioUiState.Enabled.On) {
+                        drawCircle(
+                            color = Color.White,
+                            radius = size.width * .55f,
+                            alpha = animatedAudioAlpha // Animate alpha for a pulsing effect
+                        )
+                    }
+                },
+            checked = audioUiState is AudioUiState.Enabled.On,
+            onCheckedChange = { onToggleAudio() },
+            // todo shapes
+            enabled = audioUiState is AudioUiState.Enabled
+        ) {
+            Icon(
+                modifier = Modifier.size(ButtonDefaults.MediumIconSize),
+                imageVector = if (currentUiState.value is AudioUiState.Enabled.On) {
+                    Icons.Filled.Mic
+                } else {
+                    Icons.Filled.MicOff
+                },
+                contentDescription = stringResource(id = R.string.audio_visualizer_icon_description)
             )
         }
     }
 }
 
 @Composable
-fun AmplitudeVisualizer(
-    modifier: Modifier = Modifier,
-    size: Float = 75f,
-    audioUiState: AudioUiState,
-    onToggleAudio: () -> Unit
+fun CaptureModeToggleButton(
+    uiState: CaptureModeToggleUiState.Available,
+    onChangeCaptureMode: (CaptureMode) -> Unit,
+    onToggleWhenDisabled: (DisableRationale) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val currentUiState = rememberUpdatedState(audioUiState)
-    var buttonClicked by remember { mutableStateOf(false) }
-    // animation value for the toggle icon itself
-    val animatedToggleScale by animateFloatAsState(
-        targetValue = if (buttonClicked) 1.1f else 1f, // Scale up to 110%
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        finishedListener = {
-            buttonClicked = false // Reset the trigger
+    // Captures hdr image (left) when output format is UltraHdr, else captures hdr video (right).
+    val toggleState = remember(uiState.selectedCaptureMode) {
+        when (uiState.selectedCaptureMode) {
+            CaptureMode.IMAGE_ONLY, CaptureMode.STANDARD -> ToggleState.Left
+            CaptureMode.VIDEO_ONLY -> ToggleState.Right
         }
+    }
+    val enabled =
+        uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
+            uiState.isCaptureModeSelectable(
+                CaptureMode.IMAGE_ONLY
+            ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
+
+    ToggleButton(
+        leftIcon = if (uiState.selectedCaptureMode ==
+            CaptureMode.IMAGE_ONLY
+        ) {
+            rememberVectorPainter(image = Icons.Filled.CameraAlt)
+        } else {
+            rememberVectorPainter(image = Icons.Outlined.CameraAlt)
+        },
+        rightIcon = if (uiState.selectedCaptureMode ==
+            CaptureMode.VIDEO_ONLY
+        ) {
+            rememberVectorPainter(image = Icons.Filled.Videocam)
+        } else {
+            rememberVectorPainter(image = Icons.Outlined.Videocam)
+        },
+        toggleState = toggleState,
+        onToggle = {
+            val newCaptureMode = when (toggleState) {
+                ToggleState.Right -> CaptureMode.IMAGE_ONLY
+                ToggleState.Left -> CaptureMode.VIDEO_ONLY
+            }
+            onChangeCaptureMode(newCaptureMode)
+        },
+        onToggleWhenDisabled = {
+            val disabledReason: DisableRationale? =
+                (
+                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                        SingleSelectableUiState.Disabled<CaptureMode>
+                    )?.disabledReason
+                    ?: (
+                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                            as? SingleSelectableUiState.Disabled<CaptureMode>
+                        )
+                        ?.disabledReason
+            disabledReason?.let { onToggleWhenDisabled(it) }
+        },
+        // toggle only enabled when both capture modes are available
+        enabled = enabled,
+        leftIconDescription =
+        if (enabled) {
+            stringResource(id = R.string.capture_mode_image_capture_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_image_capture_content_description_disabled
+            )
+        },
+        rightIconDescription =
+        if (enabled) {
+            stringResource(id = R.string.capture_mode_video_recording_content_description)
+        } else {
+            stringResource(
+                id = R.string.capture_mode_video_recording_content_description_disabled
+            )
+        },
+        modifier = modifier
+    )
+}
+
+enum class ToggleState {
+    Left,
+    Right
+}
+
+// todo(kc): need to recreate image toggle button to be scalable and support drag
+@Composable
+fun ToggleButton(
+    leftIcon: Painter,
+    rightIcon: Painter,
+    modifier: Modifier = Modifier,
+    toggleState: ToggleState? = null,
+    onToggle: () -> Unit = {},
+    onToggleWhenDisabled: () -> Unit = {},
+    enabled: Boolean = true,
+    leftIconDescription: String = "leftIcon",
+    rightIconDescription: String = "rightIcon",
+    iconPadding: Dp = 8.dp
+) {
+    val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
+    val disableColor = MaterialTheme.colorScheme.onSurface
+    val iconSelectionColor = MaterialTheme.colorScheme.onPrimary
+    val iconUnSelectionColor = MaterialTheme.colorScheme.primary
+    val circleSelectionColor = MaterialTheme.colorScheme.primary
+    val circleColor = if (enabled) circleSelectionColor else disableColor.copy(alpha = 0.12f)
+    val animatedTogglePosition by animateFloatAsState(
+        when (toggleState) {
+            ToggleState.Left -> 0f
+            ToggleState.Right -> 1f
+            null -> 0f
+        },
+        label = "togglePosition"
     )
 
-    // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
-    val animatedAudioScale by animateFloatAsState(
-        targetValue = EaseOutExpo.transform(1 + (1.75f * currentUiState.value.amplitude.toFloat())),
-        label = "AudioAnimation"
-    )
-    Box(
-        modifier = modifier.clickable(
-            onClick = {
-                buttonClicked = true
-                onToggleAudio()
-            },
-            interactionSource = null,
-            // removes the greyish background animation that appears when clicking
-            indication = null
-        )
-    ) {
-        // animated audio circle
-        Canvas(
-            modifier = Modifier
-                .align(Alignment.Center),
-            onDraw = {
-                drawCircle(
-                    // tweak the multiplier to size to adjust the maximum size of the visualizer
-                    radius = (size * animatedAudioScale).coerceIn(size, size * 1.65f),
-                    alpha = .5f,
-                    color = Color.White
-                )
-            }
-        )
-
-        // static circle
-        Canvas(
-            modifier = Modifier
-                .align(Alignment.Center),
-            onDraw = {
-                drawCircle(
-                    radius = (size * animatedToggleScale),
-                    color = Color.White
-                )
-            }
-        )
-
-        Icon(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size((0.5 * size).dp)
-                .scale(animatedToggleScale)
-                .apply {
-                    if (currentUiState.value is AudioUiState.Enabled.On) {
-                        testTag(AMPLITUDE_HOT_TAG)
+    Surface(
+        modifier = modifier
+            .clip(shape = RoundedCornerShape(50))
+            .then(
+                Modifier.clickable(
+                    role = Role.Switch
+                ) {
+                    if (enabled && toggleState != null) {
+                        onToggle()
                     } else {
-                        testTag(AMPLITUDE_NONE_TAG)
+                        onToggleWhenDisabled()
                     }
-                },
-            tint = Color.Black,
-            imageVector = if (currentUiState.value is AudioUiState.Enabled.On) {
-                Icons.Filled.Mic
-            } else {
-                Icons.Filled.MicOff
-            },
-            contentDescription = stringResource(id = R.string.audio_visualizer_icon)
-        )
+                }
+            )
+            .semantics {
+                stateDescription = when (toggleState) {
+                    ToggleState.Left -> leftIconDescription
+                    ToggleState.Right -> rightIconDescription
+                    null -> "unknown togglestate"
+                }
+            }
+            .width(64.dp)
+            .height(32.dp),
+        color = backgroundColor
+    ) {
+        Box {
+            Row(
+                modifier = Modifier.matchParentSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier
+                        .layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(placeable.width, placeable.height) {
+                                val xPos = animatedTogglePosition *
+                                    (constraints.maxWidth - placeable.width)
+                                placeable.placeRelative(xPos.toInt(), 0)
+                            }
+                        }
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(50))
+                        .background(circleColor)
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .matchParentSize()
+                    .then(
+                        if (enabled) Modifier else Modifier.alpha(0.38f)
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(
+                    painter = leftIcon,
+                    contentDescription = "leftIcon",
+                    modifier = Modifier.padding(iconPadding),
+                    tint = if (!enabled) {
+                        disableColor
+                    } else if (toggleState == ToggleState.Left) {
+                        iconSelectionColor
+                    } else {
+                        iconUnSelectionColor
+                    }
+                )
+                Icon(
+                    painter = rightIcon,
+                    contentDescription = "rightIcon",
+                    modifier = Modifier.padding(iconPadding),
+                    tint = if (!enabled) {
+                        disableColor
+                    } else if (toggleState == ToggleState.Right) {
+                        iconSelectionColor
+                    } else {
+                        iconUnSelectionColor
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -343,7 +484,12 @@ fun DetectWindowColorModeChanges(
 
         LaunchedEffect(Unit) {
             val colorModeSnapshotFlow =
-                snapshotFlow { Pair(currentSurfaceRequest.dynamicRange, currentImplementationMode) }
+                snapshotFlow {
+                    Pair(
+                        currentSurfaceRequest.dynamicRange,
+                        currentImplementationMode
+                    )
+                }
                     .map { (dynamicRange, implMode) ->
                         val isSourceHdr = dynamicRange.encoding != CXDynamicRange.ENCODING_SDR
                         val destSupportsHdr = implMode == ImplementationMode.EXTERNAL
@@ -399,7 +545,7 @@ fun PreviewDisplay(
                 .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
                 previewDisplayUiState.aspectRatioUiState as
@@ -482,83 +628,131 @@ fun PreviewDisplay(
 }
 
 @Composable
-fun StabilizationIcon(
-    stabilizationUiState: StabilizationUiState.Enabled,
-    modifier: Modifier = Modifier
+fun CaptureButton(
+    modifier: Modifier = Modifier,
+    captureButtonUiState: CaptureButtonUiState,
+    isQuickSettingsOpen: Boolean,
+    onToggleQuickSettings: () -> Unit = {},
+    onIncrementZoom: (Float) -> Unit = {},
+    onCaptureImage: (ContentResolver) -> Unit = {},
+    onStartVideoRecording: () -> Unit = {},
+    onStopVideoRecording: () -> Unit = {},
+    onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
-    val contentColor = Color.White.let {
-        if (!stabilizationUiState.active) it.copy(alpha = 0.38f) else it
-    }
-    CompositionLocalProvider(LocalContentColor provides contentColor) {
-        if (stabilizationUiState.stabilizationMode != StabilizationMode.OFF) {
-            Icon(
-                painter = when (stabilizationUiState) {
-                    is StabilizationUiState.Specific ->
-                        when (stabilizationUiState.stabilizationMode) {
-                            StabilizationMode.AUTO ->
-                                throw IllegalStateException(
-                                    "AUTO is not a specific StabilizationUiState."
-                                )
+    val multipleEventsCutter = remember { MultipleEventsCutter() }
+    val context = LocalContext.current
 
-                            StabilizationMode.HIGH_QUALITY ->
-                                painterResource(R.drawable.video_stable_hq_filled_icon)
+    CaptureButton(
+        modifier = modifier.testTag(CAPTURE_BUTTON),
+        onIncrementZoom = onIncrementZoom,
+        onImageCapture = {
+            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+                multipleEventsCutter.processEvent {
+                    onCaptureImage(context.contentResolver)
+                }
+            }
+            if (isQuickSettingsOpen) {
+                onToggleQuickSettings()
+            }
+        },
+        onStartRecording = {
+            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+                onStartVideoRecording()
+            }
+        },
+        onStopRecording = {
+            onStopVideoRecording()
+        },
+        captureButtonUiState = captureButtonUiState,
+        onLockVideoRecording = onLockVideoRecording
+    )
+}
 
-                            StabilizationMode.OPTICAL ->
-                                painterResource(R.drawable.video_stable_ois_filled_icon)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modifier = Modifier) {
+    if (stabilizationUiState is StabilizationUiState.Enabled) {
+        val contentColor = Color.White.let {
+            if (!stabilizationUiState.active) it.copy(alpha = 0.38f) else it
+        }
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
+            if (stabilizationUiState.stabilizationMode != StabilizationMode.OFF) {
+                Icon(
+                    modifier = modifier.size(IconButtonDefaults.smallIconSize),
 
-                            StabilizationMode.ON ->
-                                rememberVectorPainter(Icons.Filled.VideoStable)
+                    painter = when (stabilizationUiState) {
+                        is StabilizationUiState.Specific ->
+                            when (stabilizationUiState.stabilizationMode) {
+                                StabilizationMode.AUTO ->
+                                    throw IllegalStateException(
+                                        "AUTO is not a specific StabilizationUiState."
+                                    )
 
-                            else ->
-                                TODO(
-                                    "Cannot retrieve icon for unimplemented stabilization mode:" +
-                                        "${stabilizationUiState.stabilizationMode}"
-                                )
+                                StabilizationMode.HIGH_QUALITY ->
+                                    painterResource(R.drawable.video_stable_hq_filled_icon)
+
+                                StabilizationMode.OPTICAL ->
+                                    painterResource(R.drawable.video_stable_ois_filled_icon)
+
+                                StabilizationMode.ON ->
+                                    rememberVectorPainter(Icons.Filled.VideoStable)
+
+                                else ->
+                                    TODO(
+                                        "Cannot retrieve icon for unimplemented " +
+                                            "stabilization mode:" +
+                                            "${stabilizationUiState.stabilizationMode}"
+                                    )
+                            }
+
+                        is StabilizationUiState.Auto -> {
+                            when (stabilizationUiState.stabilizationMode) {
+                                StabilizationMode.ON ->
+                                    painterResource(R.drawable.video_stable_auto_filled_icon)
+
+                                StabilizationMode.OPTICAL ->
+                                    painterResource(R.drawable.video_stable_ois_auto_filled_icon)
+
+                                else ->
+                                    TODO(
+                                        "Auto stabilization not yet implemented for " +
+                                            "${stabilizationUiState.stabilizationMode}, " +
+                                            "unable to retrieve icon."
+                                    )
+                            }
                         }
+                    },
+                    contentDescription = when (stabilizationUiState.stabilizationMode) {
+                        StabilizationMode.AUTO ->
+                            stringResource(R.string.stabilization_icon_description_auto)
 
-                    is StabilizationUiState.Auto -> {
-                        when (stabilizationUiState.stabilizationMode) {
-                            StabilizationMode.ON ->
-                                painterResource(R.drawable.video_stable_auto_filled_icon)
+                        StabilizationMode.ON ->
+                            stringResource(
+                                R.string.stabilization_icon_description_preview_and_video
+                            )
 
-                            StabilizationMode.OPTICAL ->
-                                painterResource(R.drawable.video_stable_ois_auto_filled_icon)
+                        StabilizationMode.HIGH_QUALITY ->
+                            stringResource(R.string.stabilization_icon_description_video_only)
 
-                            else ->
-                                TODO(
-                                    "Auto stabilization not yet implemented for " +
-                                        "${stabilizationUiState.stabilizationMode}, " +
-                                        "unable to retrieve icon."
-                                )
-                        }
+                        StabilizationMode.OPTICAL ->
+                            stringResource(R.string.stabilization_icon_description_optical)
+
+                        else -> null
                     }
-                },
-                contentDescription = when (stabilizationUiState.stabilizationMode) {
-                    StabilizationMode.AUTO ->
-                        stringResource(R.string.stabilization_icon_description_auto)
-
-                    StabilizationMode.ON ->
-                        stringResource(R.string.stabilization_icon_description_preview_and_video)
-
-                    StabilizationMode.HIGH_QUALITY ->
-                        stringResource(R.string.stabilization_icon_description_video_only)
-
-                    StabilizationMode.OPTICAL ->
-                        stringResource(R.string.stabilization_icon_description_optical)
-
-                    else -> null
-                },
-                modifier = modifier
-            )
+                )
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         if (videoQuality != VideoQuality.UNSPECIFIED) {
             Icon(
+                modifier = modifier.size(IconButtonDefaults.smallIconSize),
+
                 painter = when (videoQuality) {
                     VideoQuality.SD ->
                         painterResource(R.drawable.video_resolution_sd_icon)
@@ -591,13 +785,13 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                         stringResource(R.string.video_quality_description_uhd)
 
                     else -> null
-                },
-                modifier = modifier
+                }
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FlipCameraButton(
     enabledCondition: Boolean,
@@ -629,348 +823,17 @@ fun FlipCameraButton(
             }
         }
         IconButton(
-            modifier = modifier.size(40.dp),
+            modifier = modifier,
             onClick = onClick,
             enabled = enabledCondition
         ) {
             Icon(
                 imageVector = Icons.Filled.FlipCameraAndroid,
-                contentDescription = stringResource(id = R.string.flip_camera_content_description),
+                contentDescription = stringResource(id = R.string.flip_camera_icon_description),
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(IconButtonDefaults.extraLargeIconSize)
                     .rotate(animatedRotation.value)
             )
         }
-    }
-}
-
-@Composable
-fun SettingsNavButton(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(
-        modifier = modifier,
-        onClick = onNavigateToSettings
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Settings,
-            contentDescription = stringResource(R.string.settings_content_description),
-            modifier = Modifier.size(72.dp)
-        )
-    }
-}
-
-@Composable
-fun ZoomRatioText(zoomUiState: ZoomUiState.Enabled) {
-    Text(
-        modifier = Modifier
-            .testTag(ZOOM_RATIO_TAG),
-        text = stringResource(id = R.string.zoom_ratio_text, zoomUiState.primaryZoomRatio ?: 1f)
-    )
-}
-
-@Composable
-fun CurrentCameraIdText(physicalCameraId: String?, logicalCameraId: String?) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row {
-            Text(text = stringResource(R.string.debug_text_logical_camera_id_prefix))
-            Text(
-                modifier = Modifier.testTag(LOGICAL_CAMERA_ID_TAG),
-                text = logicalCameraId ?: "---"
-            )
-        }
-        Row {
-            Text(text = stringResource(R.string.debug_text_physical_camera_id_prefix))
-            Text(
-                modifier = Modifier.testTag(PHYSICAL_CAMERA_ID_TAG),
-                text = physicalCameraId ?: "---"
-            )
-        }
-    }
-}
-
-@Composable
-fun CaptureModeDropDown(
-    modifier: Modifier = Modifier,
-    onSetCaptureMode: (CaptureMode) -> Unit,
-    onDisabledCaptureMode: (DisableRationale) -> Unit,
-    captureModeUiState: CaptureModeUiState.Available
-) {
-    var isExpanded by remember { mutableStateOf(false) }
-
-    Column(modifier = modifier) {
-        AnimatedVisibility(
-            visible = isExpanded,
-            enter =
-            fadeIn() + expandVertically(expandFrom = Alignment.Top),
-            exit = shrinkVertically(shrinkTowards = Alignment.Bottom)
-        ) {
-            fun onDisabledClick(
-                selectableState: SingleSelectableUiState<CaptureMode>?
-            ): () -> Unit = if (selectableState is SingleSelectableUiState.Disabled) {
-                { onDisabledCaptureMode(selectableState.disabledReason) }
-            } else {
-                { TODO("Enabled should not have disabled click") }
-            }
-
-            Column {
-                DropDownItem(
-                    text = stringResource(R.string.quick_settings_text_capture_mode_standard),
-                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.STANDARD),
-                    onClick = {
-                        onSetCaptureMode(CaptureMode.STANDARD)
-                        isExpanded = false
-                    },
-                    onDisabledClick = onDisabledClick(
-                        captureModeUiState.findSelectableStateFor(CaptureMode.STANDARD)
-                    )
-                )
-                DropDownItem(
-                    text = stringResource(R.string.quick_settings_text_capture_mode_image_only),
-                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY),
-                    onClick = {
-                        onSetCaptureMode(CaptureMode.IMAGE_ONLY)
-                        isExpanded = false
-                    },
-                    onDisabledClick = onDisabledClick(
-                        captureModeUiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                    )
-                )
-                DropDownItem(
-                    text = stringResource(R.string.quick_settings_text_capture_mode_video_only),
-                    enabled = captureModeUiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY),
-                    onClick = {
-                        onSetCaptureMode(CaptureMode.VIDEO_ONLY)
-                        isExpanded = false
-                    },
-                    onDisabledClick = onDisabledClick(
-                        captureModeUiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY)
-                    )
-
-                )
-            }
-        }
-        // this text displays the current selection
-        Box(
-            modifier = Modifier
-                .clickable(
-                    interactionSource = null,
-                    // removes the greyish background animation that appears when clicking on a clickable
-                    indication = null,
-                    onClick = { isExpanded = !isExpanded }
-                )
-                .padding(8.dp)
-        ) {
-            Text(
-                text = when (captureModeUiState.selectedCaptureMode) {
-                    CaptureMode.STANDARD -> stringResource(
-                        R.string.quick_settings_text_capture_mode_standard
-                    )
-
-                    CaptureMode.VIDEO_ONLY -> stringResource(
-                        R.string.quick_settings_text_capture_mode_image_only
-                    )
-
-                    CaptureMode.IMAGE_ONLY -> stringResource(
-                        R.string.quick_settings_text_capture_mode_video_only
-                    )
-                },
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun DropDownItem(
-    modifier: Modifier = Modifier,
-    text: String,
-    onClick: () -> Unit = {},
-    onDisabledClick: () -> Unit = {},
-    enabled: Boolean = true,
-    isSelected: Boolean = false
-) {
-    Text(
-        text = text,
-        color = if (enabled) Color.Unspecified else Color.DarkGray,
-        modifier = modifier
-            .clickable(enabled = true, onClick = if (enabled) onClick else onDisabledClick)
-            .apply {
-                if (!enabled) {
-                    alpha(.37f)
-                }
-            }
-            .padding(16.dp)
-    )
-}
-
-enum class ToggleState {
-    Left,
-    Right
-}
-
-@Composable
-fun ToggleButton(
-    leftIcon: Painter,
-    rightIcon: Painter,
-    modifier: Modifier = Modifier,
-    initialState: ToggleState = ToggleState.Left,
-    onToggleStateChanged: (newState: ToggleState) -> Unit = {},
-    onToggleWhenDisabled: () -> Unit = {},
-    enabled: Boolean = true,
-    leftIconDescription: String = "leftIcon",
-    rightIconDescription: String = "rightIcon",
-    iconPadding: Dp = 8.dp
-) {
-    val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
-    val disableColor = MaterialTheme.colorScheme.onSurface
-    val iconSelectionColor = MaterialTheme.colorScheme.onPrimary
-    val iconUnSelectionColor = MaterialTheme.colorScheme.primary
-    val circleSelectionColor = MaterialTheme.colorScheme.primary
-    val circleColor = if (enabled) circleSelectionColor else disableColor.copy(alpha = 0.12f)
-    var toggleState by remember { mutableStateOf(initialState) }
-    val animatedTogglePosition by animateFloatAsState(
-        when (toggleState) {
-            ToggleState.Left -> 0f
-            ToggleState.Right -> 1f
-        },
-        label = "togglePosition"
-    )
-
-    Surface(
-        modifier = modifier
-            .clip(shape = RoundedCornerShape(50))
-            .then(
-                Modifier.clickable(
-                    role = Role.Switch
-                ) {
-                    if (enabled) {
-                        toggleState = when (toggleState) {
-                            ToggleState.Left -> ToggleState.Right
-                            ToggleState.Right -> ToggleState.Left
-                        }
-                        onToggleStateChanged(toggleState)
-                    } else {
-                        onToggleWhenDisabled()
-                    }
-                }
-            )
-            .semantics {
-                stateDescription = when (toggleState) {
-                    ToggleState.Left -> leftIconDescription
-                    ToggleState.Right -> rightIconDescription
-                }
-            }
-            .width(64.dp)
-            .height(32.dp),
-        color = backgroundColor
-    ) {
-        Box {
-            Row(
-                modifier = Modifier.matchParentSize(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    Modifier
-                        .layout { measurable, constraints ->
-                            val placeable = measurable.measure(constraints)
-                            layout(placeable.width, placeable.height) {
-                                val xPos = animatedTogglePosition *
-                                    (constraints.maxWidth - placeable.width)
-                                placeable.placeRelative(xPos.toInt(), 0)
-                            }
-                        }
-                        .fillMaxHeight()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(50))
-                        .background(circleColor)
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .matchParentSize()
-                    .then(
-                        if (enabled) Modifier else Modifier.alpha(0.38f)
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Icon(
-                    painter = leftIcon,
-                    contentDescription = "leftIcon",
-                    modifier = Modifier.padding(iconPadding),
-                    tint = if (!enabled) {
-                        disableColor
-                    } else if (toggleState == ToggleState.Left) {
-                        iconSelectionColor
-                    } else {
-                        iconUnSelectionColor
-                    }
-                )
-                Icon(
-                    painter = rightIcon,
-                    contentDescription = "rightIcon",
-                    modifier = Modifier.padding(iconPadding),
-                    tint = if (!enabled) {
-                        disableColor
-                    } else if (toggleState == ToggleState.Right) {
-                        iconSelectionColor
-                    } else {
-                        iconUnSelectionColor
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Preview(name = "Light Mode")
-@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun Preview_ToggleButton_Selecting_Left() {
-    val initialState = ToggleState.Left
-    var toggleState by remember {
-        mutableStateOf(initialState)
-    }
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleButton(
-            leftIcon = if (toggleState == ToggleState.Left) {
-                rememberVectorPainter(image = Icons.Filled.CameraAlt)
-            } else {
-                rememberVectorPainter(image = Icons.Outlined.CameraAlt)
-            },
-            rightIcon = if (toggleState == ToggleState.Right) {
-                rememberVectorPainter(image = Icons.Filled.Videocam)
-            } else {
-                rememberVectorPainter(image = Icons.Outlined.Videocam)
-            },
-            initialState = ToggleState.Left,
-            onToggleStateChanged = {
-                toggleState = it
-            }
-        )
-    }
-}
-
-@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun Preview_ToggleButton_Selecting_Right() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleButton(
-            leftIcon = rememberVectorPainter(image = Icons.Outlined.CameraAlt),
-            rightIcon = rememberVectorPainter(image = Icons.Filled.Videocam),
-            initialState = ToggleState.Right
-        )
-    }
-}
-
-@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun Preview_ToggleButton_Disabled() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleButton(
-            leftIcon = rememberVectorPainter(image = Icons.Outlined.CameraAlt),
-            rightIcon = rememberVectorPainter(image = Icons.Filled.Videocam),
-            initialState = ToggleState.Right,
-            enabled = false
-        )
     }
 }

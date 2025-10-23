@@ -39,6 +39,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -53,56 +57,61 @@ import java.text.DecimalFormat
 fun ZoomButtonRow(
     onChangeZoom: (Float) -> Unit,
     modifier: Modifier = Modifier,
-    zoomControlUiState: ZoomControlUiState.Enabled,
+    zoomControlUiState: ZoomControlUiState,
     buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
     spacing: Dp = 16.dp
 ) {
-    val currentZoomState by rememberUpdatedState(zoomControlUiState)
-    val selectedOptionIndex: Int by remember(zoomControlUiState.primaryLensFacing) {
-        // todo(kc): checkValue will flash to 1.0 when flipping between camera lenses on API 30+.
-        // cameraState (cameraState's zoom value) should have an intermediate, "unknown", state when
-        // camera flip is in progress. Then we can ensure that the zoom controls don't flash to 1.0
-        // when cameraState is in this intermediate state.
+    if (zoomControlUiState is ZoomControlUiState.Enabled) {
+        val currentZoomState by rememberUpdatedState(zoomControlUiState)
+        val selectedOptionIndex: Int by remember(zoomControlUiState.primaryLensFacing) {
+            // todo(kc): checkValue will flash to 1.0 when flipping between camera lenses on API 30+.
+            // cameraState (cameraState's zoom value) should have an intermediate, "unknown", state when
+            // camera flip is in progress. Then we can ensure that the zoom controls don't flash to 1.0
+            // when cameraState is in this intermediate state.
 
-        derivedStateOf {
-            // if animating towards a value, then that option will be selected
-            // otherwise, select the closest option that is less than the current zoom ratio
+            derivedStateOf {
+                // if animating towards a value, then that option will be selected
+                // otherwise, select the closest option that is less than the current zoom ratio
 
-            val checkValue =
-                currentZoomState.animatingToValue ?: currentZoomState.primaryZoomRatio ?: 1f
-            if (checkValue >= 1f) {
-                // -1 if no index is found
-                currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
-                    checkValue >= zoomLevelOption
+                val checkValue =
+                    currentZoomState.animatingToValue ?: currentZoomState.primaryZoomRatio ?: 1f
+                if (checkValue >= 1f) {
+                    // -1 if no index is found
+                    currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
+                        checkValue >= zoomLevelOption
+                    }
+                } else {
+                    0
                 }
-            } else {
-                0
             }
         }
-    }
 
-    Row(
-        modifier = Modifier
-            .background(
-                color = Color.Black.copy(alpha = 0.32f),
-                shape = CircleShape
-            )
-            .padding(horizontal = spacing / 2, vertical = spacing / 2)
-            .testTag("")
-            .height(buttonSize),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        zoomControlUiState.zoomLevels.forEachIndexed { index, value ->
-            Box(
-                modifier = Modifier.width(buttonSize + spacing + 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                ZoomButton(
-                    targetZoom = value,
-                    zoomRatio = zoomControlUiState.primaryZoomRatio ?: 1f,
-                    isSelected = selectedOptionIndex == index,
-                    onChangeZoom = onChangeZoom
+        Row(
+            modifier = modifier
+                .background(
+                    color = Color.Black.copy(alpha = 0.32f),
+                    shape = CircleShape
                 )
+                .padding(horizontal = spacing / 2, vertical = spacing / 2)
+                .semantics {
+                    testTag = ZOOM_BUTTON_ROW_TAG
+                    stateDescription = zoomControlUiState.primaryZoomRatio.toString()
+                }
+                .height(buttonSize),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            zoomControlUiState.zoomLevels.forEachIndexed { index, value ->
+                Box(
+                    modifier = Modifier.width(buttonSize + spacing + 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ZoomButton(
+                        targetZoom = value,
+                        zoomRatio = zoomControlUiState.primaryZoomRatio ?: 1f,
+                        isSelected = selectedOptionIndex == index,
+                        onChangeZoom = onChangeZoom
+                    )
+                }
             }
         }
     }
@@ -141,7 +150,13 @@ private fun ZoomButton(
     ToggleButton(
         checked = isSelected,
         onCheckedChange = { onChangeZoom(targetZoom) },
-        modifier = modifier.heightIn(buttonSize),
+        modifier = modifier.heightIn(buttonSize)
+            .semantics {
+                testTag = getZoomButtonTestTag(targetZoom)
+                // todo(kc): move to text resource
+                contentDescription = if (isSelected) "selected" else "not selected"
+            }
+            .testTag(getZoomButtonTestTag(targetZoom)),
         shapes = ToggleButtonDefaults.shapesFor(buttonSize),
         contentPadding = ButtonDefaults.contentPaddingFor(buttonSize),
         colors = if (isSelected) {
@@ -162,6 +177,20 @@ private fun ZoomButton(
             style = MaterialTheme.typography.labelSmall,
             textAlign = TextAlign.Center
         )
+    }
+}
+
+private fun getZoomButtonTestTag(buttonValue: Float): String {
+    return if (buttonValue < 1 && buttonValue > 0) {
+        ZOOM_BUTTON_MIN_TAG
+    } else if (buttonValue == 1f) {
+        ZOOM_BUTTON_1_TAG
+    } else if (buttonValue == 2f) {
+        ZOOM_BUTTON_2_TAG
+    } else if (buttonValue == 5f) {
+        ZOOM_BUTTON_5_TAG
+    } else {
+        TODO("Zoom button with value $buttonValue needs a test tag")
     }
 }
 
