@@ -45,11 +45,11 @@ fun CaptureModeToggleUiState.Companion.from(
     cameraState: CameraState,
     externalCaptureMode: ExternalCaptureMode
 ): CaptureModeToggleUiState =
-    if (cameraState.videoRecordingState !is VideoRecordingState.Inactive) {
-        CaptureModeToggleUiState.Unavailable
-    } else if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-        cameraAppSettings.dynamicRange == DynamicRange.HLG10
+    if (cameraState.videoRecordingState !is VideoRecordingState.Inactive ||
+        cameraAppSettings.captureMode == CaptureMode.STANDARD
     ) {
+        CaptureModeToggleUiState.Unavailable
+    } else {
         val availableCaptureModes = getAvailableCaptureModes(
             systemConstraints,
             cameraAppSettings,
@@ -73,8 +73,6 @@ fun CaptureModeToggleUiState.Companion.from(
             imageOnlyUiState = imageOnlyState,
             videoOnlyUiState = videoOnlyState
         )
-    } else {
-        CaptureModeToggleUiState.Unavailable
     }
 
 fun CaptureModeUiState.Companion.from(

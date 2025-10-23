@@ -17,13 +17,14 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import android.util.Size
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 
-fun DebugUiState.Open.Companion.from(
+fun DebugUiState.Enabled.Open.Companion.from(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
@@ -40,7 +41,7 @@ fun DebugUiState.Open.Companion.from(
             }
     }
 
-    return DebugUiState.Open(
+    return DebugUiState.Enabled.Open(
         cameraPropertiesJSON = cameraPropertiesJSON,
         videoResolution = Size(
             cameraState.videoQualityInfo.width,
@@ -49,11 +50,14 @@ fun DebugUiState.Open.Companion.from(
         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
         selectedTestPattern = cameraAppSettings.debugSettings.testPattern,
-        availableTestPatterns = availableTestPatterns
+        availableTestPatterns = availableTestPatterns,
+        currentPrimaryZoomRatio = cameraState.zoomRatios[cameraAppSettings.cameraLensFacing]
     )
 }
 
-fun DebugUiState.Closed.Companion.from(cameraState: CameraState) = DebugUiState.Closed(
-    currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
-    currentLogicalCameraId = cameraState.debugInfo.logicalCameraId
-)
+fun DebugUiState.Enabled.Closed.Companion.from(cameraState: CameraState, lensFacing: LensFacing) =
+    DebugUiState.Enabled.Closed(
+        currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
+        currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+        currentPrimaryZoomRatio = cameraState.zoomRatios[lensFacing]
+    )
