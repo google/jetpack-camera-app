@@ -23,9 +23,11 @@ enum class LowLightBoostPriority {
 
     companion object {
         /**
-         * Returns the LowLightBoostPriority enum equivalent of a provided
-         * LowLightBoostPriorityProto
-         * */
+         * Returns the [LowLightBoostPriority] enum equivalent of a provided [LowLightBoostPriorityProto].
+         *
+         * @param lowLightBoostPriorityProto The proto to convert from.
+         * @return The converted [LowLightBoostPriority].
+         */
         fun fromProto(
             lowLightBoostPriorityProto: LowLightBoostPriorityProto
         ): LowLightBoostPriority {
