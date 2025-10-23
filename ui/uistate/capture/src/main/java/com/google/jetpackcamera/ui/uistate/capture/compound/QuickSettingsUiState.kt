@@ -34,6 +34,14 @@ sealed interface QuickSettingsUiState {
         val flipLensUiState: FlipLensUiState,
         val hdrUiState: HdrUiState,
         val streamConfigUiState: StreamConfigUiState,
-        val quickSettingsIsOpen: Boolean = false
+        val quickSettingsIsOpen: Boolean = false,
+        val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE
     ) : QuickSettingsUiState
+}
+
+// enum representing which individual quick setting is currently focused
+enum class FocusedQuickSetting {
+    NONE,
+    ASPECT_RATIO,
+    CAPTURE_MODE
 }

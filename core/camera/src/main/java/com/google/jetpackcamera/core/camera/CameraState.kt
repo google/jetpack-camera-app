@@ -28,7 +28,7 @@ data class CameraState(
     val sessionFirstFrameTimestamp: Long = 0L,
     val torchEnabled: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
-    val lowLightBoostState: LowLightBoostState = LowLightBoostState.INACTIVE,
+    val lowLightBoostState: LowLightBoostState = LowLightBoostState.Inactive,
     val debugInfo: DebugInfo = DebugInfo(null, null),
     val videoQualityInfo: VideoQualityInfo = VideoQualityInfo(VideoQuality.UNSPECIFIED, 0, 0)
 )

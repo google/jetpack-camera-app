@@ -25,6 +25,9 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensFacing.Companion.toProto
+import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.fromProto
+import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.toProto
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
@@ -53,7 +56,7 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
                     DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
                     DarkModeProto.DARK_MODE_SYSTEM -> DarkMode.SYSTEM
-                    else -> DarkMode.SYSTEM
+                    else -> DarkMode.DARK
                 },
                 flashMode = when (it.flashModeStatus) {
                     FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
@@ -70,6 +73,7 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
                     StreamConfigProto.STREAM_CONFIG_MULTI_STREAM -> StreamConfig.MULTI_STREAM
                     else -> StreamConfig.MULTI_STREAM
                 },
+                lowLightBoostPriority = fromProto(it.lowLightBoostPriority),
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
                 maxVideoDurationMillis = it.maxVideoDurationMillis,
@@ -191,6 +195,14 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setVideoQuality(videoQuality.toProto())
+                .build()
+        }
+    }
+
+    override suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setLowLightBoostPriority(lowLightBoostPriority.toProto())
                 .build()
         }
     }

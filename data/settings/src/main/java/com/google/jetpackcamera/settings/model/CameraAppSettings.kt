@@ -25,6 +25,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
@@ -38,7 +39,7 @@ const val UNLIMITED_VIDEO_DURATION = 0L
 data class CameraAppSettings(
     val captureMode: CaptureMode = CaptureMode.STANDARD,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
-    val darkMode: DarkMode = DarkMode.SYSTEM,
+    val darkMode: DarkMode = DarkMode.DARK,
     val flashMode: FlashMode = FlashMode.OFF,
     val streamConfig: StreamConfig = StreamConfig.MULTI_STREAM,
     val aspectRatio: AspectRatio = AspectRatio.NINE_SIXTEEN,
@@ -52,6 +53,7 @@ data class CameraAppSettings(
     val deviceRotation: DeviceRotation = DeviceRotation.Natural,
     val concurrentCameraMode: ConcurrentCameraMode = ConcurrentCameraMode.OFF,
     val maxVideoDurationMillis: Long = UNLIMITED_VIDEO_DURATION,
+    val lowLightBoostPriority: LowLightBoostPriority = LowLightBoostPriority.PRIORITIZE_AE_MODE,
     val debugSettings: DebugSettings = DebugSettings()
 )
 
