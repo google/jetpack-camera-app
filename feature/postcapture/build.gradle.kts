@@ -56,6 +56,8 @@ android {
 
     @Suppress("UnstableApiUsage")
     testOptions {
+        animationsDisabled = true
+
         unitTests {
             isReturnDefaultValues = true
             isIncludeAndroidResources = true
