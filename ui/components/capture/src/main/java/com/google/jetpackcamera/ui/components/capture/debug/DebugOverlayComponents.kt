@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -55,6 +54,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -134,6 +134,7 @@ private fun DebugTextBar(modifier: Modifier = Modifier, title: String, value: St
 
 @Composable
 private fun ToggleVisibilityButton(
+    modifier: Modifier = Modifier,
     onToggleHidingComponents: () -> Unit,
     isHidingComponents: Boolean
 ) {
@@ -144,8 +145,7 @@ private fun ToggleVisibilityButton(
     }
 
     IconButton(
-        modifier = Modifier
-            .safeDrawingPadding()
+        modifier = modifier
             .semantics {
                 testTag = BTN_DEBUG_HIDE_COMPONENTS_TAG
                 stateDescription = stateDescption
@@ -153,7 +153,11 @@ private fun ToggleVisibilityButton(
         onClick = { onToggleHidingComponents() }
     ) {
         if (isHidingComponents) {
-            Icon(Icons.Default.VisibilityOff, contentDescription = null)
+            Icon(
+                Icons.Default.VisibilityOff,
+                contentDescription = null,
+                modifier = Modifier.alpha(.5f)
+            )
         } else {
             Icon(Icons.Default.Visibility, contentDescription = null)
         }
@@ -171,14 +175,13 @@ fun DebugOverlay(
     vararg extraControls: @Composable () -> Unit
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        Column {
+        Column(modifier = Modifier.padding(top = 100.dp)) {
             ToggleVisibilityButton(
                 onToggleHidingComponents = onToggleHidingComponents,
                 isHidingComponents = debugUiState.debugHidingComponents
             )
             if (!debugUiState.debugHidingComponents) {
                 DebugConsole(
-                    modifier = Modifier.padding(top = 100.dp),
                     debugUiState = debugUiState,
                     onToggleDebugOverlay = toggleIsOpen,
                     extraControls = extraControls
