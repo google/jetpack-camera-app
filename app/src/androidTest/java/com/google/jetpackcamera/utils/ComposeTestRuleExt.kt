@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.utils
-
 import android.content.Context
 import android.util.Log
 import androidx.annotation.StringRes
