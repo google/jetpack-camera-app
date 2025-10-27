@@ -271,6 +271,7 @@ private fun CaptureLayoutPreview() {
         },
         snackBar = { _, _ ->
             // No-op for preview
-        }
+        },
+        debugVisibilityWrapper = { content -> content() }
     )
 }
