@@ -97,7 +97,6 @@ fun PreviewLayout(
     }
 }
 
-
 @Composable
 private fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
