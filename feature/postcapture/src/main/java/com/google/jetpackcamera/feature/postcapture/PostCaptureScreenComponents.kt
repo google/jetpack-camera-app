@@ -20,7 +20,6 @@ import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -43,10 +42,9 @@ fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap?) {
 
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoPlayer(modifier: Modifier, player: ExoPlayer?, onDispose: () -> Unit)  {
+fun VideoPlayer(modifier: Modifier, player: ExoPlayer?) {
     player?.let {
         val presentationState = rememberPresentationState(player)
-        DisposableEffect(Unit) { onDispose { onDispose() } }
         PlayerSurface(
             modifier = modifier.resizeWithContentScale(
                 ContentScale.Fit,

@@ -38,7 +38,6 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -62,12 +61,6 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
     val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    DisposableEffect(viewModel) {
-        onDispose {
-            viewModel.releasePlayer()
-        }
-    }
-
     Box(modifier = Modifier.fillMaxSize()) {
         when (val media = uiState.media) {
             is Media.Image -> {
@@ -78,8 +71,7 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
             is Media.Video -> {
                 VideoPlayer(
                     modifier = Modifier,
-                    player = viewModel.player,
-                    onDispose = viewModel::releasePlayer
+                    player = viewModel.player
                 )
                 viewModel.playPostCaptureVideo()
             }
