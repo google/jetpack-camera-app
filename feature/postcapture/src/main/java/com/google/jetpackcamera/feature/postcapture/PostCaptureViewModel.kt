@@ -82,16 +82,18 @@ class PostCaptureViewModel @Inject constructor(
     val uiState: StateFlow<PostCaptureUiState> = _uiState
 
     fun updatePlayerState(commands: Player.Commands?) {
-        playerState.update {
-            if (commands == null) {
-                PlayerState()
-            } else {
-                it.copy(
-                    canPrepare = commands.contains(COMMAND_PREPARE),
-                    canPlayPause = commands.contains(COMMAND_PLAY_PAUSE),
-                    canSetMediaItem = commands.contains(COMMAND_SET_MEDIA_ITEM),
-                    canChangeMediaItem = commands.contains(COMMAND_CHANGE_MEDIA_ITEMS)
-                )
+        viewModelScope.launch {
+            playerState.update {
+                if (commands == null) {
+                    PlayerState()
+                } else {
+                    it.copy(
+                        canPrepare = commands.contains(COMMAND_PREPARE),
+                        canPlayPause = commands.contains(COMMAND_PLAY_PAUSE),
+                        canSetMediaItem = commands.contains(COMMAND_SET_MEDIA_ITEM),
+                        canChangeMediaItem = commands.contains(COMMAND_CHANGE_MEDIA_ITEMS)
+                    )
+                }
             }
         }
     }
@@ -153,10 +155,12 @@ class PostCaptureViewModel @Inject constructor(
      * Starts playback of the video in post capture using [ExoPlayer.REPEAT_MODE_ONE]
      */
     fun startPostCapturePlayback() {
-        player?.let {
-            loadVideo()
-            it.repeatMode = ExoPlayer.REPEAT_MODE_ONE
-            playVideo()
+        viewModelScope.launch {
+            player?.let {
+                loadVideo()
+                it.repeatMode = ExoPlayer.REPEAT_MODE_ONE
+                playVideo()
+            }
         }
     }
 
