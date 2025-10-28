@@ -18,11 +18,11 @@ package com.google.jetpackcamera.feature.postcapture
 import android.graphics.Bitmap
 import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.PlayerSurface
@@ -34,8 +34,8 @@ fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap?) {
     if (bitmap != null) {
         Image(
             bitmap = bitmap.asImageBitmap(),
-            contentDescription = "Image loaded from Bitmap",
-            modifier = modifier.fillMaxSize()
+            contentDescription = stringResource(R.string.post_capture_image_description),
+            modifier = modifier
         )
     }
 }

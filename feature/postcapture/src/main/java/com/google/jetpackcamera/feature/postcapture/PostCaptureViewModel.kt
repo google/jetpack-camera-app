@@ -117,6 +117,10 @@ class PostCaptureViewModel @Inject constructor(
     }
 
     // exoplayer controls
+
+    /**
+     * Initializes a new [ExoPlayer] instance with a [Player.Listener] attached. Releases any pre-existing player.
+     */
     fun initPlayer() {
         releasePlayer()
         val exoplayer = ExoPlayer.Builder(context).build()
@@ -125,6 +129,9 @@ class PostCaptureViewModel @Inject constructor(
         player = exoplayer
     }
 
+    /**
+     * Releases the current [ExoPlayer] instance. Resets [player] to null.
+     */
     fun releasePlayer() {
         player?.let {
             it.release()
@@ -134,6 +141,9 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Loads and prepares the uistate's current video media for playback.
+     */
     fun loadVideo() {
         val media = uiState.value.media
         if (media is Media.Video) {
@@ -152,7 +162,8 @@ class PostCaptureViewModel @Inject constructor(
     }
 
     /**
-     * Starts playback of the video in post capture using [ExoPlayer.REPEAT_MODE_ONE]
+     * Loads and plays the uiState's current video media.
+     * playback of the video is an infinite loop.
      */
     fun startPostCapturePlayback() {
         viewModelScope.launch {
@@ -164,6 +175,9 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Starts/resumes the currently loaded video.
+     */
     fun playVideo() {
         player?.let { exoPlayer ->
             if (playerState.value.canPrepare) {
@@ -171,14 +185,6 @@ class PostCaptureViewModel @Inject constructor(
             }
             if (playerState.value.canPlayPause) {
                 exoPlayer.play()
-            }
-        }
-    }
-
-    fun pauseVideo() {
-        player?.let {
-            if (playerState.value.canPlayPause) {
-                it.pause()
             }
         }
     }
