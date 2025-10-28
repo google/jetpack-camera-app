@@ -20,6 +20,9 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.Player.COMMAND_PLAY_PAUSE
+import androidx.media3.common.Player.COMMAND_SET_MEDIA_ITEM
 import androidx.media3.exoplayer.ExoPlayer
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
@@ -38,8 +41,24 @@ class PostCaptureViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    val playerListener = object : Player.Listener {
+        /**
+         * This callback is the single source of truth for
+         * what the UI is allowed to do.
+         */
+        override fun onAvailableCommandsChanged(commands: Player.Commands) {
+            super.onAvailableCommandsChanged(commands)
+            playerState.update {
+                it.copy(
+                    canPlayPause = commands.contains(COMMAND_PLAY_PAUSE),
+                    canSetMediaItem = commands.contains(COMMAND_SET_MEDIA_ITEM)
+                )
+            }
+        }
+    }
     init {
         getLastCapture()
+        initPlayer()
     }
 
     private val _uiState = MutableStateFlow(
@@ -48,8 +67,11 @@ class PostCaptureViewModel @Inject constructor(
             media = Media.None
         )
     )
+    private val playerState = MutableStateFlow(
+        PlayerState()
+    )
 
-    val player = ExoPlayer.Builder(context).build()
+    var player: ExoPlayer? = null // ExoPlayer.Builder(context).build()
 
     val uiState: StateFlow<PostCaptureUiState> = _uiState
 
@@ -71,14 +93,50 @@ class PostCaptureViewModel @Inject constructor(
         _uiState.update { it.copy(mediaDescriptor = MediaDescriptor.None, media = Media.None) }
     }
 
-    fun playVideo() {
+    // exoplayer controls
+    fun initPlayer() {
+        player?.release()
+        player = ExoPlayer.Builder(context).build()
+        player?.addListener(playerListener)
+    }
+
+    fun releasePlayer() {
+        player?.release()
+        player = null
+    }
+
+    fun loadVideo() {
         val media = uiState.value.media
         if (media is Media.Video) {
+            player?.stop()
             val mediaItem = MediaItem.fromUri(media.uri)
-            player.setMediaItem(mediaItem)
-            player.prepare()
-            player.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE)
-            player.play()
+            player!!.setMediaItem(mediaItem)
+            player!!.prepare()
+        }
+    }
+
+    fun playPostCaptureVideo()  {
+        player?.let {
+            loadVideo()
+            it.repeatMode = ExoPlayer.REPEAT_MODE_ONE
+            playVideo()
+        }
+    }
+
+    fun playVideo() {
+        player?.let { exoPlayer ->
+            exoPlayer.prepare()
+            if (playerState.value.canPlayPause) {
+                exoPlayer.play()
+            }
+        }
+    }
+
+    fun pauseVideo() {
+        player?.let {
+            if (playerState.value.canPlayPause) {
+                it.pause()
+            }
         }
     }
 }
@@ -86,4 +144,9 @@ class PostCaptureViewModel @Inject constructor(
 data class PostCaptureUiState(
     val mediaDescriptor: MediaDescriptor,
     val media: Media
+)
+
+data class PlayerState(
+    val canPlayPause: Boolean = false,
+    val canSetMediaItem: Boolean = false
 )
