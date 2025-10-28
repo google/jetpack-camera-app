@@ -149,7 +149,10 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
-    fun playPostCaptureVideo() {
+    /**
+     * Starts playback of the video in post capture using [ExoPlayer.REPEAT_MODE_ONE]
+     */
+    fun startPostCapturePlayback() {
         player?.let {
             loadVideo()
             it.repeatMode = ExoPlayer.REPEAT_MODE_ONE

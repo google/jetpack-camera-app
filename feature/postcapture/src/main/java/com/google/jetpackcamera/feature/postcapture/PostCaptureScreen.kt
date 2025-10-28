@@ -73,7 +73,7 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
                     modifier = Modifier,
                     player = viewModel.player
                 )
-                viewModel.playPostCaptureVideo()
+                viewModel.startPostCapturePlayback()
             }
 
             Media.None -> {
