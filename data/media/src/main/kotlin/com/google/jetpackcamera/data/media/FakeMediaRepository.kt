@@ -15,7 +15,18 @@
  */
 package com.google.jetpackcamera.data.media
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+
 object FakeMediaRepository : MediaRepository {
+    override val currentMedia = MutableStateFlow<MediaDescriptor>(
+        MediaDescriptor.None
+    )
+
+    override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
+        currentMedia.update { pendingMedia }
+    }
+
     override suspend fun getLastCapturedMedia(): MediaDescriptor {
         return MediaDescriptor.None
     }

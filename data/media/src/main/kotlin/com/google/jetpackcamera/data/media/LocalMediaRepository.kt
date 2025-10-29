@@ -23,23 +23,41 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Log
 import android.util.Size
 import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 
+private const val TAG = "LocalMediaRepository"
 class LocalMediaRepository
 @Inject constructor(
     @ApplicationContext private val context: Context,
     @IODispatcher private val iODispatcher: CoroutineDispatcher
 ) : MediaRepository {
+    private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
+
+    override val currentMedia = _currentMedia.asStateFlow()
+
+    override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
+        _currentMedia.update { pendingMedia }
+        Log.d(TAG, "set new media $pendingMedia")
+    }
 
     override suspend fun load(mediaDescriptor: MediaDescriptor): Media {
         return when (mediaDescriptor) {
-            is MediaDescriptor.Image -> loadImage(mediaDescriptor.uri)
+            is MediaDescriptor.Image -> {
+                val bitmap = loadImage(mediaDescriptor.uri)
+                bitmap?.let { Media.Image(bitmap) } ?: Media.Error
+            }
+
             MediaDescriptor.None -> Media.None
+
             is MediaDescriptor.Video -> Media.Video(mediaDescriptor.uri)
         }
     }
@@ -66,7 +84,10 @@ class LocalMediaRepository
         }
     }
 
-    private suspend fun loadImage(uri: Uri): Media = withContext(iODispatcher) {
+    /**
+     * Loads an image from bitmap
+     */
+    private suspend fun loadImage(uri: Uri): Bitmap? = withContext(iODispatcher) {
         try {
             val loadedBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // Android 10 (API 29) and above: Use ImageDecoder
@@ -79,14 +100,10 @@ class LocalMediaRepository
                 }
             }
 
-            return@withContext if (loadedBitmap != null) {
-                Media.Image(loadedBitmap)
-            } else {
-                Media.Error
-            }
+            return@withContext loadedBitmap
         } catch (e: Exception) {
             e.printStackTrace()
-            return@withContext Media.Error
+            return@withContext null
         }
     }
 

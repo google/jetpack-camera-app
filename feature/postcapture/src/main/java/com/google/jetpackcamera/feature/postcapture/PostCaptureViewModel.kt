@@ -29,6 +29,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -38,10 +40,6 @@ class PostCaptureViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    init {
-        getLastCapture()
-    }
-
     private val _uiState = MutableStateFlow(
         PostCaptureUiState(
             mediaDescriptor = MediaDescriptor.None,
@@ -49,18 +47,21 @@ class PostCaptureViewModel @Inject constructor(
         )
     )
 
+    init {
+        viewModelScope.launch {
+            mediaRepository.currentMedia.filterNotNull().collectLatest { mediaDescriptor ->
+                val mediaDescriptor = mediaDescriptor
+                val media = mediaRepository.load(mediaDescriptor)
+                _uiState.update {
+                    it.copy(mediaDescriptor = mediaDescriptor, media = media)
+                }
+            }
+        }
+    }
+
     val player = ExoPlayer.Builder(context).build()
 
     val uiState: StateFlow<PostCaptureUiState> = _uiState
-
-    fun getLastCapture() {
-        viewModelScope.launch {
-            val mediaDescriptor = mediaRepository.getLastCapturedMedia()
-            val media = mediaRepository.load(mediaDescriptor)
-
-            _uiState.update { it.copy(mediaDescriptor = mediaDescriptor, media = media) }
-        }
-    }
 
     fun deleteMedia(contentResolver: ContentResolver) {
         when (val mediaDescriptor = uiState.value.mediaDescriptor) {

@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.postcapture
 
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -41,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -53,6 +55,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
@@ -67,12 +70,28 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
     Log.d(TAG, "PostCaptureScreen")
 
     val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
+    PostCaptureComponent(
+        uiState = uiState,
+        player = viewModel.player,
+        playVideo = viewModel::playVideo,
+        onDeleteMedia = viewModel::deleteMedia
+    )
+}
+
+@Composable
+fun PostCaptureComponent(
+    uiState: PostCaptureUiState,
+    player: ExoPlayer,
+    playVideo: () -> Unit,
+    onDeleteMedia: (ContentResolver) -> Unit
+) {
     val context = LocalContext.current
+    val media = mutableStateOf(uiState.media)
 
     Box(modifier = Modifier.fillMaxSize()) {
-        when (val media = uiState.media) {
+        when (val currentMedia = uiState.media) {
             is Media.Image -> {
-                val bitmap = media.bitmap
+                val bitmap = currentMedia.bitmap
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawIntoCanvas { canvas ->
                         val scale = maxOf(
@@ -94,23 +113,26 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
                     }
                 }
             }
+
             is Media.Video -> {
-                val presentationState = rememberPresentationState(viewModel.player)
+                val presentationState = rememberPresentationState(player)
                 PlayerSurface(
-                    player = viewModel.player,
+                    player = player,
                     modifier = Modifier.resizeWithContentScale(
                         ContentScale.Fit,
                         presentationState.videoSizeDp
                     )
                 )
-                viewModel.playVideo()
+                playVideo()
             }
+
             Media.None -> {
                 Text(
                     text = stringResource(R.string.no_media_available),
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
+
             Media.Error -> {
                 Text(
                     text = stringResource(R.string.error_loading_media),
@@ -128,7 +150,7 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
         ) {
             // Delete Image Button
             IconButton(
-                onClick = { viewModel.deleteMedia(context.contentResolver) },
+                onClick = { onDeleteMedia(context.contentResolver) },
                 modifier = Modifier
                     .size(56.dp)
                     .shadow(10.dp, CircleShape),

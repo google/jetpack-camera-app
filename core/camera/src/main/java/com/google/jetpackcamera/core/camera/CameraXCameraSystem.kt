@@ -522,7 +522,7 @@ constructor(
         saveLocation: SaveLocation,
         onCaptureStarted: (() -> Unit)
     ): ImageCapture.OutputFileResults = imageCaptureUseCase?.let { imageCaptureUseCase ->
-        val (outputFileOptions, closeable) = when (saveLocation) {
+        val (outputFileOptions: OutputFileOptions, closeable) = when (saveLocation) {
             is SaveLocation.Default -> {
                 val formatter = SimpleDateFormat(
                     "yyyy-MM-dd-HH-mm-ss-SSS",
@@ -558,6 +558,26 @@ constructor(
                     Log.d(TAG, "takePicture onError: $e")
                     throw e
                 }
+            }
+
+            SaveLocation.Cache -> {
+                // 1. Get the app's cache directory
+                val cacheDir = application.cacheDir
+
+                // 2. Create a unique temporary file
+                // todo: update filename for multiple capture session
+                val tempFile = File.createTempFile(
+                    "JCA_IMG_CAPTURE_TEMP_",
+                    ".jpg", // Use .jpg to support Ultra HDR
+                    cacheDir
+                )
+                Log.d(TAG, "cache file location: ${tempFile.absolutePath}")
+
+                // 3. Build OutputFileOptions directly with the File object
+                val options = OutputFileOptions.Builder(tempFile).build()
+
+                // 4. Return options. Since CameraX manages the stream, we return null for the 'closeable'.
+                options to null
             }
         }
 

@@ -17,11 +17,14 @@ package com.google.jetpackcamera.data.media
 
 import android.graphics.Bitmap
 import android.net.Uri
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Data layer for Media.
  */
 interface MediaRepository {
+    val currentMedia: Flow<MediaDescriptor>
+    suspend fun setCurrentMedia(pendingMedia: MediaDescriptor)
     suspend fun getLastCapturedMedia(): MediaDescriptor
     suspend fun load(mediaDescriptor: MediaDescriptor): Media
 }

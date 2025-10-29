@@ -49,13 +49,13 @@ sealed interface ImageCaptureEvent : CaptureEvent {
      * Concrete implementations will specify whether the capture was a single event
      * or part of a sequence.
      */
-    interface ImageSaved : ImageCaptureEvent {
+    interface ImageCaptured : ImageCaptureEvent {
         /**
          * The [Uri] of the saved image file. This may be null if the
          * capture was successful but the image was not saved to a specific Uri
          * (e.g., if only a bitmap was processed in memory without explicit file saving).
          */
-        val savedUri: Uri?
+        val capturedUri: Uri?
     }
 
     /**
@@ -74,11 +74,13 @@ sealed interface ImageCaptureEvent : CaptureEvent {
      * Indicates that a single image (not part of an explicit sequence)
      * was successfully captured and saved.
      *
-     * @param savedUri The [Uri] of the saved image file. This may be null if the
+     * @param capturedUri The [Uri] of the saved image file. This may be null if the
      *                 capture was successful but the image was not saved to a specific Uri
      *                 (e.g., if only a bitmap was processed in memory).
      */
-    data class SingleImageSaved(override val savedUri: Uri? = null) : ImageSaved
+    data class SingleImageSaved(override val capturedUri: Uri? = null) : ImageCaptured
+
+    data class SingleImageCached(override val capturedUri: Uri? = null) : ImageCaptured
 
     /**
      * Indicates that an error occurred during a single image capture or saving
@@ -92,7 +94,7 @@ sealed interface ImageCaptureEvent : CaptureEvent {
      * Indicates that an image, as part of a sequence, was successfully captured and saved,
      * along with its progress in that sequence.
      *
-     * @param savedUri The [Uri] of the saved image file. This may be null if the
+     * @param capturedUri The [Uri] of the saved image file. This may be null if the
      *                 capture was successful but the image was not saved to a specific Uri.
      * @param progress The progress of this image capture within the overall sequence.
      *                 The [IntProgress.currentValue] represents the current identifier of this
@@ -100,9 +102,9 @@ sealed interface ImageCaptureEvent : CaptureEvent {
      *                 span of the sequence.
      */
     data class SequentialImageSaved(
-        override val savedUri: Uri? = null,
+        override val capturedUri: Uri? = null,
         override val progress: IntProgress
-    ) : ImageSaved, ProgressCaptureEvent
+    ) : ImageCaptured, ProgressCaptureEvent
 
     /**
      * Indicates that an error occurred during the capture or saving of an image
@@ -130,6 +132,7 @@ sealed interface VideoCaptureEvent : CaptureEvent {
      * @param savedUri The [Uri] of the saved video file.
      */
     data class VideoSaved(val savedUri: Uri) : VideoCaptureEvent
+    data class VideoCached(val capturedUri: Uri) : VideoCaptureEvent
 
     /**
      * Indicates that an error occurred during video capture or saving.

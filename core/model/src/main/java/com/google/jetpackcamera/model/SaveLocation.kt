@@ -22,6 +22,8 @@ import android.net.Uri
  */
 sealed interface SaveLocation {
 
+    object Cache : SaveLocation
+
     /**
      * Indicates that the application's default logic for capturing media
      * should determine the save location and filename. The CameraUseCase typically

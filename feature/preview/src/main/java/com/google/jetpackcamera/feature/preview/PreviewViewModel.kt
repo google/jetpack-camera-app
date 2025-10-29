@@ -29,6 +29,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
+import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
@@ -49,6 +50,7 @@ import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
+import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoCaptureEvent
@@ -375,6 +377,12 @@ class PreviewViewModel @Inject constructor(
         DebugUiState.Disabled
     }
 
+    fun setMediaRepository(mediaDescriptor: MediaDescriptor) {
+        viewModelScope.launch {
+            mediaRepository.setCurrentMedia(mediaDescriptor)
+        }
+    }
+
     fun updateLastCapturedMedia() {
         viewModelScope.launch {
             val lastCapturedMediaDescriptor = mediaRepository.getLastCapturedMedia()
@@ -545,26 +553,36 @@ class PreviewViewModel @Inject constructor(
         )
     }
 
-    private fun nextSaveLocation(): Pair<SaveLocation, IntProgress?> = when (externalCaptureMode) {
-        ExternalCaptureMode.ImageCapture,
-        ExternalCaptureMode.MultipleImageCapture,
-        ExternalCaptureMode.VideoCapture -> {
-            if (externalUris.isNotEmpty()) {
-                if (!this::externalUriProgress.isInitialized) {
-                    externalUriProgress = IntProgress(1, 1..externalUris.size)
-                }
-                val progress = externalUriProgress
-                if (progress.currentValue < progress.range.endInclusive) externalUriProgress++
-                Pair(
-                    SaveLocation.Explicit(externalUris[progress.currentValue - 1]),
-                    progress
-                )
+    private fun nextSaveLocation(saveMode: SaveMode): Pair<SaveLocation, IntProgress?> {
+        val defaultSaveLocation =
+            if (saveMode is SaveMode.CacheAndReview) {
+                SaveLocation.Cache
             } else {
-                Pair(SaveLocation.Default, null)
+                SaveLocation.Default
             }
+
+        return when (externalCaptureMode) {
+            ExternalCaptureMode.ImageCapture,
+            ExternalCaptureMode.MultipleImageCapture,
+            ExternalCaptureMode.VideoCapture -> {
+                if (externalUris.isNotEmpty()) {
+                    if (!this::externalUriProgress.isInitialized) {
+                        externalUriProgress = IntProgress(1, 1..externalUris.size)
+                    }
+                    val progress = externalUriProgress
+                    if (progress.currentValue < progress.range.endInclusive) externalUriProgress++
+                    Pair(
+                        SaveLocation.Explicit(externalUris[progress.currentValue - 1]),
+                        progress
+                    )
+                } else {
+                    Pair(defaultSaveLocation, null)
+                }
+            }
+
+            ExternalCaptureMode.Standard ->
+                Pair(defaultSaveLocation, null)
         }
-        ExternalCaptureMode.Standard ->
-            Pair(SaveLocation.Default, null)
     }
 
     fun captureImage(contentResolver: ContentResolver) {
@@ -592,7 +610,8 @@ class PreviewViewModel @Inject constructor(
         }
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
-            val (saveLocation, progress) = nextSaveLocation()
+            val saveMode = cameraSystem.getCurrentSettings().value?.saveMode ?: SaveMode.Immediate
+            val (saveLocation, progress) = nextSaveLocation(saveMode)
             captureImageInternal(
                 doTakePicture = {
                     cameraSystem.takePicture(contentResolver, saveLocation) {
@@ -607,11 +626,21 @@ class PreviewViewModel @Inject constructor(
                     }.savedUri
                 },
                 onSuccess = { savedUri ->
-                    updateLastCapturedMedia()
+                    if (saveLocation !is SaveLocation.Cache) {
+                        updateLastCapturedMedia()
+                    }
                     val event = if (progress != null) {
                         ImageCaptureEvent.SequentialImageSaved(savedUri, progress)
                     } else {
-                        ImageCaptureEvent.SingleImageSaved(savedUri)
+                        if (saveMode is SaveMode.CacheAndReview) {
+                            ImageCaptureEvent.SingleImageCached(savedUri)
+                        } else {
+                            ImageCaptureEvent.SingleImageSaved(savedUri)
+                        }
+                    }
+
+                    savedUri?.let {
+                        setMediaRepository(MediaDescriptor.Image(it, null))
                     }
                     _captureEvents.trySend(event)
                 },
@@ -621,6 +650,7 @@ class PreviewViewModel @Inject constructor(
                     } else {
                         ImageCaptureEvent.SingleImageCaptureError(exception)
                     }
+
                     _captureEvents.trySend(event)
                 }
             )
@@ -693,21 +723,36 @@ class PreviewViewModel @Inject constructor(
         Log.d(TAG, "startVideoRecording")
         recordingJob = viewModelScope.launch {
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
-            val (saveLocation, _) = nextSaveLocation()
+            val saveMode = cameraSystem.getCurrentSettings().value?.saveMode ?: SaveMode.Immediate
+
+            val (saveLocation, _) = nextSaveLocation(saveMode)
             try {
                 cameraSystem.startVideoRecording(saveLocation) {
                     var snackbarToShow: SnackbarData?
                     when (it) {
                         is OnVideoRecordEvent.OnVideoRecorded -> {
                             Log.d(TAG, "cameraSystem.startRecording OnVideoRecorded")
-                            _captureEvents.trySend(VideoCaptureEvent.VideoSaved(it.savedUri))
+                            val event = if (saveLocation is SaveLocation.Cache) {
+                                VideoCaptureEvent.VideoCached(it.savedUri)
+                            } else {
+                                VideoCaptureEvent.VideoSaved(it.savedUri)
+                            }
+
+                            if (saveLocation !is SaveLocation.Cache) {
+                                updateLastCapturedMedia()
+                            } else {
+                                setMediaRepository(
+                                    MediaDescriptor.Video(it.savedUri, null)
+                                )
+                            }
+
+                            _captureEvents.trySend(event)
                             snackbarToShow = SnackbarData(
                                 cookie = cookie,
                                 stringResource = R.string.toast_video_capture_success,
                                 withDismissAction = true,
                                 testTag = VIDEO_CAPTURE_SUCCESS_TAG
                             )
-                            updateLastCapturedMedia()
                         }
 
                         is OnVideoRecordEvent.OnVideoRecordError -> {
@@ -747,6 +792,7 @@ class PreviewViewModel @Inject constructor(
             old.copy(isRecordingLocked = isLocked)
         }
     }
+
     fun setZoomAnimationState(targetValue: Float?) {
         trackedPreviewUiState.update { old ->
             old.copy(zoomAnimationTarget = targetValue)
@@ -835,6 +881,7 @@ class PreviewViewModel @Inject constructor(
             }
         }
     }
+
     fun setClearUiScreenBrightness(brightness: Float) {
         screenFlash.setClearUiScreenBrightness(brightness)
     }
