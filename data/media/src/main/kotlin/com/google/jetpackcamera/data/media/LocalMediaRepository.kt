@@ -46,9 +46,9 @@ class LocalMediaRepository
 
     override suspend fun getLastCapturedMedia(): MediaDescriptor {
         val imagePair =
-            getLastMediaUriWithDate(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            getLastSavedMediaUriWithDate(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         val videoPair =
-            getLastMediaUriWithDate(context, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            getLastSavedMediaUriWithDate(context, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
 
         return when {
             imagePair == null && videoPair == null -> MediaDescriptor.None
@@ -128,7 +128,21 @@ class LocalMediaRepository
             }
         }
 
-    private fun getLastMediaUriWithDate(context: Context, collectionUri: Uri): Pair<Uri, Long>? {
+    /**
+     * Retrieves the URI and date added of the most recent media file from the MediaStore.
+     *
+     * This function queries the MediaStore for media files that have a display name starting with
+     * "JCA". It returns the URI and date added for the most recently added file.
+     *
+     * @param context The context to use for accessing the ContentResolver.
+     * @param collectionUri The URI of the media collection to query (e.g., Images or Video).
+     * @return A [Pair] containing the [Uri] and date added (in seconds) of the most recent media
+     * file, or `null` if no matching media is found.
+     */
+    private fun getLastSavedMediaUriWithDate(
+        context: Context,
+        collectionUri: Uri
+    ): Pair<Uri, Long>? {
         val projection = arrayOf(
             MediaStore.MediaColumns._ID,
             MediaStore.MediaColumns.DATE_ADDED

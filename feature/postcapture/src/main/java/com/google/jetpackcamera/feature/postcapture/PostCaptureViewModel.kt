@@ -49,7 +49,7 @@ class PostCaptureViewModel @Inject constructor(
     private val playerState = MutableStateFlow(
         PlayerState()
     )
-    val playerListener = object : Player.Listener {
+    private val playerListener = object : Player.Listener {
         /**
          * This callback is the single source of truth for
          * what the UI is allowed to do.
@@ -60,6 +60,17 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
+    private val _uiState = MutableStateFlow(
+        PostCaptureUiState(
+            mediaDescriptor = MediaDescriptor.None,
+            media = Media.None
+        )
+    )
+
+    var player: ExoPlayer? = null
+        private set
+    val uiState: StateFlow<PostCaptureUiState> = _uiState
+
     init {
         getLastCapture()
         initPlayer()
@@ -69,17 +80,6 @@ class PostCaptureViewModel @Inject constructor(
         super.onCleared()
         releasePlayer()
     }
-
-    private val _uiState = MutableStateFlow(
-        PostCaptureUiState(
-            mediaDescriptor = MediaDescriptor.None,
-            media = Media.None
-        )
-    )
-
-    var player: ExoPlayer? = null
-
-    val uiState: StateFlow<PostCaptureUiState> = _uiState
 
     fun updatePlayerState(commands: Player.Commands?) {
         viewModelScope.launch {
@@ -180,9 +180,6 @@ class PostCaptureViewModel @Inject constructor(
      */
     fun playVideo() {
         player?.let { exoPlayer ->
-            if (playerState.value.canPrepare) {
-                exoPlayer.prepare()
-            }
             if (playerState.value.canPlayPause) {
                 exoPlayer.play()
             }
