@@ -279,7 +279,7 @@ fun PreviewScreen(
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
                 onSetTestPattern = viewModel::setTestPattern,
-
+                onSetImageWell = viewModel::imageWellToRepository,
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
                         zoomState.absoluteZoom(
@@ -362,6 +362,7 @@ private fun ContentScreen(
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
     onSetTestPattern: (TestPattern) -> Unit = {},
+    onSetImageWell: () -> Unit = {},
     onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onScaleZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onIncrementZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
@@ -607,7 +608,7 @@ private fun ContentScreen(
                     modifier = modifier,
                     imageWellUiState = captureUiState.imageWellUiState,
                     onClick = {
-                        // set mediarepository to imagewell item
+                        onSetImageWell()
                         onNavigatePostCapture()
                     }
                 )

@@ -377,6 +377,18 @@ class PreviewViewModel @Inject constructor(
         DebugUiState.Disabled
     }
 
+    fun imageWellToRepository() {
+        viewModelScope.launch {
+            val mediaDescriptor = (
+                (_captureUiState.value as? CaptureUiState.Ready)
+                    ?.imageWellUiState as ImageWellUiState.LastCapture
+                )
+                .mediaDescriptor
+
+            mediaRepository.setCurrentMedia(mediaDescriptor)
+        }
+    }
+
     fun setMediaRepository(mediaDescriptor: MediaDescriptor) {
         viewModelScope.launch {
             mediaRepository.setCurrentMedia(mediaDescriptor)

@@ -201,6 +201,7 @@ fun PostCaptureComponent(
  * Starts an intent to share media
  */
 private fun shareImage(context: Context, uri: Uri, mimeType: String) {
+    // todo(kc): use fileprovider to share cached images?
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType
         putExtra(Intent.EXTRA_STREAM, uri)

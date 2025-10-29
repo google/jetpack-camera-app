@@ -884,7 +884,9 @@ private fun getPendingRecording(
             } else {
                 if (saveLocation.locationUri.scheme == "file") {
                     saveLocation.locationUri.path?.let { path ->
-                        val fileOutputOptions = FileOutputOptions.Builder(File(path)).build()
+                        val fileOutputOptions = FileOutputOptions.Builder(File(path))
+                            .setDurationLimitMillis(maxDurationMillis)
+                            .build()
                         videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
                     } ?: run {
                         onVideoRecord(
@@ -939,18 +941,16 @@ private fun getPendingRecording(
 
                 // 3. Build FileOutputOptions with the File object
                 val fileOutputOptions = FileOutputOptions.Builder(tempFile)
-                    // You can also set duration/size limits here if needed
-                    // .setDurationLimitMillis(maxDurationMillis)
+                    .setDurationLimitMillis(maxDurationMillis)
                     .build()
 
                 // 4. Prepare the recording
                 videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
             } catch (e: Exception) {
-                // Handle exceptions (e.g., IOException from createTempFile)
                 onVideoRecord(
                     OnVideoRecordEvent.OnVideoRecordError(e)
                 )
-                null // Return null as this branch is part of an expression
+                null
             }
         }
     }

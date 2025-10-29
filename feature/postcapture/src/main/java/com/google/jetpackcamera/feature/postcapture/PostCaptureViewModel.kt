@@ -59,6 +59,15 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
+    override fun onCleared() {
+        super.onCleared()
+
+        // todo(): delete cached image(s)/video?
+        viewModelScope.launch {
+            mediaRepository.setCurrentMedia(MediaDescriptor.None)
+        }
+    }
+
     val player = ExoPlayer.Builder(context).build()
 
     val uiState: StateFlow<PostCaptureUiState> = _uiState
@@ -81,6 +90,9 @@ class PostCaptureViewModel @Inject constructor(
             player.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE)
             player.play()
         }
+    }
+
+    fun saveCachedMedia()  {
     }
 }
 
