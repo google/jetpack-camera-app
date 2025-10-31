@@ -568,7 +568,7 @@ class PreviewViewModel @Inject constructor(
     private fun nextSaveLocation(saveMode: SaveMode): Pair<SaveLocation, IntProgress?> {
         val defaultSaveLocation =
             if (saveMode is SaveMode.CacheAndReview) {
-                SaveLocation.Cache
+                SaveLocation.Cache(saveMode.cacheDir)
             } else {
                 SaveLocation.Default
             }

@@ -37,6 +37,7 @@ import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
+import androidx.core.net.toFile
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
@@ -560,9 +561,9 @@ constructor(
                 }
             }
 
-            SaveLocation.Cache -> {
+            is SaveLocation.Cache -> {
                 // 1. Get the app's cache directory
-                val cacheDir = application.cacheDir
+                val cacheDir = saveLocation.cacheDir?.toFile() ?: application.cacheDir
 
                 // 2. Create a unique temporary file
                 // todo: update filename for multiple capture session
@@ -571,7 +572,7 @@ constructor(
                     ".jpg", // Use .jpg to support Ultra HDR
                     cacheDir
                 )
-                Log.d(TAG, "cache file location: ${tempFile.absolutePath}")
+                Log.d(TAG, "cached image location: ${tempFile.absolutePath}")
 
                 // 3. Build OutputFileOptions directly with the File object
                 val options = OutputFileOptions.Builder(tempFile).build()

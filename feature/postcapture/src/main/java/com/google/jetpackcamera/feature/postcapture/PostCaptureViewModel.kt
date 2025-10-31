@@ -92,7 +92,7 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
-    fun saveCachedMedia()  {
+    fun saveCachedMedia() {
     }
 }
 

@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.model
 
+import android.net.Uri
+
 sealed interface SaveMode {
     /**
      * (Default) Saves media directly to MediaStore or an Explicit Uri.
@@ -29,6 +31,7 @@ sealed interface SaveMode {
      */
     data class CacheAndReview(
         // todo(kc): how to handle 1, max limit (>1), or unlimited (0)
-        val allowMultipleImages: Boolean = false
+        val allowMultipleImages: Boolean = false,
+        val cacheDir: Uri? = null
     ) : SaveMode
 }
