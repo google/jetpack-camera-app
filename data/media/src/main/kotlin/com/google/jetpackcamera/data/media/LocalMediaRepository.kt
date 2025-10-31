@@ -51,14 +51,14 @@ class LocalMediaRepository
 
     override suspend fun load(mediaDescriptor: MediaDescriptor): Media {
         return when (mediaDescriptor) {
-            is MediaDescriptor.Image -> {
+            is MediaDescriptor.Content.Image -> {
                 val bitmap = loadImage(mediaDescriptor.uri)
                 bitmap?.let { Media.Image(bitmap) } ?: Media.Error
             }
 
             MediaDescriptor.None -> Media.None
 
-            is MediaDescriptor.Video -> Media.Video(mediaDescriptor.uri)
+            is MediaDescriptor.Content.Video -> Media.Video(mediaDescriptor.uri)
         }
     }
 
@@ -109,12 +109,12 @@ class LocalMediaRepository
 
     private suspend fun getVideoMediaDescriptor(uri: Uri): MediaDescriptor {
         val thumbnail = getThumbnail(uri, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-        return MediaDescriptor.Video(uri, thumbnail)
+        return MediaDescriptor.Content.Video(uri, thumbnail)
     }
 
     private suspend fun getImageMediaDescriptor(uri: Uri): MediaDescriptor {
         val thumbnail = getThumbnail(uri, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        return MediaDescriptor.Image(uri, thumbnail)
+        return MediaDescriptor.Content.Image(uri, thumbnail)
     }
 
     private suspend fun getThumbnail(uri: Uri, collectionUri: Uri): Bitmap? =

@@ -36,8 +36,24 @@ interface MediaRepository {
  */
 sealed interface MediaDescriptor {
     data object None : MediaDescriptor
-    class Image(val uri: Uri, val thumbnail: Bitmap?) : MediaDescriptor
-    class Video(val uri: Uri, val thumbnail: Bitmap?) : MediaDescriptor
+
+    sealed interface Content : MediaDescriptor {
+        val uri: Uri
+        val thumbnail: Bitmap?
+        val isCached: Boolean
+
+        class Image(
+            override val uri: Uri,
+            override val thumbnail: Bitmap?,
+            override val isCached: Boolean = false
+        ) : Content
+
+        class Video(
+            override val uri: Uri,
+            override val thumbnail: Bitmap?,
+            override val isCached: Boolean = false
+        ) : Content
+    }
 }
 
 /**

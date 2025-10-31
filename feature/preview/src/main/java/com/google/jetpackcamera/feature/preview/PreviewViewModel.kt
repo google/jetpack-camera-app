@@ -650,9 +650,12 @@ class PreviewViewModel @Inject constructor(
                             ImageCaptureEvent.SingleImageSaved(savedUri)
                         }
                     }
-
-                    savedUri?.let {
-                        setMediaRepository(MediaDescriptor.Image(it, null))
+                    if (saveLocation !is SaveLocation.Cache) {
+                        updateLastCapturedMedia()
+                    } else {
+                        savedUri?.let {
+                            setMediaRepository(MediaDescriptor.Content.Image(it, null, true))
+                        }
                     }
                     _captureEvents.trySend(event)
                 },
@@ -754,7 +757,7 @@ class PreviewViewModel @Inject constructor(
                                 updateLastCapturedMedia()
                             } else {
                                 setMediaRepository(
-                                    MediaDescriptor.Video(it.savedUri, null)
+                                    MediaDescriptor.Content.Video(it.savedUri, null, true)
                                 )
                             }
 

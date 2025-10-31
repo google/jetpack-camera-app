@@ -566,7 +566,6 @@ constructor(
                 val cacheDir = saveLocation.cacheDir?.toFile() ?: application.cacheDir
 
                 // 2. Create a unique temporary file
-                // todo: update filename for multiple capture session
                 val tempFile = File.createTempFile(
                     "JCA_IMG_CAPTURE_TEMP_",
                     ".jpg", // Use .jpg to support Ultra HDR

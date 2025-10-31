@@ -17,6 +17,8 @@ package com.google.jetpackcamera.feature.postcapture
 
 import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
+import androidx.core.net.toFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
@@ -26,6 +28,7 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.IOException
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,8 +64,11 @@ class PostCaptureViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        val mediaDescriptor = uiState.value.mediaDescriptor
+        if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
+            deleteCachedMedia(mediaDescriptor)
+        }
 
-        // todo(): delete cached image(s)/video?
         viewModelScope.launch {
             mediaRepository.setCurrentMedia(MediaDescriptor.None)
         }
@@ -72,13 +78,29 @@ class PostCaptureViewModel @Inject constructor(
 
     val uiState: StateFlow<PostCaptureUiState> = _uiState
 
+    fun deleteCachedMedia(mediaDescriptor: MediaDescriptor.Content) {
+        mediaDescriptor.uri.toFile().delete()
+    }
+
     fun deleteMedia(contentResolver: ContentResolver) {
-        when (val mediaDescriptor = uiState.value.mediaDescriptor) {
-            is MediaDescriptor.Image -> contentResolver.delete(mediaDescriptor.uri, null, null)
-            is MediaDescriptor.Video -> contentResolver.delete(mediaDescriptor.uri, null, null)
-            MediaDescriptor.None -> {}
+        val mediaDescriptor = uiState.value.mediaDescriptor
+        if (mediaDescriptor is MediaDescriptor.Content) {
+            if (mediaDescriptor.isCached) {
+                deleteCachedMedia(mediaDescriptor)
+            } else {
+                contentResolver.delete(mediaDescriptor.uri, null, null)
+            }
+
+            _uiState.update { it.copy(mediaDescriptor = MediaDescriptor.None, media = Media.None) }
         }
-        _uiState.update { it.copy(mediaDescriptor = MediaDescriptor.None, media = Media.None) }
+    }
+
+    fun copyMedia(contentResolver: ContentResolver, sourceUri: Uri, targetUri: Uri) {
+        contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+            contentResolver.openOutputStream(targetUri)?.use { outputStream ->
+                inputStream.copyTo(outputStream)
+            } ?: throw IOException("Could not open output stream for $targetUri")
+        } ?: throw IOException("Could not open input stream for $sourceUri")
     }
 
     fun playVideo() {
@@ -91,12 +113,9 @@ class PostCaptureViewModel @Inject constructor(
             player.play()
         }
     }
-
-    fun saveCachedMedia() {
-    }
 }
 
 data class PostCaptureUiState(
-    val mediaDescriptor: MediaDescriptor,
+    val mediaDescriptor: MediaDescriptor?,
     val media: Media
 )
