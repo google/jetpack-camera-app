@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
 
 private const val DISABLED_ICON_ALPHA = 0.38f
+private const val TRACK_COLOR_ALPHA = .16f
 
 /**
  * A custom Switch component built with Canvas, supporting drag gestures
@@ -72,7 +73,7 @@ private const val DISABLED_ICON_ALPHA = 0.38f
  * @param thumbColor The color of the thumb and the checked track.
  * @param leftIcon The [ImageVector] (e.g., Google Symbol) for the 'off' state.
  * @param rightIcon The [ImageVector] (e.g., Google Symbol) for the 'on' state.
- * @param unSelectedIconColor The tint color for the 'off' icon.
+ * @param unselectedIconColor The tint color for the 'off' icon.
  * @param selectedIconColor The tint color for the 'on' icon.
  */
 @Composable
@@ -82,15 +83,15 @@ fun ToggleSwitch(
     modifier: Modifier = Modifier,
     onToggleWhenDisabled: () -> Unit = {},
     enabled: Boolean = true,
-    trackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
-    thumbColor: Color = MaterialTheme.colorScheme.primary,
+    trackColor: Color = Color.White.copy(alpha = TRACK_COLOR_ALPHA),
+    thumbColor: Color = MaterialTheme.colorScheme.primaryFixedDim,
     disableColor: Color = MaterialTheme.colorScheme.onSurface,
     leftIcon: ImageVector? = null,
     rightIcon: ImageVector? = null,
     leftIconDescription: String = "leftIcon",
     rightIconDescription: String = "rightIcon",
-    unSelectedIconColor: Color = MaterialTheme.colorScheme.primary,
-    selectedIconColor: Color = MaterialTheme.colorScheme.onPrimary,
+    unselectedIconColor: Color = MaterialTheme.colorScheme.secondaryFixed,
+    selectedIconColor: Color = MaterialTheme.colorScheme.onPrimaryFixed,
     switchWidth: Dp = 116.dp,
     switchHeight: Dp = 64.dp,
     thumbDiameter: Dp = 40.dp,
@@ -220,7 +221,7 @@ fun ToggleSwitch(
                 leftIconPainter = offIconPainter,
                 rightIconPainter = onIconPainter,
                 offIconColor = if (enabled) {
-                    unSelectedIconColor
+                    unselectedIconColor
                 } else {
                     disableColor.copy(
                         alpha = DISABLED_ICON_ALPHA
