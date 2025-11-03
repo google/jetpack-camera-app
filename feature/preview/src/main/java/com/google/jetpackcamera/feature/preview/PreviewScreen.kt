@@ -317,6 +317,7 @@ fun PreviewScreen(
                 onToggleQuickSettings = viewModel::toggleQuickSettings,
                 onSetFocusedSetting = viewModel::setFocusedSetting,
                 onToggleDebugOverlay = viewModel::toggleDebugOverlay,
+                onToggleDebugHidingComponents = viewModel::toggleDebugHidingComponents,
                 onSetPause = viewModel::setPaused,
                 onSetAudioEnabled = viewModel::setAudioEnabled,
                 onCaptureImage = viewModel::captureImage,
@@ -369,6 +370,7 @@ private fun ContentScreen(
     onToggleQuickSettings: () -> Unit = {},
     onSetFocusedSetting: (FocusedQuickSetting) -> Unit = {},
     onToggleDebugOverlay: () -> Unit = {},
+    onToggleDebugHidingComponents: () -> Unit = {},
     onSetPause: (Boolean) -> Unit = {},
     onSetAudioEnabled: (Boolean) -> Unit = {},
     onCaptureImage: (ContentResolver) -> Unit = {},
@@ -562,8 +564,15 @@ private fun ContentScreen(
                     debugUiState = it,
                     onSetTestPattern = onSetTestPattern,
                     onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) },
-                    extraControls = extraControls.orEmpty()
+                    extraControls = extraControls.orEmpty(),
+                    onToggleHidingComponents = onToggleDebugHidingComponents
                 )
+            }
+        },
+        debugVisibilityWrapper = { content ->
+            val uiState = captureUiState.debugUiState
+            if (uiState !is DebugUiState.Enabled || !uiState.debugHidingComponents) {
+                content()
             }
         },
         screenFlashOverlay = {
@@ -642,6 +651,7 @@ private fun LayoutWrapper(
         modifier: Modifier,
         extraButtons: Array<@Composable () -> Unit>?
     ) -> Unit,
+    debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit
 ) {
@@ -678,6 +688,7 @@ private fun LayoutWrapper(
                 )
             )
         },
+        debugVisibilityWrapper = debugVisibilityWrapper,
         screenFlashOverlay = screenFlashOverlay,
         snackBar = snackBar
     )
