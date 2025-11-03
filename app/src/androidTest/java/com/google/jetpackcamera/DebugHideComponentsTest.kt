@@ -37,7 +37,7 @@ import com.google.jetpackcamera.ui.components.capture.ZOOM_RATIO_TAG
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
-import com.google.jetpackcamera.utils.waitForStartup
+import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -60,7 +60,7 @@ class DebugHideComponentsTest {
     @Test
     fun hideComponentsButton_togglesUiVisibility() {
         runMainActivityScenarioTest(debugExtra) {
-            composeTestRule.waitForStartup()
+            composeTestRule.waitForCaptureButton()
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(DEBUG_OVERLAY_BUTTON).assertExists()

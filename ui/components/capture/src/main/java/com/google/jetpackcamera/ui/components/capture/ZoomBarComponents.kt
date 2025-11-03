@@ -38,7 +38,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -155,8 +154,7 @@ private fun ZoomButton(
                 testTag = getZoomButtonTestTag(targetZoom)
                 // todo(kc): move to text resource
                 contentDescription = if (isSelected) "selected" else "not selected"
-            }
-            .testTag(getZoomButtonTestTag(targetZoom)),
+            },
         shapes = ToggleButtonDefaults.shapesFor(buttonSize),
         contentPadding = ButtonDefaults.contentPaddingFor(buttonSize),
         colors = if (isSelected) {
