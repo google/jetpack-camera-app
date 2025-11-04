@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.feature.postcapture
 
-import android.content.ClipData
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
@@ -212,21 +211,11 @@ private fun shareMedia(context: Context, mediaDescriptor: MediaDescriptor.Conten
 
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType
-        val clipData = ClipData.newUri(
-            context.contentResolver,
-            "Shared Media",
-            contentUri
-        )
-        // allows ShareSheet to preview the shared image
-
-        // todo(kc) figure out why the edit feature of the ShareSheet preview is buggy
-        if (mediaDescriptor is MediaDescriptor.Content.Image && mediaDescriptor.isCached) {
-            setClipData(clipData)
-        }
-
         putExtra(Intent.EXTRA_STREAM, contentUri)
     }
     intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+    // todo(kc): is it possible to prevent "edit image" from appearing in the ShareSheet.
     context.startActivity(Intent.createChooser(intent, "Share Media"))
 }
 

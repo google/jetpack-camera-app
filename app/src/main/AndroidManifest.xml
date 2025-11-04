@@ -54,6 +54,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.JetpackCamera"
         android:requestLegacyExternalStorage="true"
+        android:enableOnBackInvokedCallback="true"
         tools:targetApi="33">
         <profileable android:shell="true"/>
         <activity
