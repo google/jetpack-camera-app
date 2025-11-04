@@ -49,6 +49,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.compose.material3.buttons.PlayPauseButton
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 
@@ -62,7 +63,7 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
     val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         when (val media = uiState.media) {
             is Media.Image -> {
                 val bitmap = media.bitmap
@@ -70,13 +71,13 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
             }
 
             is Media.Video -> {
-                VideoPlayer(
-                    modifier = Modifier,
-                    player = viewModel.player
-                )
-                LaunchedEffect(media.uri) {
-                    viewModel.startPostCapturePlayback()
-                }
+                viewModel.player?.let { player ->
+                    VideoPlayer(modifier = Modifier, player = player)
+                    PlayPauseButton(player)
+                    LaunchedEffect(media.uri) {
+                        viewModel.loadCurrentVideo()
+                    }
+                } ?: Text("Loading Video...")
             }
 
             Media.None -> {

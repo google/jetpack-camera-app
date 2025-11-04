@@ -43,14 +43,12 @@ fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap?) {
 @OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(modifier: Modifier, player: ExoPlayer?) {
-    player?.let {
-        val presentationState = rememberPresentationState(player)
-        ContentFrame(
-            modifier = modifier.resizeWithContentScale(
-                ContentScale.Fit,
-                presentationState.videoSizeDp
-            ),
-            player = player
-        )
-    }
+    val presentationState = rememberPresentationState(player)
+    ContentFrame(
+        modifier = modifier.resizeWithContentScale(
+            ContentScale.Fit,
+            presentationState.videoSizeDp
+        ),
+        player = player
+    )
 }

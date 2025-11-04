@@ -165,23 +165,14 @@ class PostCaptureViewModel @Inject constructor(
      * Loads and plays the uiState's current video media.
      * playback of the video is an infinite loop.
      */
-    fun startPostCapturePlayback() {
+    fun loadCurrentVideo() {
         viewModelScope.launch {
             player?.let {
                 loadVideo()
                 it.repeatMode = ExoPlayer.REPEAT_MODE_ONE
-                playVideo()
-            }
-        }
-    }
-
-    /**
-     * Starts/resumes the currently loaded video.
-     */
-    fun playVideo() {
-        player?.let { exoPlayer ->
-            if (playerState.value.canPlayPause) {
-                exoPlayer.play()
+                if (playerState.value.canPlayPause) {
+                    it.playWhenReady = true
+                }
             }
         }
     }
