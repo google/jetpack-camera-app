@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.data.media
 
+import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
 import android.graphics.Bitmap
@@ -64,9 +65,15 @@ class LocalMediaRepository
 
     override suspend fun getLastCapturedMedia(): MediaDescriptor {
         val imagePair =
-            getLastMediaUriWithDate(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            getLastMediaUriWithDate(
+                context.contentResolver,
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            )
         val videoPair =
-            getLastMediaUriWithDate(context, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            getLastMediaUriWithDate(
+                context.contentResolver,
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            )
 
         return when {
             imagePair == null && videoPair == null -> MediaDescriptor.None
@@ -145,7 +152,10 @@ class LocalMediaRepository
             }
         }
 
-    private fun getLastMediaUriWithDate(context: Context, collectionUri: Uri): Pair<Uri, Long>? {
+    private fun getLastMediaUriWithDate(
+        contentResolver: ContentResolver,
+        collectionUri: Uri
+    ): Pair<Uri, Long>? {
         val projection = arrayOf(
             MediaStore.MediaColumns._ID,
             MediaStore.MediaColumns.DATE_ADDED
@@ -159,7 +169,7 @@ class LocalMediaRepository
         val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} DESC"
 
         // Perform the query on the MediaStore.
-        context.contentResolver.query(
+        contentResolver.query(
             collectionUri,
             projection,
             selection,
