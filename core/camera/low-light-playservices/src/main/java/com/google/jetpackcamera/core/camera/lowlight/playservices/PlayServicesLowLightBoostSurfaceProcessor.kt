@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera.effects.processors
+package com.google.jetpackcamera.core.camera.lowlight.playservices
 
 import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
@@ -48,13 +48,10 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
-private const val TAG = "LowLightBoostProcessor"
+private const val TAG = "PsLlbProcessor"
 
-/**
- * This is a [SurfaceProcessor] that passes an input surface to Google Low Light Boost.
- */
 @RequiresApi(Build.VERSION_CODES.R)
-class LowLightBoostSurfaceProcessor(
+internal class PlayServicesLowLightBoostSurfaceProcessor(
     private val cameraId: String,
     private val lowLightBoostClient: LowLightBoostClient,
     private val captureResults: StateFlow<TotalCaptureResult?>,
@@ -106,7 +103,6 @@ class LowLightBoostSurfaceProcessor(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
     override fun onInputSurface(surfaceRequest: SurfaceRequest) {
         Log.d(
             TAG,
@@ -119,7 +115,6 @@ class LowLightBoostSurfaceProcessor(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
     override fun onOutputSurface(surfaceOutput: SurfaceOutput) {
         Log.d(TAG, "New OutputSurface received: $surfaceOutput, resolution: ${surfaceOutput.size}")
         val result = outputSurfaces.trySend(surfaceOutput)

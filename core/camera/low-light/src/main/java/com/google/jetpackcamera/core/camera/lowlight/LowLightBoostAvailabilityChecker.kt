@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.model
+package com.google.jetpackcamera.core.camera.lowlight
 
-enum class Illuminant {
-    FLASH_UNIT,
-    SCREEN,
-    LOW_LIGHT_BOOST_AE_MODE,
-    LOW_LIGHT_BOOST_CAMERA_EFFECT
+import android.content.Context
+import androidx.camera.core.CameraInfo
+
+/**
+ * An interface for checking the availability of a specific low light boost implementation.
+ */
+interface LowLightBoostAvailabilityChecker {
+    suspend fun isImplementationAvailable(cameraInfo: CameraInfo, context: Context): Boolean
 }

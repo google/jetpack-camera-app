@@ -13,11 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.model
+package com.google.jetpackcamera.core.camera.lowlight
 
-enum class Illuminant {
-    FLASH_UNIT,
-    SCREEN,
-    LOW_LIGHT_BOOST_AE_MODE,
-    LOW_LIGHT_BOOST_CAMERA_EFFECT
+import android.hardware.camera2.TotalCaptureResult
+import androidx.camera.core.CameraEffect
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.StateFlow
+
+/**
+ * An interface for providing a [CameraEffect] for low light boost.
+ */
+interface LowLightBoostEffectProvider {
+    fun create(
+        cameraId: String,
+        captureResults: StateFlow<TotalCaptureResult?>,
+        coroutineScope: CoroutineScope,
+        onSceneBrightnessChanged: (Float) -> Unit,
+        onLowLightBoostError: (Exception) -> Unit
+    ): CameraEffect
 }

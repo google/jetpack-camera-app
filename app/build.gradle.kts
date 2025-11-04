@@ -168,6 +168,9 @@ dependencies {
 
     // capture components
     implementation(project(":ui:components:capture"))
+
+    // Low Light implementations
+    implementation(project(":core:camera:low-light-playservices"))
 }
 
 // Allow references to generated code
