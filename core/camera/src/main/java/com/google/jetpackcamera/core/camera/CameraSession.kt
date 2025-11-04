@@ -50,6 +50,7 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.video.ExperimentalPersistentRecording
 import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.FileOutputOptions
@@ -917,6 +918,7 @@ private fun getPendingRecording(
 }
 
 context(CameraSessionContext)
+@OptIn(ExperimentalPersistentRecording::class)
 private suspend fun startVideoRecordingInternal(
     isInitialAudioEnabled: Boolean,
     context: Context,
