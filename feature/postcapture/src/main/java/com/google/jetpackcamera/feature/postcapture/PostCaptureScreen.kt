@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.feature.postcapture
 
+import android.content.ClipData
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
@@ -53,6 +54,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -61,6 +63,8 @@ import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
+import java.io.File
+import java.io.FileNotFoundException
 
 private const val TAG = "PostCaptureScreen"
 
@@ -171,13 +175,8 @@ fun PostCaptureComponent(
             IconButton(
                 onClick = {
                     val mediaDescriptor = uiState.mediaDescriptor
-
-                    if (mediaDescriptor is MediaDescriptor.Content.Image) {
-                        shareImage(context, mediaDescriptor.uri, "image/jpeg")
-                    }
-
-                    if (mediaDescriptor is MediaDescriptor.Content.Video) {
-                        shareImage(context, mediaDescriptor.uri, "video/mp4")
+                    (mediaDescriptor as? MediaDescriptor.Content)?.let {
+                        shareMedia(context, it)
                     }
                 },
                 modifier = Modifier
@@ -200,12 +199,43 @@ fun PostCaptureComponent(
 /**
  * Starts an intent to share media
  */
-private fun shareImage(context: Context, uri: Uri, mimeType: String) {
-    // todo(kc): use fileprovider to share cached images?
+private fun shareMedia(context: Context, mediaDescriptor: MediaDescriptor.Content) {
+    // todo(kc): support sharing multi media once multiple capture is complete
+    val uri = mediaDescriptor.uri
+    val mimeType: String = when (mediaDescriptor) {
+        is MediaDescriptor.Content.Image -> "image/jpeg"
+        is MediaDescriptor.Content.Video -> "video/mp4"
+    }
+
+    val contentUri: Uri =
+        if (uri.scheme == ContentResolver.SCHEME_CONTENT) uri else getShareableUri(context, uri)
+
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType
-        putExtra(Intent.EXTRA_STREAM, uri)
+        val clipData = ClipData.newUri(
+            context.contentResolver,
+            "Shared Media",
+            contentUri
+        )
+        // allows ShareSheet to preview the shared image
+
+        // todo(kc) figure out why the edit feature of the ShareSheet preview is buggy
+        if (mediaDescriptor is MediaDescriptor.Content.Image && mediaDescriptor.isCached) {
+            setClipData(clipData)
+        }
+
+        putExtra(Intent.EXTRA_STREAM, contentUri)
     }
     intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     context.startActivity(Intent.createChooser(intent, "Share Media"))
+}
+
+private fun getShareableUri(context: Context, uri: Uri): Uri {
+    val authority = "${context.packageName}.fileprovider"
+    val file =
+        uri.path
+            ?.let { File(it) }
+            ?: throw FileNotFoundException("path does not exist")
+
+    return FileProvider.getUriForFile(context, authority, file)
 }
