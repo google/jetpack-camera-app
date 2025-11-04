@@ -25,7 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.compose.PlayerSurface
+import androidx.media3.ui.compose.ContentFrame
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 
@@ -45,7 +45,7 @@ fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap?) {
 fun VideoPlayer(modifier: Modifier, player: ExoPlayer?) {
     player?.let {
         val presentationState = rememberPresentationState(player)
-        PlayerSurface(
+        ContentFrame(
             modifier = modifier.resizeWithContentScale(
                 ContentScale.Fit,
                 presentationState.videoSizeDp
