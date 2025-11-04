@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.model
+package com.google.jetpackcamera.core.camera.lowlight
 
-enum class Illuminant {
-    FLASH_UNIT,
-    SCREEN,
-    LOW_LIGHT_BOOST_AE_MODE,
-    LOW_LIGHT_BOOST_CAMERA_EFFECT
-}
+/**
+ * A key used to identify a specific implementation of a Low Light Boost feature set.
+ */
+interface LowLightBoostFeatureKey

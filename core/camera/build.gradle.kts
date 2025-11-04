@@ -89,7 +89,6 @@ android {
     }
 
     compileOptions {
-        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -141,17 +140,8 @@ dependencies {
     implementation(project(":data:settings"))
     implementation(project(":core:model"))
     implementation(project(":core:common"))
+    implementation(project(":core:camera:low-light"))
 
-    // Google Play Services
-    implementation(libs.play.services.base)
-    implementation(libs.play.services.tasks)
-    implementation(libs.kotlinx.coroutines.play.services)
-
-    // Google Low Light Boost
-    implementation(libs.play.services.camera.low.light.boost)
-
-    // Desugaring
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
 // Allow references to generated code

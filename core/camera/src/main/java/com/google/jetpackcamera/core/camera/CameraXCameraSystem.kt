@@ -40,6 +40,9 @@ import androidx.camera.video.Recorder
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
+import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
+import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
+import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.common.DefaultDispatcher
 import com.google.jetpackcamera.core.common.IODispatcher
 import com.google.jetpackcamera.model.AspectRatio
@@ -76,6 +79,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import javax.inject.Inject
+import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -108,7 +112,11 @@ constructor(
     private val application: Application,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     @param:IODispatcher private val iODispatcher: CoroutineDispatcher,
-    private val constraintsRepository: SettableConstraintsRepository
+    private val constraintsRepository: SettableConstraintsRepository,
+    availabilityCheckers:
+    Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>>,
+    effectProviders:
+    Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostEffectProvider>>
 ) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -131,6 +139,25 @@ constructor(
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
+
+    private val lowLightBoostAvailabilityChecker: LowLightBoostAvailabilityChecker?
+    private val lowLightBoostEffectProvider: LowLightBoostEffectProvider?
+
+    init {
+        val entry = availabilityCheckers.entries.firstOrNull()
+        if (entry == null) {
+            Log.d(TAG, "No LowLightBoost implementation found.")
+            lowLightBoostAvailabilityChecker = null
+            lowLightBoostEffectProvider = null
+        } else {
+            Log.d(TAG, "Using LowLightBoost implementation with key: ${entry.key}")
+            lowLightBoostAvailabilityChecker = entry.value.get()
+            val effectProviderForKey = requireNotNull(effectProviders[entry.key]) {
+                "LowLightBoostEffectProvider missing for feature key ${entry.key}"
+            }
+            lowLightBoostEffectProvider = effectProviderForKey.get()
+        }
+    }
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
@@ -302,11 +329,12 @@ constructor(
                 add(Illuminant.SCREEN)
             }
 
-            val llbAvailability = camInfo.getLowLightBoostAvailability(application)
+            val llbAvailability =
+                camInfo.getLowLightBoostAvailability(application, lowLightBoostAvailabilityChecker)
             if (llbAvailability == LowLightBoostAvailability.AE_MODE_ONLY ||
                 (
                     llbAvailability ==
-                        LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                        LowLightBoostAvailability.AE_MODE_AND_CAMERA_EFFECT &&
                         cameraAppSettings.lowLightBoostPriority ==
                         LowLightBoostPriority.PRIORITIZE_AE_MODE
                     )
@@ -314,15 +342,15 @@ constructor(
                 add(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
             }
             if (llbAvailability ==
-                LowLightBoostAvailability.GOOGLE_PLAY_SERVICES_ONLY ||
+                LowLightBoostAvailability.CAMERA_EFFECT_ONLY ||
                 (
                     llbAvailability ==
-                        LowLightBoostAvailability.AE_MODE_AND_GOOGLE_PLAY_SERVICES &&
+                        LowLightBoostAvailability.AE_MODE_AND_CAMERA_EFFECT &&
                         cameraAppSettings.lowLightBoostPriority ==
                         LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
                     )
             ) {
-                add(Illuminant.GOOGLE_LOW_LIGHT_BOOST)
+                add(Illuminant.LOW_LIGHT_BOOST_CAMERA_EFFECT)
             }
         }
     }
@@ -344,7 +372,7 @@ constructor(
             }
 
             if (Illuminant.LOW_LIGHT_BOOST_AE_MODE in supportedIlluminants ||
-                Illuminant.GOOGLE_LOW_LIGHT_BOOST in supportedIlluminants
+                Illuminant.LOW_LIGHT_BOOST_CAMERA_EFFECT in supportedIlluminants
             ) {
                 add(FlashMode.LOW_LIGHT_BOOST)
             }
@@ -440,7 +468,8 @@ constructor(
                             videoCaptureControlEvents = videoCaptureControlEvents,
                             currentCameraState = currentCameraState,
                             surfaceRequests = _surfaceRequest,
-                            transientSettings = transientSettings
+                            transientSettings = transientSettings,
+                            lowLightBoostEffectProvider = lowLightBoostEffectProvider
                         )
                     ) {
                         try {
