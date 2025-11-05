@@ -50,6 +50,7 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.video.ExperimentalPersistentRecording
 import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.FileOutputOptions
@@ -65,11 +66,7 @@ import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
-import com.google.android.gms.cameralowlight.LowLightBoost
-import com.google.android.gms.cameralowlight.LowLightBoostSession
-import com.google.android.gms.cameralowlight.SceneDetectorCallback
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
-import com.google.jetpackcamera.core.camera.effects.LowLightBoostEffect
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -154,20 +151,6 @@ internal suspend fun runSingleCameraSession(
         }
     }
 
-    // A callback to be passed to the LowLightBoostEffect to update the camera state.
-    val sceneDetectorCallback = object : SceneDetectorCallback {
-        override fun onSceneBrightnessChanged(session: LowLightBoostSession, boostStrength: Float) {
-            val strength = LowLightBoostState.Active(strength = boostStrength)
-            currentCameraState.update { old ->
-                if (old.lowLightBoostState != strength) {
-                    old.copy(lowLightBoostState = strength)
-                } else {
-                    old
-                }
-            }
-        }
-    }
-
     launch {
         processVideoControlEvents(
             videoCaptureUseCase,
@@ -203,23 +186,31 @@ internal suspend fun runSingleCameraSession(
                 if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                         cameraConstraints?.supportedIlluminants?.contains(
-                            Illuminant.GOOGLE_LOW_LIGHT_BOOST
-                        ) == true
+                            Illuminant.LOW_LIGHT_BOOST_CAMERA_EFFECT
+                        ) == true && lowLightBoostEffectProvider != null
                     ) {
-                        val lowLightBoostClient = LowLightBoost.getClient(context)
                         captureResults = MutableStateFlow(null)
-                        cameraEffect = LowLightBoostEffect(
-                            cameraId,
-                            lowLightBoostClient,
-                            captureResults,
+                        cameraEffect = lowLightBoostEffectProvider.create(
+                            cameraId = cameraId,
+                            captureResults = captureResults,
                             coroutineScope = this@sessionScope,
-                            sceneDetectorCallback = sceneDetectorCallback
-                        ) { e ->
-                            Log.w(TAG, "Emitting LLB Error", e)
-                            currentCameraState.update { old ->
-                                old.copy(lowLightBoostState = LowLightBoostState.Error(e))
+                            onSceneBrightnessChanged = { boostStrength ->
+                                val strength = LowLightBoostState.Active(strength = boostStrength)
+                                currentCameraState.update { old ->
+                                    if (old.lowLightBoostState != strength) {
+                                        old.copy(lowLightBoostState = strength)
+                                    } else {
+                                        old
+                                    }
+                                }
+                            },
+                            onLowLightBoostError = { e ->
+                                Log.w(TAG, "Emitting LLB Error", e)
+                                currentCameraState.update { old ->
+                                    old.copy(lowLightBoostState = LowLightBoostState.Error(e))
+                                }
                             }
-                        }
+                        )
                     }
                 }
                 if (cameraEffect == null &&
@@ -957,6 +948,7 @@ private fun getPendingRecording(
 }
 
 context(CameraSessionContext)
+@OptIn(ExperimentalPersistentRecording::class)
 private suspend fun startVideoRecordingInternal(
     isInitialAudioEnabled: Boolean,
     context: Context,

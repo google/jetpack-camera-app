@@ -43,7 +43,6 @@ android {
     }
 
     compileOptions {
-        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -153,8 +152,6 @@ dependencies {
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:uistateadapter:capture"))
 
-    // Desugaring
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
 // Allow references to generated code

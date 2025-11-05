@@ -409,7 +409,7 @@ fun LowLightBoostPrioritySetting(
                 )
 
                 LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES -> stringResource(
-                    id = R.string.low_light_boost_priority_description_google_play_services
+                    id = R.string.low_light_boost_priority_description_camera_effect
                 )
             }
         } else {
@@ -432,7 +432,7 @@ fun LowLightBoostPrioritySetting(
                         BTN_DIALOG_LOW_LIGHT_BOOST_PRIORITY_OPTION_GOOGLE_PLAY_SERVICES_TAG
                     ),
                     text = stringResource(
-                        id = R.string.low_light_boost_priority_selector_google_play_services
+                        id = R.string.low_light_boost_priority_selector_camera_effect
                     ),
                     selected = lowLightBoostPriorityUiState.currentLowLightBoostPriority ==
                         LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES,
