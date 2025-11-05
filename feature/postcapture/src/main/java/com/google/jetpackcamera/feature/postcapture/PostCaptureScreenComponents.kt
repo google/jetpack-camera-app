@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -33,6 +34,18 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
+fun CancelPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = Modifier) {
+    IconButton(
+        modifier = modifier.size(IconButtonDefaults.largeIconSize),
+        onClick = onExitPostCapture
+    ) {
+        // todo: content description
+        Icon(imageVector = Icons.Default.Close, contentDescription = "TODO")
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
 fun SaveCurrentMediaButton(onClick: (ContentResolver) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     IconButton(
@@ -43,6 +56,7 @@ fun SaveCurrentMediaButton(onClick: (ContentResolver) -> Unit, modifier: Modifie
             .iconButtonColors(containerColor = MaterialTheme.colorScheme.surface),
         onClick = { onClick(context.contentResolver) }
     ) {
-        Icon(imageVector = Icons.Default.SaveAlt, contentDescription = null)
+        // todo: content description
+        Icon(imageVector = Icons.Default.SaveAlt, contentDescription = "TODO")
     }
 }

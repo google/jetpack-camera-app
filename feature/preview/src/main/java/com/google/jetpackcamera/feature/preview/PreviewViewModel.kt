@@ -93,6 +93,8 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.LinkedList
+import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -111,8 +113,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.LinkedList
-import javax.inject.Inject
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -393,9 +393,9 @@ class PreviewViewModel @Inject constructor(
     fun imageWellToRepository() {
         viewModelScope.launch {
             val mediaDescriptor = (
-                    (_captureUiState.value as? CaptureUiState.Ready)
-                        ?.imageWellUiState as ImageWellUiState.LastCapture
-                    )
+                (_captureUiState.value as? CaptureUiState.Ready)
+                    ?.imageWellUiState as ImageWellUiState.LastCapture
+                )
                 .mediaDescriptor
 
             mediaRepository.setCurrentMedia(mediaDescriptor)
@@ -414,7 +414,7 @@ class PreviewViewModel @Inject constructor(
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.copy(
                     imageWellUiState =
-                        ImageWellUiState.from(lastCapturedMediaDescriptor)
+                    ImageWellUiState.from(lastCapturedMediaDescriptor)
                 ) ?: old
             }
         }
@@ -701,16 +701,17 @@ class PreviewViewModel @Inject constructor(
                 onSuccess(result)
             }
             Log.d(TAG, "cameraSystem.takePicture success")
-            //don't display snackbar for successful capture
-            if (saveLocation is SaveLocation.Cache)
+            // don't display snackbar for successful capture
+            if (saveLocation is SaveLocation.Cache) {
                 null
-            else
+            } else {
                 SnackbarData(
                     cookie = cookie,
                     stringResource = R.string.toast_image_capture_success,
                     withDismissAction = true,
                     testTag = IMAGE_CAPTURE_SUCCESS_TAG
                 )
+            }
         } catch (exception: Exception) {
             onFailure(exception)
             Log.d(TAG, "cameraSystem.takePicture error", exception)
@@ -780,16 +781,17 @@ class PreviewViewModel @Inject constructor(
                             }
 
                             _captureEvents.trySend(event)
-                            //don't display snackbar for successful capture
-                            snackbarToShow = if (saveLocation is SaveLocation.Cache)
+                            // don't display snackbar for successful capture
+                            snackbarToShow = if (saveLocation is SaveLocation.Cache) {
                                 null
-                            else
+                            } else {
                                 SnackbarData(
                                     cookie = cookie,
                                     stringResource = R.string.toast_video_capture_success,
                                     withDismissAction = true,
                                     testTag = VIDEO_CAPTURE_SUCCESS_TAG
                                 )
+                            }
                         }
 
                         is OnVideoRecordEvent.OnVideoRecordError -> {
@@ -822,7 +824,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     /**
-    "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
+     "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
     fun setLockedRecording(isLocked: Boolean) {
         trackedPreviewUiState.update { old ->

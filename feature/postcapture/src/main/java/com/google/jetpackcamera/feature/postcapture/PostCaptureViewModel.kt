@@ -77,7 +77,7 @@ class PostCaptureViewModel @Inject constructor(
         if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
             deleteCachedMedia(mediaDescriptor)
         }
-
+        player.release()
         viewModelScope.launch {
             mediaRepository.setCurrentMedia(MediaDescriptor.None)
         }
@@ -137,11 +137,19 @@ private fun saveMediaDescriptorToMediaStore(
     contentResolver: ContentResolver,
     mediaDescriptor: MediaDescriptor.Content
 ): Uri? {
-    val mimeType =
-        if (mediaDescriptor is MediaDescriptor.Content.Video) "video/mp4" else "image/jpeg"
+    val mimeType: String
+    val mediaUrl: Uri
+    if (mediaDescriptor is MediaDescriptor.Content.Video) {
+        mimeType = "video/mp4"
+        mediaUrl = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+    } else {
+        mimeType = "image/jpeg"
+        mediaUrl = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+    }
     val filename = createFilename(mediaDescriptor)
-    return copyToMediaStore(contentResolver, mediaDescriptor.uri, filename, mimeType)
+    return copyToMediaStore(contentResolver, mediaDescriptor.uri, filename, mimeType, mediaUrl)
 }
+
 // todo(kc) support saving to target location
 // saves cached media to default location
 /**
@@ -156,7 +164,8 @@ private fun copyToMediaStore(
     contentResolver: ContentResolver,
     sourceUri: Uri,
     outputFilename: String,
-    mimeType: String
+    mimeType: String,
+    mediaUrl: Uri
 ): Uri? {
     // "video/mp4" else "image/jpeg"
     var destinationUri: Uri?
@@ -176,7 +185,7 @@ private fun copyToMediaStore(
     }
     try {
         destinationUri = contentResolver.insert(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            mediaUrl,
             contentValues
         )
         if (destinationUri == null) {

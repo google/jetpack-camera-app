@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -69,12 +70,17 @@ private const val TAG = "PostCaptureScreen"
 
 @OptIn(UnstableApi::class)
 @Composable
-fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
+fun PostCaptureScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: PostCaptureViewModel = hiltViewModel(),
+    onCaptureAccepted: (Uri) -> Unit = {}
+) {
     Log.d(TAG, "PostCaptureScreen")
 
     val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
     PostCaptureComponent(
         uiState = uiState,
+        onNavigateBack = onNavigateBack,
         player = viewModel.player,
         playVideo = viewModel::playVideo,
         onDeleteMedia = viewModel::deleteMedia,
@@ -86,6 +92,7 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
 @Composable
 fun PostCaptureComponent(
     uiState: PostCaptureUiState,
+    onNavigateBack: () -> Unit,
     player: ExoPlayer,
     playVideo: () -> Unit,
     onSaveMedia: (ContentResolver) -> Boolean,
@@ -146,6 +153,13 @@ fun PostCaptureComponent(
             }
         }
 
+        CancelPostCaptureButton(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .safeContentPadding(),
+            onExitPostCapture = onNavigateBack
+        )
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -154,28 +168,33 @@ fun PostCaptureComponent(
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             SaveCurrentMediaButton(onClick = {
-                // FIXME(kc): set up proper events for saving
+                // FIXME(kc): set up proper save events
                 if (onSaveMedia(it)) {
-                    Toast.makeText(context, "Image successfully saved", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Capture save successful", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(context, "Image save unsuccessful", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Capture save unsuccessful", Toast.LENGTH_SHORT).show()
                 }
             })
-            // Delete Image Button
-            IconButton(
-                onClick = { onDeleteMedia(context.contentResolver) },
-                modifier = Modifier
-                    .size(56.dp)
-                    .shadow(10.dp, CircleShape),
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
+            // Delete Image Button visible for saved media
+            if ((uiState.mediaDescriptor as? MediaDescriptor.Content)?.isCached != true) {
+                IconButton(
+                    onClick = {
+                        onDeleteMedia(context.contentResolver)
+                        onNavigateBack()
+                    },
+                    modifier = Modifier
+                        .size(56.dp)
+                        .shadow(10.dp, CircleShape),
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
