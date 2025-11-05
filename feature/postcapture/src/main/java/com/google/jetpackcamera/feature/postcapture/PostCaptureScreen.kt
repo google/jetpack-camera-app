@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +43,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -77,20 +77,21 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
         uiState = uiState,
         player = viewModel.player,
         playVideo = viewModel::playVideo,
-        onDeleteMedia = viewModel::deleteMedia
+        onDeleteMedia = viewModel::deleteMedia,
+        onSaveMedia = viewModel::saveCurrentMedia
     )
 }
 
+@OptIn(UnstableApi::class)
 @Composable
 fun PostCaptureComponent(
     uiState: PostCaptureUiState,
     player: ExoPlayer,
     playVideo: () -> Unit,
+    onSaveMedia: (ContentResolver) -> Boolean,
     onDeleteMedia: (ContentResolver) -> Unit
 ) {
     val context = LocalContext.current
-    val media = mutableStateOf(uiState.media)
-
     Box(modifier = Modifier.fillMaxSize()) {
         when (val currentMedia = uiState.media) {
             is Media.Image -> {
@@ -119,6 +120,7 @@ fun PostCaptureComponent(
 
             is Media.Video -> {
                 val presentationState = rememberPresentationState(player)
+                val context = LocalContext.current
                 PlayerSurface(
                     player = player,
                     modifier = Modifier.resizeWithContentScale(
@@ -151,6 +153,14 @@ fun PostCaptureComponent(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
+            SaveCurrentMediaButton(onClick = {
+                // FIXME(kc): set up proper events for saving
+                if (onSaveMedia(it)) {
+                    Toast.makeText(context, "Image successfully saved", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Image save unsuccessful", Toast.LENGTH_SHORT).show()
+                }
+            })
             // Delete Image Button
             IconButton(
                 onClick = { onDeleteMedia(context.contentResolver) },
@@ -199,7 +209,7 @@ fun PostCaptureComponent(
  * Starts an intent to share media
  */
 private fun shareMedia(context: Context, mediaDescriptor: MediaDescriptor.Content) {
-    // todo(kc): support sharing multi media once multiple capture is complete
+    // todo(kc): support sharing multiple media
     val uri = mediaDescriptor.uri
     val mimeType: String = when (mediaDescriptor) {
         is MediaDescriptor.Content.Image -> "image/jpeg"
