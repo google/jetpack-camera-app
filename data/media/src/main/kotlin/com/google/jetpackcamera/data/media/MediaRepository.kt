@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.data.media
 
+import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.net.Uri
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +27,21 @@ interface MediaRepository {
     val currentMedia: Flow<MediaDescriptor>
     suspend fun setCurrentMedia(pendingMedia: MediaDescriptor)
     suspend fun getLastCapturedMedia(): MediaDescriptor
+
+    suspend fun deleteMedia(
+        contentResolver: ContentResolver,
+        mediaDescriptor: MediaDescriptor.Content
+    )
+    suspend fun copyToUri(
+        contentResolver: ContentResolver,
+        mediaDescriptor: MediaDescriptor.Content,
+        destinationUri: Uri
+    )
+    suspend fun saveToMediaStore(
+        contentResolver: ContentResolver,
+        mediaDescriptor: MediaDescriptor.Content,
+        filename: String
+    ): Uri?
     suspend fun load(mediaDescriptor: MediaDescriptor): Media
 }
 

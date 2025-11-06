@@ -17,17 +17,22 @@ package com.google.jetpackcamera.data.media
 
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
+import androidx.core.net.toFile
 import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
+import java.io.IOException
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +41,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 
 private const val TAG = "LocalMediaRepository"
+private const val IMAGE_MIME_TYPE = "image/jpeg"
+private const val VIDEO_MIME_TYPE = "video/mp4"
+
 class LocalMediaRepository
 @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -88,6 +96,111 @@ class LocalMediaRepository
             }
 
             else -> MediaDescriptor.None // Should not happen
+        }
+    }
+
+    override suspend fun deleteMedia(
+        contentResolver: ContentResolver,
+        mediaDescriptor: MediaDescriptor.Content
+    ) {
+        if (mediaDescriptor.isCached) {
+            deleteCachedMedia(mediaDescriptor)
+            Log.d(TAG, "deleted cached media")
+        } else {
+            contentResolver.delete(mediaDescriptor.uri, null, null)
+            Log.d(TAG, "deleted saved media")
+        }
+    }
+
+    private fun deleteCachedMedia(mediaDescriptor: MediaDescriptor.Content) {
+        mediaDescriptor.uri.toFile().delete()
+    }
+
+    @Throws(IOException::class)
+    override suspend fun copyToUri(
+        contentResolver: ContentResolver,
+        mediaDescriptor: MediaDescriptor.Content,
+        destinationUri: Uri
+    ) = copyUriToUri(contentResolver, sourceUri = mediaDescriptor.uri, destinationUri)
+
+    @Throws(IOException::class)
+    private fun copyUriToUri(
+        contentResolver: ContentResolver,
+        sourceUri: Uri,
+        destinationUri: Uri
+    ) {
+        contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+            contentResolver.openOutputStream(destinationUri)?.use { outputStream ->
+                inputStream.copyTo(outputStream)
+            } ?: throw IOException("Could not open output stream for $destinationUri")
+        } ?: throw IOException("Could not open input stream for $sourceUri")
+    }
+
+    @Throws(IOException::class)
+    override suspend fun saveToMediaStore(
+        contentResolver: ContentResolver,
+        mediaDescriptor: MediaDescriptor.Content,
+        filename: String
+    ): Uri? {
+        val mimeType: String
+        val mediaUrl: Uri
+        if (mediaDescriptor is MediaDescriptor.Content.Video) {
+            mimeType = VIDEO_MIME_TYPE
+            mediaUrl = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        } else {
+            mimeType = IMAGE_MIME_TYPE
+            mediaUrl = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        }
+        return copyToMediaStore(contentResolver, mediaDescriptor.uri, filename, mimeType, mediaUrl)
+    }
+
+    private fun copyToMediaStore(
+        contentResolver: ContentResolver,
+        sourceUri: Uri,
+        outputFilename: String,
+        mimeType: String,
+        mediaUrl: Uri
+    ): Uri? {
+        var destinationUri: Uri?
+
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, outputFilename)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(
+                    MediaStore.MediaColumns.RELATIVE_PATH,
+                    Environment.DIRECTORY_DCIM + File.separator + "Camera"
+                )
+                // Mark as "pending" so the file isn't visible until we're done writing
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+        }
+        try {
+            destinationUri = contentResolver.insert(
+                mediaUrl,
+                contentValues
+            )
+            if (destinationUri == null) {
+                throw IOException("Failed to create new MediaStore entry")
+            }
+
+            // Copy the data from source to destination
+            copyUriToUri(contentResolver, sourceUri, destinationUri)
+
+            // (API 29+) Publish the file by marking it as "not pending"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                contentValues.clear()
+                contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                contentResolver.update(destinationUri, contentValues, null, null)
+            }
+
+            Log.d(TAG, "File saved to MediaStore: $destinationUri")
+            return destinationUri
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving to MediaStore: ${e.message}", e)
+
+            return null
         }
     }
 

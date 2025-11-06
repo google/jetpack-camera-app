@@ -83,8 +83,13 @@ fun PostCaptureScreen(
         onNavigateBack = onNavigateBack,
         player = viewModel.player,
         playVideo = viewModel::playVideo,
-        onDeleteMedia = viewModel::deleteMedia,
-        onSaveMedia = viewModel::saveCurrentMedia
+        onDeleteMedia = {
+            (uiState.mediaDescriptor as? MediaDescriptor.Content)
+                ?.let { viewModel.deleteMedia(it) }
+        },
+        onSaveMedia = { block ->
+            viewModel.saveCurrentMedia { block(it) }
+        }
     )
 }
 
@@ -95,8 +100,8 @@ fun PostCaptureComponent(
     onNavigateBack: () -> Unit,
     player: ExoPlayer,
     playVideo: () -> Unit,
-    onSaveMedia: (ContentResolver) -> Boolean,
-    onDeleteMedia: (ContentResolver) -> Unit
+    onSaveMedia: ((Boolean) -> Unit) -> Unit,
+    onDeleteMedia: () -> Unit
 ) {
     val context = LocalContext.current
     Box(modifier = Modifier.fillMaxSize()) {
@@ -127,7 +132,6 @@ fun PostCaptureComponent(
 
             is Media.Video -> {
                 val presentationState = rememberPresentationState(player)
-                val context = LocalContext.current
                 PlayerSurface(
                     player = player,
                     modifier = Modifier.resizeWithContentScale(
@@ -169,17 +173,21 @@ fun PostCaptureComponent(
         ) {
             SaveCurrentMediaButton(onClick = {
                 // FIXME(kc): set up proper save events
-                if (onSaveMedia(it)) {
-                    Toast.makeText(context, "Capture save successful", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Capture save unsuccessful", Toast.LENGTH_SHORT).show()
+                onSaveMedia { isSaved ->
+                    if (isSaved) {
+                        Toast.makeText(context, "Capture save successful", Toast.LENGTH_SHORT)
+                            .show()
+                    } else {
+                        Toast.makeText(context, "Capture save unsuccessful", Toast.LENGTH_SHORT)
+                            .show()
+                    }
                 }
             })
             // Delete Image Button visible for saved media
             if ((uiState.mediaDescriptor as? MediaDescriptor.Content)?.isCached != true) {
                 IconButton(
                     onClick = {
-                        onDeleteMedia(context.contentResolver)
+                        onDeleteMedia()
                         onNavigateBack()
                     },
                     modifier = Modifier
