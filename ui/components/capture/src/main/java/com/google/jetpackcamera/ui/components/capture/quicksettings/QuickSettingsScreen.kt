@@ -121,9 +121,9 @@ fun QuickSettingsBottomSheet(
                             ToggleFocusedQuickSetCaptureMode(
                                 modifier = Modifier
                                     .testTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
-                                    .apply {
+                                    .semantics {
                                         if (description != null) {
-                                            semantics { stateDescription = description }
+                                            stateDescription = description
                                         }
                                     },
                                 setCaptureMode = {
