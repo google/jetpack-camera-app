@@ -38,7 +38,7 @@ const val UNLIMITED_VIDEO_DURATION = 0L
  * Data layer representation for settings.
  */
 data class CameraAppSettings(
-    val saveMode: SaveMode = SaveMode.CacheAndReview(false),
+    val saveMode: SaveMode = SaveMode.Immediate,
     val captureMode: CaptureMode = CaptureMode.STANDARD,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
     val darkMode: DarkMode = DarkMode.DARK,

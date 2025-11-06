@@ -25,13 +25,19 @@ sealed interface SaveMode {
 
     /**
      * Saves media to a temporary cache file
-     *
-     * @param allowMultipleImages If true, the user can capture multiple images
-     * in a single review session.
      */
     data class CacheAndReview(
-        // todo(kc): how to handle 1, max limit (>1), or unlimited (0)
-        val allowMultipleImages: Boolean = false,
+        val captureLimit: CaptureCount = CaptureCount.Single,
         val cacheDir: Uri? = null
     ) : SaveMode
+}
+
+sealed interface CaptureCount {
+    data object Unlimited : CaptureCount
+    data object Single : CaptureCount
+    data class Multiple(val max: Int) : CaptureCount {
+        init {
+            require(max > 1) { "Max must be greater than 1" }
+        }
+    }
 }
