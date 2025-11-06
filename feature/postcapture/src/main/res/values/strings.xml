@@ -17,4 +17,8 @@
 <resources>
     <string name="no_media_available">No Media Available</string>
     <string name="error_loading_media">Error loading media</string>
+    <string name="button_exit_description">Exit Post Capture</string>
+    <string name="button_save_media_description">Save Media</string>
+    <string name="button_share_media_description">Share Media</string>
+    <string name="button_delete_media_description">Delete Media</string>
 </resources>

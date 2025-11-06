@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.postcapture
+package com.google.jetpackcamera.feature.postcapture.ui
 
 import android.content.ContentResolver
 import androidx.compose.foundation.layout.size
@@ -30,24 +30,40 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.feature.postcapture.R
 
+/**
+ * A button to exit post capture.
+ *
+ * @param onExitPostCapture the action to be performed when the button is clicked.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CancelPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(
         modifier = modifier
             .size(56.dp)
-            .shadow(10.dp, CircleShape),
+            .shadow(10.dp, CircleShape)
+            .testTag(BUTTON_POST_CAPTURE_EXIT),
         colors = IconButtonDefaults
             .iconButtonColors(containerColor = MaterialTheme.colorScheme.surface),
         onClick = onExitPostCapture
     ) {
-        // todo: content description
-        Icon(imageVector = Icons.Default.Close, contentDescription = "TODO")
+        Icon(
+            imageVector = Icons.Default.Close,
+            contentDescription = stringResource(R.string.button_exit_description)
+        )
     }
 }
 
+/**
+ * A button to save the current media.
+ *
+ * @param onClick the action to be performed when the button is clicked.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SaveCurrentMediaButton(onClick: (ContentResolver) -> Unit, modifier: Modifier = Modifier) {
@@ -55,12 +71,15 @@ fun SaveCurrentMediaButton(onClick: (ContentResolver) -> Unit, modifier: Modifie
     IconButton(
         modifier = modifier
             .size(56.dp)
-            .shadow(10.dp, CircleShape),
+            .shadow(10.dp, CircleShape)
+            .testTag(BUTTON_POST_CAPTURE_SAVE),
         colors = IconButtonDefaults
             .iconButtonColors(containerColor = MaterialTheme.colorScheme.surface),
         onClick = { onClick(context.contentResolver) }
     ) {
-        // todo: content description
-        Icon(imageVector = Icons.Default.SaveAlt, contentDescription = "TODO")
+        Icon(
+            imageVector = Icons.Default.SaveAlt,
+            contentDescription = stringResource(R.string.button_save_media_description)
+        )
     }
 }

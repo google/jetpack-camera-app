@@ -13,24 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera
+package com.google.jetpackcamera.feature.postcapture.ui
 
-import com.google.jetpackcamera.model.SaveMode
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+const val BUTTON_POST_CAPTURE_EXIT = "btn_post_capture_exit"
+const val BUTTON_POST_CAPTURE_SAVE = "btn_post_capture_save"
 
-@Module
-@InstallIn(SingletonComponent::class)
-object AppModule {
-    @Provides
-    fun providesSaveMode(): SaveMode {
-        // This is the only place that needs to know about the flavor-specific BuildConfig
-        return if (BuildConfig.USE_IMMEDIATE_SAVE) {
-            SaveMode.Immediate
-        } else {
-            SaveMode.CacheAndReview()
-        }
-    }
-}
+const val BUTTON_POST_CAPTURE_SHARE = "btn_post_capture_share"
+
+const val BUTTON_POST_CAPTURE_DELETE = "btn_post_capture_delete"
+
+const val VIEWER_POST_CAPTURE_VIDEO = "surface_post_capture_video_player"
+const val VIEWER_POST_CAPTURE_IMAGE = "surface_post_capture_image_player"

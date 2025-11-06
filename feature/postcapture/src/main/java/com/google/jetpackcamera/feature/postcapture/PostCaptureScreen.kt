@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -63,6 +64,12 @@ import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_DELETE
+import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SHARE
+import com.google.jetpackcamera.feature.postcapture.ui.CancelPostCaptureButton
+import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
+import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_VIDEO
 import java.io.File
 import java.io.FileNotFoundException
 
@@ -72,8 +79,7 @@ private const val TAG = "PostCaptureScreen"
 @Composable
 fun PostCaptureScreen(
     onNavigateBack: () -> Unit,
-    viewModel: PostCaptureViewModel = hiltViewModel(),
-    onCaptureAccepted: (Uri) -> Unit = {}
+    viewModel: PostCaptureViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PostCaptureScreen")
 
@@ -108,7 +114,11 @@ fun PostCaptureComponent(
         when (val currentMedia = uiState.media) {
             is Media.Image -> {
                 val bitmap = currentMedia.bitmap
-                Canvas(modifier = Modifier.fillMaxSize()) {
+                Canvas(
+                    modifier = Modifier
+                        .testTag(VIEWER_POST_CAPTURE_IMAGE)
+                        .fillMaxSize()
+                ) {
                     drawIntoCanvas { canvas ->
                         val scale = maxOf(
                             size.width / bitmap.width,
@@ -134,10 +144,12 @@ fun PostCaptureComponent(
                 val presentationState = rememberPresentationState(player)
                 PlayerSurface(
                     player = player,
-                    modifier = Modifier.resizeWithContentScale(
-                        ContentScale.Fit,
-                        presentationState.videoSizeDp
-                    )
+                    modifier = Modifier
+                        .testTag(VIEWER_POST_CAPTURE_VIDEO)
+                        .resizeWithContentScale(
+                            ContentScale.Fit,
+                            presentationState.videoSizeDp
+                        )
                 )
                 playVideo()
             }
@@ -192,14 +204,17 @@ fun PostCaptureComponent(
                     },
                     modifier = Modifier
                         .size(56.dp)
-                        .shadow(10.dp, CircleShape),
+                        .shadow(10.dp, CircleShape)
+                        .testTag(BUTTON_POST_CAPTURE_DELETE),
                     colors = IconButtonDefaults.iconButtonColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
+                        contentDescription = stringResource(
+                            R.string.button_delete_media_description
+                        ),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -217,14 +232,15 @@ fun PostCaptureComponent(
                 },
                 modifier = Modifier
                     .size(56.dp)
-                    .shadow(10.dp, CircleShape),
+                    .shadow(10.dp, CircleShape)
+                    .testTag(BUTTON_POST_CAPTURE_SHARE),
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
                 Icon(
                     imageVector = Icons.Default.Share,
-                    contentDescription = "Share",
+                    contentDescription = stringResource(R.string.button_share_media_description),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -233,7 +249,10 @@ fun PostCaptureComponent(
 }
 
 /**
- * Starts an intent to share media
+ * Starts an intent to share media.
+ *
+ * @param context the context of the calling component.
+ * @param mediaDescriptor the [MediaDescriptor] of the media to be shared.
  */
 private fun shareMedia(context: Context, mediaDescriptor: MediaDescriptor.Content) {
     // todo(kc): support sharing multiple media
@@ -252,10 +271,18 @@ private fun shareMedia(context: Context, mediaDescriptor: MediaDescriptor.Conten
     }
     intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
-    // todo(kc): is it possible to prevent "edit image" from appearing in the ShareSheet.
+    // todo(kc): prevent "edit image" from appearing in the ShareSheet.
     context.startActivity(Intent.createChooser(intent, "Share Media"))
 }
 
+/**
+ * Creates a content Uri for a given file Uri.
+ *
+ * @param context the context of the calling component.
+ * @param uri the Uri of the file.
+ *
+ * @return a content Uri to be used for sharing.
+ */
 private fun getShareableUri(context: Context, uri: Uri): Uri {
     val authority = "${context.packageName}.fileprovider"
     val file =

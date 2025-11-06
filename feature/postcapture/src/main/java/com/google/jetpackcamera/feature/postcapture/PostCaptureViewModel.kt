@@ -88,10 +88,15 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
-    // FIXME(kc): set up proper save events
+    /**
+     * Saves the current media to the MediaStore.
+     *
+     * @param onMediaSaved a callback to be invoked with the result of the save operation.
+     */
     inline fun saveCurrentMedia(crossinline onMediaSaved: (Boolean) -> Unit) {
         (uiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
             viewModelScope.launch {
+                // FIXME(kc): set up proper save events
                 onMediaSaved(saveMedia(it))
             }
         }
@@ -107,6 +112,11 @@ class PostCaptureViewModel @Inject constructor(
             createFilename(mediaDescriptor)
         ) != null
 
+    /**
+     * Deletes the given media.
+     *
+     * @param mediaDescriptor the [MediaDescriptor] of the media to be deleted.
+     */
     fun deleteMedia(mediaDescriptor: MediaDescriptor.Content) {
         viewModelScope.launch {
             mediaRepository.deleteMedia(context.contentResolver, mediaDescriptor)
@@ -115,10 +125,17 @@ class PostCaptureViewModel @Inject constructor(
     }
 }
 
+/**
+ * Creates a filename for the media descriptor.
+ *
+ * @param mediaDescriptor the [MediaDescriptor] to create a filename for.
+ *
+ * @return a filename for the media descriptor.
+ */
 private fun createFilename(mediaDescriptor: MediaDescriptor.Content): String =
     when (mediaDescriptor) {
         is MediaDescriptor.Content.Image -> {
-            "JCA-photo-${Date()}.mp4"
+            "JCA-photo-${Date()}.jpg"
         }
 
         is MediaDescriptor.Content.Video -> {

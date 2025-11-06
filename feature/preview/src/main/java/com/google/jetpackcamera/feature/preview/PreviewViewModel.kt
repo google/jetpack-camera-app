@@ -391,6 +391,9 @@ class PreviewViewModel @Inject constructor(
         DebugUiState.Disabled
     }
 
+    /**
+     * Sets the media from the image well to the [MediaRepository].
+     */
     fun imageWellToRepository() {
         viewModelScope.launch {
             val mediaDescriptor = (
