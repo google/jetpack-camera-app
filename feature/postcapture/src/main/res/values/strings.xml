@@ -21,4 +21,6 @@
     <string name="button_save_media_description">Save Media</string>
     <string name="button_share_media_description">Share Media</string>
     <string name="button_delete_media_description">Delete Media</string>
+    <string name="toast_save_success">Media saved successfully</string>
+    <string name="toast_save_failure">Media failed to save</string>
 </resources>

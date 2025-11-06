@@ -132,16 +132,19 @@ class PostCaptureViewModel @Inject constructor(
  *
  * @return a filename for the media descriptor.
  */
-private fun createFilename(mediaDescriptor: MediaDescriptor.Content): String =
-    when (mediaDescriptor) {
+private fun createFilename(mediaDescriptor: MediaDescriptor.Content): String {
+    val timeStamp = java.text.SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", java.util.Locale.US)
+        .format(Date())
+    return when (mediaDescriptor) {
         is MediaDescriptor.Content.Image -> {
-            "JCA-photo-${Date()}.jpg"
+            "JCA-photo-$timeStamp.jpg"
         }
 
         is MediaDescriptor.Content.Video -> {
-            "JCA-recording-${Date()}.mp4"
+            "JCA-recording-$timeStamp.mp4"
         }
     }
+}
 
 data class PostCaptureUiState(
     val mediaDescriptor: MediaDescriptor?,

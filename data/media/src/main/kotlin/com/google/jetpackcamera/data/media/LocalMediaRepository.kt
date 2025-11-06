@@ -222,7 +222,7 @@ class LocalMediaRepository
 
             return@withContext loadedBitmap
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Error loading image: ${e.message}", e)
             return@withContext null
         }
     }
@@ -260,7 +260,7 @@ class LocalMediaRepository
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "Error retrieving thumbnail: ${e.message}", e)
                 null
             }
         }

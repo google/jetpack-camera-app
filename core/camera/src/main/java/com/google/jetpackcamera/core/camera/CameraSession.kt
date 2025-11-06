@@ -928,7 +928,6 @@ private fun getPendingRecording(
                     ".mp4", // Suffix
                     cacheDir // Directory
                 )
-                Log.d(TAG, "cache file location: ${tempFile.absolutePath}")
 
                 // 3. Build FileOutputOptions with the File object
                 val fileOutputOptions = FileOutputOptions.Builder(tempFile)

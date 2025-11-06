@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.feature.postcapture.ui
 
-import android.content.ContentResolver
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -29,7 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -66,8 +64,7 @@ fun CancelPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = 
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SaveCurrentMediaButton(onClick: (ContentResolver) -> Unit, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
+fun SaveCurrentMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(
         modifier = modifier
             .size(56.dp)
@@ -75,7 +72,7 @@ fun SaveCurrentMediaButton(onClick: (ContentResolver) -> Unit, modifier: Modifie
             .testTag(BUTTON_POST_CAPTURE_SAVE),
         colors = IconButtonDefaults
             .iconButtonColors(containerColor = MaterialTheme.colorScheme.surface),
-        onClick = { onClick(context.contentResolver) }
+        onClick = onClick
     ) {
         Icon(
             imageVector = Icons.Default.SaveAlt,

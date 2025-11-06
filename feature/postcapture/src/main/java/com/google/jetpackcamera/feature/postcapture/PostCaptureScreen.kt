@@ -183,14 +183,16 @@ fun PostCaptureComponent(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
+            val saveSuccessString = stringResource(R.string.toast_save_success)
+            val saveFailureString = stringResource(R.string.toast_save_failure)
             SaveCurrentMediaButton(onClick = {
                 // FIXME(kc): set up proper save events
                 onSaveMedia { isSaved ->
                     if (isSaved) {
-                        Toast.makeText(context, "Capture save successful", Toast.LENGTH_SHORT)
+                        Toast.makeText(context, saveSuccessString, Toast.LENGTH_SHORT)
                             .show()
                     } else {
-                        Toast.makeText(context, "Capture save unsuccessful", Toast.LENGTH_SHORT)
+                        Toast.makeText(context, saveFailureString, Toast.LENGTH_SHORT)
                             .show()
                     }
                 }

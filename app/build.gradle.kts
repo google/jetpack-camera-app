@@ -61,7 +61,7 @@ android {
         }
         create("stableCache") {
             dimension = "flavor"
-            // This mode will have it set to true
+            // This mode will use cache-and-review capture flow
             buildConfigField("Boolean", "USE_IMMEDIATE_SAVE", "false")
             matchingFallbacks += listOf("stable")
         }
