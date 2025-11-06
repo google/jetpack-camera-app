@@ -36,7 +36,11 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun CancelPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(
-        modifier = modifier.size(IconButtonDefaults.largeIconSize),
+        modifier = modifier
+            .size(56.dp)
+            .shadow(10.dp, CircleShape),
+        colors = IconButtonDefaults
+            .iconButtonColors(containerColor = MaterialTheme.colorScheme.surface),
         onClick = onExitPostCapture
     ) {
         // todo: content description

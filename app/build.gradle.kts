@@ -35,6 +35,7 @@ android {
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
+        buildConfigField("Boolean", "USE_IMMEDIATE_SAVE", "true")
     }
 
     buildTypes {
@@ -57,6 +58,12 @@ android {
         create("stable") {
             dimension = "flavor"
             isDefault = true
+        }
+        create("stableCache") {
+            dimension = "flavor"
+            // This mode will have it set to true
+            buildConfigField("Boolean", "USE_IMMEDIATE_SAVE", "false")
+            matchingFallbacks += listOf("stable")
         }
     }
 

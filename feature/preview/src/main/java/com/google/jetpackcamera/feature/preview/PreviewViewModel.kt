@@ -124,6 +124,7 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 class PreviewViewModel @Inject constructor(
     private val cameraSystem: CameraSystem,
     private val savedStateHandle: SavedStateHandle,
+    private val saveMode: SaveMode,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository,
     private val mediaRepository: MediaRepository
@@ -635,7 +636,6 @@ class PreviewViewModel @Inject constructor(
         }
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
-            val saveMode = cameraSystem.getCurrentSettings().value?.saveMode ?: SaveMode.Immediate
             val (saveLocation, progress) = nextSaveLocation(saveMode)
             captureImageInternal(
                 saveLocation = saveLocation,
@@ -757,7 +757,7 @@ class PreviewViewModel @Inject constructor(
         Log.d(TAG, "startVideoRecording")
         recordingJob = viewModelScope.launch {
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
-            val saveMode = cameraSystem.getCurrentSettings().value?.saveMode ?: SaveMode.Immediate
+            val saveMode = saveMode
 
             val (saveLocation, _) = nextSaveLocation(saveMode)
             try {
