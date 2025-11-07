@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.feature.postcapture
 
 import android.content.Context
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
@@ -133,8 +134,15 @@ class PostCaptureViewModel @Inject constructor(
  * @return a filename for the media descriptor.
  */
 private fun createFilename(mediaDescriptor: MediaDescriptor.Content): String {
-    val timeStamp = java.text.SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", java.util.Locale.US)
-        .format(Date())
+    val timeStamp =
+        java.text.SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", java.util.Locale.US).apply {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+                format(java.time.LocalDateTime.now())
+            } else {
+                format(Date())
+            }
+        }
+
     return when (mediaDescriptor) {
         is MediaDescriptor.Content.Image -> {
             "JCA-photo-$timeStamp.jpg"

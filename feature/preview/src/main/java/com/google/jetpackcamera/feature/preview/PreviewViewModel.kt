@@ -396,13 +396,9 @@ class PreviewViewModel @Inject constructor(
      */
     fun imageWellToRepository() {
         viewModelScope.launch {
-            val mediaDescriptor = (
-                (_captureUiState.value as? CaptureUiState.Ready)
-                    ?.imageWellUiState as ImageWellUiState.LastCapture
-                )
-                .mediaDescriptor
-
-            mediaRepository.setCurrentMedia(mediaDescriptor)
+            (_captureUiState.value as? CaptureUiState.Ready)
+                ?.let { it.imageWellUiState as? ImageWellUiState.LastCapture }
+                ?.let { mediaRepository.setCurrentMedia(it.mediaDescriptor) }
         }
     }
 
