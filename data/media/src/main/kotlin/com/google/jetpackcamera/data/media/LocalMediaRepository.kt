@@ -53,11 +53,21 @@ class LocalMediaRepository
 
     override val currentMedia = _currentMedia.asStateFlow()
 
+    /**
+     * Sets the current media descriptor.
+     *
+     * @param pendingMedia The [MediaDescriptor] to set as current.
+     */
     override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
         _currentMedia.update { pendingMedia }
         Log.d(TAG, "set new media $pendingMedia")
     }
 
+    /**
+     * Loads the media for the given [MediaDescriptor].
+     *
+     * @return The loaded [Media] object, or [Media.Error] if loading fails.
+     */
     override suspend fun load(mediaDescriptor: MediaDescriptor): Media {
         return when (mediaDescriptor) {
             is MediaDescriptor.Content.Image -> {
@@ -71,6 +81,11 @@ class LocalMediaRepository
         }
     }
 
+    /**
+     * Returns the most recent captured media (image or video) from the MediaStore.
+     *
+     * @return The [MediaDescriptor] of the last captured media, or [MediaDescriptor.None] if no media is found.
+     */
     override suspend fun getLastCapturedMedia(): MediaDescriptor {
         val imagePair =
             getLastMediaUriWithDate(
@@ -99,6 +114,9 @@ class LocalMediaRepository
         }
     }
 
+    /**
+     * Deletes the specified media from either the cache or the MediaStore.
+     */
     override suspend fun deleteMedia(
         contentResolver: ContentResolver,
         mediaDescriptor: MediaDescriptor.Content
@@ -112,10 +130,17 @@ class LocalMediaRepository
         }
     }
 
+    /**
+     * Deletes a cached media file.
+     */
     private fun deleteCachedMedia(mediaDescriptor: MediaDescriptor.Content) {
         mediaDescriptor.uri.toFile().delete()
     }
 
+    /**
+     * Copies the content of a media descriptor to a specified destination URI.
+     * @throws IOException if an I/O error occurs during the copy operation.
+     */
     @Throws(IOException::class)
     override suspend fun copyToUri(
         contentResolver: ContentResolver,
@@ -123,6 +148,11 @@ class LocalMediaRepository
         destinationUri: Uri
     ) = copyUriToUri(contentResolver, sourceUri = mediaDescriptor.uri, destinationUri)
 
+    /**
+     * Copies the content from a source URI to a destination URI.
+     *
+     * @throws IOException if an I/O error occurs during the copy operation.
+     */
     @Throws(IOException::class)
     private fun copyUriToUri(
         contentResolver: ContentResolver,
@@ -136,6 +166,14 @@ class LocalMediaRepository
         } ?: throw IOException("Could not open input stream for $sourceUri")
     }
 
+    /**
+     * Saves the specified media to the MediaStore.
+     *
+     * @param filename The desired filename for the media (including file extension e.g. ".mp4" or ".jpg").
+     *
+     * @return The [Uri] of the saved media, or `null` if the save attempt fails.
+     * @throws IOException if an I/O error occurs during the save operation.
+     */
     @Throws(IOException::class)
     override suspend fun saveToMediaStore(
         contentResolver: ContentResolver,
@@ -154,6 +192,17 @@ class LocalMediaRepository
         return copyToMediaStore(contentResolver, mediaDescriptor.uri, filename, mimeType, mediaUrl)
     }
 
+    /**
+     * Copies content from a source URI to the MediaStore.
+     *
+     * @param contentResolver The [ContentResolver] used for MediaStore operations.
+     * @param sourceUri The [Uri] of the source content.
+     * @param outputFilename The desired filename for the new MediaStore entry (including file extension e.g. ".mp4" or ".jpg").
+     * @param mimeType The MIME type of the content (e.g., "image/jpeg", "video/mp4").
+     * @param mediaUrl The base [Uri] for the MediaStore collection (e.g., [MediaStore.Images.Media.EXTERNAL_CONTENT_URI]).
+     *
+     * @return The [Uri] of the newly created MediaStore entry, or `null` if the operation fails.
+     */
     private fun copyToMediaStore(
         contentResolver: ContentResolver,
         sourceUri: Uri,
@@ -227,44 +276,73 @@ class LocalMediaRepository
         }
     }
 
+    /**
+     * Creates a [MediaDescriptor.Content.Video] for the given video URI.
+     *
+     * @return A [MediaDescriptor.Content.Video] object.
+     */
     private suspend fun getVideoMediaDescriptor(uri: Uri): MediaDescriptor {
         val thumbnail = getThumbnail(uri, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
         return MediaDescriptor.Content.Video(uri, thumbnail)
     }
 
+    /**
+     * Creates a [MediaDescriptor.Content.Image] for the given image URI.
+     *
+     * @return A [MediaDescriptor.Content.Image] object.
+     */
     private suspend fun getImageMediaDescriptor(uri: Uri): MediaDescriptor {
         val thumbnail = getThumbnail(uri, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         return MediaDescriptor.Content.Image(uri, thumbnail)
     }
 
+    /**
+     * Retrieves a thumbnail for the given media URI.
+     *
+     * @param uri The [Uri] of the media.
+     * @param collectionUri The collection [Uri] (e.g., [MediaStore.Images.Media.EXTERNAL_CONTENT_URI] or [MediaStore.Video.Media.EXTERNAL_CONTENT_URI]).
+     * @return The [Bitmap] thumbnail, or `null` if retrieval fails.
+     */
     private suspend fun getThumbnail(uri: Uri, collectionUri: Uri): Bitmap? =
         withContext(iODispatcher) {
-            return@withContext try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    context.contentResolver.loadThumbnail(uri, Size(640, 480), null)
-                } else {
-                    if (collectionUri == MediaStore.Images.Media.EXTERNAL_CONTENT_URI) {
-                        MediaStore.Images.Thumbnails.getThumbnail(
-                            context.contentResolver,
-                            ContentUris.parseId(uri),
-                            MediaStore.Images.Thumbnails.MINI_KIND,
-                            null
-                        )
-                    } else { // Video
-                        MediaStore.Video.Thumbnails.getThumbnail(
-                            context.contentResolver,
-                            ContentUris.parseId(uri),
-                            MediaStore.Video.Thumbnails.MINI_KIND,
-                            null
-                        )
+            if (uri.scheme != ContentResolver.SCHEME_CONTENT) {
+                Log.e(TAG, "URI is not managed by a content provider")
+                return@withContext null
+            } else {
+                return@withContext try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        context.contentResolver.loadThumbnail(uri, Size(640, 480), null)
+                    } else {
+                        if (collectionUri == MediaStore.Images.Media.EXTERNAL_CONTENT_URI) {
+                            MediaStore.Images.Thumbnails.getThumbnail(
+                                context.contentResolver,
+                                ContentUris.parseId(uri),
+                                MediaStore.Images.Thumbnails.MINI_KIND,
+                                null
+                            )
+                        } else { // Video
+                            MediaStore.Video.Thumbnails.getThumbnail(
+                                context.contentResolver,
+                                ContentUris.parseId(uri),
+                                MediaStore.Video.Thumbnails.MINI_KIND,
+                                null
+                            )
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error retrieving thumbnail: ${e.message}", e)
+                    null
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error retrieving thumbnail: ${e.message}", e)
-                null
             }
         }
 
+    /**
+     * Retrieves the URI and date added of the last media item (image or video) from a specified MediaStore collection.
+     *
+     * @param contentResolver The [ContentResolver] to query the MediaStore.
+     * @param collectionUri The collection [Uri] to query (e.g., [MediaStore.Images.Media.EXTERNAL_CONTENT_URI] or [MediaStore.Video.Media.EXTERNAL_CONTENT_URI]).
+     * @return A [Pair] containing the [Uri] and the date added (in milliseconds) of the last media item, or `null` if no media is found.
+     */
     private fun getLastMediaUriWithDate(
         contentResolver: ContentResolver,
         collectionUri: Uri
