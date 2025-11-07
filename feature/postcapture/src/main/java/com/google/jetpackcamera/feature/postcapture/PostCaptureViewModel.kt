@@ -136,7 +136,7 @@ class PostCaptureViewModel @Inject constructor(
 private fun createFilename(mediaDescriptor: MediaDescriptor.Content): String {
     val timeStamp =
         java.text.SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", java.util.Locale.US).apply {
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 format(java.time.LocalDateTime.now())
             } else {
                 format(Date())
