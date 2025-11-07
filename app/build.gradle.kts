@@ -59,7 +59,7 @@ android {
             dimension = "flavor"
             isDefault = true
         }
-        create("cachedSave") {
+        create("stableCache") {
             dimension = "flavor"
             // This mode will use cache-and-review capture flow
             buildConfigField("Boolean", "USE_IMMEDIATE_SAVE", "false")
