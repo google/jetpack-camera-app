@@ -19,6 +19,7 @@ protobufPlugin = "0.9.5"
 
 androidxActivityCompose = "1.10.1"
 androidxAppCompat = "1.7.1"
+androidxAnnotation = "1.7.1"
 androidxBenchmark = "1.3.4"
 androidxCamera = "1.5.0-SNAPSHOT"
 androidxConcurrentFutures = "1.3.0"
@@ -46,9 +47,9 @@ mockitoCore = "5.18.0"
 protobuf = "4.31.1"
 robolectric = "4.15.1"
 truth = "1.4.4"
-playServices = "18.7.0"
+playServices = "18.9.0"
 playServicesCoroutines = "1.10.2"
-playServicesTasks = "18.3.0"
+playServicesTasks = "18.4.0"
 cameraLowLightBoost = "16.0.1-beta06"
 material = "1.12.0"
 material3WindowSizeClass = "1.3.2"
@@ -57,6 +58,7 @@ material3WindowSizeClass = "1.3.2"
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityCompose" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppCompat" }
+androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "androidxAnnotation" }
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "androidxBenchmark" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCoreKtx" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "androidxDatastore" }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera.effects
+package com.google.jetpackcamera.core.camera.lowlight.playservices
 
 import android.annotation.SuppressLint
 import android.hardware.camera2.TotalCaptureResult
@@ -22,19 +22,15 @@ import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraEffect
 import com.google.android.gms.cameralowlight.LowLightBoostClient
 import com.google.android.gms.cameralowlight.SceneDetectorCallback
-import com.google.jetpackcamera.core.camera.effects.processors.LowLightBoostSurfaceProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 
-private const val TARGETS =
+private const val PLAY_SERVICES_EFFECT_TARGETS =
     CameraEffect.PREVIEW or CameraEffect.IMAGE_CAPTURE or CameraEffect.VIDEO_CAPTURE
 
-/**
- * [CameraEffect] that applies Google Low Light Boost.
- */
 @SuppressLint("RestrictedApi")
 @RequiresApi(Build.VERSION_CODES.R)
-class LowLightBoostEffect(
+internal class PlayServicesLowLightBoostEffect(
     cameraId: String,
     lowLightBoostClient: LowLightBoostClient,
     captureResults: StateFlow<TotalCaptureResult?>,
@@ -42,11 +38,11 @@ class LowLightBoostEffect(
     sceneDetectorCallback: SceneDetectorCallback? = null,
     onLowLightBoostErrorCallback: (Exception) -> Unit = {}
 ) : CameraEffect(
-    TARGETS,
+    PLAY_SERVICES_EFFECT_TARGETS,
     OUTPUT_OPTION_ONE_FOR_ALL_TARGETS,
     TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION,
     Runnable::run,
-    LowLightBoostSurfaceProcessor(
+    PlayServicesLowLightBoostSurfaceProcessor(
         cameraId,
         lowLightBoostClient,
         captureResults,

@@ -21,8 +21,8 @@
     <!-- Capture Mode Toggle -->
     <string name="capture_mode_image_capture_content_description">Image capture mode</string>
     <string name="capture_mode_video_recording_content_description">Video recording mode</string>
-    <string name="capture_mode_image_capture_content_description_disabled">HDR Image Capture mode only</string>
-    <string name="capture_mode_video_recording_content_description_disabled">HDR Video recording mode only</string>
+    <string name="capture_mode_image_capture_content_description_disabled">Image Capture mode only</string>
+    <string name="capture_mode_video_recording_content_description_disabled">Video recording mode only</string>
 
     <string name="flip_camera_icon_description">Flip Camera Icon</string>
 
@@ -37,6 +37,8 @@
     <string name="debug_text_physical_camera_id_prefix">Physical ID: </string>
     <string name="debug_text_logical_camera_id_prefix">Logical ID: </string>
     <string name="debug_overlay_toggle_btn_text">Debug</string>
+    <string name="debug_hide_components_desc">Hiding components</string>
+    <string name="debug_show_components_desc">Displaying components</string>
 
 
     <!-- Notification Text -->

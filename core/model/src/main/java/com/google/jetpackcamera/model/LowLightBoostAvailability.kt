@@ -18,6 +18,6 @@ package com.google.jetpackcamera.model
 enum class LowLightBoostAvailability {
     NONE,
     AE_MODE_ONLY,
-    GOOGLE_PLAY_SERVICES_ONLY,
-    AE_MODE_AND_GOOGLE_PLAY_SERVICES
+    CAMERA_EFFECT_ONLY,
+    AE_MODE_AND_CAMERA_EFFECT
 }
