@@ -24,13 +24,11 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    // This is the only place that needs to know about the flavor-specific BuildConfig
+
     @Provides
-    fun providesSaveMode(): SaveMode {
-        // This is the only place that needs to know about the flavor-specific BuildConfig
-        return if (BuildConfig.USE_IMMEDIATE_SAVE) {
-            SaveMode.Immediate
-        } else {
-            SaveMode.CacheAndReview()
-        }
-    }
+    fun providesSaveMode(): SaveMode =
+        if (BuildConfig.USE_IMMEDIATE_SAVE) SaveMode.Immediate else SaveMode.CacheAndReview()
+
 }

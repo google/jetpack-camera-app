@@ -31,14 +31,14 @@ import android.util.Size
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.File
-import java.io.IOException
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.IOException
+import javax.inject.Inject
 
 private const val TAG = "LocalMediaRepository"
 private const val IMAGE_MIME_TYPE = "image/jpeg"
@@ -71,8 +71,12 @@ class LocalMediaRepository
     override suspend fun load(mediaDescriptor: MediaDescriptor): Media {
         return when (mediaDescriptor) {
             is MediaDescriptor.Content.Image -> {
-                val bitmap = loadImage(mediaDescriptor.uri)
-                bitmap?.let { Media.Image(bitmap) } ?: Media.Error
+                try {
+                    val bitmap = loadImage(mediaDescriptor.uri)
+                    bitmap?.let { Media.Image(bitmap) } ?: Media.Error
+                } catch (e: Exception) {
+                    Media.Error
+                }
             }
 
             MediaDescriptor.None -> Media.None
@@ -256,6 +260,7 @@ class LocalMediaRepository
     /**
      * Loads an image from bitmap
      */
+    @Throws(IOException::class)
     private suspend fun loadImage(uri: Uri): Bitmap? = withContext(iODispatcher) {
         try {
             val loadedBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -272,7 +277,7 @@ class LocalMediaRepository
             return@withContext loadedBitmap
         } catch (e: Exception) {
             Log.e(TAG, "Error loading image: ${e.message}", e)
-            return@withContext null
+            throw e
         }
     }
 

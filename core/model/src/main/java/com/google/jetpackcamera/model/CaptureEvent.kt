@@ -45,13 +45,13 @@ interface ProgressCaptureEvent {
 sealed interface ImageCaptureEvent : CaptureEvent {
 
     /**
-     * Base interface for events indicating a successful image capture and save.
+     * Base interface for events indicating a successful image capture.
      * Concrete implementations will specify whether the capture was a single event
      * or part of a sequence.
      */
     interface ImageCaptured : ImageCaptureEvent {
         /**
-         * The [Uri] of the saved image file. This may be null if the
+         * The [Uri] of the captured image file. This may be `null` if the
          * capture was successful but the image was not saved to a specific Uri
          * (e.g., if only a bitmap was processed in memory without explicit file saving).
          */
@@ -59,7 +59,7 @@ sealed interface ImageCaptureEvent : CaptureEvent {
     }
 
     /**
-     * Base interface for events indicating an error during image capture or saving.
+     * Base interface for events indicating an error during image capture.
      * Concrete implementations will specify whether the error occurred during a single event
      * or as part of a sequence.
      */
