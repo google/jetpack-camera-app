@@ -22,7 +22,6 @@ import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.OptIn
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -42,15 +41,12 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -59,17 +55,15 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.compose.PlayerSurface
-import androidx.media3.ui.compose.modifiers.resizeWithContentScale
-import androidx.media3.ui.compose.state.rememberPresentationState
+import androidx.media3.ui.compose.material3.buttons.PlayPauseButton
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_DELETE
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SHARE
 import com.google.jetpackcamera.feature.postcapture.ui.CancelPostCaptureButton
+import com.google.jetpackcamera.feature.postcapture.ui.ImageFromBitmap
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
-import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
-import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_VIDEO
+import com.google.jetpackcamera.feature.postcapture.ui.VideoPlayer
 import java.io.File
 import java.io.FileNotFoundException
 
@@ -88,7 +82,7 @@ fun PostCaptureScreen(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         player = viewModel.player,
-        playVideo = viewModel::playVideo,
+        loadCurrentVideo = viewModel::loadCurrentVideo,
         onDeleteMedia = {
             (uiState.mediaDescriptor as? MediaDescriptor.Content)
                 ?.let { viewModel.deleteMedia(it) }
@@ -104,54 +98,27 @@ fun PostCaptureScreen(
 fun PostCaptureComponent(
     uiState: PostCaptureUiState,
     onNavigateBack: () -> Unit,
-    player: ExoPlayer,
-    playVideo: () -> Unit,
+    player: ExoPlayer?,
+    loadCurrentVideo: () -> Unit,
     onSaveMedia: ((Boolean) -> Unit) -> Unit,
     onDeleteMedia: () -> Unit
 ) {
     val context = LocalContext.current
-    Box(modifier = Modifier.fillMaxSize()) {
-        when (val currentMedia = uiState.media) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        when (val media = uiState.media) {
             is Media.Image -> {
-                val bitmap = currentMedia.bitmap
-                Canvas(
-                    modifier = Modifier
-                        .testTag(VIEWER_POST_CAPTURE_IMAGE)
-                        .fillMaxSize()
-                ) {
-                    drawIntoCanvas { canvas ->
-                        val scale = maxOf(
-                            size.width / bitmap.width,
-                            size.height / bitmap.height
-                        )
-                        val imageSize = Size(bitmap.width * scale, bitmap.height * scale)
-                        canvas.nativeCanvas.drawBitmap(
-                            bitmap,
-                            null,
-                            android.graphics.RectF(
-                                0f,
-                                0f,
-                                imageSize.width,
-                                imageSize.height
-                            ),
-                            null
-                        )
-                    }
-                }
+                val bitmap = media.bitmap
+                ImageFromBitmap(Modifier.fillMaxSize(), bitmap)
             }
 
             is Media.Video -> {
-                val presentationState = rememberPresentationState(player)
-                PlayerSurface(
-                    player = player,
-                    modifier = Modifier
-                        .testTag(VIEWER_POST_CAPTURE_VIDEO)
-                        .resizeWithContentScale(
-                            ContentScale.Fit,
-                            presentationState.videoSizeDp
-                        )
-                )
-                playVideo()
+                player?.let { player ->
+                    VideoPlayer(modifier = Modifier, player = player)
+                    PlayPauseButton(player)
+                    LaunchedEffect(media.uri) {
+                        loadCurrentVideo()
+                    }
+                } ?: Text("Loading Video...")
             }
 
             Media.None -> {
