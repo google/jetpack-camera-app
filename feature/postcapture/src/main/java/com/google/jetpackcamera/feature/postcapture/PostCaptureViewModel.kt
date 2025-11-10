@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.feature.postcapture
 
 import android.content.Context
-import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
@@ -26,14 +25,16 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.util.Date
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import javax.inject.Inject
 
 private const val TAG = "PostCaptureViewModel"
 
@@ -135,14 +136,7 @@ class PostCaptureViewModel @Inject constructor(
  * @return a filename for the media descriptor.
  */
 private fun createFilename(mediaDescriptor: MediaDescriptor.Content): String {
-    val timeStamp =
-        java.text.SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", java.util.Locale.US).apply {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                format(java.time.LocalDateTime.now())
-            } else {
-                format(Date())
-            }
-        }
+    val timeStamp = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US).format(Date())
 
     return when (mediaDescriptor) {
         is MediaDescriptor.Content.Image -> {
