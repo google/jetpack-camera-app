@@ -30,6 +30,7 @@ import org.json.JSONObject
 
 private const val TAG = "CameraCoreUtil"
 object CameraCoreUtil {
+
     fun getDefaultMediaSaveLocation(): String {
         return Environment.DIRECTORY_DCIM + File.separator + "Camera"
     }

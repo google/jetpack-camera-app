@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.feature.postcapture
 
-import android.content.ContentResolver
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -32,9 +31,14 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -72,13 +76,31 @@ class PostCaptureViewModel @Inject constructor(
     val uiState: StateFlow<PostCaptureUiState> = _uiState
 
     init {
-        getLastCapture()
+        viewModelScope.launch {
+            mediaRepository.currentMedia.filterNotNull().collectLatest { mediaDescriptor ->
+                val mediaDescriptor = mediaDescriptor
+                val media = mediaRepository.load(mediaDescriptor)
+                _uiState.update {
+                    it.copy(mediaDescriptor = mediaDescriptor, media = media)
+                }
+            }
+        }
         initPlayer()
     }
 
     override fun onCleared() {
         super.onCleared()
         releasePlayer()
+
+        val mediaDescriptor = uiState.value.mediaDescriptor
+
+        // todo(kc): improve cache cleanup strategy
+        if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
+            viewModelScope.launch {
+                mediaRepository.deleteMedia(context.contentResolver, mediaDescriptor)
+                mediaRepository.setCurrentMedia(MediaDescriptor.None)
+            }
+        }
     }
 
     fun updatePlayerState(commands: Player.Commands?) {
@@ -96,24 +118,6 @@ class PostCaptureViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun getLastCapture() {
-        viewModelScope.launch {
-            val mediaDescriptor = mediaRepository.getLastCapturedMedia()
-            val media = mediaRepository.load(mediaDescriptor)
-
-            _uiState.update { it.copy(mediaDescriptor = mediaDescriptor, media = media) }
-        }
-    }
-
-    fun deleteMedia(contentResolver: ContentResolver) {
-        when (val mediaDescriptor = uiState.value.mediaDescriptor) {
-            is MediaDescriptor.Image -> contentResolver.delete(mediaDescriptor.uri, null, null)
-            is MediaDescriptor.Video -> contentResolver.delete(mediaDescriptor.uri, null, null)
-            MediaDescriptor.None -> {}
-        }
-        _uiState.update { it.copy(mediaDescriptor = MediaDescriptor.None, media = Media.None) }
     }
 
     // exoplayer controls
@@ -174,6 +178,63 @@ class PostCaptureViewModel @Inject constructor(
                     it.playWhenReady = true
                 }
             }
+        }
+    }
+
+    /**
+     * Saves the current media to the MediaStore.
+     *
+     * @param onMediaSaved a callback to be invoked with the result of the save operation.
+     */
+    inline fun saveCurrentMedia(crossinline onMediaSaved: (Boolean) -> Unit) {
+        (uiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
+            viewModelScope.launch {
+                // FIXME(kc): set up proper save events
+                onMediaSaved(saveMedia(it))
+            }
+        }
+    }
+
+    /**
+     * returns true if successfully saved, false if not
+     */
+    suspend fun saveMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
+        mediaRepository.saveToMediaStore(
+            context.contentResolver,
+            mediaDescriptor,
+            createFilename(mediaDescriptor)
+        ) != null
+
+    /**
+     * Deletes the given media.
+     *
+     * @param mediaDescriptor the [MediaDescriptor] of the media to be deleted.
+     */
+    fun deleteMedia(mediaDescriptor: MediaDescriptor.Content) {
+        viewModelScope.launch {
+            mediaRepository.deleteMedia(context.contentResolver, mediaDescriptor)
+            _uiState.update { it.copy(mediaDescriptor = MediaDescriptor.None, media = Media.None) }
+        }
+    }
+}
+
+/**
+ * Creates a filename for the media descriptor.
+ *
+ * @param mediaDescriptor the [MediaDescriptor] to create a filename for.
+ *
+ * @return a filename for the media descriptor.
+ */
+private fun createFilename(mediaDescriptor: MediaDescriptor.Content): String {
+    val timeStamp = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US).format(Date())
+
+    return when (mediaDescriptor) {
+        is MediaDescriptor.Content.Image -> {
+            "JCA-photo-$timeStamp.jpg"
+        }
+
+        is MediaDescriptor.Content.Video -> {
+            "JCA-recording-$timeStamp.mp4"
         }
     }
 }

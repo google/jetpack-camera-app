@@ -152,7 +152,7 @@ private fun JetpackCameraNavHost(
         composable(
             POST_CAPTURE_ROUTE
         ) {
-            PostCaptureScreen()
+            PostCaptureScreen(onNavigateBack = { navController.popBackStack() })
         }
     }
 }

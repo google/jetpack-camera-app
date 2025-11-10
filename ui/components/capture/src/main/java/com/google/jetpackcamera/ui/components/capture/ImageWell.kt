@@ -45,14 +45,14 @@ fun ImageWell(
     when (imageWellUiState) {
         is ImageWellUiState.LastCapture -> {
             val bitmap = when (imageWellUiState.mediaDescriptor) {
-                is MediaDescriptor.Image -> (
+                is MediaDescriptor.Content.Image -> (
                     imageWellUiState.mediaDescriptor
-                        as MediaDescriptor.Image
+                        as MediaDescriptor.Content.Image
                     ).thumbnail
 
-                is MediaDescriptor.Video -> (
+                is MediaDescriptor.Content.Video -> (
                     imageWellUiState.mediaDescriptor
-                        as MediaDescriptor.Video
+                        as MediaDescriptor.Content.Video
                     ).thumbnail
 
                 is MediaDescriptor.None -> null

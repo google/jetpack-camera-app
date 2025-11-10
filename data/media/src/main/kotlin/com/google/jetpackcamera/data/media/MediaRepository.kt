@@ -15,14 +15,33 @@
  */
 package com.google.jetpackcamera.data.media
 
+import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.net.Uri
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Data layer for Media.
  */
 interface MediaRepository {
+    val currentMedia: Flow<MediaDescriptor>
+    suspend fun setCurrentMedia(pendingMedia: MediaDescriptor)
     suspend fun getLastCapturedMedia(): MediaDescriptor
+
+    suspend fun deleteMedia(
+        contentResolver: ContentResolver,
+        mediaDescriptor: MediaDescriptor.Content
+    )
+    suspend fun copyToUri(
+        contentResolver: ContentResolver,
+        mediaDescriptor: MediaDescriptor.Content,
+        destinationUri: Uri
+    )
+    suspend fun saveToMediaStore(
+        contentResolver: ContentResolver,
+        mediaDescriptor: MediaDescriptor.Content,
+        filename: String
+    ): Uri?
     suspend fun load(mediaDescriptor: MediaDescriptor): Media
 }
 
@@ -33,8 +52,24 @@ interface MediaRepository {
  */
 sealed interface MediaDescriptor {
     data object None : MediaDescriptor
-    class Image(val uri: Uri, val thumbnail: Bitmap?) : MediaDescriptor
-    class Video(val uri: Uri, val thumbnail: Bitmap?) : MediaDescriptor
+
+    sealed interface Content : MediaDescriptor {
+        val uri: Uri
+        val thumbnail: Bitmap?
+        val isCached: Boolean
+
+        class Image(
+            override val uri: Uri,
+            override val thumbnail: Bitmap?,
+            override val isCached: Boolean = false
+        ) : Content
+
+        class Video(
+            override val uri: Uri,
+            override val thumbnail: Bitmap?,
+            override val isCached: Boolean = false
+        ) : Content
+    }
 }
 
 /**

@@ -15,10 +15,12 @@
  */
 package com.google.jetpackcamera.feature.postcapture
 
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +29,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -45,24 +48,62 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.material3.buttons.PlayPauseButton
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_DELETE
+import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SHARE
+import com.google.jetpackcamera.feature.postcapture.ui.CancelPostCaptureButton
+import com.google.jetpackcamera.feature.postcapture.ui.ImageFromBitmap
+import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.VideoPlayer
+import java.io.File
+import java.io.FileNotFoundException
 
 private const val TAG = "PostCaptureScreen"
 
 @OptIn(UnstableApi::class)
 @Composable
-fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
+fun PostCaptureScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: PostCaptureViewModel = hiltViewModel()
+) {
     Log.d(TAG, "PostCaptureScreen")
 
     val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
+    PostCaptureComponent(
+        uiState = uiState,
+        onNavigateBack = onNavigateBack,
+        player = viewModel.player,
+        loadCurrentVideo = viewModel::loadCurrentVideo,
+        onDeleteMedia = {
+            (uiState.mediaDescriptor as? MediaDescriptor.Content)
+                ?.let { viewModel.deleteMedia(it) }
+        },
+        onSaveMedia = { block ->
+            viewModel.saveCurrentMedia { block(it) }
+        }
+    )
+}
 
+@OptIn(UnstableApi::class)
+@Composable
+fun PostCaptureComponent(
+    uiState: PostCaptureUiState,
+    onNavigateBack: () -> Unit,
+    player: ExoPlayer?,
+    loadCurrentVideo: () -> Unit,
+    onSaveMedia: ((Boolean) -> Unit) -> Unit,
+    onDeleteMedia: () -> Unit
+) {
+    val context = LocalContext.current
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         when (val media = uiState.media) {
             is Media.Image -> {
@@ -71,11 +112,11 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
             }
 
             is Media.Video -> {
-                viewModel.player?.let { player ->
+                player?.let { player ->
                     VideoPlayer(modifier = Modifier, player = player)
                     PlayPauseButton(player)
                     LaunchedEffect(media.uri) {
-                        viewModel.loadCurrentVideo()
+                        loadCurrentVideo()
                     }
                 } ?: Text("Loading Video...")
             }
@@ -95,6 +136,13 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
             }
         }
 
+        CancelPostCaptureButton(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .safeContentPadding(),
+            onExitPostCapture = onNavigateBack
+        )
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -102,21 +150,43 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
-            // Delete Image Button
-            IconButton(
-                onClick = { viewModel.deleteMedia(context.contentResolver) },
-                modifier = Modifier
-                    .size(56.dp)
-                    .shadow(10.dp, CircleShape),
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
+            val saveSuccessString = stringResource(R.string.toast_save_success)
+            val saveFailureString = stringResource(R.string.toast_save_failure)
+            SaveCurrentMediaButton(onClick = {
+                // FIXME(kc): set up proper save events
+                onSaveMedia { isSaved ->
+                    if (isSaved) {
+                        Toast.makeText(context, saveSuccessString, Toast.LENGTH_SHORT)
+                            .show()
+                    } else {
+                        Toast.makeText(context, saveFailureString, Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+            })
+            // Delete Image Button visible for saved media
+            if ((uiState.mediaDescriptor as? MediaDescriptor.Content)?.isCached != true) {
+                IconButton(
+                    onClick = {
+                        onDeleteMedia()
+                        onNavigateBack()
+                    },
+                    modifier = Modifier
+                        .size(56.dp)
+                        .shadow(10.dp, CircleShape)
+                        .testTag(BUTTON_POST_CAPTURE_DELETE),
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(
+                            R.string.button_delete_media_description
+                        ),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -125,25 +195,21 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
             IconButton(
                 onClick = {
                     val mediaDescriptor = uiState.mediaDescriptor
-
-                    if (mediaDescriptor is MediaDescriptor.Image) {
-                        shareImage(context, mediaDescriptor.uri, "image/jpeg")
-                    }
-
-                    if (mediaDescriptor is MediaDescriptor.Video) {
-                        shareImage(context, mediaDescriptor.uri, "video/mp4")
+                    (mediaDescriptor as? MediaDescriptor.Content)?.let {
+                        shareMedia(context, it)
                     }
                 },
                 modifier = Modifier
                     .size(56.dp)
-                    .shadow(10.dp, CircleShape),
+                    .shadow(10.dp, CircleShape)
+                    .testTag(BUTTON_POST_CAPTURE_SHARE),
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
                 Icon(
                     imageVector = Icons.Default.Share,
-                    contentDescription = "Share",
+                    contentDescription = stringResource(R.string.button_share_media_description),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -152,13 +218,46 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
 }
 
 /**
- * Starts an intent to share media
+ * Starts an intent to share media.
+ *
+ * @param context the context of the calling component.
+ * @param mediaDescriptor the [MediaDescriptor] of the media to be shared.
  */
-private fun shareImage(context: Context, uri: Uri, mimeType: String) {
+private fun shareMedia(context: Context, mediaDescriptor: MediaDescriptor.Content) {
+    // todo(kc): support sharing multiple media
+    val uri = mediaDescriptor.uri
+    val mimeType: String = when (mediaDescriptor) {
+        is MediaDescriptor.Content.Image -> "image/jpeg"
+        is MediaDescriptor.Content.Video -> "video/mp4"
+    }
+
+    val contentUri: Uri =
+        if (uri.scheme == ContentResolver.SCHEME_CONTENT) uri else getShareableUri(context, uri)
+
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType
-        putExtra(Intent.EXTRA_STREAM, uri)
+        putExtra(Intent.EXTRA_STREAM, contentUri)
     }
     intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+    // todo(kc): prevent "edit image" from appearing in the ShareSheet.
     context.startActivity(Intent.createChooser(intent, "Share Media"))
+}
+
+/**
+ * Creates a content Uri for a given file Uri.
+ *
+ * @param context the context of the calling component.
+ * @param uri the Uri of the file.
+ *
+ * @return a content Uri to be used for sharing.
+ */
+private fun getShareableUri(context: Context, uri: Uri): Uri {
+    val authority = "${context.packageName}.fileprovider"
+    val file =
+        uri.path
+            ?.let { File(it) }
+            ?: throw FileNotFoundException("path does not exist")
+
+    return FileProvider.getUriForFile(context, authority, file)
 }

@@ -229,9 +229,9 @@ class MainActivity : ComponentActivity() {
             return when (externalCaptureMode) {
                 ExternalCaptureMode.ImageCapture -> { event ->
                     Log.d(TAG, "onImageCapture, event: $event")
-                    if (event is ImageCaptureEvent.ImageSaved) {
+                    if (event is ImageCaptureEvent.ImageCaptured) {
                         val resultIntent = Intent()
-                        resultIntent.putExtra(MediaStore.EXTRA_OUTPUT, event.savedUri)
+                        resultIntent.putExtra(MediaStore.EXTRA_OUTPUT, event.capturedUri)
                         setResult(RESULT_OK, resultIntent)
                         Log.d(TAG, "onImageCapture, finish()")
                         finish()
@@ -263,8 +263,8 @@ class MainActivity : ComponentActivity() {
                     }
 
                     if (progress == null) {
-                        if (event is ImageCaptureEvent.ImageSaved) {
-                            pictureTakenUriList.add(event.savedUri.toString())
+                        if (event is ImageCaptureEvent.ImageCaptured) {
+                            pictureTakenUriList.add(event.capturedUri.toString())
                         } else if (event is ImageCaptureEvent.ImageCaptureError) {
                             pictureTakenUriList.add("")
                         }
@@ -283,10 +283,12 @@ class MainActivity : ComponentActivity() {
                 }
 
                 ExternalCaptureMode.Standard -> { event ->
-                    if (event is ImageCaptureEvent.ImageSaved) {
+                    if (event is ImageCaptureEvent.ImageCaptured &&
+                        event !is ImageCaptureEvent.SingleImageCached
+                    ) {
                         @Suppress("DEPRECATION")
                         val intent = Intent(Camera.ACTION_NEW_PICTURE)
-                        intent.data = event.savedUri
+                        intent.data = event.capturedUri
                         sendBroadcast(intent)
                     }
                 }

@@ -14,14 +14,8 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<resources>
-    <string name="no_media_available">No Media Available</string>
-    <string name="error_loading_media">Error loading media</string>
-    <string name="post_capture_image_description">An image captured by the camera</string>
-    <string name="button_exit_description">Exit Post Capture</string>
-    <string name="button_save_media_description">Save Media</string>
-    <string name="button_share_media_description">Share Media</string>
-    <string name="button_delete_media_description">Delete Media</string>
-    <string name="toast_save_success">Media saved successfully</string>
-    <string name="toast_save_failure">Media failed to save</string>
-</resources>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path
+        name="my_cache"
+        path="." />
+</paths>
