@@ -30,5 +30,4 @@ object AppModule {
     @Provides
     fun providesSaveMode(): SaveMode =
         if (BuildConfig.USE_IMMEDIATE_SAVE) SaveMode.Immediate else SaveMode.CacheAndReview()
-
 }

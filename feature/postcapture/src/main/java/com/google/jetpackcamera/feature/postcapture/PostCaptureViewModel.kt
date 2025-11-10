@@ -65,7 +65,7 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
-    //todo(kc): improve cache cleanup strategy
+    // todo(kc): improve cache cleanup strategy
     override fun onCleared() {
         super.onCleared()
         player.release()
