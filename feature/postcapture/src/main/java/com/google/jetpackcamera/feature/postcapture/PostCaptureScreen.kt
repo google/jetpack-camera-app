@@ -22,19 +22,9 @@ import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.OptIn
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,13 +34,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -59,17 +44,15 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.compose.PlayerSurface
-import androidx.media3.ui.compose.modifiers.resizeWithContentScale
-import androidx.media3.ui.compose.state.rememberPresentationState
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_DELETE
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SHARE
 import com.google.jetpackcamera.feature.postcapture.ui.CancelPostCaptureButton
+import com.google.jetpackcamera.feature.postcapture.ui.DeleteMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.ImageFromBitmap
+import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
-import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
-import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_VIDEO
+import com.google.jetpackcamera.feature.postcapture.ui.VideoPlayer
 import java.io.File
 import java.io.FileNotFoundException
 
@@ -90,8 +73,9 @@ fun PostCaptureScreen(
         player = viewModel.player,
         playVideo = viewModel::playVideo,
         onDeleteMedia = {
-            (uiState.mediaDescriptor as? MediaDescriptor.Content)
-                ?.let { viewModel.deleteMedia(it) }
+            (uiState.mediaDescriptor as? MediaDescriptor.Content)?.let {
+                viewModel.deleteMedia(it)
+            }
         },
         onSaveMedia = { block ->
             viewModel.saveCurrentMedia { block(it) }
@@ -110,82 +94,25 @@ fun PostCaptureComponent(
     onDeleteMedia: () -> Unit
 ) {
     val context = LocalContext.current
-    Box(modifier = Modifier.fillMaxSize()) {
-        when (val currentMedia = uiState.media) {
-            is Media.Image -> {
-                val bitmap = currentMedia.bitmap
-                Canvas(
-                    modifier = Modifier
-                        .testTag(VIEWER_POST_CAPTURE_IMAGE)
-                        .fillMaxSize()
-                ) {
-                    drawIntoCanvas { canvas ->
-                        val scale = maxOf(
-                            size.width / bitmap.width,
-                            size.height / bitmap.height
-                        )
-                        val imageSize = Size(bitmap.width * scale, bitmap.height * scale)
-                        canvas.nativeCanvas.drawBitmap(
-                            bitmap,
-                            null,
-                            android.graphics.RectF(
-                                0f,
-                                0f,
-                                imageSize.width,
-                                imageSize.height
-                            ),
-                            null
-                        )
-                    }
-                }
-            }
-
-            is Media.Video -> {
-                val presentationState = rememberPresentationState(player)
-                PlayerSurface(
-                    player = player,
-                    modifier = Modifier
-                        .testTag(VIEWER_POST_CAPTURE_VIDEO)
-                        .resizeWithContentScale(
-                            ContentScale.Fit,
-                            presentationState.videoSizeDp
-                        )
-                )
-                playVideo()
-            }
-
-            Media.None -> {
-                Text(
-                    text = stringResource(R.string.no_media_available),
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            Media.Error -> {
-                Text(
-                    text = stringResource(R.string.error_loading_media),
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-        }
-
-        CancelPostCaptureButton(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .safeContentPadding(),
-            onExitPostCapture = onNavigateBack
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
+    PostCaptureLayout(
+        mediaSurface = {
+            MediaViewer(
+                modifier = it,
+                media = uiState.media,
+                player = player,
+                playVideo = playVideo
+            )
+        },
+        exitButton = {
+            CancelPostCaptureButton(
+                modifier = it,
+                onExitPostCapture = onNavigateBack
+            )
+        },
+        saveButton = {
             val saveSuccessString = stringResource(R.string.toast_save_success)
             val saveFailureString = stringResource(R.string.toast_save_failure)
-            SaveCurrentMediaButton(onClick = {
+            SaveCurrentMediaButton(modifier = it, onClick = {
                 // FIXME(kc): set up proper save events
                 onSaveMedia { isSaved ->
                     if (isSaved) {
@@ -197,34 +124,8 @@ fun PostCaptureComponent(
                     }
                 }
             })
-            // Delete Image Button visible for saved media
-            if ((uiState.mediaDescriptor as? MediaDescriptor.Content)?.isCached != true) {
-                IconButton(
-                    onClick = {
-                        onDeleteMedia()
-                        onNavigateBack()
-                    },
-                    modifier = Modifier
-                        .size(56.dp)
-                        .shadow(10.dp, CircleShape)
-                        .testTag(BUTTON_POST_CAPTURE_DELETE),
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = stringResource(
-                            R.string.button_delete_media_description
-                        ),
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Share Media Button
+        },
+        shareButton = {
             IconButton(
                 onClick = {
                     val mediaDescriptor = uiState.mediaDescriptor
@@ -232,7 +133,7 @@ fun PostCaptureComponent(
                         shareMedia(context, it)
                     }
                 },
-                modifier = Modifier
+                modifier = it
                     .size(56.dp)
                     .shadow(10.dp, CircleShape)
                     .testTag(BUTTON_POST_CAPTURE_SHARE),
@@ -246,6 +147,47 @@ fun PostCaptureComponent(
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
+        },
+        deleteButton = {
+            if ((uiState.mediaDescriptor as? MediaDescriptor.Content)?.isCached != true) {
+                DeleteMediaButton(onClick = {
+                    onDeleteMedia()
+                    onNavigateBack()
+                })
+            }
+        }
+    )
+}
+
+@Composable
+private fun MediaViewer(
+    media: Media,
+    player: ExoPlayer?,
+    playVideo: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    when (media) {
+        is Media.Image -> {
+            val bitmap = media.bitmap
+            ImageFromBitmap(bitmap, modifier)
+        }
+
+        is Media.Video -> {
+            player?.let {
+                VideoPlayer(modifier = modifier, player = it)
+                playVideo()
+            } ?: @Composable {
+                Log.d(TAG, "null player resource for Video Media playback")
+                Text(text = "video playback failed")
+            }
+        }
+
+        Media.None -> {
+            Text(modifier = modifier, text = stringResource(R.string.no_media_available))
+        }
+
+        Media.Error -> {
+            Text(modifier = modifier, text = stringResource(R.string.error_loading_media))
         }
     }
 }
