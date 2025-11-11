@@ -102,19 +102,22 @@ class LocalMediaRepository
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI
             )
 
-        return when {
-            imagePair == null && videoPair == null -> MediaDescriptor.None
-            imagePair == null && videoPair != null -> getVideoMediaDescriptor(videoPair.first)
-            videoPair == null && imagePair != null -> getImageMediaDescriptor(imagePair.first)
-            imagePair != null && videoPair != null -> {
-                if (imagePair.second > videoPair.second) {
-                    getImageMediaDescriptor(imagePair.first)
-                } else {
-                    getVideoMediaDescriptor(videoPair.first)
-                }
+        return if (imagePair != null && videoPair != null) {
+            // Case 1: BOTH exist. Compare dates.
+            if (imagePair.second >= videoPair.second) {
+                getImageMediaDescriptor(imagePair.first)
+            } else {
+                getVideoMediaDescriptor(videoPair.first)
             }
-
-            else -> MediaDescriptor.None // Should not happen
+        } else if (imagePair != null) {
+            // Case 2: Only image exists
+            getImageMediaDescriptor(imagePair.first)
+        } else if (videoPair != null) {
+            // Case 3: Only video exists
+            getVideoMediaDescriptor(videoPair.first)
+        } else {
+            // Case 4: Neither exist
+            MediaDescriptor.None
         }
     }
 
