@@ -16,7 +16,6 @@
 package com.google.jetpackcamera
 
 import android.os.Build
-import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -28,7 +27,6 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
-import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
@@ -37,6 +35,7 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONF
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -74,9 +73,7 @@ class BackgroundDeviceTest {
     @Test
     fun background_foreground() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         backgroundThenForegroundApp()
     }
@@ -84,9 +81,7 @@ class BackgroundDeviceTest {
     @Test
     fun flipCamera_then_background_foreground() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         // Navigate to quick settings
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
@@ -109,9 +104,7 @@ class BackgroundDeviceTest {
     @Test
     fun setAspectRatio_then_background_foreground() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         // Navigate to quick settings
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
@@ -147,9 +140,7 @@ class BackgroundDeviceTest {
         assumeSupportsSingleStream()
 
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         // Navigate to quick settings
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
