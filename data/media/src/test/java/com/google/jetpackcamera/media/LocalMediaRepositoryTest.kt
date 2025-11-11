@@ -28,7 +28,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.jetpackcamera.data.media.LocalMediaRepository
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -61,7 +61,7 @@ class LocalMediaRepositoryTest {
     private lateinit var mockContentResolver: ContentResolver
 
     private lateinit var repository: LocalMediaRepository
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
 
     @Before
     fun setup() {
@@ -200,6 +200,140 @@ class LocalMediaRepositoryTest {
 
         // Then
         assertEquals(MediaDescriptor.None, result)
+    }
+
+    @Test
+    fun getLastCapturedMedia_equalTimestamps_returnsImage() = runTest(testDispatcher) {
+        // Given
+        val imageId = 500L
+        val videoId = 600L
+        val sameTime = 9999L
+
+        mockQuery(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            Pair(imageId, sameTime)
+        )
+        mockQuery(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            Pair(videoId, sameTime)
+        )
+        mockThumbnailCalls()
+
+        // When
+        val result = repository.getLastCapturedMedia()
+
+        // Then
+        assertTrue(
+            "Result should be Image when timestamps are equal",
+            result is MediaDescriptor.Content.Image
+        )
+        assertEquals(
+            ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageId),
+            (result as MediaDescriptor.Content.Image).uri
+        )
+    }
+
+    @Test
+    fun getLastCapturedMedia_onlyImageExists_returnsImage() = runTest(testDispatcher) {
+        // Given
+        val imageId = 700L
+        val imageTime = 10000L
+
+        mockQuery(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            Pair(imageId, imageTime)
+        )
+        mockQuery(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, null) // No video
+        mockThumbnailCalls()
+
+        // When
+        val result = repository.getLastCapturedMedia()
+
+        // Then
+        assertTrue("Result should be Image", result is MediaDescriptor.Content.Image)
+        assertEquals(
+            ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageId),
+            (result as MediaDescriptor.Content.Image).uri
+        )
+    }
+
+    @Test
+    fun getLastCapturedMedia_onlyVideoExists_returnsVideo() = runTest(testDispatcher) {
+        // Given
+        val videoId = 800L
+        val videoTime = 11000L
+
+        mockQuery(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null) // No image
+        mockQuery(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            Pair(videoId, videoTime)
+        )
+        mockThumbnailCalls()
+
+        // When
+        val result = repository.getLastCapturedMedia()
+
+        // Then
+        assertTrue("Result should be Video", result is MediaDescriptor.Content.Video)
+        assertEquals(
+            ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, videoId),
+            (result as MediaDescriptor.Content.Video).uri
+        )
+    }
+
+    @Test
+    fun deleteMedia_nonExistentUri_doesNotThrow() = runTest(testDispatcher) {
+        // Given a URI that looks valid but won't be found by the ContentResolver
+        val nonExistentUri = ContentUris.withAppendedId(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            999L
+        )
+        val mediaToDelete = MediaDescriptor.Content.Image(
+            nonExistentUri,
+            thumbnail = null,
+            isCached = false
+        )
+
+        // Mock the delete call to return 0 (no rows affected)
+        doReturn(0).`when`(mockContentResolver).delete(eq(nonExistentUri), any(), any())
+
+        // When & Then (The test passes if no exception is thrown)
+        repository.deleteMedia(mockContentResolver, mediaToDelete)
+
+        // Verify delete was still called
+        verify(mockContentResolver).delete(eq(nonExistentUri), eq(null), eq(null))
+    }
+
+    @Test
+    fun saveToMediaStore_video_success_returnsNewUri() = runTest(testDispatcher) {
+        // Given
+        val sourceUri = Uri.parse("file://cache/temp.mp4")
+        val mediaDescriptor = MediaDescriptor.Content.Video(
+            sourceUri,
+            thumbnail = null,
+            isCached = true
+        )
+        val newMediaStoreUri = Uri.parse("content://media/external/video/media/102")
+
+        // Mock successful insertion, stream opening, and update
+        doReturn(newMediaStoreUri).`when`(mockContentResolver).insert(any(), any())
+        val mockInputStream = java.io.ByteArrayInputStream("fake video".toByteArray())
+        val mockOutputStream = java.io.ByteArrayOutputStream()
+        doReturn(mockInputStream).`when`(mockContentResolver).openInputStream(sourceUri)
+        doReturn(mockOutputStream).`when`(mockContentResolver).openOutputStream(newMediaStoreUri)
+        doReturn(1).`when`(mockContentResolver).update(eq(newMediaStoreUri), any(), any(), any())
+
+        // When
+        val result = repository.saveToMediaStore(
+            mockContentResolver,
+            mediaDescriptor,
+            "my_video.mp4"
+        )
+
+        // Then
+        assertEquals(newMediaStoreUri, result)
+        assertEquals("fake video", mockOutputStream.toString())
+        verify(mockContentResolver).update(eq(newMediaStoreUri), any(), eq(null), eq(null))
     }
 
     @Test

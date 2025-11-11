@@ -40,6 +40,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
@@ -202,6 +203,83 @@ internal class PostCaptureViewModelTest {
         )
     }
 
+    @Test
+    fun saveCurrentMedia_Success_callsRepositoryAndReturnsTrue() = runTest(testDispatcher) {
+        // Given
+        var onMediaSavedResult: Boolean? = null
+        currentMediaFlow.emit(testCacheImageDesc)
+        advanceUntilIdle()
+
+        `when`(
+            mockMediaRepository.saveToMediaStore(
+                safeAny(ContentResolver::class.java),
+                safeAny(MediaDescriptor.Content::class.java),
+                safeAny(String::class.java)
+            )
+        ).thenReturn(Uri.parse("file:///new_uri"))
+
+        // When
+        viewModel.saveCurrentMedia { onMediaSavedResult = it }
+        advanceUntilIdle()
+
+        // Then
+        verify(mockMediaRepository).saveToMediaStore(
+            safeAny(ContentResolver::class.java),
+            safeEq(testCacheImageDesc),
+            safeAny(String::class.java)
+        )
+        assertThat(onMediaSavedResult).isTrue()
+    }
+
+    @Test
+    fun saveCurrentMedia_Failure_callsRepositoryAndReturnsFalse() = runTest(testDispatcher) {
+        // Given
+        var onMediaSavedResult: Boolean? = null
+        currentMediaFlow.emit(testCacheImageDesc)
+        advanceUntilIdle()
+
+        `when`(
+            mockMediaRepository.saveToMediaStore(
+                safeAny(ContentResolver::class.java),
+                safeAny(MediaDescriptor.Content::class.java),
+                safeAny(String::class.java)
+            )
+        ).thenReturn(null)
+
+        // When
+        viewModel.saveCurrentMedia { onMediaSavedResult = it }
+        advanceUntilIdle()
+
+        // Then
+        verify(mockMediaRepository).saveToMediaStore(
+            safeAny(ContentResolver::class.java),
+            safeEq(testCacheImageDesc),
+            safeAny(String::class.java)
+        )
+        assertThat(onMediaSavedResult).isFalse()
+    }
+
+    @Test
+    fun deleteMedia_callsRepository() = runTest(testDispatcher) {
+        // Given
+        currentMediaFlow.emit(testImageDesc)
+        advanceUntilIdle()
+
+        // When
+        viewModel.deleteMedia(testImageDesc)
+        advanceUntilIdle()
+
+        // Then
+        verify(mockMediaRepository).deleteMedia(
+            safeAny(ContentResolver::class.java),
+            safeEq(testImageDesc)
+        )
+        // Also verify UI state is reset
+        val finalState = viewModel.uiState.value
+        assertThat(finalState.mediaDescriptor).isEqualTo(MediaDescriptor.None)
+        assertThat(finalState.media).isEqualTo(Media.None)
+    }
+
     // Helper to access protected method without extending class
     private fun callOnCleared(viewModel: ViewModel) {
         val onClearedMethod = ViewModel::class.java.getDeclaredMethod("onCleared")
@@ -213,5 +291,10 @@ internal class PostCaptureViewModelTest {
     private fun <T> safeAny(type: Class<T>): T {
         any(type)
         return null as T
+    }
+
+    private fun <T> safeEq(value: T): T {
+        eq(value)
+        return value
     }
 }
