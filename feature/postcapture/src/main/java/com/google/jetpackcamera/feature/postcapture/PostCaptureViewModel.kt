@@ -26,6 +26,7 @@ import androidx.media3.common.Player.COMMAND_PLAY_PAUSE
 import androidx.media3.common.Player.COMMAND_PREPARE
 import androidx.media3.common.Player.COMMAND_SET_MEDIA_ITEM
 import androidx.media3.exoplayer.ExoPlayer
+import com.google.jetpackcamera.core.common.ApplicationScope
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
@@ -35,6 +36,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -47,7 +49,8 @@ private const val TAG = "PostCaptureViewModel"
 @HiltViewModel
 class PostCaptureViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    @ApplicationScope private val applicationScope: CoroutineScope
 ) : ViewModel() {
 
     private val playerState = MutableStateFlow(
@@ -78,29 +81,52 @@ class PostCaptureViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             mediaRepository.currentMedia.filterNotNull().collectLatest { mediaDescriptor ->
-                val mediaDescriptor = mediaDescriptor
                 val media = mediaRepository.load(mediaDescriptor)
+
+                // init with player if current media is a video
+                if (media is Media.Video) {
+                    if (player == null) {
+                        initPlayer()
+                    }
+                }
                 _uiState.update {
                     it.copy(mediaDescriptor = mediaDescriptor, media = media)
                 }
             }
         }
-        initPlayer()
+
+        // release and remove player when not needed
+        viewModelScope.launch {
+            uiState.filterNotNull().collectLatest {
+                when (it.media) {
+                    Media.Error,
+                    is Media.Image,
+                    Media.None -> if (player != null) {
+                        releasePlayer()
+                        player = null
+                    }
+
+                    is Media.Video -> if (player == null) initPlayer()
+                }
+            }
+        }
     }
 
     override fun onCleared() {
-        super.onCleared()
         releasePlayer()
 
         val mediaDescriptor = uiState.value.mediaDescriptor
 
         // todo(kc): improve cache cleanup strategy
         if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
-            viewModelScope.launch {
+            // use application scope for cleanup
+            // coroutine will not be cancelled when ViewModel dies
+            applicationScope.launch {
                 mediaRepository.deleteMedia(context.contentResolver, mediaDescriptor)
                 mediaRepository.setCurrentMedia(MediaDescriptor.None)
             }
         }
+        super.onCleared()
     }
 
     fun updatePlayerState(commands: Player.Commands?) {
