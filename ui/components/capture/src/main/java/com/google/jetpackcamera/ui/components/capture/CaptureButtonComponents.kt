@@ -47,6 +47,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -269,6 +270,37 @@ fun CaptureButton(
     )
 }
 
+/**
+ * A composable that returns a debounced boolean state for whether the capture button should be
+ * visually disabled.
+ *
+ * While the button's semantics and pointer input are disabled immediately, the visual change
+ * to a disabled appearance is delayed. If the button becomes enabled again within this period,
+ * the distracting flicker is avoided.
+ *
+ * @param captureButtonUiState The current UI state of the capture button.
+ * @param delayMillis The duration to wait before visually disabling the button.
+ * @return A [State] holding `true` if the button should be visually disabled, `false` otherwise.
+ */
+@Composable
+private fun rememberDebouncedVisuallyDisabled(
+    captureButtonUiState: CaptureButtonUiState,
+    delayMillis: Long = 1000L
+): State<Boolean> {
+    val isVisuallyDisabled = remember {
+        mutableStateOf(captureButtonUiState is CaptureButtonUiState.Unavailable)
+    }
+    LaunchedEffect(captureButtonUiState) {
+        if (captureButtonUiState is CaptureButtonUiState.Unavailable) {
+            delay(delayMillis)
+            isVisuallyDisabled.value = true
+        } else {
+            isVisuallyDisabled.value = false
+        }
+    }
+    return isVisuallyDisabled
+}
+
 @Composable
 private fun CaptureButton(
     modifier: Modifier = Modifier,
@@ -296,21 +328,9 @@ private fun CaptureButton(
 
     val isEnabled = captureButtonUiState !is CaptureButtonUiState.Unavailable
 
-    var isVisuallyDisabled by remember {
-        mutableStateOf(captureButtonUiState is CaptureButtonUiState.Unavailable)
-    }
-    val currentCaptureButtonUiState = rememberUpdatedState(captureButtonUiState)
-
-    LaunchedEffect(captureButtonUiState) {
-        if (currentCaptureButtonUiState.value is CaptureButtonUiState.Unavailable) {
-            delay(1000)
-            if (currentCaptureButtonUiState.value is CaptureButtonUiState.Unavailable) {
-                isVisuallyDisabled = true
-            }
-        } else {
-            isVisuallyDisabled = false
-        }
-    }
+    val isVisuallyDisabled by rememberDebouncedVisuallyDisabled(
+        captureButtonUiState = captureButtonUiState
+    )
 
     val animatedColor by animateColorAsState(
         targetValue = if (isVisuallyDisabled) {
