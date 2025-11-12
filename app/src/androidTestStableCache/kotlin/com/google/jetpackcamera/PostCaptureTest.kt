@@ -16,7 +16,6 @@
 package com.google.jetpackcamera
 
 import androidx.compose.ui.test.isDisplayed
-import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -50,7 +49,6 @@ import org.junit.Rule
 import org.junit.Test
 
 class PostCaptureTest {
-
     @get:Rule
     val permissionsRule: GrantPermissionRule =
         GrantPermissionRule.grant(*(TEST_REQUIRED_PERMISSIONS).toTypedArray())
@@ -71,6 +69,26 @@ class PostCaptureTest {
         deleteFilesInDirAfterTimestamp(MEDIA_DIR_PATH, instrumentation, timestamp)
         deleteFilesInDirAfterTimestamp(PICTURES_DIR_PATH, instrumentation, timestamp)
         deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, timestamp)
+    }
+
+    private fun enterImageWellAndDelete(recentCaptureViewerTag: String) {
+        // enter postcapture via imagewell
+        composeTestRule.waitUntil { composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).isDisplayed() }
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertExists().performClick()
+
+        // most recent capture tag
+        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(recentCaptureViewerTag).isDisplayed()
+        }
+
+        // delete most recent capture
+        composeTestRule.waitUntil {
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_DELETE).isDisplayed()
+        }
+        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_DELETE).assertExists().performClick()
+
+        // wait for capture button after automatically exiting post capture
+        composeTestRule.waitForCaptureButton()
     }
 
     @Test
@@ -161,23 +179,9 @@ class PostCaptureTest {
         composeTestRule.waitForCaptureButton()
         assertTrue(filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp))
 
-        // enter postcapture via imagewell
-        composeTestRule.waitUntil { composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).isDisplayed() }
-        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertExists().performClick()
+        // enter postcapture via imagewell and delete recent capture
+        enterImageWellAndDelete(VIEWER_POST_CAPTURE_IMAGE)
 
-        // most recent capture should be image
-        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_IMAGE).isDisplayed()
-        }
-
-        // delete most recent capture
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_DELETE).isDisplayed()
-        }
-        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_DELETE).assertExists().performClick()
-
-        // wait for capture button after automatically exiting post capture
-        composeTestRule.waitForCaptureButton()
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
             !filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp)
         }
@@ -215,25 +219,8 @@ class PostCaptureTest {
         composeTestRule.waitForCaptureButton()
         assertTrue(filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp))
 
-        // enter postcapture via imagewell
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).isDisplayed()
-        }
-        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertExists().performClick()
-
-        // most recent capture should be video
-        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_VIDEO).isDisplayed()
-        }
-
-        // delete most recent capture
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_DELETE).isDisplayed()
-        }
-        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_DELETE).assertExists().performClick()
-
-        // wait for capture button after automatically exiting post capture
-        composeTestRule.waitForCaptureButton()
+        // enter postcapture via imagewell and delete recent capture
+        enterImageWellAndDelete(VIEWER_POST_CAPTURE_VIDEO)
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
             !filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp)
         }
