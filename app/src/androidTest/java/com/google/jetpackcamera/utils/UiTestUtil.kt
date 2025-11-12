@@ -223,10 +223,7 @@ fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri = Ur
     )
 )
 
-fun filesExistInDirAfterTimestamp(
-    directoryPath: String,
-    timeStamp: Long
-): Boolean {
+fun filesExistInDirAfterTimestamp(directoryPath: String, timeStamp: Long): Boolean {
     for (file in File(directoryPath).listFiles() ?: emptyArray()) {
         if (file.lastModified() >= timeStamp) {
             return true

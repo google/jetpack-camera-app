@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera
 
 import android.app.Activity
@@ -86,7 +85,7 @@ class CachedImageCaptureDeviceTest {
         composeTestRule.waitForCaptureButton()
     }
 
-    //identical to image_capture_external
+    // identical to image_capture_external
     @Test
     fun singleImageCapture_withIntent_savesImmediate() {
         val timeStamp = System.currentTimeMillis()
@@ -203,7 +202,10 @@ class CachedImageCaptureDeviceTest {
     fun multipleImageCaptureExternal_withNullUriList_returnsResultCancel() {
         val result =
             runMainActivityScenarioTestForResult(
-                getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+                getMultipleImageCaptureIntent(
+                    null,
+                    MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA
+                )
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera
 
 import android.app.Activity
@@ -69,7 +68,11 @@ class CachedVideoRecordingDeviceTest {
         composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_VIDEO).isDisplayed()
         }
-        composeTestRule.waitUntil { composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).isDisplayed() }
+        composeTestRule.waitUntil {
+            composeTestRule.onNodeWithTag(
+                BUTTON_POST_CAPTURE_EXIT
+            ).isDisplayed()
+        }
 
         composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
         composeTestRule.waitForCaptureButton()
