@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.ContentFrame
+import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 import com.google.jetpackcamera.feature.postcapture.R
@@ -91,6 +93,28 @@ fun CancelPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = 
     }
 }
 
+@Composable
+fun ImageFromBitmap(bitmap: Bitmap, modifier: Modifier = Modifier) {
+    Image(
+        bitmap = bitmap.asImageBitmap(),
+        contentDescription = stringResource(R.string.post_capture_image_description),
+        modifier = modifier
+    )
+}
+
+@androidx.annotation.OptIn(UnstableApi::class)
+@Composable
+fun VideoPlayer(player: ExoPlayer, modifier: Modifier = Modifier) {
+    val presentationState = rememberPresentationState(player)
+    PlayerSurface(
+        modifier = modifier.resizeWithContentScale(
+            ContentScale.Fit,
+            presentationState.videoSizeDp
+        ),
+        player = player
+    )
+}
+
 /**
  * A button to save the current media.
  *
@@ -111,6 +135,28 @@ fun SaveCurrentMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         Icon(
             imageVector = Icons.Default.SaveAlt,
             contentDescription = stringResource(R.string.button_save_media_description)
+        )
+    }
+}
+
+@Composable
+fun DeleteMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier
+            .size(56.dp)
+            .shadow(10.dp, CircleShape)
+            .testTag(BUTTON_POST_CAPTURE_DELETE),
+        colors = IconButtonDefaults.iconButtonColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Icon(
+            imageVector = Icons.Default.Delete,
+            contentDescription = stringResource(
+                R.string.button_delete_media_description
+            ),
+            tint = MaterialTheme.colorScheme.onSurface
         )
     }
 }
