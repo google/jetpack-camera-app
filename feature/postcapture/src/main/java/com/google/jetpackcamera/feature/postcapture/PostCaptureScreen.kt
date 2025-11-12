@@ -20,7 +20,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -47,12 +46,13 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SHARE
-import com.google.jetpackcamera.feature.postcapture.ui.CancelPostCaptureButton
-import com.google.jetpackcamera.feature.postcapture.ui.DeleteMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.DeleteCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.ExitPostCaptureButton
 import com.google.jetpackcamera.feature.postcapture.ui.ImageFromBitmap
 import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.VideoPlayer
+import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import java.io.File
 import java.io.FileNotFoundException
 
@@ -76,9 +76,8 @@ fun PostCaptureScreen(
                 viewModel.deleteMedia(it)
             }
         },
-        onSaveMedia = { block ->
-            viewModel.saveCurrentMedia { block(it) }
-        }
+        onSaveMedia = viewModel::saveCurrentMedia,
+        onSnackBarResult = viewModel::onSnackBarResult
     )
 }
 
@@ -88,8 +87,9 @@ fun PostCaptureComponent(
     uiState: PostCaptureUiState,
     onNavigateBack: () -> Unit,
     player: ExoPlayer?,
-    onSaveMedia: ((Boolean) -> Unit) -> Unit,
-    onDeleteMedia: () -> Unit
+    onSaveMedia: () -> Unit,
+    onDeleteMedia: () -> Unit,
+    onSnackBarResult: (String) -> Unit
 ) {
     val context = LocalContext.current
     PostCaptureLayout(
@@ -101,25 +101,14 @@ fun PostCaptureComponent(
             )
         },
         exitButton = {
-            CancelPostCaptureButton(
+            ExitPostCaptureButton(
                 modifier = it,
                 onExitPostCapture = onNavigateBack
             )
         },
         saveButton = {
-            val saveSuccessString = stringResource(R.string.toast_save_success)
-            val saveFailureString = stringResource(R.string.toast_save_failure)
             SaveCurrentMediaButton(modifier = it, onClick = {
-                // FIXME(kc): set up proper save events
-                onSaveMedia { isSaved ->
-                    if (isSaved) {
-                        Toast.makeText(context, saveSuccessString, Toast.LENGTH_SHORT)
-                            .show()
-                    } else {
-                        Toast.makeText(context, saveFailureString, Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                }
+                onSaveMedia()
             })
         },
         shareButton = {
@@ -147,10 +136,22 @@ fun PostCaptureComponent(
         },
         deleteButton = {
             if ((uiState.mediaDescriptor as? MediaDescriptor.Content)?.isCached != true) {
-                DeleteMediaButton(onClick = {
+                DeleteCurrentMediaButton(onClick = {
                     onDeleteMedia()
                     onNavigateBack()
                 })
+            }
+        },
+        snackBar = {
+                modifier, snackbarHostState ->
+            val snackBarData = uiState.snackBarUiState.snackBarQueue.peek()
+            if (snackBarData != null) {
+                TestableSnackbar(
+                    modifier = modifier.testTag(snackBarData.testTag),
+                    snackbarToShow = snackBarData,
+                    snackbarHostState = snackbarHostState,
+                    onSnackbarResult = onSnackBarResult
+                )
             }
         }
     )
@@ -161,7 +162,7 @@ private fun MediaViewer(media: Media, player: ExoPlayer?, modifier: Modifier = M
     when (media) {
         is Media.Image -> {
             val bitmap = media.bitmap
-            ImageFromBitmap(bitmap, modifier)
+            ImageFromBitmap(modifier, bitmap)
         }
 
         is Media.Video -> {
