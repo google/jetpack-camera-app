@@ -127,22 +127,34 @@ class LocalMediaRepository
     override suspend fun deleteMedia(
         contentResolver: ContentResolver,
         mediaDescriptor: MediaDescriptor.Content
-    ) {
+    ): Boolean {
         if (mediaDescriptor.isCached) {
-            deleteCachedMedia(mediaDescriptor)
-            Log.d(TAG, "deleted cached media")
+            val isDeleted = deleteCachedMedia(mediaDescriptor)
+            return if (isDeleted) {
+                Log.d(TAG, "deleted cached media")
+                true
+            } else {
+                Log.d(TAG, "failed to delete cached media")
+                false
+            }
         } else {
-            contentResolver.delete(mediaDescriptor.uri, null, null)
-            Log.d(TAG, "deleted saved media")
+            val deletedRows = contentResolver.delete(mediaDescriptor.uri, null, null)
+            return if (deletedRows >= 1) {
+                Log.d(TAG, "deleted saved media rows: \n ${mediaDescriptor.uri} \n $deletedRows")
+                true
+            } else {
+                Log.d(TAG, "failed to delete saved media")
+
+                false
+            }
         }
     }
 
     /**
      * Deletes a cached media file.
      */
-    private fun deleteCachedMedia(mediaDescriptor: MediaDescriptor.Content) {
+    private fun deleteCachedMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
         mediaDescriptor.uri.toFile().delete()
-    }
 
     /**
      * Copies the content of a media descriptor to a specified destination URI.

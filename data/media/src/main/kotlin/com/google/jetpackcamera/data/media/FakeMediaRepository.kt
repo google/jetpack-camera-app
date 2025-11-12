@@ -42,7 +42,8 @@ object FakeMediaRepository : MediaRepository {
     override suspend fun deleteMedia(
         contentResolver: ContentResolver,
         mediaDescriptor: MediaDescriptor.Content
-    ) {
+    ): Boolean {
+        return true
     }
 
     override suspend fun saveToMediaStore(
