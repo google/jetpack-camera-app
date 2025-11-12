@@ -240,11 +240,18 @@ class PostCaptureViewModel @Inject constructor(
                         addSnackBarData(
                             SnackbarData(
                                 cookie = cookie,
-                                stringResource = R.string.snackbar_save_success,
+                                stringResource = when (it) {
+                                    is MediaDescriptor.Content.Image ->
+                                        R.string.snackbar_save_image_success
+
+                                    is MediaDescriptor.Content.Video ->
+                                        R.string.snackbar_save_video_success
+                                },
                                 withDismissAction = true,
                                 testTag = when (it) {
                                     is MediaDescriptor.Content.Image ->
                                         SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS
+
                                     is MediaDescriptor.Content.Video ->
                                         SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
                                 }
@@ -255,7 +262,13 @@ class PostCaptureViewModel @Inject constructor(
                     addSnackBarData(
                         SnackbarData(
                             cookie = cookie,
-                            stringResource = R.string.snackbar_save_failure,
+                            stringResource = when (it) {
+                                is MediaDescriptor.Content.Image ->
+                                    R.string.snackbar_save_image_failure
+
+                                is MediaDescriptor.Content.Video ->
+                                    R.string.snackbar_save_video_failure
+                            },
                             withDismissAction = true,
                             testTag = when (it) {
                                 is MediaDescriptor.Content.Image ->
@@ -302,11 +315,18 @@ class PostCaptureViewModel @Inject constructor(
                 addSnackBarData(
                     SnackbarData(
                         cookie = cookie,
-                        stringResource = R.string.snackbar_delete_failure,
+                        stringResource = when (mediaDescriptor) {
+                            is MediaDescriptor.Content.Image ->
+                                R.string.snackbar_delete_image_failure
+
+                            is MediaDescriptor.Content.Video ->
+                                R.string.snackbar_delete_video_failure
+                        },
                         withDismissAction = true,
                         testTag = when (mediaDescriptor) {
                             is MediaDescriptor.Content.Image ->
                                 SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE
+
                             is MediaDescriptor.Content.Video ->
                                 SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
                         }
