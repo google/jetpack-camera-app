@@ -97,7 +97,7 @@ fun PostCaptureComponent(
             MediaViewer(
                 modifier = it,
                 media = uiState.media,
-                player = player,
+                player = player
             )
         },
         exitButton = {
@@ -157,11 +157,7 @@ fun PostCaptureComponent(
 }
 
 @Composable
-private fun MediaViewer(
-    media: Media,
-    player: ExoPlayer?,
-    modifier: Modifier = Modifier
-) {
+private fun MediaViewer(media: Media, player: ExoPlayer?, modifier: Modifier = Modifier) {
     when (media) {
         is Media.Image -> {
             val bitmap = media.bitmap
