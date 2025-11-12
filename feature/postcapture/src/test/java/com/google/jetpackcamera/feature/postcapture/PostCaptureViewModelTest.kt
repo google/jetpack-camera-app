@@ -204,9 +204,7 @@ internal class PostCaptureViewModelTest {
     }
 
     @Test
-    fun saveCurrentMedia_Success_callsRepositoryAndReturnsTrue() = runTest(testDispatcher) {
-        // Given
-        var onMediaSavedResult: Boolean? = null
+    fun saveMedia_Success_callsRepositoryAndReturnsTrue() = runTest(testDispatcher) {
         currentMediaFlow.emit(testCacheImageDesc)
         advanceUntilIdle()
 
@@ -219,7 +217,11 @@ internal class PostCaptureViewModelTest {
         ).thenReturn(Uri.parse("file:///new_uri"))
 
         // When
-        viewModel.saveCurrentMedia { onMediaSavedResult = it }
+        // Given
+        val onMediaSavedResult: Uri? =
+            (viewModel.uiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
+                viewModel.saveMedia(it)
+            }
         advanceUntilIdle()
 
         // Then
@@ -228,13 +230,12 @@ internal class PostCaptureViewModelTest {
             safeEq(testCacheImageDesc),
             safeAny(String::class.java)
         )
-        assertThat(onMediaSavedResult).isTrue()
+        assertThat(onMediaSavedResult).isNotNull()
     }
 
     @Test
-    fun saveCurrentMedia_Failure_callsRepositoryAndReturnsFalse() = runTest(testDispatcher) {
+    fun saveMedia_Failure_callsRepositoryAndReturnsFalse() = runTest(testDispatcher) {
         // Given
-        var onMediaSavedResult: Boolean? = null
         currentMediaFlow.emit(testCacheImageDesc)
         advanceUntilIdle()
 
@@ -247,7 +248,10 @@ internal class PostCaptureViewModelTest {
         ).thenReturn(null)
 
         // When
-        viewModel.saveCurrentMedia { onMediaSavedResult = it }
+        val onMediaSavedResult: Uri? =
+            (viewModel.uiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
+                viewModel.saveMedia(it)
+            }
         advanceUntilIdle()
 
         // Then
@@ -256,7 +260,7 @@ internal class PostCaptureViewModelTest {
             safeEq(testCacheImageDesc),
             safeAny(String::class.java)
         )
-        assertThat(onMediaSavedResult).isFalse()
+        assertThat(onMediaSavedResult).isNull()
     }
 
     @Test
