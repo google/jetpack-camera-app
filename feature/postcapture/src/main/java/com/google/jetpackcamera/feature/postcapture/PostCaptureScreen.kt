@@ -71,7 +71,6 @@ fun PostCaptureScreen(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         player = viewModel.player,
-        playVideo = viewModel::playVideo,
         onDeleteMedia = {
             (uiState.mediaDescriptor as? MediaDescriptor.Content)?.let {
                 viewModel.deleteMedia(it)
@@ -88,8 +87,7 @@ fun PostCaptureScreen(
 fun PostCaptureComponent(
     uiState: PostCaptureUiState,
     onNavigateBack: () -> Unit,
-    player: ExoPlayer,
-    playVideo: () -> Unit,
+    player: ExoPlayer?,
     onSaveMedia: ((Boolean) -> Unit) -> Unit,
     onDeleteMedia: () -> Unit
 ) {
@@ -100,7 +98,6 @@ fun PostCaptureComponent(
                 modifier = it,
                 media = uiState.media,
                 player = player,
-                playVideo = playVideo
             )
         },
         exitButton = {
@@ -163,7 +160,6 @@ fun PostCaptureComponent(
 private fun MediaViewer(
     media: Media,
     player: ExoPlayer?,
-    playVideo: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     when (media) {
@@ -175,7 +171,6 @@ private fun MediaViewer(
         is Media.Video -> {
             player?.let {
                 VideoPlayer(modifier = modifier, player = it)
-                playVideo()
             } ?: @Composable {
                 Log.d(TAG, "null player resource for Video Media playback")
                 Text(text = "video playback failed")
@@ -206,6 +201,7 @@ private fun shareMedia(context: Context, mediaDescriptor: MediaDescriptor.Conten
         is MediaDescriptor.Content.Video -> "video/mp4"
     }
 
+    // if the uri isn't already managed by a content provider, we will need
     val contentUri: Uri =
         if (uri.scheme == ContentResolver.SCHEME_CONTENT) uri else getShareableUri(context, uri)
 

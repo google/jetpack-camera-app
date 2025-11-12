@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.feature.postcapture.ui
 
 import android.graphics.Bitmap
+import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -38,10 +39,35 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.compose.ContentFrame
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 import com.google.jetpackcamera.feature.postcapture.R
+
+@Composable
+fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap?) {
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = stringResource(R.string.post_capture_image_description),
+            modifier = modifier
+        )
+    }
+}
+
+@OptIn(UnstableApi::class)
+@Composable
+fun VideoPlayer(modifier: Modifier, player: ExoPlayer?) {
+    val presentationState = rememberPresentationState(player)
+    ContentFrame(
+        modifier = modifier.resizeWithContentScale(
+            ContentScale.Fit,
+            presentationState.videoSizeDp
+        ),
+        player = player
+    )
+}
 
 /**
  * A button to exit post capture.

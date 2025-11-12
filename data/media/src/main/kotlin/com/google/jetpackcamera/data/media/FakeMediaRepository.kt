@@ -17,16 +17,18 @@ package com.google.jetpackcamera.data.media
 
 import android.content.ContentResolver
 import android.net.Uri
+import androidx.core.net.toUri
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 object FakeMediaRepository : MediaRepository {
-    override val currentMedia = MutableStateFlow<MediaDescriptor>(
-        MediaDescriptor.None
-    )
+    private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
+
+    override val currentMedia = _currentMedia.asStateFlow()
 
     override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
-        currentMedia.update { pendingMedia }
+        _currentMedia.update { pendingMedia }
     }
 
     override suspend fun getLastCapturedMedia(): MediaDescriptor {
@@ -41,7 +43,6 @@ object FakeMediaRepository : MediaRepository {
         contentResolver: ContentResolver,
         mediaDescriptor: MediaDescriptor.Content
     ) {
-        TODO("Not yet implemented")
     }
 
     override suspend fun saveToMediaStore(
@@ -49,7 +50,10 @@ object FakeMediaRepository : MediaRepository {
         mediaDescriptor: MediaDescriptor.Content,
         filename: String
     ): Uri? {
-        TODO("Not yet implemented")
+        return when (mediaDescriptor) {
+            is MediaDescriptor.Content.Image -> "img.jpg".toUri()
+            is MediaDescriptor.Content.Video -> "video.mp4".toUri()
+        }
     }
 
     override suspend fun copyToUri(
@@ -57,6 +61,5 @@ object FakeMediaRepository : MediaRepository {
         mediaDescriptor: MediaDescriptor.Content,
         destinationUri: Uri
     ) {
-        TODO("Not yet implemented")
     }
 }

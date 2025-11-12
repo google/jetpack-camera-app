@@ -77,6 +77,11 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.truth)
