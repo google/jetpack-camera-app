@@ -31,14 +31,14 @@ import android.util.Size
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.File
-import java.io.IOException
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.IOException
+import javax.inject.Inject
 
 private const val TAG = "LocalMediaRepository"
 private const val IMAGE_MIME_TYPE = "image/jpeg"
@@ -222,12 +222,11 @@ class LocalMediaRepository
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, outputFilename)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-
+            put(
+                MediaStore.MediaColumns.RELATIVE_PATH,
+                Environment.DIRECTORY_DCIM + File.separator + "Camera"
+            )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(
-                    MediaStore.MediaColumns.RELATIVE_PATH,
-                    Environment.DIRECTORY_DCIM + File.separator + "Camera"
-                )
                 // Mark as "pending" so the file isn't visible until we're done writing
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }

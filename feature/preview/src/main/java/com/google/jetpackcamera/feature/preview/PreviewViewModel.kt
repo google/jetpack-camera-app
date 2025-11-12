@@ -93,8 +93,6 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.LinkedList
-import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -113,6 +111,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.LinkedList
+import javax.inject.Inject
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -414,7 +414,7 @@ class PreviewViewModel @Inject constructor(
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.copy(
                     imageWellUiState =
-                    ImageWellUiState.from(lastCapturedMediaDescriptor)
+                        ImageWellUiState.from(lastCapturedMediaDescriptor)
                 ) ?: old
             }
         }
@@ -579,12 +579,6 @@ class PreviewViewModel @Inject constructor(
     }
 
     private fun nextSaveLocation(saveMode: SaveMode): Pair<SaveLocation, IntProgress?> {
-        val defaultSaveLocation =
-            if (saveMode is SaveMode.CacheAndReview) {
-                SaveLocation.Cache(saveMode.cacheDir)
-            } else {
-                SaveLocation.Default
-            }
 
         return when (externalCaptureMode) {
             ExternalCaptureMode.ImageCapture,
@@ -601,12 +595,19 @@ class PreviewViewModel @Inject constructor(
                         progress
                     )
                 } else {
-                    Pair(defaultSaveLocation, null)
+                    Pair(SaveLocation.Default, null)
                 }
             }
 
-            ExternalCaptureMode.Standard ->
+            ExternalCaptureMode.Standard -> {
+                val defaultSaveLocation =
+                    if ( saveMode is SaveMode.CacheAndReview) {
+                        SaveLocation.Cache(saveMode.cacheDir)
+                    } else {
+                        SaveLocation.Default
+                    }
                 Pair(defaultSaveLocation, null)
+            }
         }
     }
 
@@ -657,7 +658,7 @@ class PreviewViewModel @Inject constructor(
                     val event = if (progress != null) {
                         ImageCaptureEvent.SequentialImageSaved(savedUri, progress)
                     } else {
-                        if (saveMode is SaveMode.CacheAndReview) {
+                        if (saveLocation is SaveLocation.Cache) {
                             ImageCaptureEvent.SingleImageCached(savedUri)
                         } else {
                             ImageCaptureEvent.SingleImageSaved(savedUri)
@@ -823,7 +824,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     /**
-     "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
+    "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
     fun setLockedRecording(isLocked: Boolean) {
         trackedPreviewUiState.update { old ->

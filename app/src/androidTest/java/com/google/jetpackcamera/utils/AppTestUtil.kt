@@ -56,6 +56,9 @@ internal val MOVIES_DIR_PATH: String = Environment.getExternalStoragePublicDirec
     Environment.DIRECTORY_MOVIES
 ).path
 
+internal val MEDIA_DIR_PATH:String = Environment.getExternalStoragePublicDirectory(
+    Environment.DIRECTORY_DCIM
+).path
 fun mediaStoreInsertedFlow(
     mediaUri: Uri,
     instrumentation: Instrumentation,

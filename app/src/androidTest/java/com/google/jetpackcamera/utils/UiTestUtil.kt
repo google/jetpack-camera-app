@@ -93,6 +93,7 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     expectedNumFiles: Int = 1,
     fileWaitTimeoutMs: Duration = 10.seconds,
     fileObserverContext: CoroutineContext = Dispatchers.IO,
+    extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
 ) = runBlocking {
     val debugTag = "MediaStoreAutoDelete"
@@ -112,7 +113,7 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
 
     var succeeded = false
     try {
-        runMainActivityScenarioTest(block = block)
+        runMainActivityScenarioTest(extras = extras, block = block)
         succeeded = true
     } finally {
         withContext(NonCancellable) {
@@ -221,6 +222,18 @@ fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri = Ur
         "$timeStamp.$suffix"
     )
 )
+
+fun filesExistInDirAfterTimestamp(
+    directoryPath: String,
+    timeStamp: Long
+): Boolean {
+    for (file in File(directoryPath).listFiles() ?: emptyArray()) {
+        if (file.lastModified() >= timeStamp) {
+            return true
+        }
+    }
+    return false
+}
 
 /**
  * @return - true if all eligible files were successfully deleted. False otherwise
