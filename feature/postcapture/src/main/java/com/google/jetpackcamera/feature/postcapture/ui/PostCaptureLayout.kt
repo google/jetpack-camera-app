@@ -21,8 +21,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
@@ -33,59 +38,70 @@ fun PostCaptureLayout(
     exitButton: @Composable (Modifier) -> Unit,
     saveButton: @Composable (Modifier) -> Unit,
     shareButton: @Composable (Modifier) -> Unit,
-    deleteButton: @Composable (Modifier) -> Unit
+    deleteButton: @Composable (Modifier) -> Unit,
+    snackBar: @Composable (Modifier, SnackbarHostState) -> Unit
 ) {
-    Box(
-        modifier = modifier.fillMaxSize()
-    ) {
-        // Layer 1: Media Surface
-        // Occupies the full screen background
-        mediaSurface(
-            Modifier
-                .fillMaxSize()
-                .align(Alignment.Center)
-        )
+    val snackbarHostState = remember { SnackbarHostState() }
 
-        // Layer 2: PostCapture Controls
-        // Uses SpaceBetween to push two rows to the absolute edges
-        Column(
-            modifier = Modifier
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { paddingValues ->
+        Box(
+            modifier = modifier
                 .fillMaxSize()
-                .safeContentPadding(),
-            verticalArrangement = Arrangement.SpaceBetween
+                .padding(paddingValues)
         ) {
-            // Top Bar Area
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
-            ) {
-                exitButton(Modifier)
-            }
+            // Layer 1: Media Surface
+            // Occupies the full screen background
+            mediaSurface(
+                Modifier
+                    .fillMaxSize()
+                    .align(Alignment.Center)
+            )
 
-            // Bottom Bar Area
-            // Using a Row with SpaceBetween to separate negative (left) from positive (right) actions
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Layer 2: PostCapture Controls
+            // Uses SpaceBetween to push two rows to the absolute edges
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .safeContentPadding(),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Negative actions on the left
+                // Top Bar Area
                 Row(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start
                 ) {
-                    deleteButton(Modifier)
+                    exitButton(Modifier)
                 }
 
-                // Positive actions on the right
+                // Bottom Bar Area
+                // Using a Row with SpaceBetween to separate negative (left) from positive (right) actions
                 Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.End
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    saveButton(Modifier)
-                    shareButton(Modifier)
+                    // Negative actions on the left
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        deleteButton(Modifier)
+                    }
+
+                    // Positive actions on the right
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        saveButton(Modifier)
+                        shareButton(Modifier)
+                    }
                 }
             }
+            snackBar(Modifier, snackbarHostState)
         }
     }
 }

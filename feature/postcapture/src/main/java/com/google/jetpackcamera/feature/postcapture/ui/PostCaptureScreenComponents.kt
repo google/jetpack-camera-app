@@ -51,7 +51,7 @@ fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap?) {
         Image(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = stringResource(R.string.post_capture_image_description),
-            modifier = modifier
+            modifier = modifier.testTag(VIEWER_POST_CAPTURE_IMAGE)
         )
     }
 }
@@ -61,10 +61,12 @@ fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap?) {
 fun VideoPlayer(modifier: Modifier, player: ExoPlayer?) {
     val presentationState = rememberPresentationState(player)
     ContentFrame(
-        modifier = modifier.resizeWithContentScale(
-            ContentScale.Fit,
-            presentationState.videoSizeDp
-        ),
+        modifier = modifier
+            .testTag(VIEWER_POST_CAPTURE_VIDEO)
+            .resizeWithContentScale(
+                ContentScale.Fit,
+                presentationState.videoSizeDp
+            ),
         player = player
     )
 }
