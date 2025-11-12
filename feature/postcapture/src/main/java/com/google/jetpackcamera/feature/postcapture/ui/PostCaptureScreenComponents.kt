@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.ContentFrame
-import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 import com.google.jetpackcamera.feature.postcapture.R
@@ -51,7 +50,7 @@ fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap?) {
         Image(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = stringResource(R.string.post_capture_image_description),
-            modifier = modifier
+            modifier = modifier.testTag(VIEWER_POST_CAPTURE_IMAGE)
         )
     }
 }
@@ -61,10 +60,12 @@ fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap?) {
 fun VideoPlayer(modifier: Modifier, player: ExoPlayer?) {
     val presentationState = rememberPresentationState(player)
     ContentFrame(
-        modifier = modifier.resizeWithContentScale(
-            ContentScale.Fit,
-            presentationState.videoSizeDp
-        ),
+        modifier = modifier
+            .testTag(VIEWER_POST_CAPTURE_VIDEO)
+            .resizeWithContentScale(
+                ContentScale.Fit,
+                presentationState.videoSizeDp
+            ),
         player = player
     )
 }
@@ -76,7 +77,7 @@ fun VideoPlayer(modifier: Modifier, player: ExoPlayer?) {
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun CancelPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = Modifier) {
+fun ExitPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(
         modifier = modifier
             .size(56.dp)
@@ -91,28 +92,6 @@ fun CancelPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = 
             contentDescription = stringResource(R.string.button_exit_description)
         )
     }
-}
-
-@Composable
-fun ImageFromBitmap(bitmap: Bitmap, modifier: Modifier = Modifier) {
-    Image(
-        bitmap = bitmap.asImageBitmap(),
-        contentDescription = stringResource(R.string.post_capture_image_description),
-        modifier = modifier
-    )
-}
-
-@androidx.annotation.OptIn(UnstableApi::class)
-@Composable
-fun VideoPlayer(player: ExoPlayer, modifier: Modifier = Modifier) {
-    val presentationState = rememberPresentationState(player)
-    PlayerSurface(
-        modifier = modifier.resizeWithContentScale(
-            ContentScale.Fit,
-            presentationState.videoSizeDp
-        ),
-        player = player
-    )
 }
 
 /**
@@ -140,7 +119,7 @@ fun SaveCurrentMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun DeleteMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun DeleteCurrentMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(
         onClick = onClick,
         modifier = modifier

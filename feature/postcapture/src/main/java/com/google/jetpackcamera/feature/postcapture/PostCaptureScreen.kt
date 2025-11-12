@@ -47,8 +47,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SHARE
-import com.google.jetpackcamera.feature.postcapture.ui.CancelPostCaptureButton
-import com.google.jetpackcamera.feature.postcapture.ui.DeleteMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.DeleteCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.ExitPostCaptureButton
 import com.google.jetpackcamera.feature.postcapture.ui.ImageFromBitmap
 import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
@@ -101,7 +101,7 @@ fun PostCaptureComponent(
             )
         },
         exitButton = {
-            CancelPostCaptureButton(
+            ExitPostCaptureButton(
                 modifier = it,
                 onExitPostCapture = onNavigateBack
             )
@@ -147,7 +147,7 @@ fun PostCaptureComponent(
         },
         deleteButton = {
             if ((uiState.mediaDescriptor as? MediaDescriptor.Content)?.isCached != true) {
-                DeleteMediaButton(onClick = {
+                DeleteCurrentMediaButton(onClick = {
                     onDeleteMedia()
                     onNavigateBack()
                 })
@@ -161,7 +161,7 @@ private fun MediaViewer(media: Media, player: ExoPlayer?, modifier: Modifier = M
     when (media) {
         is Media.Image -> {
             val bitmap = media.bitmap
-            ImageFromBitmap(bitmap, modifier)
+            ImageFromBitmap(modifier, bitmap)
         }
 
         is Media.Video -> {
