@@ -121,7 +121,10 @@ class PostCaptureViewModel @Inject constructor(
                         player = null
                     }
 
-                    is Media.Video -> if (player == null) initPlayer()
+                    is Media.Video -> {
+                        if (player == null) initPlayer()
+                        loadCurrentVideo()
+                    }
                 }
             }
         }
