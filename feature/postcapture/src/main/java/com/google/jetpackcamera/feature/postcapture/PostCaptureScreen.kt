@@ -168,8 +168,8 @@ private fun MediaViewer(media: Media, player: ExoPlayer?, modifier: Modifier = M
             player?.let {
                 VideoPlayer(modifier = modifier, player = it)
             } ?: @Composable {
-                Log.d(TAG, "null player resource for Video Media playback")
-                Text(text = "video playback failed")
+                Log.w(TAG, "null player resource for Video Media playback")
+                Text(modifier = modifier, text = stringResource(R.string.player_unavailable))
             }
         }
 
