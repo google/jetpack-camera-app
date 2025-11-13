@@ -42,6 +42,11 @@ import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.LinkedList
+import java.util.Locale
+import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,11 +55,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.LinkedList
-import java.util.Locale
-import javax.inject.Inject
 
 private const val TAG = "PostCaptureViewModel"
 
@@ -243,11 +243,11 @@ class PostCaptureViewModel @Inject constructor(
                         val (stringResource, testTag) = when (it) {
                             is MediaDescriptor.Content.Image ->
                                 R.string.snackbar_save_image_success to
-                                        SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS
+                                    SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS
 
                             is MediaDescriptor.Content.Video ->
                                 R.string.snackbar_save_video_success to
-                                        SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
+                                    SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
                         }
 
                         addSnackBarData(
@@ -265,11 +265,11 @@ class PostCaptureViewModel @Inject constructor(
                         val (stringResource, testTag) = when (it) {
                             is MediaDescriptor.Content.Image ->
                                 R.string.snackbar_save_image_failure to
-                                        SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
+                                    SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
 
                             is MediaDescriptor.Content.Video ->
                                 R.string.snackbar_save_video_failure to
-                                        SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
+                                    SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
                         }
 
                         addSnackBarData(
@@ -282,14 +282,15 @@ class PostCaptureViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
-                    //todo: custom message depending on failure reason
+                    // todo: custom message depending on failure reason
                     val (stringResource, testTag) = when (it) {
                         is MediaDescriptor.Content.Image ->
                             R.string.snackbar_save_image_failure to
-                                    SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
+                                SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
 
                         is MediaDescriptor.Content.Video ->
-                            R.string.snackbar_save_video_failure to SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
+                            R.string.snackbar_save_video_failure to
+                                SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
                     }
 
                     addSnackBarData(
@@ -336,11 +337,11 @@ class PostCaptureViewModel @Inject constructor(
                 val (stringResource, testTag) = when (mediaDescriptor) {
                     is MediaDescriptor.Content.Image ->
                         R.string.snackbar_delete_image_failure to
-                                SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE
+                            SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE
 
                     is MediaDescriptor.Content.Video ->
                         R.string.snackbar_delete_video_failure to
-                                SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
+                            SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
                 }
                 addSnackBarData(
                     SnackbarData(
@@ -374,7 +375,6 @@ class PostCaptureViewModel @Inject constructor(
                 val newQueue = LinkedList(old.snackBarUiState.snackBarQueue)
                 val snackBarData = newQueue.poll()
                 if (snackBarData != null && snackBarData.cookie == cookie) {
-                    newQueue.remove()
                     // If the latest snackBar had a result, then clear snackBarToShow
                     Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
                     old.copy(
