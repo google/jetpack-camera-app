@@ -59,7 +59,6 @@ class LocalMediaRepositoryTest {
 
     @Mock
     private lateinit var mockContentResolver: ContentResolver
-
     private lateinit var repository: LocalMediaRepository
     private val testDispatcher = StandardTestDispatcher()
 
@@ -71,6 +70,12 @@ class LocalMediaRepositoryTest {
         context = spy(ApplicationProvider.getApplicationContext<Context>())
         doReturn(mockContentResolver).`when`(context).contentResolver
 
+        // stub loadThumbnail
+        doReturn(mock(Bitmap::class.java)).`when`(mockContentResolver).loadThumbnail(
+            any<Uri>(),
+            any<Size>(),
+            any()
+        )
         repository = LocalMediaRepository(context, testDispatcher)
     }
 
@@ -146,8 +151,6 @@ class LocalMediaRepositoryTest {
             Pair(newerVideoId, newerVideoTime)
         )
 
-        mockThumbnailCalls()
-
         // When
         val result = repository.getLastCapturedMedia()
 
@@ -176,7 +179,6 @@ class LocalMediaRepositoryTest {
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             Pair(olderVideoId, olderVideoTime)
         )
-        mockThumbnailCalls()
 
         // When
         val result = repository.getLastCapturedMedia()
@@ -217,7 +219,6 @@ class LocalMediaRepositoryTest {
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             Pair(videoId, sameTime)
         )
-        mockThumbnailCalls()
 
         // When
         val result = repository.getLastCapturedMedia()
@@ -244,7 +245,6 @@ class LocalMediaRepositoryTest {
             Pair(imageId, imageTime)
         )
         mockQuery(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, null) // No video
-        mockThumbnailCalls()
 
         // When
         val result = repository.getLastCapturedMedia()
@@ -268,7 +268,6 @@ class LocalMediaRepositoryTest {
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             Pair(videoId, videoTime)
         )
-        mockThumbnailCalls()
 
         // When
         val result = repository.getLastCapturedMedia()
@@ -444,18 +443,5 @@ class LocalMediaRepositoryTest {
             any(), // selectionArgs
             anyString() // sortOrder
         )
-    }
-
-    private fun mockThumbnailCalls() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                // Return a numb mock bitmap to prevent null checks failing
-                doReturn(mock(Bitmap::class.java)).`when`(mockContentResolver).loadThumbnail(
-                    any<Uri>(),
-                    any<Size>(),
-                    any()
-                )
-            } catch (e: Exception) { }
-        }
     }
 }
