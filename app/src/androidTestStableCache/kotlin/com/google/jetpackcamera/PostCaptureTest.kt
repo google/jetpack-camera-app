@@ -30,9 +30,10 @@ import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
 import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_VIDEO
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.IMAGE_WELL_TAG
-import com.google.jetpackcamera.utils.MEDIA_DIR_PATH
+import com.google.jetpackcamera.utils.JCA_MEDIA_DIR_PATH
 import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
 import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
+import com.google.jetpackcamera.utils.SAVE_MEDIA_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.debugExtra
@@ -66,7 +67,7 @@ class PostCaptureTest {
 
     @After
     fun cleanup() {
-        deleteFilesInDirAfterTimestamp(MEDIA_DIR_PATH, instrumentation, timestamp)
+        deleteFilesInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, instrumentation, timestamp)
         deleteFilesInDirAfterTimestamp(PICTURES_DIR_PATH, instrumentation, timestamp)
         deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, timestamp)
     }
@@ -109,10 +110,10 @@ class PostCaptureTest {
         composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
 
         // Wait for image save success message
-        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS).isDisplayed()
         }
-        assertTrue(filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp))
+        assertTrue(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
     }
 
     @Test
@@ -129,7 +130,7 @@ class PostCaptureTest {
             composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).isDisplayed()
         }
 
-        assertFalse(filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp))
+        assertFalse(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
 
         // save video
         composeTestRule.waitUntil {
@@ -142,7 +143,7 @@ class PostCaptureTest {
             composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS).isDisplayed()
         }
 
-        assertTrue(filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp))
+        assertTrue(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
 
         composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
         composeTestRule.waitForCaptureButton()
@@ -155,11 +156,11 @@ class PostCaptureTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
 
         // navigate to postcapture screen
-        composeTestRule.waitUntil(timeoutMillis = 5_000L) {
+        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_IMAGE).isDisplayed()
         }
 
-        assertFalse(filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp))
+        assertFalse(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
 
         composeTestRule.waitUntil {
             composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
@@ -168,7 +169,7 @@ class PostCaptureTest {
         composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
 
         // Wait for image save success message
-        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS).isDisplayed()
         }
 
@@ -177,13 +178,13 @@ class PostCaptureTest {
 
         // wait for capture button after navigating out of postcapture
         composeTestRule.waitForCaptureButton()
-        assertTrue(filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp))
+        assertTrue(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
 
         // enter postcapture via imagewell and delete recent capture
         enterImageWellAndDelete(VIEWER_POST_CAPTURE_IMAGE)
 
-        composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            !filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp)
+        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
+            !filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp)
         }
     }
 
@@ -194,11 +195,11 @@ class PostCaptureTest {
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
         // navigate to postcapture screen
-        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_VIDEO).isDisplayed()
         }
 
-        assertFalse(filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp))
+        assertFalse(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
 
         composeTestRule.waitUntil {
             composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
@@ -208,7 +209,7 @@ class PostCaptureTest {
         composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
 
         // Wait for video save success message
-        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS).isDisplayed()
         }
 
@@ -217,12 +218,12 @@ class PostCaptureTest {
 
         // wait for capture button after navigating out of postcapture
         composeTestRule.waitForCaptureButton()
-        assertTrue(filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp))
+        assertTrue(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
 
         // enter postcapture via imagewell and delete recent capture
         enterImageWellAndDelete(VIEWER_POST_CAPTURE_VIDEO)
-        composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            !filesExistInDirAfterTimestamp(MEDIA_DIR_PATH, timestamp)
+        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
+            !filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp)
         }
     }
 }

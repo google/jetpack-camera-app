@@ -234,11 +234,12 @@ class LocalMediaRepository
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, outputFilename)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(
-                MediaStore.MediaColumns.RELATIVE_PATH,
-                Environment.DIRECTORY_DCIM + File.separator + "Camera"
-            )
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(
+                    MediaStore.MediaColumns.RELATIVE_PATH,
+                    Environment.DIRECTORY_DCIM + File.separator + "Camera"
+                )
                 // Mark as "pending" so the file isn't visible until we're done writing
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
