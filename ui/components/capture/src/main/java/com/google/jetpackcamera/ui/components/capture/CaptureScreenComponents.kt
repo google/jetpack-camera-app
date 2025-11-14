@@ -412,7 +412,7 @@ fun PreviewDisplay(
                     AspectRatioUiState.Available
                 ).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
-            val aspectRatioFloat: Float = aspectRatio.ratio.toFloat()
+            val aspectRatioFloat: Float = aspectRatio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
             val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
             val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
