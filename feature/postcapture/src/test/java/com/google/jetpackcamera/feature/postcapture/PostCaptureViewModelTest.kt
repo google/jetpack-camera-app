@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,14 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
+import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
+import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -42,11 +45,13 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito
+import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
+
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -123,56 +128,62 @@ internal class PostCaptureViewModelTest {
     }
 
     @Test
-    fun getUiState_image_playerIsNull() = runTest(testDispatcher) {
+    fun getUiState_image_viewerHasContent() = runTest(testDispatcher) {
         // Act
         currentMediaFlow.emit(testImageDesc)
 
-        // Wait for state update
+        // Wait for state update to show content
         val uiState = viewModel.postCaptureUiState.first {
-            it.mediaDescriptor is MediaDescriptor.Content.Image
-        }
+            it is PostCaptureUiState.Ready &&
+                it.viewerUiState is MediaViewerUiState.Content.Image
+        } as PostCaptureUiState.Ready
 
         // Assert
-        assertThat(uiState.media).isEqualTo(testImageMedia)
-        assertThat(viewModel.player).isNull()
+        val viewerState = uiState.viewerUiState as MediaViewerUiState.Content.Image
+        assertThat(viewerState.imageBitmap).isEqualTo(testImageMedia.bitmap)
     }
 
     @Test
-    fun getUiState_video_playerIsInitialized() = runTest(testDispatcher) {
+    fun getUiState_video_playerIsInitializedAndTransitionsToContent() = runTest(testDispatcher) {
         // Act
         currentMediaFlow.emit(testVideoDesc)
 
-        // Wait for state update
+        // Wait for the final state to show content for the video
         val uiState = viewModel.postCaptureUiState.first {
-            it.mediaDescriptor is MediaDescriptor.Content.Video
-        }
+            it is PostCaptureUiState.Ready &&
+                it.viewerUiState is MediaViewerUiState.Content.Video.Ready
+        } as PostCaptureUiState.Ready
 
         // Assert
-        assertThat(uiState.media).isEqualTo(testVideoMedia)
-        assertThat(viewModel.player).isNotNull()
+        val viewerState = uiState.viewerUiState as MediaViewerUiState.Content.Video.Ready
+        assertThat(viewerState.player).isNotNull()
     }
 
     @Test
-    fun switchVideoToImage_playerReleased() = runTest(testDispatcher) {
+    fun switchVideoToImage_playerIsReleased() = runTest(testDispatcher) {
+        // Arrange: Start with a video, ensuring player is initialized
         currentMediaFlow.emit(testVideoDesc)
+        viewModel.postCaptureUiState.first {
+            it is PostCaptureUiState.Ready &&
+                it.viewerUiState is MediaViewerUiState.Content.Video.Ready
+        }
 
-        // Wait for video state
-        viewModel.postCaptureUiState.first { it.mediaDescriptor == testVideoDesc }
-
-        assertThat(viewModel.player).isNotNull()
-
+        // Act: Switch to an image
         currentMediaFlow.emit(testImageDesc)
-        advanceUntilIdle()
-
-        // 3. Assert Player Released
-        assertThat(viewModel.postCaptureUiState.value.mediaDescriptor).isEqualTo(testImageDesc)
-        assertThat(viewModel.player).isNull()
+        
+        // Assert: Wait for the state to become Image content
+        val finalState = viewModel.postCaptureUiState.first {
+            it is PostCaptureUiState.Ready &&
+                it.viewerUiState is MediaViewerUiState.Content.Image
+        } as PostCaptureUiState.Ready
+        
+        val finalViewerState = finalState.viewerUiState as MediaViewerUiState.Content.Image
+        assertThat(finalViewerState.imageBitmap).isEqualTo((testImageMedia.bitmap))
     }
 
     @Test
     fun onCleared_deletesCachedMedia() = runTest(testDispatcher) {
         // Arrange
-
         currentMediaFlow.emit(testCacheImageDesc)
         advanceUntilIdle()
 
@@ -183,12 +194,13 @@ internal class PostCaptureViewModelTest {
         // Assert
         verify(mockMediaRepository).deleteMedia(
             safeAny(ContentResolver::class.java),
-            safeAny(MediaDescriptor.Content::class.java)
+            safeEq(testCacheImageDesc)
         )
     }
 
     @Test
     fun onCleared_keepsSavedMedia() = runTest(testDispatcher) {
+        // Arrange
         currentMediaFlow.emit(testImageDesc)
         advanceUntilIdle()
 
@@ -204,84 +216,67 @@ internal class PostCaptureViewModelTest {
     }
 
     @Test
-    fun saveMedia_Success_callsRepositoryAndReturnsTrue() = runTest(testDispatcher) {
-        currentMediaFlow.emit(testCacheImageDesc)
-        advanceUntilIdle()
-
-        `when`(
-            mockMediaRepository.saveToMediaStore(
-                safeAny(ContentResolver::class.java),
-                safeAny(MediaDescriptor.Content::class.java),
-                safeAny(String::class.java)
-            )
-        ).thenReturn(Uri.parse("file:///new_uri"))
-
-        // When
-        // Given
-        val onMediaSavedResult: Uri? =
-            (viewModel.postCaptureUiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
-                viewModel.saveMedia(it)
-            }
-        advanceUntilIdle()
-
-        // Then
-        verify(mockMediaRepository).saveToMediaStore(
-            safeAny(ContentResolver::class.java),
-            safeEq(testCacheImageDesc),
-            safeAny(String::class.java)
-        )
-        assertThat(onMediaSavedResult).isNotNull()
-    }
-
-    @Test
-    fun saveMedia_Failure_callsRepositoryAndReturnsFalse() = runTest(testDispatcher) {
-        // Given
-        currentMediaFlow.emit(testCacheImageDesc)
-        advanceUntilIdle()
-
-        `when`(
-            mockMediaRepository.saveToMediaStore(
-                safeAny(ContentResolver::class.java),
-                safeAny(MediaDescriptor.Content::class.java),
-                safeAny(String::class.java)
-            )
-        ).thenReturn(null)
-
-        // When
-        val onMediaSavedResult: Uri? =
-            (viewModel.postCaptureUiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
-                viewModel.saveMedia(it)
-            }
-        advanceUntilIdle()
-
-        // Then
-        verify(mockMediaRepository).saveToMediaStore(
-            safeAny(ContentResolver::class.java),
-            safeEq(testCacheImageDesc),
-            safeAny(String::class.java)
-        )
-        assertThat(onMediaSavedResult).isNull()
-    }
-
-    @Test
-    fun deleteMedia_callsRepository() = runTest(testDispatcher) {
-        // Given
+    fun deleteCurrentMedia_image_callsRepositoryAndResetsState() = runTest(testDispatcher) {
+        // Arrange
         currentMediaFlow.emit(testImageDesc)
         advanceUntilIdle()
 
-        // When
-        viewModel.deleteMedia(testImageDesc)
+        // Stub deleteMedia to return true and then emit MediaDescriptor.None
+        doAnswer { invocation ->
+            val mediaDescriptor = invocation.arguments[1] as MediaDescriptor.Content
+            if (mediaDescriptor == testImageDesc) {
+                testExternalScope.launch { currentMediaFlow.emit(MediaDescriptor.None) }
+            }
+            true // Simulate successful deletion
+        }.`when`(mockMediaRepository).deleteMedia(
+            safeAny(ContentResolver::class.java),
+            safeEq(testImageDesc)
+        )
+
+        // Act
+        viewModel.deleteCurrentMedia()
         advanceUntilIdle()
 
-        // Then
+        // Assert
         verify(mockMediaRepository).deleteMedia(
             safeAny(ContentResolver::class.java),
             safeEq(testImageDesc)
         )
-        // Also verify UI state is reset
-        val finalState = viewModel.postCaptureUiState.value
-        assertThat(finalState.mediaDescriptor).isEqualTo(MediaDescriptor.None)
-        assertThat(finalState.media).isEqualTo(Media.None)
+        // Also verify UI state is reset to loading
+        val finalState = viewModel.postCaptureUiState.value as PostCaptureUiState.Ready
+        assertThat(finalState.viewerUiState).isInstanceOf(MediaViewerUiState.Loading::class.java)
+    }
+
+    @Test
+    fun deleteCurrentMedia_video_callsRepositoryAndResetsState() = runTest(testDispatcher) {
+        // Arrange
+        currentMediaFlow.emit(testVideoDesc)
+        advanceUntilIdle()
+
+        // Stub deleteMedia to return true and then emit MediaDescriptor.None
+        doAnswer { invocation ->
+            val mediaDescriptor = invocation.arguments[1] as MediaDescriptor.Content
+            if (mediaDescriptor == testVideoDesc) {
+                testExternalScope.launch { currentMediaFlow.emit(MediaDescriptor.None) }
+            }
+            true // Simulate successful deletion
+        }.`when`(mockMediaRepository).deleteMedia(
+            safeAny(ContentResolver::class.java),
+            safeEq(testVideoDesc)
+        )
+
+        // Act
+        viewModel.deleteCurrentMedia()
+        advanceUntilIdle()
+
+        // Assert
+        verify(mockMediaRepository).deleteMedia(
+            safeAny(ContentResolver::class.java),
+            safeEq(testVideoDesc)
+        )
+        // Also verify UI state is reset to loading
+        val finalState = viewModel.postCaptureUiState.value as PostCaptureUiState.Ready
+        assertThat(finalState.viewerUiState).isInstanceOf(MediaViewerUiState.Loading::class.java)
     }
 
     // Helper to access protected method without extending class

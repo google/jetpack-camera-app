@@ -19,12 +19,13 @@ import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.net.Uri
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Data layer for Media.
  */
 interface MediaRepository {
-    val currentMedia: Flow<MediaDescriptor>
+    val currentMedia: StateFlow<MediaDescriptor>
     suspend fun setCurrentMedia(pendingMedia: MediaDescriptor)
     suspend fun getLastCapturedMedia(): MediaDescriptor
 
