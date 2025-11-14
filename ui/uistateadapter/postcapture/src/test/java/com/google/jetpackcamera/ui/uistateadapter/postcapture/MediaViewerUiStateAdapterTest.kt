@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
 import android.graphics.Bitmap
@@ -33,7 +32,7 @@ class MediaViewerUiStateAdapterTest {
     val mockPlayer: Player = mock(Player::class.java)
 
     @Test
-    fun `MediaViewerUiState from Media_Error returns Loading`() {
+    fun mediaViewerUiState_fromMediaError_returnsLoading() {
         val mediaDescriptor = MediaDescriptor.None
         val media = Media.Error
         val player = null
@@ -44,7 +43,7 @@ class MediaViewerUiStateAdapterTest {
     }
 
     @Test
-    fun `MediaViewerUiState from Media_None returns Loading`() {
+    fun mediaViewerUiState_fromMediaNone_returnsLoading() {
         val mediaDescriptor = MediaDescriptor.None
         val media = Media.None
         val player = null
@@ -55,7 +54,7 @@ class MediaViewerUiStateAdapterTest {
     }
 
     @Test
-    fun `MediaViewerUiState from Media_Image returns Content_Image`() {
+    fun mediaViewerUiState_fromMediaImage_returnsContentImage() {
         val mediaDescriptor = MediaDescriptor.Content.Image(testUri, mockBitmap)
         val media = Media.Image(mockBitmap)
         val player = null
@@ -66,7 +65,7 @@ class MediaViewerUiStateAdapterTest {
     }
 
     @Test
-    fun `MediaViewerUiState from Media_Video with playerState true and player not null returns Content_Video_Ready`() {
+    fun mediaViewerUiState_fromVideoPlayerReady_returnsContentVideoReady() {
         val mediaDescriptor = MediaDescriptor.Content.Video(testUri, mockBitmap)
         val media = Media.Video(testUri)
         val player = mockPlayer
@@ -77,7 +76,7 @@ class MediaViewerUiStateAdapterTest {
     }
 
     @Test
-    fun `MediaViewerUiState from Media_Video with playerState true and player null returns Content_Video_Loading`() {
+    fun mediaViewerUiState_fromVideoPlayerNull_returnsContentVideoLoading() {
         val mediaDescriptor = MediaDescriptor.Content.Video(testUri, mockBitmap)
         val media = Media.Video(testUri)
         val expectedUiState = MediaViewerUiState.Content.Video.Loading(mockBitmap)
@@ -86,7 +85,7 @@ class MediaViewerUiStateAdapterTest {
     }
 
     @Test
-    fun `MediaViewerUiState from Media_Video with playerState false returns Content_Video_Loading`() {
+    fun mediaViewerUiState_fromVideoPlayerStateFalse_returnsContentVideoLoading() {
         val mediaDescriptor = MediaDescriptor.Content.Video(testUri, mockBitmap)
         val media = Media.Video(testUri)
         val player = mockPlayer

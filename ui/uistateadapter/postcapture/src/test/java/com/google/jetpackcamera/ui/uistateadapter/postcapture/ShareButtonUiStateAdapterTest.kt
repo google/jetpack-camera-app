@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
 import android.graphics.Bitmap
@@ -30,7 +29,7 @@ class ShareButtonUiStateAdapterTest {
     val mockBitmap: Bitmap = mock(Bitmap::class.java)
 
     @Test
-    fun `ShareButtonUiState from Content_Image returns Ready`() {
+    fun shareButtonUiState_fromContentImage_returnsReady() {
         val mediaDescriptor = MediaDescriptor.Content.Image(testUri, mockBitmap)
         val expectedUiState = ShareButtonUiState.Ready
         val actualUiState = ShareButtonUiState.from(mediaDescriptor)
@@ -38,7 +37,7 @@ class ShareButtonUiStateAdapterTest {
     }
 
     @Test
-    fun `ShareButtonUiState from Content_Video returns Ready`() {
+    fun shareButtonUiState_fromContentVideo_returnsReady() {
         val mediaDescriptor = MediaDescriptor.Content.Video(testUri, mockBitmap)
         val expectedUiState = ShareButtonUiState.Ready
         val actualUiState = ShareButtonUiState.from(mediaDescriptor)
@@ -46,7 +45,7 @@ class ShareButtonUiStateAdapterTest {
     }
 
     @Test
-    fun `ShareButtonUiState from None returns Unavailable`() {
+    fun shareButtonUiState_fromNone_returnsUnavailable() {
         val mediaDescriptor = MediaDescriptor.None
         val expectedUiState = ShareButtonUiState.Unavailable
         val actualUiState = ShareButtonUiState.from(mediaDescriptor)

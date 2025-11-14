@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
 import androidx.media3.common.Player
@@ -25,7 +24,7 @@ fun MediaViewerUiState.Companion.from(
     mediaDescriptor: MediaDescriptor,
     media: Media,
     player: Player?,
-    playerState: Boolean,
+    playerState: Boolean
 ): MediaViewerUiState {
     return when (media) {
         Media.Error, Media.None -> MediaViewerUiState.Loading

@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
 
-fun DeleteButtonUiState.Companion.from(mediaDescriptor: MediaDescriptor) =
-    when (mediaDescriptor) {
-        is MediaDescriptor.Content ->
-            if (!mediaDescriptor.isCached) {
-                DeleteButtonUiState.Ready
-            } else {
-                DeleteButtonUiState.Unavailable
-            }
+fun DeleteButtonUiState.Companion.from(mediaDescriptor: MediaDescriptor) = when (mediaDescriptor) {
+    is MediaDescriptor.Content ->
+        if (!mediaDescriptor.isCached) {
+            DeleteButtonUiState.Ready
+        } else {
+            DeleteButtonUiState.Unavailable
+        }
 
-        MediaDescriptor.None -> DeleteButtonUiState.Unavailable
-    }
+    MediaDescriptor.None -> DeleteButtonUiState.Unavailable
+}

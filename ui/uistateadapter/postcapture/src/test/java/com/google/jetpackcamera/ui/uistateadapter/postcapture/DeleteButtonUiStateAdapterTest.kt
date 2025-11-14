@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
 import android.net.Uri
@@ -27,7 +26,7 @@ class DeleteButtonUiStateAdapterTest {
     private val testUri: Uri = mock(Uri::class.java)
 
     @Test
-    fun `DeleteButtonUiState from non-cached content returns Ready`() {
+    fun deleteButtonUiState_fromNonCachedContent_returnsReady() {
         val mediaDescriptor = MediaDescriptor.Content.Video(
             uri = testUri,
             thumbnail = null,
@@ -39,7 +38,7 @@ class DeleteButtonUiStateAdapterTest {
     }
 
     @Test
-    fun `DeleteButtonUiState from cached content returns Unavailable`() {
+    fun deleteButtonUiState_fromCachedContent_returnsUnavailable() {
         val mediaDescriptor = MediaDescriptor.Content.Video(
             uri = testUri,
             thumbnail = null,
@@ -51,7 +50,7 @@ class DeleteButtonUiStateAdapterTest {
     }
 
     @Test
-    fun `DeleteButtonUiState from None returns Unavailable`() {
+    fun deleteButtonUiState_fromNone_returnsUnavailable() {
         val mediaDescriptor = MediaDescriptor.None
         val expectedUiState = DeleteButtonUiState.Unavailable
         val actualUiState = DeleteButtonUiState.from(mediaDescriptor)
