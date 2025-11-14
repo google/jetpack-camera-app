@@ -85,9 +85,6 @@ dependencies {
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:components:capture"))
 
-    implementation(project(":ui:uistateadapter:capture"))
-
-
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)

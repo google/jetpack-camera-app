@@ -17,6 +17,8 @@
 <resources>
     <string name="post_capture_image_description">An image captured by the camera</string>
     <string name="no_media_available">No Media Available</string>
+    <string name="player_unavailable">Video Playback failed</string>
+
     <string name="error_loading_media">Error loading media</string>
     <string name="button_exit_description">Exit Post Capture</string>
     <string name="button_save_media_description">Save Media</string>

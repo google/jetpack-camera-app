@@ -258,7 +258,6 @@ class LocalMediaRepository
 
             // (API 29+) Publish the file by marking it as "not pending"
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                contentValues.clear()
                 contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                 contentResolver.update(destinationUri, contentValues, null, null)
             }

@@ -52,7 +52,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -95,7 +94,7 @@ class PostCaptureViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            mediaRepository.currentMedia.filterNotNull().collectLatest { mediaDescriptor ->
+            mediaRepository.currentMedia.collectLatest { mediaDescriptor ->
                 val media = mediaRepository.load(mediaDescriptor)
 
                 // init with player if current media is a video
@@ -112,7 +111,7 @@ class PostCaptureViewModel @Inject constructor(
 
         // release and remove player when not needed
         viewModelScope.launch {
-            uiState.filterNotNull().collectLatest {
+            uiState.collectLatest {
                 when (it.media) {
                     Media.Error,
                     is Media.Image,
@@ -240,46 +239,65 @@ class PostCaptureViewModel @Inject constructor(
                 try {
                     result = saveMedia(it)
                     if (result != null) {
+                        val (stringResource, testTag) = when (it) {
+                            is MediaDescriptor.Content.Image ->
+                                R.string.snackbar_save_image_success to
+                                    SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS
+
+                            is MediaDescriptor.Content.Video ->
+                                R.string.snackbar_save_video_success to
+                                    SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
+                        }
+
                         addSnackBarData(
                             SnackbarData(
                                 cookie = cookie,
-                                stringResource = when (it) {
-                                    is MediaDescriptor.Content.Image ->
-                                        R.string.snackbar_save_image_success
-
-                                    is MediaDescriptor.Content.Video ->
-                                        R.string.snackbar_save_video_success
-                                },
+                                stringResource = stringResource,
                                 withDismissAction = true,
-                                testTag = when (it) {
-                                    is MediaDescriptor.Content.Image ->
-                                        SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS
+                                testTag = testTag
+                            )
+                        )
+                    } else {
+                        // potential custom behavior for null
+                        Log.e(TAG, "null saved media Uri without exception")
 
-                                    is MediaDescriptor.Content.Video ->
-                                        SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
-                                }
+                        val (stringResource, testTag) = when (it) {
+                            is MediaDescriptor.Content.Image ->
+                                R.string.snackbar_save_image_failure to
+                                    SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
+
+                            is MediaDescriptor.Content.Video ->
+                                R.string.snackbar_save_video_failure to
+                                    SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
+                        }
+
+                        addSnackBarData(
+                            SnackbarData(
+                                cookie = cookie,
+                                stringResource = stringResource,
+                                withDismissAction = true,
+                                testTag = testTag
                             )
                         )
                     }
                 } catch (e: Exception) {
+                    // todo: custom message depending on failure reason
+                    val (stringResource, testTag) = when (it) {
+                        is MediaDescriptor.Content.Image ->
+                            R.string.snackbar_save_image_failure to
+                                SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
+
+                        is MediaDescriptor.Content.Video ->
+                            R.string.snackbar_save_video_failure to
+                                SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
+                    }
+
                     addSnackBarData(
                         SnackbarData(
                             cookie = cookie,
-                            stringResource = when (it) {
-                                is MediaDescriptor.Content.Image ->
-                                    R.string.snackbar_save_image_failure
-
-                                is MediaDescriptor.Content.Video ->
-                                    R.string.snackbar_save_video_failure
-                            },
+                            stringResource = stringResource,
                             withDismissAction = true,
-                            testTag = when (it) {
-                                is MediaDescriptor.Content.Image ->
-                                    SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
-
-                                is MediaDescriptor.Content.Video ->
-                                    SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
-                            }
+                            testTag = testTag
                         )
                     )
                 }
@@ -315,24 +333,21 @@ class PostCaptureViewModel @Inject constructor(
             } catch (e: Exception) {
                 val cookieInt = snackBarCount.incrementAndGet()
                 val cookie = "MediaDelete-$cookieInt"
+                val (stringResource, testTag) = when (mediaDescriptor) {
+                    is MediaDescriptor.Content.Image ->
+                        R.string.snackbar_delete_image_failure to
+                            SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE
+
+                    is MediaDescriptor.Content.Video ->
+                        R.string.snackbar_delete_video_failure to
+                            SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
+                }
                 addSnackBarData(
                     SnackbarData(
                         cookie = cookie,
-                        stringResource = when (mediaDescriptor) {
-                            is MediaDescriptor.Content.Image ->
-                                R.string.snackbar_delete_image_failure
-
-                            is MediaDescriptor.Content.Video ->
-                                R.string.snackbar_delete_video_failure
-                        },
+                        stringResource = stringResource,
                         withDismissAction = true,
-                        testTag = when (mediaDescriptor) {
-                            is MediaDescriptor.Content.Image ->
-                                SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE
-
-                            is MediaDescriptor.Content.Video ->
-                                SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
-                        }
+                        testTag = testTag
                     )
                 )
             }
@@ -357,7 +372,7 @@ class PostCaptureViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { old ->
                 val newQueue = LinkedList(old.snackBarUiState.snackBarQueue)
-                val snackBarData = newQueue.remove()
+                val snackBarData = newQueue.poll()
                 if (snackBarData != null && snackBarData.cookie == cookie) {
                     // If the latest snackBar had a result, then clear snackBarToShow
                     Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
