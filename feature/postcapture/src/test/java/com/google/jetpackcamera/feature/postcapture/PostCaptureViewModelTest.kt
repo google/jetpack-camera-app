@@ -52,7 +52,6 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 
-
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 internal class PostCaptureViewModelTest {
@@ -170,13 +169,13 @@ internal class PostCaptureViewModelTest {
 
         // Act: Switch to an image
         currentMediaFlow.emit(testImageDesc)
-        
+
         // Assert: Wait for the state to become Image content
         val finalState = viewModel.postCaptureUiState.first {
             it is PostCaptureUiState.Ready &&
                 it.viewerUiState is MediaViewerUiState.Content.Image
         } as PostCaptureUiState.Ready
-        
+
         val finalViewerState = finalState.viewerUiState as MediaViewerUiState.Content.Image
         assertThat(finalViewerState.imageBitmap).isEqualTo((testImageMedia.bitmap))
     }

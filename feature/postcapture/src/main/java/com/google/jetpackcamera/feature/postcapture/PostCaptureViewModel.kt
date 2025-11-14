@@ -126,7 +126,7 @@ class PostCaptureViewModel @Inject constructor(
                             mediaPair.first,
                             mediaPair.second,
                             player,
-                            playerstate,
+                            playerstate
                         ),
                         shareButtonUiState = ShareButtonUiState.from(mediaPair.first),
                         deleteButtonUiState = DeleteButtonUiState.from(mediaPair.first)

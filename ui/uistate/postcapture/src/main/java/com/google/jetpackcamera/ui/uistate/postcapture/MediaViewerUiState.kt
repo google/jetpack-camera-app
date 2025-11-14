@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.ui.uistate.postcapture
 
 import android.graphics.Bitmap
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.common.Player
 
 /**
  * Defines the UI state for the content viewer within the PostCaptureScreen.
@@ -38,12 +38,13 @@ sealed interface MediaViewerUiState {
 
             data class Loading(override val thumbnail: Bitmap?) : Video
             data class Ready(
-                val player: ExoPlayer,
+                val player: Player,
                 override val thumbnail: Bitmap?
             ) : Video
         }
 
         data class Image(val imageBitmap: Bitmap) : Content
     }
+
     companion object
 }

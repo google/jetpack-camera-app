@@ -42,8 +42,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.ContentFrame
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
@@ -52,7 +52,11 @@ import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
 
 @Composable
-fun MediaViewer(uiState: MediaViewerUiState, onLoadVideo:() -> Unit, modifier: Modifier = Modifier) {
+fun MediaViewer(
+    uiState: MediaViewerUiState,
+    onLoadVideo: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     when (uiState) {
         is MediaViewerUiState.Content.Image -> {
             ImageFromBitmap(modifier, uiState.imageBitmap)
@@ -65,7 +69,7 @@ fun MediaViewer(uiState: MediaViewerUiState, onLoadVideo:() -> Unit, modifier: M
         is MediaViewerUiState.Content.Video.Ready -> {
             VideoPlayer(modifier = modifier, player = uiState.player)
             LaunchedEffect(Unit) {
-               onLoadVideo()
+                onLoadVideo()
             }
         }
 
@@ -92,7 +96,7 @@ fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap?) {
 
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoPlayer(modifier: Modifier, player: ExoPlayer?) {
+fun VideoPlayer(modifier: Modifier, player: Player?) {
     val presentationState = rememberPresentationState(player)
     ContentFrame(
         modifier = modifier
@@ -159,7 +163,7 @@ fun ShareCurrentMediaButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    FilledIconButton (
+    FilledIconButton(
         enabled = shareMediaUiState is ShareButtonUiState.Ready,
         onClick = onClick,
         modifier = modifier

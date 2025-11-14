@@ -16,7 +16,7 @@
 
 package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.common.Player
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
@@ -24,7 +24,7 @@ import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 fun MediaViewerUiState.Companion.from(
     mediaDescriptor: MediaDescriptor,
     media: Media,
-    player: ExoPlayer?,
+    player: Player?,
     playerState: Boolean,
 ): MediaViewerUiState {
     return when (media) {
