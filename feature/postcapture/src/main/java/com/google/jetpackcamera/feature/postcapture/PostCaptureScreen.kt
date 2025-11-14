@@ -20,7 +20,6 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.annotation.OptIn
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -39,23 +38,18 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.ui.compose.PlayerSurface
-import androidx.media3.ui.compose.modifiers.resizeWithContentScale
-import androidx.media3.ui.compose.state.rememberPresentationState
+import androidx.media3.ui.compose.material3.buttons.PlayPauseButton
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 
@@ -69,48 +63,30 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
     val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         when (val media = uiState.media) {
             is Media.Image -> {
                 val bitmap = media.bitmap
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawIntoCanvas { canvas ->
-                        val scale = maxOf(
-                            size.width / bitmap.width,
-                            size.height / bitmap.height
-                        )
-                        val imageSize = Size(bitmap.width * scale, bitmap.height * scale)
-                        canvas.nativeCanvas.drawBitmap(
-                            bitmap,
-                            null,
-                            android.graphics.RectF(
-                                0f,
-                                0f,
-                                imageSize.width,
-                                imageSize.height
-                            ),
-                            null
-                        )
-                    }
-                }
+                ImageFromBitmap(Modifier.fillMaxSize(), bitmap)
             }
+
             is Media.Video -> {
-                val presentationState = rememberPresentationState(viewModel.player)
-                PlayerSurface(
-                    player = viewModel.player,
-                    modifier = Modifier.resizeWithContentScale(
-                        ContentScale.Fit,
-                        presentationState.videoSizeDp
-                    )
-                )
-                viewModel.playVideo()
+                viewModel.player?.let { player ->
+                    VideoPlayer(modifier = Modifier, player = player)
+                    PlayPauseButton(player)
+                    LaunchedEffect(media.uri) {
+                        viewModel.loadCurrentVideo()
+                    }
+                } ?: Text("Loading Video...")
             }
+
             Media.None -> {
                 Text(
                     text = stringResource(R.string.no_media_available),
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
+
             Media.Error -> {
                 Text(
                     text = stringResource(R.string.error_loading_media),
