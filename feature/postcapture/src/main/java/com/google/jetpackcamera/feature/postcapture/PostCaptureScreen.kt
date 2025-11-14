@@ -22,36 +22,25 @@ import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.OptIn
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SHARE
 import com.google.jetpackcamera.feature.postcapture.ui.DeleteCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.ExitPostCaptureButton
 import com.google.jetpackcamera.feature.postcapture.ui.ImageFromBitmap
 import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.ShareCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.VideoPlayer
 import java.io.File
 import java.io.FileNotFoundException
@@ -123,27 +112,12 @@ fun PostCaptureComponent(
             })
         },
         shareButton = {
-            IconButton(
-                onClick = {
-                    val mediaDescriptor = uiState.mediaDescriptor
-                    (mediaDescriptor as? MediaDescriptor.Content)?.let {
-                        shareMedia(context, it)
-                    }
-                },
-                modifier = it
-                    .size(56.dp)
-                    .shadow(10.dp, CircleShape)
-                    .testTag(BUTTON_POST_CAPTURE_SHARE),
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = stringResource(R.string.button_share_media_description),
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
+            ShareCurrentMediaButton(modifier = it, onClick = {
+                val mediaDescriptor = uiState.mediaDescriptor
+                (mediaDescriptor as? MediaDescriptor.Content)?.let { descriptor ->
+                    shareMedia(context, descriptor)
+                }
+            })
         },
         deleteButton = {
             if ((uiState.mediaDescriptor as? MediaDescriptor.Content)?.isCached != true) {

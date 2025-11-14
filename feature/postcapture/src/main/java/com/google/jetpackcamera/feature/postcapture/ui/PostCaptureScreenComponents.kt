@@ -24,9 +24,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.SaveAlt
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -45,14 +47,12 @@ import androidx.media3.ui.compose.state.rememberPresentationState
 import com.google.jetpackcamera.feature.postcapture.R
 
 @Composable
-fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap?) {
-    if (bitmap != null) {
-        Image(
-            bitmap = bitmap.asImageBitmap(),
-            contentDescription = stringResource(R.string.post_capture_image_description),
-            modifier = modifier.testTag(VIEWER_POST_CAPTURE_IMAGE)
-        )
-    }
+fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap) {
+    Image(
+        bitmap = bitmap.asImageBitmap(),
+        contentDescription = stringResource(R.string.post_capture_image_description),
+        modifier = modifier.testTag(VIEWER_POST_CAPTURE_IMAGE)
+    )
 }
 
 @OptIn(UnstableApi::class)
@@ -78,18 +78,33 @@ fun VideoPlayer(modifier: Modifier, player: ExoPlayer?) {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ExitPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(
+    PostCaptureIconButton(
         modifier = modifier
-            .size(56.dp)
-            .shadow(10.dp, CircleShape)
             .testTag(BUTTON_POST_CAPTURE_EXIT),
-        colors = IconButtonDefaults
-            .iconButtonColors(containerColor = MaterialTheme.colorScheme.surface),
         onClick = onExitPostCapture
     ) {
         Icon(
+            modifier = it,
+
             imageVector = Icons.Default.Close,
             contentDescription = stringResource(R.string.button_exit_description)
+        )
+    }
+}
+
+@Composable
+fun ShareCurrentMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    PostCaptureIconButton(
+        onClick = onClick,
+        modifier = modifier
+            .testTag(BUTTON_POST_CAPTURE_SHARE)
+    ) {
+        Icon(
+            modifier = it,
+
+            imageVector = Icons.Default.Share,
+            contentDescription = stringResource(R.string.button_share_media_description),
+            tint = MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -102,16 +117,14 @@ fun ExitPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = Mo
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SaveCurrentMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(
+    PostCaptureIconButton(
         modifier = modifier
-            .size(56.dp)
-            .shadow(10.dp, CircleShape)
             .testTag(BUTTON_POST_CAPTURE_SAVE),
-        colors = IconButtonDefaults
-            .iconButtonColors(containerColor = MaterialTheme.colorScheme.surface),
         onClick = onClick
     ) {
         Icon(
+            modifier = it,
+
             imageVector = Icons.Default.SaveAlt,
             contentDescription = stringResource(R.string.button_save_media_description)
         )
@@ -120,22 +133,37 @@ fun SaveCurrentMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @Composable
 fun DeleteCurrentMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(
-        onClick = onClick,
-        modifier = modifier
-            .size(56.dp)
-            .shadow(10.dp, CircleShape)
-            .testTag(BUTTON_POST_CAPTURE_DELETE),
-        colors = IconButtonDefaults.iconButtonColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+    PostCaptureIconButton(
+        modifier = modifier.testTag(BUTTON_POST_CAPTURE_DELETE),
+        onClick = onClick
     ) {
         Icon(
+            modifier = it,
             imageVector = Icons.Default.Delete,
             contentDescription = stringResource(
                 R.string.button_delete_media_description
-            ),
-            tint = MaterialTheme.colorScheme.onSurface
+            )
         )
+    }
+}
+
+@kotlin.OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun PostCaptureIconButton(
+    onClick: () -> Unit,
+    colors: IconButtonColors? = null,
+    modifier: Modifier = Modifier,
+    content: @Composable (Modifier) -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier
+            .size(IconButtonDefaults.mediumContainerSize())
+            .shadow(10.dp, CircleShape),
+        colors = colors ?: IconButtonDefaults.iconButtonColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        content(Modifier.size(IconButtonDefaults.mediumIconSize))
     }
 }
