@@ -17,19 +17,35 @@ package com.google.jetpackcamera.model
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 
-class AspectRatioTest {
+@RunWith(Parameterized::class)
+class AspectRatioTest(
+    private val aspectRatio: AspectRatio,
+    private val expectedFloat: Float,
+    private val expectedLandscapeFloat: Float
+) {
+    companion object {
+        @JvmStatic
+        @Parameters(name = "{0}")
+        fun data(): Collection<Array<Any>> = listOf(
+            arrayOf(AspectRatio.THREE_FOUR, 3f / 4f, 4f / 3f),
+            arrayOf(AspectRatio.NINE_SIXTEEN, 9f / 16f, 16f / 9f),
+            arrayOf(AspectRatio.ONE_ONE, 1f / 1f, 1f / 1f)
+        )
+    }
+
     @Test
     fun toFloat_returnsCorrectFloat() {
-        val aspectRatio = AspectRatio.THREE_FOUR
         val floatValue = aspectRatio.toFloat()
-        assertThat(floatValue).isEqualTo(3f / 4f)
+        assertThat(floatValue).isEqualTo(expectedFloat)
     }
 
     @Test
     fun toLandscapeFloat_returnsCorrectFloat() {
-        val aspectRatio = AspectRatio.THREE_FOUR
         val landscapeFloatValue = aspectRatio.toLandscapeFloat()
-        assertThat(landscapeFloatValue).isEqualTo(4f / 3f)
+        assertThat(landscapeFloatValue).isEqualTo(expectedLandscapeFloat)
     }
 }
