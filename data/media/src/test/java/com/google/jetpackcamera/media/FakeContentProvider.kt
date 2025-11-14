@@ -48,6 +48,11 @@ class FakeContentProvider : ContentProvider() {
 
     private val mediaStore: MutableMap<Uri, ContentValues> = mutableMapOf()
     private var nextId = 1L
+    private var failNextInsert = false
+
+    fun setFailNextInsert(fail: Boolean) {
+        failNextInsert = fail
+    }
 
     override fun onCreate(): Boolean {
         return true
@@ -113,6 +118,10 @@ class FakeContentProvider : ContentProvider() {
     }
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? {
+        if (failNextInsert) {
+            failNextInsert = false // Reset after one failure
+            return null
+        }
         if (values == null) return null
         val newUri = Uri.withAppendedPath(uri, nextId.toString())
         mediaStore[newUri] = values
