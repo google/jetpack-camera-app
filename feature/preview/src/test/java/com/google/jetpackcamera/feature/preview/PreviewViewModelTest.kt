@@ -74,7 +74,7 @@ class PreviewViewModelTest {
 
     @Test
     fun runCamera() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCameraUntilRunning()
+        startCameraUntilRunning()
 
         assertThat(cameraSystem.previewStarted).isTrue()
     }
@@ -82,7 +82,7 @@ class PreviewViewModelTest {
     @Test
     fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
         val contentResolver: ContentResolver = mock()
-        previewViewModel.startCameraUntilRunning()
+        startCameraUntilRunning()
         previewViewModel.captureImage(contentResolver)
         advanceUntilIdle()
         assertThat(cameraSystem.numPicturesTaken).isEqualTo(1)
@@ -90,7 +90,7 @@ class PreviewViewModelTest {
 
     @Test
     fun startVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCameraUntilRunning()
+        startCameraUntilRunning()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         assertThat(cameraSystem.recordingInProgress).isTrue()
@@ -98,7 +98,7 @@ class PreviewViewModelTest {
 
     @Test
     fun stopVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCameraUntilRunning()
+        startCameraUntilRunning()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
@@ -171,9 +171,8 @@ class PreviewViewModelTest {
         }
     }
 
-    context(TestScope)
-    private fun PreviewViewModel.startCameraUntilRunning() {
-        startCamera()
+    private fun TestScope.startCameraUntilRunning() {
+        previewViewModel.startCamera()
         advanceUntilIdle()
     }
 }
