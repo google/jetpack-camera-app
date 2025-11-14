@@ -38,4 +38,3 @@ sealed interface PostCaptureUiState {
 
     companion object
 }
-

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.uistate.postcapture
 
 import android.graphics.Bitmap
@@ -29,7 +28,6 @@ sealed interface MediaViewerUiState {
     object Loading : MediaViewerUiState
 
     object Error : MediaViewerUiState
-
 
     /**
      * Viewer has content to display.
