@@ -52,7 +52,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -95,7 +94,7 @@ class PostCaptureViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            mediaRepository.currentMedia.filterNotNull().collectLatest { mediaDescriptor ->
+            mediaRepository.currentMedia.collectLatest { mediaDescriptor ->
                 val media = mediaRepository.load(mediaDescriptor)
 
                 // init with player if current media is a video
@@ -112,7 +111,7 @@ class PostCaptureViewModel @Inject constructor(
 
         // release and remove player when not needed
         viewModelScope.launch {
-            uiState.filterNotNull().collectLatest {
+            uiState.collectLatest {
                 when (it.media) {
                     Media.Error,
                     is Media.Image,

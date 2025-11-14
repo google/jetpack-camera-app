@@ -70,7 +70,7 @@ internal class PostCaptureViewModelTest {
     private val currentMediaFlow = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
 
     // --- SHARED TEST DATA ---
-    val mockThumbnail: Bitmap = Mockito.mock(Bitmap::class.java)
+    val mockThumbnail: Bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
 
     private val testImageUri = Uri.parse("file:///test.jpg")
     private val testCacheImageDesc = MediaDescriptor.Content.Image(
