@@ -130,23 +130,21 @@ class LocalMediaRepository
     ): Boolean {
         if (mediaDescriptor.isCached) {
             val isDeleted = deleteCachedMedia(mediaDescriptor)
-            return if (isDeleted) {
+            if (isDeleted) {
                 Log.d(TAG, "deleted cached media")
-                true
             } else {
                 Log.d(TAG, "failed to delete cached media")
-                false
             }
+            return isDeleted
         } else {
             val deletedRows = contentResolver.delete(mediaDescriptor.uri, null, null)
-            return if (deletedRows >= 1) {
+            val isDeleted = deletedRows >= 1
+            if (isDeleted) {
                 Log.d(TAG, "deleted saved media rows: \n ${mediaDescriptor.uri} \n $deletedRows")
-                true
             } else {
                 Log.d(TAG, "failed to delete saved media")
-
-                false
             }
+            return isDeleted
         }
     }
 
