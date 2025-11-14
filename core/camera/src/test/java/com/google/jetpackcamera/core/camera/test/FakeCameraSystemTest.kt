@@ -63,7 +63,7 @@ class FakeCameraSystemTest {
     @Test
     fun canRunCamera() = runTest(testDispatcher) {
         initAndRunCamera()
-        Truth.assertThat(cameraSystem.isPreviewStarted())
+        Truth.assertThat(cameraSystem.isPreviewStarted()).isTrue()
     }
 
     @Test
