@@ -83,6 +83,8 @@ android {
 dependencies {
     // Project dependencies
     implementation(project(":ui:uistate:capture"))
+    implementation(project(":ui:uistateadapter:capture"))
+
     implementation(project(":ui:components:capture"))
 
     // Compose
