@@ -139,7 +139,7 @@ class PostCaptureTest {
         composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
 
         // Wait for video save success message
-        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS).isDisplayed()
         }
 

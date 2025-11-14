@@ -226,18 +226,11 @@ fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri = Ur
 )
 
 fun filesExistInDirAfterTimestamp(directoryPath: String, timeStamp: Long): Boolean {
-    for (file in File(directoryPath).listFiles() ?: emptyArray()) {
-        if (file.lastModified() >= timeStamp) {
-            // Ignore all hidden files (starts with .)
-            // This catches .thumbnails, .nomedia, .DS_Store, etc.
-            if (file.name.startsWith(".")) {
-                continue
-            }
-            Log.d(TAG, "file after timestamp($timeStamp): ${file.name} ")
-            return true
-        }
-    }
-    return false
+    return File(directoryPath).listFiles()?.find { file ->
+        !file.name.startsWith(".") && file.lastModified() >= timeStamp
+    }?.also {
+        Log.d(TAG, "file after timestamp($timeStamp): ${it.name} ")
+    } != null
 }
 
 /**
