@@ -37,6 +37,7 @@ sealed interface PostCaptureUiState {
         val shareButtonUiState: ShareButtonUiState = ShareButtonUiState.Unavailable,
         val snackBarUiState: SnackBarUiState = SnackBarUiState()
     ) : PostCaptureUiState
+    companion object
 }
 
 /**
@@ -50,6 +51,7 @@ sealed interface MediaViewerUiState {
 
     object Error : MediaViewerUiState
 
+
     /**
      * Viewer has content to display.
      */
@@ -60,21 +62,24 @@ sealed interface MediaViewerUiState {
             data class Loading(override val thumbnail: Bitmap?) : Video
             data class Ready(
                 val player: ExoPlayer,
-                val onLoadVideo: () -> Unit,
                 override val thumbnail: Bitmap?
             ) : Video
         }
 
         data class Image(val imageBitmap: Bitmap) : Content
     }
+    companion object
 }
 
 sealed interface DeleteButtonUiState {
     data object Ready : DeleteButtonUiState
     data object Unavailable : DeleteButtonUiState
+
+    companion object
 }
 
 sealed interface ShareButtonUiState {
     data object Ready : ShareButtonUiState
     data object Unavailable : ShareButtonUiState
+    companion object
 }

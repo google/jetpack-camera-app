@@ -26,6 +26,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -50,7 +52,7 @@ import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
 
 @Composable
-fun MediaViewer(uiState: MediaViewerUiState, modifier: Modifier = Modifier) {
+fun MediaViewer(uiState: MediaViewerUiState, onLoadVideo:() -> Unit, modifier: Modifier = Modifier) {
     when (uiState) {
         is MediaViewerUiState.Content.Image -> {
             ImageFromBitmap(modifier, uiState.imageBitmap)
@@ -63,7 +65,7 @@ fun MediaViewer(uiState: MediaViewerUiState, modifier: Modifier = Modifier) {
         is MediaViewerUiState.Content.Video.Ready -> {
             VideoPlayer(modifier = modifier, player = uiState.player)
             LaunchedEffect(Unit) {
-                uiState.onLoadVideo()
+               onLoadVideo()
             }
         }
 
@@ -157,7 +159,7 @@ fun ShareCurrentMediaButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    IconButton(
+    FilledIconButton (
         enabled = shareMediaUiState is ShareButtonUiState.Ready,
         onClick = onClick,
         modifier = modifier
@@ -182,7 +184,7 @@ fun DeleteCurrentMediaButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    IconButton(
+    FilledTonalIconButton(
         enabled = enabled,
         onClick = onClick,
         modifier = modifier

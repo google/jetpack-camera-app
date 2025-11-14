@@ -140,7 +140,7 @@ dependencies {
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:components:capture"))
     implementation(project(":ui:uistateadapter:capture"))
-
+    implementation(project(":ui:uistateadapter:postcapture"))
     testImplementation(project(":ui:uistate:postcapture"))
     testImplementation(project(":core:common"))
 }

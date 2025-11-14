@@ -47,6 +47,7 @@ import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
+import com.google.jetpackcamera.ui.uistateadapter.postcapture.from
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -114,7 +115,6 @@ class PostCaptureViewModel @Inject constructor(
                 loadedMediaFlow,
                 playerState.map { it is PlayerState.Available }.distinctUntilChanged()
             ) { mediaPair, playerstate ->
-                val media = mediaPair.second
                 _postCaptureUiState.update { old ->
                     when (old) {
                         PostCaptureUiState.Loading -> PostCaptureUiState.Ready()
@@ -122,42 +122,15 @@ class PostCaptureViewModel @Inject constructor(
                             old
                         }
                     }.copy(
-                        // todo(kc): create a .from method for mediavieweruistate
-                        viewerUiState = when (media) {
-                            Media.Error, Media.None -> MediaViewerUiState.Loading
-                            is Media.Image -> MediaViewerUiState.Content.Image(media.bitmap)
-                            is Media.Video -> {
-                                val thumbnail =
-                                    (mediaPair.first as? MediaDescriptor.Content.Video)?.thumbnail
-                                if (playerstate) {
-                                    player?.let {
-                                        MediaViewerUiState.Content.Video.Ready(
-                                            it,
-                                            onLoadVideo = { loadCurrentVideo() },
-                                            thumbnail
-                                        )
-                                    } ?: MediaViewerUiState.Content.Video.Loading(thumbnail)
-                                } else {
-                                    MediaViewerUiState.Content.Video.Loading(thumbnail)
-                                }
-                            }
-                        },
-                        shareButtonUiState = if (mediaPair.first is MediaDescriptor.Content) {
-                            ShareButtonUiState.Ready
-                        } else {
-                            ShareButtonUiState.Unavailable
-                        },
-                        deleteButtonUiState =
-                            when (val descriptor = mediaPair.first) {
-                                is MediaDescriptor.Content ->
-                                    if (!descriptor.isCached) {
-                                        DeleteButtonUiState.Ready
-                                    } else {
-                                        DeleteButtonUiState.Unavailable
-                                    }
+                        viewerUiState = MediaViewerUiState.from(
+                            mediaPair.first,
+                            mediaPair.second,
+                            player,
+                            playerstate,
+                        ),
+                        shareButtonUiState = ShareButtonUiState.from(mediaPair.first),
+                        deleteButtonUiState = DeleteButtonUiState.from(mediaPair.first)
 
-                                MediaDescriptor.None -> DeleteButtonUiState.Unavailable
-                            }
                     )
                 }
             }.collect { }
@@ -185,7 +158,6 @@ class PostCaptureViewModel @Inject constructor(
         releasePlayer()
         val mediaDescriptor = loadedMediaFlow.value.first
 
-        // todo(kc): improve cache cleanup strategy
         if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
             // use application scope for cleanup
             // coroutine will not be cancelled when ViewModel dies
@@ -260,6 +232,7 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
+    // controls exposed to UI
     /**
      * Loads and plays the uiState's current video media.
      * playback of the video is an infinite loop.

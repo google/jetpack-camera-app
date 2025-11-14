@@ -53,6 +53,7 @@ fun PostCaptureScreen(
         onDeleteMedia = viewModel::deleteCurrentMedia,
         onSaveMedia = viewModel::saveCurrentMedia,
         onShareCurrentMedia = viewModel::shareCurrentMedia,
+        onLoadVideo = viewModel::loadCurrentVideo,
         onSnackBarResult = viewModel::onSnackBarResult
     )
 }
@@ -65,12 +66,14 @@ fun PostCaptureComponent(
     onSaveMedia: () -> Unit,
     onShareCurrentMedia: () -> Unit,
     onDeleteMedia: () -> Unit,
+    onLoadVideo: () -> Unit,
     onSnackBarResult: (String) -> Unit
 ) {
     when (uiState) {
         PostCaptureUiState.Loading -> {
             MediaViewer(
                 modifier = Modifier,
+                onLoadVideo = {},
                 uiState = MediaViewerUiState.Loading
             )
         }
@@ -80,6 +83,7 @@ fun PostCaptureComponent(
                 mediaSurface = {
                     MediaViewer(
                         modifier = it,
+                        onLoadVideo = onLoadVideo,
                         uiState = uiState.viewerUiState
                     )
                 },
