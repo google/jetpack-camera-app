@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.ui.uistate.postcapture
 
-import android.graphics.Bitmap
-import androidx.media3.exoplayer.ExoPlayer
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 
 /**
@@ -37,49 +35,7 @@ sealed interface PostCaptureUiState {
         val shareButtonUiState: ShareButtonUiState = ShareButtonUiState.Unavailable,
         val snackBarUiState: SnackBarUiState = SnackBarUiState()
     ) : PostCaptureUiState
-    companion object
-}
-
-/**
- * Defines the UI state for the content viewer within the PostCaptureScreen.
- */
-sealed interface MediaViewerUiState {
-    /**
-     * Viewer is in a loading state.
-     */
-    object Loading : MediaViewerUiState
-
-    object Error : MediaViewerUiState
-
-
-    /**
-     * Viewer has content to display.
-     */
-    sealed interface Content : MediaViewerUiState {
-        sealed interface Video : Content {
-            val thumbnail: Bitmap?
-
-            data class Loading(override val thumbnail: Bitmap?) : Video
-            data class Ready(
-                val player: ExoPlayer,
-                override val thumbnail: Bitmap?
-            ) : Video
-        }
-
-        data class Image(val imageBitmap: Bitmap) : Content
-    }
-    companion object
-}
-
-sealed interface DeleteButtonUiState {
-    data object Ready : DeleteButtonUiState
-    data object Unavailable : DeleteButtonUiState
 
     companion object
 }
 
-sealed interface ShareButtonUiState {
-    data object Ready : ShareButtonUiState
-    data object Unavailable : ShareButtonUiState
-    companion object
-}
