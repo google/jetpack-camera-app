@@ -32,6 +32,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.asImageBitmap
@@ -61,6 +62,9 @@ fun MediaViewer(uiState: MediaViewerUiState, modifier: Modifier = Modifier) {
 
         is MediaViewerUiState.Content.Video.Ready -> {
             VideoPlayer(modifier = modifier, player = uiState.player)
+            LaunchedEffect(Unit) {
+                uiState.onLoadVideo()
+            }
         }
 
         MediaViewerUiState.Loading -> {

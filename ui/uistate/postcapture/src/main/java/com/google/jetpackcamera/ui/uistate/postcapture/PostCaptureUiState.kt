@@ -58,7 +58,11 @@ sealed interface MediaViewerUiState {
             val thumbnail: Bitmap?
 
             data class Loading(override val thumbnail: Bitmap?) : Video
-            data class Ready(val player: ExoPlayer, override val thumbnail: Bitmap?) : Video
+            data class Ready(
+                val player: ExoPlayer,
+                val onLoadVideo: () -> Unit,
+                override val thumbnail: Bitmap?
+            ) : Video
         }
 
         data class Image(val imageBitmap: Bitmap) : Content

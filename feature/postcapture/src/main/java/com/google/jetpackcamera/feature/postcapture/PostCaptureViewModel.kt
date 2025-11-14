@@ -131,7 +131,11 @@ class PostCaptureViewModel @Inject constructor(
                                     (mediaPair.first as? MediaDescriptor.Content.Video)?.thumbnail
                                 if (playerstate) {
                                     player?.let {
-                                        MediaViewerUiState.Content.Video.Ready(it, thumbnail)
+                                        MediaViewerUiState.Content.Video.Ready(
+                                            it,
+                                            onLoadVideo = { loadCurrentVideo() },
+                                            thumbnail
+                                        )
                                     } ?: MediaViewerUiState.Content.Video.Loading(thumbnail)
                                 } else {
                                     MediaViewerUiState.Content.Video.Loading(thumbnail)
@@ -144,16 +148,16 @@ class PostCaptureViewModel @Inject constructor(
                             ShareButtonUiState.Unavailable
                         },
                         deleteButtonUiState =
-                        when (val descriptor = mediaPair.first) {
-                            is MediaDescriptor.Content ->
-                                if (!descriptor.isCached) {
-                                    DeleteButtonUiState.Ready
-                                } else {
-                                    DeleteButtonUiState.Unavailable
-                                }
+                            when (val descriptor = mediaPair.first) {
+                                is MediaDescriptor.Content ->
+                                    if (!descriptor.isCached) {
+                                        DeleteButtonUiState.Ready
+                                    } else {
+                                        DeleteButtonUiState.Unavailable
+                                    }
 
-                            MediaDescriptor.None -> DeleteButtonUiState.Unavailable
-                        }
+                                MediaDescriptor.None -> DeleteButtonUiState.Unavailable
+                            }
                     )
                 }
             }.collect { }
