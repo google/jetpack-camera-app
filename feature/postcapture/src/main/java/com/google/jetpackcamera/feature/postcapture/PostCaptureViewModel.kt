@@ -15,9 +15,12 @@
  */
 package com.google.jetpackcamera.feature.postcapture
 
+import android.content.ContentResolver
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
@@ -39,9 +42,15 @@ import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VID
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
+import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
+import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState
+import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
+import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.LinkedList
@@ -50,9 +59,13 @@ import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -65,9 +78,22 @@ class PostCaptureViewModel @Inject constructor(
     @ApplicationScope private val applicationScope: CoroutineScope
 ) : ViewModel() {
 
-    private val playerState = MutableStateFlow(
-        PlayerState()
-    )
+    private val loadedMediaFlow: StateFlow<Pair<MediaDescriptor, Media>> =
+        mediaRepository.currentMedia
+            .map { mediaDescriptor -> mediaDescriptor to mediaRepository.load(mediaDescriptor) }
+            .distinctUntilChanged().stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(),
+                initialValue = (MediaDescriptor.None to Media.None)
+            )
+    private val _postCaptureUiState =
+        MutableStateFlow<PostCaptureUiState>(PostCaptureUiState.Loading)
+
+    val postCaptureUiState: StateFlow<PostCaptureUiState> = _postCaptureUiState
+
+    private var player: ExoPlayer? = null
+
+    private val playerState = MutableStateFlow<PlayerState>(PlayerState.Unavailable)
     private val playerListener = object : Player.Listener {
         /**
          * This callback is the single source of truth for
@@ -79,62 +105,81 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
-    private val _uiState = MutableStateFlow(
-        PostCaptureUiState(
-            mediaDescriptor = MediaDescriptor.None,
-            media = Media.None,
-            snackBarUiState = SnackBarUiState()
-        )
-    )
-
     private val snackBarCount = atomic(0)
 
-    var player: ExoPlayer? = null
-        private set
-    val uiState: StateFlow<PostCaptureUiState> = _uiState
-
     init {
+        // coroutine to update viewmodel
         viewModelScope.launch {
-            mediaRepository.currentMedia.filterNotNull().collectLatest { mediaDescriptor ->
-                val media = mediaRepository.load(mediaDescriptor)
+            combine(
+                loadedMediaFlow,
+                playerState.map { it is PlayerState.Available }.distinctUntilChanged()
+            ) { mediaPair, playerstate ->
+                val media = mediaPair.second
+                _postCaptureUiState.update { old ->
+                    when (old) {
+                        PostCaptureUiState.Loading -> PostCaptureUiState.Ready()
+                        is PostCaptureUiState.Ready -> {
+                            old
+                        }
+                    }.copy(
+                        // todo(kc): create a .from method for mediavieweruistate
+                        viewerUiState = when (media) {
+                            Media.Error, Media.None -> MediaViewerUiState.Loading
+                            is Media.Image -> MediaViewerUiState.Content.Image(media.bitmap)
+                            is Media.Video -> {
+                                val thumbnail =
+                                    (mediaPair.first as? MediaDescriptor.Content.Video)?.thumbnail
+                                if (playerstate) {
+                                    player?.let {
+                                        MediaViewerUiState.Content.Video.Ready(it, thumbnail)
+                                    } ?: MediaViewerUiState.Content.Video.Loading(thumbnail)
+                                } else {
+                                    MediaViewerUiState.Content.Video.Loading(thumbnail)
+                                }
+                            }
+                        },
+                        shareButtonUiState = if (mediaPair.first is MediaDescriptor.Content) {
+                            ShareButtonUiState.Ready
+                        } else {
+                            ShareButtonUiState.Unavailable
+                        },
+                        deleteButtonUiState =
+                        when (val descriptor = mediaPair.first) {
+                            is MediaDescriptor.Content ->
+                                if (!descriptor.isCached) {
+                                    DeleteButtonUiState.Ready
+                                } else {
+                                    DeleteButtonUiState.Unavailable
+                                }
 
-                // init with player if current media is a video
-                if (media is Media.Video) {
-                    if (player == null) {
-                        initPlayer()
-                    }
+                            MediaDescriptor.None -> DeleteButtonUiState.Unavailable
+                        }
+                    )
                 }
-                _uiState.update {
-                    it.copy(mediaDescriptor = mediaDescriptor, media = media)
-                }
-            }
+            }.collect { }
         }
 
-        // release and remove player when not needed
+        // release and remove player when no videos are loaded
         viewModelScope.launch {
-            uiState.filterNotNull().collectLatest {
-                when (it.media) {
-                    Media.Error,
-                    is Media.Image,
-                    Media.None -> if (player != null) {
+            loadedMediaFlow.map { it.second is Media.Video }
+                .distinctUntilChanged()
+                .collectLatest { isVideoMedia ->
+                    if (isVideoMedia) {
+                        if (player == null) {
+                            initPlayer()
+                        }
+                    } else if (player != null) {
                         releasePlayer()
                         player = null
                     }
-
-                    is Media.Video -> {
-                        if (player == null) initPlayer()
-                        loadCurrentVideo()
-                    }
                 }
-            }
         }
     }
 
     // todo(kc): improve cache cleanup strategy
     override fun onCleared() {
         releasePlayer()
-
-        val mediaDescriptor = uiState.value.mediaDescriptor
+        val mediaDescriptor = loadedMediaFlow.value.first
 
         // todo(kc): improve cache cleanup strategy
         if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
@@ -148,13 +193,13 @@ class PostCaptureViewModel @Inject constructor(
         super.onCleared()
     }
 
-    fun updatePlayerState(commands: Player.Commands?) {
+    private fun updatePlayerState(commands: Player.Commands?) {
         viewModelScope.launch {
             playerState.update {
                 if (commands == null) {
-                    PlayerState()
+                    PlayerState.Unavailable
                 } else {
-                    it.copy(
+                    PlayerState.Available(
                         canPrepare = commands.contains(COMMAND_PREPARE),
                         canPlayPause = commands.contains(COMMAND_PLAY_PAUSE),
                         canSetMediaItem = commands.contains(COMMAND_SET_MEDIA_ITEM),
@@ -171,7 +216,7 @@ class PostCaptureViewModel @Inject constructor(
      * Initializes a new [ExoPlayer] instance with a [Player.Listener] attached.
      * Releases any pre-existing player.
      */
-    fun initPlayer() {
+    private fun initPlayer() {
         releasePlayer()
         val exoplayer = ExoPlayer.Builder(context).build()
         updatePlayerState(exoplayer.availableCommands)
@@ -182,7 +227,7 @@ class PostCaptureViewModel @Inject constructor(
     /**
      * Releases the current [ExoPlayer] instance. Resets [player] to null.
      */
-    fun releasePlayer() {
+    private fun releasePlayer() {
         player?.let {
             it.release()
             player = null
@@ -194,17 +239,17 @@ class PostCaptureViewModel @Inject constructor(
     /**
      * Loads and prepares the uistate's current video media for playback.
      */
-    fun loadVideo() {
-        val media = uiState.value.media
+    private fun loadVideo(media: Media) {
         if (media is Media.Video) {
             if (player?.isPlaying == true) {
                 player?.stop()
             }
             val mediaItem = MediaItem.fromUri(media.uri)
-            if (playerState.value.canChangeMediaItem) {
+
+            if ((playerState.value as? PlayerState.Available)?.canChangeMediaItem == true) {
                 player?.clearMediaItems()
             }
-            if (playerState.value.canSetMediaItem) {
+            if ((playerState.value as? PlayerState.Available)?.canSetMediaItem == true) {
                 player?.setMediaItem(mediaItem)
             }
             player?.prepare()
@@ -214,14 +259,19 @@ class PostCaptureViewModel @Inject constructor(
     /**
      * Loads and plays the uiState's current video media.
      * playback of the video is an infinite loop.
+     *
+     * no-op if the current media is not a video
      */
     fun loadCurrentVideo() {
         viewModelScope.launch {
-            player?.let {
-                loadVideo()
-                it.repeatMode = ExoPlayer.REPEAT_MODE_ONE
-                if (playerState.value.canPlayPause) {
-                    it.playWhenReady = true
+            val currentMedia = loadedMediaFlow.value.second
+            if (currentMedia is Media.Video) {
+                player?.let {
+                    loadVideo(currentMedia)
+                    it.repeatMode = ExoPlayer.REPEAT_MODE_ONE
+                    if ((playerState.value as? PlayerState.Available)?.canPlayPause == true) {
+                        it.playWhenReady = true
+                    }
                 }
             }
         }
@@ -231,12 +281,11 @@ class PostCaptureViewModel @Inject constructor(
      * Saves the current media to the MediaStore.
      */
     fun saveCurrentMedia() {
-        (uiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
+        (loadedMediaFlow.value.first as? MediaDescriptor.Content)?.let {
             applicationScope.launch {
                 val cookieInt = snackBarCount.incrementAndGet()
                 val cookie = "MediaSave-$cookieInt"
                 val result: Uri?
-
                 try {
                     result = saveMedia(it)
                     if (result != null) {
@@ -287,10 +336,29 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
+    fun deleteCurrentMedia() {
+        val currentMediaDescriptor = loadedMediaFlow.value.first
+        (currentMediaDescriptor as? MediaDescriptor.Content)?.let {
+            deleteMedia(
+                mediaDescriptor = it
+            )
+        }
+    }
+
+    fun shareCurrentMedia() {
+        val currentMediaDescriptor = loadedMediaFlow.value.first
+        (currentMediaDescriptor as? MediaDescriptor.Content)?.let {
+            shareMedia(
+                context,
+                mediaDescriptor = it
+            )
+        }
+    }
+
     /**
      * returns the Uri of the new saved media location
      */
-    suspend fun saveMedia(mediaDescriptor: MediaDescriptor.Content): Uri? =
+    private suspend fun saveMedia(mediaDescriptor: MediaDescriptor.Content): Uri? =
         mediaRepository.saveToMediaStore(
             context.contentResolver,
             mediaDescriptor,
@@ -302,16 +370,10 @@ class PostCaptureViewModel @Inject constructor(
      *
      * @param mediaDescriptor the [MediaDescriptor] of the media to be deleted.
      */
-    fun deleteMedia(mediaDescriptor: MediaDescriptor.Content) {
+    private fun deleteMedia(mediaDescriptor: MediaDescriptor.Content) {
         applicationScope.launch {
             try {
                 mediaRepository.deleteMedia(context.contentResolver, mediaDescriptor)
-                _uiState.update {
-                    it.copy(
-                        mediaDescriptor = MediaDescriptor.None,
-                        media = Media.None
-                    )
-                }
             } catch (e: Exception) {
                 val cookieInt = snackBarCount.incrementAndGet()
                 val cookie = "MediaDelete-$cookieInt"
@@ -341,32 +403,36 @@ class PostCaptureViewModel @Inject constructor(
 
     private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
-            _uiState.update { old ->
-                val newQueue = LinkedList(old.snackBarUiState.snackBarQueue)
+            _postCaptureUiState.update { old ->
+                (old as? PostCaptureUiState.Ready)?.let {
+                    val newQueue = LinkedList(old.snackBarUiState.snackBarQueue)
 
-                newQueue.add(snackBarData)
-                Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
-                old.copy(
-                    snackBarUiState = SnackBarUiState.from(newQueue)
-                )
+                    newQueue.add(snackBarData)
+                    Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
+                    old.copy(
+                        snackBarUiState = SnackBarUiState.from(newQueue)
+                    )
+                } ?: old
             }
         }
     }
 
     fun onSnackBarResult(cookie: String) {
         viewModelScope.launch {
-            _uiState.update { old ->
-                val newQueue = LinkedList(old.snackBarUiState.snackBarQueue)
-                val snackBarData = newQueue.remove()
-                if (snackBarData != null && snackBarData.cookie == cookie) {
-                    // If the latest snackBar had a result, then clear snackBarToShow
-                    Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
-                    old.copy(
-                        snackBarUiState = SnackBarUiState.from(newQueue)
-                    )
-                } else {
-                    old
-                }
+            _postCaptureUiState.update { old ->
+                (old as? PostCaptureUiState.Ready)?.let {
+                    val newQueue = LinkedList(old.snackBarUiState.snackBarQueue)
+                    val snackBarData = newQueue.remove()
+                    if (snackBarData != null && snackBarData.cookie == cookie) {
+                        // If the latest snackBar had a result, then clear snackBarToShow
+                        Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
+                        old.copy(
+                            snackBarUiState = SnackBarUiState.from(newQueue)
+                        )
+                    } else {
+                        old
+                    }
+                } ?: old
             }
         }
     }
@@ -394,15 +460,58 @@ private fun createFilename(mediaDescriptor: MediaDescriptor.Content): String {
     }
 }
 
-data class PostCaptureUiState(
-    val mediaDescriptor: MediaDescriptor,
-    val media: Media,
-    val snackBarUiState: SnackBarUiState
-)
+sealed interface PlayerState {
+    data object Unavailable : PlayerState
+    data class Available(
+        val canPrepare: Boolean = false,
+        val canPlayPause: Boolean = false,
+        val canSetMediaItem: Boolean = false,
+        val canChangeMediaItem: Boolean = false
+    ) : PlayerState
+}
 
-data class PlayerState(
-    val canPrepare: Boolean = false,
-    val canPlayPause: Boolean = false,
-    val canSetMediaItem: Boolean = false,
-    val canChangeMediaItem: Boolean = false
-)
+/**
+ * Starts an intent to share media.
+ *
+ * @param context the context of the calling component.
+ * @param mediaDescriptor the [MediaDescriptor] of the media to be shared.
+ */
+private fun shareMedia(context: Context, mediaDescriptor: MediaDescriptor.Content) {
+    // todo(kc): support sharing multiple media
+    val uri = mediaDescriptor.uri
+    val mimeType: String = when (mediaDescriptor) {
+        is MediaDescriptor.Content.Image -> "image/jpeg"
+        is MediaDescriptor.Content.Video -> "video/mp4"
+    }
+
+    // if the uri isn't already managed by a content provider, we will need
+    val contentUri: Uri =
+        if (uri.scheme == ContentResolver.SCHEME_CONTENT) uri else getShareableUri(context, uri)
+
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        putExtra(Intent.EXTRA_STREAM, contentUri)
+    }
+    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+    // todo(kc): prevent "edit image" from appearing in the ShareSheet.
+    context.startActivity(Intent.createChooser(intent, "Share Media"))
+}
+
+/**
+ * Creates a content Uri for a given file Uri.
+ *
+ * @param context the context of the calling component.
+ * @param uri the Uri of the file.
+ *
+ * @return a content Uri to be used for sharing.
+ */
+private fun getShareableUri(context: Context, uri: Uri): Uri {
+    val authority = "${context.packageName}.fileprovider"
+    val file =
+        uri.path
+            ?.let { File(it) }
+            ?: throw FileNotFoundException("path does not exist")
+
+    return FileProvider.getUriForFile(context, authority, file)
+}

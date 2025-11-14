@@ -128,7 +128,7 @@ internal class PostCaptureViewModelTest {
         currentMediaFlow.emit(testImageDesc)
 
         // Wait for state update
-        val uiState = viewModel.uiState.first {
+        val uiState = viewModel.postCaptureUiState.first {
             it.mediaDescriptor is MediaDescriptor.Content.Image
         }
 
@@ -143,7 +143,7 @@ internal class PostCaptureViewModelTest {
         currentMediaFlow.emit(testVideoDesc)
 
         // Wait for state update
-        val uiState = viewModel.uiState.first {
+        val uiState = viewModel.postCaptureUiState.first {
             it.mediaDescriptor is MediaDescriptor.Content.Video
         }
 
@@ -157,7 +157,7 @@ internal class PostCaptureViewModelTest {
         currentMediaFlow.emit(testVideoDesc)
 
         // Wait for video state
-        viewModel.uiState.first { it.mediaDescriptor == testVideoDesc }
+        viewModel.postCaptureUiState.first { it.mediaDescriptor == testVideoDesc }
 
         assertThat(viewModel.player).isNotNull()
 
@@ -165,7 +165,7 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
 
         // 3. Assert Player Released
-        assertThat(viewModel.uiState.value.mediaDescriptor).isEqualTo(testImageDesc)
+        assertThat(viewModel.postCaptureUiState.value.mediaDescriptor).isEqualTo(testImageDesc)
         assertThat(viewModel.player).isNull()
     }
 
@@ -219,7 +219,7 @@ internal class PostCaptureViewModelTest {
         // When
         // Given
         val onMediaSavedResult: Uri? =
-            (viewModel.uiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
+            (viewModel.postCaptureUiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
                 viewModel.saveMedia(it)
             }
         advanceUntilIdle()
@@ -249,7 +249,7 @@ internal class PostCaptureViewModelTest {
 
         // When
         val onMediaSavedResult: Uri? =
-            (viewModel.uiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
+            (viewModel.postCaptureUiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
                 viewModel.saveMedia(it)
             }
         advanceUntilIdle()
@@ -279,7 +279,7 @@ internal class PostCaptureViewModelTest {
             safeEq(testImageDesc)
         )
         // Also verify UI state is reset
-        val finalState = viewModel.uiState.value
+        val finalState = viewModel.postCaptureUiState.value
         assertThat(finalState.mediaDescriptor).isEqualTo(MediaDescriptor.None)
         assertThat(finalState.media).isEqualTo(Media.None)
     }

@@ -15,46 +15,26 @@
  */
 package com.google.jetpackcamera.feature.postcapture
 
-import android.content.ContentResolver
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import androidx.annotation.OptIn
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
-import com.google.jetpackcamera.data.media.Media
-import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SHARE
 import com.google.jetpackcamera.feature.postcapture.ui.DeleteCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.ExitPostCaptureButton
-import com.google.jetpackcamera.feature.postcapture.ui.ImageFromBitmap
+import com.google.jetpackcamera.feature.postcapture.ui.MediaViewer
 import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
-import com.google.jetpackcamera.feature.postcapture.ui.VideoPlayer
+import com.google.jetpackcamera.feature.postcapture.ui.ShareCurrentMediaButton
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
-import java.io.File
-import java.io.FileNotFoundException
+import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
+import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
+import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState
+import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
 
 private const val TAG = "PostCaptureScreen"
 
@@ -66,17 +46,13 @@ fun PostCaptureScreen(
 ) {
     Log.d(TAG, "PostCaptureScreen")
 
-    val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
+    val uiState: PostCaptureUiState by viewModel.postCaptureUiState.collectAsState()
     PostCaptureComponent(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
-        player = viewModel.player,
-        onDeleteMedia = {
-            (uiState.mediaDescriptor as? MediaDescriptor.Content)?.let {
-                viewModel.deleteMedia(it)
-            }
-        },
+        onDeleteMedia = viewModel::deleteCurrentMedia,
         onSaveMedia = viewModel::saveCurrentMedia,
+        onShareCurrentMedia = viewModel::shareCurrentMedia,
         onSnackBarResult = viewModel::onSnackBarResult
     )
 }
@@ -86,146 +62,68 @@ fun PostCaptureScreen(
 fun PostCaptureComponent(
     uiState: PostCaptureUiState,
     onNavigateBack: () -> Unit,
-    player: ExoPlayer?,
     onSaveMedia: () -> Unit,
+    onShareCurrentMedia: () -> Unit,
     onDeleteMedia: () -> Unit,
     onSnackBarResult: (String) -> Unit
 ) {
-    val context = LocalContext.current
-    PostCaptureLayout(
-        mediaSurface = {
+    when (uiState) {
+        PostCaptureUiState.Loading -> {
             MediaViewer(
-                modifier = it,
-                media = uiState.media,
-                player = player
+                modifier = Modifier,
+                uiState = MediaViewerUiState.Loading
             )
-        },
-        exitButton = {
-            ExitPostCaptureButton(
-                modifier = it,
-                onExitPostCapture = onNavigateBack
-            )
-        },
-        saveButton = {
-            SaveCurrentMediaButton(modifier = it, onClick = {
-                onSaveMedia()
-            })
-        },
-        shareButton = {
-            IconButton(
-                onClick = {
-                    val mediaDescriptor = uiState.mediaDescriptor
-                    (mediaDescriptor as? MediaDescriptor.Content)?.let {
-                        shareMedia(context, it)
+        }
+
+        is PostCaptureUiState.Ready -> {
+            PostCaptureLayout(
+                mediaSurface = {
+                    MediaViewer(
+                        modifier = it,
+                        uiState = uiState.viewerUiState
+                    )
+                },
+                exitButton = {
+                    ExitPostCaptureButton(
+                        modifier = it,
+                        onExitPostCapture = onNavigateBack
+                    )
+                },
+                saveButton = {
+                    SaveCurrentMediaButton(modifier = it, onClick = { onSaveMedia() })
+                },
+                shareButton = {
+                    if (uiState.shareButtonUiState is ShareButtonUiState.Ready) {
+                        ShareCurrentMediaButton(
+                            modifier = it,
+                            shareMediaUiState = uiState.shareButtonUiState,
+                            onClick = onShareCurrentMedia
+                        )
                     }
                 },
-                modifier = it
-                    .size(56.dp)
-                    .shadow(10.dp, CircleShape)
-                    .testTag(BUTTON_POST_CAPTURE_SHARE),
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = stringResource(R.string.button_share_media_description),
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        },
-        deleteButton = {
-            if ((uiState.mediaDescriptor as? MediaDescriptor.Content)?.isCached != true) {
-                DeleteCurrentMediaButton(onClick = {
-                    onDeleteMedia()
-                    onNavigateBack()
-                })
-            }
-        },
-        snackBar = {
-                modifier, snackbarHostState ->
-            val snackBarData = uiState.snackBarUiState.snackBarQueue.peek()
-            if (snackBarData != null) {
-                TestableSnackbar(
-                    modifier = modifier.testTag(snackBarData.testTag),
-                    snackbarToShow = snackBarData,
-                    snackbarHostState = snackbarHostState,
-                    onSnackbarResult = onSnackBarResult
-                )
-            }
-        }
-    )
-}
-
-@Composable
-private fun MediaViewer(media: Media, player: ExoPlayer?, modifier: Modifier = Modifier) {
-    when (media) {
-        is Media.Image -> {
-            val bitmap = media.bitmap
-            ImageFromBitmap(modifier, bitmap)
-        }
-
-        is Media.Video -> {
-            player?.let {
-                VideoPlayer(modifier = modifier, player = it)
-            } ?: @Composable {
-                Log.d(TAG, "null player resource for Video Media playback")
-                Text(text = "video playback failed")
-            }
-        }
-
-        Media.None -> {
-            Text(modifier = modifier, text = stringResource(R.string.no_media_available))
-        }
-
-        Media.Error -> {
-            Text(modifier = modifier, text = stringResource(R.string.error_loading_media))
+                deleteButton = {
+                    if (uiState.deleteButtonUiState is DeleteButtonUiState.Ready) {
+                        DeleteCurrentMediaButton(
+                            modifier = it,
+                            onClick = {
+                                onDeleteMedia()
+                                onNavigateBack()
+                            }
+                        )
+                    }
+                },
+                snackBar = { modifier, snackbarHostState ->
+                    val snackBarData = uiState.snackBarUiState.snackBarQueue.peek()
+                    if (snackBarData != null) {
+                        TestableSnackbar(
+                            modifier = modifier.testTag(snackBarData.testTag),
+                            snackbarToShow = snackBarData,
+                            snackbarHostState = snackbarHostState,
+                            onSnackbarResult = onSnackBarResult
+                        )
+                    }
+                }
+            )
         }
     }
-}
-
-/**
- * Starts an intent to share media.
- *
- * @param context the context of the calling component.
- * @param mediaDescriptor the [MediaDescriptor] of the media to be shared.
- */
-private fun shareMedia(context: Context, mediaDescriptor: MediaDescriptor.Content) {
-    // todo(kc): support sharing multiple media
-    val uri = mediaDescriptor.uri
-    val mimeType: String = when (mediaDescriptor) {
-        is MediaDescriptor.Content.Image -> "image/jpeg"
-        is MediaDescriptor.Content.Video -> "video/mp4"
-    }
-
-    // if the uri isn't already managed by a content provider, we will need
-    val contentUri: Uri =
-        if (uri.scheme == ContentResolver.SCHEME_CONTENT) uri else getShareableUri(context, uri)
-
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = mimeType
-        putExtra(Intent.EXTRA_STREAM, contentUri)
-    }
-    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-    // todo(kc): prevent "edit image" from appearing in the ShareSheet.
-    context.startActivity(Intent.createChooser(intent, "Share Media"))
-}
-
-/**
- * Creates a content Uri for a given file Uri.
- *
- * @param context the context of the calling component.
- * @param uri the Uri of the file.
- *
- * @return a content Uri to be used for sharing.
- */
-private fun getShareableUri(context: Context, uri: Uri): Uri {
-    val authority = "${context.packageName}.fileprovider"
-    val file =
-        uri.path
-            ?.let { File(it) }
-            ?: throw FileNotFoundException("path does not exist")
-
-    return FileProvider.getUriForFile(context, authority, file)
 }

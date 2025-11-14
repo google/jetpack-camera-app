@@ -143,6 +143,8 @@ dependencies {
     // Project dependencies
     implementation(project(":core:common"))
     implementation(project(":data:media"))
+    implementation(project(":ui:uistate:postcapture"))
+
     testImplementation(project(":core:common"))
 }
 

@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.postcapture
+package com.google.jetpackcamera.ui.uistate.postcapture
 
 import android.graphics.Bitmap
 import androidx.media3.exoplayer.ExoPlayer
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
-
 
 /**
  * Defines the overall UI state for the PostCaptureScreen.
@@ -33,8 +32,10 @@ sealed interface PostCaptureUiState {
      * The screen is ready to display content and interact.
      */
     data class Ready(
-        val viewerUiState: MediaViewerUiState,
-        val snackBarUiState: SnackBarUiState
+        val viewerUiState: MediaViewerUiState = MediaViewerUiState.Loading,
+        val deleteButtonUiState: DeleteButtonUiState = DeleteButtonUiState.Unavailable,
+        val shareButtonUiState: ShareButtonUiState = ShareButtonUiState.Unavailable,
+        val snackBarUiState: SnackBarUiState = SnackBarUiState()
     ) : PostCaptureUiState
 }
 
@@ -47,12 +48,29 @@ sealed interface MediaViewerUiState {
      */
     object Loading : MediaViewerUiState
 
+    object Error : MediaViewerUiState
+
     /**
      * Viewer has content to display.
      */
-    interface Content : MediaViewerUiState {
-        // val media: Media
-        data class Video(val player: ExoPlayer) : Content
+    sealed interface Content : MediaViewerUiState {
+        sealed interface Video : Content {
+            val thumbnail: Bitmap?
+
+            data class Loading(override val thumbnail: Bitmap?) : Video
+            data class Ready(val player: ExoPlayer, override val thumbnail: Bitmap?) : Video
+        }
+
         data class Image(val imageBitmap: Bitmap) : Content
     }
+}
+
+sealed interface DeleteButtonUiState {
+    data object Ready : DeleteButtonUiState
+    data object Unavailable : DeleteButtonUiState
+}
+
+sealed interface ShareButtonUiState {
+    data object Ready : ShareButtonUiState
+    data object Unavailable : ShareButtonUiState
 }
