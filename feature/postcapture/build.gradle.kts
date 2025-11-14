@@ -81,13 +81,6 @@ android {
 }
 
 dependencies {
-    // Project dependencies
-    implementation(project(":ui:uistate:capture"))
-    implementation(project(":ui:components:capture"))
-
-    implementation(project(":ui:uistateadapter:capture"))
-
-
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
@@ -143,6 +136,12 @@ dependencies {
     // Project dependencies
     implementation(project(":core:common"))
     implementation(project(":data:media"))
+    implementation(project(":ui:uistate:postcapture"))
+    implementation(project(":ui:uistate:capture"))
+    implementation(project(":ui:components:capture"))
+    implementation(project(":ui:uistateadapter:capture"))
+    implementation(project(":ui:uistateadapter:postcapture"))
+    testImplementation(project(":ui:uistate:postcapture"))
     testImplementation(project(":core:common"))
 }
 
