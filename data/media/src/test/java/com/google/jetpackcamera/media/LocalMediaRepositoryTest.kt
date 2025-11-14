@@ -26,6 +26,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.jetpackcamera.data.media.LocalMediaRepository
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
+import java.io.File
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -40,7 +41,6 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowContentResolver
-import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
@@ -62,7 +62,6 @@ class LocalMediaRepositoryTest {
         fakeContentProvider =
             Robolectric.setupContentProvider(FakeContentProvider::class.java, MediaStore.AUTHORITY)
         ShadowContentResolver.registerProviderInternal(MediaStore.AUTHORITY, fakeContentProvider)
-
 
         repository = LocalMediaRepository(context, testDispatcher)
     }
@@ -149,7 +148,6 @@ class LocalMediaRepositoryTest {
         // Add the media to the fake provider so it can be deleted
         fakeContentProvider.insert(mediaUri, ContentValues())
 
-
         // When
         repository.deleteMedia(contentResolver, mediaToDelete)
 
@@ -206,7 +204,6 @@ class LocalMediaRepositoryTest {
         fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
         val videoUrl =
             fakeContentProvider.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, videoValues)!!
-
 
         // When
         val result = repository.getLastCapturedMedia()
@@ -266,7 +263,6 @@ class LocalMediaRepositoryTest {
         val imageUrl =
             fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
         fakeContentProvider.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, videoValues)!!
-
 
         // When
         val result = repository.getLastCapturedMedia()

@@ -23,7 +23,6 @@ import android.net.Uri
 import android.provider.MediaStore
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.FileOutputStream
 import java.io.OutputStream
 
 /**
@@ -100,11 +99,7 @@ class FakeContentProvider : ContentProvider() {
         return cursor
     }
 
-    private fun createRow(
-        projection: Array<String>,
-        values: ContentValues,
-        uri: Uri
-    ): Array<Any?> {
+    private fun createRow(projection: Array<String>, values: ContentValues, uri: Uri): Array<Any?> {
         return projection.map { proj ->
             when (proj) {
                 MediaStore.MediaColumns._ID -> uri.lastPathSegment?.toLong()
