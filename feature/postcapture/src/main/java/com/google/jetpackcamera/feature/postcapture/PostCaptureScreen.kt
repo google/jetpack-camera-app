@@ -111,7 +111,7 @@ fun PostCaptureComponent(
                             modifier = it,
                             onClick = {
                                 onDeleteMedia()
-                                //  onNavigateBack()
+                                onNavigateBack()
                             }
                         )
                     }

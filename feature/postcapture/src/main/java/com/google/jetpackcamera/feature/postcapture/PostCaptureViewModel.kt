@@ -50,13 +50,6 @@ import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import com.google.jetpackcamera.ui.uistateadapter.postcapture.from
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.File
-import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.LinkedList
-import java.util.Locale
-import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,6 +62,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.LinkedList
+import java.util.Locale
+import javax.inject.Inject
 
 private const val TAG = "PostCaptureViewModel"
 
@@ -221,11 +221,12 @@ class PostCaptureViewModel @Inject constructor(
                 player?.stop()
             }
             val mediaItem = MediaItem.fromUri(media.uri)
+            val availablePlayerState = playerState.value as? PlayerState.Available
 
-            if ((playerState.value as? PlayerState.Available)?.canChangeMediaItem == true) {
+            if (availablePlayerState?.canChangeMediaItem == true) {
                 player?.clearMediaItems()
             }
-            if ((playerState.value as? PlayerState.Available)?.canSetMediaItem == true) {
+            if (availablePlayerState?.canSetMediaItem == true) {
                 player?.setMediaItem(mediaItem)
             }
             player?.prepare()
@@ -379,7 +380,7 @@ class PostCaptureViewModel @Inject constructor(
     private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
             _postCaptureUiState.update { old ->
-                (old as? PostCaptureUiState.Ready)?.let {
+                if (old is PostCaptureUiState.Ready) {
                     val newQueue = LinkedList(old.snackBarUiState.snackBarQueue)
 
                     newQueue.add(snackBarData)
@@ -387,27 +388,29 @@ class PostCaptureViewModel @Inject constructor(
                     old.copy(
                         snackBarUiState = SnackBarUiState.from(newQueue)
                     )
-                } ?: old
+                } else {
+                    old
+                }
             }
         }
     }
 
     fun onSnackBarResult(cookie: String) {
-        viewModelScope.launch {
-            _postCaptureUiState.update { old ->
-                (old as? PostCaptureUiState.Ready)?.let {
-                    val newQueue = LinkedList(old.snackBarUiState.snackBarQueue)
-                    val snackBarData = newQueue.remove()
-                    if (snackBarData != null && snackBarData.cookie == cookie) {
-                        // If the latest snackBar had a result, then clear snackBarToShow
-                        Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
-                        old.copy(
-                            snackBarUiState = SnackBarUiState.from(newQueue)
-                        )
-                    } else {
-                        old
-                    }
-                } ?: old
+        _postCaptureUiState.update { state ->
+            if (state is PostCaptureUiState.Ready) {
+                val newQueue = LinkedList(state.snackBarUiState.snackBarQueue)
+                val snackBarData = newQueue.remove()
+                if (snackBarData != null && snackBarData.cookie == cookie) {
+                    // If the latest snackBar had a result, then clear snackBarToShow
+                    Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
+                    state.copy(
+                        snackBarUiState = SnackBarUiState.from(newQueue)
+                    )
+                } else {
+                    state
+                }
+            } else {
+                state
             }
         }
     }
