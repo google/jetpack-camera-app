@@ -35,6 +35,10 @@ import java.io.File
 import java.io.IOException
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -49,6 +53,7 @@ class LocalMediaRepository
     @ApplicationContext private val context: Context,
     @IODispatcher private val iODispatcher: CoroutineDispatcher
 ) : MediaRepository {
+    private val repositoryScope = CoroutineScope(iODispatcher + SupervisorJob())
     private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
 
     override val currentMedia = _currentMedia.asStateFlow()
@@ -102,43 +107,52 @@ class LocalMediaRepository
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI
             )
 
-        return when {
-            imagePair == null && videoPair == null -> MediaDescriptor.None
-            imagePair == null && videoPair != null -> getVideoMediaDescriptor(videoPair.first)
-            videoPair == null && imagePair != null -> getImageMediaDescriptor(imagePair.first)
-            imagePair != null && videoPair != null -> {
-                if (imagePair.second > videoPair.second) {
-                    getImageMediaDescriptor(imagePair.first)
-                } else {
-                    getVideoMediaDescriptor(videoPair.first)
-                }
+        return if (imagePair != null && videoPair != null) {
+            // Case 1: BOTH exist. Compare dates.
+            if (imagePair.second >= videoPair.second) {
+                getImageMediaDescriptor(imagePair.first)
+            } else {
+                getVideoMediaDescriptor(videoPair.first)
             }
-
-            else -> MediaDescriptor.None // Should not happen
+        } else if (imagePair != null) {
+            // Case 2: Only image exists
+            getImageMediaDescriptor(imagePair.first)
+        } else if (videoPair != null) {
+            // Case 3: Only video exists
+            getVideoMediaDescriptor(videoPair.first)
+        } else {
+            // Case 4: Neither exist
+            MediaDescriptor.None
         }
     }
 
     /**
      * Deletes the specified media from either the cache or the MediaStore.
      */
-    override suspend fun deleteMedia(
-        contentResolver: ContentResolver,
-        mediaDescriptor: MediaDescriptor.Content
-    ) {
-        if (mediaDescriptor.isCached) {
-            deleteCachedMedia(mediaDescriptor)
-            Log.d(TAG, "deleted cached media")
-        } else {
-            contentResolver.delete(mediaDescriptor.uri, null, null)
-            Log.d(TAG, "deleted saved media")
-        }
-    }
+    override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
+        repositoryScope.async {
+            val result =
+                if (mediaDescriptor.isCached) {
+                    deleteCachedMedia(mediaDescriptor)
+                } else {
+                    context.contentResolver.delete(mediaDescriptor.uri, null, null) >= 1
+                }
+            if (result && !mediaDescriptor.isCached) {
+                Log.d(TAG, "deleted saved media")
+            }
+
+            result
+        }.await()
 
     /**
      * Deletes a cached media file.
      */
-    private fun deleteCachedMedia(mediaDescriptor: MediaDescriptor.Content) {
-        mediaDescriptor.uri.toFile().delete()
+    private fun deleteCachedMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
+        val result = mediaDescriptor.uri.toFile().delete()
+        if (result) {
+            Log.d(TAG, "deleted cached media")
+        }
+        return result
     }
 
     /**
@@ -146,11 +160,8 @@ class LocalMediaRepository
      * @throws IOException if an I/O error occurs during the copy operation.
      */
     @Throws(IOException::class)
-    override suspend fun copyToUri(
-        contentResolver: ContentResolver,
-        mediaDescriptor: MediaDescriptor.Content,
-        destinationUri: Uri
-    ) = copyUriToUri(contentResolver, sourceUri = mediaDescriptor.uri, destinationUri)
+    override suspend fun copyToUri(mediaDescriptor: MediaDescriptor.Content, destinationUri: Uri) =
+        copyUriToUri(context.contentResolver, sourceUri = mediaDescriptor.uri, destinationUri)
 
     /**
      * Copies the content from a source URI to a destination URI.
@@ -178,12 +189,12 @@ class LocalMediaRepository
      * @return The [Uri] of the saved media, or `null` if the save attempt fails.
      * @throws IOException if an I/O error occurs during the save operation.
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Throws(IOException::class)
     override suspend fun saveToMediaStore(
-        contentResolver: ContentResolver,
         mediaDescriptor: MediaDescriptor.Content,
         filename: String
-    ): Uri? {
+    ): Uri? = repositoryScope.async {
         val mimeType: String
         val mediaUrl: Uri
         if (mediaDescriptor is MediaDescriptor.Content.Video) {
@@ -193,8 +204,8 @@ class LocalMediaRepository
             mimeType = IMAGE_MIME_TYPE
             mediaUrl = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         }
-        return copyToMediaStore(contentResolver, mediaDescriptor.uri, filename, mimeType, mediaUrl)
-    }
+        copyToMediaStore(context.contentResolver, mediaDescriptor.uri, filename, mimeType, mediaUrl)
+    }.await()
 
     /**
      * Copies content from a source URI to the MediaStore.
@@ -243,7 +254,6 @@ class LocalMediaRepository
 
             // (API 29+) Publish the file by marking it as "not pending"
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                contentValues.clear()
                 contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                 contentResolver.update(destinationUri, contentValues, null, null)
             }

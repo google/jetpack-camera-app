@@ -38,7 +38,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -77,30 +76,53 @@ class PostCaptureViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            mediaRepository.currentMedia.filterNotNull().collectLatest { mediaDescriptor ->
-                val mediaDescriptor = mediaDescriptor
+            mediaRepository.currentMedia.collectLatest { mediaDescriptor ->
                 val media = mediaRepository.load(mediaDescriptor)
+
+                // init with player if current media is a video
+                if (media is Media.Video) {
+                    if (player == null) {
+                        initPlayer()
+                    }
+                }
                 _uiState.update {
                     it.copy(mediaDescriptor = mediaDescriptor, media = media)
                 }
             }
         }
-        initPlayer()
+
+        // release and remove player when not needed
+        viewModelScope.launch {
+            uiState.collectLatest {
+                when (it.media) {
+                    Media.Error,
+                    is Media.Image,
+                    Media.None -> if (player != null) {
+                        releasePlayer()
+                        player = null
+                    }
+
+                    is Media.Video -> if (player == null) initPlayer()
+                }
+            }
+        }
     }
 
     override fun onCleared() {
-        super.onCleared()
         releasePlayer()
 
         val mediaDescriptor = uiState.value.mediaDescriptor
 
         // todo(kc): improve cache cleanup strategy
         if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
+            // use application scope for cleanup
+            // coroutine will not be cancelled when ViewModel dies
             viewModelScope.launch {
-                mediaRepository.deleteMedia(context.contentResolver, mediaDescriptor)
+                mediaRepository.deleteMedia(mediaDescriptor)
                 mediaRepository.setCurrentMedia(MediaDescriptor.None)
             }
         }
+        super.onCleared()
     }
 
     fun updatePlayerState(commands: Player.Commands?) {
@@ -196,11 +218,10 @@ class PostCaptureViewModel @Inject constructor(
     }
 
     /**
-     * returns true if successfully saved, false if not
+     * returns the Uri of the new saved media location
      */
     suspend fun saveMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
         mediaRepository.saveToMediaStore(
-            context.contentResolver,
             mediaDescriptor,
             createFilename(mediaDescriptor)
         ) != null
@@ -212,8 +233,15 @@ class PostCaptureViewModel @Inject constructor(
      */
     fun deleteMedia(mediaDescriptor: MediaDescriptor.Content) {
         viewModelScope.launch {
-            mediaRepository.deleteMedia(context.contentResolver, mediaDescriptor)
-            _uiState.update { it.copy(mediaDescriptor = MediaDescriptor.None, media = Media.None) }
+            val result = mediaRepository.deleteMedia(mediaDescriptor)
+            if (result) {
+                _uiState.update {
+                    it.copy(
+                        mediaDescriptor = MediaDescriptor.None,
+                        media = Media.None
+                    )
+                }
+            }
         }
     }
 }

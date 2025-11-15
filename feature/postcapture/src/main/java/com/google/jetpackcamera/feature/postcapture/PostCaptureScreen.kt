@@ -231,6 +231,7 @@ private fun shareMedia(context: Context, mediaDescriptor: MediaDescriptor.Conten
         is MediaDescriptor.Content.Video -> "video/mp4"
     }
 
+    // if the uri isn't already managed by a content provider, we will need
     val contentUri: Uri =
         if (uri.scheme == ContentResolver.SCHEME_CONTENT) uri else getShareableUri(context, uri)
 

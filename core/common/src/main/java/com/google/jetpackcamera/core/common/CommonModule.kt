@@ -47,6 +47,10 @@ class CommonModule {
         CoroutineScope(SupervisorJob() + dispatcher)
 }
 
+@Retention(AnnotationRetention.RUNTIME)
+@Qualifier
+annotation class ApplicationScope
+
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DefaultDispatcher
