@@ -27,7 +27,6 @@ import androidx.media3.common.Player.COMMAND_PLAY_PAUSE
 import androidx.media3.common.Player.COMMAND_PREPARE
 import androidx.media3.common.Player.COMMAND_SET_MEDIA_ITEM
 import androidx.media3.exoplayer.ExoPlayer
-import com.google.jetpackcamera.core.common.ApplicationScope
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
@@ -48,7 +47,6 @@ import java.util.LinkedList
 import java.util.Locale
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -60,8 +58,7 @@ private const val TAG = "PostCaptureViewModel"
 @HiltViewModel
 class PostCaptureViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
-    @ApplicationContext private val context: Context,
-    @ApplicationScope private val applicationScope: CoroutineScope
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val playerState = MutableStateFlow(
@@ -139,8 +136,8 @@ class PostCaptureViewModel @Inject constructor(
         if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
             // use application scope for cleanup
             // coroutine will not be cancelled when ViewModel dies
-            applicationScope.launch {
-                mediaRepository.deleteMedia(context.contentResolver, mediaDescriptor)
+            viewModelScope.launch {
+                mediaRepository.deleteMedia(mediaDescriptor)
                 mediaRepository.setCurrentMedia(MediaDescriptor.None)
             }
         }
@@ -231,7 +228,7 @@ class PostCaptureViewModel @Inject constructor(
      */
     fun saveCurrentMedia() {
         (uiState.value.mediaDescriptor as? MediaDescriptor.Content)?.let {
-            applicationScope.launch {
+            viewModelScope.launch {
                 val cookieInt = snackBarCount.incrementAndGet()
                 val cookie = "MediaSave-$cookieInt"
                 val result: Uri?
@@ -310,49 +307,9 @@ class PostCaptureViewModel @Inject constructor(
      */
     suspend fun saveMedia(mediaDescriptor: MediaDescriptor.Content): Uri? =
         mediaRepository.saveToMediaStore(
-            context.contentResolver,
             mediaDescriptor,
             createFilename(mediaDescriptor)
         )
-
-    /**
-     * Deletes the given media.
-     *
-     * @param mediaDescriptor the [MediaDescriptor] of the media to be deleted.
-     */
-    fun deleteMedia(mediaDescriptor: MediaDescriptor.Content) {
-        applicationScope.launch {
-            try {
-                mediaRepository.deleteMedia(context.contentResolver, mediaDescriptor)
-                _uiState.update {
-                    it.copy(
-                        mediaDescriptor = MediaDescriptor.None,
-                        media = Media.None
-                    )
-                }
-            } catch (e: Exception) {
-                val cookieInt = snackBarCount.incrementAndGet()
-                val cookie = "MediaDelete-$cookieInt"
-                val (stringResource, testTag) = when (mediaDescriptor) {
-                    is MediaDescriptor.Content.Image ->
-                        R.string.snackbar_delete_image_failure to
-                            SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE
-
-                    is MediaDescriptor.Content.Video ->
-                        R.string.snackbar_delete_video_failure to
-                            SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
-                }
-                addSnackBarData(
-                    SnackbarData(
-                        cookie = cookie,
-                        stringResource = stringResource,
-                        withDismissAction = true,
-                        testTag = testTag
-                    )
-                )
-            }
-        }
-    }
 
     private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
@@ -382,6 +339,45 @@ class PostCaptureViewModel @Inject constructor(
                 } else {
                     old
                 }
+            }
+        }
+    }
+
+    /**
+     * Deletes the given media.
+     *
+     * @param mediaDescriptor the [MediaDescriptor] of the media to be deleted.
+     */
+    fun deleteMedia(mediaDescriptor: MediaDescriptor.Content) {
+        viewModelScope.launch {
+            try {
+                mediaRepository.deleteMedia(mediaDescriptor)
+                _uiState.update {
+                    it.copy(
+                        mediaDescriptor = MediaDescriptor.None,
+                        media = Media.None
+                    )
+                }
+            } catch (e: Exception) {
+                val cookieInt = snackBarCount.incrementAndGet()
+                val cookie = "MediaDelete-$cookieInt"
+                val (stringResource, testTag) = when (mediaDescriptor) {
+                    is MediaDescriptor.Content.Image ->
+                        R.string.snackbar_delete_image_failure to
+                            SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE
+
+                    is MediaDescriptor.Content.Video ->
+                        R.string.snackbar_delete_video_failure to
+                            SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
+                }
+                addSnackBarData(
+                    SnackbarData(
+                        cookie = cookie,
+                        stringResource = stringResource,
+                        withDismissAction = true,
+                        testTag = testTag
+                    )
+                )
             }
         }
     }
