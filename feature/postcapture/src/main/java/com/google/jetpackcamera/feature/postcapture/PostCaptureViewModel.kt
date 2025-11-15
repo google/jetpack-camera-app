@@ -26,22 +26,20 @@ import androidx.media3.common.Player.COMMAND_PLAY_PAUSE
 import androidx.media3.common.Player.COMMAND_PREPARE
 import androidx.media3.common.Player.COMMAND_SET_MEDIA_ITEM
 import androidx.media3.exoplayer.ExoPlayer
-import com.google.jetpackcamera.core.common.ApplicationScope
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import javax.inject.Inject
 
 private const val TAG = "PostCaptureViewModel"
 
@@ -49,7 +47,6 @@ private const val TAG = "PostCaptureViewModel"
 class PostCaptureViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
     @ApplicationContext private val context: Context,
-    @ApplicationScope private val applicationScope: CoroutineScope
 ) : ViewModel() {
 
     private val playerState = MutableStateFlow(
@@ -120,8 +117,8 @@ class PostCaptureViewModel @Inject constructor(
         if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
             // use application scope for cleanup
             // coroutine will not be cancelled when ViewModel dies
-            applicationScope.launch {
-                mediaRepository.deleteMedia(context.contentResolver, mediaDescriptor)
+            viewModelScope.launch {
+                mediaRepository.deleteMedia(mediaDescriptor)
                 mediaRepository.setCurrentMedia(MediaDescriptor.None)
             }
         }
@@ -221,11 +218,10 @@ class PostCaptureViewModel @Inject constructor(
     }
 
     /**
-     * returns true if successfully saved, false if not
+     * returns the Uri of the new saved media location
      */
     suspend fun saveMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
         mediaRepository.saveToMediaStore(
-            context.contentResolver,
             mediaDescriptor,
             createFilename(mediaDescriptor)
         ) != null
@@ -237,8 +233,14 @@ class PostCaptureViewModel @Inject constructor(
      */
     fun deleteMedia(mediaDescriptor: MediaDescriptor.Content) {
         viewModelScope.launch {
-            mediaRepository.deleteMedia(context.contentResolver, mediaDescriptor)
-            _uiState.update { it.copy(mediaDescriptor = MediaDescriptor.None, media = Media.None) }
+            val result = mediaRepository.deleteMedia(mediaDescriptor)
+            if (result)
+                _uiState.update {
+                    it.copy(
+                        mediaDescriptor = MediaDescriptor.None,
+                        media = Media.None
+                    )
+                }
         }
     }
 }

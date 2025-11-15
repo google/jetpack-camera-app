@@ -45,16 +45,6 @@ class CommonModule {
     @Provides
     fun providesCoroutineScope(@DefaultDispatcher dispatcher: CoroutineDispatcher) =
         CoroutineScope(SupervisorJob() + dispatcher)
-
-    @Module
-    @InstallIn(SingletonComponent::class)
-    object CoroutinesModule {
-        @ApplicationScope
-        @Singleton
-        @Provides
-        fun providesApplicationScope(): CoroutineScope =
-            CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    }
 }
 
 @Retention(AnnotationRetention.RUNTIME)

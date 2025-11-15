@@ -26,7 +26,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.jetpackcamera.data.media.LocalMediaRepository
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
-import java.io.File
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -41,6 +40,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowContentResolver
+import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
@@ -149,7 +149,7 @@ class LocalMediaRepositoryTest {
         fakeContentProvider.insert(mediaUri, ContentValues())
 
         // When
-        repository.deleteMedia(contentResolver, mediaToDelete)
+        repository.deleteMedia(mediaToDelete)
 
         // Then
         // The fake provider will assert internally if the URI is not found.
@@ -180,7 +180,7 @@ class LocalMediaRepositoryTest {
         )
 
         // 3. Act: Call deleteMedia
-        repository.deleteMedia(contentResolver, mediaToDelete)
+        repository.deleteMedia(mediaToDelete)
 
         // 4. Assert: Verify the file is physically gone
         assertFalse("Repository should have deleted the cached file", tempFile.exists())
@@ -330,7 +330,7 @@ class LocalMediaRepositoryTest {
         )
 
         // When & Then (The test passes if no exception is thrown)
-        repository.deleteMedia(contentResolver, mediaToDelete)
+        repository.deleteMedia(mediaToDelete)
     }
 
     @Test
@@ -348,7 +348,7 @@ class LocalMediaRepositoryTest {
 
         // When
         val result = repository.saveToMediaStore(
-            contentResolver,
+
             mediaDescriptor,
             "my_video.mp4"
         )
@@ -374,7 +374,7 @@ class LocalMediaRepositoryTest {
 
         // When
         val result = repository.saveToMediaStore(
-            contentResolver,
+
             mediaDescriptor,
             "my_photo.jpg"
         )
@@ -401,7 +401,7 @@ class LocalMediaRepositoryTest {
 
         // When
         val result = repository.saveToMediaStore(
-            contentResolver,
+
             mediaDescriptor,
             "my_photo.jpg"
         )
@@ -421,7 +421,7 @@ class LocalMediaRepositoryTest {
         )
 
         // When
-        val result = repository.saveToMediaStore(contentResolver, mediaDescriptor, "broken.jpg")
+        val result = repository.saveToMediaStore(mediaDescriptor, "broken.jpg")
 
         // Then
         assertEquals(null, result)

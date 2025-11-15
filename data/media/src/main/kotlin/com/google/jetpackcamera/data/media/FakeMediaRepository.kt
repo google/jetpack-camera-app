@@ -40,13 +40,12 @@ object FakeMediaRepository : MediaRepository {
     }
 
     override suspend fun deleteMedia(
-        contentResolver: ContentResolver,
         mediaDescriptor: MediaDescriptor.Content
-    ) {
+    ): Boolean {
+        return true
     }
 
     override suspend fun saveToMediaStore(
-        contentResolver: ContentResolver,
         mediaDescriptor: MediaDescriptor.Content,
         filename: String
     ): Uri? {
@@ -57,7 +56,6 @@ object FakeMediaRepository : MediaRepository {
     }
 
     override suspend fun copyToUri(
-        contentResolver: ContentResolver,
         mediaDescriptor: MediaDescriptor.Content,
         destinationUri: Uri
     ) {

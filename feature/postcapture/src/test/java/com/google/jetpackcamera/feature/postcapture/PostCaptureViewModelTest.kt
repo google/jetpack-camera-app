@@ -91,28 +91,19 @@ internal class PostCaptureViewModelTest {
 
         mockMediaRepository = mock()
 
-        // Default Stubbing
+        // Default Stubbing for the media repository
         `when`(mockMediaRepository.currentMedia).thenReturn(currentMediaFlow)
 
-        // custom stub output for mediarepository load calls
-        `when`(
-            mockMediaRepository.load(
-                Mockito.any(MediaDescriptor::class.java) ?: MediaDescriptor.None
-            )
-        ).thenAnswer { invocation ->
-            // Get the argument passed to .load()
-            // Return dynamic result based on input class
-            when (invocation.arguments[0] as MediaDescriptor) {
-                is MediaDescriptor.Content.Video -> testVideoMedia
-                is MediaDescriptor.Content.Image -> testImageMedia
-                else -> Media.None
-            }
-        }
+        // Use specific stubs for the load method for clarity and reliability
+        `when`(mockMediaRepository.load(testImageDesc)).thenReturn(testImageMedia)
+        `when`(mockMediaRepository.load(testCacheImageDesc)).thenReturn(testImageMedia)
+        `when`(mockMediaRepository.load(testVideoDesc)).thenReturn(testVideoMedia)
+        `when`(mockMediaRepository.load(testCacheVideoDesc)).thenReturn(testVideoMedia)
+        `when`(mockMediaRepository.load(MediaDescriptor.None)).thenReturn(Media.None)
 
         viewModel = PostCaptureViewModel(
             mediaRepository = mockMediaRepository,
-            context = testContext,
-            applicationScope = testExternalScope
+            context = testContext
         )
         advanceUntilIdle()
     }
@@ -182,7 +173,6 @@ internal class PostCaptureViewModelTest {
 
         // Assert
         verify(mockMediaRepository).deleteMedia(
-            safeAny(ContentResolver::class.java),
             safeAny(MediaDescriptor.Content::class.java)
         )
     }
@@ -198,7 +188,6 @@ internal class PostCaptureViewModelTest {
 
         // Assert
         verify(mockMediaRepository, never()).deleteMedia(
-            safeAny(ContentResolver::class.java),
             safeAny(MediaDescriptor.Content::class.java)
         )
     }
@@ -212,7 +201,6 @@ internal class PostCaptureViewModelTest {
 
         `when`(
             mockMediaRepository.saveToMediaStore(
-                safeAny(ContentResolver::class.java),
                 safeAny(MediaDescriptor.Content::class.java),
                 safeAny(String::class.java)
             )
@@ -224,7 +212,6 @@ internal class PostCaptureViewModelTest {
 
         // Then
         verify(mockMediaRepository).saveToMediaStore(
-            safeAny(ContentResolver::class.java),
             safeEq(testCacheImageDesc),
             safeAny(String::class.java)
         )
@@ -240,7 +227,6 @@ internal class PostCaptureViewModelTest {
 
         `when`(
             mockMediaRepository.saveToMediaStore(
-                safeAny(ContentResolver::class.java),
                 safeAny(MediaDescriptor.Content::class.java),
                 safeAny(String::class.java)
             )
@@ -252,7 +238,6 @@ internal class PostCaptureViewModelTest {
 
         // Then
         verify(mockMediaRepository).saveToMediaStore(
-            safeAny(ContentResolver::class.java),
             safeEq(testCacheImageDesc),
             safeAny(String::class.java)
         )
@@ -264,6 +249,7 @@ internal class PostCaptureViewModelTest {
         // Given
         currentMediaFlow.emit(testImageDesc)
         advanceUntilIdle()
+        `when`(mockMediaRepository.deleteMedia(safeEq(testImageDesc))).thenReturn(true)
 
         // When
         viewModel.deleteMedia(testImageDesc)
@@ -271,7 +257,6 @@ internal class PostCaptureViewModelTest {
 
         // Then
         verify(mockMediaRepository).deleteMedia(
-            safeAny(ContentResolver::class.java),
             safeEq(testImageDesc)
         )
         // Also verify UI state is reset
