@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.data.media
 
-import android.content.ContentResolver
 import android.net.Uri
 import androidx.core.net.toUri
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,14 +38,11 @@ object FakeMediaRepository : MediaRepository {
         return Media.None
     }
 
-    override suspend fun deleteMedia(
-        contentResolver: ContentResolver,
-        mediaDescriptor: MediaDescriptor.Content
-    ) {
+    override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
+        return true
     }
 
     override suspend fun saveToMediaStore(
-        contentResolver: ContentResolver,
         mediaDescriptor: MediaDescriptor.Content,
         filename: String
     ): Uri? {
@@ -56,10 +52,6 @@ object FakeMediaRepository : MediaRepository {
         }
     }
 
-    override suspend fun copyToUri(
-        contentResolver: ContentResolver,
-        mediaDescriptor: MediaDescriptor.Content,
-        destinationUri: Uri
-    ) {
+    override suspend fun copyToUri(mediaDescriptor: MediaDescriptor.Content, destinationUri: Uri) {
     }
 }
