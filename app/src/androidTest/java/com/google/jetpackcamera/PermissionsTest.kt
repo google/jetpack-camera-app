@@ -85,9 +85,7 @@ class PermissionsTest {
     @Test
     fun allPermissions_alreadyGranted_screenNotShown() {
         runMainActivityScenarioTest {
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-            }
+            composeTestRule.waitForCaptureButton()
         }
     }
 

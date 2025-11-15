@@ -18,6 +18,7 @@ package com.google.jetpackcamera.core.camera
 import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
+import androidx.camera.core.CameraState as CXCameraState
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
 import androidx.lifecycle.asFlow
@@ -32,6 +33,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -122,9 +124,31 @@ internal suspend fun runConcurrentCameraSession(
         launch {
             sessionSettings.primaryCameraInfo.torchState.asFlow().collectLatest { torchState ->
                 currentCameraState.update { old ->
-                    old.copy(torchEnabled = torchState == TorchState.ON)
+                    old.copy(isTorchEnabled = torchState == TorchState.ON)
                 }
             }
+        }
+
+        // Update CameraState to reflect when camera is running
+        launch {
+            primaryCamera.cameraInfo.cameraState
+                .asFlow()
+                .filterNotNull()
+                .distinctUntilChanged()
+                .onCompletion {
+                    currentCameraState.update { old ->
+                        old.copy(
+                            isCameraRunning = false
+                        )
+                    }
+                }
+                .collectLatest { cameraState ->
+                    currentCameraState.update { old ->
+                        old.copy(
+                            isCameraRunning = cameraState.type == CXCameraState.Type.OPEN
+                        )
+                    }
+                }
         }
 
         // update cameraState to mirror the current zoomState

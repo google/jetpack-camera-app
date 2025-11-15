@@ -144,9 +144,9 @@ fun ComposeTestRule.wait(timeoutMillis: Long) {
     }
 }
 fun ComposeTestRule.waitForCaptureButton(timeoutMillis: Long = APP_START_TIMEOUT_MILLIS) {
-    // Wait for the capture button to be displayed
+    // Wait for the capture button to be displayed and enabled
     waitUntil(timeoutMillis = timeoutMillis) {
-        onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        onNode(hasTestTag(CAPTURE_BUTTON) and isEnabled()).isDisplayed()
     }
 }
 
