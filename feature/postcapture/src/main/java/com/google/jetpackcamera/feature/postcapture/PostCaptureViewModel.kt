@@ -31,22 +31,22 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import javax.inject.Inject
 
 private const val TAG = "PostCaptureViewModel"
 
 @HiltViewModel
 class PostCaptureViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
-    @ApplicationContext private val context: Context,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val playerState = MutableStateFlow(
@@ -234,13 +234,14 @@ class PostCaptureViewModel @Inject constructor(
     fun deleteMedia(mediaDescriptor: MediaDescriptor.Content) {
         viewModelScope.launch {
             val result = mediaRepository.deleteMedia(mediaDescriptor)
-            if (result)
+            if (result) {
                 _uiState.update {
                     it.copy(
                         mediaDescriptor = MediaDescriptor.None,
                         media = Media.None
                     )
                 }
+            }
         }
     }
 }

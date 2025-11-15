@@ -31,6 +31,9 @@ import android.util.Size
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
+import java.io.IOException
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,9 +43,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.IOException
-import javax.inject.Inject
 
 private const val TAG = "LocalMediaRepository"
 private const val IMAGE_MIME_TYPE = "image/jpeg"
@@ -129,9 +129,7 @@ class LocalMediaRepository
     /**
      * Deletes the specified media from either the cache or the MediaStore.
      */
-    override suspend fun deleteMedia(
-        mediaDescriptor: MediaDescriptor.Content
-    ): Boolean =
+    override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
         repositoryScope.async {
             val result =
                 if (mediaDescriptor.isCached) {
@@ -139,20 +137,21 @@ class LocalMediaRepository
                 } else {
                     context.contentResolver.delete(mediaDescriptor.uri, null, null) >= 1
                 }
-            if (result && !mediaDescriptor.isCached)
+            if (result && !mediaDescriptor.isCached) {
                 Log.d(TAG, "deleted saved media")
+            }
 
             result
         }.await()
-
 
     /**
      * Deletes a cached media file.
      */
     private fun deleteCachedMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
         val result = mediaDescriptor.uri.toFile().delete()
-        if (result)
+        if (result) {
             Log.d(TAG, "deleted cached media")
+        }
         return result
     }
 
@@ -161,10 +160,8 @@ class LocalMediaRepository
      * @throws IOException if an I/O error occurs during the copy operation.
      */
     @Throws(IOException::class)
-    override suspend fun copyToUri(
-        mediaDescriptor: MediaDescriptor.Content,
-        destinationUri: Uri
-    ) = copyUriToUri(context.contentResolver, sourceUri = mediaDescriptor.uri, destinationUri)
+    override suspend fun copyToUri(mediaDescriptor: MediaDescriptor.Content, destinationUri: Uri) =
+        copyUriToUri(context.contentResolver, sourceUri = mediaDescriptor.uri, destinationUri)
 
     /**
      * Copies the content from a source URI to a destination URI.
