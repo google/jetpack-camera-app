@@ -579,13 +579,6 @@ class PreviewViewModel @Inject constructor(
     }
 
     private fun nextSaveLocation(saveMode: SaveMode): Pair<SaveLocation, IntProgress?> {
-        val defaultSaveLocation =
-            if (saveMode is SaveMode.CacheAndReview) {
-                SaveLocation.Cache(saveMode.cacheDir)
-            } else {
-                SaveLocation.Default
-            }
-
         return when (externalCaptureMode) {
             ExternalCaptureMode.ImageCapture,
             ExternalCaptureMode.MultipleImageCapture,
@@ -601,12 +594,19 @@ class PreviewViewModel @Inject constructor(
                         progress
                     )
                 } else {
-                    Pair(defaultSaveLocation, null)
+                    Pair(SaveLocation.Default, null)
                 }
             }
 
-            ExternalCaptureMode.Standard ->
+            ExternalCaptureMode.Standard -> {
+                val defaultSaveLocation =
+                    if (saveMode is SaveMode.CacheAndReview) {
+                        SaveLocation.Cache(saveMode.cacheDir)
+                    } else {
+                        SaveLocation.Default
+                    }
                 Pair(defaultSaveLocation, null)
+            }
         }
     }
 
@@ -657,7 +657,7 @@ class PreviewViewModel @Inject constructor(
                     val event = if (progress != null) {
                         ImageCaptureEvent.SequentialImageSaved(savedUri, progress)
                     } else {
-                        if (saveMode is SaveMode.CacheAndReview) {
+                        if (saveLocation is SaveLocation.Cache) {
                             ImageCaptureEvent.SingleImageCached(savedUri)
                         } else {
                             ImageCaptureEvent.SingleImageSaved(savedUri)
