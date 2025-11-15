@@ -102,12 +102,16 @@ class PostCaptureViewModel @Inject constructor(
                         player = null
                     }
 
-                    is Media.Video -> if (player == null) initPlayer()
+                    is Media.Video -> {
+                        if (player == null) initPlayer()
+                        loadCurrentVideo()
+                    }
                 }
             }
         }
     }
 
+    // todo(kc): improve cache cleanup strategy
     override fun onCleared() {
         releasePlayer()
 
@@ -254,7 +258,8 @@ class PostCaptureViewModel @Inject constructor(
  * @return a filename for the media descriptor.
  */
 private fun createFilename(mediaDescriptor: MediaDescriptor.Content): String {
-    val timeStamp = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US).format(Date())
+    val timeStamp =
+        SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US).format(Date())
 
     return when (mediaDescriptor) {
         is MediaDescriptor.Content.Image -> {

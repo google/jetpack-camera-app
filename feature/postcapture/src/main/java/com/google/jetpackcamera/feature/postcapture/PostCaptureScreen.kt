@@ -22,47 +22,25 @@ import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.OptIn
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.compose.material3.buttons.PlayPauseButton
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_DELETE
-import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SHARE
-import com.google.jetpackcamera.feature.postcapture.ui.CancelPostCaptureButton
+import com.google.jetpackcamera.feature.postcapture.ui.DeleteCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.ExitPostCaptureButton
 import com.google.jetpackcamera.feature.postcapture.ui.ImageFromBitmap
+import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.ShareCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.VideoPlayer
 import java.io.File
 import java.io.FileNotFoundException
@@ -82,10 +60,10 @@ fun PostCaptureScreen(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         player = viewModel.player,
-        loadCurrentVideo = viewModel::loadCurrentVideo,
         onDeleteMedia = {
-            (uiState.mediaDescriptor as? MediaDescriptor.Content)
-                ?.let { viewModel.deleteMedia(it) }
+            (uiState.mediaDescriptor as? MediaDescriptor.Content)?.let {
+                viewModel.deleteMedia(it)
+            }
         },
         onSaveMedia = { block ->
             viewModel.saveCurrentMedia { block(it) }
@@ -99,60 +77,28 @@ fun PostCaptureComponent(
     uiState: PostCaptureUiState,
     onNavigateBack: () -> Unit,
     player: ExoPlayer?,
-    loadCurrentVideo: () -> Unit,
     onSaveMedia: ((Boolean) -> Unit) -> Unit,
     onDeleteMedia: () -> Unit
 ) {
     val context = LocalContext.current
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        when (val media = uiState.media) {
-            is Media.Image -> {
-                val bitmap = media.bitmap
-                ImageFromBitmap(Modifier.fillMaxSize(), bitmap)
-            }
-
-            is Media.Video -> {
-                player?.let { player ->
-                    VideoPlayer(modifier = Modifier, player = player)
-                    PlayPauseButton(player)
-                    LaunchedEffect(media.uri) {
-                        loadCurrentVideo()
-                    }
-                } ?: Text("Loading Video...")
-            }
-
-            Media.None -> {
-                Text(
-                    text = stringResource(R.string.no_media_available),
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            Media.Error -> {
-                Text(
-                    text = stringResource(R.string.error_loading_media),
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-        }
-
-        CancelPostCaptureButton(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .safeContentPadding(),
-            onExitPostCapture = onNavigateBack
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
+    PostCaptureLayout(
+        mediaSurface = {
+            MediaViewer(
+                modifier = it,
+                media = uiState.media,
+                player = player
+            )
+        },
+        exitButton = {
+            ExitPostCaptureButton(
+                modifier = it,
+                onExitPostCapture = onNavigateBack
+            )
+        },
+        saveButton = {
             val saveSuccessString = stringResource(R.string.toast_save_success)
             val saveFailureString = stringResource(R.string.toast_save_failure)
-            SaveCurrentMediaButton(onClick = {
+            SaveCurrentMediaButton(modifier = it, onClick = {
                 // FIXME(kc): set up proper save events
                 onSaveMedia { isSaved ->
                     if (isSaved) {
@@ -164,55 +110,49 @@ fun PostCaptureComponent(
                     }
                 }
             })
-            // Delete Image Button visible for saved media
-            if ((uiState.mediaDescriptor as? MediaDescriptor.Content)?.isCached != true) {
-                IconButton(
-                    onClick = {
-                        onDeleteMedia()
-                        onNavigateBack()
-                    },
-                    modifier = Modifier
-                        .size(56.dp)
-                        .shadow(10.dp, CircleShape)
-                        .testTag(BUTTON_POST_CAPTURE_DELETE),
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = stringResource(
-                            R.string.button_delete_media_description
-                        ),
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+        },
+        shareButton = {
+            ShareCurrentMediaButton(modifier = it, onClick = {
+                val mediaDescriptor = uiState.mediaDescriptor
+                (mediaDescriptor as? MediaDescriptor.Content)?.let { descriptor ->
+                    shareMedia(context, descriptor)
                 }
+            })
+        },
+        deleteButton = {
+            if ((uiState.mediaDescriptor as? MediaDescriptor.Content)?.isCached != true) {
+                DeleteCurrentMediaButton(onClick = {
+                    onDeleteMedia()
+                    onNavigateBack()
+                })
             }
+        }
+    )
+}
 
-            Spacer(modifier = Modifier.weight(1f))
+@Composable
+private fun MediaViewer(media: Media, player: ExoPlayer?, modifier: Modifier = Modifier) {
+    when (media) {
+        is Media.Image -> {
+            val bitmap = media.bitmap
+            ImageFromBitmap(modifier, bitmap)
+        }
 
-            // Share Media Button
-            IconButton(
-                onClick = {
-                    val mediaDescriptor = uiState.mediaDescriptor
-                    (mediaDescriptor as? MediaDescriptor.Content)?.let {
-                        shareMedia(context, it)
-                    }
-                },
-                modifier = Modifier
-                    .size(56.dp)
-                    .shadow(10.dp, CircleShape)
-                    .testTag(BUTTON_POST_CAPTURE_SHARE),
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = stringResource(R.string.button_share_media_description),
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
+        is Media.Video -> {
+            player?.let {
+                VideoPlayer(modifier = modifier, player = it)
+            } ?: @Composable {
+                Log.w(TAG, "null player resource for Video Media playback")
+                Text(modifier = modifier, text = stringResource(R.string.player_unavailable))
             }
+        }
+
+        Media.None -> {
+            Text(modifier = modifier, text = stringResource(R.string.no_media_available))
+        }
+
+        Media.Error -> {
+            Text(modifier = modifier, text = stringResource(R.string.error_loading_media))
         }
     }
 }
