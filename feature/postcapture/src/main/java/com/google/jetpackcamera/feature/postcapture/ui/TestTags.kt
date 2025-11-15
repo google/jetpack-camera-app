@@ -21,6 +21,11 @@ const val BUTTON_POST_CAPTURE_SAVE = "btn_post_capture_save"
 const val BUTTON_POST_CAPTURE_SHARE = "btn_post_capture_share"
 
 const val BUTTON_POST_CAPTURE_DELETE = "btn_post_capture_delete"
-
 const val VIEWER_POST_CAPTURE_VIDEO = "surface_post_capture_video_player"
 const val VIEWER_POST_CAPTURE_IMAGE = "surface_post_capture_image_player"
+const val SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS = "snackbar_post_capture_image_save_success"
+const val SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS = "snackbar_post_capture_video_save_success"
+const val SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE = "snackbar_post_capture_image_save_failure"
+const val SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE = "snackbar_post_capture_video_save_failure"
+const val SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE = "snackbar_post_capture_image_delete_failure"
+const val SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE = "snackbar_post_capture_video_delete_failure"

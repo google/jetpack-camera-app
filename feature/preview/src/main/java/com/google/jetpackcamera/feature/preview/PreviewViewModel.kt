@@ -905,7 +905,7 @@ class PreviewViewModel @Inject constructor(
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.let { readyState ->
                     val newQueue = LinkedList(readyState.snackBarUiState.snackBarQueue)
-                    val snackBarData = newQueue.remove()
+                    val snackBarData = newQueue.poll()
                     if (snackBarData != null && snackBarData.cookie == cookie) {
                         // If the latest snackBar had a result, then clear snackBarToShow
                         Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")

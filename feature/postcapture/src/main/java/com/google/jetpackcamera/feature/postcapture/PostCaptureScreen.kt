@@ -20,7 +20,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +27,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -42,6 +42,7 @@ import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.ShareCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.VideoPlayer
+import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import java.io.File
 import java.io.FileNotFoundException
 
@@ -65,9 +66,8 @@ fun PostCaptureScreen(
                 viewModel.deleteMedia(it)
             }
         },
-        onSaveMedia = { block ->
-            viewModel.saveCurrentMedia { block(it) }
-        }
+        onSaveMedia = viewModel::saveCurrentMedia,
+        onSnackBarResult = viewModel::onSnackBarResult
     )
 }
 
@@ -77,8 +77,9 @@ fun PostCaptureComponent(
     uiState: PostCaptureUiState,
     onNavigateBack: () -> Unit,
     player: ExoPlayer?,
-    onSaveMedia: ((Boolean) -> Unit) -> Unit,
-    onDeleteMedia: () -> Unit
+    onSaveMedia: () -> Unit,
+    onDeleteMedia: () -> Unit,
+    onSnackBarResult: (String) -> Unit
 ) {
     val context = LocalContext.current
     PostCaptureLayout(
@@ -96,19 +97,8 @@ fun PostCaptureComponent(
             )
         },
         saveButton = {
-            val saveSuccessString = stringResource(R.string.toast_save_success)
-            val saveFailureString = stringResource(R.string.toast_save_failure)
             SaveCurrentMediaButton(modifier = it, onClick = {
-                // FIXME(kc): set up proper save events
-                onSaveMedia { isSaved ->
-                    if (isSaved) {
-                        Toast.makeText(context, saveSuccessString, Toast.LENGTH_SHORT)
-                            .show()
-                    } else {
-                        Toast.makeText(context, saveFailureString, Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                }
+                onSaveMedia()
             })
         },
         shareButton = {
@@ -125,6 +115,18 @@ fun PostCaptureComponent(
                     onDeleteMedia()
                     onNavigateBack()
                 })
+            }
+        },
+        snackBar = {
+                modifier, snackbarHostState ->
+            val snackBarData = uiState.snackBarUiState.snackBarQueue.peek()
+            if (snackBarData != null) {
+                TestableSnackbar(
+                    modifier = modifier.testTag(snackBarData.testTag),
+                    snackbarToShow = snackBarData,
+                    snackbarHostState = snackbarHostState,
+                    onSnackbarResult = onSnackBarResult
+                )
             }
         }
     )
