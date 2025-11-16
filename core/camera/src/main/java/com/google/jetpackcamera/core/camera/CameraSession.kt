@@ -915,6 +915,33 @@ private fun getPendingRecording(
                     .build()
             videoCaptureUseCase.output.prepareRecording(context, mediaStoreOutput)
         }
+
+        is SaveLocation.Cache -> {
+            try {
+                // 1. Get the app's cache directory
+                val cacheDir = context.applicationContext.cacheDir
+
+                // 2. Create a unique temporary file for the video
+                val tempFile = File.createTempFile(
+                    "JCA_VID_CAPTURE_TEMP_", // Prefix
+                    ".mp4", // Suffix
+                    cacheDir // Directory
+                )
+
+                // 3. Build FileOutputOptions with the File object
+                val fileOutputOptions = FileOutputOptions.Builder(tempFile)
+                    .setDurationLimitMillis(maxDurationMillis)
+                    .build()
+
+                // 4. Prepare the recording
+                videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
+            } catch (e: Exception) {
+                onVideoRecord(
+                    OnVideoRecordEvent.OnVideoRecordError(e)
+                )
+                null
+            }
+        }
     }
 }
 

@@ -72,11 +72,13 @@ import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CaptureButton
@@ -155,6 +157,11 @@ fun PreviewScreen(
     LaunchedEffect(Unit) {
         for (event in viewModel.captureEvents) {
             currentOnCaptureEvent(event)
+            if (event is ImageCaptureEvent.SingleImageCached ||
+                event is VideoCaptureEvent.VideoCached
+            ) {
+                onNavigateToPostCapture()
+            }
         }
     }
 
