@@ -129,6 +129,8 @@ class PreviewViewModel @Inject constructor(
     private val constraintsRepository: ConstraintsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
+    private val saveMode: SaveMode = SaveMode.Immediate
+
     private val _captureUiState: MutableStateFlow<CaptureUiState> =
         MutableStateFlow(CaptureUiState.NotReady)
     private val trackedPreviewUiState: MutableStateFlow<TrackedPreviewUiState> =
