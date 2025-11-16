@@ -60,7 +60,8 @@ class PreviewViewModelTest {
             constraintsRepository = constraintsRepository,
             settingsRepository = FakeSettingsRepository,
             mediaRepository = FakeMediaRepository,
-            savedStateHandle = SavedStateHandle()
+            savedStateHandle = SavedStateHandle(),
+            saveMode = SaveMode.Immediate
         )
         advanceUntilIdle()
     }

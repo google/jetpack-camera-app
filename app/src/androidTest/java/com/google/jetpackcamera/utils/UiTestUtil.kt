@@ -78,6 +78,8 @@ const val ELAPSED_TIME_TEXT_TIMEOUT_MILLIS = 45_000L
 const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 45_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
+const val SAVE_MEDIA_TIMEOUT_MILLIS = 5_000L
+
 const val VIDEO_DURATION_MILLIS = 3_000L
 const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 15_000L
 const val FILE_PREFIX = "JCA"
@@ -93,6 +95,7 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     expectedNumFiles: Int = 1,
     fileWaitTimeoutMs: Duration = 10.seconds,
     fileObserverContext: CoroutineContext = Dispatchers.IO,
+    extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
 ) = runBlocking {
     val debugTag = "MediaStoreAutoDelete"
@@ -112,7 +115,7 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
 
     var succeeded = false
     try {
-        runMainActivityScenarioTest(block = block)
+        runMainActivityScenarioTest(extras = extras, block = block)
         succeeded = true
     } finally {
         withContext(NonCancellable) {
@@ -221,6 +224,14 @@ fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri = Ur
         "$timeStamp.$suffix"
     )
 )
+
+fun filesExistInDirAfterTimestamp(directoryPath: String, timeStamp: Long): Boolean {
+    return File(directoryPath).listFiles()?.find { file ->
+        !file.name.startsWith(".") && file.lastModified() >= timeStamp
+    }?.also {
+        Log.d(TAG, "file after timestamp($timeStamp): ${it.name} ")
+    } != null
+}
 
 /**
  * @return - true if all eligible files were successfully deleted. False otherwise

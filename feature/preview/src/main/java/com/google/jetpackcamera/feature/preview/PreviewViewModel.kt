@@ -124,12 +124,11 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 class PreviewViewModel @Inject constructor(
     private val cameraSystem: CameraSystem,
     private val savedStateHandle: SavedStateHandle,
+    private val saveMode: SaveMode,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
-    private val saveMode: SaveMode = SaveMode.Immediate
-
     private val _captureUiState: MutableStateFlow<CaptureUiState> =
         MutableStateFlow(CaptureUiState.NotReady)
     private val trackedPreviewUiState: MutableStateFlow<TrackedPreviewUiState> =
