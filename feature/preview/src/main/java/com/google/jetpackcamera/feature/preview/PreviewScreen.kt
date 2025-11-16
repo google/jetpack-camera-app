@@ -272,7 +272,7 @@ fun PreviewScreen(
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
                 onSetTestPattern = viewModel::setTestPattern,
-
+                onSetImageWell = viewModel::imageWellToRepository,
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
                         zoomState.absoluteZoom(
@@ -326,7 +326,7 @@ fun PreviewScreen(
                 onLockVideoRecording = viewModel::setLockedRecording,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                onImageWellClick = onNavigateToPostCapture
+                onNavigatePostCapture = onNavigateToPostCapture
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -356,6 +356,7 @@ private fun ContentScreen(
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
     onSetTestPattern: (TestPattern) -> Unit = {},
+    onSetImageWell: () -> Unit = {},
     onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onScaleZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onIncrementZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
@@ -379,7 +380,7 @@ private fun ContentScreen(
     onLockVideoRecording: (Boolean) -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
-    onImageWellClick: () -> Unit = {}
+    onNavigatePostCapture: () -> Unit = {}
 ) {
     val onFlipCamera = {
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
@@ -608,7 +609,10 @@ private fun ContentScreen(
                 ImageWell(
                     modifier = modifier,
                     imageWellUiState = captureUiState.imageWellUiState,
-                    onClick = onImageWellClick
+                    onClick = {
+                        onSetImageWell()
+                        onNavigatePostCapture()
+                    }
                 )
             }
         }
