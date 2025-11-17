@@ -156,8 +156,6 @@ class PostCaptureViewModel @Inject constructor(
         val mediaDescriptor = loadedMediaFlow.value.first
 
         if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
-            // use application scope for cleanup
-            // coroutine will not be cancelled when ViewModel dies
             viewModelScope.launch {
                 mediaRepository.deleteMedia(mediaDescriptor)
             }

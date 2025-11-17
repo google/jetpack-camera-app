@@ -32,6 +32,6 @@
 
     <string name="snackbar_save_image_failure">Image failed to save</string>
     <string name="snackbar_save_video_failure">Video failed to save</string>
-    <string name="snackbar_delete_image_failure">Imaged failed to delete</string>
+    <string name="snackbar_delete_image_failure">Image failed to delete</string>
     <string name="snackbar_delete_video_failure">Video failed to delete</string>
 </resources>
