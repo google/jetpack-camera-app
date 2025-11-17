@@ -64,8 +64,16 @@ class PostCaptureViewModel @Inject constructor(
 
     fun deleteMedia(contentResolver: ContentResolver) {
         when (val mediaDescriptor = uiState.value.mediaDescriptor) {
-            is MediaDescriptor.Image -> contentResolver.delete(mediaDescriptor.uri, null, null)
-            is MediaDescriptor.Video -> contentResolver.delete(mediaDescriptor.uri, null, null)
+            is MediaDescriptor.Content.Image -> contentResolver.delete(
+                mediaDescriptor.uri,
+                null,
+                null
+            )
+            is MediaDescriptor.Content.Video -> contentResolver.delete(
+                mediaDescriptor.uri,
+                null,
+                null
+            )
             MediaDescriptor.None -> {}
         }
         _uiState.update { it.copy(mediaDescriptor = MediaDescriptor.None, media = Media.None) }

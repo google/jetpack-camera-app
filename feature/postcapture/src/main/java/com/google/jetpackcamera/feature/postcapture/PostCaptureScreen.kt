@@ -150,11 +150,11 @@ fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
                 onClick = {
                     val mediaDescriptor = uiState.mediaDescriptor
 
-                    if (mediaDescriptor is MediaDescriptor.Image) {
+                    if (mediaDescriptor is MediaDescriptor.Content.Image) {
                         shareImage(context, mediaDescriptor.uri, "image/jpeg")
                     }
 
-                    if (mediaDescriptor is MediaDescriptor.Video) {
+                    if (mediaDescriptor is MediaDescriptor.Content.Video) {
                         shareImage(context, mediaDescriptor.uri, "video/mp4")
                     }
                 },
