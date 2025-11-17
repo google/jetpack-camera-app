@@ -422,7 +422,7 @@ class PostCaptureViewModel @Inject constructor(
             _postCaptureUiState.update { state ->
                 if (state is PostCaptureUiState.Ready) {
                     val newQueue = LinkedList(state.snackBarUiState.snackBarQueue)
-                    val snackBarData = newQueue.remove()
+                    val snackBarData = newQueue.poll()
                     if (snackBarData != null && snackBarData.cookie == cookie) {
                         // If the latest snackBar had a result, then clear snackBarToShow
                         Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
