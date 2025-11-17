@@ -109,6 +109,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
@@ -606,14 +607,16 @@ private fun ContentScreen(
         },
         imageWell = { modifier ->
             if (captureUiState.externalCaptureMode == ExternalCaptureMode.Standard) {
-                ImageWell(
-                    modifier = modifier,
-                    imageWellUiState = captureUiState.imageWellUiState,
-                    onClick = {
-                        onSetImageWell()
-                        onNavigatePostCapture()
-                    }
-                )
+                (captureUiState.imageWellUiState as? ImageWellUiState.LastCapture)?.let {
+                    ImageWell(
+                        modifier = modifier,
+                        imageWellUiState = it,
+                        onClick = {
+                            onSetImageWell()
+                            onNavigatePostCapture()
+                        }
+                    )
+                }
             }
         }
     )
@@ -663,6 +666,7 @@ private fun LayoutWrapper(
         modifier = modifier,
         viewfinder = viewfinder,
         captureButton = captureButton,
+        imageWell = imageWell,
         flipCameraButton = flipCameraButton,
         zoomLevelDisplay = zoomLevelDisplay,
         elapsedTimeDisplay = elapsedTimeDisplay,
@@ -687,7 +691,6 @@ private fun LayoutWrapper(
                 modifier,
                 arrayOf(
                     { audioToggleButton(Modifier) },
-                    { imageWell(Modifier) },
                     { pauseToggleButton(Modifier) }
                 )
             )

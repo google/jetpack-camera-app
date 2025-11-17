@@ -15,9 +15,8 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import android.graphics.RectF
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -28,82 +27,44 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
-import kotlin.math.min
 
 @Composable
 fun ImageWell(
+    imageWellUiState: ImageWellUiState.LastCapture,
+    shape: Shape = RoundedCornerShape(16.dp),
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
-    onClick: () -> Unit
+    enabled: Boolean = true
 ) {
-    when (imageWellUiState) {
-        is ImageWellUiState.LastCapture -> {
-            val bitmap = when (val mediaDescriptor = imageWellUiState.mediaDescriptor) {
-                is MediaDescriptor.Content.Image ->
-                    mediaDescriptor.thumbnail
+    val lastCapture = imageWellUiState.mediaDescriptor
 
-                is MediaDescriptor.Content.Video ->
-                    mediaDescriptor.thumbnail
-
-                is MediaDescriptor.None -> null
+    Box(
+        modifier = modifier
+            .testTag(IMAGE_WELL_TAG)
+            .size(120.dp)
+            .padding(18.dp)
+            .border(2.dp, Color.White, shape)
+            .clip(shape)
+            .clickable(onClick = onClick, enabled = enabled)
+    ) {
+        AnimatedContent(targetState = lastCapture, label = "ImageWellAnimation") { contentDesc ->
+            contentDesc.thumbnail?.let {
+                Image(
+                    bitmap = it.asImageBitmap(),
+                    contentDescription = stringResource(
+                        id = R.string.image_well_content_description
+                    ),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(110.dp)
+                )
             }
-
-            bitmap?.let {
-                Box(
-                    modifier = modifier
-                        .testTag(IMAGE_WELL_TAG)
-                        .size(120.dp)
-                        .padding(18.dp)
-                        .border(2.dp, Color.White, RoundedCornerShape(16.dp))
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable(onClick = onClick)
-                ) {
-                    AnimatedContent(
-                        targetState = bitmap
-                    ) { targetBitmap ->
-                        Canvas(
-                            modifier = Modifier
-                                .size(110.dp)
-                        ) {
-                            drawIntoCanvas { canvas ->
-                                val canvasSize = min(size.width, size.height)
-
-                                val scale = canvasSize / min(
-                                    targetBitmap.width,
-                                    targetBitmap.height
-                                )
-
-                                val imageWidth = targetBitmap.width * scale
-                                val imageHeight = targetBitmap.height * scale
-
-                                val offsetX = (canvasSize - imageWidth) / 2f
-                                val offsetY = (canvasSize - imageHeight) / 2f
-
-                                canvas.nativeCanvas.drawBitmap(
-                                    targetBitmap,
-                                    null,
-                                    RectF(
-                                        offsetX,
-                                        offsetY,
-                                        offsetX + imageWidth,
-                                        offsetY + imageHeight
-                                    ),
-                                    null
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        is ImageWellUiState.Unavailable -> {
         }
     }
 }

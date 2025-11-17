@@ -19,5 +19,9 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
 fun ImageWellUiState.Companion.from(mediaDescriptor: MediaDescriptor): ImageWellUiState {
-    return ImageWellUiState.LastCapture(mediaDescriptor = mediaDescriptor)
+    return if (mediaDescriptor is MediaDescriptor.Content) {
+        ImageWellUiState.LastCapture(mediaDescriptor = mediaDescriptor)
+    } else {
+        ImageWellUiState.Unavailable
+    }
 }

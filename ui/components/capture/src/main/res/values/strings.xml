@@ -139,4 +139,7 @@
     <string name="quick_settings_more_text">More</string>
     <string name="quick_settings_more_description">Settings icon</string>
 
+    <!-- ImageWell -->
+    <string name="image_well_content_description">Click to </string>
+
 </resources>
