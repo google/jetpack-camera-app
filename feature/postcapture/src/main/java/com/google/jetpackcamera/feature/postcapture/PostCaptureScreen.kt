@@ -65,7 +65,7 @@ fun PostCaptureComponent(
     onNavigateBack: () -> Unit,
     onSaveMedia: () -> Unit,
     onShareCurrentMedia: () -> Unit,
-    onDeleteMedia: () -> Unit,
+    onDeleteMedia: (onSuccessCallback: () -> Unit) -> Unit,
     onLoadVideo: () -> Unit,
     onSnackBarResult: (String) -> Unit
 ) {
@@ -109,8 +109,7 @@ fun PostCaptureComponent(
                         DeleteCurrentMediaButton(
                             modifier = it,
                             onClick = {
-                                onDeleteMedia()
-                                onNavigateBack()
+                                onDeleteMedia(onNavigateBack)
                             }
                         )
                     }
