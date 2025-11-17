@@ -355,15 +355,15 @@ private fun CaptureButton(
                     onDragEnd = {},
                     onDragCancel = {},
                     onDrag = { change, deltaOffset ->
-                        val newPoint = change.position
-
-                        // update position of lock switch
-                        setLockSwitchPosition(newPoint.x, deltaOffset.x)
-
-                        // update zoom
                         if (currentUiState.value ==
                             CaptureButtonUiState.Enabled.Recording.PressedRecording
                         ) {
+                            val newPoint = change.position
+
+                            // update position of lock switch
+                            setLockSwitchPosition(newPoint.x, deltaOffset.x)
+
+                            // update zoom
                             val previousPoint = change.position - deltaOffset
                             val positiveDistance =
                                 if (newPoint.y >= 0 && previousPoint.y >= 0) {

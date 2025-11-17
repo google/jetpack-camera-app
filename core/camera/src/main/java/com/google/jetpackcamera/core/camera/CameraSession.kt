@@ -30,6 +30,7 @@ import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
+import android.util.Rational
 import android.util.Size
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraControl
@@ -600,7 +601,7 @@ internal fun createUseCaseGroup(
         )
         setViewPort(
             ViewPort.Builder(
-                aspectRatio.ratio,
+                Rational(aspectRatio.numerator, aspectRatio.denominator),
                 // Initialize rotation to Preview's rotation, which comes from Display rotation
                 previewUseCase.targetRotation
             ).build()
@@ -701,8 +702,8 @@ private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: A
         else -> {
             // Choose the aspect ratio which maximizes FOV by being closest to the sensor ratio
             if (
-                abs(sensorLandscapeRatio - AspectRatio.NINE_SIXTEEN.landscapeRatio.toFloat()) <
-                abs(sensorLandscapeRatio - AspectRatio.THREE_FOUR.landscapeRatio.toFloat())
+                abs(sensorLandscapeRatio - AspectRatio.NINE_SIXTEEN.toLandscapeFloat()) <
+                abs(sensorLandscapeRatio - AspectRatio.THREE_FOUR.toLandscapeFloat())
             ) {
                 androidx.camera.core.AspectRatio.RATIO_16_9
             } else {
@@ -770,8 +771,8 @@ private fun getResolutionSelector(
             // Choose the resolution selector strategy which maximizes FOV by being closest
             // to the sensor aspect ratio
             if (
-                abs(sensorLandscapeRatio - AspectRatio.NINE_SIXTEEN.landscapeRatio.toFloat()) <
-                abs(sensorLandscapeRatio - AspectRatio.THREE_FOUR.landscapeRatio.toFloat())
+                abs(sensorLandscapeRatio - AspectRatio.NINE_SIXTEEN.toLandscapeFloat()) <
+                abs(sensorLandscapeRatio - AspectRatio.THREE_FOUR.toLandscapeFloat())
             ) {
                 AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
             } else {

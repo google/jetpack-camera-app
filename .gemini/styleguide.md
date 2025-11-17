@@ -39,6 +39,7 @@ When reviewing a pull request, focus on the following key areas:
     * **When Tests are Missing:** If a PR introduces a significant feature or modifies logic without corresponding tests, flag this omission. Suggest a name for a new test class (e.g., `NewFeatureViewModelTest`) and outline what it should verify (e.g., "This test should check that the UI state updates correctly when the user performs X action").
     * **When Tests are Present in the PR:** If new or modified tests are included, review them for thoroughness. Check for coverage of happy paths, failure scenarios, and relevant edge cases.
     * **Analysis of Existing Tests:** Identify existing test files in the target branch that are relevant to the code being changed in the PR but were **not** modified. Analyze these files to see if the PR introduces new logic that is not covered. If you find coverage gaps, cite the filename (e.g., `ExistingViewModelTest.kt`) and suggest specific test cases to add (e.g., "Consider adding a test case here to handle the new `XYZ` state introduced in the PR.").
+    * **Testing Strategy: Fakes over Mocks for Unowned Classes:** Never mock concrete classes that the project doesn't own. Instead, for testing, use fakes that implement or extend the class's interface. This ensures that tests are robust against changes in third-party library internals and encourages testing against behavior rather than implementation details.
     * **Descriptive Test Names:** Test function names must be clear, descriptive, and follow a consistent pattern.
 
 6.  **Documentation Sync**
