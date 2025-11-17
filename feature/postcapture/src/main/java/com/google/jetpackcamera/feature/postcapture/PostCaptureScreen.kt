@@ -94,7 +94,7 @@ fun PostCaptureComponent(
                     )
                 },
                 saveButton = {
-                    SaveCurrentMediaButton(modifier = it, onClick = { onSaveMedia() })
+                    SaveCurrentMediaButton(modifier = it, onClick = onSaveMedia)
                 },
                 shareButton = {
                     if (uiState.shareButtonUiState is ShareButtonUiState.Ready) {
