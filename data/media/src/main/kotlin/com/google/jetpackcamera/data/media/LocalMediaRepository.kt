@@ -130,7 +130,7 @@ class LocalMediaRepository
      * Deletes the specified media from either the cache or the MediaStore.
      */
     override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
-        val finalResult = repositoryScope.async {
+        val finalResult = withContext(repositoryScope.coroutineContext) {
             val result = if (mediaDescriptor.isCached) {
                 deleteCachedMedia(mediaDescriptor)
             } else {
@@ -140,7 +140,7 @@ class LocalMediaRepository
                 Log.d(TAG, "deleted saved media")
             }
             result
-        }.await()
+        }
         if (finalResult && currentMedia.value == mediaDescriptor) {
             setCurrentMedia(MediaDescriptor.None)
         }
@@ -197,7 +197,7 @@ class LocalMediaRepository
     override suspend fun saveToMediaStore(
         mediaDescriptor: MediaDescriptor.Content,
         filename: String
-    ): Uri? = repositoryScope.async {
+    ): Uri? = withContext(repositoryScope.coroutineContext) {
         val mimeType: String
         val mediaUrl: Uri
         if (mediaDescriptor is MediaDescriptor.Content.Video) {
@@ -208,7 +208,7 @@ class LocalMediaRepository
             mediaUrl = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         }
         copyToMediaStore(context.contentResolver, mediaDescriptor.uri, filename, mimeType, mediaUrl)
-    }.await()
+    }
 
     /**
      * Copies content from a source URI to the MediaStore.
@@ -228,7 +228,7 @@ class LocalMediaRepository
         mimeType: String,
         mediaUrl: Uri
     ): Uri? {
-        var destinationUri: Uri?
+        val destinationUri: Uri?
 
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, outputFilename)
