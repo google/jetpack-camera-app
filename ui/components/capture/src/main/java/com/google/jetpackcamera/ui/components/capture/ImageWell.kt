@@ -16,6 +16,13 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,6 +30,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun ImageWell(
     imageWellUiState: ImageWellUiState.LastCapture,
@@ -48,21 +58,29 @@ fun ImageWell(
     Box(
         modifier = modifier
             .testTag(IMAGE_WELL_TAG)
-            .size(120.dp)
+            .size(IconButtonDefaults.largeContainerSize())
             .padding(18.dp)
             .border(2.dp, Color.White, shape)
             .clip(shape)
             .clickable(onClick = onClick, enabled = enabled)
     ) {
-        AnimatedContent(targetState = lastCapture, label = "ImageWellAnimation") { contentDesc ->
+        AnimatedContent(
+            targetState = lastCapture,
+            label = "ImageWellAnimation",
+            transitionSpec = {
+                (
+                    fadeIn() + expandHorizontally { height -> height } +
+                        scaleIn(animationSpec = spring(0.8f))
+                    ).togetherWith(fadeOut())
+            }
+        ) { contentDesc ->
             contentDesc.thumbnail?.let {
                 Image(
                     bitmap = it.asImageBitmap(),
                     contentDescription = stringResource(
                         id = R.string.image_well_content_description
                     ),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(110.dp)
+                    contentScale = ContentScale.Crop
                 )
             }
         }
