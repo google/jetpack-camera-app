@@ -391,6 +391,21 @@ internal class PostCaptureViewModelTest {
         assertThat(updatedUiState.snackBarUiState.snackBarQueue).hasSize(1)
     }
 
+    @Test
+    fun onSnackBarResult_withEmptyQueue_doesNotChangeQueue() = runTest(testDispatcher) {
+        // Given an empty snackbar queue (initial state)
+        val initialUiState = viewModel.postCaptureUiState.value.asReady()
+        assertThat(initialUiState.snackBarUiState.snackBarQueue).isEmpty()
+
+        // When
+        viewModel.onSnackBarResult("any_cookie")
+        advanceUntilIdle()
+
+        // Then
+        val updatedUiState = viewModel.postCaptureUiState.value.asReady()
+        assertThat(updatedUiState.snackBarUiState.snackBarQueue).isEmpty()
+    }
+
     // Helper to access protected method without extending class
     private fun callOnCleared(viewModel: ViewModel) {
         val onClearedMethod = ViewModel::class.java.getDeclaredMethod("onCleared")
