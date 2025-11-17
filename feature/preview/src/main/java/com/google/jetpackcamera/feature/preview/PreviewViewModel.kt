@@ -92,6 +92,8 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.LinkedList
+import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -110,8 +112,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.LinkedList
-import javax.inject.Inject
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -325,7 +325,6 @@ class PreviewViewModel @Inject constructor(
                             trackedUiState.recentCapturedMedia,
                             cameraState.videoRecordingState
                         )
-
 
                     )
                 }
@@ -773,7 +772,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     /**
-    "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
+     "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
     fun setLockedRecording(isLocked: Boolean) {
         trackedPreviewUiState.update { old ->
