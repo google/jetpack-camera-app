@@ -368,9 +368,12 @@ class PostCaptureViewModel @Inject constructor(
      */
     private suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
         viewModelScope.async {
-            try {
+            val result = try {
                 mediaRepository.deleteMedia(mediaDescriptor)
             } catch (e: Exception) {
+                false
+            }
+            if (!result) {
                 val cookieInt = snackBarCount.incrementAndGet()
                 val cookie = "MediaDelete-$cookieInt"
                 addSnackBarData(
@@ -393,8 +396,8 @@ class PostCaptureViewModel @Inject constructor(
                         }
                     )
                 )
-                false
             }
+            result
         }.await()
 
     // snackbar interaction
