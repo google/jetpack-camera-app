@@ -92,8 +92,6 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.LinkedList
-import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -112,6 +110,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.LinkedList
+import javax.inject.Inject
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -319,7 +319,14 @@ class PreviewViewModel @Inject constructor(
                             cameraState,
                             externalCaptureMode
                         ),
-                        hdrUiState = hdrUiState
+                        hdrUiState = hdrUiState,
+
+                        imageWellUiState = ImageWellUiState.from(
+                            trackedUiState.recentCapturedMedia,
+                            cameraState.videoRecordingState
+                        )
+
+
                     )
                 }
             }.collect {}
@@ -406,12 +413,8 @@ class PreviewViewModel @Inject constructor(
 
     fun updateLastCapturedMedia() {
         viewModelScope.launch {
-            val lastCapturedMediaDescriptor = mediaRepository.getLastCapturedMedia()
-            _captureUiState.update { old ->
-                (old as? CaptureUiState.Ready)?.copy(
-                    imageWellUiState =
-                    ImageWellUiState.from(lastCapturedMediaDescriptor)
-                ) ?: old
+            trackedPreviewUiState.update { old ->
+                old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
             }
         }
     }
@@ -770,7 +773,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     /**
-     "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
+    "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
     fun setLockedRecording(isLocked: Boolean) {
         trackedPreviewUiState.update { old ->
@@ -892,6 +895,7 @@ class PreviewViewModel @Inject constructor(
         val isDebugOverlayOpen: Boolean = false,
         val isRecordingLocked: Boolean = false,
         val zoomAnimationTarget: Float? = null,
-        val debugHidingComponents: Boolean = false
+        val debugHidingComponents: Boolean = false,
+        val recentCapturedMedia: MediaDescriptor = MediaDescriptor.None
     )
 }
