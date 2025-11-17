@@ -650,9 +650,6 @@ class PreviewViewModel @Inject constructor(
                     }.savedUri
                 },
                 onSuccess = { savedUri ->
-                    if (saveLocation !is SaveLocation.Cache) {
-                        updateLastCapturedMedia()
-                    }
                     val event = if (progress != null) {
                         ImageCaptureEvent.SequentialImageSaved(savedUri, progress)
                     } else {
