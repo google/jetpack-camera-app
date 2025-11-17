@@ -38,7 +38,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -76,6 +75,11 @@ class LocalMediaRepository
     override suspend fun load(mediaDescriptor: MediaDescriptor): Media {
         return when (mediaDescriptor) {
             is MediaDescriptor.Content.Image -> {
+                // 💡 Check existence before loading
+                if (!exists(mediaDescriptor.uri)) {
+                    return Media.Error
+                }
+
                 try {
                     val bitmap = loadImage(mediaDescriptor.uri)
                     bitmap?.let { Media.Image(bitmap) } ?: Media.Error
@@ -84,10 +88,42 @@ class LocalMediaRepository
                 }
             }
 
-            MediaDescriptor.None -> Media.None
+            is MediaDescriptor.Content.Video -> {
+                if (!exists(mediaDescriptor.uri)) {
+                    return Media.Error
+                }
+                Media.Video(mediaDescriptor.uri)
+            }
 
-            is MediaDescriptor.Content.Video -> Media.Video(mediaDescriptor.uri)
+            MediaDescriptor.None -> Media.None
         }
+    }
+
+    private suspend fun exists(uri: Uri): Boolean = withContext(iODispatcher) {
+        // 1. File URI check (for cached media)
+        if (uri.scheme == ContentResolver.SCHEME_FILE) {
+            val path = uri.path ?: return@withContext false
+            return@withContext File(path).exists()
+        }
+
+        // 2. Content URI check (for saved MediaStore media)
+        if (uri.scheme == ContentResolver.SCHEME_CONTENT) {
+            // Only query for the ID column.
+            val projection = arrayOf(MediaStore.MediaColumns._ID)
+
+            // Using a try-catch for contentResolver operations is best practice
+            return@withContext try {
+                context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                    // If the cursor is not null and has at least one row, the URI exists.
+                    cursor.moveToFirst() && cursor.count > 0
+                } ?: false
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        // 3. Fallback for unexpected schemes
+        return@withContext false
     }
 
     /**
@@ -276,7 +312,9 @@ class LocalMediaRepository
     @Throws(IOException::class)
     private suspend fun loadImage(uri: Uri): Bitmap? = withContext(iODispatcher) {
         try {
-            val loadedBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val loadedBitmap = if (uri.scheme == ContentResolver.SCHEME_FILE) {
+                BitmapFactory.decodeFile(uri.path)
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // Android 10 (API 29) and above: Use ImageDecoder
                 val source = ImageDecoder.createSource(context.contentResolver, uri)
                 ImageDecoder.decodeBitmap(source)

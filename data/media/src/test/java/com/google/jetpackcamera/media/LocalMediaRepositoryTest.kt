@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -27,6 +28,7 @@ import com.google.jetpackcamera.data.media.LocalMediaRepository
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import java.io.File
+import java.io.FileOutputStream
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -34,6 +36,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -84,10 +87,31 @@ class LocalMediaRepositoryTest {
         assertEquals(newMedia, repository.currentMedia.value)
     }
 
-    fun load_image_succeeds() = runTest(testDispatcher) {
-        // Given a valid image URI
+    @Test
+    fun loadImage_succeeds_returnsImageMedia() = runTest(testDispatcher) {
+        // 1. Create a real, decodable Bitmap
+        val bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+
+        // 2. Given a valid image URI
         val sourceFile = File(context.cacheDir, "temp.jpg")
-        sourceFile.writeText("fake image data")
+
+        // Write the actual Bitmap data as a compressed JPEG
+        try {
+            FileOutputStream(sourceFile).use { outputStream ->
+                // Use compress to write a valid image format
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            }
+        } catch (e: Exception) {
+            // Handle potential IO exceptions if necessary
+            fail("Failed to write mock image data: ${e.message}")
+        }
+
+        // Check if the file was created and is non-empty
+        assertTrue(
+            "Mock file should exist and be non-empty",
+            sourceFile.exists() && sourceFile.length() > 0
+        )
+
         val imageUri = Uri.fromFile(sourceFile)
         val mediaDescriptor = MediaDescriptor.Content.Image(imageUri, null, true)
 
@@ -95,25 +119,43 @@ class LocalMediaRepositoryTest {
         val result = repository.load(mediaDescriptor)
 
         // Then
-        assertTrue(result is Media.Image)
+        assertTrue(
+            "Load result should be Media.Image but was ${result::class.java.simpleName}",
+            result is Media.Image
+        )
     }
 
     @Test
-    fun load_video_succeeds() = runTest(testDispatcher) {
-        // Given a valid video URI
-        val videoUri = Uri.parse("file:///fake/video.mp4")
+    fun loadVideo_succeeds_returnsVideoMedia() = runTest(testDispatcher) {
+        // 1. Setup: Create a temporary file in the cache directory
+        val sourceFile = File(context.cacheDir, "temp_video.mp4")
+
+        // 2. Write a small amount of data to make it non-empty.
+        // Unlike images, video content doesn't need to be fully valid to pass the existence check.
+        // However, if the repository eventually uses a video decoder for metadata/thumbnail,
+        // a small amount of non-zero data ensures the file exists and is readable.
+        sourceFile.writeText("fake video content")
+
+        // Ensure the file exists before proceeding
+        assertTrue("Setup failed: Temp file must exist", sourceFile.exists())
+
+        // 3. Given a valid video URI (file:// pointing to the real file)
+        val videoUri = Uri.fromFile(sourceFile)
         val mediaDescriptor = MediaDescriptor.Content.Video(videoUri, null, true)
 
         // When
         val result = repository.load(mediaDescriptor)
 
         // Then
-        assertTrue(result is Media.Video)
+        assertTrue(
+            "Result should be Media.Video but was: ${result::class.java.simpleName}",
+            result is Media.Video
+        )
         assertEquals(videoUri, (result as Media.Video).uri)
     }
 
     @Test
-    fun load_image_fails() = runTest(testDispatcher) {
+    fun loadImage_fails_returnsError() = runTest(testDispatcher) {
         // Given an invalid image URI
         val invalidImageUri = Uri.parse("file:///nonexistent/image.jpg")
         val mediaDescriptor = MediaDescriptor.Content.Image(invalidImageUri, null, true)
@@ -122,6 +164,27 @@ class LocalMediaRepositoryTest {
         val result = repository.load(mediaDescriptor)
 
         // Then
+        assertEquals(Media.Error, result)
+    }
+
+    @Test
+    fun loadVideo_fails_returnsError() = runTest(testDispatcher) {
+        val nonExistentPath = "/nonexistent/path/video_not_here.mp4"
+        val nonExistentUri = Uri.parse("file://$nonExistentPath")
+
+        // Explicitly verify file does not exist (for robust setup assertion)
+        assertFalse(File(nonExistentPath).exists())
+
+        val mediaDescriptor = MediaDescriptor.Content.Video(
+            uri = nonExistentUri,
+            thumbnail = null,
+            isCached = true
+        )
+
+        // 2. When: The repository attempts to load the non-existent video.
+        val result = repository.load(mediaDescriptor)
+
+        // 3. Then: The result should be Media.Error because the existence check failed.
         assertEquals(Media.Error, result)
     }
 
@@ -448,8 +511,4 @@ class LocalMediaRepositoryTest {
         // Then
         assertEquals(null, result)
     }
-
-    // --- Helpers ---
-
-    // mockQuery is no longer needed with FakeContentProvider
 }
