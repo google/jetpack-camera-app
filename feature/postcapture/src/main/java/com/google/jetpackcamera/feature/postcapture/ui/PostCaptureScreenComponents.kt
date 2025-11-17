@@ -61,7 +61,7 @@ fun MediaViewer(
         }
 
         is MediaViewerUiState.Content.Video.Loading -> {
-            Text(modifier = modifier, text = "loading video")
+            Text(modifier = modifier, text = stringResource(R.string.loading_video_text))
         }
 
         is MediaViewerUiState.Content.Video.Ready -> {
@@ -137,7 +137,7 @@ fun ShareCurrentMediaButton(
         onClick = onClick,
         modifier = modifier
             .testTag(BUTTON_POST_CAPTURE_SHARE),
-        enabled = true
+        enabled = enabled
 
     ) {
         Icon(
@@ -180,7 +180,8 @@ fun DeleteCurrentMediaButton(
 ) {
     PostCaptureIconButton(
         modifier = modifier.testTag(BUTTON_POST_CAPTURE_DELETE),
-        onClick = onClick
+        onClick = onClick,
+        enabled = enabled
     ) {
         Icon(
             modifier = it,

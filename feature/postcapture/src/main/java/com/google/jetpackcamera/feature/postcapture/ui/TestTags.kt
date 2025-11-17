@@ -21,5 +21,5 @@ const val BUTTON_POST_CAPTURE_SAVE = "btn_post_capture_save"
 const val BUTTON_POST_CAPTURE_SHARE = "btn_post_capture_share"
 
 const val BUTTON_POST_CAPTURE_DELETE = "btn_post_capture_delete"
-const val VIEWER_POST_CAPTURE_VIDEO = "surface_post_capture_video_player"
-const val VIEWER_POST_CAPTURE_IMAGE = "surface_post_capture_image_player"
+const val VIEWER_POST_CAPTURE_VIDEO = "viewer_post_capture_video"
+const val VIEWER_POST_CAPTURE_IMAGE = "viewer_post_capture_image"

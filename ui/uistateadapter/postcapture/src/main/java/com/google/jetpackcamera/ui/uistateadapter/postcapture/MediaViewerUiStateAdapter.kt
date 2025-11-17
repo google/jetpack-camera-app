@@ -27,7 +27,8 @@ fun MediaViewerUiState.Companion.from(
     playerState: Boolean
 ): MediaViewerUiState {
     return when (media) {
-        Media.Error, Media.None -> MediaViewerUiState.Loading
+        Media.None -> MediaViewerUiState.Loading
+        Media.Error -> MediaViewerUiState.Error
         is Media.Image -> MediaViewerUiState.Content.Image(media.bitmap)
         is Media.Video -> {
             val thumbnail =

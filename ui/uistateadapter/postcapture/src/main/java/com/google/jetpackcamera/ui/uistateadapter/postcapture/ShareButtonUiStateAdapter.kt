@@ -19,8 +19,7 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
 
 fun ShareButtonUiState.Companion.from(mediaDescriptor: MediaDescriptor): ShareButtonUiState =
-    if (mediaDescriptor is MediaDescriptor.Content) {
-        ShareButtonUiState.Ready
-    } else {
-        ShareButtonUiState.Unavailable
+    when (mediaDescriptor) {
+        is MediaDescriptor.Content -> ShareButtonUiState.Ready
+        else -> ShareButtonUiState.Unavailable
     }

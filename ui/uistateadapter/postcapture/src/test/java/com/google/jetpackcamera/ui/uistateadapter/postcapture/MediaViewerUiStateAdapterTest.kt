@@ -32,12 +32,12 @@ class MediaViewerUiStateAdapterTest {
     val mockPlayer: Player = mock(Player::class.java)
 
     @Test
-    fun mediaViewerUiState_fromMediaError_returnsLoading() {
+    fun mediaViewerUiState_fromMediaError_returnsError() {
         val mediaDescriptor = MediaDescriptor.None
         val media = Media.Error
         val player = null
         val playerState = false
-        val expectedUiState = MediaViewerUiState.Loading
+        val expectedUiState = MediaViewerUiState.Error
         val actualUiState = MediaViewerUiState.from(mediaDescriptor, media, player, playerState)
         assertEquals(expectedUiState, actualUiState)
     }
