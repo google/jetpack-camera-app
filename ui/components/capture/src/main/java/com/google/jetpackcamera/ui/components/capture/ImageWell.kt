@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.spring
@@ -32,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,16 +44,20 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
+import androidx.core.graphics.createBitmap
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun ImageWell(
     imageWellUiState: ImageWellUiState.LastCapture,
-    shape: Shape = RoundedCornerShape(16.dp),
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(16.dp),
     enabled: Boolean = true
 ) {
     val lastCapture = imageWellUiState.mediaDescriptor
@@ -58,8 +65,7 @@ fun ImageWell(
     Box(
         modifier = modifier
             .testTag(IMAGE_WELL_TAG)
-            .size(IconButtonDefaults.largeContainerSize())
-            .padding(18.dp)
+            .size(IconButtonDefaults.mediumContainerSize())
             .border(2.dp, Color.White, shape)
             .clip(shape)
             .clickable(onClick = onClick, enabled = enabled)
@@ -84,5 +90,27 @@ fun ImageWell(
                 )
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun ImageWellPreview() {
+    val previewBitmap = createBitmap(1000, 1000).apply {
+        eraseColor(android.graphics.Color.BLUE)
+    }
+    val mediaDescriptor = MediaDescriptor.Content.Image(
+        uri = Uri.EMPTY,
+        thumbnail = previewBitmap
+    )
+    val imageWellUiState = ImageWellUiState.LastCapture(
+        mediaDescriptor = mediaDescriptor
+    )
+
+    MaterialTheme {
+        ImageWell(
+            imageWellUiState = imageWellUiState,
+            onClick = {}
+        )
     }
 }
