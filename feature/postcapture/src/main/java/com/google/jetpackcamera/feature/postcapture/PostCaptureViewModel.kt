@@ -77,6 +77,12 @@ class PostCaptureViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    /**
+     * This flow maps the latest [MediaRepository.currentMedia] and its loaded [Media] counterpart to a [Pair]
+     *
+     * - [Pair.first] - [MediaDescriptor]
+     * - [Pair.second] - [Media]
+     */
     private val loadedMediaFlow: StateFlow<Pair<MediaDescriptor, Media>> =
         mediaRepository.currentMedia
             .map { mediaDescriptor -> mediaDescriptor to mediaRepository.load(mediaDescriptor) }
@@ -153,7 +159,7 @@ class PostCaptureViewModel @Inject constructor(
     // todo(kc): improve cache cleanup strategy
     override fun onCleared() {
         releasePlayer()
-        val mediaDescriptor = loadedMediaFlow.value.first
+        val mediaDescriptor: MediaDescriptor = loadedMediaFlow.value.first
 
         if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
             viewModelScope.launch {
