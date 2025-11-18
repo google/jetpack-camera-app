@@ -198,26 +198,28 @@ class LocalMediaRepositoryTest {
 
     @Test
     fun deleteMedia_savedMedia_callsContentResolverDelete() = runTest(testDispatcher) {
-        // Given a saved media item (isCached = false)
-        val mediaUri = ContentUris.withAppendedId(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            123L
-        )
+        val baseUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+
+        // Insert mock data and capture the URI *returned* by the fake ContentProvider
+        val insertedUri = fakeContentProvider.insert(baseUri, ContentValues())!!
+
+        // 2. Create the MediaDescriptor using the URI returned by the insert
         val mediaToDelete = MediaDescriptor.Content.Image(
-            mediaUri,
+            insertedUri, // Use the URI with the correct generated ID
             thumbnail = null,
             isCached = false
         )
-        // Add the media to the fake provider so it can be deleted
-        fakeContentProvider.insert(mediaUri, ContentValues())
 
-        // When
+        // Verify it exists before deleting
+        var cursor = fakeContentProvider.query(insertedUri, null, null, null, null)
+        assertEquals(1, cursor.count)
+
+        // 3. When
         repository.deleteMedia(mediaToDelete)
 
-        // Then
-        // The fake provider will assert internally if the URI is not found.
-        // A successful run of this test means the delete was handled.
-        val cursor = fakeContentProvider.query(mediaUri, null, null, null, null)
+        // 4. Then
+        // Query using the correct, inserted URI
+        cursor = fakeContentProvider.query(insertedUri, null, null, null, null)
         assertEquals(0, cursor.count)
     }
 
@@ -228,7 +230,7 @@ class LocalMediaRepositoryTest {
         val cacheDir = ApplicationProvider.getApplicationContext<Context>().cacheDir
         if (!cacheDir.exists()) cacheDir.mkdirs()
 
-        val tempFile = java.io.File(cacheDir, "temp_test_video.mp4")
+        val tempFile = File(cacheDir, "temp_test_video.mp4")
         tempFile.createNewFile() // Actually creates the empty file on disk
 
         assertTrue("Setup failed: Temp file should exist before test", tempFile.exists())
