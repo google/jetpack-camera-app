@@ -658,8 +658,7 @@ JCA supports two different media saving workflows, controlled by an intent extra
 
 #### How to Enable Cache-and-Review
 
-You can enable the cache-and-review workflow by launching the app with the following extra:
-`intent.putExtra("should_cache_and_review", true)`
+You can enable the cache-and-review workflow by launching the app with the extra `KEY_REVIEW_AFTER_CAPTURE` set to true
 
 #### Customizing Default Save Mode for Forks
 
