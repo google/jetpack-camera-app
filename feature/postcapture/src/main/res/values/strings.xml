@@ -26,4 +26,12 @@
     <string name="button_save_media_description">Save Media</string>
     <string name="button_share_media_description">Share Media</string>
     <string name="button_delete_media_description">Delete Media</string>
+
+    <string name="snackbar_save_image_success">Image saved successfully</string>
+    <string name="snackbar_save_video_success">Video saved successfully</string>
+
+    <string name="snackbar_save_image_failure">Image failed to save</string>
+    <string name="snackbar_save_video_failure">Video failed to save</string>
+    <string name="snackbar_delete_image_failure">Image failed to delete</string>
+    <string name="snackbar_delete_video_failure">Video failed to delete</string>
 </resources>
