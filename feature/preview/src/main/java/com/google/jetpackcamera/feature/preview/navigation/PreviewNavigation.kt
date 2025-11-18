@@ -35,7 +35,7 @@ import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_CAPTURE_URIS
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_DEBUG_SETTINGS
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_EXTERNAL_CAPTURE_MODE
-import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_SAVE_MODE
+import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_REVIEW_AFTER_CAPTURE
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -44,7 +44,7 @@ import com.google.jetpackcamera.model.SaveMode
 object PreviewRoute {
     internal const val ARG_EXTERNAL_CAPTURE_MODE: String = "externalCaptureMode"
 
-    internal const val ARG_SAVE_MODE: String = "saveMode"
+    internal const val ARG_REVIEW_AFTER_CAPTURE: String = "reviewAfterCapture"
     internal const val ARG_CAPTURE_URIS: String = "captureUris"
     internal const val ARG_DEBUG_SETTINGS: String = "debugSettings"
 }
@@ -53,7 +53,7 @@ private const val BASE_ROUTE_DEF: String = "preview"
 private const val FULL_ROUTE_DEF: String =
     BASE_ROUTE_DEF +
         "?${ARG_EXTERNAL_CAPTURE_MODE}={$ARG_EXTERNAL_CAPTURE_MODE}" +
-        "&${ARG_SAVE_MODE}={$ARG_SAVE_MODE}" +
+        "&${ARG_REVIEW_AFTER_CAPTURE}={$ARG_REVIEW_AFTER_CAPTURE}" +
         "&${ARG_CAPTURE_URIS}={$ARG_CAPTURE_URIS}" +
         "&${ARG_DEBUG_SETTINGS}={$ARG_DEBUG_SETTINGS}"
 
@@ -78,7 +78,7 @@ fun NavController.navigateToPreview(
     }
     saveMode?.let {
         queryParams.add(
-            "${ARG_SAVE_MODE}=${
+            "${ARG_REVIEW_AFTER_CAPTURE}=${
                 NavType.BoolType.serializeAsValue(it)}"
         )
     }
@@ -122,7 +122,7 @@ fun NavGraphBuilder.previewScreen(
                 type = NavType.EnumType(ExternalCaptureMode::class.java)
                 defaultValue = externalCaptureMode
             },
-            navArgument(name = ARG_SAVE_MODE) {
+            navArgument(name = ARG_REVIEW_AFTER_CAPTURE) {
                 type = NavType.BoolType
                 defaultValue = shouldCacheReview
             },
@@ -171,7 +171,7 @@ fun NavOptionsBuilder.popUpToPreview() {
 }
 
 internal fun SavedStateHandle.getRequestedSaveMode(): SaveMode? {
-    val requestedCaptureReview = get<Boolean>(ARG_SAVE_MODE) ?: false
+    val requestedCaptureReview = get<Boolean>(ARG_REVIEW_AFTER_CAPTURE) ?: false
     return if (requestedCaptureReview) {
         SaveMode.CacheAndReview()
     } else {
