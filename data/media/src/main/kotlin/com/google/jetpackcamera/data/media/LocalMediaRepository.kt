@@ -164,14 +164,27 @@ class LocalMediaRepository
 
     /**
      * Deletes the specified media from either the cache or the MediaStore.
+     *
+     * This function determines the deletion method based on the URI scheme and the `isCached` flag.
+     * - If the URI scheme is not `content` or if `isCached` is `true`, the media is treated as a
+     *   cached file and deleted directly using [deleteCachedMedia].
+     * - Otherwise, the media is deleted from the MediaStore using the [ContentResolver].
+     *
+     * If the deleted media was the currently active media, [currentMedia] is reset to [MediaDescriptor.None].
+     *
+     * @param mediaDescriptor The [MediaDescriptor.Content] of the media to delete.
+     * @return `true` if the media was successfully deleted, `false` otherwise.
      */
     override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
         val finalResult = withContext(repositoryScope.coroutineContext) {
-            val result = if (mediaDescriptor.isCached) {
-                deleteCachedMedia(mediaDescriptor)
-            } else {
-                context.contentResolver.delete(mediaDescriptor.uri, null, null) >= 1
-            }
+            val result =
+                if (mediaDescriptor.uri.scheme != ContentResolver.SCHEME_CONTENT ||
+                    mediaDescriptor.isCached
+                ) {
+                    deleteCachedMedia(mediaDescriptor)
+                } else {
+                    context.contentResolver.delete(mediaDescriptor.uri, null, null) >= 1
+                }
             if (result && !mediaDescriptor.isCached) {
                 Log.d(TAG, "deleted saved media")
             }
@@ -185,6 +198,14 @@ class LocalMediaRepository
 
     /**
      * Deletes a cached media file.
+     *
+     * This function is specifically for deleting files that are *not* managed by a [ContentProvider].
+     * It directly uses [Uri.toFile] to get a [File] object and then calls [File.delete].
+     * It is crucial that the [MediaDescriptor.Content.isCached] flag is correctly set
+     * to `true` when calling [deleteMedia] to ensure this function is invoked for appropriate URIs.
+     *
+     * @param mediaDescriptor The [MediaDescriptor.Content] representing the cached media to delete.
+     * @return `true` if the file was successfully deleted, `false` otherwise.
      */
     private fun deleteCachedMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
         val result = mediaDescriptor.uri.toFile().delete()
