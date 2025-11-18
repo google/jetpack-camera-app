@@ -35,12 +35,16 @@ import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_CAPTURE_URIS
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_DEBUG_SETTINGS
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_EXTERNAL_CAPTURE_MODE
+import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_SAVE_MODE
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.SaveMode
 
 object PreviewRoute {
     internal const val ARG_EXTERNAL_CAPTURE_MODE: String = "externalCaptureMode"
+
+    internal const val ARG_SAVE_MODE: String = "saveMode"
     internal const val ARG_CAPTURE_URIS: String = "captureUris"
     internal const val ARG_DEBUG_SETTINGS: String = "debugSettings"
 }
@@ -49,6 +53,7 @@ private const val BASE_ROUTE_DEF: String = "preview"
 private const val FULL_ROUTE_DEF: String =
     BASE_ROUTE_DEF +
         "?${ARG_EXTERNAL_CAPTURE_MODE}={$ARG_EXTERNAL_CAPTURE_MODE}" +
+        "&${ARG_SAVE_MODE}={$ARG_SAVE_MODE}" +
         "&${ARG_CAPTURE_URIS}={$ARG_CAPTURE_URIS}" +
         "&${ARG_DEBUG_SETTINGS}={$ARG_DEBUG_SETTINGS}"
 
@@ -56,6 +61,7 @@ fun NavController.navigateToPreview(
     externalCaptureMode: ExternalCaptureMode? = null,
     captureUris: List<Uri>? = null,
     debugSettings: DebugSettings? = null,
+    saveMode: Boolean? = null,
     builder: (NavOptionsBuilder.() -> Unit) = {}
 ) {
     var route = BASE_ROUTE_DEF // Start with the base route
@@ -68,6 +74,12 @@ fun NavController.navigateToPreview(
             "${ARG_EXTERNAL_CAPTURE_MODE}=${NavType.EnumType(
                 ExternalCaptureMode::class.java
             ).serializeAsValue(it)}"
+        )
+    }
+    saveMode?.let {
+        queryParams.add(
+            "${ARG_SAVE_MODE}=${
+                NavType.BoolType.serializeAsValue(it)}"
         )
     }
     captureUris?.let {
@@ -93,6 +105,7 @@ fun NavController.navigateToPreview(
 @OptIn(ExperimentalPermissionsApi::class)
 fun NavGraphBuilder.previewScreen(
     externalCaptureMode: ExternalCaptureMode,
+    shouldCacheReview: Boolean,
     captureUris: List<Uri>,
     debugSettings: DebugSettings,
     onRequestWindowColorMode: (Int) -> Unit,
@@ -108,6 +121,10 @@ fun NavGraphBuilder.previewScreen(
             navArgument(name = ARG_EXTERNAL_CAPTURE_MODE) {
                 type = NavType.EnumType(ExternalCaptureMode::class.java)
                 defaultValue = externalCaptureMode
+            },
+            navArgument(name = ARG_SAVE_MODE) {
+                type = NavType.BoolType
+                defaultValue = shouldCacheReview
             },
             navArgument(name = ARG_CAPTURE_URIS) {
                 type = NavType.StringListType
@@ -150,6 +167,15 @@ fun NavGraphBuilder.previewScreen(
 fun NavOptionsBuilder.popUpToPreview() {
     popUpTo(BASE_ROUTE_DEF) {
         inclusive = true
+    }
+}
+
+internal fun SavedStateHandle.getRequestedSaveMode(): SaveMode? {
+    val requestedCaptureReview = get<Boolean>(ARG_SAVE_MODE) ?: false
+    return if (requestedCaptureReview) {
+        SaveMode.CacheAndReview()
+    } else {
+        null
     }
 }
 

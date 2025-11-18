@@ -35,6 +35,7 @@ import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.VIDEO_PREFIX
+import com.google.jetpackcamera.utils.cacheExtra
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesMediaExist
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
@@ -59,25 +60,26 @@ class CachedVideoRecordingDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun videoCapture_success_navigatesPostcapture(): Unit = runMainActivityScenarioTest {
-        // Wait for the capture button to be displayed
-        composeTestRule.waitForCaptureButton()
-        composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
+    fun videoCapture_success_navigatesPostcapture(): Unit =
+        runMainActivityScenarioTest(cacheExtra) {
+            // Wait for the capture button to be displayed
+            composeTestRule.waitForCaptureButton()
+            composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
-        // navigate to postcapture screen
-        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_VIDEO).isDisplayed()
-        }
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(
-                BUTTON_POST_CAPTURE_EXIT
-            ).isDisplayed()
-        }
+            // navigate to postcapture screen
+            composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_VIDEO).isDisplayed()
+            }
+            composeTestRule.waitUntil {
+                composeTestRule.onNodeWithTag(
+                    BUTTON_POST_CAPTURE_EXIT
+                ).isDisplayed()
+            }
 
-        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
-        composeTestRule.waitForCaptureButton()
-        // no need to delete
-    }
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
+            composeTestRule.waitForCaptureButton()
+            // no need to delete
+        }
 
     @Test
     fun pressedVideoCapture_withIntent_savesImmediate() {
@@ -85,7 +87,8 @@ class CachedVideoRecordingDeviceTest {
         val uri = getTestUri(MOVIES_DIR_PATH, timeStamp, "mp4")
         val result =
             runScenarioTestForResult<MainActivity>(
-                getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE),
+                cacheExtra
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {

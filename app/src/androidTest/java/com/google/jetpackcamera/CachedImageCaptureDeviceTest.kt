@@ -40,6 +40,7 @@ import com.google.jetpackcamera.utils.MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.cacheExtra
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesFileExist
 import com.google.jetpackcamera.utils.doesMediaExist
@@ -65,25 +66,26 @@ class CachedImageCaptureDeviceTest {
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
     @Test
-    fun imageCapture_success_navigatesPostCapture() = runMainActivityScenarioTest {
-        // Wait for the capture button to be displayed
-        composeTestRule.waitForCaptureButton()
+    fun imageCapture_success_navigatesPostCapture() =
+        runMainActivityScenarioTest(extras = cacheExtra) {
+            // Wait for the capture button to be displayed
+            composeTestRule.waitForCaptureButton()
 
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-            .assertExists()
-            .performClick()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+                .assertExists()
+                .performClick()
 
-        // navigate to postcapture screen
-        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_IMAGE).isDisplayed()
+            // navigate to postcapture screen
+            composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_IMAGE).isDisplayed()
+            }
+            composeTestRule.waitUntil {
+                composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).isDisplayed()
+            }
+
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
+            composeTestRule.waitForCaptureButton()
         }
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).isDisplayed()
-        }
-
-        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
-        composeTestRule.waitForCaptureButton()
-    }
 
     // identical to image_capture_external
     @Test
@@ -92,7 +94,8 @@ class CachedImageCaptureDeviceTest {
         val uri = getTestUri(PICTURES_DIR_PATH, timeStamp, "jpg")
         val result =
             runMainActivityScenarioTestForResult(
-                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE),
+                cacheExtra
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -117,7 +120,8 @@ class CachedImageCaptureDeviceTest {
         val uri = Uri.parse("asdfasdf")
         val result =
             runMainActivityScenarioTestForResult(
-                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE),
+                cacheExtra
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -150,7 +154,8 @@ class CachedImageCaptureDeviceTest {
                 getMultipleImageCaptureIntent(
                     uriStrings,
                     MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA
-                )
+                ),
+                cacheExtra
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -178,7 +183,8 @@ class CachedImageCaptureDeviceTest {
         val timeStamp = System.currentTimeMillis()
         val result =
             runMainActivityScenarioTestForResult(
-                getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+                getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA),
+                cacheExtra
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -205,7 +211,8 @@ class CachedImageCaptureDeviceTest {
                 getMultipleImageCaptureIntent(
                     null,
                     MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA
-                )
+                ),
+                cacheExtra
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -227,7 +234,8 @@ class CachedImageCaptureDeviceTest {
                 getMultipleImageCaptureIntent(
                     uriStrings,
                     MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA
-                )
+                ),
+                cacheExtra
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {

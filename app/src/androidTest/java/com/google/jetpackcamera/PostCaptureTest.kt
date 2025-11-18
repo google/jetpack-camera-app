@@ -29,13 +29,16 @@ import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VID
 import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
 import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_VIDEO
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_WELL_TAG
+import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.JCA_MEDIA_DIR_PATH
 import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
 import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.SAVE_MEDIA_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.cacheExtra
 import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.filesExistInDirAfterTimestamp
@@ -117,7 +120,7 @@ class PostCaptureTest {
     }
 
     @Test
-    fun postcapture_canSaveCachedVideo(): Unit = runMainActivityScenarioTest {
+    fun postcapture_canSaveCachedVideo(): Unit = runMainActivityScenarioTest(extras = cacheExtra) {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
@@ -153,31 +156,12 @@ class PostCaptureTest {
     fun postcapture_canDeleteSavedImage() = runMainActivityScenarioTest(extras = debugExtra) {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
-
-        // navigate to postcapture screen
-        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_IMAGE).isDisplayed()
-        }
-
         assertFalse(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
 
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+        composeTestRule.waitUntil(IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        // save image
-        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
-
-        // Wait for image save success message
-        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS).isDisplayed()
-        }
-
-        // exit postcapture
-        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
-
-        // wait for capture button after navigating out of postcapture
-        composeTestRule.waitForCaptureButton()
         assertTrue(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
 
         // enter postcapture via imagewell and delete recent capture
@@ -192,32 +176,13 @@ class PostCaptureTest {
     fun postcapture_canDeleteSavedVideo(): Unit = runMainActivityScenarioTest(extras = debugExtra) {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
-        composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
-
-        // navigate to postcapture screen
-        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_VIDEO).isDisplayed()
-        }
-
         assertFalse(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
 
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
+        composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
+
+        composeTestRule.waitUntil(IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-
-        // save video
-        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
-
-        // Wait for video save success message
-        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS).isDisplayed()
-        }
-
-        // exit postcapture
-        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
-
-        // wait for capture button after navigating out of postcapture
-        composeTestRule.waitForCaptureButton()
         assertTrue(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
 
         // enter postcapture via imagewell and delete recent capture

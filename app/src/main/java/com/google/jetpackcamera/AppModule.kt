@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import com.google.jetpackcamera.core.common.DefaultSaveMode
 import com.google.jetpackcamera.model.SaveMode
 import dagger.Module
 import dagger.Provides
@@ -25,9 +26,10 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    // This is the only place that needs to know about the flavor-specific BuildConfig
-
+    /**
+     * provides the default [SaveMode] to be used by the app
+     */
     @Provides
-    fun providesSaveMode(): SaveMode =
-        if (BuildConfig.USE_IMMEDIATE_SAVE) SaveMode.Immediate else SaveMode.CacheAndReview()
+    @DefaultSaveMode
+    fun providesSaveMode(): SaveMode = SaveMode.Immediate
 }
