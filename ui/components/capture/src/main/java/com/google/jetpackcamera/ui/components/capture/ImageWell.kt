@@ -72,7 +72,7 @@ fun ImageWell(
             label = "ImageWellAnimation",
             transitionSpec = {
                 (
-                    fadeIn() + expandHorizontally { height -> height } +
+                    fadeIn() + expandHorizontally() +
                         scaleIn(animationSpec = spring(0.8f))
                     ).togetherWith(fadeOut())
             }
