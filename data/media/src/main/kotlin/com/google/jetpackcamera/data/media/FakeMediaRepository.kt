@@ -15,12 +15,46 @@
  */
 package com.google.jetpackcamera.data.media
 
+import android.net.Uri
+import androidx.core.net.toUri
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+
 object FakeMediaRepository : MediaRepository {
+    private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
+
+    override val currentMedia = _currentMedia.asStateFlow()
+
+    override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
+        _currentMedia.update { pendingMedia }
+    }
+
     override suspend fun getLastCapturedMedia(): MediaDescriptor {
         return MediaDescriptor.None
     }
 
     override suspend fun load(mediaDescriptor: MediaDescriptor): Media {
         return Media.None
+    }
+
+    override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
+        if (mediaDescriptor == currentMedia.value) {
+            _currentMedia.update { MediaDescriptor.None }
+        }
+        return true
+    }
+
+    override suspend fun saveToMediaStore(
+        mediaDescriptor: MediaDescriptor.Content,
+        filename: String
+    ): Uri? {
+        return when (mediaDescriptor) {
+            is MediaDescriptor.Content.Image -> "img.jpg".toUri()
+            is MediaDescriptor.Content.Video -> "video.mp4".toUri()
+        }
+    }
+
+    override suspend fun copyToUri(mediaDescriptor: MediaDescriptor.Content, destinationUri: Uri) {
     }
 }
