@@ -651,23 +651,19 @@ the user interface and does not impact the captured images or videos.
 
 ### Media Saving and Review
 
-JCA supports two different media saving workflows, controlled by build flavors. This allows developers to test and validate different user experiences for capturing and saving media.
+JCA supports two different media saving workflows, controlled by an intent extra. This allows developers to test and validate different user experiences for capturing and saving media.
 
-*   **Immediate Save (`stable` flavor):** This is the default behavior. When a photo or video is captured, it is immediately saved to the device's MediaStore.
-*   **Cache-and-Review (`stableCache` flavor):** In this mode, captured media is saved to a temporary cache. After capture, the user is taken to a post-capture review screen where they can view the media and decide to either save it to the MediaStore or delete it. **Note: When JCA is launched via an `ACTION_IMAGE_CAPTURE` or `ACTION_VIDEO_CAPTURE` intent, the cache-and-review mode is bypassed, and media is saved directly to the provided output URI.**
+*   **Immediate Save (Default):** This is the default behavior. When a photo or video is captured, it is immediately saved to the device's MediaStore.
+*   **Cache-and-Review:** In this mode, captured media is saved to a temporary cache. After capture, the user is taken to a post-capture review screen where they can view the media and decide to either save it to the MediaStore or delete it. **Note: When JCA is launched via an `ACTION_IMAGE_CAPTURE` or `ACTION_VIDEO_CAPTURE` intent, the cache-and-review mode is bypassed, and media is saved directly to the provided output URI.**
 
-#### How to Build
+#### How to Enable Cache-and-Review
 
-You can build and install a specific flavor using the corresponding Gradle tasks in Android Studio or from the command line.
+You can enable the cache-and-review workflow by launching the app with the following extra:
+`intent.putExtra("should_cache_and_review", true)`
 
-*   **To build the Immediate Save version:**
-    ```bash
-    ./gradlew installStableDebug
-    ```
-*   **To build the Cache-and-Review version:**
-    ```bash
-    ./gradlew installStableCacheDebug
-    ```
+#### Customizing Default Save Mode for Forks
+
+For forks of this project, the default save mode (either `Immediate` or `CacheAndReview`) can be configured in the `AppModule.kt` file. Locate the `providesSaveMode` function and change the returned `SaveMode` enum to your desired default.
 
 # Source Code Headers
 
