@@ -14,16 +14,6 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<resources>
-    <string name="post_capture_image_description">An image captured by the camera</string>
-    <string name="no_media_available">No Media Available</string>
-    <string name="player_unavailable">Video Playback failed</string>
-    <string name="loading_video_text">Loading video...</string>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-
-    <string name="error_loading_media">Error loading media</string>
-    <string name="button_exit_description">Exit Post Capture</string>
-    <string name="button_save_media_description">Save Media</string>
-    <string name="button_share_media_description">Share Media</string>
-    <string name="button_delete_media_description">Delete Media</string>
-</resources>
+</manifest>
