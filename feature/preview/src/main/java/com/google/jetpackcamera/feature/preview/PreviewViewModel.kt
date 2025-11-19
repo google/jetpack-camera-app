@@ -398,10 +398,10 @@ class PreviewViewModel @Inject constructor(
     fun imageWellToRepository() {
         (_captureUiState.value as? CaptureUiState.Ready)
             ?.let { it.imageWellUiState as? ImageWellUiState.LastCapture }
-            ?.let { setMediaRepository(it.mediaDescriptor) }
+            ?.let { postCurrentMediaToMediaRepository(it.mediaDescriptor) }
     }
 
-    private fun setMediaRepository(mediaDescriptor: MediaDescriptor) {
+    private fun postCurrentMediaToMediaRepository(mediaDescriptor: MediaDescriptor) {
         viewModelScope.launch {
             mediaRepository.setCurrentMedia(mediaDescriptor)
         }
@@ -663,7 +663,9 @@ class PreviewViewModel @Inject constructor(
                         updateLastCapturedMedia()
                     } else {
                         savedUri?.let {
-                            setMediaRepository(MediaDescriptor.Content.Image(it, null, true))
+                            postCurrentMediaToMediaRepository(
+                                MediaDescriptor.Content.Image(it, null, true)
+                            )
                         }
                     }
                     _captureEvents.trySend(event)
@@ -769,7 +771,7 @@ class PreviewViewModel @Inject constructor(
                             if (saveLocation !is SaveLocation.Cache) {
                                 updateLastCapturedMedia()
                             } else {
-                                setMediaRepository(
+                                postCurrentMediaToMediaRepository(
                                     MediaDescriptor.Content.Video(it.savedUri, null, true)
                                 )
                             }

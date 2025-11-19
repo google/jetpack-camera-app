@@ -66,6 +66,7 @@ import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REAC
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
+import androidx.core.net.toFile
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
@@ -919,7 +920,8 @@ private fun getPendingRecording(
         is SaveLocation.Cache -> {
             try {
                 // 1. Get the app's cache directory
-                val cacheDir = context.applicationContext.cacheDir
+                val cacheDir = saveLocation.cacheDir?.toFile()
+                    ?: context.applicationContext.cacheDir
 
                 // 2. Create a unique temporary file for the video
                 val tempFile = File.createTempFile(
