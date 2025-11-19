@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
+import android.graphics.Bitmap
 import android.net.Uri
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.data.media.MediaDescriptor
@@ -24,12 +25,13 @@ import org.junit.Test
 import org.mockito.Mockito.mock
 
 class ImageWellUiStateAdapterTest {
-    private val testThumbnailUri: Uri = mock(Uri::class.java)
+    private val testUri: Uri = mock(Uri::class.java)
+    val testBitmap: Bitmap = mock(Bitmap::class.java)
 
     @Test
-    fun from_mediaContentAndVideoInactive_returnsLastCapture() {
+    fun from_mediaContentAndVideoInactive_withThumbnail_returnsLastCapture() {
         // Given
-        val mediaDescriptor = MediaDescriptor.Content.Image(testThumbnailUri, null, false)
+        val mediaDescriptor = MediaDescriptor.Content.Image(testUri, testBitmap, false)
         val videoRecordingState = VideoRecordingState.Inactive()
 
         // When
@@ -37,6 +39,19 @@ class ImageWellUiStateAdapterTest {
 
         // Then
         assertEquals(ImageWellUiState.LastCapture(mediaDescriptor), result)
+    }
+
+    @Test
+    fun from_mediaContentAndVideoInactive_noThumbnail_returnsUnavailable() {
+        // Given
+        val mediaDescriptor = MediaDescriptor.Content.Image(testUri, null, false)
+        val videoRecordingState = VideoRecordingState.Inactive()
+
+        // When
+        val result = ImageWellUiState.from(mediaDescriptor, videoRecordingState)
+
+        // Then
+        assertEquals(ImageWellUiState.Unavailable, result)
     }
 
     @Test
@@ -55,7 +70,7 @@ class ImageWellUiStateAdapterTest {
     @Test
     fun from_videoRecording_returnsUnavailable() {
         // Given
-        val mediaDescriptor = MediaDescriptor.Content.Image(testThumbnailUri, null, false)
+        val mediaDescriptor = MediaDescriptor.Content.Image(testUri, null, false)
         val videoRecordingState = VideoRecordingState.Active.Recording(0, 0.0, 0)
 
         // When
@@ -68,7 +83,7 @@ class ImageWellUiStateAdapterTest {
     @Test
     fun from_videoPaused_returnsUnavailable() {
         // Given
-        val mediaDescriptor = MediaDescriptor.Content.Image(testThumbnailUri, null, false)
+        val mediaDescriptor = MediaDescriptor.Content.Image(testUri, null, false)
         val videoRecordingState = VideoRecordingState.Active.Paused(0, 0.0, 0)
 
         // When
@@ -81,7 +96,7 @@ class ImageWellUiStateAdapterTest {
     @Test
     fun from_mediaContentAndVideoStarting_returnsUnavailable() {
         // Given
-        val mediaDescriptor = MediaDescriptor.Content.Image(testThumbnailUri, null, false)
+        val mediaDescriptor = MediaDescriptor.Content.Image(testUri, null, false)
         val videoRecordingState = VideoRecordingState.Starting()
 
         // When
