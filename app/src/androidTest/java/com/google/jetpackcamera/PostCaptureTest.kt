@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import android.os.Build
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -31,6 +32,7 @@ import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_VIDEO
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_WELL_TAG
+import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.JCA_MEDIA_DIR_PATH
 import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
@@ -62,6 +64,25 @@ class PostCaptureTest {
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private var timestamp: Long = Long.MAX_VALUE
+
+    private val publicPictureDirPath: String
+        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // API 29+ (Scoped Storage): Use the app's specific directory within DCIM or Pictures
+            // Assuming JCA_MEDIA_DIR_PATH is the correct place where your app saves.
+            JCA_MEDIA_DIR_PATH
+        } else {
+            // API 28 and below: Use the generic public Pictures directory
+            PICTURES_DIR_PATH
+        }
+
+    private val publicVideoDirPath: String
+        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // API 29+ (Scoped Storage): Use the app's specific directory within DCIM or Movies
+            JCA_MEDIA_DIR_PATH
+        } else {
+            // API 28 and below: Use the generic public Movies directory
+            MOVIES_DIR_PATH
+        }
 
     @Before
     fun setup() {
@@ -96,67 +117,81 @@ class PostCaptureTest {
     }
 
     @Test
-    fun postcapture_canSaveCachedImage() = runMainActivityScenarioTest {
-        // Wait for the capture button to be displayed
-        composeTestRule.waitForCaptureButton()
+    fun captureImage_navigatesPostcapture_canSaveCachedImage() =
+        runMainActivityScenarioTest(cacheExtra) {
+            // Wait for the capture button to be displayed
+            composeTestRule.waitForCaptureButton()
 
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+            assertFalse(filesExistInDirAfterTimestamp(publicPictureDirPath, timestamp))
 
-        // navigate to postcapture screen
-        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_IMAGE).isDisplayed()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+
+            // navigate to postcapture screen
+            composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_IMAGE).isDisplayed()
+            }
+
+            composeTestRule.waitUntil {
+                composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
+            }
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
+
+            // Wait for image save success message
+            composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS)
+                    .isDisplayed()
+            }
+            composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
+                filesExistInDirAfterTimestamp(publicPictureDirPath, timestamp)
+            }
         }
-
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
-        }
-        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
-
-        // Wait for image save success message
-        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS).isDisplayed()
-        }
-        assertTrue(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
-    }
 
     @Test
-    fun postcapture_canSaveCachedVideo(): Unit = runMainActivityScenarioTest(extras = cacheExtra) {
-        // Wait for the capture button to be displayed
-        composeTestRule.waitForCaptureButton()
-        composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
+    fun captureVideo_navigatesPostcapture_canSaveCachedVideo(): Unit =
+        runMainActivityScenarioTest(extras = cacheExtra) {
+            // Wait for the capture button to be displayed
+            composeTestRule.waitForCaptureButton()
+            composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
-        // navigate to postcapture screen
-        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_VIDEO).isDisplayed()
+            // navigate to postcapture screen
+            composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_VIDEO).isDisplayed()
+            }
+            composeTestRule.waitUntil {
+                composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).isDisplayed()
+            }
+
+            assertFalse(filesExistInDirAfterTimestamp(publicVideoDirPath, timestamp))
+
+            // save video
+            composeTestRule.waitUntil {
+                composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
+            }
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
+
+            composeTestRule.waitUntil(VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(
+                    VIEWER_POST_CAPTURE_VIDEO
+                ).isDisplayed()
+            }
+            // Wait for video save success message
+            composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS)
+                    .isDisplayed()
+            }
+
+            composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
+                filesExistInDirAfterTimestamp(publicVideoDirPath, timestamp)
+            }
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
+            composeTestRule.waitForCaptureButton()
         }
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).isDisplayed()
-        }
-
-        assertFalse(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
-
-        // save video
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
-        }
-        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
-
-        // Wait for video save success message
-        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS).isDisplayed()
-        }
-
-        assertTrue(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
-
-        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
-        composeTestRule.waitForCaptureButton()
-    }
 
     @Test
     fun postcapture_canDeleteSavedImage() = runMainActivityScenarioTest(extras = debugExtra) {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
-        assertFalse(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
+        assertFalse(filesExistInDirAfterTimestamp(publicPictureDirPath, timestamp))
 
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
         composeTestRule.waitUntil(IMAGE_CAPTURE_TIMEOUT_MILLIS) {
@@ -168,7 +203,7 @@ class PostCaptureTest {
         enterImageWellAndDelete(VIEWER_POST_CAPTURE_IMAGE)
 
         composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
-            !filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp)
+            !filesExistInDirAfterTimestamp(publicPictureDirPath, timestamp)
         }
     }
 
@@ -180,15 +215,15 @@ class PostCaptureTest {
 
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
-        composeTestRule.waitUntil(IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
+        composeTestRule.waitUntil(VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        assertTrue(filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp))
+        assertTrue(filesExistInDirAfterTimestamp(publicVideoDirPath, timestamp))
 
         // enter postcapture via imagewell and delete recent capture
         enterImageWellAndDelete(VIEWER_POST_CAPTURE_VIDEO)
         composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
-            !filesExistInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, timestamp)
+            !filesExistInDirAfterTimestamp(publicVideoDirPath, timestamp)
         }
     }
 }
