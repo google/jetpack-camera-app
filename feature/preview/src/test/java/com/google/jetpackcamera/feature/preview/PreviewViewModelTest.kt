@@ -22,6 +22,7 @@ import com.google.jetpackcamera.core.camera.test.FakeCameraSystem
 import com.google.jetpackcamera.data.media.FakeMediaRepository
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.test.FakeSettingsRepository
