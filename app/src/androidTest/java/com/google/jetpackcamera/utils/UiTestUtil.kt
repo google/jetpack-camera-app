@@ -83,7 +83,6 @@ const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val SAVE_MEDIA_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_WELL_LOAD_TIMEOUT_MILLIS = 10_000L
 
-
 const val VIDEO_DURATION_MILLIS = 3_000L
 const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 15_000L
 const val FILE_PREFIX = "JCA"
@@ -258,6 +257,7 @@ fun mediaStoreEntryExistsAfterTimestamp(
     // Return true if the cursor has any entries
     return cursor?.use { it.count > 0 } ?: false
 }
+
 /**
  * @return - true if all eligible files were successfully deleted. False otherwise
  */

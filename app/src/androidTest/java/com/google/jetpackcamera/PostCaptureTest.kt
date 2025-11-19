@@ -66,21 +66,17 @@ class PostCaptureTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private var timestamp: Long = Long.MAX_VALUE
 
+    private fun newImageMediaExists(): Boolean = mediaStoreEntryExistsAfterTimestamp(
+        instrumentation,
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        timestamp
+    )
 
-    private fun newImageMediaExists(): Boolean =
-        mediaStoreEntryExistsAfterTimestamp(
-            instrumentation,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            timestamp
-        )
-
-    private fun newVideoMediaExists(): Boolean =
-        mediaStoreEntryExistsAfterTimestamp(
-            instrumentation,
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-            timestamp
-        )
-
+    private fun newVideoMediaExists(): Boolean = mediaStoreEntryExistsAfterTimestamp(
+        instrumentation,
+        MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+        timestamp
+    )
 
     @Before
     fun setup() {
@@ -96,7 +92,9 @@ class PostCaptureTest {
 
     private fun enterImageWellAndDelete(recentCaptureViewerTag: String) {
         // enter postcapture via imagewell
-        composeTestRule.waitUntil(IMAGE_WELL_LOAD_TIMEOUT_MILLIS) { composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).isDisplayed() }
+        composeTestRule.waitUntil(IMAGE_WELL_LOAD_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).isDisplayed()
+        }
         composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertExists().performClick()
 
         // most recent capture tag
@@ -163,7 +161,6 @@ class PostCaptureTest {
                 composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
             }
             composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
-
 
             // Wait for video save success message
             composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
