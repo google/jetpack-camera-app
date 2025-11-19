@@ -29,6 +29,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
+import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
@@ -386,6 +387,21 @@ class PreviewViewModel @Inject constructor(
         }
     } else {
         DebugUiState.Disabled
+    }
+
+    /**
+     * Sets the media from the image well to the [MediaRepository].
+     */
+    fun imageWellToRepository() {
+        (_captureUiState.value as? CaptureUiState.Ready)
+            ?.let { it.imageWellUiState as? ImageWellUiState.LastCapture }
+            ?.let { setMediaRepository(it.mediaDescriptor) }
+    }
+
+    private fun setMediaRepository(mediaDescriptor: MediaDescriptor) {
+        viewModelScope.launch {
+            mediaRepository.setCurrentMedia(mediaDescriptor)
+        }
     }
 
     fun updateLastCapturedMedia() {
