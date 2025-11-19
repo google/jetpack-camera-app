@@ -81,6 +81,8 @@ const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 45_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
 const val SAVE_MEDIA_TIMEOUT_MILLIS = 5_000L
+const val IMAGE_WELL_LOAD_TIMEOUT_MILLIS = 10_000L
+
 
 const val VIDEO_DURATION_MILLIS = 3_000L
 const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 15_000L
@@ -230,14 +232,32 @@ fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri = Ur
     )
 )
 
-fun filesExistInDirAfterTimestamp(directoryPath: String, timeStamp: Long): Boolean {
-    return File(directoryPath).listFiles()?.find { file ->
-        !file.name.startsWith(".") && file.lastModified() >= timeStamp
-    }?.also {
-        Log.d(TAG, "file after timestamp($timeStamp): ${it.name} ")
-    } != null
-}
+// Helper function to check if a MediaStore entry exists (Source of Truth)
+fun mediaStoreEntryExistsAfterTimestamp(
+    instrumentation: Instrumentation,
+    mediaUri: Uri, // MediaStore.Images.Media.EXTERNAL_CONTENT_URI or Video.Media...
+    timestamp: Long
+): Boolean {
+    val contentResolver = instrumentation.targetContext.contentResolver
 
+    // MediaStore.MediaColumns.DATE_ADDED is stored in seconds (s), convert ms to s
+    val timestampInSeconds = timestamp / 1000
+
+    // Check if any file was added to this collection since the test started
+    val selection = "${MediaStore.MediaColumns.DATE_ADDED} >= ?"
+    val selectionArgs = arrayOf(timestampInSeconds.toString())
+
+    val cursor = contentResolver.query(
+        mediaUri,
+        arrayOf(MediaStore.MediaColumns._ID), // Querying for just the ID is efficient
+        selection,
+        selectionArgs,
+        null // No sorting needed
+    )
+
+    // Return true if the cursor has any entries
+    return cursor?.use { it.count > 0 } ?: false
+}
 /**
  * @return - true if all eligible files were successfully deleted. False otherwise
  */
