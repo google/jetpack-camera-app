@@ -267,11 +267,13 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
-    fun deleteCurrentMedia() {
+    fun deleteCurrentMedia(onDeleteSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             val currentMediaDescriptor = loadedMediaFlow.value.first
             (currentMediaDescriptor as? MediaDescriptor.Content)?.let {
-                deleteMedia(mediaDescriptor = it)
+                if (deleteMedia(mediaDescriptor = it)) {
+                    onDeleteSuccess()
+                }
             }
         }
     }
