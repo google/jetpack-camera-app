@@ -174,7 +174,7 @@ class PreviewViewModel @Inject constructor(
         externalCaptureMode: ExternalCaptureMode
     ): CameraAppSettings {
         val captureMode = externalCaptureMode.toCaptureMode()
-        return if (captureMode == this.captureMode) {
+        return if (captureMode == null || captureMode == this.captureMode) {
             this
         } else {
             this.copy(captureMode = captureMode)
@@ -420,7 +420,7 @@ class PreviewViewModel @Inject constructor(
         ExternalCaptureMode.ImageCapture -> CaptureMode.IMAGE_ONLY
         ExternalCaptureMode.MultipleImageCapture -> CaptureMode.IMAGE_ONLY
         ExternalCaptureMode.VideoCapture -> CaptureMode.VIDEO_ONLY
-        ExternalCaptureMode.Standard -> CaptureMode.STANDARD
+        ExternalCaptureMode.Standard -> null
     }
 
     /**

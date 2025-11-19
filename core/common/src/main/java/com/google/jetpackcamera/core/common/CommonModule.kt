@@ -49,6 +49,10 @@ class CommonModule {
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
+annotation class DefaultCaptureModeOverride
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
 annotation class DefaultDispatcher
 
 @Qualifier
