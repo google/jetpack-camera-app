@@ -321,7 +321,13 @@ class PreviewViewModel @Inject constructor(
                             cameraState,
                             externalCaptureMode
                         ),
-                        hdrUiState = hdrUiState
+                        hdrUiState = hdrUiState,
+
+                        imageWellUiState = ImageWellUiState.from(
+                            trackedUiState.recentCapturedMedia,
+                            cameraState.videoRecordingState
+                        )
+
                     )
                 }
             }.collect {}
@@ -408,12 +414,8 @@ class PreviewViewModel @Inject constructor(
 
     fun updateLastCapturedMedia() {
         viewModelScope.launch {
-            val lastCapturedMediaDescriptor = mediaRepository.getLastCapturedMedia()
-            _captureUiState.update { old ->
-                (old as? CaptureUiState.Ready)?.copy(
-                    imageWellUiState =
-                    ImageWellUiState.from(lastCapturedMediaDescriptor)
-                ) ?: old
+            trackedPreviewUiState.update { old ->
+                old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
             }
         }
     }
@@ -894,6 +896,7 @@ class PreviewViewModel @Inject constructor(
         val isDebugOverlayOpen: Boolean = false,
         val isRecordingLocked: Boolean = false,
         val zoomAnimationTarget: Float? = null,
-        val debugHidingComponents: Boolean = false
+        val debugHidingComponents: Boolean = false,
+        val recentCapturedMedia: MediaDescriptor = MediaDescriptor.None
     )
 }
