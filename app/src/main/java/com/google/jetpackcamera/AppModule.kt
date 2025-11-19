@@ -26,7 +26,7 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 object AppModule {
     /**
-     * provides the default [com.google.jetpackcamera.model.CaptureMode] to override by the app
+     * provides the default [CaptureMode] to override by the app
      */
     @Provides
     @DefaultCaptureModeOverride
