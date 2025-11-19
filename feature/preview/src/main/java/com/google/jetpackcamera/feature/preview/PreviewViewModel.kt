@@ -50,6 +50,7 @@ import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
+import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoCaptureEvent
@@ -127,6 +128,8 @@ class PreviewViewModel @Inject constructor(
     private val constraintsRepository: ConstraintsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
+    private val saveMode: SaveMode = SaveMode.Immediate
+
     private val _captureUiState: MutableStateFlow<CaptureUiState> =
         MutableStateFlow(CaptureUiState.NotReady)
     private val trackedPreviewUiState: MutableStateFlow<TrackedPreviewUiState> =
@@ -395,10 +398,10 @@ class PreviewViewModel @Inject constructor(
     fun imageWellToRepository() {
         (_captureUiState.value as? CaptureUiState.Ready)
             ?.let { it.imageWellUiState as? ImageWellUiState.LastCapture }
-            ?.let { setMediaRepository(it.mediaDescriptor) }
+            ?.let { postCurrentMediaToMediaRepository(it.mediaDescriptor) }
     }
 
-    private fun setMediaRepository(mediaDescriptor: MediaDescriptor) {
+    private fun postCurrentMediaToMediaRepository(mediaDescriptor: MediaDescriptor) {
         viewModelScope.launch {
             mediaRepository.setCurrentMedia(mediaDescriptor)
         }
@@ -574,27 +577,36 @@ class PreviewViewModel @Inject constructor(
         )
     }
 
-    private fun nextSaveLocation(): Pair<SaveLocation, IntProgress?> = when (externalCaptureMode) {
-        ExternalCaptureMode.ImageCapture,
-        ExternalCaptureMode.MultipleImageCapture,
-        ExternalCaptureMode.VideoCapture -> {
-            if (externalUris.isNotEmpty()) {
-                if (!this::externalUriProgress.isInitialized) {
-                    externalUriProgress = IntProgress(1, 1..externalUris.size)
+    private fun nextSaveLocation(saveMode: SaveMode): Pair<SaveLocation, IntProgress?> {
+        return when (externalCaptureMode) {
+            ExternalCaptureMode.ImageCapture,
+            ExternalCaptureMode.MultipleImageCapture,
+            ExternalCaptureMode.VideoCapture -> {
+                if (externalUris.isNotEmpty()) {
+                    if (!this::externalUriProgress.isInitialized) {
+                        externalUriProgress = IntProgress(1, 1..externalUris.size)
+                    }
+                    val progress = externalUriProgress
+                    if (progress.currentValue < progress.range.endInclusive) externalUriProgress++
+                    Pair(
+                        SaveLocation.Explicit(externalUris[progress.currentValue - 1]),
+                        progress
+                    )
+                } else {
+                    Pair(SaveLocation.Default, null)
                 }
-                val progress = externalUriProgress
-                if (progress.currentValue < progress.range.endInclusive) externalUriProgress++
-                Pair(
-                    SaveLocation.Explicit(externalUris[progress.currentValue - 1]),
-                    progress
-                )
-            } else {
-                Pair(SaveLocation.Default, null)
+            }
+
+            ExternalCaptureMode.Standard -> {
+                val defaultSaveLocation =
+                    if (saveMode is SaveMode.CacheAndReview) {
+                        SaveLocation.Cache(saveMode.cacheDir)
+                    } else {
+                        SaveLocation.Default
+                    }
+                Pair(defaultSaveLocation, null)
             }
         }
-
-        ExternalCaptureMode.Standard ->
-            Pair(SaveLocation.Default, null)
     }
 
     fun captureImage(contentResolver: ContentResolver) {
@@ -622,8 +634,9 @@ class PreviewViewModel @Inject constructor(
         }
         Log.d(TAG, "captureImage")
         viewModelScope.launch {
-            val (saveLocation, progress) = nextSaveLocation()
+            val (saveLocation, progress) = nextSaveLocation(saveMode)
             captureImageInternal(
+                saveLocation = saveLocation,
                 doTakePicture = {
                     cameraSystem.takePicture(contentResolver, saveLocation) {
                         _captureUiState.update { old ->
@@ -637,11 +650,23 @@ class PreviewViewModel @Inject constructor(
                     }.savedUri
                 },
                 onSuccess = { savedUri ->
-                    updateLastCapturedMedia()
                     val event = if (progress != null) {
                         ImageCaptureEvent.SequentialImageSaved(savedUri, progress)
                     } else {
-                        ImageCaptureEvent.SingleImageSaved(savedUri)
+                        if (saveLocation is SaveLocation.Cache) {
+                            ImageCaptureEvent.SingleImageCached(savedUri)
+                        } else {
+                            ImageCaptureEvent.SingleImageSaved(savedUri)
+                        }
+                    }
+                    if (saveLocation !is SaveLocation.Cache) {
+                        updateLastCapturedMedia()
+                    } else {
+                        savedUri?.let {
+                            postCurrentMediaToMediaRepository(
+                                MediaDescriptor.Content.Image(it, null, true)
+                            )
+                        }
                     }
                     _captureEvents.trySend(event)
                 },
@@ -651,6 +676,7 @@ class PreviewViewModel @Inject constructor(
                     } else {
                         ImageCaptureEvent.SingleImageCaptureError(exception)
                     }
+
                     _captureEvents.trySend(event)
                 }
             )
@@ -658,25 +684,31 @@ class PreviewViewModel @Inject constructor(
     }
 
     private suspend fun <T> captureImageInternal(
+        saveLocation: SaveLocation,
         doTakePicture: suspend () -> T,
         onSuccess: (T) -> Unit = {},
         onFailure: (exception: Exception) -> Unit = {}
     ) {
         val cookieInt = snackBarCount.incrementAndGet()
         val cookie = "Image-$cookieInt"
-        try {
+        val snackBarData = try {
             traceAsync(IMAGE_CAPTURE_TRACE, cookieInt) {
                 doTakePicture()
             }.also { result ->
                 onSuccess(result)
             }
             Log.d(TAG, "cameraSystem.takePicture success")
-            SnackbarData(
-                cookie = cookie,
-                stringResource = R.string.toast_image_capture_success,
-                withDismissAction = true,
-                testTag = IMAGE_CAPTURE_SUCCESS_TAG
-            )
+            // don't display snackbar for successful capture
+            if (saveLocation is SaveLocation.Cache) {
+                null
+            } else {
+                SnackbarData(
+                    cookie = cookie,
+                    stringResource = R.string.toast_image_capture_success,
+                    withDismissAction = true,
+                    testTag = IMAGE_CAPTURE_SUCCESS_TAG
+                )
+            }
         } catch (exception: Exception) {
             onFailure(exception)
             Log.d(TAG, "cameraSystem.takePicture error", exception)
@@ -686,9 +718,8 @@ class PreviewViewModel @Inject constructor(
                 withDismissAction = true,
                 testTag = IMAGE_CAPTURE_FAILURE_TAG
             )
-        }.also { snackBarData ->
-            addSnackBarData(snackBarData)
         }
+        snackBarData?.let { addSnackBarData(it) }
     }
 
     fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale) {
@@ -723,21 +754,40 @@ class PreviewViewModel @Inject constructor(
         Log.d(TAG, "startVideoRecording")
         recordingJob = viewModelScope.launch {
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
-            val (saveLocation, _) = nextSaveLocation()
+            val saveMode = saveMode
+            val (saveLocation, _) = nextSaveLocation(saveMode)
             try {
                 cameraSystem.startVideoRecording(saveLocation) {
                     var snackbarToShow: SnackbarData?
                     when (it) {
                         is OnVideoRecordEvent.OnVideoRecorded -> {
                             Log.d(TAG, "cameraSystem.startRecording OnVideoRecorded")
-                            _captureEvents.trySend(VideoCaptureEvent.VideoSaved(it.savedUri))
-                            snackbarToShow = SnackbarData(
-                                cookie = cookie,
-                                stringResource = R.string.toast_video_capture_success,
-                                withDismissAction = true,
-                                testTag = VIDEO_CAPTURE_SUCCESS_TAG
-                            )
-                            updateLastCapturedMedia()
+                            val event = if (saveLocation is SaveLocation.Cache) {
+                                VideoCaptureEvent.VideoCached(it.savedUri)
+                            } else {
+                                VideoCaptureEvent.VideoSaved(it.savedUri)
+                            }
+
+                            if (saveLocation !is SaveLocation.Cache) {
+                                updateLastCapturedMedia()
+                            } else {
+                                postCurrentMediaToMediaRepository(
+                                    MediaDescriptor.Content.Video(it.savedUri, null, true)
+                                )
+                            }
+
+                            _captureEvents.trySend(event)
+                            // don't display snackbar for successful capture
+                            snackbarToShow = if (saveLocation is SaveLocation.Cache) {
+                                null
+                            } else {
+                                SnackbarData(
+                                    cookie = cookie,
+                                    stringResource = R.string.toast_video_capture_success,
+                                    withDismissAction = true,
+                                    testTag = VIDEO_CAPTURE_SUCCESS_TAG
+                                )
+                            }
                         }
 
                         is OnVideoRecordEvent.OnVideoRecordError -> {
@@ -752,7 +802,7 @@ class PreviewViewModel @Inject constructor(
                         }
                     }
 
-                    addSnackBarData(snackbarToShow)
+                    snackbarToShow?.let { data -> addSnackBarData(data) }
                 }
                 Log.d(TAG, "cameraSystem.startRecording success")
             } catch (exception: IllegalStateException) {
@@ -852,7 +902,7 @@ class PreviewViewModel @Inject constructor(
             _captureUiState.update { old ->
                 (old as? CaptureUiState.Ready)?.let { readyState ->
                     val newQueue = LinkedList(readyState.snackBarUiState.snackBarQueue)
-                    val snackBarData = newQueue.remove()
+                    val snackBarData = newQueue.poll()
                     if (snackBarData != null && snackBarData.cookie == cookie) {
                         // If the latest snackBar had a result, then clear snackBarToShow
                         Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
