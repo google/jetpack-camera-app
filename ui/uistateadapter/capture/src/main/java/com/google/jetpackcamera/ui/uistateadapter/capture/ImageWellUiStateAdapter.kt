@@ -24,6 +24,7 @@ fun ImageWellUiState.Companion.from(
     videoRecordingState: VideoRecordingState
 ): ImageWellUiState {
     return if (mediaDescriptor is MediaDescriptor.Content &&
+        mediaDescriptor.thumbnail != null &&
         videoRecordingState is VideoRecordingState.Inactive
     ) {
         ImageWellUiState.LastCapture(mediaDescriptor = mediaDescriptor)
