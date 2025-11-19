@@ -173,11 +173,13 @@ class PreviewViewModel @Inject constructor(
     private fun CameraAppSettings.applyExternalCaptureMode(
         externalCaptureMode: ExternalCaptureMode
     ): CameraAppSettings {
-        val captureMode = externalCaptureMode.toCaptureMode()
-        return if (captureMode == this.captureMode) {
+        val requiredCaptureModeOverride = externalCaptureMode.toCaptureMode()
+        return if (requiredCaptureModeOverride == null ||
+            requiredCaptureModeOverride == this.captureMode
+        ) {
             this
         } else {
-            this.copy(captureMode = captureMode)
+            this.copy(captureMode = requiredCaptureModeOverride)
         }
     }
 
@@ -422,7 +424,7 @@ class PreviewViewModel @Inject constructor(
         ExternalCaptureMode.ImageCapture -> CaptureMode.IMAGE_ONLY
         ExternalCaptureMode.MultipleImageCapture -> CaptureMode.IMAGE_ONLY
         ExternalCaptureMode.VideoCapture -> CaptureMode.VIDEO_ONLY
-        ExternalCaptureMode.Standard -> CaptureMode.STANDARD
+        ExternalCaptureMode.Standard -> null
     }
 
     /**
