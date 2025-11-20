@@ -47,6 +47,7 @@ import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.mediaStoreEntryExistsAfterTimestamp
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.wait
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.After
 import org.junit.Assert.assertFalse
@@ -145,6 +146,7 @@ class PostCaptureTest {
         runMainActivityScenarioTest(extras = cacheExtra) {
             // Wait for the capture button to be displayed
             composeTestRule.waitForCaptureButton()
+            composeTestRule.wait(500L)
             composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
             // navigate to postcapture screen
