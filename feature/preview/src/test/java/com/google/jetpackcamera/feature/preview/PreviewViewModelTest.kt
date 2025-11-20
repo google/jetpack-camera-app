@@ -28,6 +28,7 @@ import com.google.jetpackcamera.settings.test.FakeSettingsRepository
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -73,7 +74,7 @@ class PreviewViewModelTest {
 
     @Test
     fun runCamera() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCameraUntilRunning()
+        startCameraUntilRunning()
 
         assertThat(cameraSystem.previewStarted).isTrue()
     }
@@ -81,7 +82,7 @@ class PreviewViewModelTest {
     @Test
     fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
         val contentResolver: ContentResolver = mock()
-        previewViewModel.startCameraUntilRunning()
+        startCameraUntilRunning()
         previewViewModel.captureImage(contentResolver)
         advanceUntilIdle()
         assertThat(cameraSystem.numPicturesTaken).isEqualTo(1)
@@ -89,7 +90,7 @@ class PreviewViewModelTest {
 
     @Test
     fun startVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCameraUntilRunning()
+        startCameraUntilRunning()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         assertThat(cameraSystem.recordingInProgress).isTrue()
@@ -97,7 +98,7 @@ class PreviewViewModelTest {
 
     @Test
     fun stopVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCameraUntilRunning()
+        startCameraUntilRunning()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
@@ -145,9 +146,33 @@ class PreviewViewModelTest {
         assertThat(cameraSystem.isLensFacingFront).isTrue()
     }
 
-    context(TestScope)
-    private fun PreviewViewModel.startCameraUntilRunning() {
-        startCamera()
+    @Test
+    fun toggleQuickSettings() = runTest(StandardTestDispatcher()) {
+        // Initial state should be closed
+        assertIsReady(previewViewModel.captureUiState.value).also {
+            val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available
+            assertThat(quickSettings.quickSettingsIsOpen).isFalse()
+        }
+
+        // Toggle to open
+        previewViewModel.toggleQuickSettings()
+        advanceUntilIdle()
+        assertIsReady(previewViewModel.captureUiState.value).also {
+            val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available
+            assertThat(quickSettings.quickSettingsIsOpen).isTrue()
+        }
+
+        // Toggle back to closed
+        previewViewModel.toggleQuickSettings()
+        advanceUntilIdle()
+        assertIsReady(previewViewModel.captureUiState.value).also {
+            val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available
+            assertThat(quickSettings.quickSettingsIsOpen).isFalse()
+        }
+    }
+
+    private fun TestScope.startCameraUntilRunning() {
+        previewViewModel.startCamera()
         advanceUntilIdle()
     }
 }

@@ -17,7 +17,7 @@
 syntax = "proto3";
 
 import "com/google/jetpackcamera/model/proto/aspect_ratio.proto";
-import "com/google/jetpackcamera/model/proto/capture_mode.proto";
+import "com/google/jetpackcamera/model/proto/stream_config.proto";
 import "com/google/jetpackcamera/model/proto/dark_mode.proto";
 import "com/google/jetpackcamera/model/proto/dynamic_range.proto";
 import "com/google/jetpackcamera/model/proto/flash_mode.proto";
@@ -25,6 +25,7 @@ import "com/google/jetpackcamera/model/proto/image_output_format.proto";
 import "com/google/jetpackcamera/model/proto/lens_facing.proto";
 import "com/google/jetpackcamera/model/proto/stabilization_mode.proto";
 import "com/google/jetpackcamera/model/proto/video_quality.proto";
+import "com/google/jetpackcamera/model/proto/low_light_boost_priority.proto";
 
 
 option java_package = "com.google.jetpackcamera.settings";
@@ -43,6 +44,7 @@ message JcaSettings {
   uint64 max_video_duration_millis = 11;
   VideoQuality video_quality = 12;
   bool audio_enabled_status = 13;
+  LowLightBoostPriority low_light_boost_priority = 14;
 
   // Non-camera app settings
   DarkMode dark_mode_status = 9;

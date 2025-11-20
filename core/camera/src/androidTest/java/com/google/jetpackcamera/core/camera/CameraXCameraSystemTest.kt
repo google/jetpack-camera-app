@@ -167,7 +167,9 @@ class CameraXCameraSystemTest {
         application = application,
         defaultDispatcher = Dispatchers.Default,
         iODispatcher = Dispatchers.IO,
-        constraintsRepository = constraintsRepository
+        constraintsRepository = constraintsRepository,
+        availabilityCheckers = emptyMap(),
+        effectProviders = emptyMap()
     ).apply {
         initialize(appSettings) {}
         providePreviewSurface()

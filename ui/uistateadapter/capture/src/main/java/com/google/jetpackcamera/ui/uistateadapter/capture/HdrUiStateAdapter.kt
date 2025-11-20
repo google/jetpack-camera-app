@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
@@ -38,7 +39,8 @@ fun HdrUiState.Companion.from(
         ExternalCaptureMode.MultipleImageCapture -> if (
             cameraConstraints
                 ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
-                ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
+                ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false &&
+            cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
         ) {
             HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
         } else {
@@ -47,7 +49,8 @@ fun HdrUiState.Companion.from(
 
         ExternalCaptureMode.VideoCapture -> if (
             cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true &&
-            cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
+            cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL &&
+            cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
         ) {
             HdrUiState.Available(
                 cameraAppSettings.imageFormat,
@@ -65,7 +68,8 @@ fun HdrUiState.Companion.from(
                     )
                         ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
                 ) &&
-            cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL
+            cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL &&
+            cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
         ) {
             HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
         } else {

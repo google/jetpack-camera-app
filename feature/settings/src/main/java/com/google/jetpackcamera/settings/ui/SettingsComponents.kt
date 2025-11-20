@@ -48,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -64,6 +63,7 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
@@ -75,6 +75,7 @@ import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
 import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
+import com.google.jetpackcamera.settings.LowLightBoostPriorityUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
@@ -189,16 +190,16 @@ fun DefaultCameraFacing(
     lensUiState: FlipLensUiState,
     setDefaultLensFacing: (LensFacing) -> Unit
 ) {
-    val context = LocalContext.current
+    val description = stringResource(
+        when (lensUiState.currentLensFacing) {
+            LensFacing.FRONT -> R.string.default_facing_camera_description_front
+            LensFacing.BACK -> R.string.default_facing_camera_description_back
+        }
+    )
     SwitchSettingUI(
         modifier = modifier.testTag(BTN_SWITCH_SETTING_LENS_FACING_TAG)
             .semantics {
-                stateDescription = when (lensUiState.currentLensFacing) {
-                    LensFacing.FRONT ->
-                        context.getString(R.string.default_facing_camera_description_front)
-                    LensFacing.BACK ->
-                        context.getString(R.string.default_facing_camera_description_back)
-                }
+                stateDescription = description
             },
         title = stringResource(id = R.string.default_facing_camera_title),
         description = when (lensUiState) {
@@ -383,6 +384,64 @@ fun StreamConfigSetting(
                         StreamConfig.SINGLE_STREAM,
                     enabled = true,
                     onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun LowLightBoostPrioritySetting(
+    lowLightBoostPriorityUiState: LowLightBoostPriorityUiState,
+    setLowLightBoostPriority: (LowLightBoostPriority) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BasicPopupSetting(
+        modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_LOW_LIGHT_BOOST_PRIORITY_TAG),
+        title = stringResource(R.string.low_light_boost_priority_title),
+        leadingIcon = null,
+        enabled = true,
+        description =
+        if (lowLightBoostPriorityUiState is LowLightBoostPriorityUiState.Enabled) {
+            when (lowLightBoostPriorityUiState.currentLowLightBoostPriority) {
+                LowLightBoostPriority.PRIORITIZE_AE_MODE -> stringResource(
+                    id = R.string.low_light_boost_priority_description_ae_mode
+                )
+
+                LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES -> stringResource(
+                    id = R.string.low_light_boost_priority_description_camera_effect
+                )
+            }
+        } else {
+            TODO("low light boost priority currently has no disabled criteria")
+        },
+        popupContents = {
+            Column(Modifier.selectableGroup()) {
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(
+                        BTN_DIALOG_LOW_LIGHT_BOOST_PRIORITY_OPTION_AE_MODE_TAG
+                    ),
+                    text = stringResource(id = R.string.low_light_boost_priority_selector_ae_mode),
+                    selected = lowLightBoostPriorityUiState.currentLowLightBoostPriority ==
+                        LowLightBoostPriority.PRIORITIZE_AE_MODE,
+                    enabled = true,
+                    onClick = { setLowLightBoostPriority(LowLightBoostPriority.PRIORITIZE_AE_MODE) }
+                )
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(
+                        BTN_DIALOG_LOW_LIGHT_BOOST_PRIORITY_OPTION_GOOGLE_PLAY_SERVICES_TAG
+                    ),
+                    text = stringResource(
+                        id = R.string.low_light_boost_priority_selector_camera_effect
+                    ),
+                    selected = lowLightBoostPriorityUiState.currentLowLightBoostPriority ==
+                        LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES,
+                    enabled = true,
+                    onClick = {
+                        setLowLightBoostPriority(
+                            LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
+                        )
+                    }
                 )
             }
         }

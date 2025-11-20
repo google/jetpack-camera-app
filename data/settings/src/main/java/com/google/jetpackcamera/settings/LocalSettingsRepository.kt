@@ -16,7 +16,9 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
+import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.DynamicRange.Companion.toProto
@@ -25,6 +27,9 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensFacing.Companion.toProto
+import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.fromProto
+import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.toProto
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
@@ -42,7 +47,10 @@ import kotlinx.coroutines.flow.map
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
  */
-class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataStore<JcaSettings>) :
+class LocalSettingsRepository @Inject constructor(
+    private val jcaSettings: DataStore<JcaSettings>,
+    @DefaultCaptureModeOverride private val defaultCaptureModeOverride: CaptureMode
+) :
     SettingsRepository {
 
     override val defaultCameraAppSettings = jcaSettings.data
@@ -53,7 +61,7 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
                     DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
                     DarkModeProto.DARK_MODE_SYSTEM -> DarkMode.SYSTEM
-                    else -> DarkMode.SYSTEM
+                    else -> DarkMode.DARK
                 },
                 flashMode = when (it.flashModeStatus) {
                     FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
@@ -70,11 +78,13 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
                     StreamConfigProto.STREAM_CONFIG_MULTI_STREAM -> StreamConfig.MULTI_STREAM
                     else -> StreamConfig.MULTI_STREAM
                 },
+                lowLightBoostPriority = fromProto(it.lowLightBoostPriority),
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
                 maxVideoDurationMillis = it.maxVideoDurationMillis,
                 videoQuality = VideoQuality.fromProto(it.videoQuality),
-                audioEnabled = it.audioEnabledStatus
+                audioEnabled = it.audioEnabledStatus,
+                captureMode = defaultCaptureModeOverride
             )
         }
 
@@ -191,6 +201,14 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setVideoQuality(videoQuality.toProto())
+                .build()
+        }
+    }
+
+    override suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setLowLightBoostPriority(lowLightBoostPriority.toProto())
                 .build()
         }
     }

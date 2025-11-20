@@ -140,6 +140,8 @@ dependencies {
     implementation(project(":data:settings"))
     implementation(project(":core:model"))
     implementation(project(":core:common"))
+    implementation(project(":core:camera:low-light"))
+
 }
 
 // Allow references to generated code

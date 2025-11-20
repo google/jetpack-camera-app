@@ -29,6 +29,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
+import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
@@ -47,6 +48,7 @@ import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
@@ -58,6 +60,7 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.LOW_LIGHT_BOOST_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ScreenFlash
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
@@ -83,6 +86,7 @@ import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
@@ -101,8 +105,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -167,11 +173,13 @@ class PreviewViewModel @Inject constructor(
     private fun CameraAppSettings.applyExternalCaptureMode(
         externalCaptureMode: ExternalCaptureMode
     ): CameraAppSettings {
-        val captureMode = externalCaptureMode.toCaptureMode()
-        return if (captureMode == this.captureMode) {
+        val requiredCaptureModeOverride = externalCaptureMode.toCaptureMode()
+        return if (requiredCaptureModeOverride == null ||
+            requiredCaptureModeOverride == this.captureMode
+        ) {
             this
         } else {
-            this.copy(captureMode = captureMode)
+            this.copy(captureMode = requiredCaptureModeOverride)
         }
     }
 
@@ -187,6 +195,27 @@ class PreviewViewModel @Inject constructor(
                         oldCameraAppSettings = new
                     }
             }
+
+            launch {
+                cameraSystem.getCurrentCameraState()
+                    .map { it.lowLightBoostState }
+                    .distinctUntilChanged()
+                    .collect { state ->
+                        if (state is LowLightBoostState.Error) {
+                            val cookieInt = snackBarCount.incrementAndGet()
+                            Log.d(TAG, "LowLightBoostState changed to Error #$cookieInt")
+                            addSnackBarData(
+                                SnackbarData(
+                                    cookie = "LowLightBoost-$cookieInt",
+                                    stringResource = R.string.low_light_boost_error_toast_message,
+                                    withDismissAction = true,
+                                    testTag = LOW_LIGHT_BOOST_FAILURE_TAG
+                                )
+                            )
+                        }
+                    }
+            }
+
             combine(
                 cameraSystem.getCurrentSettings().filterNotNull(),
                 constraintsRepository.systemConstraints.filterNotNull(),
@@ -195,6 +224,7 @@ class PreviewViewModel @Inject constructor(
             ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
 
                 var flashModeUiState: FlashModeUiState
+
                 val captureModeUiState = CaptureModeUiState.from(
                     systemConstraints,
                     cameraAppSettings,
@@ -205,6 +235,11 @@ class PreviewViewModel @Inject constructor(
                     systemConstraints
                 )
                 val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
+                val hdrUiState = HdrUiState.from(
+                    cameraAppSettings,
+                    systemConstraints,
+                    externalCaptureMode
+                )
                 _captureUiState.update { old ->
                     when (old) {
                         is CaptureUiState.NotReady -> {
@@ -241,14 +276,17 @@ class PreviewViewModel @Inject constructor(
                             cameraAppSettings,
                             systemConstraints,
                             aspectRatioUiState,
-                            trackedUiState.isQuickSettingsOpen
+                            hdrUiState,
+                            trackedUiState.isQuickSettingsOpen,
+                            trackedUiState.focusedQuickSetting
                         ),
                         sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
                         debugUiState = getDebugUiState(
                             systemConstraints,
                             cameraAppSettings,
                             cameraState,
-                            trackedUiState.isDebugOverlayOpen
+                            trackedUiState.isDebugOverlayOpen,
+                            trackedUiState.debugHidingComponents
                         ),
                         stabilizationUiState = StabilizationUiState.from(
                             cameraAppSettings,
@@ -282,7 +320,14 @@ class PreviewViewModel @Inject constructor(
                             cameraAppSettings,
                             cameraState,
                             externalCaptureMode
+                        ),
+                        hdrUiState = hdrUiState,
+
+                        imageWellUiState = ImageWellUiState.from(
+                            trackedUiState.recentCapturedMedia,
+                            cameraState.videoRecordingState
                         )
+
                     )
                 }
             }.collect {}
@@ -296,7 +341,9 @@ class PreviewViewModel @Inject constructor(
         cameraAppSettings: CameraAppSettings,
         systemConstraints: CameraSystemConstraints,
         aspectRatioUiState: AspectRatioUiState,
-        quickSettingsIsOpen: Boolean
+        hdrUiState: HdrUiState,
+        quickSettingsIsOpen: Boolean,
+        focusedQuickSetting: FocusedQuickSetting
     ): QuickSettingsUiState {
         val streamConfigUiState = StreamConfigUiState.from(cameraAppSettings)
         return QuickSettingsUiState.Available(
@@ -311,44 +358,64 @@ class PreviewViewModel @Inject constructor(
             ),
             flashModeUiState = flashModeUiState,
             flipLensUiState = flipLensUiState,
-            hdrUiState = HdrUiState.from(
-                cameraAppSettings,
-                systemConstraints,
-                externalCaptureMode
-            ),
+            hdrUiState = hdrUiState,
             streamConfigUiState = streamConfigUiState,
-            quickSettingsIsOpen = quickSettingsIsOpen
+            quickSettingsIsOpen = quickSettingsIsOpen,
+            focusedQuickSetting = focusedQuickSetting
         )
+    }
+
+    fun toggleDebugHidingComponents() {
+        trackedPreviewUiState.update { old ->
+            old.copy(debugHidingComponents = !old.debugHidingComponents)
+        }
     }
 
     private fun getDebugUiState(
         systemConstraints: CameraSystemConstraints,
         cameraAppSettings: CameraAppSettings,
         cameraState: CameraState,
-        isDebugOverlayOpen: Boolean
+        isDebugOverlayOpen: Boolean,
+        debugHidingComponents: Boolean
     ): DebugUiState = if (debugSettings.isDebugModeEnabled) {
         if (isDebugOverlayOpen) {
-            DebugUiState.Open.from(
+            DebugUiState.Enabled.Open.from(
                 systemConstraints,
                 cameraAppSettings,
                 cameraState,
+                debugHidingComponents,
                 cameraPropertiesJSON
             )
         } else {
-            DebugUiState.Closed.from(cameraState)
+            DebugUiState.Enabled.Closed.from(
+                cameraState,
+                cameraAppSettings.cameraLensFacing,
+                debugHidingComponents
+            )
         }
     } else {
         DebugUiState.Disabled
     }
 
+    /**
+     * Sets the media from the image well to the [MediaRepository].
+     */
+    fun imageWellToRepository() {
+        (_captureUiState.value as? CaptureUiState.Ready)
+            ?.let { it.imageWellUiState as? ImageWellUiState.LastCapture }
+            ?.let { setMediaRepository(it.mediaDescriptor) }
+    }
+
+    private fun setMediaRepository(mediaDescriptor: MediaDescriptor) {
+        viewModelScope.launch {
+            mediaRepository.setCurrentMedia(mediaDescriptor)
+        }
+    }
+
     fun updateLastCapturedMedia() {
         viewModelScope.launch {
-            val lastCapturedMediaDescriptor = mediaRepository.getLastCapturedMedia()
-            _captureUiState.update { old ->
-                (old as? CaptureUiState.Ready)?.copy(
-                    imageWellUiState =
-                    ImageWellUiState.from(lastCapturedMediaDescriptor)
-                ) ?: old
+            trackedPreviewUiState.update { old ->
+                old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
             }
         }
     }
@@ -357,7 +424,7 @@ class PreviewViewModel @Inject constructor(
         ExternalCaptureMode.ImageCapture -> CaptureMode.IMAGE_ONLY
         ExternalCaptureMode.MultipleImageCapture -> CaptureMode.IMAGE_ONLY
         ExternalCaptureMode.VideoCapture -> CaptureMode.VIDEO_ONLY
-        ExternalCaptureMode.Standard -> CaptureMode.STANDARD
+        ExternalCaptureMode.Standard -> null
     }
 
     /**
@@ -394,6 +461,11 @@ class PreviewViewModel @Inject constructor(
         )
         applyDiff(new, CameraAppSettings::videoQuality, cameraSystem::setVideoQuality)
         applyDiff(new, CameraAppSettings::audioEnabled, cameraSystem::setAudioEnabled)
+        applyDiff(
+            new,
+            CameraAppSettings::lowLightBoostPriority,
+            cameraSystem::setLowLightBoostPriority
+        )
     }
 
     fun startCamera() {
@@ -524,6 +596,7 @@ class PreviewViewModel @Inject constructor(
                 Pair(SaveLocation.Default, null)
             }
         }
+
         ExternalCaptureMode.Standard ->
             Pair(SaveLocation.Default, null)
     }
@@ -759,6 +832,12 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
+    fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting) {
+        trackedPreviewUiState.update { old ->
+            old.copy(focusedQuickSetting = focusedQuickSetting)
+        }
+    }
+
     fun toggleDebugOverlay() {
         trackedPreviewUiState.update { old ->
             old.copy(isDebugOverlayOpen = !old.isDebugOverlayOpen)
@@ -791,6 +870,7 @@ class PreviewViewModel @Inject constructor(
             }
         }
     }
+
     fun setClearUiScreenBrightness(brightness: Float) {
         screenFlash.setClearUiScreenBrightness(brightness)
     }
@@ -812,8 +892,11 @@ class PreviewViewModel @Inject constructor(
      */
     data class TrackedPreviewUiState(
         val isQuickSettingsOpen: Boolean = false,
+        val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE,
         val isDebugOverlayOpen: Boolean = false,
         val isRecordingLocked: Boolean = false,
-        val zoomAnimationTarget: Float? = null
+        val zoomAnimationTarget: Float? = null,
+        val debugHidingComponents: Boolean = false,
+        val recentCapturedMedia: MediaDescriptor = MediaDescriptor.None
     )
 }

@@ -41,9 +41,18 @@ class CommonModule {
     fun provideIODispatcher(): CoroutineDispatcher = Dispatchers.IO
 
     @Singleton
+    @DefaultCoroutineScope
     @Provides
-    fun providesCoroutineScope() = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    fun providesCoroutineScope(@DefaultDispatcher dispatcher: CoroutineDispatcher) =
+        CoroutineScope(SupervisorJob() + dispatcher)
 }
+
+/**
+ * provides the default [CaptureMode] to override in [LocalSettingsRepository]
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultCaptureModeOverride
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
@@ -52,3 +61,7 @@ annotation class DefaultDispatcher
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class IODispatcher
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultCoroutineScope

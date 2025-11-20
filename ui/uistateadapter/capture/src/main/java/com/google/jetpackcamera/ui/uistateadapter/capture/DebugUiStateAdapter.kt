@@ -17,16 +17,18 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import android.util.Size
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 
-fun DebugUiState.Open.Companion.from(
+fun DebugUiState.Enabled.Open.Companion.from(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
+    debugHidingComponents: Boolean,
     cameraPropertiesJSON: String
 ): DebugUiState.Enabled {
     val availableTestPatterns = buildSet {
@@ -40,7 +42,7 @@ fun DebugUiState.Open.Companion.from(
             }
     }
 
-    return DebugUiState.Open(
+    return DebugUiState.Enabled.Open(
         cameraPropertiesJSON = cameraPropertiesJSON,
         videoResolution = Size(
             cameraState.videoQualityInfo.width,
@@ -49,11 +51,19 @@ fun DebugUiState.Open.Companion.from(
         currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
         selectedTestPattern = cameraAppSettings.debugSettings.testPattern,
-        availableTestPatterns = availableTestPatterns
+        availableTestPatterns = availableTestPatterns,
+        currentPrimaryZoomRatio = cameraState.zoomRatios[cameraAppSettings.cameraLensFacing],
+        debugHidingComponents = debugHidingComponents
     )
 }
 
-fun DebugUiState.Closed.Companion.from(cameraState: CameraState) = DebugUiState.Closed(
+fun DebugUiState.Enabled.Closed.Companion.from(
+    cameraState: CameraState,
+    lensFacing: LensFacing,
+    debugHidingComponents: Boolean
+) = DebugUiState.Enabled.Closed(
     currentPhysicalCameraId = cameraState.debugInfo.physicalCameraId,
-    currentLogicalCameraId = cameraState.debugInfo.logicalCameraId
+    currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
+    currentPrimaryZoomRatio = cameraState.zoomRatios[lensFacing],
+    debugHidingComponents = debugHidingComponents
 )

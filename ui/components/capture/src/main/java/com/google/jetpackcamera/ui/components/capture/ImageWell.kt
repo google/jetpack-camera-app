@@ -15,99 +15,99 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import android.graphics.RectF
+import android.net.Uri
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.createBitmap
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
-import kotlin.math.min
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun ImageWell(
+    imageWellUiState: ImageWellUiState.LastCapture,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    imageWellUiState: ImageWellUiState = ImageWellUiState.Unavailable,
-    onClick: () -> Unit
+    shape: Shape = RoundedCornerShape(16.dp),
+    enabled: Boolean = true
 ) {
-    when (imageWellUiState) {
-        is ImageWellUiState.LastCapture -> {
-            val bitmap = when (imageWellUiState.mediaDescriptor) {
-                is MediaDescriptor.Image -> (
-                    imageWellUiState.mediaDescriptor
-                        as MediaDescriptor.Image
-                    ).thumbnail
+    val lastCapture = imageWellUiState.mediaDescriptor
 
-                is MediaDescriptor.Video -> (
-                    imageWellUiState.mediaDescriptor
-                        as MediaDescriptor.Video
-                    ).thumbnail
-
-                is MediaDescriptor.None -> null
+    Box(
+        modifier = modifier
+            .testTag(IMAGE_WELL_TAG)
+            .size(IconButtonDefaults.mediumContainerSize())
+            .border(2.dp, Color.White, shape)
+            .clip(shape)
+            .clickable(onClick = onClick, enabled = enabled)
+    ) {
+        AnimatedContent(
+            targetState = lastCapture,
+            label = "ImageWellAnimation",
+            transitionSpec = {
+                (
+                    fadeIn() + expandHorizontally() +
+                        scaleIn(animationSpec = spring(0.8f))
+                    ).togetherWith(fadeOut())
             }
-
-            bitmap?.let {
-                Box(
-                    modifier = modifier
-                        .testTag(IMAGE_WELL_TAG)
-                        .size(120.dp)
-                        .padding(18.dp)
-                        .border(2.dp, Color.White, RoundedCornerShape(16.dp))
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable(onClick = onClick)
-                ) {
-                    AnimatedContent(
-                        targetState = bitmap
-                    ) { targetBitmap ->
-                        Canvas(
-                            modifier = Modifier
-                                .size(110.dp)
-                        ) {
-                            drawIntoCanvas { canvas ->
-                                val canvasSize = min(size.width, size.height)
-
-                                val scale = canvasSize / min(
-                                    targetBitmap.width,
-                                    targetBitmap.height
-                                )
-
-                                val imageWidth = targetBitmap.width * scale
-                                val imageHeight = targetBitmap.height * scale
-
-                                val offsetX = (canvasSize - imageWidth) / 2f
-                                val offsetY = (canvasSize - imageHeight) / 2f
-
-                                canvas.nativeCanvas.drawBitmap(
-                                    targetBitmap,
-                                    null,
-                                    RectF(
-                                        offsetX,
-                                        offsetY,
-                                        offsetX + imageWidth,
-                                        offsetY + imageHeight
-                                    ),
-                                    null
-                                )
-                            }
-                        }
-                    }
-                }
+        ) { contentDesc ->
+            contentDesc.thumbnail?.let {
+                Image(
+                    bitmap = it.asImageBitmap(),
+                    contentDescription = stringResource(
+                        id = R.string.image_well_content_description
+                    ),
+                    contentScale = ContentScale.Crop
+                )
             }
         }
+    }
+}
 
-        is ImageWellUiState.Unavailable -> {
-        }
+@Preview
+@Composable
+private fun ImageWellPreview() {
+    val previewBitmap = createBitmap(1000, 1000).apply {
+        eraseColor(android.graphics.Color.BLUE)
+    }
+    val mediaDescriptor = MediaDescriptor.Content.Image(
+        uri = Uri.EMPTY,
+        thumbnail = previewBitmap
+    )
+    val imageWellUiState = ImageWellUiState.LastCapture(
+        mediaDescriptor = mediaDescriptor
+    )
+
+    MaterialTheme {
+        ImageWell(
+            imageWellUiState = imageWellUiState,
+            onClick = {}
+        )
     }
 }
