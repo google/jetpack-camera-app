@@ -779,6 +779,7 @@ fun FocusMeteringIndicator(
         ) {
             Box(
                 Modifier
+                    .testTag(FOCUS_METERING_INDICATOR_TAG)
                     .alpha(
                         if (focusMeteringUiState.status == FocusMeteringUiState.Status.SUCCESS) {
                             1f
