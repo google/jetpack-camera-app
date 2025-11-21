@@ -66,7 +66,11 @@ class LocalMediaRepositoryTest {
             Robolectric.setupContentProvider(FakeContentProvider::class.java, MediaStore.AUTHORITY)
         ShadowContentResolver.registerProviderInternal(MediaStore.AUTHORITY, fakeContentProvider)
 
-        repository = LocalMediaRepository(context, testDispatcher)
+        repository = LocalMediaRepository(
+            context,
+            testDispatcher,
+            FakeFilePathGenerator()
+        )
     }
 
     @Test

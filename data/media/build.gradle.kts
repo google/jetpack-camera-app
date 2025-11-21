@@ -90,8 +90,6 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core:common"))
-    implementation(project(":core:camera"))
-
 }
 
 // Allow references to generated code
