@@ -42,7 +42,6 @@ import com.google.jetpackcamera.utils.SAVE_MEDIA_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.cacheExtra
-import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.mediaStoreEntryExistsAfterTimestamp
@@ -65,30 +64,32 @@ class PostCaptureTest {
     val composeTestRule = createEmptyComposeRule()
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
-    private var timestamp: Long = Long.MAX_VALUE
+    private var testTimestamp: Long = Long.MAX_VALUE
 
-    private fun newImageMediaExists(): Boolean = mediaStoreEntryExistsAfterTimestamp(
-        instrumentation,
-        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        timestamp
-    )
+    private fun newImageMediaExists(timestamp: Long = testTimestamp): Boolean =
+        mediaStoreEntryExistsAfterTimestamp(
+            instrumentation,
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            timestamp
+        )
 
-    private fun newVideoMediaExists(): Boolean = mediaStoreEntryExistsAfterTimestamp(
-        instrumentation,
-        MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-        timestamp
-    )
+    private fun newVideoMediaExists(timestamp: Long = testTimestamp): Boolean =
+        mediaStoreEntryExistsAfterTimestamp(
+            instrumentation,
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            timestamp
+        )
 
     @Before
     fun setup() {
-        timestamp = System.currentTimeMillis()
+        testTimestamp = System.currentTimeMillis()
     }
 
     @After
     fun cleanup() {
-        deleteFilesInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, instrumentation, timestamp)
-        deleteFilesInDirAfterTimestamp(PICTURES_DIR_PATH, instrumentation, timestamp)
-        deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, timestamp)
+        deleteFilesInDirAfterTimestamp(JCA_MEDIA_DIR_PATH, instrumentation, testTimestamp)
+        deleteFilesInDirAfterTimestamp(PICTURES_DIR_PATH, instrumentation, testTimestamp)
+        deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, testTimestamp)
     }
 
     private fun enterImageWellAndDelete(recentCaptureViewerTag: String) {
@@ -111,6 +112,25 @@ class PostCaptureTest {
 
         // wait for capture button after automatically exiting post capture
         composeTestRule.waitForCaptureButton()
+    }
+
+    private fun enterImageWellAndSave(recentCaptureViewerTag: String) {
+        // enter postcapture via imagewell
+        composeTestRule.waitUntil(IMAGE_WELL_LOAD_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).isDisplayed()
+        }
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertExists().performClick()
+
+        // most recent capture tag
+        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(recentCaptureViewerTag).isDisplayed()
+        }
+
+        // delete most recent capture
+        composeTestRule.waitUntil {
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_DELETE).isDisplayed()
+        }
+        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).assertExists().performClick()
     }
 
     @Test
@@ -176,7 +196,7 @@ class PostCaptureTest {
         }
 
     @Test
-    fun postcapture_canDeleteSavedImage() = runMainActivityScenarioTest(extras = debugExtra) {
+    fun postcapture_canDeleteSavedImage() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
         assertFalse(newImageMediaExists())
@@ -194,7 +214,7 @@ class PostCaptureTest {
     }
 
     @Test
-    fun postcapture_canDeleteSavedVideo(): Unit = runMainActivityScenarioTest(extras = debugExtra) {
+    fun postcapture_canDeleteSavedVideo(): Unit = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
         assertFalse(newVideoMediaExists())
@@ -208,6 +228,50 @@ class PostCaptureTest {
         enterImageWellAndDelete(VIEWER_POST_CAPTURE_VIDEO)
         composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
             !newVideoMediaExists()
+        }
+    }
+
+    @Test
+    fun postcapture_canCopySavedImage() = runMainActivityScenarioTest {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitForCaptureButton()
+        assertFalse(newImageMediaExists())
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+        composeTestRule.waitUntil(IMAGE_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
+        }
+        assertTrue(newImageMediaExists())
+        // enter postcapture via imagewell and save recent capture
+        val newTimestamp = System.currentTimeMillis()
+
+        enterImageWellAndSave(VIEWER_POST_CAPTURE_IMAGE)
+        composeTestRule.waitUntil(SAVE_MEDIA_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS).isDisplayed()
+        }
+        composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
+            newImageMediaExists(newTimestamp)
+        }
+    }
+
+    @Test
+    fun postcapture_canCopySavedVideo(): Unit = runMainActivityScenarioTest {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitForCaptureButton()
+        assertFalse(newVideoMediaExists())
+        composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
+
+        composeTestRule.waitUntil(VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
+        }
+        assertTrue(newVideoMediaExists())
+        // enter postcapture via imagewell and save recent capture
+        val newTimestamp = System.currentTimeMillis()
+        enterImageWellAndSave(VIEWER_POST_CAPTURE_VIDEO)
+        composeTestRule.waitUntil(SAVE_MEDIA_TIMEOUT_MILLIS) {
+            composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS).isDisplayed()
+        }
+        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+            newVideoMediaExists(newTimestamp)
         }
     }
 }

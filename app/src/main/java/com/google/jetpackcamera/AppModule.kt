@@ -15,7 +15,9 @@
  */
 package com.google.jetpackcamera
 
+import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
 import com.google.jetpackcamera.core.common.DefaultSaveMode
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.SaveMode
 import dagger.Module
 import dagger.Provides
@@ -25,6 +27,12 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+    /**
+     * provides the default [CaptureMode] to override by the app
+     */
+    @Provides
+    @DefaultCaptureModeOverride
+    fun providesDefaultCaptureModeOverride(): CaptureMode = CaptureMode.STANDARD
 
     /**
      * provides the default [SaveMode] to be used by the app

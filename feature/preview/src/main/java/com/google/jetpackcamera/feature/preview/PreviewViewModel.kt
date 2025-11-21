@@ -178,11 +178,13 @@ class PreviewViewModel @Inject constructor(
     private fun CameraAppSettings.applyExternalCaptureMode(
         externalCaptureMode: ExternalCaptureMode
     ): CameraAppSettings {
-        val captureMode = externalCaptureMode.toCaptureMode()
-        return if (captureMode == this.captureMode) {
+        val requiredCaptureModeOverride = externalCaptureMode.toCaptureMode()
+        return if (requiredCaptureModeOverride == null ||
+            requiredCaptureModeOverride == this.captureMode
+        ) {
             this
         } else {
-            this.copy(captureMode = captureMode)
+            this.copy(captureMode = requiredCaptureModeOverride)
         }
     }
 
@@ -324,7 +326,13 @@ class PreviewViewModel @Inject constructor(
                             cameraState,
                             externalCaptureMode
                         ),
-                        hdrUiState = hdrUiState
+                        hdrUiState = hdrUiState,
+
+                        imageWellUiState = ImageWellUiState.from(
+                            trackedUiState.recentCapturedMedia,
+                            cameraState.videoRecordingState
+                        )
+
                     )
                 }
             }.collect {}
@@ -411,12 +419,8 @@ class PreviewViewModel @Inject constructor(
 
     fun updateLastCapturedMedia() {
         viewModelScope.launch {
-            val lastCapturedMediaDescriptor = mediaRepository.getLastCapturedMedia()
-            _captureUiState.update { old ->
-                (old as? CaptureUiState.Ready)?.copy(
-                    imageWellUiState =
-                    ImageWellUiState.from(lastCapturedMediaDescriptor)
-                ) ?: old
+            trackedPreviewUiState.update { old ->
+                old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
             }
         }
     }
@@ -425,7 +429,7 @@ class PreviewViewModel @Inject constructor(
         ExternalCaptureMode.ImageCapture -> CaptureMode.IMAGE_ONLY
         ExternalCaptureMode.MultipleImageCapture -> CaptureMode.IMAGE_ONLY
         ExternalCaptureMode.VideoCapture -> CaptureMode.VIDEO_ONLY
-        ExternalCaptureMode.Standard -> CaptureMode.STANDARD
+        ExternalCaptureMode.Standard -> null
     }
 
     /**
@@ -944,6 +948,7 @@ class PreviewViewModel @Inject constructor(
         val isDebugOverlayOpen: Boolean = false,
         val isRecordingLocked: Boolean = false,
         val zoomAnimationTarget: Float? = null,
-        val debugHidingComponents: Boolean = false
+        val debugHidingComponents: Boolean = false,
+        val recentCapturedMedia: MediaDescriptor = MediaDescriptor.None
     )
 }
