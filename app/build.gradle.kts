@@ -81,6 +81,7 @@ android {
     @Suppress("UnstableApiUsage")
     testOptions {
         execution = "ANDROIDX_TEST_ORCHESTRATOR"
+        animationsDisabled = true
 
         managedDevices {
             localDevices {
