@@ -144,6 +144,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             JcaApp(
                                 externalCaptureMode = externalCaptureMode,
+                                shouldReviewAfterCapture = shouldReviewAfterCapture,
                                 captureUris = captureUris,
                                 debugSettings = debugSettings,
                                 openAppSettings = ::openAppSettings,
@@ -196,12 +197,19 @@ class MainActivity : ComponentActivity() {
                 MediaStore.ACTION_VIDEO_CAPTURE -> ExternalCaptureMode.VideoCapture
                 MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA ->
                     ExternalCaptureMode.MultipleImageCapture
+
                 else -> {
                     Log.w(TAG, "Ignoring external intent with unknown action: $action")
                     ExternalCaptureMode.Standard
                 }
             }
         } ?: ExternalCaptureMode.Standard
+
+    private val Intent.shouldReviewAfterCapture: Boolean
+        get() = this.getBooleanExtra(KEY_REVIEW_AFTER_CAPTURE, false)
+
+    private val shouldReviewAfterCapture: Boolean
+        get() = intent?.shouldReviewAfterCapture == true
 
     private val Intent.externalCaptureUri: Uri?
         get() = IntentCompat.getParcelableExtra(
@@ -218,8 +226,10 @@ class MainActivity : ComponentActivity() {
             ExternalCaptureMode.ImageCapture,
             ExternalCaptureMode.VideoCapture ->
                 intent?.externalCaptureUri?.let(::listOf) ?: emptyList()
+
             ExternalCaptureMode.MultipleImageCapture ->
                 intent?.multipleExternalCaptureUri ?: emptyList()
+
             ExternalCaptureMode.Standard -> emptyList()
         }
 
@@ -296,6 +306,8 @@ class MainActivity : ComponentActivity() {
         }
 
     companion object {
+        private const val KEY_REVIEW_AFTER_CAPTURE = "KEY_REVIEW_AFTER_CAPTURE"
+
         private const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
         const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
     }
