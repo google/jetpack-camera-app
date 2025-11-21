@@ -24,11 +24,12 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import androidx.core.net.toFile
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultVideoSaveLocation
 import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -291,10 +292,29 @@ class LocalMediaRepository
             put(MediaStore.MediaColumns.DISPLAY_NAME, outputFilename)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
 
+            // API 28 fix -- Manually set output directory and final output filename
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && mediaUrl ==
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            ) {
+                val volumePath = getDefaultVideoSaveLocation()
+                if (volumePath.isNotEmpty()) {
+                    put(MediaStore.MediaColumns.DATA, "$volumePath/$outputFilename")
+                    Log.d(
+                        TAG,
+                        "API 28- Video Fix: Setting _DATA to $volumePath/$outputFilename"
+                    )
+                } else {
+                    Log.d(
+                        TAG,
+                        "API 28- Fix: Could not determine volume path, cannot set _DATA column"
+                    )
+                }
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 put(
                     MediaStore.MediaColumns.RELATIVE_PATH,
-                    Environment.DIRECTORY_DCIM + File.separator + "Camera"
+                    getDefaultMediaSaveLocation()
                 )
                 // Mark as "pending" so the file isn't visible until we're done writing
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
