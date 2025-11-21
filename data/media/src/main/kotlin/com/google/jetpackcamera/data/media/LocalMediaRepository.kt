@@ -29,6 +29,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import androidx.core.net.toFile
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.queryVolumePath
 import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -290,6 +291,38 @@ class LocalMediaRepository
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, outputFilename)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && mediaUrl ==
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            ) {
+                // get the default volume path for video
+                try {
+                    val volumePath =
+                        queryVolumePath(
+                            contentResolver,
+                            mediaUrl
+                        )
+                    if (!volumePath.isNullOrEmpty()) {
+                        // 2. Construct the full file path: base_path + final_display_name
+                        // This explicitly hints to the MediaStore that the file should be MP4.
+                        put(MediaStore.MediaColumns.DATA, "$volumePath/$outputFilename")
+                        Log.i(
+                            TAG,
+                            "API 28- Video Fix: Setting _DATA to $volumePath/$outputFilename"
+                        )
+                    } else {
+                        Log.w(
+                            TAG,
+                            "API 28- Fix: Could not determine volume path, cannot set _DATA column"
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.w(
+                        TAG,
+                        "API 28- Fix: Could not determine volume path, cannot set _DATA column"
+                    )
+                }
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 put(

@@ -15,9 +15,12 @@
  */
 package com.google.jetpackcamera.core.camera
 
+import android.content.ContentResolver
 import android.hardware.camera2.CameraCharacteristics
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraInfo
@@ -32,6 +35,30 @@ private const val TAG = "CameraCoreUtil"
 object CameraCoreUtil {
     fun getDefaultMediaSaveLocation(): String {
         return Environment.DIRECTORY_DCIM + File.separator + "Camera"
+    }
+
+    /**
+     * Helper function to retrieve the base file path of a MediaStore collection on legacy systems.
+     */
+    fun queryVolumePath(contentResolver: ContentResolver, mediaUrl: Uri): String? {
+        // We query the MediaStore using the base URI to find the _DATA path of the volume root.
+        val cursor = contentResolver.query(
+            mediaUrl,
+            arrayOf(MediaStore.MediaColumns.DATA),
+            null,
+            null,
+            "${MediaStore.MediaColumns.DATE_ADDED} DESC LIMIT 1" // Just need one entry
+        )
+
+        // If a result is found, we extract the path and strip the filename to get the base directory.
+        return cursor?.use {
+            if (it.moveToFirst()) {
+                val fullPath = it.getString(it.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA))
+                // The path includes the filename, so we strip the filename to get the directory.
+                return fullPath.substringBeforeLast(File.separator)
+            }
+            null
+        }
     }
 
     @OptIn(ExperimentalCamera2Interop::class)

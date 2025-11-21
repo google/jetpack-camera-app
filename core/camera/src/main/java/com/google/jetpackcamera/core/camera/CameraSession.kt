@@ -68,6 +68,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
+import com.google.jetpackcamera.core.camera.CameraCoreUtil.queryVolumePath
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -147,6 +148,7 @@ internal suspend fun runSingleCameraSession(
                 sessionSettings.videoQuality,
                 backgroundDispatcher
             )
+
         else -> {
             null
         }
@@ -479,6 +481,7 @@ private suspend fun updateCamera2RequestOptions(
                         .addCaptureRequestOptions(captureRequestOptions)
                 }
             }
+
             else -> {
                 optionsBuilder.clearCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE)
             }
@@ -495,6 +498,7 @@ private suspend fun updateCamera2RequestOptions(
                 CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS_FADE_TO_GRAY,
                 null
             )
+
             TestPattern.PN9 -> Pair(CameraMetadata.SENSOR_TEST_PATTERN_MODE_PN9, null)
             TestPattern.Custom1 -> Pair(CameraMetadata.SENSOR_TEST_PATTERN_MODE_CUSTOM1, null)
             is TestPattern.SolidColor -> {
@@ -897,18 +901,50 @@ private fun getPendingRecording(
             }
 
         is SaveLocation.Default -> {
-            val name = "JCA-recording-${Date()}-$captureTypeSuffix.mp4"
+            val outputFilename = "JCA-recording-${Date().time}-$captureTypeSuffix.mp4"
+            val mediaUrl = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            val contentResolver = context.contentResolver
+
             val contentValues =
                 ContentValues().apply {
-                    put(MediaStore.Video.Media.DISPLAY_NAME, name)
+                    put(MediaStore.Video.Media.DISPLAY_NAME, outputFilename)
+                    put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+
+                    // manually set the output file location and name to device's default video directory
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                        // get the default volume path for video
+                        try {
+                            val volumePath = queryVolumePath(contentResolver, mediaUrl)
+                            if (!volumePath.isNullOrEmpty()) {
+                                // 2. Construct the full file path: base_path + final_display_name
+                                // This explicitly hints to the MediaStore that the file should be MP4.
+                                put(MediaStore.MediaColumns.DATA, "$volumePath/$outputFilename")
+                                Log.i(
+                                    TAG,
+                                    "API 28- Video Fix: Setting _DATA to $volumePath/$outputFilename"
+                                )
+                            } else {
+                                Log.w(
+                                    TAG,
+                                    "API 28- Fix: Could not determine volume path, cannot set _DATA column"
+                                )
+                            }
+                        } catch (e: Exception) {
+                            Log.w(
+                                TAG,
+                                "API 28- Fix: Could not determine volume path, cannot set _DATA column"
+                            )
+                        }
+                    }
+
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
                         put(MediaStore.Video.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
                     }
                 }
             val mediaStoreOutput =
                 MediaStoreOutputOptions.Builder(
-                    context.contentResolver,
-                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                    contentResolver,
+                    mediaUrl
                 )
                     .setDurationLimitMillis(maxDurationMillis)
                     .setContentValues(contentValues)
@@ -1241,6 +1277,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                     val boostStrength = when (nativeBoostState) {
                         CameraMetadata.CONTROL_LOW_LIGHT_BOOST_STATE_ACTIVE ->
                             LowLightBoostState.Active(LowLightBoostState.MAXIMUM_STRENGTH)
+
                         else -> LowLightBoostState.Inactive
                     }
                     currentCameraState.update { old ->
