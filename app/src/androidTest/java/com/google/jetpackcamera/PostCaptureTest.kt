@@ -23,6 +23,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_DELETE
+import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_EXIT
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SAVE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
@@ -40,11 +41,12 @@ import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.SAVE_MEDIA_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
-import com.google.jetpackcamera.utils.debugExtra
+import com.google.jetpackcamera.utils.cacheExtra
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.mediaStoreEntryExistsAfterTimestamp
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.wait
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.After
 import org.junit.Assert.assertFalse
@@ -132,7 +134,69 @@ class PostCaptureTest {
     }
 
     @Test
-    fun postcapture_canDeleteSavedImage() = runMainActivityScenarioTest(extras = debugExtra) {
+    fun captureImage_navigatesPostcapture_canSaveCachedImage() =
+        runMainActivityScenarioTest(cacheExtra) {
+            // Wait for the capture button to be displayed
+            composeTestRule.waitForCaptureButton()
+
+            assertFalse(newImageMediaExists())
+
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+
+            // navigate to postcapture screen
+            composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_IMAGE).isDisplayed()
+            }
+
+            composeTestRule.waitUntil {
+                composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
+            }
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
+
+            // Wait for image save success message
+            composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS)
+                    .isDisplayed()
+            }
+            assertTrue(newImageMediaExists())
+        }
+
+    @Test
+    fun captureVideo_navigatesPostcapture_canSaveCachedVideo(): Unit =
+        runMainActivityScenarioTest(extras = cacheExtra) {
+            // Wait for the capture button to be displayed
+            composeTestRule.waitForCaptureButton()
+            composeTestRule.wait(500L)
+            composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
+
+            // navigate to postcapture screen
+            composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_VIDEO).isDisplayed()
+            }
+            composeTestRule.waitUntil {
+                composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).isDisplayed()
+            }
+
+            assertFalse(newVideoMediaExists())
+            // save video
+            composeTestRule.waitUntil {
+                composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
+            }
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
+
+            // Wait for video save success message
+            composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
+                composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS)
+                    .isDisplayed()
+            }
+
+            assertTrue(newVideoMediaExists())
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
+            composeTestRule.waitForCaptureButton()
+        }
+
+    @Test
+    fun postcapture_canDeleteSavedImage() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
         assertFalse(newImageMediaExists())
@@ -150,7 +214,7 @@ class PostCaptureTest {
     }
 
     @Test
-    fun postcapture_canDeleteSavedVideo(): Unit = runMainActivityScenarioTest(extras = debugExtra) {
+    fun postcapture_canDeleteSavedVideo(): Unit = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
         assertFalse(newVideoMediaExists())
@@ -168,7 +232,7 @@ class PostCaptureTest {
     }
 
     @Test
-    fun postcapture_canCopySavedImage() = runMainActivityScenarioTest(extras = debugExtra) {
+    fun postcapture_canCopySavedImage() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
         assertFalse(newImageMediaExists())
@@ -190,7 +254,7 @@ class PostCaptureTest {
     }
 
     @Test
-    fun postcapture_canCopySavedVideo(): Unit = runMainActivityScenarioTest(extras = debugExtra) {
+    fun postcapture_canCopySavedVideo(): Unit = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
         assertFalse(newVideoMediaExists())
