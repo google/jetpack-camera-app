@@ -47,6 +47,13 @@ class CommonModule {
         CoroutineScope(SupervisorJob() + dispatcher)
 }
 
+/**
+ * provides the default [CaptureMode] to override in [LocalSettingsRepository]
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultCaptureModeOverride
+
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DefaultDispatcher

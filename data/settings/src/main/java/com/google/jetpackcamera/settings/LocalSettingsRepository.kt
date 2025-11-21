@@ -16,7 +16,9 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
+import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.DynamicRange.Companion.toProto
@@ -45,7 +47,10 @@ import kotlinx.coroutines.flow.map
 /**
  * Implementation of [SettingsRepository] with locally stored settings.
  */
-class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataStore<JcaSettings>) :
+class LocalSettingsRepository @Inject constructor(
+    private val jcaSettings: DataStore<JcaSettings>,
+    @DefaultCaptureModeOverride private val defaultCaptureModeOverride: CaptureMode
+) :
     SettingsRepository {
 
     override val defaultCameraAppSettings = jcaSettings.data
@@ -78,7 +83,8 @@ class LocalSettingsRepository @Inject constructor(private val jcaSettings: DataS
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
                 maxVideoDurationMillis = it.maxVideoDurationMillis,
                 videoQuality = VideoQuality.fromProto(it.videoQuality),
-                audioEnabled = it.audioEnabledStatus
+                audioEnabled = it.audioEnabledStatus,
+                captureMode = defaultCaptureModeOverride
             )
         }
 

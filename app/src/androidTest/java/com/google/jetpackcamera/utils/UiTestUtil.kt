@@ -78,6 +78,9 @@ const val ELAPSED_TIME_TEXT_TIMEOUT_MILLIS = 45_000L
 const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 45_000L
 const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
+const val SAVE_MEDIA_TIMEOUT_MILLIS = 5_000L
+const val IMAGE_WELL_LOAD_TIMEOUT_MILLIS = 10_000L
+
 const val VIDEO_DURATION_MILLIS = 3_000L
 const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 15_000L
 const val FILE_PREFIX = "JCA"
@@ -93,6 +96,7 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     expectedNumFiles: Int = 1,
     fileWaitTimeoutMs: Duration = 10.seconds,
     fileObserverContext: CoroutineContext = Dispatchers.IO,
+    extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
 ) = runBlocking {
     val debugTag = "MediaStoreAutoDelete"
@@ -112,7 +116,7 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
 
     var succeeded = false
     try {
-        runMainActivityScenarioTest(block = block)
+        runMainActivityScenarioTest(extras = extras, block = block)
         succeeded = true
     } finally {
         withContext(NonCancellable) {
@@ -182,9 +186,12 @@ inline fun <reified T : Activity> runScenarioTest(
 
 inline fun runMainActivityScenarioTestForResult(
     intent: Intent,
+    extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
-): Instrumentation.ActivityResult =
-    runScenarioTestForResult<MainActivity>(intent, compatMainActivityExtras, block)
+): Instrumentation.ActivityResult {
+    val activityExtras = compatMainActivityExtras?.apply { extras?.let { putAll(it) } } ?: extras
+    return runScenarioTestForResult<MainActivity>(intent, activityExtras, block)
+}
 
 inline fun <reified T : Activity> runScenarioTestForResult(
     intent: Intent,
@@ -221,6 +228,33 @@ fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri = Ur
         "$timeStamp.$suffix"
     )
 )
+
+// Helper function to check if a MediaStore entry exists (Source of Truth)
+fun mediaStoreEntryExistsAfterTimestamp(
+    instrumentation: Instrumentation,
+    mediaUri: Uri, // MediaStore.Images.Media.EXTERNAL_CONTENT_URI or Video.Media...
+    timestamp: Long
+): Boolean {
+    val contentResolver = instrumentation.targetContext.contentResolver
+
+    // MediaStore.MediaColumns.DATE_ADDED is stored in seconds (s), convert ms to s
+    val timestampInSeconds = timestamp / 1000
+
+    // Check if any file was added to this collection since the test started
+    val selection = "${MediaStore.MediaColumns.DATE_ADDED} >= ?"
+    val selectionArgs = arrayOf(timestampInSeconds.toString())
+
+    val cursor = contentResolver.query(
+        mediaUri,
+        arrayOf(MediaStore.MediaColumns._ID), // Querying for just the ID is efficient
+        selection,
+        selectionArgs,
+        null // No sorting needed
+    )
+
+    // Return true if the cursor has any entries
+    return cursor?.use { it.count > 0 } ?: false
+}
 
 /**
  * @return - true if all eligible files were successfully deleted. False otherwise

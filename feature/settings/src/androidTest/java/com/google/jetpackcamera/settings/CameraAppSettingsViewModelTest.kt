@@ -22,6 +22,7 @@ import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
@@ -59,7 +60,10 @@ internal class CameraAppSettingsViewModelTest {
         ) {
             testContext.dataStoreFile("test_jca_settings.pb")
         }
-        val settingsRepository = LocalSettingsRepository(testDataStore)
+        val settingsRepository = LocalSettingsRepository(
+            jcaSettings = testDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD
+        )
         val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
             updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
         }

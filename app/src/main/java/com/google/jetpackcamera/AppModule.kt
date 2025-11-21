@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistate.capture
+package com.google.jetpackcamera
 
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
+import com.google.jetpackcamera.model.CaptureMode
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 
-sealed interface ImageWellUiState {
-    data object Unavailable : ImageWellUiState
-
-    data class LastCapture(val mediaDescriptor: MediaDescriptor.Content) : ImageWellUiState
-
-    companion object
+@Module
+@InstallIn(SingletonComponent::class)
+object AppModule {
+    /**
+     * provides the default [CaptureMode] to override by the app
+     */
+    @Provides
+    @DefaultCaptureModeOverride
+    fun providesDefaultCaptureModeOverride(): CaptureMode = CaptureMode.STANDARD
 }
