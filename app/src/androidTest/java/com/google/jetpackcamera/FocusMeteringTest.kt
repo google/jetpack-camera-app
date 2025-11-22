@@ -16,6 +16,7 @@
 package com.google.jetpackcamera
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
@@ -34,6 +35,7 @@ import com.google.jetpackcamera.utils.FOCUS_METERING_INDICATOR_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.wait
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.Rule
 import org.junit.Test
@@ -69,22 +71,12 @@ class FocusMeteringTest {
             )
 
             quadrants.forEach { (x, y) ->
-                composeTestRule.waitUntil(FOCUS_METERING_INDICATOR_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(
-                        FOCUS_METERING_INDICATOR_TAG
-                    ).isNotDisplayed()
-                }
-
                 // Tap on the viewfinder in the current quadrant
                 composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).apply {
                     val displayBounds = fetchSemanticsNode().boundsInWindow
-                    val offsetX = x * displayBounds.width
-                    val offsetY = y * displayBounds.height
 
                     // Tap on the quadrant
-                    performTouchInput {
-                        click(position = Offset(offsetX, offsetY))
-                    }
+                    performTouchInput { click(position = percentOffset(x, y)) }
 
                     // Wait for the focus metering indicator to be visible
                     composeTestRule.waitUntil(FOCUS_METERING_INDICATOR_TIMEOUT_MILLIS) {
@@ -121,6 +113,11 @@ class FocusMeteringTest {
                             indicatorXSign == quadrantXSign && indicatorYSign == quadrantYSign
                         }
                     }
+
+                    // Wait until twice the double tap threshold has expired so the next tap doesn't
+                    // get registered as a double tap
+                    val doubleTapTimeout = android.view.ViewConfiguration.getDoubleTapTimeout()
+                    composeTestRule.wait(timeoutMillis = 2 * doubleTapTimeout.toLong())
                 }
             }
         }
