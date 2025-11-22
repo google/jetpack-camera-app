@@ -439,7 +439,8 @@ private fun ContentScreen(
                 onTapToFocus = onTapToFocus,
                 onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
                 surfaceRequest = surfaceRequest,
-                onRequestWindowColorMode = onRequestWindowColorMode
+                onRequestWindowColorMode = onRequestWindowColorMode,
+                focusMeteringUiState = captureUiState.focusMeteringUiState
             )
         },
         captureButton = {

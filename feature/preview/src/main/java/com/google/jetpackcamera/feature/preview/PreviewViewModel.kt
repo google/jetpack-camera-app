@@ -80,6 +80,7 @@ import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
@@ -229,6 +230,7 @@ class PreviewViewModel @Inject constructor(
             ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
 
                 var flashModeUiState: FlashModeUiState
+                var focusMeteringUiState: FocusMeteringUiState
 
                 val captureModeUiState = CaptureModeUiState.from(
                     systemConstraints,
@@ -252,6 +254,7 @@ class PreviewViewModel @Inject constructor(
                                 cameraAppSettings,
                                 systemConstraints
                             )
+                            focusMeteringUiState = FocusMeteringUiState.from(cameraState)
                             // This is the first PreviewUiState.Ready. Create the initial
                             // PreviewUiState.Ready from defaults and initialize it below.
                             CaptureUiState.Ready()
@@ -263,6 +266,8 @@ class PreviewViewModel @Inject constructor(
                                 systemConstraints = systemConstraints,
                                 cameraState = cameraState
                             )
+
+                            focusMeteringUiState = old.focusMeteringUiState.updateFrom(cameraState)
                             // We have a previous `PreviewUiState.Ready`, return it here and
                             // update it below.
                             old
@@ -327,7 +332,7 @@ class PreviewViewModel @Inject constructor(
                             externalCaptureMode
                         ),
                         hdrUiState = hdrUiState,
-
+                        focusMeteringUiState = focusMeteringUiState,
                         imageWellUiState = ImageWellUiState.from(
                             trackedUiState.recentCapturedMedia,
                             cameraState.videoRecordingState
