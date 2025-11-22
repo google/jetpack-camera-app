@@ -51,10 +51,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.LinkedList
-import java.util.Locale
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.async
@@ -300,7 +297,7 @@ class PostCaptureViewModel @Inject constructor(
         try {
             result = mediaRepository.saveToMediaStore(
                 mediaDescriptor,
-                createFilename(mediaDescriptor)
+                null
             )
             if (result != null) {
                 val (stringResource, testTag) = when (mediaDescriptor) {
@@ -444,28 +441,6 @@ class PostCaptureViewModel @Inject constructor(
                     state
                 }
             }
-        }
-    }
-}
-
-/**
- * Creates a filename for the media descriptor.
- *
- * @param mediaDescriptor the [MediaDescriptor] to create a filename for.
- *
- * @return a filename for the media descriptor.
- */
-private fun createFilename(mediaDescriptor: MediaDescriptor.Content): String {
-    val timeStamp =
-        SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US).format(Date())
-
-    return when (mediaDescriptor) {
-        is MediaDescriptor.Content.Image -> {
-            "JCA-photo-$timeStamp.jpg"
-        }
-
-        is MediaDescriptor.Content.Video -> {
-            "JCA-recording-$timeStamp.mp4"
         }
     }
 }

@@ -35,10 +35,6 @@ object CameraCoreUtil {
         return Environment.DIRECTORY_DCIM + File.separator + "Camera"
     }
 
-    fun getDefaultVideoSaveLocation(): String = Environment.getExternalStoragePublicDirectory(
-        Environment.DIRECTORY_MOVIES
-    ).path
-
     @OptIn(ExperimentalCamera2Interop::class)
     @RequiresApi(Build.VERSION_CODES.P)
     fun getAllCamerasPropertiesJSONArray(cameraInfos: List<CameraInfo>): JSONArray {

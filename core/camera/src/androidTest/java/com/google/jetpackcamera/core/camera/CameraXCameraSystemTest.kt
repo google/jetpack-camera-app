@@ -28,6 +28,7 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecordError
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecorded
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.core.common.FakeFilePathGenerator
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
@@ -169,7 +170,8 @@ class CameraXCameraSystemTest {
         iODispatcher = Dispatchers.IO,
         constraintsRepository = constraintsRepository,
         availabilityCheckers = emptyMap(),
-        effectProviders = emptyMap()
+        effectProviders = emptyMap(),
+        filePathGenerator = FakeFilePathGenerator()
     ).apply {
         initialize(appSettings) {}
         providePreviewSurface()

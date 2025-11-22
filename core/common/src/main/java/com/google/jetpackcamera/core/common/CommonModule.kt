@@ -19,12 +19,12 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Qualifier
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import javax.inject.Qualifier
+import javax.inject.Singleton
 
 /**
  * Dagger [Module] for Common dependencies.
@@ -46,6 +46,11 @@ class CommonModule {
     fun providesCoroutineScope(@DefaultDispatcher dispatcher: CoroutineDispatcher) =
         CoroutineScope(SupervisorJob() + dispatcher)
 }
+
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultFilePathGenerator
 
 /**
  * provides the default [CaptureMode] to override in [LocalSettingsRepository]

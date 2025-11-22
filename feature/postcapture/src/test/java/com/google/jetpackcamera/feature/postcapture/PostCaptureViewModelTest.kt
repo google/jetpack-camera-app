@@ -48,6 +48,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq
+import org.mockito.ArgumentMatchers.isNull
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
@@ -104,9 +105,16 @@ internal class PostCaptureViewModelTest {
         `when`(
             mockMediaRepository.saveToMediaStore(
                 safeAny(MediaDescriptor.Content.Image::class.java),
-                safeAny(String::class.java)
+                isNull()
             )
         ).thenReturn(testImageUri)
+
+        `when`(
+            mockMediaRepository.saveToMediaStore(
+                safeAny(MediaDescriptor.Content.Video::class.java),
+                isNull()
+            )
+        ).thenReturn(testVideoUri)
 
         // custom stub output for mediarepository load calls
         `when`(
@@ -244,12 +252,6 @@ internal class PostCaptureViewModelTest {
         // Given
         currentMediaFlow.emit(testVideoDesc)
         advanceUntilIdle()
-        `when`(
-            mockMediaRepository.saveToMediaStore(
-                safeAny(MediaDescriptor.Content::class.java),
-                safeAny(String::class.java)
-            )
-        ).thenReturn(testVideoUri)
 
         // When
         viewModel.saveCurrentMedia()
@@ -272,7 +274,7 @@ internal class PostCaptureViewModelTest {
         `when`(
             mockMediaRepository.saveToMediaStore(
                 safeAny(MediaDescriptor.Content::class.java),
-                safeAny(String::class.java)
+                isNull()
             )
         ).thenReturn(null) // Simulate failure
 
@@ -294,8 +296,8 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
         `when`(
             mockMediaRepository.saveToMediaStore(
-                safeAny(MediaDescriptor.Content::class.java),
-                safeAny(String::class.java)
+                safeAny(MediaDescriptor.Content.Video::class.java),
+                isNull()
             )
         ).thenReturn(null) // Simulate failure
 

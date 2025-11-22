@@ -30,7 +30,10 @@ interface MediaRepository {
     suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean
 
     suspend fun copyToUri(mediaDescriptor: MediaDescriptor.Content, destinationUri: Uri)
-    suspend fun saveToMediaStore(mediaDescriptor: MediaDescriptor.Content, filename: String): Uri?
+    suspend fun saveToMediaStore(
+        mediaDescriptor: MediaDescriptor.Content,
+        outputFilename: String?
+    ): Uri?
     suspend fun load(mediaDescriptor: MediaDescriptor): Media
 }
 
