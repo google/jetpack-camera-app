@@ -131,6 +131,8 @@ import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
+private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
+private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
 
 @Composable
 fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
@@ -719,9 +721,17 @@ fun FlipCameraButton(
     }
 }
 
-private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
-private const val FOCUS_INDICATOR_TIMEOUT = 250L
-
+/**
+ * A composable that displays a focus metering indicator on the viewfinder.
+ *
+ * This indicator is displayed when the user taps on the screen to focus. It shows a pulsing
+ * animation while the focus is in progress, and then shows a success or failure animation
+ * depending on the result of the focus operation.
+ *
+ * @param focusMeteringUiState The state of the focus metering operation.
+ * @param coordinateTransformer The coordinate transformer to use to map the surface coordinates
+ * to screen coordinates. This should come from [CameraXViewfinder].
+ */
 @Composable
 fun FocusMeteringIndicator(
     focusMeteringUiState: FocusMeteringUiState,
@@ -738,17 +748,18 @@ fun FocusMeteringIndicator(
             ),
             label = "FocusPulseAlpha"
         )
-        val showFocusMeteringIndicator =
-            focusMeteringUiState.status == FocusMeteringUiState.Status.RUNNING
 
         // The indicator for SUCCESS/FAILURE is shown for a short duration
         var showResultIndicator by remember { mutableStateOf(false) }
-        LaunchedEffect(focusMeteringUiState) {
-            if (focusMeteringUiState.status == FocusMeteringUiState.Status.SUCCESS ||
-                focusMeteringUiState.status == FocusMeteringUiState.Status.FAILURE
+        val status = focusMeteringUiState.status
+        LaunchedEffect(status) {
+            if (status == FocusMeteringUiState.Status.SUCCESS ||
+                status == FocusMeteringUiState.Status.FAILURE
             ) {
                 showResultIndicator = true
-                delay(FOCUS_INDICATOR_TIMEOUT)
+                delay(FOCUS_INDICATOR_RESULT_DELAY)
+                showResultIndicator = false
+            } else {
                 showResultIndicator = false
             }
         }
@@ -764,6 +775,7 @@ fun FocusMeteringIndicator(
                     map(focusMeteringUiState.surfaceCoordinates)
                 }
             }
+        val showFocusMeteringIndicator = status == FocusMeteringUiState.Status.RUNNING
         AnimatedVisibility(
             visible = showFocusMeteringIndicator || showResultIndicator,
             enter = fadeIn() + scaleIn(initialScale = 1.5f),
