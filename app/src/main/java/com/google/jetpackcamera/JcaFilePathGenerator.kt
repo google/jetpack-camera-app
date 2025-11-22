@@ -20,7 +20,7 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import java.io.File
 import java.util.Date
 
-class JcaFilePathGenerator() : FilePathGenerator {
+class JcaFilePathGenerator : FilePathGenerator {
     private fun createTimestamp() = Date().time
 
     override fun generateImageFilename(): String {

@@ -21,17 +21,27 @@ package com.google.jetpackcamera.core.common
 interface FilePathGenerator {
 
     /**
-     * Generates a filename for a media file.
+     * Generates a unique filename for an image file.
      */
     fun generateImageFilename(): String
 
+    /**
+     * Generates a unique filename for a video file.
+     */
     fun generateVideoFilename(): String
 
     /**
-     * Provides the output directory for a media file.
+     * Provides the relative output path for an image file, used for MediaStore.
      */
     val relativeImageOutputPath: String
+
+    /**
+     * Provides the relative output path for a video file, used for MediaStore on API 29+.
+     */
     val relativeVideoOutputPath: String
 
+    /**
+     * Provides the absolute output path for a video file, used for MediaStore on API 28 and below.
+     */
     val absoluteVideoOutputPath: String
 }

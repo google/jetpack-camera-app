@@ -41,7 +41,7 @@ object AppModule {
      */
     @Provides
     @DefaultSaveMode
-    fun providesSaveMode(): SaveMode = SaveMode.Immediate
+    fun providesSaveMode(): SaveMode = SaveMode.CacheAndReview()
 
     @Provides
     @DefaultFilePathGenerator

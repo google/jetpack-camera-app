@@ -19,7 +19,7 @@ import android.os.Environment
 import java.io.File
 import java.util.Date
 
-class FakeFilePathGenerator() : FilePathGenerator {
+class FakeFilePathGenerator : FilePathGenerator {
     private fun createTimestamp() = Date().time
 
     override fun generateImageFilename(): String {
