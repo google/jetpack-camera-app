@@ -129,7 +129,7 @@ class CameraXCameraSystemTest {
 
         // Arrange: Create a ReceiveChannel to observe the torch enabled state.
         val torchEnabled: ReceiveChannel<Boolean> = cameraSystem.getCurrentCameraState()
-            .map { it.torchEnabled }
+            .map { it.isTorchEnabled }
             .produceIn(this)
 
         // Assert: The initial torch enabled should be false.
