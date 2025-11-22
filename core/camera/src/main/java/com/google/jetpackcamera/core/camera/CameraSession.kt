@@ -68,9 +68,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.net.toFile
 import androidx.lifecycle.asFlow
-import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
-import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultVideoSaveLocation
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
+import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DeviceRotation
@@ -92,7 +91,6 @@ import com.google.jetpackcamera.model.VideoQuality.UHD
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import java.io.File
 import java.io.FileNotFoundException
-import java.util.Date
 import java.util.concurrent.Executor
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.math.abs
@@ -844,6 +842,7 @@ private fun getPendingRecording(
     context: Context,
     videoCaptureUseCase: VideoCapture<Recorder>,
     maxDurationMillis: Long,
+    filePathGenerator: FilePathGenerator,
     captureTypeSuffix: String,
     saveLocation: SaveLocation,
     onVideoRecord: (OnVideoRecordEvent) -> Unit
@@ -902,7 +901,7 @@ private fun getPendingRecording(
             }
 
         is SaveLocation.Default -> {
-            val outputFilename = "JCA-recording-${Date().time}-$captureTypeSuffix.mp4"
+            val outputFilename = filePathGenerator.generateVideoFilename()
             val mediaUrl = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
             val contentResolver = context.contentResolver
 
@@ -913,23 +912,21 @@ private fun getPendingRecording(
 
                     // API 28 fix -- Manually set output directory and final output filename
                     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                        val volumePath = getDefaultVideoSaveLocation()
+                        val volumePath = filePathGenerator.absoluteVideoOutputPath
                         if (volumePath.isNotEmpty()) {
                             put(MediaStore.MediaColumns.DATA, "$volumePath/$outputFilename")
                             Log.d(
                                 TAG,
                                 "API 28- Video Fix: Setting _DATA to $volumePath/$outputFilename"
                             )
-                        } else {
-                            Log.d(
-                                TAG,
-                                "API 28- Fix: Could not determine volume path, cannot set _DATA column"
-                            )
                         }
                     }
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
-                        put(MediaStore.Video.Media.RELATIVE_PATH, getDefaultMediaSaveLocation())
+                        put(
+                            MediaStore.Video.Media.RELATIVE_PATH,
+                            filePathGenerator.relativeVideoOutputPath
+                        )
                     }
                 }
             val mediaStoreOutput =
@@ -1153,7 +1150,8 @@ private suspend fun runVideoRecording(
     transientSettings: StateFlow<TransientSessionSettings?>,
     saveLocation: SaveLocation,
     videoControlEvents: Channel<VideoCaptureControlEvent>,
-    onVideoRecord: (OnVideoRecordEvent) -> Unit
+    onVideoRecord: (OnVideoRecordEvent) -> Unit,
+    filePathGenerator: FilePathGenerator
 ) = coroutineScope {
     var currentSettings = transientSettings.filterNotNull().first()
 
@@ -1161,6 +1159,7 @@ private suspend fun runVideoRecording(
         context,
         videoCapture,
         maxDurationMillis,
+        filePathGenerator,
         captureTypeSuffix,
         saveLocation,
         onVideoRecord
@@ -1257,7 +1256,8 @@ internal suspend fun processVideoControlEvents(
                     transientSettings,
                     event.saveLocation,
                     videoCaptureControlEvents,
-                    event.onVideoRecord
+                    event.onVideoRecord,
+                    filePathGenerator
                 )
             }
 
