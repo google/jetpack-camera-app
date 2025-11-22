@@ -22,16 +22,27 @@ import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.viewfinder.compose.CoordinateTransformer
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -39,8 +50,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -80,6 +93,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -89,6 +103,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.round
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
@@ -103,6 +118,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unav
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
@@ -115,6 +131,8 @@ import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
+private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
+private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
 
 @Composable
 fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
@@ -388,6 +406,7 @@ fun PreviewDisplay(
     onScaleZoom: (Float) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     surfaceRequest: SurfaceRequest?,
+    focusMeteringUiState: FocusMeteringUiState,
     modifier: Modifier = Modifier
 ) {
     if (previewDisplayUiState.aspectRatioUiState !is AspectRatioUiState.Available) {
@@ -480,6 +499,10 @@ fun PreviewDisplay(
                         },
                     surfaceRequest = it,
                     implementationMode = implementationMode,
+                    coordinateTransformer = coordinateTransformer
+                )
+                FocusMeteringIndicator(
+                    focusMeteringUiState = focusMeteringUiState,
                     coordinateTransformer = coordinateTransformer
                 )
             }
@@ -693,6 +716,95 @@ fun FlipCameraButton(
                 modifier = Modifier
                     .size(IconButtonDefaults.extraLargeIconSize)
                     .rotate(animatedRotation.value)
+            )
+        }
+    }
+}
+
+/**
+ * A composable that displays a focus metering indicator on the viewfinder.
+ *
+ * This indicator is displayed when the user taps on the screen to focus. It shows a pulsing
+ * animation while the focus is in progress, and then shows a success or failure animation
+ * depending on the result of the focus operation.
+ *
+ * @param focusMeteringUiState The state of the focus metering operation.
+ * @param coordinateTransformer The coordinate transformer to use to map the surface coordinates
+ * to screen coordinates. This should come from [CameraXViewfinder].
+ */
+@Composable
+fun FocusMeteringIndicator(
+    focusMeteringUiState: FocusMeteringUiState,
+    coordinateTransformer: CoordinateTransformer
+) {
+    if (focusMeteringUiState is FocusMeteringUiState.Specified) {
+        val transition = rememberInfiniteTransition(label = "FocusPulse")
+        val alpha by transition.animateFloat(
+            initialValue = 1f,
+            targetValue = 0.5f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(500),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "FocusPulseAlpha"
+        )
+
+        // The indicator for SUCCESS/FAILURE is shown for a short duration
+        var showResultIndicator by remember { mutableStateOf(false) }
+        val status = focusMeteringUiState.status
+        LaunchedEffect(status) {
+            if (status == FocusMeteringUiState.Status.SUCCESS ||
+                status == FocusMeteringUiState.Status.FAILURE
+            ) {
+                showResultIndicator = true
+                delay(FOCUS_INDICATOR_RESULT_DELAY)
+                showResultIndicator = false
+            } else {
+                showResultIndicator = false
+            }
+        }
+        // Map coordinates from surface coordinates back to screen coordinates
+        val tapCoords =
+            remember(
+                coordinateTransformer.transformMatrix,
+                focusMeteringUiState.surfaceCoordinates
+            ) {
+                Matrix().run {
+                    setFrom(coordinateTransformer.transformMatrix)
+                    invert()
+                    map(focusMeteringUiState.surfaceCoordinates)
+                }
+            }
+        val showFocusMeteringIndicator = status == FocusMeteringUiState.Status.RUNNING
+        AnimatedVisibility(
+            visible = showFocusMeteringIndicator || showResultIndicator,
+            enter = fadeIn() + scaleIn(initialScale = 1.5f),
+            exit = fadeOut() + when (focusMeteringUiState.status) {
+                FocusMeteringUiState.Status.SUCCESS -> scaleOut(targetScale = 0.5f)
+                FocusMeteringUiState.Status.FAILURE -> scaleOut(targetScale = 1.5f)
+                else -> fadeOut()
+            },
+            modifier = Modifier
+                .offset { tapCoords.round() }
+                // Offset the indicator to be centered on the tap coordinates
+                .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
+        ) {
+            Box(
+                Modifier
+                    .testTag(FOCUS_METERING_INDICATOR_TAG)
+                    .alpha(
+                        if (focusMeteringUiState.status == FocusMeteringUiState.Status.SUCCESS) {
+                            1f
+                        } else {
+                            alpha
+                        }
+                    )
+                    .border(
+                        1.dp,
+                        Color.White,
+                        CircleShape
+                    )
+                    .size(TAP_TO_FOCUS_INDICATOR_SIZE)
             )
         }
     }

@@ -39,13 +39,10 @@ import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
-import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
-import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
@@ -109,7 +106,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
@@ -1205,31 +1201,6 @@ private suspend fun runVideoRecording(
                     VideoCaptureControlEvent.PauseRecordingEvent -> recording.pause()
                     VideoCaptureControlEvent.ResumeRecordingEvent -> recording.resume()
                 }
-            }
-        }
-    }
-}
-
-context(CameraSessionContext)
-internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
-    surfaceRequests.map { surfaceRequest ->
-        surfaceRequest?.resolution?.run {
-            Log.d(
-                TAG,
-                "Waiting to process focus points for surface with resolution: " +
-                    "$width x $height"
-            )
-            SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
-        }
-    }.collectLatest { meteringPointFactory ->
-        for (event in focusMeteringEvents) {
-            meteringPointFactory?.apply {
-                Log.d(TAG, "tapToFocus, processing event: $event")
-                val meteringPoint = createPoint(event.x, event.y)
-                val action = FocusMeteringAction.Builder(meteringPoint).build()
-                cameraControl.startFocusAndMetering(action)
-            } ?: run {
-                Log.w(TAG, "Ignoring event due to no SurfaceRequest: $event")
             }
         }
     }

@@ -34,6 +34,7 @@ const val PREVIEW_DISPLAY = "PreviewDisplay"
 const val SCREEN_FLASH_OVERLAY = "ScreenFlashOverlay"
 const val AMPLITUDE_NONE_TAG = "AmplitudeNoneTag"
 const val AMPLITUDE_HOT_TAG = "AmplitudeHotTag"
+const val FOCUS_METERING_INDICATOR_TAG = "FocusMeteringIndicatorTag"
 
 // HDR disabled rationale tags
 const val HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG = "HdrImageUnsupportedOnDeviceTag"
