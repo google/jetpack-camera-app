@@ -34,11 +34,14 @@ class FakeFilePathGenerator() : FilePathGenerator {
     }
 
     override val relativeImageOutputPath: String
-        get() = Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_PICTURES
-        ).path + File.separator + "Camera"
+        get() =
+            Environment.DIRECTORY_PICTURES + File.separator + "Camera"
+
     override val relativeVideoOutputPath: String
+        get() = Environment.DIRECTORY_MOVIES + File.separator + "Camera"
+
+    override val absoluteVideoOutputPath: String
         get() = Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_PICTURES
-        ).path + File.separator + "Camera"
+            Environment.DIRECTORY_MOVIES
+        ).path
 }
