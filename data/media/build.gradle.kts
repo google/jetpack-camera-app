@@ -90,6 +90,8 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core:common"))
+    testImplementation(project(":core:common"))
+
 }
 
 // Allow references to generated code

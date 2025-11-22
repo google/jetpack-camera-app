@@ -316,7 +316,6 @@ class LocalMediaRepository
     ): Uri? {
         val contentResolver = context.contentResolver
         val destinationUri: Uri?
-        println(fileOutputDirectory)
 
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, outputFilename)
