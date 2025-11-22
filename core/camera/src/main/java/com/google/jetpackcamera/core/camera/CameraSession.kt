@@ -39,13 +39,10 @@ import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
-import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
-import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
@@ -64,7 +61,6 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
-import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.net.toFile
@@ -112,9 +108,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -1210,65 +1204,6 @@ private suspend fun runVideoRecording(
                 }
             }
         }
-    }
-}
-
-context(CameraSessionContext)
-internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
-    surfaceRequests.map { surfaceRequest ->
-        surfaceRequest?.resolution?.run {
-            Log.d(
-                TAG,
-                "Waiting to process focus points for surface with resolution: " +
-                    "$width x $height"
-            )
-            SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
-        }
-    }.collectLatest { meteringPointFactory ->
-        focusMeteringEvents
-            .receiveAsFlow()
-            .onCompletion {
-                currentCameraState.update { old ->
-                    old.copy(focusState = FocusState.Unspecified)
-                }
-            }
-            .collectLatest { event ->
-                meteringPointFactory?.apply {
-                    Log.d(TAG, "tapToFocus, processing event: $event")
-                    currentCameraState.update { old ->
-                        old.copy(
-                            focusState = FocusState.Specified(
-                                x = event.x,
-                                y = event.y,
-                                status = FocusState.Status.RUNNING
-                            )
-                        )
-                    }
-                    val meteringPoint = createPoint(event.x, event.y)
-                    val action = FocusMeteringAction.Builder(meteringPoint).build()
-                    val completionStatus: FocusState.Status = try {
-                        if (cameraControl.startFocusAndMetering(action).await().isFocusSuccessful) {
-                            FocusState.Status.SUCCESS
-                        } else {
-                            FocusState.Status.FAILURE
-                        }
-                    } catch (e: CameraControl.OperationCanceledException) {
-                        // New calls to startFocusAndMetering and switching the camera will cancel
-                        // the previous focus and metering request.
-                        FocusState.Status.CANCELLED
-                    }
-
-                    currentCameraState.update { old ->
-                        old.copy(
-                            focusState = FocusState.Specified(
-                                x = event.x,
-                                y = event.y,
-                                status = completionStatus
-                            )
-                        )
-                    }
-                }
-            }
     }
 }
 
