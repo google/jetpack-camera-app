@@ -22,12 +22,13 @@ import java.io.File
 import java.util.Date
 
 class JcaFilePathGenerator : FilePathGenerator {
+    private companion object {
+        private val RELATIVE_OUTPUT_PATH: String =
+            "${Environment.DIRECTORY_DCIM}${File.separator}Camera"
+    }
+    override val relativeImageOutputPath: String = RELATIVE_OUTPUT_PATH
 
-    override val relativeImageOutputPath: String
-        get() = Environment.DIRECTORY_DCIM + File.separator + "Camera"
-
-    override val relativeVideoOutputPath: String
-        get() = Environment.DIRECTORY_DCIM + File.separator + "Camera"
+    override val relativeVideoOutputPath: String = RELATIVE_OUTPUT_PATH
 
     override val absoluteVideoOutputPath: String
         get() = Environment.getExternalStoragePublicDirectory(

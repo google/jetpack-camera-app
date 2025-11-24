@@ -21,12 +21,14 @@ import java.io.File
 import java.util.Date
 
 class FakeFilePathGenerator : FilePathGenerator {
-    override val relativeImageOutputPath: String
-        get() =
-            Environment.DIRECTORY_PICTURES + File.separator + "Camera"
+    private companion object {
+        private val RELATIVE_OUTPUT_PATH: String =
+            "${Environment.DIRECTORY_DCIM}${File.separator}Camera"
+    }
 
-    override val relativeVideoOutputPath: String
-        get() = Environment.DIRECTORY_MOVIES + File.separator + "Camera"
+    override val relativeImageOutputPath: String = RELATIVE_OUTPUT_PATH
+
+    override val relativeVideoOutputPath: String = RELATIVE_OUTPUT_PATH
 
     override val absoluteVideoOutputPath: String
         get() = Environment.getExternalStoragePublicDirectory(
