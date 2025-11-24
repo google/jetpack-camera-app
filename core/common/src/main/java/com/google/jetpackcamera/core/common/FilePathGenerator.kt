@@ -56,30 +56,4 @@ interface FilePathGenerator {
      * @param fileExtension the extension to be appended at the end of the generated filename
      */
     fun generateVideoFilename(suffixText: String? = null, fileExtension: String? = ".mp4"): String
-
-    companion object {
-        /**
-         * constructs a filename based on the provided values
-         *
-         * @param prefix the first portion of the filename's text
-         * @param timestamp a unique string to prevent subsequently created files from overwriting
-         * each other. i.e. a timestamp
-         * @param suffixText additional text to append to the end of the generated filename, before
-         * the file extension.
-         * @param fileExtension the extension to be appended at the end of the generated filename
-         * (i.e. `.mp4` or `.jpg`)
-         */
-        fun constructFilename(
-            prefix: String,
-            timestamp: String,
-            suffixText: String?,
-            fileExtension: String?
-        ): String {
-            return buildString {
-                append("$prefix-$timestamp")
-                suffixText?.let { append("-$it") }
-                fileExtension?.let { append(it) }
-            }
-        }
-    }
 }

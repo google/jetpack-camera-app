@@ -17,7 +17,6 @@ package com.google.jetpackcamera
 
 import android.os.Environment
 import com.google.jetpackcamera.core.common.FilePathGenerator
-import com.google.jetpackcamera.core.common.FilePathGenerator.Companion.constructFilename
 import java.io.File
 import java.util.Date
 
@@ -36,6 +35,32 @@ class JcaFilePathGenerator : FilePathGenerator {
         )?.path ?: ""
 
     private fun createTimestamp() = Date().time
+
+    /**
+     * constructs a string based on the provided values in the following pattern:
+     * "$prefix-$suffixText-$timestamp-$FileExtension"
+     *
+     * @param prefix the first portion of the filename's text
+     * @param timestamp a unique string to prevent subsequently created files from overwriting
+     * each other. i.e. a timestamp
+     * @param suffixText additional text to append to the end of the generated filename, before
+     * the file extension.
+     * @param fileExtension the extension to be appended at the end of the generated filename
+     * (i.e. `.mp4` or `.jpg`)
+     */
+    private fun constructFilename(
+        prefix: String,
+        timestamp: String,
+        suffixText: String?,
+        fileExtension: String?
+    ): String {
+        return buildString {
+            append(prefix)
+            suffixText?.let { append("-$it") }
+            append("-$timestamp")
+            fileExtension?.let { append(it) }
+        }
+    }
 
     override fun generateImageFilename(suffixText: String?, fileExtension: String?): String {
         return constructFilename(
