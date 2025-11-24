@@ -66,9 +66,10 @@ interface FilePathGenerator {
          * each other. i.e. a timestamp
          * @param suffixText additional text to append to the end of the generated filename, before
          * the file extension.
-         * @param fileExtension the extension to be appended at the end of the generated filename (i.e. `.mp4``.jpg`)
+         * @param fileExtension the extension to be appended at the end of the generated filename
+         * (i.e. `.mp4` or `.jpg`)
          */
-        fun FilePathGenerator.constructFilename(
+        fun constructFilename(
             prefix: String,
             timestamp: String,
             suffixText: String?,
