@@ -17,6 +17,7 @@ package com.google.jetpackcamera
 
 import android.os.Environment
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.FilePathGenerator.Companion.constructFilename
 import java.io.File
 import java.util.Date
 
@@ -32,26 +33,24 @@ class JcaFilePathGenerator : FilePathGenerator {
         get() = Environment.getExternalStoragePublicDirectory(
             Environment.DIRECTORY_MOVIES
         )?.path ?: ""
+
     private fun createTimestamp() = Date().time
 
-    private fun generateFilename(
-        prefix: String,
-        suffixText: String?,
-        fileExtension: String?
-    ): String {
-        val timestamp = createTimestamp()
-        return buildString {
-            append("$prefix-$timestamp")
-            suffixText?.let { append("-$it") }
-            fileExtension?.let { append(it) }
-        }
-    }
-
     override fun generateImageFilename(suffixText: String?, fileExtension: String?): String {
-        return generateFilename("JCA-photo", suffixText, fileExtension)
+        return constructFilename(
+            "JCA-photo",
+            createTimestamp().toString(),
+            suffixText,
+            fileExtension
+        )
     }
 
     override fun generateVideoFilename(suffixText: String?, fileExtension: String?): String {
-        return generateFilename("JCA-recording", suffixText, fileExtension)
+        return constructFilename(
+            "JCA-recording",
+            createTimestamp().toString(),
+            suffixText,
+            fileExtension
+        )
     }
 }

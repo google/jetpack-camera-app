@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.common
 
 import android.os.Environment
+import com.google.jetpackcamera.core.common.FilePathGenerator.Companion.constructFilename
 import java.io.File
 import java.util.Date
 
@@ -34,24 +35,21 @@ class FakeFilePathGenerator : FilePathGenerator {
 
     private fun createTimestamp() = Date().time
 
-    private fun generateFilename(
-        prefix: String,
-        suffixText: String?,
-        fileExtension: String?
-    ): String {
-        val timestamp = createTimestamp()
-        return buildString {
-            append("$prefix-$timestamp")
-            suffixText?.let { append("-$it") }
-            fileExtension?.let { append(it) }
-        }
-    }
-
     override fun generateImageFilename(suffixText: String?, fileExtension: String?): String {
-        return generateFilename("JCA-test-photo", suffixText, fileExtension)
+        return constructFilename(
+            "JCA-test-photo",
+            createTimestamp().toString(),
+            suffixText,
+            fileExtension
+        )
     }
 
     override fun generateVideoFilename(suffixText: String?, fileExtension: String?): String {
-        return generateFilename("JCA-test-recording", suffixText, fileExtension)
+        return constructFilename(
+            "JCA-test-recording",
+            createTimestamp().toString(),
+            suffixText,
+            fileExtension
+        )
     }
 }
