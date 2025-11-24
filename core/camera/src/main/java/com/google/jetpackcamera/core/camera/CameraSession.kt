@@ -897,7 +897,8 @@ private fun getPendingRecording(
             }
 
         is SaveLocation.Default -> {
-            val outputFilename = filePathGenerator.generateVideoFilename()
+            val outputFilename =
+                filePathGenerator.generateVideoFilename(suffixText = captureTypeSuffix)
             val mediaUrl = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
             val contentResolver = context.contentResolver
 

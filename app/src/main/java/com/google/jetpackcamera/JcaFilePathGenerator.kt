@@ -23,14 +23,22 @@ import java.util.Date
 class JcaFilePathGenerator : FilePathGenerator {
     private fun createTimestamp() = Date().time
 
-    override fun generateImageFilename(): String {
+    override fun generateImageFilename(suffixText: String?, fileExtension: String?): String {
         val timestamp = createTimestamp()
-        return "JCA-photo-$timestamp.jpg"
+        var filename = "JCA-photo-$timestamp"
+        suffixText?.let { filename += "-$it" }
+        fileExtension?.let { filename += fileExtension }
+
+        return filename
     }
 
-    override fun generateVideoFilename(): String {
+    override fun generateVideoFilename(suffixText: String?, fileExtension: String?): String {
         val timestamp = createTimestamp()
-        return "JCA-recording-$timestamp.mp4"
+        var filename = "JCA-recording-$timestamp"
+        suffixText?.let { filename += "-$it" }
+        fileExtension?.let { filename += fileExtension }
+
+        return filename
     }
 
     override val relativeImageOutputPath: String
