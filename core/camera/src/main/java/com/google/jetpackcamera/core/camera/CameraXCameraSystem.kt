@@ -37,6 +37,7 @@ import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
+import androidx.core.net.toFile
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
@@ -587,6 +588,25 @@ constructor(
                     Log.d(TAG, "takePicture onError: $e")
                     throw e
                 }
+            }
+
+            is SaveLocation.Cache -> {
+                // 1. Get the app's cache directory
+                val cacheDir = saveLocation.cacheDir?.toFile() ?: application.cacheDir
+
+                // 2. Create a unique temporary file
+                val tempFile = File.createTempFile(
+                    "JCA_IMG_CAPTURE_TEMP_",
+                    ".jpg", // Use .jpg to support Ultra HDR
+                    cacheDir
+                )
+                Log.d(TAG, "cached image location: ${tempFile.absolutePath}")
+
+                // 3. Build OutputFileOptions directly with the File object
+                val options = OutputFileOptions.Builder(tempFile).build()
+
+                // 4. Return options. Since CameraX manages the stream, we return null for the 'closeable'.
+                options to null
             }
         }
 
