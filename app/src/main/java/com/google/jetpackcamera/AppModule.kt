@@ -45,7 +45,5 @@ object AppModule {
 
     @Provides
     @DefaultFilePathGenerator
-    fun providesFilePathGenerator(): FilePathGenerator {
-        return JcaFilePathGenerator()
-    }
+    fun providesFilePathGenerator(): FilePathGenerator = JcaFilePathGenerator()
 }

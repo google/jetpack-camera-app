@@ -916,6 +916,11 @@ private fun getPendingRecording(
                                 TAG,
                                 "API 28- Video Fix: Setting _DATA to $volumePath/$outputFilename"
                             )
+                        } else {
+                            Log.d(
+                                TAG,
+                                "API 28- Fix: Could not determine volume path, cannot set _DATA column"
+                            )
                         }
                     }
 

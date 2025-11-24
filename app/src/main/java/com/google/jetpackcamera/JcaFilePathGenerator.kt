@@ -21,25 +21,6 @@ import java.io.File
 import java.util.Date
 
 class JcaFilePathGenerator : FilePathGenerator {
-    private fun createTimestamp() = Date().time
-
-    override fun generateImageFilename(suffixText: String?, fileExtension: String?): String {
-        val timestamp = createTimestamp()
-        var filename = "JCA-photo-$timestamp"
-        suffixText?.let { filename += "-$it" }
-        fileExtension?.let { filename += fileExtension }
-
-        return filename
-    }
-
-    override fun generateVideoFilename(suffixText: String?, fileExtension: String?): String {
-        val timestamp = createTimestamp()
-        var filename = "JCA-recording-$timestamp"
-        suffixText?.let { filename += "-$it" }
-        fileExtension?.let { filename += fileExtension }
-
-        return filename
-    }
 
     override val relativeImageOutputPath: String
         get() = Environment.DIRECTORY_DCIM + File.separator + "Camera"
@@ -50,5 +31,27 @@ class JcaFilePathGenerator : FilePathGenerator {
     override val absoluteVideoOutputPath: String
         get() = Environment.getExternalStoragePublicDirectory(
             Environment.DIRECTORY_MOVIES
-        ).path
+        )?.path ?: ""
+    private fun createTimestamp() = Date().time
+
+    private fun generateFilename(
+        prefix: String,
+        suffixText: String?,
+        fileExtension: String?
+    ): String {
+        val timestamp = createTimestamp()
+        return buildString {
+            append("$prefix-$timestamp")
+            suffixText?.let { append("-$it") }
+            fileExtension?.let { append(it) }
+        }
+    }
+
+    override fun generateImageFilename(suffixText: String?, fileExtension: String?): String {
+        return generateFilename("JCA-photo", suffixText, fileExtension)
+    }
+
+    override fun generateVideoFilename(suffixText: String?, fileExtension: String?): String {
+        return generateFilename("JCA-recording", suffixText, fileExtension)
+    }
 }

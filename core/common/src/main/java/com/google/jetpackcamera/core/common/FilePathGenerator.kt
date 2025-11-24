@@ -21,24 +21,6 @@ package com.google.jetpackcamera.core.common
 interface FilePathGenerator {
 
     /**
-     * Generates a unique filename for an image file.
-     *
-     * @param suffixText additional text to append to the end of the generated filename, before the
-     * file extension.
-     * @param fileExtension the extension to be appended at the end of the generated filename.
-     */
-    fun generateImageFilename(suffixText: String? = null, fileExtension: String? = ".jpg"): String
-
-    /**
-     * Generates a unique filename for a video file.
-     *
-     * @param suffixText additional text to append to the end of the generated filename, before the
-     * file extension.
-     * @param fileExtension the extension to be appended at the end of the generated filename
-     */
-    fun generateVideoFilename(suffixText: String? = null, fileExtension: String? = ".mp4"): String
-
-    /**
      * Provides the relative output path for an image file, used for MediaStore.
      *
      * (i.e [android.os.Environment.DIRECTORY_DCIM], [android.os.Environment.DIRECTORY_PICTURES])
@@ -56,4 +38,22 @@ interface FilePathGenerator {
      * Provides the absolute output path for a video file, used for MediaStore on API 28 and below.
      */
     val absoluteVideoOutputPath: String
+
+    /**
+     * Generates a unique filename for an image file.
+     *
+     * @param suffixText additional text to append to the end of the generated filename, before the
+     * file extension.
+     * @param fileExtension the extension to be appended at the end of the generated filename.
+     */
+    fun generateImageFilename(suffixText: String? = null, fileExtension: String? = ".jpg"): String
+
+    /**
+     * Generates a unique filename for a video file.
+     *
+     * @param suffixText additional text to append to the end of the generated filename, before the
+     * file extension.
+     * @param fileExtension the extension to be appended at the end of the generated filename
+     */
+    fun generateVideoFilename(suffixText: String? = null, fileExtension: String? = ".mp4"): String
 }

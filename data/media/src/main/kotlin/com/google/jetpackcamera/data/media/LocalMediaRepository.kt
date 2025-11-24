@@ -325,11 +325,18 @@ class LocalMediaRepository
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && mediaUrl ==
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI
             ) {
-                put(MediaStore.MediaColumns.DATA, "$fileOutputDirectory/$outputFilename")
-                Log.d(
-                    TAG,
-                    "API 28- Video Fix: Setting _DATA to $fileOutputDirectory/$outputFilename"
-                )
+                if (fileOutputDirectory.isNotEmpty()) {
+                    put(MediaStore.MediaColumns.DATA, "$fileOutputDirectory/$outputFilename")
+                    Log.d(
+                        TAG,
+                        "API 28- Video Fix: Setting _DATA to $fileOutputDirectory/$outputFilename"
+                    )
+                } else {
+                    Log.d(
+                        TAG,
+                        "API 28- Fix: Could not determine volume path, cannot set _DATA column"
+                    )
+                }
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
