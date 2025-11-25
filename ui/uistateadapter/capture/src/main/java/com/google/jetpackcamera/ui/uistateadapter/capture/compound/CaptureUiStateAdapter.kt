@@ -61,9 +61,6 @@ fun CaptureUiState.Companion.update(
     debugHidingComponents: Boolean,
     recentCapturedMedia: MediaDescriptor
 ) {
-    var flashModeUiState: FlashModeUiState
-    var focusMeteringUiState: FocusMeteringUiState
-
     val captureModeUiState = CaptureModeUiState.from(
         systemConstraints,
         cameraAppSettings,
@@ -80,31 +77,28 @@ fun CaptureUiState.Companion.update(
         externalCaptureMode
     )
     captureUiState.update { old ->
-        when (old) {
-            is CaptureUiState.NotReady -> {
-                flashModeUiState = FlashModeUiState.from(
+        val (baseState, flashModeUiState, focusMeteringUiState) = when (old) {
+            is CaptureUiState.NotReady -> Triple(
+                first = CaptureUiState.Ready(),
+                second = FlashModeUiState.from(
                     cameraAppSettings,
                     systemConstraints
-                )
-                focusMeteringUiState = FocusMeteringUiState.from(cameraState)
-                // This is the first PreviewUiState.Ready. Create the initial
-                // PreviewUiState.Ready from defaults and initialize it below.
-                CaptureUiState.Ready()
-            }
+                ),
+                third = FocusMeteringUiState.from(cameraState)
+            )
 
-            is CaptureUiState.Ready -> {
-                flashModeUiState = old.flashModeUiState.updateFrom(
+            is CaptureUiState.Ready -> Triple(
+                first = old,
+                second = old.flashModeUiState.updateFrom(
                     cameraAppSettings = cameraAppSettings,
                     systemConstraints = systemConstraints,
                     cameraState = cameraState
-                )
+                ),
+                third = old.focusMeteringUiState.updateFrom(cameraState)
+            )
+        }
 
-                focusMeteringUiState = old.focusMeteringUiState.updateFrom(cameraState)
-                // We have a previous `PreviewUiState.Ready`, return it here and
-                // update it below.
-                old
-            }
-        }.copy(
+        baseState.copy(
             // Update or initialize PreviewUiState.Ready
             externalCaptureMode = externalCaptureMode,
             videoRecordingState = cameraState.videoRecordingState,
