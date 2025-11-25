@@ -32,9 +32,7 @@ sealed interface DebugUiState {
             override val currentLogicalCameraId: String? = null,
             override val currentPrimaryZoomRatio: Float?,
             override val debugHidingComponents: Boolean = false
-        ) : Enabled {
-            companion object
-        }
+        ) : Enabled
 
         data class Open(
             override val currentPhysicalCameraId: String? = null,
@@ -45,8 +43,8 @@ sealed interface DebugUiState {
             val videoResolution: Size? = null,
             val selectedTestPattern: TestPattern = TestPattern.Off,
             val availableTestPatterns: Set<TestPattern> = setOf(TestPattern.Off)
-        ) : Enabled {
-            companion object
-        }
+        ) : Enabled
     }
+
+    companion object
 }

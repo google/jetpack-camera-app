@@ -25,8 +25,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import androidx.tracing.traceAsync
-import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.core.common.DefaultSaveMode
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
@@ -59,7 +59,7 @@ import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
@@ -70,31 +70,14 @@ import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNS
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.uistate.DisableRationale
-import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
-import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
-import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
-import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
-import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
-import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
-import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
-import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
-import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
-import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
-import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.uistateadapter.capture.compound.update
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
-import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.LinkedList
 import javax.inject.Inject
@@ -173,22 +156,6 @@ class PreviewViewModel @Inject constructor(
         ) { cameraPropertiesJSON = it }
     }
 
-    /**
-     * updates the capture mode based on the preview mode
-     */
-    private fun CameraAppSettings.applyExternalCaptureMode(
-        externalCaptureMode: ExternalCaptureMode
-    ): CameraAppSettings {
-        val requiredCaptureModeOverride = externalCaptureMode.toCaptureMode()
-        return if (requiredCaptureModeOverride == null ||
-            requiredCaptureModeOverride == this.captureMode
-        ) {
-            this
-        } else {
-            this.copy(captureMode = requiredCaptureModeOverride)
-        }
-    }
-
     init {
         viewModelScope.launch {
             launch {
@@ -196,7 +163,7 @@ class PreviewViewModel @Inject constructor(
                 settingsRepository.defaultCameraAppSettings
                     .collect { new ->
                         oldCameraAppSettings?.apply {
-                            applyDiffs(new)
+                            applyDiffs(new, cameraSystem)
                         }
                         oldCameraAppSettings = new
                     }
@@ -228,183 +195,30 @@ class PreviewViewModel @Inject constructor(
                 cameraSystem.getCurrentCameraState(),
                 trackedPreviewUiState
             ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
-
-                var flashModeUiState: FlashModeUiState
-                var focusMeteringUiState: FocusMeteringUiState
-
-                val captureModeUiState = CaptureModeUiState.from(
-                    systemConstraints,
-                    cameraAppSettings,
-                    externalCaptureMode
-                )
-                val flipLensUiState = FlipLensUiState.from(
-                    cameraAppSettings,
-                    systemConstraints
-                )
-                val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
-                val hdrUiState = HdrUiState.from(
+                CaptureUiState.update(
+                    _captureUiState,
                     cameraAppSettings,
                     systemConstraints,
-                    externalCaptureMode
+                    cameraState,
+                    externalCaptureMode,
+                    debugSettings,
+                    cameraPropertiesJSON,
+                    trackedUiState.isQuickSettingsOpen,
+                    trackedUiState.focusedQuickSetting,
+                    trackedUiState.isDebugOverlayOpen,
+                    trackedUiState.isRecordingLocked,
+                    trackedUiState.zoomAnimationTarget,
+                    trackedUiState.debugHidingComponents,
+                    trackedUiState.recentCapturedMedia
                 )
-                _captureUiState.update { old ->
-                    when (old) {
-                        is CaptureUiState.NotReady -> {
-                            flashModeUiState = FlashModeUiState.from(
-                                cameraAppSettings,
-                                systemConstraints
-                            )
-                            focusMeteringUiState = FocusMeteringUiState.from(cameraState)
-                            // This is the first PreviewUiState.Ready. Create the initial
-                            // PreviewUiState.Ready from defaults and initialize it below.
-                            CaptureUiState.Ready()
-                        }
-
-                        is CaptureUiState.Ready -> {
-                            flashModeUiState = old.flashModeUiState.updateFrom(
-                                cameraAppSettings = cameraAppSettings,
-                                systemConstraints = systemConstraints,
-                                cameraState = cameraState
-                            )
-
-                            focusMeteringUiState = old.focusMeteringUiState.updateFrom(cameraState)
-                            // We have a previous `PreviewUiState.Ready`, return it here and
-                            // update it below.
-                            old
-                        }
-                    }.copy(
-                        // Update or initialize PreviewUiState.Ready
-                        externalCaptureMode = externalCaptureMode,
-                        videoRecordingState = cameraState.videoRecordingState,
-                        flipLensUiState = flipLensUiState,
-                        aspectRatioUiState = aspectRatioUiState,
-                        previewDisplayUiState = PreviewDisplayUiState(0, aspectRatioUiState),
-                        quickSettingsUiState = getQuickSettingsUiState(
-                            captureModeUiState,
-                            flashModeUiState,
-                            flipLensUiState,
-                            cameraAppSettings,
-                            systemConstraints,
-                            aspectRatioUiState,
-                            hdrUiState,
-                            trackedUiState.isQuickSettingsOpen,
-                            trackedUiState.focusedQuickSetting
-                        ),
-                        sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
-                        debugUiState = getDebugUiState(
-                            systemConstraints,
-                            cameraAppSettings,
-                            cameraState,
-                            trackedUiState.isDebugOverlayOpen,
-                            trackedUiState.debugHidingComponents
-                        ),
-                        stabilizationUiState = StabilizationUiState.from(
-                            cameraAppSettings,
-                            cameraState
-                        ),
-                        flashModeUiState = flashModeUiState,
-                        videoQuality = cameraState.videoQualityInfo.quality,
-                        audioUiState = AudioUiState.from(
-                            cameraAppSettings,
-                            cameraState
-                        ),
-                        elapsedTimeUiState = ElapsedTimeUiState.from(cameraState),
-                        captureButtonUiState = CaptureButtonUiState.from(
-                            cameraAppSettings,
-                            cameraState,
-                            trackedUiState.isRecordingLocked
-                        ),
-                        zoomUiState = ZoomUiState.from(
-                            systemConstraints,
-                            cameraAppSettings.cameraLensFacing,
-                            cameraState
-                        ),
-                        zoomControlUiState = ZoomControlUiState.from(
-                            trackedUiState.zoomAnimationTarget,
-                            systemConstraints,
-                            cameraAppSettings,
-                            cameraState
-                        ),
-                        captureModeToggleUiState = CaptureModeToggleUiState.from(
-                            systemConstraints,
-                            cameraAppSettings,
-                            cameraState,
-                            externalCaptureMode
-                        ),
-                        hdrUiState = hdrUiState,
-                        focusMeteringUiState = focusMeteringUiState,
-                        imageWellUiState = ImageWellUiState.from(
-                            trackedUiState.recentCapturedMedia,
-                            cameraState.videoRecordingState
-                        )
-
-                    )
-                }
             }.collect {}
         }
-    }
-
-    private fun getQuickSettingsUiState(
-        captureModeUiState: CaptureModeUiState,
-        flashModeUiState: FlashModeUiState,
-        flipLensUiState: FlipLensUiState,
-        cameraAppSettings: CameraAppSettings,
-        systemConstraints: CameraSystemConstraints,
-        aspectRatioUiState: AspectRatioUiState,
-        hdrUiState: HdrUiState,
-        quickSettingsIsOpen: Boolean,
-        focusedQuickSetting: FocusedQuickSetting
-    ): QuickSettingsUiState {
-        val streamConfigUiState = StreamConfigUiState.from(cameraAppSettings)
-        return QuickSettingsUiState.Available(
-            aspectRatioUiState = aspectRatioUiState,
-            captureModeUiState = captureModeUiState,
-            concurrentCameraUiState = ConcurrentCameraUiState.from(
-                cameraAppSettings,
-                systemConstraints,
-                externalCaptureMode,
-                captureModeUiState,
-                streamConfigUiState
-            ),
-            flashModeUiState = flashModeUiState,
-            flipLensUiState = flipLensUiState,
-            hdrUiState = hdrUiState,
-            streamConfigUiState = streamConfigUiState,
-            quickSettingsIsOpen = quickSettingsIsOpen,
-            focusedQuickSetting = focusedQuickSetting
-        )
     }
 
     fun toggleDebugHidingComponents() {
         trackedPreviewUiState.update { old ->
             old.copy(debugHidingComponents = !old.debugHidingComponents)
         }
-    }
-
-    private fun getDebugUiState(
-        systemConstraints: CameraSystemConstraints,
-        cameraAppSettings: CameraAppSettings,
-        cameraState: CameraState,
-        isDebugOverlayOpen: Boolean,
-        debugHidingComponents: Boolean
-    ): DebugUiState = if (debugSettings.isDebugModeEnabled) {
-        if (isDebugOverlayOpen) {
-            DebugUiState.Enabled.Open.from(
-                systemConstraints,
-                cameraAppSettings,
-                cameraState,
-                debugHidingComponents,
-                cameraPropertiesJSON
-            )
-        } else {
-            DebugUiState.Enabled.Closed.from(
-                cameraState,
-                cameraAppSettings.cameraLensFacing,
-                debugHidingComponents
-            )
-        }
-    } else {
-        DebugUiState.Disabled
     }
 
     /**
@@ -428,54 +242,6 @@ class PreviewViewModel @Inject constructor(
                 old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
             }
         }
-    }
-
-    private fun ExternalCaptureMode.toCaptureMode() = when (this) {
-        ExternalCaptureMode.ImageCapture -> CaptureMode.IMAGE_ONLY
-        ExternalCaptureMode.MultipleImageCapture -> CaptureMode.IMAGE_ONLY
-        ExternalCaptureMode.VideoCapture -> CaptureMode.VIDEO_ONLY
-        ExternalCaptureMode.Standard -> null
-    }
-
-    /**
-     * Applies an individual camera app setting with the given [settingExtractor] and
-     * [settingApplicator] if the new setting differs from the old setting.
-     */
-    private suspend inline fun <R> CameraAppSettings.applyDiff(
-        new: CameraAppSettings,
-        settingExtractor: CameraAppSettings.() -> R,
-        crossinline settingApplicator: suspend (R) -> Unit
-    ) {
-        val oldSetting = settingExtractor.invoke(this)
-        val newSetting = settingExtractor.invoke(new)
-        if (oldSetting != newSetting) {
-            settingApplicator(newSetting)
-        }
-    }
-
-    /**
-     * Checks whether each actionable individual setting has changed and applies them to
-     * [CameraSystem].
-     */
-    private suspend fun CameraAppSettings.applyDiffs(new: CameraAppSettings) {
-        applyDiff(new, CameraAppSettings::cameraLensFacing, cameraSystem::setLensFacing)
-        applyDiff(new, CameraAppSettings::flashMode, cameraSystem::setFlashMode)
-        applyDiff(new, CameraAppSettings::streamConfig, cameraSystem::setStreamConfig)
-        applyDiff(new, CameraAppSettings::aspectRatio, cameraSystem::setAspectRatio)
-        applyDiff(new, CameraAppSettings::stabilizationMode, cameraSystem::setStabilizationMode)
-        applyDiff(new, CameraAppSettings::targetFrameRate, cameraSystem::setTargetFrameRate)
-        applyDiff(
-            new,
-            CameraAppSettings::maxVideoDurationMillis,
-            cameraSystem::setMaxVideoDuration
-        )
-        applyDiff(new, CameraAppSettings::videoQuality, cameraSystem::setVideoQuality)
-        applyDiff(new, CameraAppSettings::audioEnabled, cameraSystem::setAudioEnabled)
-        applyDiff(
-            new,
-            CameraAppSettings::lowLightBoostPriority,
-            cameraSystem::setLowLightBoostPriority
-        )
     }
 
     fun startCamera() {

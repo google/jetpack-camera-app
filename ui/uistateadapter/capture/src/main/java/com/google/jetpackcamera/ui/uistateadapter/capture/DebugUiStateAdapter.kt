@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import android.util.Size
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -24,7 +25,35 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 
-fun DebugUiState.Enabled.Open.Companion.from(
+fun DebugUiState.Companion.from(
+    systemConstraints: CameraSystemConstraints,
+    cameraAppSettings: CameraAppSettings,
+    cameraState: CameraState,
+    isDebugOverlayOpen: Boolean,
+    debugHidingComponents: Boolean,
+    debugSettings: DebugSettings,
+    cameraPropertiesJSON: String
+): DebugUiState = if (debugSettings.isDebugModeEnabled) {
+    if (isDebugOverlayOpen) {
+        getEnabledDebugUiState(
+            systemConstraints,
+            cameraAppSettings,
+            cameraState,
+            debugHidingComponents,
+            cameraPropertiesJSON
+        )
+    } else {
+        getDisabledDebugUiState(
+            cameraState,
+            cameraAppSettings.cameraLensFacing,
+            debugHidingComponents
+        )
+    }
+} else {
+    DebugUiState.Disabled
+}
+
+private fun getEnabledDebugUiState(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
@@ -57,7 +86,7 @@ fun DebugUiState.Enabled.Open.Companion.from(
     )
 }
 
-fun DebugUiState.Enabled.Closed.Companion.from(
+private fun getDisabledDebugUiState(
     cameraState: CameraState,
     lensFacing: LensFacing,
     debugHidingComponents: Boolean
