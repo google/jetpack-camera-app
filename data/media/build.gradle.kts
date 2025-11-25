@@ -90,7 +90,7 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core:common"))
-    implementation(project(":core:camera"))
+    testImplementation(project(":core:common"))
 
 }
 

@@ -47,7 +47,7 @@ object FakeMediaRepository : MediaRepository {
 
     override suspend fun saveToMediaStore(
         mediaDescriptor: MediaDescriptor.Content,
-        filename: String
+        outputFilename: String?
     ): Uri? {
         return when (mediaDescriptor) {
             is MediaDescriptor.Content.Image -> "img.jpg".toUri()

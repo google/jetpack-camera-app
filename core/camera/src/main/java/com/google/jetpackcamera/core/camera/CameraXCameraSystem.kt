@@ -39,12 +39,13 @@ import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
-import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.common.DefaultDispatcher
+import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
+import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.core.common.IODispatcher
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraZoomRatio
@@ -76,9 +77,6 @@ import com.google.jetpackcamera.settings.model.forCurrentLens
 import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
 import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
@@ -114,6 +112,7 @@ constructor(
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     @param:IODispatcher private val iODispatcher: CoroutineDispatcher,
     private val constraintsRepository: SettableConstraintsRepository,
+    @DefaultFilePathGenerator private val filePathGenerator: FilePathGenerator,
     availabilityCheckers:
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>>,
     effectProviders:
@@ -465,6 +464,7 @@ constructor(
                             cameraProvider = cameraProvider,
                             backgroundDispatcher = defaultDispatcher,
                             screenFlashEvents = screenFlashEvents,
+                            filePathGenerator = filePathGenerator,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
                             currentCameraState = currentCameraState,
@@ -554,15 +554,11 @@ constructor(
     ): ImageCapture.OutputFileResults = imageCaptureUseCase?.let { imageCaptureUseCase ->
         val (outputFileOptions, closeable) = when (saveLocation) {
             is SaveLocation.Default -> {
-                val formatter = SimpleDateFormat(
-                    "yyyy-MM-dd-HH-mm-ss-SSS",
-                    Locale.US
-                )
-                val filename = "JCA-${formatter.format(Calendar.getInstance().time)}.jpg"
+                val filename = filePathGenerator.generateImageFilename()
                 val contentValues = ContentValues()
                 contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
                 contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-                val relativePath = getDefaultMediaSaveLocation()
+                val relativePath = filePathGenerator.relativeImageOutputPath
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
                     contentValues.put(
                         MediaStore.Images.Media.RELATIVE_PATH,
