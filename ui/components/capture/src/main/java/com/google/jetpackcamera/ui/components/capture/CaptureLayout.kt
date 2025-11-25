@@ -132,7 +132,6 @@ private fun VerticalMaterialControls(
                 // bottom controls row
                 BottomControls(
                     modifier = Modifier
-                        .defaultMinSize(minHeight = IconButtonDefaults.mediumContainerSize().height)
                         .padding(horizontal = 16.dp)
                         .padding(bottom = 24.dp),
                     centerItem = { captureModeToggleSwitch(Modifier) },
@@ -187,8 +186,7 @@ private fun BottomControls(
     rightItem: @Composable () -> Unit = {}
 ) {
     Row(
-        modifier
-            .fillMaxWidth(),
+        modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {

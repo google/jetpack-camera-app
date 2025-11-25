@@ -94,6 +94,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -138,7 +139,7 @@ private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
 fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
     if (elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
         Text(
-            modifier = modifier,
+            modifier = modifier.testTag(ELAPSED_TIME_TAG),
             text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
                 .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
             textAlign = TextAlign.Center
@@ -252,9 +253,9 @@ fun CaptureModeToggleButton(
 
     val enabled =
         uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
-            uiState.isCaptureModeSelectable(
-                CaptureMode.IMAGE_ONLY
-            ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
+                uiState.isCaptureModeSelectable(
+                    CaptureMode.IMAGE_ONLY
+                ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
@@ -266,13 +267,13 @@ fun CaptureModeToggleButton(
         onToggleWhenDisabled = {
             val disabledReason: DisableRationale? =
                 (
-                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                        SingleSelectableUiState.Disabled<CaptureMode>
-                    )?.disabledReason
+                        uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                                SingleSelectableUiState.Disabled<CaptureMode>
+                        )?.disabledReason
                     ?: (
-                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                            as? SingleSelectableUiState.Disabled<CaptureMode>
-                        )
+                            uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                                    as? SingleSelectableUiState.Disabled<CaptureMode>
+                            )
                         ?.disabledReason
             disabledReason?.let { onToggleWhenDisabled(it) }
         },
@@ -407,7 +408,8 @@ fun PreviewDisplay(
     onRequestWindowColorMode: (Int) -> Unit,
     surfaceRequest: SurfaceRequest?,
     focusMeteringUiState: FocusMeteringUiState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    clippedShape: Shape? = null,
 ) {
     if (previewDisplayUiState.aspectRatioUiState !is AspectRatioUiState.Available) {
         return
@@ -420,16 +422,13 @@ fun PreviewDisplay(
 
     surfaceRequest?.let {
         BoxWithConstraints(
-            modifier
-                .testTag(PREVIEW_DISPLAY)
-                .fillMaxSize()
-                .background(Color.Black),
+            modifier = modifier.testTag(PREVIEW_DISPLAY),
             contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
-                previewDisplayUiState.aspectRatioUiState as
-                    AspectRatioUiState.Available
-                ).selectedAspectRatio
+                    previewDisplayUiState.aspectRatioUiState as
+                            AspectRatioUiState.Available
+                    ).selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -460,7 +459,11 @@ fun PreviewDisplay(
                     .height(height)
                     .transformable(state = transformableState)
                     .alpha(imageAlpha)
-                    .clip(RoundedCornerShape(16.dp))
+                    .apply {
+                        clippedShape?.let {
+                            clip(clippedShape)
+                        }
+                    }
             ) {
                 val implementationMode = when {
                     Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
@@ -490,7 +493,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -583,8 +586,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Cannot retrieve icon for unimplemented " +
-                                            "stabilization mode:" +
-                                            "${stabilizationUiState.stabilizationMode}"
+                                                "stabilization mode:" +
+                                                "${stabilizationUiState.stabilizationMode}"
                                     )
                             }
 
@@ -599,8 +602,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Auto stabilization not yet implemented for " +
-                                            "${stabilizationUiState.stabilizationMode}, " +
-                                            "unable to retrieve icon."
+                                                "${stabilizationUiState.stabilizationMode}, " +
+                                                "unable to retrieve icon."
                                     )
                             }
                         }
@@ -634,7 +637,9 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         if (videoQuality != VideoQuality.UNSPECIFIED) {
             Icon(
-                modifier = modifier.size(IconButtonDefaults.smallIconSize),
+                modifier = modifier
+                    .testTag(VIDEO_QUALITY_TAG)
+                    .size(IconButtonDefaults.smallIconSize),
 
                 painter = when (videoQuality) {
                     VideoQuality.SD ->
@@ -706,7 +711,7 @@ fun FlipCameraButton(
             }
         }
         IconButton(
-            modifier = modifier,
+            modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
             onClick = onClick,
             enabled = enabledCondition
         ) {

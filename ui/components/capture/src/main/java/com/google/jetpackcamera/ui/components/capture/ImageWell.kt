@@ -19,7 +19,7 @@ import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -54,27 +54,42 @@ fun ImageWell(
     imageWellUiState: ImageWellUiState.LastCapture,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape? = RoundedCornerShape(16.dp),
     enabled: Boolean = true
 ) {
     val lastCapture = imageWellUiState.mediaDescriptor
+    var currentModifier = modifier
+        .testTag(IMAGE_WELL_TAG)
+        .size(IconButtonDefaults.mediumContainerSize())
+        .clickable(onClick = onClick, enabled = enabled)
+
+    shape?.let { s ->
+        currentModifier = currentModifier
+            .border(2.dp, Color.White, s)
+            .clip(s)
+    }
 
     Box(
-        modifier = modifier
+        modifier = currentModifier
             .testTag(IMAGE_WELL_TAG)
             .size(IconButtonDefaults.mediumContainerSize())
-            .border(2.dp, Color.White, shape)
-            .clip(shape)
             .clickable(onClick = onClick, enabled = enabled)
+            .apply {
+                shape?.let {
+                    println("shape is not null")
+                    border(2.dp, Color.White, it)
+                    clip(it)
+                } ?: println("shape is null")
+            }
     ) {
         AnimatedContent(
             targetState = lastCapture,
             label = "ImageWellAnimation",
             transitionSpec = {
                 (
-                    fadeIn() + expandHorizontally() +
-                        scaleIn(animationSpec = spring(0.8f))
-                    ).togetherWith(fadeOut())
+                        fadeIn() + expandVertically() +
+                                scaleIn(animationSpec = spring(0.8f))
+                        ).togetherWith(fadeOut())
             }
         ) { contentDesc ->
             contentDesc.thumbnail?.let {
