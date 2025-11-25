@@ -87,9 +87,9 @@ fun ImageWell(
             label = "ImageWellAnimation",
             transitionSpec = {
                 (
-                        fadeIn() + expandVertically() +
-                                scaleIn(animationSpec = spring(0.8f))
-                        ).togetherWith(fadeOut())
+                    fadeIn() + expandVertically() +
+                        scaleIn(animationSpec = spring(0.8f))
+                    ).togetherWith(fadeOut())
             }
         ) { contentDesc ->
             contentDesc.thumbnail?.let {

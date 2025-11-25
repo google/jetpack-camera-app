@@ -143,10 +143,10 @@ fun PreviewScreen(
     val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlashUiState
-            by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlash.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
-            by viewModel.surfaceRequest.collectAsState()
+        by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.startCamera()
@@ -206,9 +206,9 @@ fun PreviewScreen(
 
                 ZoomState(
                     initialZoomLevel = (
-                            currentUiState.zoomControlUiState as?
-                                    ZoomControlUiState.Enabled
-                            )
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     onAnimateStateChanged = viewModel::setZoomAnimationState,
@@ -225,9 +225,9 @@ fun PreviewScreen(
             ) {
                 zoomState.onChangeLens(
                     newInitialZoomLevel = (
-                            currentUiState.zoomControlUiState as?
-                                    ZoomControlUiState.Enabled
-                            )
+                        currentUiState.zoomControlUiState as?
+                            ZoomControlUiState.Enabled
+                        )
                         ?.initialZoomRatio
                         ?: 1f,
                     newZoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
@@ -395,8 +395,8 @@ private fun ContentScreen(
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
             onSetLensFacing(
                 (
-                        captureUiState.flipLensUiState as FlipLensUiState.Available
-                        )
+                    captureUiState.flipLensUiState as FlipLensUiState.Available
+                    )
                     .selectedLensFacing.flip()
             )
         }
@@ -423,7 +423,7 @@ private fun ContentScreen(
         videoQualityIndicator = {
             VideoQualityIcon(
                 modifier = it,
-                videoQuality = captureUiState.videoQuality,
+                videoQuality = captureUiState.videoQuality
             )
         },
         stabilizationIndicator = {
@@ -461,9 +461,9 @@ private fun ContentScreen(
                 modifier = it,
                 captureButtonUiState = captureUiState.captureButtonUiState,
                 isQuickSettingsOpen = (
-                        captureUiState.quickSettingsUiState as?
-                                QuickSettingsUiState.Available
-                        )?.quickSettingsIsOpen ?: false,
+                    captureUiState.quickSettingsUiState as?
+                        QuickSettingsUiState.Available
+                    )?.quickSettingsIsOpen ?: false,
                 onCaptureImage = {
                     runCaptureAction {
                         onCaptureImage(it)
@@ -479,7 +479,7 @@ private fun ContentScreen(
                     }
                 },
                 onStopVideoRecording =
-                    onStopVideoRecording,
+                onStopVideoRecording,
                 onLockVideoRecording = onLockVideoRecording
             )
         },
@@ -517,15 +517,16 @@ private fun ContentScreen(
             }
         },
         quickSettingsButton = {
-            if (captureUiState.videoRecordingState !is VideoRecordingState.Active)
+            if (captureUiState.videoRecordingState !is VideoRecordingState.Active) {
                 ToggleQuickSettingsButton(
                     modifier = it,
                     toggleBottomSheet = onToggleQuickSettings,
                     isOpen = (
-                            captureUiState.quickSettingsUiState
-                                    as? QuickSettingsUiState.Available
-                            )?.quickSettingsIsOpen == true
+                        captureUiState.quickSettingsUiState
+                            as? QuickSettingsUiState.Available
+                        )?.quickSettingsIsOpen == true
                 )
+            }
         },
         audioToggleButton = {
             AmplitudeToggleButton(
@@ -544,10 +545,10 @@ private fun ContentScreen(
                     CaptureModeToggleButton(
                         modifier = it,
                         uiState = captureUiState.captureModeToggleUiState
-                                as CaptureModeToggleUiState.Available,
+                            as CaptureModeToggleUiState.Available,
 
                         onChangeCaptureMode = onSetCaptureMode,
-                        onToggleWhenDisabled = onDisabledCaptureMode,
+                        onToggleWhenDisabled = onDisabledCaptureMode
                     )
                 }
             }

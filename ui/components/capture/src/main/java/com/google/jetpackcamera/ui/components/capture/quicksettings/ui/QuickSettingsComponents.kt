@@ -472,7 +472,7 @@ fun ToggleQuickSettingsButton(
     toggleBottomSheet: () -> Unit,
     isOpen: Boolean,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
+    enabled: Boolean = true
 ) {
     val buttonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
