@@ -90,7 +90,7 @@ import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
 import com.google.jetpackcamera.ui.components.capture.ImageWell
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
-import com.google.jetpackcamera.ui.components.capture.PreviewLayout
+import com.google.jetpackcamera.ui.components.capture.CaptureLayout
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
 import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
@@ -670,7 +670,7 @@ private fun LayoutWrapper(
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit
 ) {
-    PreviewLayout(
+    CaptureLayout(
         modifier = modifier,
         viewfinder = viewfinder,
         captureButton = captureButton,
