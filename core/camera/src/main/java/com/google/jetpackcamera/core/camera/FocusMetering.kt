@@ -21,11 +21,12 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.SurfaceRequest
 import androidx.concurrent.futures.await
+import androidx.core.content.ContextCompat
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
@@ -51,12 +52,14 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
                     "${request.resolution.width} x ${request.resolution.height}"
             )
 
-            request.transformationInfoFlow.filterNotNull().map {
-                SurfaceToSensorMeteringPointFactory(
-                    cameraInfo.sensorRect,
-                    it.sensorToBufferTransform
-                )
-            }
+            request.createTransformationInfoFlow(ContextCompat.getMainExecutor(context))
+                .filterNotNull()
+                .map {
+                    SurfaceToSensorMeteringPointFactory(
+                        cameraInfo.sensorRect,
+                        it.sensorToBufferTransform
+                    )
+                }
         } ?: flowOf(null)
     }.collectLatest { meteringPointFactory ->
         focusMeteringEvents
@@ -108,13 +111,13 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
     }
 }
 
-private val SurfaceRequest.transformationInfoFlow: StateFlow<SurfaceRequest.TransformationInfo?>
-    get() = MutableStateFlow<SurfaceRequest.TransformationInfo?>(null)
-        .also { stateFlow ->
-            // Set a callback to update this state flow
-            setTransformationInfoListener(Runnable::run) { transformInfo ->
-                // Set the next value of the flow
-                stateFlow.value = transformInfo
-            }
-        }
-        .asStateFlow()
+private fun SurfaceRequest.createTransformationInfoFlow(
+    executor: java.util.concurrent.Executor
+): Flow<SurfaceRequest.TransformationInfo> = callbackFlow {
+    val listener = SurfaceRequest.TransformationInfoListener { transformationInfo ->
+        trySend(transformationInfo)
+    }
+    setTransformationInfoListener(executor, listener)
+
+    awaitClose { clearTransformationInfoListener() }
+}
