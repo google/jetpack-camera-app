@@ -17,28 +17,47 @@ package com.google.jetpackcamera.core.camera
 
 import android.util.Log
 import androidx.camera.core.CameraControl
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.FocusMeteringAction
-import androidx.camera.core.SurfaceOrientedMeteringPointFactory
+import androidx.camera.core.SurfaceRequest
 import androidx.concurrent.futures.await
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 
 private const val TAG = "FocusMetering"
+private const val AUTO_FOCUS_TIMEOUT_MILLIS = 2500L
 
-context(CameraSessionContext)
-internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
-    surfaceRequests.map { surfaceRequest ->
-        surfaceRequest?.resolution?.run {
+@OptIn(ExperimentalCoroutinesApi::class)
+internal suspend fun CameraSessionContext.processFocusMeteringEvents(
+    cameraInfo: CameraInfo,
+    cameraControl: CameraControl
+) {
+    surfaceRequests.flatMapLatest { surfaceRequest ->
+        surfaceRequest?.let { request ->
             Log.d(
                 TAG,
                 "Waiting to process focus points for surface with resolution: " +
-                    "$width x $height"
+                    "${request.resolution.width} x ${request.resolution.height}"
             )
-            SurfaceOrientedMeteringPointFactory(width.toFloat(), height.toFloat())
-        }
+
+            request.transformationInfoFlow.filterNotNull().map {
+                SurfaceToSensorMeteringPointFactory(
+                    cameraInfo.sensorRect,
+                    it.sensorToBufferTransform
+                )
+            }
+        } ?: flowOf(null)
     }.collectLatest { meteringPointFactory ->
         focusMeteringEvents
             .receiveAsFlow()
@@ -65,7 +84,9 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
 
                     updateFocusState(FocusState.Status.RUNNING)
                     val meteringPoint = createPoint(event.x, event.y)
-                    val action = FocusMeteringAction.Builder(meteringPoint).build()
+                    val action = FocusMeteringAction.Builder(meteringPoint)
+                        .setAutoCancelDuration(AUTO_FOCUS_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+                        .build()
                     val completionStatus: FocusState.Status = try {
                         if (cameraControl.startFocusAndMetering(action).await().isFocusSuccessful) {
                             FocusState.Status.SUCCESS
@@ -73,9 +94,7 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
                             FocusState.Status.FAILURE
                         }
                     } catch (_: CameraControl.OperationCanceledException) {
-                        // New calls to startFocusAndMetering and switching the camera will cancel
-                        // the previous focus and metering request.
-                        FocusState.Status.CANCELLED
+                        FocusState.Status.FAILURE
                     }
 
                     Log.d(
@@ -88,3 +107,14 @@ internal suspend fun processFocusMeteringEvents(cameraControl: CameraControl) {
             }
     }
 }
+
+private val SurfaceRequest.transformationInfoFlow: StateFlow<SurfaceRequest.TransformationInfo?>
+    get() = MutableStateFlow<SurfaceRequest.TransformationInfo?>(null)
+        .also { stateFlow ->
+            // Set a callback to update this state flow
+            setTransformationInfoListener(Runnable::run) { transformInfo ->
+                // Set the next value of the flow
+                stateFlow.value = transformInfo
+            }
+        }
+        .asStateFlow()
