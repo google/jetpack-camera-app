@@ -238,7 +238,10 @@ internal suspend fun runSingleCameraSession(
                 ) { camera ->
                     Log.d(TAG, "Camera session started")
                     launch {
-                        processFocusMeteringEvents(camera.cameraControl)
+                        processFocusMeteringEvents(
+                            camera.cameraInfo,
+                            camera.cameraControl
+                        )
                     }
 
                     launch {

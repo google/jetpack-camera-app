@@ -73,6 +73,7 @@ android {
 
     @Suppress("UnstableApiUsage")
     testOptions {
+        unitTests.isIncludeAndroidResources = true
         managedDevices {
             localDevices {
                 create("pixel2Api28") {
@@ -107,6 +108,7 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.rules)
