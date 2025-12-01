@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.content.Context
+import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
 import android.os.Build
@@ -78,6 +79,16 @@ fun LensFacing.toCameraSelector(): CameraSelector = when (this) {
     LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
 }
 
+val CameraInfo.sensorRect: Rect
+    @OptIn(ExperimentalCamera2Interop::class)
+    get() = Camera2CameraInfo.from(this)
+        .getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
+        .let { sensorRect ->
+            if ("robolectric" == Build.FINGERPRINT && sensorRect == null) {
+                return Rect(0, 0, 4000, 3000)
+            }
+            return requireNotNull(sensorRect) { "Sensor rect not available." }
+        }
 val CameraInfo.sensorLandscapeRatio: Float
     @OptIn(ExperimentalCamera2Interop::class)
     get() = Camera2CameraInfo.from(this)
