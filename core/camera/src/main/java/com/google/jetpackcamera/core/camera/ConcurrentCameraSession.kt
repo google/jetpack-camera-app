@@ -16,19 +16,30 @@
 package com.google.jetpackcamera.core.camera
 
 import android.annotation.SuppressLint
+import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
 import android.util.Log
+import android.util.Rational
+import androidx.camera.core.CameraEffect
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraState as CXCameraState
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
+import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.ViewPort
+import androidx.camera.video.Recorder
+import androidx.camera.video.VideoCapture
 import androidx.lifecycle.asFlow
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -119,7 +130,7 @@ internal suspend fun runConcurrentCameraSession(
 
         launch {
             processVideoControlEvents(
-                useCaseGroup.getVideoCapture(),
+                useCaseGroup.useCases.getVideoCapture(),
                 captureTypeSuffix = "DualCam"
             )
         }
@@ -187,14 +198,72 @@ internal suspend fun runConcurrentCameraSession(
                 }
         }
 
-        applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
+        applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup.useCases)
         processTransientSettingEvents(
             primaryCamera,
             cameraConstraints,
-            useCaseGroup,
+            useCaseGroup.useCases,
             initialTransientSettings,
             transientSettings,
             null
         )
     }
+}
+
+context(CameraSessionContext)
+internal fun createUseCaseGroup(
+    cameraInfo: CameraInfo,
+    initialTransientSettings: TransientSessionSettings,
+    stabilizationMode: StabilizationMode,
+    aspectRatio: AspectRatio,
+    videoCaptureUseCase: VideoCapture<Recorder>?,
+    dynamicRange: DynamicRange,
+    imageFormat: ImageOutputFormat,
+    captureMode: CaptureMode,
+    effect: CameraEffect? = null,
+    captureResults: MutableStateFlow<TotalCaptureResult?>? = null
+): UseCaseGroup {
+    val previewUseCase =
+        createPreviewUseCase(
+            cameraInfo,
+            aspectRatio,
+            stabilizationMode,
+            captureResults
+        )
+
+    // only create image use case in image or standard
+    val imageCaptureUseCase = if (captureMode != CaptureMode.VIDEO_ONLY) {
+        createImageUseCase(cameraInfo, aspectRatio, dynamicRange, imageFormat)
+    } else {
+        null
+    }
+
+    imageCaptureUseCase?.let {
+        setFlashModeInternal(
+            imageCapture = imageCaptureUseCase,
+            flashMode = initialTransientSettings.flashMode,
+            isFrontFacing = cameraInfo.appLensFacing == LensFacing.FRONT
+        )
+    }
+
+    return UseCaseGroup.Builder().apply {
+        Log.d(
+            TAG,
+            "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
+        )
+        setViewPort(
+            ViewPort.Builder(
+                Rational(aspectRatio.numerator, aspectRatio.denominator),
+                // Initialize rotation to Preview's rotation, which comes from Display rotation
+                previewUseCase.targetRotation
+            ).build()
+        )
+        addUseCase(previewUseCase)
+
+        // image and video use cases are only created if supported by the configuration
+        imageCaptureUseCase?.let { addUseCase(imageCaptureUseCase) }
+        videoCaptureUseCase?.let { addUseCase(videoCaptureUseCase) }
+
+        effect?.let { addEffect(it) }
+    }.build()
 }
