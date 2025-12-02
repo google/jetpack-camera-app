@@ -44,8 +44,9 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraState as CXCameraState
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
+import androidx.camera.core.SessionConfig
 import androidx.camera.core.TorchState
-import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.UseCase
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
@@ -218,7 +219,7 @@ internal suspend fun runSingleCameraSession(
                 ) {
                     cameraEffect = SingleSurfaceForcingEffect(this@sessionScope)
                 }
-                val useCaseGroup = createUseCaseGroup(
+                val sessionConfig = createSessionConfig(
                     cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),
                     videoCaptureUseCase = videoCaptureUseCase,
                     initialTransientSettings = currentTransientSettings,
@@ -231,12 +232,12 @@ internal suspend fun runSingleCameraSession(
                     captureResults = captureResults
 
                 ).apply {
-                    getImageCapture()?.let(onImageCaptureCreated)
+                    useCases.getImageCapture()?.let(onImageCaptureCreated)
                 }
 
                 cameraProvider.runWith(
                     currentCameraSelector,
-                    useCaseGroup
+                    sessionConfig
                 ) { camera ->
                     Log.d(TAG, "Camera session started")
                     launch {
@@ -352,11 +353,14 @@ internal suspend fun runSingleCameraSession(
                             }
                     }
 
-                    applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
+                    applyDeviceRotation(
+                        currentTransientSettings.deviceRotation,
+                        sessionConfig.useCases
+                    )
                     processTransientSettingEvents(
                         camera,
                         cameraConstraints,
-                        useCaseGroup,
+                        sessionConfig.useCases,
                         currentTransientSettings,
                         transientSettings,
                         sessionSettings
@@ -371,7 +375,7 @@ context(CameraSessionContext)
 internal suspend fun processTransientSettingEvents(
     camera: Camera,
     cameraConstraints: CameraConstraints?,
-    useCaseGroup: UseCaseGroup,
+    useCases: List<UseCase>,
     initialTransientSettings: TransientSessionSettings,
     transientSettings: StateFlow<TransientSessionSettings?>,
     sessionSettings: PerpetualSessionSettings.SingleCamera?
@@ -421,7 +425,7 @@ internal suspend fun processTransientSettingEvents(
         }
 
         // apply camera torch mode to image capture
-        useCaseGroup.getImageCapture()?.let { imageCapture ->
+        useCases.getImageCapture()?.let { imageCapture ->
             if (prevTransientSettings.flashMode != newTransientSettings.flashMode) {
                 setFlashModeInternal(
                     imageCapture = imageCapture,
@@ -440,7 +444,7 @@ internal suspend fun processTransientSettingEvents(
                     "${prevTransientSettings.deviceRotation} -> " +
                     "${newTransientSettings.deviceRotation}"
             )
-            applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
+            applyDeviceRotation(newTransientSettings.deviceRotation, useCases)
         }
 
         // setzoomratio when the primary zoom value changes.
@@ -561,9 +565,9 @@ private suspend fun updateCamera2RequestOptions(
     }
 }
 
-internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
+internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCases: List<UseCase>) {
     val targetRotation = deviceRotation.toUiSurfaceRotation()
-    useCaseGroup.useCases.forEach {
+    useCases.forEach {
         when (it) {
             is Preview -> {
                 // Preview's target rotation should not be updated with device rotation.
@@ -585,7 +589,7 @@ internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: U
 }
 
 context(CameraSessionContext)
-internal fun createUseCaseGroup(
+internal fun createSessionConfig(
     cameraInfo: CameraInfo,
     initialTransientSettings: TransientSessionSettings,
     stabilizationMode: StabilizationMode,
@@ -596,7 +600,7 @@ internal fun createUseCaseGroup(
     captureMode: CaptureMode,
     effect: CameraEffect? = null,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null
-): UseCaseGroup {
+): SessionConfig {
     val previewUseCase =
         createPreviewUseCase(
             cameraInfo,
@@ -620,26 +624,28 @@ internal fun createUseCaseGroup(
         )
     }
 
-    return UseCaseGroup.Builder().apply {
-        Log.d(
-            TAG,
-            "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
-        )
-        setViewPort(
-            ViewPort.Builder(
-                Rational(aspectRatio.numerator, aspectRatio.denominator),
-                // Initialize rotation to Preview's rotation, which comes from Display rotation
-                previewUseCase.targetRotation
-            ).build()
-        )
-        addUseCase(previewUseCase)
+    val useCases = buildList {
+        add(previewUseCase)
 
         // image and video use cases are only created if supported by the configuration
-        imageCaptureUseCase?.let { addUseCase(imageCaptureUseCase) }
-        videoCaptureUseCase?.let { addUseCase(videoCaptureUseCase) }
+        imageCaptureUseCase?.let { add(imageCaptureUseCase) }
+        videoCaptureUseCase?.let { add(videoCaptureUseCase) }
+    }
 
-        effect?.let { addEffect(it) }
-    }.build()
+    Log.d(
+        TAG,
+        "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
+    )
+
+    return SessionConfig(
+        useCases = useCases,
+        viewPort = ViewPort.Builder(
+            Rational(aspectRatio.numerator, aspectRatio.denominator),
+            // Initialize rotation to Preview's rotation, which comes from Display rotation
+            previewUseCase.targetRotation
+        ).build(),
+        effects = effect?.let { listOf(it) } ?: emptyList()
+    )
 }
 
 private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
@@ -663,7 +669,7 @@ private fun getHeightFromCropRect(cropRect: Rect?): Int {
     return abs(cropRect.left - cropRect.right)
 }
 
-private fun createImageUseCase(
+internal fun createImageUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     dynamicRange: DynamicRange,
@@ -739,7 +745,7 @@ private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: A
     }
 
 context(CameraSessionContext)
-private fun createPreviewUseCase(
+internal fun createPreviewUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     stabilizationMode: StabilizationMode,
@@ -815,7 +821,7 @@ private fun getResolutionSelector(
 }
 
 context(CameraSessionContext)
-private fun setFlashModeInternal(
+internal fun setFlashModeInternal(
     imageCapture: ImageCapture,
     flashMode: FlashMode,
     isFrontFacing: Boolean
