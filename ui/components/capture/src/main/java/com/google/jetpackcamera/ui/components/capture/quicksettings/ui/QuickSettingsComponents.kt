@@ -31,8 +31,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -57,9 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -109,7 +105,20 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
-import kotlin.math.min
+
+/**
+ * A button in the quick settings menu that will navigate to the default settings screen
+ */
+@Composable
+fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
+    QuickSettingToggleButton(
+        onClick = onNavigateToSettings,
+        text = stringResource(R.string.quick_settings_more_text),
+        accessibilityText = stringResource(R.string.quick_settings_more_description),
+        painter = rememberVectorPainter(Icons.Filled.MoreHoriz),
+        modifier = modifier.testTag(SETTINGS_BUTTON)
+    )
+}
 
 @Composable
 fun QuickSetRatio(
@@ -125,7 +134,6 @@ fun QuickSetRatio(
                 AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
                 AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
                 AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-                else -> CameraAspectRatio.ONE_ONE
             }
         QuickSettingToggleButton(
             modifier = modifier,
@@ -138,49 +146,72 @@ fun QuickSetRatio(
 }
 
 @Composable
-fun FocusedQuickSetCaptureMode(
+fun ToggleFocusedQuickSetRatio(
+    setRatio: (aspectRatio: AspectRatio) -> Unit,
+    aspectRatioUiState: AspectRatioUiState,
     modifier: Modifier = Modifier,
-    onSetCaptureMode: (CaptureMode) -> Unit,
-    captureModeUiState: CaptureModeUiState
+    isHighlightEnabled: Boolean = false
 ) {
-    val buttons: Array<@Composable () -> Unit> =
-        if (captureModeUiState is CaptureModeUiState.Available) {
-            arrayOf(
-                {
-                    QuickSetCaptureMode(
-                        modifier = Modifier
-                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
-                        onClick = { onSetCaptureMode(CaptureMode.STANDARD) },
-                        assignedCaptureMode = CaptureMode.STANDARD,
-                        captureModeUiState = captureModeUiState,
-                        isHighlightEnabled = true
+    if (aspectRatioUiState is AspectRatioUiState.Available) {
+        val enum =
+            when (aspectRatioUiState.selectedAspectRatio) {
+                AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
+                AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
+                AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
+            }
+        QuickSettingToggleButton(
+            modifier = modifier,
+            enum = enum,
+            isHighLighted = isHighlightEnabled,
+            onClick = {
+                setRatio(
+                    aspectRatioUiState.availableAspectRatios.getNextSelectableItem(
+                        aspectRatioUiState.selectedAspectRatio
                     )
-                },
-                {
-                    QuickSetCaptureMode(
-                        modifier = Modifier
-                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
-                        onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
-                        assignedCaptureMode = CaptureMode.IMAGE_ONLY,
-                        captureModeUiState = captureModeUiState,
-                        isHighlightEnabled = true
-                    )
-                },
-                {
-                    QuickSetCaptureMode(
-                        modifier = Modifier
-                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
-                        onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
-                        assignedCaptureMode = CaptureMode.VIDEO_ONLY,
-                        captureModeUiState = captureModeUiState,
-                        isHighlightEnabled = true
-                    )
-                }
+                )
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun FocusedAspectRatio(
+    aspectRatioUiState: AspectRatioUiState,
+    onUnFocus: () -> Unit,
+    onSetAspectRatio: (AspectRatio) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val options: List<@Composable (Modifier) -> Unit> = listOf(
+        {
+            QuickSetRatio(
+                modifier = it.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
+                onClick = { onSetAspectRatio(AspectRatio.THREE_FOUR) },
+                assignedRatio = AspectRatio.THREE_FOUR,
+                aspectRatioUiState = aspectRatioUiState,
+                isHighlightEnabled = true
             )
-        } else {
-            emptyArray()
+        },
+        {
+            QuickSetRatio(
+                modifier = it.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
+                onClick = { onSetAspectRatio(AspectRatio.NINE_SIXTEEN) },
+                assignedRatio = AspectRatio.NINE_SIXTEEN,
+                aspectRatioUiState = aspectRatioUiState,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            QuickSetRatio(
+                modifier = it.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
+                onClick = { onSetAspectRatio(AspectRatio.ONE_ONE) },
+                assignedRatio = AspectRatio.ONE_ONE,
+                aspectRatioUiState = aspectRatioUiState,
+                isHighlightEnabled = true
+            )
         }
-    ExpandedQuickSetting(modifier = modifier, quickSettingButtons = buttons)
+    )
+    ExpandedQuickSetting(modifier = modifier, onUnFocus = onUnFocus, quickSettingButtons = options)
 }
 
 @Composable
@@ -226,20 +257,6 @@ fun QuickSetCaptureMode(
     }
 }
 
-/**
- * A button in the quick settings menu that will navigate to the default settings screen
- */
-@Composable
-fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
-    QuickSettingToggleButton(
-        onClick = onNavigateToSettings,
-        text = stringResource(R.string.quick_settings_more_text),
-        accessibilityText = stringResource(R.string.quick_settings_more_description),
-        painter = rememberVectorPainter(Icons.Filled.MoreHoriz),
-        modifier = modifier.testTag(SETTINGS_BUTTON)
-    )
-}
-
 @Composable
 fun ToggleFocusedQuickSetCaptureMode(
     setCaptureMode: (captureMode: CaptureMode) -> Unit,
@@ -272,6 +289,53 @@ fun ToggleFocusedQuickSetCaptureMode(
 
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun FocusedCaptureMode(
+    captureModeUiState: CaptureModeUiState,
+    onUnFocus: () -> Unit,
+    onSetCaptureMode: (CaptureMode) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val options: List<@Composable (Modifier) -> Unit> = listOf(
+        {
+            QuickSetCaptureMode(
+                modifier = it
+                    .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
+                onClick = { onSetCaptureMode(CaptureMode.STANDARD) },
+                assignedCaptureMode = CaptureMode.STANDARD,
+                captureModeUiState = captureModeUiState,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            QuickSetCaptureMode(
+                modifier = it
+                    .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
+                onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
+                assignedCaptureMode = CaptureMode.IMAGE_ONLY,
+                captureModeUiState = captureModeUiState,
+                isHighlightEnabled = true
+            )
+        },
+        {
+            QuickSetCaptureMode(
+                modifier = it
+                    .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
+                onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
+                assignedCaptureMode = CaptureMode.VIDEO_ONLY,
+                captureModeUiState = captureModeUiState,
+                isHighlightEnabled = true
+            )
+        }
+    )
+    ExpandedQuickSetting(
+        modifier = modifier,
+        onUnFocus = onUnFocus,
+        quickSettingButtons = options
+    )
 }
 
 @Composable
@@ -325,35 +389,6 @@ fun QuickSetHdr(
             ),
         enabled = hdrUiState is HdrUiState.Available
     )
-}
-
-@Composable
-fun ToggleFocusedQuickSetRatio(
-    setRatio: (aspectRatio: AspectRatio) -> Unit,
-    aspectRatioUiState: AspectRatioUiState,
-    modifier: Modifier = Modifier,
-    isHighlightEnabled: Boolean = false
-) {
-    if (aspectRatioUiState is AspectRatioUiState.Available) {
-        val enum =
-            when (aspectRatioUiState.selectedAspectRatio) {
-                AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
-                AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
-                AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-            }
-        QuickSettingToggleButton(
-            modifier = modifier,
-            enum = enum,
-            isHighLighted = isHighlightEnabled,
-            onClick = {
-                setRatio(
-                    aspectRatioUiState.availableAspectRatios.getNextSelectableItem(
-                        aspectRatioUiState.selectedAspectRatio
-                    )
-                )
-            }
-        )
-    }
 }
 
 @Composable
@@ -505,6 +540,33 @@ fun ToggleQuickSettingsButton(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuickSettingsBottomSheet(
+    modifier: Modifier,
+    onDismiss: () -> Unit,
+    sheetState: SheetState,
+    content: @Composable () -> Unit
+) {
+    val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
+
+    ModalBottomSheet(
+        modifier = modifier
+            .semantics {
+                // since Modal Bottom Sheet is placed above ALL other composables in the hierarchy,
+                // it doesn't inherit the "testTagsAsResourceId" property.
+                testTagsAsResourceId = true
+                testTag = QUICK_SETTINGS_BOTTOM_SHEET
+                contentDescription = openDescription
+            },
+
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        content()
+    }
+}
+
 // ////////////////////////////////////////////////////
 //
 // subcomponents used to build completed components
@@ -512,7 +574,7 @@ fun ToggleQuickSettingsButton(
 // ////////////////////////////////////////////////////
 
 @Composable
-fun QuickSettingToggleButton(
+private fun QuickSettingToggleButton(
     modifier: Modifier = Modifier,
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
@@ -530,116 +592,61 @@ fun QuickSettingToggleButton(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuickSettingsBottomSheet(
-    modifier: Modifier,
-    onDismiss: () -> Unit,
-    sheetState: SheetState,
-    vararg quickSettingButtons: @Composable () -> Unit
+private fun ExpandedQuickSetting(
+    onUnFocus: () -> Unit,
+    quickSettingButtons: List<@Composable (Modifier) -> Unit>,
+    modifier: Modifier = Modifier
 ) {
-    val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
-
-    ModalBottomSheet(
-        modifier = modifier
-            .semantics {
-                // since Modal Bottom Sheet is placed above ALL other composables in the hierarchy,
-                // it doesn't inherit the "testTagsAsResourceId" property.
-                testTagsAsResourceId = true
-                testTag = QUICK_SETTINGS_BOTTOM_SHEET
-                contentDescription = openDescription
-            },
-
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
-    ) {
-        QuickSettingsBottomSheetRow(
-            modifier = Modifier,
-            quickSettingButtons = quickSettingButtons
-        )
-    }
+    CenterTriControls(
+        modifier = modifier,
+        centerItem = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                quickSettingButtons.forEach { content ->
+                    content(Modifier)
+                }
+            }
+        },
+        leftItem = { CloseExpandedSettingsButton(onUnFocus = onUnFocus) }
+    )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun focusedRatioButtons(
-    onUnFocus: () -> Unit,
-    onSetAspectRatio: (AspectRatio) -> Unit,
-    aspectRatioUiState: AspectRatioUiState
-): List<@Composable () -> Unit> = listOf(
-    {
-        CloseExpandedSettingsButton(onUnFocus)
-    },
-    {
-        QuickSetRatio(
-            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
-            onClick = { onSetAspectRatio(AspectRatio.THREE_FOUR) },
-            assignedRatio = AspectRatio.THREE_FOUR,
-            aspectRatioUiState = aspectRatioUiState,
-            isHighlightEnabled = true
-        )
-    },
-    {
-        QuickSetRatio(
-            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
-            onClick = { onSetAspectRatio(AspectRatio.NINE_SIXTEEN) },
-            assignedRatio = AspectRatio.NINE_SIXTEEN,
-            aspectRatioUiState = aspectRatioUiState,
-            isHighlightEnabled = true
-        )
-    },
-    {
-        QuickSetRatio(
-            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
-            onClick = { onSetAspectRatio(AspectRatio.ONE_ONE) },
-            assignedRatio = AspectRatio.ONE_ONE,
-            aspectRatioUiState = aspectRatioUiState,
-            isHighlightEnabled = true
-        )
-    }
-)
+private fun CenterTriControls(
+    centerItem: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    leftItem: @Composable () -> Unit = {},
+    rightItem: @Composable () -> Unit = {}
+) {
+    Row(
+        modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            leftItem()
+        }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun focusedCaptureModeButtons(
-    onUnFocus: () -> Unit,
-    onSetCaptureMode: (CaptureMode) -> Unit,
-    captureModeUiState: CaptureModeUiState
-): List<@Composable () -> Unit> = listOf(
-    {
-        CloseExpandedSettingsButton(onUnFocus)
-    },
-    {
-        QuickSetCaptureMode(
-            modifier = Modifier
-                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
-            onClick = { onSetCaptureMode(CaptureMode.STANDARD) },
-            assignedCaptureMode = CaptureMode.STANDARD,
-            captureModeUiState = captureModeUiState,
-            isHighlightEnabled = true
-        )
-    },
-    {
-        QuickSetCaptureMode(
-            modifier = Modifier
-                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
-            onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
-            assignedCaptureMode = CaptureMode.IMAGE_ONLY,
-            captureModeUiState = captureModeUiState,
-            isHighlightEnabled = true
-        )
-    },
-    {
-        QuickSetCaptureMode(
-            modifier = Modifier
-                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
-            onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
-            assignedCaptureMode = CaptureMode.VIDEO_ONLY,
-            captureModeUiState = captureModeUiState,
-            isHighlightEnabled = true
-        )
+        Box(
+            contentAlignment = Alignment.Center
+        ) {
+            centerItem()
+        }
+
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            rightItem()
+        }
     }
-)
+}
 
 @Composable
 private fun CloseExpandedSettingsButton(onUnFocus: () -> Unit, modifier: Modifier = Modifier) {
@@ -664,9 +671,9 @@ private fun CloseExpandedSettingsButton(onUnFocus: () -> Unit, modifier: Modifie
  * @param modifier The Modifier to be applied to this composable.
  */
 @Composable
-private fun QuickSettingsBottomSheetRow(
+fun QuickSettingsBottomSheetLazyRow(
     modifier: Modifier = Modifier,
-    vararg quickSettingButtons: @Composable () -> Unit
+    vararg quickSettingButtons: @Composable (Modifier) -> Unit
 ) {
     // LazyRow is inherently scrollable if content exceeds bounds.
     // It handles the "overflow to the right" behavior by default.
@@ -678,7 +685,7 @@ private fun QuickSettingsBottomSheetRow(
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
         itemsIndexed(quickSettingButtons.toList()) { index, quickSetting ->
-            quickSetting()
+            quickSetting(Modifier)
         }
     }
 }
@@ -692,7 +699,7 @@ private fun QuickSettingsBottomSheetRow(
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun QuickSettingToggleButton(
+private fun QuickSettingToggleButton(
     onClick: () -> Unit,
     text: String,
     accessibilityText: String,
@@ -746,48 +753,6 @@ fun QuickSettingToggleButton(
     }
 }
 
-/**
- * Should you want to have an expanded view of a single quick setting
- */
-@Composable
-fun ExpandedQuickSetting(
-    modifier: Modifier = Modifier,
-    vararg quickSettingButtons: @Composable () -> Unit
-) {
-    val expandedNumOfColumns =
-        min(
-            quickSettingButtons.size,
-            (
-                (
-                    LocalConfiguration.current.screenWidthDp.dp - (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_horizontal_padding
-                        ) * 2
-                        )
-                    ) /
-                    (
-                        dimensionResource(
-                            id = R.dimen.quick_settings_ui_item_icon_size
-                        ) +
-                            (
-                                dimensionResource(
-                                    id = R.dimen.quick_settings_ui_item_padding
-                                ) *
-                                    2
-                                )
-                        )
-                ).toInt()
-        )
-    LazyVerticalGrid(
-        modifier = modifier.fillMaxWidth(),
-        columns = GridCells.Fixed(count = expandedNumOfColumns)
-    ) {
-        items(quickSettingButtons.size) { i ->
-            quickSettingButtons[i]()
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
@@ -834,11 +799,11 @@ fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = 
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun TopBarQuickSettingIcon(
+private fun TopBarQuickSettingIcon(
     enum: QuickSettingsEnum,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    onClick: () -> Unit = {}
+    onClick: (() -> Unit)? = null
 ) {
     val contentColor = Color.White.let {
         if (!enabled) it.copy(alpha = 0.38f) else it
@@ -849,12 +814,16 @@ fun TopBarQuickSettingIcon(
             contentDescription = stringResource(id = enum.getDescriptionResId()),
             modifier = modifier
                 .size(IconButtonDefaults.smallIconSize)
-                .clickable(
-                    interactionSource = null,
-                    indication = null,
-                    onClick = onClick,
-                    enabled = enabled
-                )
+                .apply {
+                    onClick?.let {
+                        clickable(
+                            interactionSource = null,
+                            indication = null,
+                            onClick = onClick,
+                            enabled = enabled
+                        )
+                    }
+                }
         )
     }
 }
