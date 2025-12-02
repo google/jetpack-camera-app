@@ -21,6 +21,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.ConcurrentCamera
 import androidx.camera.core.ConcurrentCamera.SingleCameraConfig
+import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.Lifecycle
@@ -40,11 +41,11 @@ import kotlinx.coroutines.coroutineScope
  */
 suspend fun <R> ProcessCameraProvider.runWith(
     cameraSelector: CameraSelector,
-    useCases: UseCaseGroup,
+    sessionConfig: SessionConfig,
     block: suspend CoroutineScope.(Camera) -> R
 ): R = coroutineScope {
     val scopedLifecycle = CoroutineLifecycleOwner(coroutineContext)
-    block(this@runWith.bindToLifecycle(scopedLifecycle, cameraSelector, useCases))
+    block(this@runWith.bindToLifecycle(scopedLifecycle, cameraSelector, sessionConfig))
 }
 
 @SuppressLint("RestrictedApi")
