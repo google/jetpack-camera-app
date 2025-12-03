@@ -22,7 +22,10 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class ImageWellUiStateAdapterTest {
     private val testUri: Uri = Uri.EMPTY
     val testBitmap: Bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)

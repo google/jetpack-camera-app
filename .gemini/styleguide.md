@@ -42,6 +42,7 @@ When reviewing a pull request, focus on the following key areas:
     * **Testing Strategy: Use Fakes Over Mocks:** Avoid libraries such as Mockito. Instead of mocking, create fake implementations of dependencies. Fakes lead to more robust and maintainable tests by focusing on behavior rather than implementation details, and they avoid the brittleness associated with mocking concrete classes or third-party libraries.
     * **Descriptive Test Names:** Test function names must be clear, descriptive, and follow a consistent pattern.
     * **Use Truth Assertions:** Always prefer [Truth](https://truth.dev/) assertions (`assertThat(...)`) over JUnit assertions (`assertEquals`, `assertTrue`, etc.). Truth provides more readable assertion chains and more informative failure messages. Avoid functions from `org.junit.Assert` such as `assertEquals`, `assertTrue`, `assertFalse`, `assertNull`, and `assertNotNull`.
+    * **Explicit Test Runners:** All test classes must be annotated with `@RunWith(...)` to explicitly declare which test runner should be used (e.g., `@RunWith(AndroidJUnit4::class)`, `@RunWith(RobolectricTestRunner::class)`, or `@RunWith(JUnit4::class)` for host tests with no Android dependencies).
 
 6.  **Documentation Sync**
     * **Check for necessary updates:** Analyze if the PR's changes (e.g., adding a new feature, changing build logic, deprecating functionality) require updates to `README.md` or other documentation files.

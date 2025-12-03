@@ -20,6 +20,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
@@ -40,8 +41,10 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(AndroidJUnit4::class)
 internal class CameraAppSettingsViewModelTest {
     private val testContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
     private lateinit var testDataStore: DataStore<JcaSettings>

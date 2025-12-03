@@ -23,7 +23,10 @@ import com.google.jetpackcamera.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
 import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class ProtoConversionTest {
     @Test
     fun dynamicRange_convertsToCorrectProto() {

@@ -25,7 +25,10 @@ import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class MediaViewerUiStateAdapterTest {
     private val testUri: Uri = Uri.EMPTY
 
