@@ -158,7 +158,7 @@ class PostCaptureViewModel @Inject constructor(
         releasePlayer()
         val mediaDescriptor: MediaDescriptor = loadedMediaFlow.value.first
 
-        if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
+        if (mediaDescriptor is MediaDescriptor.Content && mediaDescriptor.isCached) {
             viewModelScope.launch {
                 if (!mediaRepository.deleteMedia(mediaDescriptor)) {
                     Log.e(TAG, "Failed to delete media from cache: ${mediaDescriptor.uri}")
