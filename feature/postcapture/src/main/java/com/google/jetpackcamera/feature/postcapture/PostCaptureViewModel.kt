@@ -160,7 +160,9 @@ class PostCaptureViewModel @Inject constructor(
 
         if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
             viewModelScope.launch {
-                mediaRepository.deleteMedia(mediaDescriptor)
+                if (!mediaRepository.deleteMedia(mediaDescriptor)) {
+                    Log.e(TAG, "Failed to delete media from cache: ${mediaDescriptor.uri}")
+                }
             }
         }
         super.onCleared()
