@@ -43,6 +43,8 @@ import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStor
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
+import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
+import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
 import com.google.jetpackcamera.core.common.DefaultDispatcher
 import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
 import com.google.jetpackcamera.core.common.FilePathGenerator
@@ -116,7 +118,9 @@ constructor(
     availabilityCheckers:
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>>,
     effectProviders:
-    Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostEffectProvider>>
+    Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostEffectProvider>>,
+    val imagePostProcessors:
+    Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>>
 ) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -615,6 +619,11 @@ constructor(
             closeable?.close()
         }.also { outputFileResults ->
             outputFileResults.savedUri?.let {
+                imagePostProcessors.forEach {
+                        (key, value) ->
+                    value.get().postProcessImage(it)
+                    Log.d(TAG, "Post processing image with $key")
+                }
                 Log.d(TAG, "Saved image to $it")
             }
         }
