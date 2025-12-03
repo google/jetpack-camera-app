@@ -27,7 +27,6 @@ import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import java.io.File
-import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -189,8 +188,8 @@ internal class CameraAppSettingsViewModelTest {
                 )
                 .currentDarkMode
 
-        assertEquals(initialDarkMode, DarkMode.DARK)
-        assertEquals(DarkMode.SYSTEM, newDarkMode)
+        assertThat(initialDarkMode).isEqualTo(DarkMode.DARK)
+        assertThat(newDarkMode).isEqualTo(DarkMode.SYSTEM)
     }
 }
 

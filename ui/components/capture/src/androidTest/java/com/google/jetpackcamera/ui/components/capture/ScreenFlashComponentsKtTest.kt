@@ -29,9 +29,9 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -108,7 +108,7 @@ class ScreenFlashComponentsKtTest {
             2
         )
         overlayPixels.forEach {
-            Assert.assertEquals(Color.White.toArgb(), it)
+            assertThat(it).isEqualTo(Color.White.toArgb())
         }
     }
 }

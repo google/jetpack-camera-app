@@ -16,9 +16,9 @@
 package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
 import android.net.Uri
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DeleteButtonUiStateAdapterTest {
@@ -33,7 +33,7 @@ class DeleteButtonUiStateAdapterTest {
         )
         val expectedUiState = DeleteButtonUiState.Ready
         val actualUiState = DeleteButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -45,7 +45,7 @@ class DeleteButtonUiStateAdapterTest {
         )
         val expectedUiState = DeleteButtonUiState.Unavailable
         val actualUiState = DeleteButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -53,6 +53,6 @@ class DeleteButtonUiStateAdapterTest {
         val mediaDescriptor = MediaDescriptor.None
         val expectedUiState = DeleteButtonUiState.Unavailable
         val actualUiState = DeleteButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 }

@@ -20,10 +20,10 @@ import android.net.Uri
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.test.core.app.ApplicationProvider
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MediaViewerUiStateAdapterTest {
@@ -40,7 +40,7 @@ class MediaViewerUiStateAdapterTest {
         val playerState = false
         val expectedUiState = MediaViewerUiState.Error
         val actualUiState = MediaViewerUiState.from(mediaDescriptor, media, player, playerState)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -51,7 +51,7 @@ class MediaViewerUiStateAdapterTest {
         val playerState = false
         val expectedUiState = MediaViewerUiState.Loading
         val actualUiState = MediaViewerUiState.from(mediaDescriptor, media, player, playerState)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -62,7 +62,7 @@ class MediaViewerUiStateAdapterTest {
         val playerState = false
         val expectedUiState = MediaViewerUiState.Content.Image(testBitmap)
         val actualUiState = MediaViewerUiState.from(mediaDescriptor, media, player, playerState)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -73,7 +73,7 @@ class MediaViewerUiStateAdapterTest {
         val playerState = true
         val expectedUiState = MediaViewerUiState.Content.Video.Ready(testPlayer, testBitmap)
         val actualUiState = MediaViewerUiState.from(mediaDescriptor, media, player, playerState)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -82,7 +82,7 @@ class MediaViewerUiStateAdapterTest {
         val media = Media.Video(testUri)
         val expectedUiState = MediaViewerUiState.Content.Video.Loading(testBitmap)
         val actualUiState = MediaViewerUiState.from(mediaDescriptor, media, null, false)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -93,6 +93,6 @@ class MediaViewerUiStateAdapterTest {
         val playerState = false
         val expectedUiState = MediaViewerUiState.Content.Video.Loading(testBitmap)
         val actualUiState = MediaViewerUiState.from(mediaDescriptor, media, player, playerState)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 }

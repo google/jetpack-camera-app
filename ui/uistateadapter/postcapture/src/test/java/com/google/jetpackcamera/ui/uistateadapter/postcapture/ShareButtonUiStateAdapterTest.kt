@@ -17,9 +17,9 @@ package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
 import android.graphics.Bitmap
 import android.net.Uri
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ShareButtonUiStateAdapterTest {
@@ -32,7 +32,7 @@ class ShareButtonUiStateAdapterTest {
         val mediaDescriptor = MediaDescriptor.Content.Image(testUri, testBitmap)
         val expectedUiState = ShareButtonUiState.Ready
         val actualUiState = ShareButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -40,7 +40,7 @@ class ShareButtonUiStateAdapterTest {
         val mediaDescriptor = MediaDescriptor.Content.Video(testUri, testBitmap)
         val expectedUiState = ShareButtonUiState.Ready
         val actualUiState = ShareButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -48,6 +48,6 @@ class ShareButtonUiStateAdapterTest {
         val mediaDescriptor = MediaDescriptor.None
         val expectedUiState = ShareButtonUiState.Unavailable
         val actualUiState = ShareButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 }

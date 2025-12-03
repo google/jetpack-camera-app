@@ -17,10 +17,10 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import android.graphics.Bitmap
 import android.net.Uri
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ImageWellUiStateAdapterTest {
@@ -37,7 +37,7 @@ class ImageWellUiStateAdapterTest {
         val result = ImageWellUiState.from(mediaDescriptor, videoRecordingState)
 
         // Then
-        assertEquals(ImageWellUiState.LastCapture(mediaDescriptor), result)
+        assertThat(result).isEqualTo(ImageWellUiState.LastCapture(mediaDescriptor))
     }
 
     @Test
@@ -50,7 +50,7 @@ class ImageWellUiStateAdapterTest {
         val result = ImageWellUiState.from(mediaDescriptor, videoRecordingState)
 
         // Then
-        assertEquals(ImageWellUiState.Unavailable, result)
+        assertThat(result).isEqualTo(ImageWellUiState.Unavailable)
     }
 
     @Test
@@ -63,7 +63,7 @@ class ImageWellUiStateAdapterTest {
         val result = ImageWellUiState.from(mediaDescriptor, videoRecordingState)
 
         // Then
-        assertEquals(ImageWellUiState.Unavailable, result)
+        assertThat(result).isEqualTo(ImageWellUiState.Unavailable)
     }
 
     @Test
@@ -76,7 +76,7 @@ class ImageWellUiStateAdapterTest {
         val result = ImageWellUiState.from(mediaDescriptor, videoRecordingState)
 
         // Then
-        assertEquals(ImageWellUiState.Unavailable, result)
+        assertThat(result).isEqualTo(ImageWellUiState.Unavailable)
     }
 
     @Test
@@ -89,7 +89,7 @@ class ImageWellUiStateAdapterTest {
         val result = ImageWellUiState.from(mediaDescriptor, videoRecordingState)
 
         // Then
-        assertEquals(ImageWellUiState.Unavailable, result)
+        assertThat(result).isEqualTo(ImageWellUiState.Unavailable)
     }
 
     @Test
@@ -102,6 +102,6 @@ class ImageWellUiStateAdapterTest {
         val result = ImageWellUiState.from(mediaDescriptor, videoRecordingState)
 
         // Then
-        assertEquals(ImageWellUiState.Unavailable, result)
+        assertThat(result).isEqualTo(ImageWellUiState.Unavailable)
     }
 }
