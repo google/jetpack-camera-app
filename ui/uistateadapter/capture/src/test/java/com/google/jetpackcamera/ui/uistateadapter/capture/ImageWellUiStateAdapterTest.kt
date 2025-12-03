@@ -22,11 +22,10 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.mockito.Mockito.mock
 
 class ImageWellUiStateAdapterTest {
-    private val testUri: Uri = mock(Uri::class.java)
-    val testBitmap: Bitmap = mock(Bitmap::class.java)
+    private val testUri: Uri = Uri.EMPTY
+    val testBitmap: Bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
 
     @Test
     fun from_mediaContentAndVideoInactive_withThumbnail_returnsLastCapture() {

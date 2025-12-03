@@ -76,7 +76,6 @@ dependencies {
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:components:capture"))
 
-    testImplementation(libs.mockito.core)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
 

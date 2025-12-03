@@ -198,14 +198,14 @@ class LocalMediaRepositoryTest {
         // When
         val result = repository.load(MediaDescriptor.None)
         // Then
-        assertEquals(Media.None, result)
+        assertThat(result).isEqualTo(Media.None)
     }
 
     @Test
     fun deleteMedia_savedMedia_callsContentResolverDelete() = runTest(testDispatcher) {
         val baseUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
-        // Insert mock data and capture the URI *returned* by the fake ContentProvider
+        // Insert test data and capture the URI *returned* by the fake ContentProvider
         val insertedUri = fakeContentProvider.insert(baseUri, ContentValues())!!
 
         // 2. Create the MediaDescriptor using the URI returned by the insert

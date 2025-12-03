@@ -20,10 +20,9 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.mockito.Mockito.mock
 
 class DeleteButtonUiStateAdapterTest {
-    private val testUri: Uri = mock(Uri::class.java)
+    private val testUri: Uri = Uri.EMPTY
 
     @Test
     fun deleteButtonUiState_fromNonCachedContent_returnsReady() {
