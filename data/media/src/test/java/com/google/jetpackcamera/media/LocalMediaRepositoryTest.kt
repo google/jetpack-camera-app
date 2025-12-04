@@ -24,6 +24,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.common.FakeFilePathGenerator
 import com.google.jetpackcamera.data.media.LocalMediaRepository
 import com.google.jetpackcamera.data.media.Media
@@ -33,10 +34,6 @@ import java.io.FileOutputStream
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
@@ -78,7 +75,7 @@ class LocalMediaRepositoryTest {
     fun setCurrentMedia_updatesStateFlow() = runTest(testDispatcher) {
         // Given
         val initialMedia = repository.currentMedia.value
-        assertEquals(MediaDescriptor.None, initialMedia)
+        assertThat(initialMedia).isEqualTo(MediaDescriptor.None)
 
         // When
         val newMedia = MediaDescriptor.Content.Image(
@@ -89,7 +86,7 @@ class LocalMediaRepositoryTest {
         repository.setCurrentMedia(newMedia)
 
         // Then
-        assertEquals(newMedia, repository.currentMedia.value)
+        assertThat(repository.currentMedia.value).isEqualTo(newMedia)
     }
 
     @Test
@@ -112,10 +109,8 @@ class LocalMediaRepositoryTest {
         }
 
         // Check if the file was created and is non-empty
-        assertTrue(
-            "Mock file should exist and be non-empty",
-            sourceFile.exists() && sourceFile.length() > 0
-        )
+        assertThat(sourceFile.exists()).isTrue()
+        assertThat(sourceFile.length()).isGreaterThan(0)
 
         val imageUri = Uri.fromFile(sourceFile)
         val mediaDescriptor = MediaDescriptor.Content.Image(imageUri, null, true)
@@ -124,10 +119,7 @@ class LocalMediaRepositoryTest {
         val result = repository.load(mediaDescriptor)
 
         // Then
-        assertTrue(
-            "Load result should be Media.Image but was ${result::class.java.simpleName}",
-            result is Media.Image
-        )
+        assertThat(result).isInstanceOf(Media.Image::class.java)
     }
 
     @Test
@@ -142,7 +134,7 @@ class LocalMediaRepositoryTest {
         sourceFile.writeText("fake video content")
 
         // Ensure the file exists before proceeding
-        assertTrue("Setup failed: Temp file must exist", sourceFile.exists())
+        assertThat(sourceFile.exists()).isTrue()
 
         // 3. Given a valid video URI (file:// pointing to the real file)
         val videoUri = Uri.fromFile(sourceFile)
@@ -152,11 +144,8 @@ class LocalMediaRepositoryTest {
         val result = repository.load(mediaDescriptor)
 
         // Then
-        assertTrue(
-            "Result should be Media.Video but was: ${result::class.java.simpleName}",
-            result is Media.Video
-        )
-        assertEquals(videoUri, (result as Media.Video).uri)
+        assertThat(result).isInstanceOf(Media.Video::class.java)
+        assertThat((result as Media.Video).uri).isEqualTo(videoUri)
     }
 
     @Test
@@ -169,7 +158,7 @@ class LocalMediaRepositoryTest {
         val result = repository.load(mediaDescriptor)
 
         // Then
-        assertEquals(Media.Error, result)
+        assertThat(result).isEqualTo(Media.Error)
     }
 
     @Test
@@ -178,7 +167,7 @@ class LocalMediaRepositoryTest {
         val nonExistentUri = Uri.parse("file://$nonExistentPath")
 
         // Explicitly verify file does not exist (for robust setup assertion)
-        assertFalse(File(nonExistentPath).exists())
+        assertThat(File(nonExistentPath).exists()).isFalse()
 
         val mediaDescriptor = MediaDescriptor.Content.Video(
             uri = nonExistentUri,
@@ -190,7 +179,7 @@ class LocalMediaRepositoryTest {
         val result = repository.load(mediaDescriptor)
 
         // 3. Then: The result should be Media.Error because the existence check failed.
-        assertEquals(Media.Error, result)
+        assertThat(result).isEqualTo(Media.Error)
     }
 
     @Test
@@ -198,14 +187,14 @@ class LocalMediaRepositoryTest {
         // When
         val result = repository.load(MediaDescriptor.None)
         // Then
-        assertEquals(Media.None, result)
+        assertThat(result).isEqualTo(Media.None)
     }
 
     @Test
     fun deleteMedia_savedMedia_callsContentResolverDelete() = runTest(testDispatcher) {
         val baseUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
-        // Insert mock data and capture the URI *returned* by the fake ContentProvider
+        // Insert test data and capture the URI *returned* by the fake ContentProvider
         val insertedUri = fakeContentProvider.insert(baseUri, ContentValues())!!
 
         // 2. Create the MediaDescriptor using the URI returned by the insert
@@ -217,7 +206,7 @@ class LocalMediaRepositoryTest {
 
         // Verify it exists before deleting
         var cursor = fakeContentProvider.query(insertedUri, null, null, null, null)
-        assertEquals(1, cursor.count)
+        assertThat(cursor.count).isEqualTo(1)
 
         // 3. When
         repository.deleteMedia(mediaToDelete)
@@ -225,7 +214,7 @@ class LocalMediaRepositoryTest {
         // 4. Then
         // Query using the correct, inserted URI
         cursor = fakeContentProvider.query(insertedUri, null, null, null, null)
-        assertEquals(0, cursor.count)
+        assertThat(cursor.count).isEqualTo(0)
     }
 
     @Test
@@ -238,7 +227,7 @@ class LocalMediaRepositoryTest {
         val tempFile = File(cacheDir, "temp_test_video.mp4")
         tempFile.createNewFile() // Actually creates the empty file on disk
 
-        assertTrue("Setup failed: Temp file should exist before test", tempFile.exists())
+        assertThat(tempFile.exists()).isTrue()
 
         // 2. Create the descriptor pointing to this real file
         // Uri.fromFile() creates a "file://" URI, which is what your app likely uses for cached media
@@ -253,7 +242,7 @@ class LocalMediaRepositoryTest {
         repository.deleteMedia(mediaToDelete)
 
         // 4. Assert: Verify the file is physically gone
-        assertFalse("Repository should have deleted the cached file", tempFile.exists())
+        assertThat(tempFile.exists()).isFalse()
     }
 
     @Test
@@ -269,13 +258,13 @@ class LocalMediaRepositoryTest {
             isCached = false
         )
         repository.setCurrentMedia(mediaToDelete)
-        assertEquals(mediaToDelete, repository.currentMedia.value)
+        assertThat(repository.currentMedia.value).isEqualTo(mediaToDelete)
 
         // When
         repository.deleteMedia(mediaToDelete)
 
         // Then
-        assertEquals(MediaDescriptor.None, repository.currentMedia.value)
+        assertThat(repository.currentMedia.value).isEqualTo(MediaDescriptor.None)
     }
 
     @Test
@@ -301,8 +290,8 @@ class LocalMediaRepositoryTest {
         val result = repository.getLastCapturedMedia()
 
         // Then
-        assertTrue("Result should be Video", result is MediaDescriptor.Content.Video)
-        assertEquals(videoUrl, (result as MediaDescriptor.Content.Video).uri)
+        assertThat(result).isInstanceOf(MediaDescriptor.Content.Video::class.java)
+        assertThat((result as MediaDescriptor.Content.Video).uri).isEqualTo(videoUrl)
     }
 
     @Test
@@ -327,8 +316,8 @@ class LocalMediaRepositoryTest {
         val result = repository.getLastCapturedMedia()
 
         // Then
-        assertTrue("Result should be Image", result is MediaDescriptor.Content.Image)
-        assertEquals(imageUrl, (result as MediaDescriptor.Content.Image).uri)
+        assertThat(result).isInstanceOf(MediaDescriptor.Content.Image::class.java)
+        assertThat((result as MediaDescriptor.Content.Image).uri).isEqualTo(imageUrl)
     }
 
     @Test
@@ -337,7 +326,7 @@ class LocalMediaRepositoryTest {
         // When
         val result = repository.getLastCapturedMedia()
         // Then
-        assertEquals(MediaDescriptor.None, result)
+        assertThat(result).isEqualTo(MediaDescriptor.None)
     }
 
     @Test
@@ -360,11 +349,8 @@ class LocalMediaRepositoryTest {
         val result = repository.getLastCapturedMedia()
 
         // Then
-        assertTrue(
-            "Result should be Image when timestamps are equal",
-            result is MediaDescriptor.Content.Image
-        )
-        assertEquals(imageUrl, (result as MediaDescriptor.Content.Image).uri)
+        assertThat(result).isInstanceOf(MediaDescriptor.Content.Image::class.java)
+        assertThat((result as MediaDescriptor.Content.Image).uri).isEqualTo(imageUrl)
     }
 
     @Test
@@ -382,11 +368,8 @@ class LocalMediaRepositoryTest {
         val result = repository.getLastCapturedMedia()
 
         // Then
-        assertTrue(
-            "Result should be Image but was ${result::class}",
-            result is MediaDescriptor.Content.Image
-        )
-        assertEquals(imageUrl, (result as MediaDescriptor.Content.Image).uri)
+        assertThat(result).isInstanceOf(MediaDescriptor.Content.Image::class.java)
+        assertThat((result as MediaDescriptor.Content.Image).uri).isEqualTo(imageUrl)
     }
 
     @Test
@@ -404,8 +387,8 @@ class LocalMediaRepositoryTest {
         val result = repository.getLastCapturedMedia()
 
         // Then
-        assertTrue("Result should be Video", result is MediaDescriptor.Content.Video)
-        assertEquals(videoUrl, (result as MediaDescriptor.Content.Video).uri)
+        assertThat(result).isInstanceOf(MediaDescriptor.Content.Video::class.java)
+        assertThat((result as MediaDescriptor.Content.Video).uri).isEqualTo(videoUrl)
     }
 
     @Test
@@ -446,10 +429,10 @@ class LocalMediaRepositoryTest {
         )
 
         // Then
-        assertNotNull(result)
+        assertThat(result).isNotNull()
         // Check that the media is in the fake provider with the correct name
         val values = fakeContentProvider.get(result!!)
-        assertEquals("my_video.mp4", values?.get(MediaStore.MediaColumns.DISPLAY_NAME))
+        assertThat(values?.get(MediaStore.MediaColumns.DISPLAY_NAME)).isEqualTo("my_video.mp4")
     }
 
     @Test
@@ -472,9 +455,9 @@ class LocalMediaRepositoryTest {
         )
 
         // Then
-        assertNotNull(result)
+        assertThat(result).isNotNull()
         val values = fakeContentProvider.get(result!!)
-        assertEquals("my_photo.jpg", values?.get(MediaStore.MediaColumns.DISPLAY_NAME))
+        assertThat(values?.get(MediaStore.MediaColumns.DISPLAY_NAME)).isEqualTo("my_photo.jpg")
     }
 
     @Test
@@ -499,7 +482,7 @@ class LocalMediaRepositoryTest {
         )
 
         // Then
-        assertEquals(null, result)
+        assertThat(result).isNull()
     }
 
     @Test
@@ -516,6 +499,6 @@ class LocalMediaRepositoryTest {
         val result = repository.saveToMediaStore(mediaDescriptor, "broken.jpg")
 
         // Then
-        assertEquals(null, result)
+        assertThat(result).isNull()
     }
 }

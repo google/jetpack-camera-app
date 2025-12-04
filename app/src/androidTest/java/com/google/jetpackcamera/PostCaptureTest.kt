@@ -20,8 +20,10 @@ import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_DELETE
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_EXIT
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SAVE
@@ -49,12 +51,12 @@ import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.wait
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.After
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class PostCaptureTest {
     @get:Rule
     val permissionsRule: GrantPermissionRule =
@@ -139,7 +141,7 @@ class PostCaptureTest {
             // Wait for the capture button to be displayed
             composeTestRule.waitForCaptureButton()
 
-            assertFalse(newImageMediaExists())
+            assertThat(newImageMediaExists()).isFalse()
 
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
 
@@ -158,7 +160,7 @@ class PostCaptureTest {
                 composeTestRule.onNodeWithTag(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS)
                     .isDisplayed()
             }
-            assertTrue(newImageMediaExists())
+            assertThat(newImageMediaExists()).isTrue()
         }
 
     @Test
@@ -177,7 +179,7 @@ class PostCaptureTest {
                 composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).isDisplayed()
             }
 
-            assertFalse(newVideoMediaExists())
+            assertThat(newVideoMediaExists()).isFalse()
             // save video
             composeTestRule.waitUntil {
                 composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).isDisplayed()
@@ -190,7 +192,7 @@ class PostCaptureTest {
                     .isDisplayed()
             }
 
-            assertTrue(newVideoMediaExists())
+            assertThat(newVideoMediaExists()).isTrue()
             composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
             composeTestRule.waitForCaptureButton()
         }
@@ -199,12 +201,12 @@ class PostCaptureTest {
     fun postcapture_canDeleteSavedImage() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
-        assertFalse(newImageMediaExists())
+        assertThat(newImageMediaExists()).isFalse()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
         composeTestRule.waitUntil(IMAGE_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        assertTrue(newImageMediaExists())
+        assertThat(newImageMediaExists()).isTrue()
         // enter postcapture via imagewell and delete recent capture
         enterImageWellAndDelete(VIEWER_POST_CAPTURE_IMAGE)
 
@@ -217,13 +219,13 @@ class PostCaptureTest {
     fun postcapture_canDeleteSavedVideo(): Unit = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
-        assertFalse(newVideoMediaExists())
+        assertThat(newVideoMediaExists()).isFalse()
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
         composeTestRule.waitUntil(VIDEO_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        assertTrue(newVideoMediaExists())
+        assertThat(newVideoMediaExists()).isTrue()
         // enter postcapture via imagewell and delete recent capture
         enterImageWellAndDelete(VIEWER_POST_CAPTURE_VIDEO)
         composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
@@ -235,12 +237,12 @@ class PostCaptureTest {
     fun postcapture_canCopySavedImage() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
-        assertFalse(newImageMediaExists())
+        assertThat(newImageMediaExists()).isFalse()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
         composeTestRule.waitUntil(IMAGE_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        assertTrue(newImageMediaExists())
+        assertThat(newImageMediaExists()).isTrue()
         // enter postcapture via imagewell and save recent capture
         val newTimestamp = System.currentTimeMillis()
 
@@ -257,13 +259,13 @@ class PostCaptureTest {
     fun postcapture_canCopySavedVideo(): Unit = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
-        assertFalse(newVideoMediaExists())
+        assertThat(newVideoMediaExists()).isFalse()
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
         composeTestRule.waitUntil(VIDEO_CAPTURE_TIMEOUT_MILLIS) {
             composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
         }
-        assertTrue(newVideoMediaExists())
+        assertThat(newVideoMediaExists()).isTrue()
         // enter postcapture via imagewell and save recent capture
         val newTimestamp = System.currentTimeMillis()
         enterImageWellAndSave(VIEWER_POST_CAPTURE_VIDEO)
