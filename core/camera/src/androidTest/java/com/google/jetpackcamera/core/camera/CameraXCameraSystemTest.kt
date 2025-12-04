@@ -80,7 +80,7 @@ class CameraXCameraSystemTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.context
     private val application = context.applicationContext as Application
-    private val videosToDelete = mutableSetOf<Uri>()
+    private val filesToDelete = mutableSetOf<Uri>()
     private lateinit var cameraSystemScope: CoroutineScope
 
     @Before
@@ -91,7 +91,22 @@ class CameraXCameraSystemTest {
     @After
     fun tearDown() {
         cameraSystemScope.cancel()
-        deleteVideos()
+        deleteFiles(filesToDelete)
+    }
+
+    @Test
+    fun canCaptureImage(): Unit = runBlocking {
+        // Arrange.
+        val cameraSystem = createAndInitCameraXCameraSystem()
+        cameraSystem.runCameraOnMain()
+
+        // Act.
+        val result = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+
+        // Assert.
+        result.savedUri?.let {
+            filesToDelete.add(it)
+        } ?: fail("Captured image URI is null")
     }
 
     @Test
@@ -195,7 +210,7 @@ class CameraXCameraSystemTest {
             if (event is OnVideoRecorded) {
                 val videoUri = event.savedUri
                 if (videoUri != Uri.EMPTY) {
-                    videosToDelete.add(videoUri)
+                    filesToDelete.add(videoUri)
                 }
             }
 
@@ -240,8 +255,8 @@ class CameraXCameraSystemTest {
         Illuminant.FLASH_UNIT in
             systemConstraints.first()!!.perLensConstraints[lensFacing]!!.supportedIlluminants
 
-    private fun deleteVideos() {
-        for (uri in videosToDelete) {
+    private fun deleteFiles(uris: Set<Uri>) {
+        for (uri in uris) {
             when (uri.scheme) {
                 ContentResolver.SCHEME_CONTENT -> {
                     try {
