@@ -25,7 +25,8 @@ import android.net.Uri
 interface ImagePostProcessor {
     /**
      * Performs a post-processing operation on the image located at the given URI after an image has
-     * been successfully captured and saved.
+     * been successfully captured and saved. Make sure the this operation does not block I/O when
+     * performing the post-processing.
      *
      * @param uri The [Uri] of the saved image that needs to be processed.
      */

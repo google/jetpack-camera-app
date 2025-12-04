@@ -620,12 +620,8 @@ constructor(
         }.also { outputFileResults ->
             outputFileResults.savedUri?.let {
                 for ((key, value) in imagePostProcessors) {
-                    try {
-                        value.get().postProcessImage(it)
-                        Log.d(TAG, "Post processing image with $key")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Post processing image with $key failed", e)
-                    }
+                    value.get().postProcessImage(it)
+                    Log.d(TAG, "Post processed image with $key")
                 }
                 Log.d(TAG, "Saved image to $it")
             }

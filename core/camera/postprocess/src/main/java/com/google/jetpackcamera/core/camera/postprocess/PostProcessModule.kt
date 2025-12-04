@@ -37,7 +37,7 @@ abstract class PostProcessModule {
     companion object {
         @Provides
         @Singleton
-        fun provideAvailabilityCheckerMap(
+        fun provideImagePostProcessorMap(
             entries: @JvmSuppressWildcards Set<
                 Map.Entry<
                     ImagePostProcessorFeatureKey,
