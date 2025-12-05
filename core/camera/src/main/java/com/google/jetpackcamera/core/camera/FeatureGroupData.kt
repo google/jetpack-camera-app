@@ -71,6 +71,11 @@ internal fun Collection<FeatureGroupData<*>>.isInvalid(): Boolean {
     return requiresFeatureGroupQuery() && any { it is Ungroupable }
 }
 
+/**
+ * Converts this [DynamicRange] to a [FeatureGroupData].
+ *
+ * This allows the dynamic range to be used in CameraX feature group compatibility checks.
+ */
 fun DynamicRange.toFeatureGroupData(): FeatureGroupData<DynamicRange> {
     return when (this) {
         DynamicRange.SDR -> InexplicitlyGroupable
@@ -78,6 +83,11 @@ fun DynamicRange.toFeatureGroupData(): FeatureGroupData<DynamicRange> {
     }
 }
 
+/**
+ * Converts this [VideoQuality] to a [GroupableFeatureData].
+ *
+ * This allows the video quality to be used in CameraX feature group compatibility checks.
+ */
 fun VideoQuality.toFeatureGroupData(): FeatureGroupData<VideoQuality> {
     return when (this) {
         SD -> ExplicitlyGroupable(GroupableFeatures.SD_RECORDING)
@@ -88,6 +98,11 @@ fun VideoQuality.toFeatureGroupData(): FeatureGroupData<VideoQuality> {
     }
 }
 
+/**
+ * Converts this [ImageOutputFormat] to a [GroupableFeatureData].
+ *
+ * This allows the image output format to be used in CameraX feature group compatibility checks.
+ */
 fun ImageOutputFormat.toFeatureGroupData(): FeatureGroupData<ImageOutputFormat> {
     return when (this) {
         JPEG -> InexplicitlyGroupable
@@ -95,6 +110,11 @@ fun ImageOutputFormat.toFeatureGroupData(): FeatureGroupData<ImageOutputFormat> 
     }
 }
 
+/**
+ * Converts this [StabilizationMode] to a [GroupableFeatureData].
+ *
+ * This allows the stabilization mode to be used in CameraX feature group compatibility checks.
+ */
 fun StabilizationMode.toFeatureGroupData(): FeatureGroupData<StabilizationMode> {
     return when (this) {
         OFF -> InexplicitlyGroupable
@@ -105,6 +125,11 @@ fun StabilizationMode.toFeatureGroupData(): FeatureGroupData<StabilizationMode> 
     }
 }
 
+/**
+ * Converts this integer FPS value to a [GroupableFeatureData].
+ *
+ * This allows the frame rate to be used in CameraX feature group compatibility checks.
+ */
 fun Int.toFpsGroupableFeatureData(): FeatureGroupData<Int> {
     return when (this) {
         60 -> ExplicitlyGroupable(GroupableFeature.FPS_60)

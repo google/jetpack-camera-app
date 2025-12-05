@@ -531,6 +531,17 @@ constructor(
             }
     }
 
+    /**
+     * Updates the [CameraSystemConstraints] based on feature group compatibility.
+     *
+     * This function checks various combinations of settings (dynamic range, frame rate,
+     * stabilization, etc.) against the device's capabilities using the CameraX feature groups API.
+     * It filters out unsupported options from the system constraints, ensuring that the UI only
+     * presents valid combinations to the user.
+     *
+     * This update happens asynchronously after the initial camera session is started to avoid
+     * blocking the UI thread.
+     */
     private suspend fun updateSystemConstraintsByFeatureGroups() {
         val cameraAppSettings = requireNotNull(currentSettings.value)
         val initialCameraConstraints =
@@ -636,6 +647,9 @@ constructor(
         Log.d(TAG, "updateSystemConstraints: updated systemConstraints = $systemConstraints")
     }
 
+    /**
+     * Filters supported [DynamicRange]s by checking groupability with current settings.
+     */
     private suspend fun filterGroupableDynamicRanges(
         cameraAppSettings: CameraAppSettings,
         initialCameraConstraints: CameraConstraints,
@@ -649,6 +663,9 @@ constructor(
         }.toSet()
     }
 
+    /**
+     * Filters supported frame rates by checking groupability with current settings.
+     */
     private suspend fun filterGroupableFrameRates(
         cameraAppSettings: CameraAppSettings,
         initialCameraConstraints: CameraConstraints,
@@ -662,6 +679,9 @@ constructor(
         }.toSet()
     }
 
+    /**
+     * Filters supported [StabilizationMode]s by checking groupability with current settings.
+     */
     private suspend fun filterGroupableStabilizationModes(
         cameraAppSettings: CameraAppSettings,
         initialCameraConstraints: CameraConstraints,
@@ -680,6 +700,9 @@ constructor(
         }.toSet()
     }
 
+    /**
+     * Filters supported [ImageOutputFormat]s by checking groupability with current settings.
+     */
     private suspend fun filterGroupableImageFormatsMap(
         cameraAppSettings: CameraAppSettings,
         initialCameraConstraints: CameraConstraints,
@@ -704,6 +727,9 @@ constructor(
         }
     }
 
+    /**
+     * Filters supported [VideoQuality]s by checking groupability with current settings.
+     */
     private suspend fun filterGroupableVideoQualitiesMap(
         cameraAppSettings: CameraAppSettings,
         initialCameraConstraints: CameraConstraints,
@@ -1357,6 +1383,7 @@ constructor(
         }
     }
 
+    /** Creates a copy of this [CameraAppSettings] with the provided [ImageOutputFormat] applied. */
     private fun CameraAppSettings.copyImageFormat(
         imageFormat: ImageOutputFormat,
         systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
@@ -1380,6 +1407,7 @@ constructor(
         }
     }
 
+    /** Creates a copy of this [CameraAppSettings] with the provided [StabilizationMode] applied. */
     private fun CameraAppSettings.copyStabilizationMode(
         stabilizationMode: StabilizationMode
     ): CameraAppSettings {
@@ -1392,6 +1420,7 @@ constructor(
         }
     }
 
+    /** Creates a copy of this [CameraAppSettings] with the provided frame rate applied. */
     private fun CameraAppSettings.copyTargetFrameRate(
         targetFrameRate: Int,
         systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
