@@ -169,7 +169,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override fun getScreenFlashEvents() = screenFlashEvents
     override fun getCurrentSettings(): StateFlow<CameraAppSettings?> = currentSettings.asStateFlow()
 
-    override fun setFlashMode(flashMode: FlashMode) {
+    override suspend fun setFlashMode(flashMode: FlashMode) {
         currentSettings.update { old ->
             old.copy(flashMode = flashMode)
         }
