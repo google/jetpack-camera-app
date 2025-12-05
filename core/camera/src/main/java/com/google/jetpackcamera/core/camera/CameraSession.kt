@@ -48,6 +48,7 @@ import androidx.camera.core.SessionConfig
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCase
 import androidx.camera.core.ViewPort
+import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.video.ExperimentalPersistentRecording
@@ -67,6 +68,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.net.toFile
 import androidx.lifecycle.asFlow
+import com.google.jetpackcamera.core.camera.FeatureGroupability.ExplicitlyGroupable
+import com.google.jetpackcamera.core.camera.FeatureGroupability.ImplicitlyGroupable
+import com.google.jetpackcamera.core.camera.FeatureGroupability.Ungroupable
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
@@ -96,6 +100,8 @@ import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -112,6 +118,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraSession"
 private val QUALITY_RANGE_MAP = mapOf(
@@ -134,22 +141,17 @@ internal suspend fun runSingleCameraSession(
         .primaryLensFacing.toCameraSelector()
 
     // only create video use case in standard or video_only
-    val videoCaptureUseCase = when (sessionSettings.captureMode) {
-        CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY ->
-            createVideoUseCase(
-                cameraProvider.getCameraInfo(initialCameraSelector),
-                sessionSettings.aspectRatio,
-                sessionSettings.targetFrameRate,
-                sessionSettings.stabilizationMode,
-                sessionSettings.dynamicRange,
-                sessionSettings.videoQuality,
-                backgroundDispatcher
-            )
-
-        else -> {
-            null
-        }
-    }
+    val videoCaptureUseCase =
+        createVideoUseCase(
+            cameraProvider.getCameraInfo(initialCameraSelector),
+            sessionSettings.aspectRatio,
+            sessionSettings.captureMode,
+            backgroundDispatcher,
+            sessionSettings.targetFrameRate.takeIfFeatureGroupInvalid(sessionSettings),
+            sessionSettings.stabilizationMode.takeIfFeatureGroupInvalid(sessionSettings),
+            sessionSettings.dynamicRange.takeIfFeatureGroupInvalid(sessionSettings),
+            sessionSettings.videoQuality.takeIfFeatureGroupInvalid(sessionSettings)
+        )
 
     launch {
         processVideoControlEvents(
@@ -175,67 +177,18 @@ internal suspend fun runSingleCameraSession(
         .collectLatest { currentTransientSettings ->
             coroutineScope sessionScope@{
                 cameraProvider.unbindAll()
-                val currentCameraSelector = currentTransientSettings.primaryLensFacing
-                    .toCameraSelector()
-                val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
-                val camera2Info = Camera2CameraInfo.from(cameraInfo)
-                val cameraId = camera2Info.cameraId
-
-                var cameraEffect: CameraEffect? = null
-                var captureResults: MutableStateFlow<TotalCaptureResult?>? = null
-                if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-                        cameraConstraints?.supportedIlluminants?.contains(
-                            Illuminant.LOW_LIGHT_BOOST_CAMERA_EFFECT
-                        ) == true && lowLightBoostEffectProvider != null
-                    ) {
-                        captureResults = MutableStateFlow(null)
-                        cameraEffect = lowLightBoostEffectProvider.create(
-                            cameraId = cameraId,
-                            captureResults = captureResults,
-                            coroutineScope = this@sessionScope,
-                            onSceneBrightnessChanged = { boostStrength ->
-                                val strength = LowLightBoostState.Active(strength = boostStrength)
-                                currentCameraState.update { old ->
-                                    if (old.lowLightBoostState != strength) {
-                                        old.copy(lowLightBoostState = strength)
-                                    } else {
-                                        old
-                                    }
-                                }
-                            },
-                            onLowLightBoostError = { e ->
-                                Log.w(TAG, "Emitting LLB Error", e)
-                                currentCameraState.update { old ->
-                                    old.copy(lowLightBoostState = LowLightBoostState.Error(e))
-                                }
-                            }
-                        )
-                    }
-                }
-                if (cameraEffect == null &&
-                    sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM
-                ) {
-                    cameraEffect = SingleSurfaceForcingEffect(this@sessionScope)
-                }
                 val sessionConfig = createSessionConfig(
-                    cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),
+                    cameraConstraints = cameraConstraints,
                     videoCaptureUseCase = videoCaptureUseCase,
                     initialTransientSettings = currentTransientSettings,
-                    stabilizationMode = sessionSettings.stabilizationMode,
-                    aspectRatio = sessionSettings.aspectRatio,
-                    dynamicRange = sessionSettings.dynamicRange,
-                    imageFormat = sessionSettings.imageFormat,
-                    captureMode = sessionSettings.captureMode,
-                    effect = cameraEffect,
-                    captureResults = captureResults
-
+                    sessionSettings = sessionSettings,
+                    sessionScope = this@sessionScope
                 ).apply {
                     useCases.getImageCapture()?.let(onImageCaptureCreated)
                 }
 
                 cameraProvider.runWith(
-                    currentCameraSelector,
+                    currentTransientSettings.primaryLensFacing.toCameraSelector(),
                     sessionConfig
                 ) { camera ->
                     Log.d(TAG, "Camera session started")
@@ -258,11 +211,13 @@ internal suspend fun runSingleCameraSession(
                         val videoQuality = getVideoQualityFromResolution(
                             videoCaptureUseCase.resolutionInfo?.resolution
                         )
-                        if (videoQuality != sessionSettings.videoQuality) {
+                        if (sessionSettings.videoQuality != VideoQuality.UNSPECIFIED &&
+                            videoQuality != sessionSettings.videoQuality
+                        ) {
                             Log.e(
                                 TAG,
-                                "Failed to select video quality: $sessionSettings.videoQuality. " +
-                                    "Fallback: $videoQuality"
+                                "Failed to select video quality:" +
+                                    " ${sessionSettings.videoQuality}. Fallback: $videoQuality"
                             )
                         }
                         launch {
@@ -588,29 +543,74 @@ internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCases: List<
 }
 
 context(CameraSessionContext)
-internal fun createSessionConfig(
-    cameraInfo: CameraInfo,
+@OptIn(ExperimentalCamera2Interop::class)
+internal suspend fun createSessionConfig(
+    cameraConstraints: CameraConstraints?,
     initialTransientSettings: TransientSessionSettings,
-    stabilizationMode: StabilizationMode,
-    aspectRatio: AspectRatio,
+    sessionSettings: PerpetualSessionSettings.SingleCamera,
     videoCaptureUseCase: VideoCapture<Recorder>?,
-    dynamicRange: DynamicRange,
-    imageFormat: ImageOutputFormat,
-    captureMode: CaptureMode,
-    effect: CameraEffect? = null,
-    captureResults: MutableStateFlow<TotalCaptureResult?>? = null
+    sessionScope: CoroutineScope
 ): SessionConfig {
+    val currentCameraSelector = initialTransientSettings.primaryLensFacing
+        .toCameraSelector()
+    val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
+    val camera2Info = Camera2CameraInfo.from(cameraInfo)
+    val cameraId = camera2Info.cameraId
+
+    var cameraEffect: CameraEffect? = null
+    var captureResults: MutableStateFlow<TotalCaptureResult?>? = null
+    if (initialTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            cameraConstraints?.supportedIlluminants?.contains(
+                Illuminant.LOW_LIGHT_BOOST_CAMERA_EFFECT
+            ) == true && lowLightBoostEffectProvider != null
+        ) {
+            captureResults = MutableStateFlow(null)
+            cameraEffect = lowLightBoostEffectProvider.create(
+                cameraId = cameraId,
+                captureResults = captureResults,
+                coroutineScope = sessionScope,
+                onSceneBrightnessChanged = { boostStrength ->
+                    val strength = LowLightBoostState.Active(strength = boostStrength)
+                    currentCameraState.update { old ->
+                        if (old.lowLightBoostState != strength) {
+                            old.copy(lowLightBoostState = strength)
+                        } else {
+                            old
+                        }
+                    }
+                },
+                onLowLightBoostError = { e ->
+                    Log.w(TAG, "Emitting LLB Error", e)
+                    currentCameraState.update { old ->
+                        old.copy(lowLightBoostState = LowLightBoostState.Error(e))
+                    }
+                }
+            )
+        }
+    }
+    if (cameraEffect == null &&
+        sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM
+    ) {
+        cameraEffect = SingleSurfaceForcingEffect(sessionScope)
+    }
+
     val previewUseCase =
         createPreviewUseCase(
             cameraInfo,
-            aspectRatio,
-            stabilizationMode,
+            sessionSettings.aspectRatio,
+            sessionSettings.stabilizationMode.takeIfFeatureGroupInvalid(sessionSettings),
             captureResults
         )
 
     // only create image use case in image or standard
-    val imageCaptureUseCase = if (captureMode != CaptureMode.VIDEO_ONLY) {
-        createImageUseCase(cameraInfo, aspectRatio, dynamicRange, imageFormat)
+    val imageCaptureUseCase = if (sessionSettings.captureMode != CaptureMode.VIDEO_ONLY) {
+        createImageUseCase(
+            cameraInfo,
+            sessionSettings.aspectRatio,
+            sessionSettings.dynamicRange,
+            sessionSettings.imageFormat.takeIfFeatureGroupInvalid(sessionSettings)
+        )
     } else {
         null
     }
@@ -636,15 +636,55 @@ internal fun createSessionConfig(
         "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
     )
 
+    val features = sessionSettings.toGroupableFeatures() ?: emptySet()
+
+    Log.d(TAG, "createSessionConfig: sessionSettings = $sessionSettings, features = $features")
+
     return SessionConfig(
         useCases = useCases,
         viewPort = ViewPort.Builder(
-            Rational(aspectRatio.numerator, aspectRatio.denominator),
+            Rational(
+                sessionSettings.aspectRatio.numerator,
+                sessionSettings.aspectRatio.denominator
+            ),
             // Initialize rotation to Preview's rotation, which comes from Display rotation
             previewUseCase.targetRotation
         ).build(),
-        effects = effect?.let { listOf(it) } ?: emptyList()
+        effects = cameraEffect?.let { listOf(it) } ?: emptyList(),
+        requiredFeatureGroup = features
     )
+}
+
+/**
+ * Creates a set of [GroupableFeature] from a [PerpetualSessionSettings.SingleCamera].
+ *
+ * Only the [PerpetualSessionSettings.SingleCamera] values that are supported by CameraX feature
+ * group APIs are included in the returned set.
+ *
+ * A null value is returned if the feature groups API can't be used for some value in
+ * [PerpetualSessionSettings.SingleCamera], e.g. optical stabilization, or 15 FPS.
+ */
+internal fun PerpetualSessionSettings.SingleCamera.toGroupableFeatures(): Set<GroupableFeature>? {
+    return buildSet {
+        this@toGroupableFeatures.toFeatureGroupabilities().forEach {
+            when (it) {
+                is ExplicitlyGroupable -> {
+                    val shouldAdd = when {
+                        it.feature == GroupableFeature.IMAGE_ULTRA_HDR ->
+                            captureMode != CaptureMode.VIDEO_ONLY
+                        it.feature.featureType == GroupableFeature.FEATURE_TYPE_RECORDING_QUALITY ->
+                            captureMode != CaptureMode.IMAGE_ONLY
+                        else -> true
+                    }
+                    if (shouldAdd) {
+                        add(it.feature)
+                    }
+                }
+                is ImplicitlyGroupable -> {} // No-op.
+                is Ungroupable -> return null
+            }
+        }
+    }.toSet()
 }
 
 private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
@@ -672,7 +712,7 @@ internal fun createImageUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     dynamicRange: DynamicRange,
-    imageFormat: ImageOutputFormat
+    imageFormat: ImageOutputFormat? = null
 ): ImageCapture {
     val builder = ImageCapture.Builder()
     builder.setResolutionSelector(
@@ -688,12 +728,17 @@ internal fun createImageUseCase(
 internal fun createVideoUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
-    targetFrameRate: Int,
-    stabilizationMode: StabilizationMode,
-    dynamicRange: DynamicRange,
-    videoQuality: VideoQuality,
-    backgroundDispatcher: CoroutineDispatcher
-): VideoCapture<Recorder> {
+    captureMode: CaptureMode,
+    backgroundDispatcher: CoroutineDispatcher,
+    targetFrameRate: Int? = null,
+    stabilizationMode: StabilizationMode? = null,
+    dynamicRange: DynamicRange? = null,
+    videoQuality: VideoQuality? = null
+): VideoCapture<Recorder>? {
+    if (captureMode != CaptureMode.STANDARD && captureMode != CaptureMode.VIDEO_ONLY) {
+        return null
+    }
+
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
     val recorder = Recorder.Builder()
         .setAspectRatio(
@@ -701,7 +746,7 @@ internal fun createVideoUseCase(
         )
         .setExecutor(backgroundDispatcher.asExecutor())
         .apply {
-            videoQuality.toQuality()?.let { quality ->
+            videoQuality?.toQuality()?.let { quality ->
                 // No fallback strategy is used. The app will crash if the quality is unsupported
                 setQualitySelector(
                     QualitySelector.from(
@@ -718,11 +763,13 @@ internal fun createVideoUseCase(
             setVideoStabilizationEnabled(true)
         }
         // set target fps
-        if (targetFrameRate != TARGET_FPS_AUTO) {
+        if (targetFrameRate != TARGET_FPS_AUTO && targetFrameRate != null) {
             setTargetFrameRate(Range(targetFrameRate, targetFrameRate))
         }
 
-        setDynamicRange(dynamicRange.toCXDynamicRange())
+        if (dynamicRange != null) {
+            setDynamicRange(dynamicRange.toCXDynamicRange())
+        }
     }.build()
 }
 
@@ -744,10 +791,10 @@ private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: A
     }
 
 context(CameraSessionContext)
-internal fun createPreviewUseCase(
+internal suspend fun createPreviewUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
-    stabilizationMode: StabilizationMode,
+    stabilizationMode: StabilizationMode? = null,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null
 ): Preview = Preview.Builder().apply {
     updateCameraStateWithCaptureResults(
@@ -761,6 +808,7 @@ internal fun createPreviewUseCase(
         StabilizationMode.OPTICAL -> setOpticalStabilizationModeEnabled(true)
         StabilizationMode.OFF -> setOpticalStabilizationModeEnabled(false)
         StabilizationMode.HIGH_QUALITY -> {} // No-op. Handled by VideoCapture use case.
+        null -> {} // No-op. Handled by feature groups API.
         else -> throw UnsupportedOperationException(
             "Unexpected stabilization mode: $stabilizationMode. Stabilization mode should always " +
                 "an explicit mode, such as ON, OPTICAL, OFF or HIGH_QUALITY"
@@ -772,8 +820,10 @@ internal fun createPreviewUseCase(
     )
 }.build()
     .apply {
-        setSurfaceProvider { surfaceRequest ->
-            surfaceRequests.update { surfaceRequest }
+        withContext(Dispatchers.Main) {
+            setSurfaceProvider { surfaceRequest ->
+                surfaceRequests.update { surfaceRequest }
+            }
         }
     }
 
