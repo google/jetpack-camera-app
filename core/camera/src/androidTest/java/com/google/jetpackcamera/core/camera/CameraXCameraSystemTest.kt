@@ -260,7 +260,7 @@ class CameraXCameraSystemTest {
 
     private suspend fun ConstraintsRepository.hasFlashUnit(lensFacing: LensFacing): Boolean =
         Illuminant.FLASH_UNIT in
-                systemConstraints.first()!!.perLensConstraints[lensFacing]!!.supportedIlluminants
+            systemConstraints.first()!!.perLensConstraints[lensFacing]!!.supportedIlluminants
 
     private fun deleteFiles(uris: Set<Uri>) {
         for (uri in uris) {
