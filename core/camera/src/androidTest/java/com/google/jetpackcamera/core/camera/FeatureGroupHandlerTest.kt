@@ -54,7 +54,8 @@ class FeatureGroupHandlerTest {
             constraintsRepository = constraintsRepository,
             filePathGenerator = FakeFilePathGenerator(),
             availabilityCheckers = emptyMap(),
-            effectProviders = emptyMap()
+            effectProviders = emptyMap(),
+            imagePostProcessors = emptyMap()
         )
         cameraSystem.initialize(DEFAULT_CAMERA_APP_SETTINGS) {}
 

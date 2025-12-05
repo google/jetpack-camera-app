@@ -20,6 +20,7 @@ import android.content.ContentResolver
 import android.graphics.SurfaceTexture
 import android.net.Uri
 import android.view.Surface
+import androidx.annotation.GuardedBy
 import androidx.concurrent.futures.DirectExecutor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -35,27 +36,35 @@ import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatur
 import com.google.jetpackcamera.core.camera.postprocess.PostProcessModule.Companion.provideImagePostProcessorMap
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.common.FakeFilePathGenerator
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import java.io.File
 import java.util.AbstractMap
 import javax.inject.Provider
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -271,6 +280,74 @@ class CameraXCameraSystemTest {
         torchEnabled.cancel()
     }
 
+    @Test
+    fun setMultipleFeatures_systemConstraintsUpdatedAndFeaturesSettableIfSupported() = runBlocking {
+        // Arrange.
+        val constraintsRepository = ObservableConstraintsRepository()
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            constraintsRepository = constraintsRepository
+        )
+
+        // Each camera run/update should lead to a new systemConstraints update
+        var systemConstraints = constraintsRepository.observeNextUpdate()
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        val lensFacing = cameraSystem.getCurrentSettings().value?.cameraLensFacing
+
+        // Act: For each of the features — HDR, 60 FPS, UHD recording, await previous constraints
+        //  update and set the feature if the constraints supports it.
+
+        if (
+            systemConstraints
+                .awaitUntil()
+                .perLensConstraints[lensFacing]
+                ?.supportedDynamicRanges
+                ?.contains(DynamicRange.HLG10) == true
+        ) {
+            systemConstraints = constraintsRepository.observeNextUpdate()
+            cameraSystem.setDynamicRange(DynamicRange.HLG10)
+        }
+
+        if (
+            systemConstraints
+                .awaitUntil()
+                .perLensConstraints[lensFacing]
+                ?.supportedFixedFrameRates
+                ?.contains(60) == true
+        ) {
+            systemConstraints = constraintsRepository.observeNextUpdate()
+            cameraSystem.setTargetFrameRate(60)
+        }
+
+        if (
+            systemConstraints
+                .awaitUntil()
+                .perLensConstraints[lensFacing]
+                ?.supportedVideoQualitiesMap
+                ?.get(cameraSystem.getCurrentSettings().value?.dynamicRange)
+                ?.contains(VideoQuality.UHD) == true
+        ) {
+            systemConstraints = constraintsRepository.observeNextUpdate()
+            cameraSystem.setVideoQuality(VideoQuality.UHD)
+        }
+
+        // Wait to ensure the async updateSystemConstraintsByFeatureGroups has time to run
+        // and potentially crash if there's an issue.
+        systemConstraints.awaitUntil()
+
+        // Assert.
+        // If the test reaches here without crashing, it passes.
+        // This ensures that the feature group logic doesn't cause runtime exceptions
+        // even when high-end features are requested.
+        return@runBlocking
+    }
+
+    suspend fun <T> Deferred<T>.awaitUntil(timeout: Duration = 2.seconds): T {
+        return withTimeout(timeout) {
+            await()
+        }
+    }
+
     private suspend fun createAndInitCameraXCameraSystem(
         appSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
         constraintsRepository: SettableConstraintsRepository = SettableConstraintsRepositoryImpl(),
@@ -409,5 +486,33 @@ class FakeImagePostProcessor(val shouldError: Boolean = false) : ImagePostProces
         postProcessImageCalled = true
         savedUri = uri
         if (shouldError) throw RuntimeException("Post process failed")
+    }
+}
+
+class ObservableConstraintsRepository : SettableConstraintsRepository {
+    private val lock = Object()
+
+    override val systemConstraints: StateFlow<CameraSystemConstraints?> =
+        MutableStateFlow(null)
+
+    @GuardedBy("lock")
+    private var updateDeferredList =
+        mutableListOf<CompletableDeferred<CameraSystemConstraints>>()
+
+    override fun updateSystemConstraints(systemConstraints: CameraSystemConstraints) {
+        synchronized(lock) {
+            updateDeferredList.forEach {
+                it.complete(systemConstraints)
+            }
+            updateDeferredList.clear()
+        }
+    }
+
+    fun observeNextUpdate(): Deferred<CameraSystemConstraints> {
+        return synchronized(lock) {
+            val deferred = CompletableDeferred<CameraSystemConstraints>()
+            updateDeferredList.add(deferred)
+            deferred
+        }
     }
 }
