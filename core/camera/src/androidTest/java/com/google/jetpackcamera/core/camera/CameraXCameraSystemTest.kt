@@ -47,7 +47,9 @@ import kotlin.time.toDuration
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -69,6 +71,7 @@ import org.junit.runner.RunWith
 class CameraXCameraSystemTest {
 
     companion object {
+        private const val CAMERA_START_TIMEOUT_MS = 10_000L
         private const val GENERAL_TIMEOUT_MS = 3_000L
         private const val RECORDING_TIMEOUT_MS = 10_000L
         private const val RECORDING_START_DURATION_MS = 500L
@@ -83,15 +86,18 @@ class CameraXCameraSystemTest {
     private val application = context.applicationContext as Application
     private val filesToDelete = mutableSetOf<Uri>()
     private lateinit var cameraSystemScope: CoroutineScope
+    private var cameraJob: Job? = null
 
     @Before
     fun setup() {
-        cameraSystemScope = CoroutineScope(Dispatchers.Default)
+        cameraSystemScope = CoroutineScope(Dispatchers.Main)
     }
 
     @After
     fun tearDown() {
-        cameraSystemScope.cancel()
+        runBlocking {
+            cameraJob?.cancelAndJoin()
+        }
         deleteFiles(filesToDelete)
     }
 
@@ -99,7 +105,7 @@ class CameraXCameraSystemTest {
     fun canCaptureImage(): Unit = runBlocking {
         // Arrange.
         val cameraSystem = createAndInitCameraXCameraSystem()
-        cameraSystem.runCameraOnMain()
+        cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
         val result = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
@@ -116,7 +122,7 @@ class CameraXCameraSystemTest {
     fun canRecordVideo(): Unit = runBlocking {
         // Arrange.
         val cameraSystem = createAndInitCameraXCameraSystem()
-        cameraSystem.runCameraOnMain()
+        cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
         val recordingComplete = CompletableDeferred<Unit>()
@@ -146,11 +152,11 @@ class CameraXCameraSystemTest {
         )
         assume().withMessage("No flash unit, skip the test.")
             .that(constraintsRepository.hasFlashUnit(lensFacing)).isTrue()
-        cameraSystem.runCameraOnMain()
+        cameraSystem.startCameraAndWaitUntilRunning()
 
         // Arrange: Create a ReceiveChannel to observe the torch enabled state.
         val torchEnabled: ReceiveChannel<Boolean> = cameraSystem.getCurrentCameraState()
-            .map { it.torchEnabled }
+            .map { it.isTorchEnabled }
             .produceIn(this)
 
         // Assert: The initial torch enabled should be false.
@@ -256,8 +262,17 @@ class CameraXCameraSystemTest {
         }
     }
 
-    private fun CameraXCameraSystem.runCameraOnMain() {
-        cameraSystemScope.launch(Dispatchers.Main) { runCamera() }
+    private suspend fun CameraXCameraSystem.startCameraAndWaitUntilRunning() {
+        cameraJob = cameraSystemScope.launch { runCamera() }
+        // Wait for camera to be running.
+        val cameraStarted = cameraSystemScope.async {
+            withTimeoutOrNull(CAMERA_START_TIMEOUT_MS) {
+                getCurrentCameraState().filterNotNull().first {
+                    it.isCameraRunning
+                }
+            }
+        }.await() != null
+        assertWithMessage("Camera timed out while starting.").that(cameraStarted).isTrue()
         instrumentation.waitForIdleSync()
     }
 
