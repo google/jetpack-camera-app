@@ -27,6 +27,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecordError
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecorded
+import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
+import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
+import com.google.jetpackcamera.core.camera.postprocess.PostProcessModule.Companion.provideImagePostProcessorMap
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.common.FakeFilePathGenerator
 import com.google.jetpackcamera.model.FlashMode
@@ -39,6 +42,8 @@ import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import java.io.File
+import java.util.AbstractMap
+import javax.inject.Provider
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.coroutines.CompletableDeferred
@@ -81,11 +86,16 @@ class CameraXCameraSystemTest {
     private val context = instrumentation.context
     private val application = context.applicationContext as Application
     private val videosToDelete = mutableSetOf<Uri>()
+
+    private val imagePostProcessor = FakeImagePostProcessor()
     private lateinit var cameraSystemScope: CoroutineScope
+
+    private lateinit var contentResolver: ContentResolver
 
     @Before
     fun setup() {
         cameraSystemScope = CoroutineScope(Dispatchers.Default)
+        contentResolver = context.contentResolver
     }
 
     @After
@@ -171,6 +181,7 @@ class CameraXCameraSystemTest {
         constraintsRepository = constraintsRepository,
         availabilityCheckers = emptyMap(),
         effectProviders = emptyMap(),
+        imagePostProcessors = getFakePostProcessorMap(),
         filePathGenerator = FakeFilePathGenerator()
     ).apply {
         initialize(appSettings) {}
@@ -255,5 +266,28 @@ class CameraXCameraSystemTest {
                 }
             }
         }
+    }
+
+    private fun getFakePostProcessorMap(): Map<
+        ImagePostProcessorFeatureKey,
+        @JvmSuppressWildcards Provider<ImagePostProcessor>
+        > {
+        return provideImagePostProcessorMap(
+            entries = setOf(
+                AbstractMap.SimpleImmutableEntry(
+                    FakeImagePostProcessorFeatureKey,
+                    Provider { imagePostProcessor }
+                )
+            )
+        )
+    }
+}
+
+object FakeImagePostProcessorFeatureKey : ImagePostProcessorFeatureKey
+
+class FakeImagePostProcessor : ImagePostProcessor {
+    var postProcessImageCalled = false
+    override suspend fun postProcessImage(uri: Uri) {
+        postProcessImageCalled = true
     }
 }
