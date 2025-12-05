@@ -22,7 +22,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
-import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking

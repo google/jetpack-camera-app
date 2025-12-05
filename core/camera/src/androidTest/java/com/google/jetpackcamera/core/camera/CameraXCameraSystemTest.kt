@@ -34,26 +34,33 @@ import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.util.AbstractMap
 import javax.inject.Provider
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -337,6 +344,77 @@ class CameraXCameraSystemTest {
         // Clean-up.
         recordingComplete.await()
         torchEnabled.cancel()
+    }
+
+    @Test
+    fun setMultipleFeatures_systemConstraintsUpdatedAndFeaturesSettableIfSupported() = runBlocking {
+        // Arrange.
+        val cameraSystem = createAndInitCameraXCameraSystem()
+        val systemConstraintsFlow = cameraSystem.getSystemConstraints()
+
+        // Each camera run/update should lead to a new systemConstraints update
+        var systemConstraintsUpdate = systemConstraintsFlow.observeNextUpdate(this)
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        var currentConstraints = systemConstraintsUpdate.awaitUntil()
+        val lensFacing = cameraSystem.getCurrentSettings().value?.cameraLensFacing
+
+        // Act: For each of the features — HDR, 60 FPS, UHD recording, await previous constraints
+        //  update and set the feature if the constraints supports it.
+
+        if (
+            currentConstraints
+                .perLensConstraints[lensFacing]
+                ?.supportedDynamicRanges
+                ?.contains(DynamicRange.HLG10) == true
+        ) {
+            systemConstraintsUpdate = systemConstraintsFlow.observeNextUpdate(this)
+            cameraSystem.setDynamicRange(DynamicRange.HLG10)
+            currentConstraints = systemConstraintsUpdate.awaitUntil()
+        }
+
+        if (
+            currentConstraints
+                .perLensConstraints[lensFacing]
+                ?.supportedFixedFrameRates
+                ?.contains(60) == true
+        ) {
+            systemConstraintsUpdate = systemConstraintsFlow.observeNextUpdate(this)
+            cameraSystem.setTargetFrameRate(60)
+            currentConstraints = systemConstraintsUpdate.awaitUntil()
+        }
+
+        if (
+            currentConstraints
+                .perLensConstraints[lensFacing]
+                ?.supportedVideoQualitiesMap
+                ?.get(cameraSystem.getCurrentSettings().value?.dynamicRange)
+                ?.contains(VideoQuality.UHD) == true
+        ) {
+            systemConstraintsUpdate = systemConstraintsFlow.observeNextUpdate(this)
+            cameraSystem.setVideoQuality(VideoQuality.UHD)
+            systemConstraintsUpdate.awaitUntil()
+        }
+
+        // Wait to ensure the async updateSystemConstraintsByFeatureGroups has time to run
+        // and potentially crash if there's an issue.
+        // As currentConstraints has already been updated, we just ensure we reach here without crash.
+
+        // Assert.
+        // If the test reaches here without crashing, it passes.
+        // This ensures that the feature group logic doesn't cause runtime exceptions
+        // even when high-end features are requested.
+        return@runBlocking
+    }
+
+    private fun <T> StateFlow<T?>.observeNextUpdate(scope: CoroutineScope): Deferred<T> {
+        return scope.async { drop(1).filterNotNull().first() }
+    }
+
+    suspend fun <T> Deferred<T>.awaitUntil(timeout: Duration = 2.seconds): T {
+        return withTimeout(timeout) {
+            await()
+        }
     }
 
     private suspend fun createAndInitCameraXCameraSystem(
