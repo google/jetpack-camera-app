@@ -105,8 +105,11 @@ class CameraXCameraSystemTest {
         val result = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
 
         // Assert.
-        assertThat(result.savedUri).isNotNull()
-        filesToDelete.add(result.savedUri!!)
+        val savedUri = result.savedUri
+        assertThat(savedUri).isNotNull()
+        if (savedUri != null) {
+            filesToDelete.add(savedUri)
+        }
     }
 
     @Test
