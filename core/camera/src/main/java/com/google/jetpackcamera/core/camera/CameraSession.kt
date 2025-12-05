@@ -542,6 +542,21 @@ internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCases: List<
     }
 }
 
+/**
+ * Creates a [SessionConfig] for a single camera session.
+ *
+ * This function constructs the session configuration, including binding use cases, setting up
+ * viewports, and applying necessary effects. It also determines the required feature group
+ * from the [sessionSettings] to ensure that the combination of features is supported by the
+ * device.
+ *
+ * @param cameraConstraints The constraints applicable to the current camera.
+ * @param initialTransientSettings The initial transient settings (e.g. flash, zoom).
+ * @param sessionSettings The persistent settings for the single camera session.
+ * @param videoCaptureUseCase The video capture use case, if video recording is enabled.
+ * @param sessionScope The coroutine scope for the session.
+ * @return A [SessionConfig] ready to be bound to the camera lifecycle.
+ */
 context(CameraSessionContext)
 @OptIn(ExperimentalCamera2Interop::class)
 internal suspend fun createSessionConfig(

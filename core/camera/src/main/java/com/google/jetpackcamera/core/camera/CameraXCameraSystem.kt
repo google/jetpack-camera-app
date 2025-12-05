@@ -557,6 +557,17 @@ constructor(
             }
     }
 
+    /**
+     * Updates the [CameraSystemConstraints] based on feature group compatibility.
+     *
+     * This function checks various combinations of settings (dynamic range, frame rate,
+     * stabilization, etc.) against the device's capabilities using the CameraX feature groups API.
+     * It filters out unsupported options from the system constraints, ensuring that the UI only
+     * presents valid combinations to the user.
+     *
+     * This update happens asynchronously after the initial camera session is started to avoid
+     * blocking the UI thread.
+     */
     private suspend fun updateSystemConstraintsByFeatureGroups() {
         val cameraAppSettings = requireNotNull(currentSettings.value)
 
