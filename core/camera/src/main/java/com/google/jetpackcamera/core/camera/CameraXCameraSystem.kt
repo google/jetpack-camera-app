@@ -783,6 +783,12 @@ constructor(
             return false
         }
 
+        // An explicit job is used here because simpler approach like `coroutineScope { ... }`
+        // seems to get stuck forever for StreamConfig.SINGLE_STREAM. The code flow for
+        // SINGLE_STREAM seems to be keeping the coroutine scope forever busy and thus the
+        // `coroutineScope` block never completes.
+        val job = Job()
+
         val sessionConfig = with(
             CameraSessionContext(
                 context = application,
@@ -815,11 +821,13 @@ constructor(
                 initialTransientSettings = transientSettings,
                 videoCaptureUseCase = videoCaptureUseCase,
                 sessionSettings = sessionSettings,
-                sessionScope = CoroutineScope(defaultDispatcher + Job())
+                sessionScope = CoroutineScope(defaultDispatcher + job)
             )
         }
 
-        return cameraInfo.isSessionConfigSupported(sessionConfig)
+        return cameraInfo.isSessionConfigSupported(sessionConfig).apply {
+            job.cancel()
+        }
     }
 
     private suspend fun resolveStabilizationMode(
