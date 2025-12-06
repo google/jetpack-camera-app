@@ -97,7 +97,7 @@ interface CameraSystem {
 
     fun getCurrentSettings(): StateFlow<CameraAppSettings?>
 
-    fun setFlashMode(flashMode: FlashMode)
+    suspend fun setFlashMode(flashMode: FlashMode)
 
     fun isScreenFlashEnabled(): Boolean
 
