@@ -106,36 +106,36 @@ internal class FeatureGroupHandler(
         val cameraInfo =
             cameraProvider.getCameraInfo(currentSettings.cameraLensFacing.toCameraSelector())
 
-        // TODO: More stabilization + FPS pairs can be supported with CameraX feature group API.
-        //  However, while the following code does provide such support, this function is called
-        //  only when camera session is recreated. So, updating unsupportedStabilizationFpsMap now
-        //  can cause regressions in scenarios where user tries to change both stabilization mode
-        //  and FPS mode from settings page directly. We need to ensure this function is used
-        //  for each setting value update to avoid that.
-
-//        val unsupportedStabilizationFpsMap = buildMap {
-//            initialCameraConstraints
-//                .unsupportedStabilizationFpsMap
-//                .forEach { (stabilizationMode, fpsList) ->
-//                    if (stabilizationMode.toFeatureGroupability() is Nongroupable) {
-//                        put(stabilizationMode, fpsList)
-//                        return@forEach
-//                    }
-//
-//                    fpsList.forEach { fps ->
-//                        if (fps.toFpsFeatureGroupability() is Nongroupable) {
-//                            put(stabilizationMode, fpsList)
-//                            return@forEach
-//                        }
-//
-//                        if (!cameraAppSettings.copyStabilizationMode(stabilizationMode)
-//                                .copyTargetFrameRate(fps).isGroupingSupported(cameraInfo)
-//                        ) {
-//                            put(stabilizationMode, fpsList)
-//                        }
-//                    }
-//                }
-//        }
+        /*
+         * TODO: More stabilization + FPS pairs can be supported with CameraX feature group API.
+         *  However, while the following code does provide such support, this function is called
+         *  only when camera session is recreated. So, updating unsupportedStabilizationFpsMap now
+         *  can cause regressions in scenarios where user tries to change both stabilization mode
+         *  and FPS mode from settings page directly. We need to ensure this function is used
+         *  for each setting value update to avoid that.
+         *  Reference code:
+         *  val unsupportedStabilizationFpsMap = buildMap {
+         *      initialCameraConstraints
+         *          .unsupportedStabilizationFpsMap
+         *          .forEach { (stabilizationMode, fpsList) ->
+         *              if (stabilizationMode.toFeatureGroupability() is Nongroupable) {
+         *                  put(stabilizationMode, fpsList)
+         *                  return@forEach
+         *              }
+         *              fpsList.forEach { fps ->
+         *                  if (fps.toFpsFeatureGroupability() is Nongroupable) {
+         *                      put(stabilizationMode, fpsList)
+         *                      return@forEach
+         *                  }
+         *                  if (!cameraAppSettings.copyStabilizationMode(stabilizationMode)
+         *                          .copyTargetFrameRate(fps).isGroupingSupported(cameraInfo)
+         *                  ) {
+         *                      put(stabilizationMode, fpsList)
+         *                  }
+         *              }
+         *          }
+         *  }
+         */
 
         val updatedPerLensConstraints = initialSystemConstraints.perLensConstraints.toMutableMap()
 
@@ -171,8 +171,14 @@ internal class FeatureGroupHandler(
                         initialSystemConstraints,
                         initialCameraConstraints,
                         cameraInfo
+                    ),
+                    supportedStreamConfigs = filterStreamConfig(
+                        currentSettings,
+                        initialSystemConstraints,
+                        initialCameraConstraints,
+                        cameraInfo
                     )
-//                    unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
+                    // TODO: unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
                 )
 
         val newConstraints = currentSystemConstraints.copy(
@@ -336,6 +342,23 @@ internal class FeatureGroupHandler(
                     )
                 }
         }
+    }
+
+    /**
+     * Filters supported [StreamConfig]s by checking groupability with current settings.
+     */
+    private suspend fun filterStreamConfig(
+        cameraAppSettings: CameraAppSettings,
+        initialSystemConstraints: CameraSystemConstraints,
+        initialCameraConstraints: CameraConstraints,
+        cameraInfo: CameraInfo
+    ): Set<StreamConfig> {
+        return initialCameraConstraints.supportedStreamConfigs.filter {
+            val settings = with(cameraSystem) {
+                cameraAppSettings.applyStreamConfig(it)
+            }
+            isGroupingSupported(settings, cameraInfo, initialSystemConstraints) == true
+        }.toSet()
     }
 
     /**
