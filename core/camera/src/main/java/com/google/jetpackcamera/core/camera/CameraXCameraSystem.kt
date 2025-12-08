@@ -264,6 +264,7 @@ constructor(
                                 supportedStabilizationModes = supportedStabilizationModes,
                                 supportedFixedFrameRates = supportedFixedFrameRates,
                                 supportedDynamicRanges = supportedDynamicRanges,
+                                supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedImageFormatsMap = mapOf(
                                     // Only JPEG is supported in single-stream mode, since
                                     // single-stream mode uses CameraEffect, which does not support
@@ -271,12 +272,15 @@ constructor(
                                     Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(StreamConfig.MULTI_STREAM, supportedImageFormats)
                                 ),
-                                supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
                                 supportedZoomRange = supportedZoomRange,
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap,
-                                supportedTestPatterns = supportedTestPatterns
+                                supportedTestPatterns = supportedTestPatterns,
+                                supportedStreamConfigs = setOf(
+                                    StreamConfig.SINGLE_STREAM,
+                                    StreamConfig.MULTI_STREAM
+                                )
                             )
                         )
                     }
@@ -285,6 +289,8 @@ constructor(
         )
 
         initialSystemConstraints = systemConstraints
+
+        Log.d(TAG, "initialize: initialSystemConstraints = $initialSystemConstraints")
 
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
@@ -636,6 +642,11 @@ constructor(
                         cameraAppSettings,
                         initialCameraConstraints,
                         cameraInfo
+                    ),
+                    supportedStreamConfigs = filterStreamConfig(
+                        cameraAppSettings,
+                        initialCameraConstraints,
+                        cameraInfo
                     )
 //                    unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
                 )
@@ -690,6 +701,8 @@ constructor(
         Log.d(TAG, "filterGroupableStabilizationModes")
 
         return initialCameraConstraints.supportedStabilizationModes.filter {
+            Log.d(TAG, "filterGroupableStabilizationModes: it = $it")
+
             val resolvedStabilizationMode = resolveStabilizationMode(
                 requestedStabilizationMode = it,
                 cameraAppSettings = cameraAppSettings,
@@ -755,6 +768,19 @@ constructor(
     }
 
     /**
+     * Filters supported [StreamConfig]s by checking groupability with current settings.
+     */
+    private suspend fun filterStreamConfig(
+        cameraAppSettings: CameraAppSettings,
+        initialCameraConstraints: CameraConstraints,
+        cameraInfo: CameraInfo
+    ): Set<StreamConfig> {
+        return initialCameraConstraints.supportedStreamConfigs.filter {
+            cameraAppSettings.copyStreamConfig(it).supportsGrouping(cameraInfo)
+        }.toSet()
+    }
+
+    /**
      * Returns whether a [CameraAppSettings] is supported together as a group.
      *
      * High quality features sometimes can be supported individually cwhile being unsupported
@@ -794,12 +820,12 @@ constructor(
                 context = application,
                 cameraProvider = cameraProvider,
                 backgroundDispatcher = defaultDispatcher,
-                screenFlashEvents = screenFlashEvents,
+                screenFlashEvents = Channel(),
                 filePathGenerator = filePathGenerator,
-                focusMeteringEvents = focusMeteringEvents,
-                videoCaptureControlEvents = videoCaptureControlEvents,
-                currentCameraState = currentCameraState,
-                surfaceRequests = _surfaceRequest,
+                focusMeteringEvents = Channel(),
+                videoCaptureControlEvents = Channel(),
+                currentCameraState = MutableStateFlow(CameraState()),
+                surfaceRequests = MutableStateFlow(null),
                 transientSettings = MutableStateFlow(transientSettings).asStateFlow(),
                 lowLightBoostEffectProvider = lowLightBoostEffectProvider
             )

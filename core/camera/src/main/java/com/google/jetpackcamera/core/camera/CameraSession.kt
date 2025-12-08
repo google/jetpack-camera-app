@@ -68,8 +68,6 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.net.toFile
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.FeatureGroupData.ExplicitlyGroupable
-import com.google.jetpackcamera.core.camera.FeatureGroupData.InexplicitlyGroupable
-import com.google.jetpackcamera.core.camera.FeatureGroupData.Ungroupable
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
@@ -628,7 +626,11 @@ internal suspend fun createSessionConfig(
         "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
     )
 
-    val features = sessionSettings.toGroupableFeatures() ?: emptySet()
+    val features = if (sessionSettings.toFeatureGroupDataSet().isInvalid()) {
+        emptySet()
+    } else {
+        sessionSettings.toGroupableFeatures()
+    }
 
     Log.d(TAG, "createSessionConfig: sessionSettings = $sessionSettings, features = $features")
 
@@ -650,13 +652,10 @@ internal suspend fun createSessionConfig(
 /**
  * Creates a set of [GroupableFeature] from a [PerpetualSessionSettings.SingleCamera].
  *
- * Only the [PerpetualSessionSettings.SingleCamera] values that are supported by CameraX feature
- * group APIs are included in the returned set.
- *
- * A null value is returned if the feature groups API can't be used for some value in
- * [PerpetualSessionSettings.SingleCamera], e.g. optical stabilization, or 15 FPS.
+ * Only the [PerpetualSessionSettings.SingleCamera] values that are compatible with CameraX feature
+ * group APIs (i.e. [ExplicitlyGroupable] features) are included in the returned set.
  */
-internal fun PerpetualSessionSettings.SingleCamera.toGroupableFeatures(): Set<GroupableFeature>? {
+internal fun PerpetualSessionSettings.SingleCamera.toGroupableFeatures(): Set<GroupableFeature> {
     return buildSet {
         this@toGroupableFeatures.toFeatureGroupDataSet().forEach {
             when (it) {
@@ -672,8 +671,7 @@ internal fun PerpetualSessionSettings.SingleCamera.toGroupableFeatures(): Set<Gr
                         add(it.feature)
                     }
                 }
-                is InexplicitlyGroupable -> {} // No-op.
-                is Ungroupable -> return null
+                else -> {} // No-op.
             }
         }
     }.toSet()

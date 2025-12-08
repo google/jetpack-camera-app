@@ -17,7 +17,6 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.example.uistateadapter.Utils
 import com.google.jetpackcamera.model.ConcurrentCameraMode
-import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
@@ -31,16 +30,14 @@ fun StreamConfigUiState.Companion.from(cameraAppSettings: CameraAppSettings): St
     return createFrom(
         cameraAppSettings.streamConfig,
         ORDERED_UI_SUPPORTED_STREAM_CONFIGS.toSet(),
-        cameraAppSettings.concurrentCameraMode,
-        cameraAppSettings.imageFormat
+        cameraAppSettings.concurrentCameraMode
     )
 }
 
 private fun createFrom(
     selectedStreamConfig: StreamConfig,
     supportedStreamConfigs: Set<StreamConfig>,
-    concurrentCameraMode: ConcurrentCameraMode,
-    imageOutputFormat: ImageOutputFormat
+    concurrentCameraMode: ConcurrentCameraMode
 ): StreamConfigUiState {
     // Ensure we at least support one flash mode
     check(supportedStreamConfigs.isNotEmpty()) {
@@ -60,10 +57,7 @@ private fun createFrom(
         StreamConfigUiState.Available(
             selectedStreamConfig = selectedStreamConfig,
             availableStreamConfigs = availableStreamConfigs,
-            isActive = !(
-                concurrentCameraMode == ConcurrentCameraMode.DUAL ||
-                    imageOutputFormat == ImageOutputFormat.JPEG_ULTRA_HDR
-                )
+            isActive = concurrentCameraMode != ConcurrentCameraMode.DUAL
         )
     }
 }

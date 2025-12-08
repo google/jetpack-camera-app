@@ -35,6 +35,7 @@ import com.google.jetpackcamera.model.VideoQuality.FHD
 import com.google.jetpackcamera.model.VideoQuality.HD
 import com.google.jetpackcamera.model.VideoQuality.SD
 import com.google.jetpackcamera.model.VideoQuality.UHD
+import com.google.jetpackcamera.model.VideoQuality.UNSPECIFIED
 
 sealed interface FeatureGroupData<out T> {
     /** Corresponds to a specific [GroupableFeature] object. */
@@ -94,7 +95,7 @@ fun VideoQuality.toFeatureGroupData(): FeatureGroupData<VideoQuality> {
         HD -> ExplicitlyGroupable(GroupableFeatures.HD_RECORDING)
         FHD -> ExplicitlyGroupable(GroupableFeatures.FHD_RECORDING)
         UHD -> ExplicitlyGroupable(GroupableFeatures.UHD_RECORDING)
-        else -> InexplicitlyGroupable
+        UNSPECIFIED -> InexplicitlyGroupable
     }
 }
 
