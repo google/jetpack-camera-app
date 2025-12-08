@@ -79,7 +79,10 @@ import java.io.File
 import java.io.FileNotFoundException
 import javax.inject.Inject
 import javax.inject.Provider
+import kotlin.time.measureTime
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -122,6 +125,7 @@ constructor(
 
     private var imageCaptureUseCase: ImageCapture? = null
 
+    private lateinit var initialSystemConstraints: CameraSystemConstraints
     private lateinit var systemConstraints: CameraSystemConstraints
 
     private val screenFlashEvents: Channel<CameraSystem.ScreenFlashEvent> =
@@ -142,6 +146,8 @@ constructor(
 
     private val lowLightBoostAvailabilityChecker: LowLightBoostAvailabilityChecker?
     private val lowLightBoostEffectProvider: LowLightBoostEffectProvider?
+
+    private lateinit var defaultCameraSessionContext: CameraSessionContext
 
     init {
         val entry = availabilityCheckers.entries.firstOrNull()
@@ -167,6 +173,20 @@ constructor(
         cameraProvider = configureAndGetCameraProvider(
             context = application,
             singleLensMode = debugSettings.singleLensMode
+        )
+
+        defaultCameraSessionContext = CameraSessionContext(
+            context = application,
+            cameraProvider = cameraProvider,
+            backgroundDispatcher = defaultDispatcher,
+            screenFlashEvents = Channel(),
+            filePathGenerator = filePathGenerator,
+            focusMeteringEvents = Channel(),
+            videoCaptureControlEvents = Channel(),
+            currentCameraState = MutableStateFlow(CameraState()),
+            surfaceRequests = MutableStateFlow(null),
+            transientSettings = MutableStateFlow(null),
+            lowLightBoostEffectProvider = lowLightBoostEffectProvider
         )
 
         // updates values for available cameras
@@ -260,6 +280,7 @@ constructor(
                                 supportedStabilizationModes = supportedStabilizationModes,
                                 supportedFixedFrameRates = supportedFixedFrameRates,
                                 supportedDynamicRanges = supportedDynamicRanges,
+                                supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedImageFormatsMap = mapOf(
                                     // Only JPEG is supported in single-stream mode, since
                                     // single-stream mode uses CameraEffect, which does not support
@@ -267,18 +288,25 @@ constructor(
                                     Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(StreamConfig.MULTI_STREAM, supportedImageFormats)
                                 ),
-                                supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
                                 supportedZoomRange = supportedZoomRange,
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap,
-                                supportedTestPatterns = supportedTestPatterns
+                                supportedTestPatterns = supportedTestPatterns,
+                                supportedStreamConfigs = setOf(
+                                    StreamConfig.SINGLE_STREAM,
+                                    StreamConfig.MULTI_STREAM
+                                )
                             )
                         )
                     }
                 }
             }
         )
+
+        initialSystemConstraints = systemConstraints
+
+        Log.d(TAG, "initialize: initialSystemConstraints = $initialSystemConstraints")
 
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
@@ -379,6 +407,39 @@ constructor(
         }
     }
 
+    private fun CameraAppSettings.toTransientSessionSettings(): TransientSessionSettings {
+        return TransientSessionSettings(
+            isAudioEnabled = audioEnabled,
+            deviceRotation = deviceRotation,
+            flashMode = flashMode,
+            primaryLensFacing = cameraLensFacing,
+            zoomRatios = defaultZoomRatios,
+            testPattern = debugSettings.testPattern
+        )
+    }
+
+    private suspend fun CameraAppSettings.toSingleCameraSessionSettings(
+        cameraConstraints: CameraConstraints
+    ): PerpetualSessionSettings.SingleCamera {
+        val resolvedStabilizationMode = resolveStabilizationMode(
+            requestedStabilizationMode = stabilizationMode,
+            cameraAppSettings = this,
+            cameraConstraints = cameraConstraints
+        )
+
+        return PerpetualSessionSettings.SingleCamera(
+            aspectRatio = aspectRatio,
+            captureMode = captureMode,
+            streamConfig = streamConfig,
+            targetFrameRate = targetFrameRate,
+            stabilizationMode = resolvedStabilizationMode,
+            dynamicRange = dynamicRange,
+            videoQuality = videoQuality,
+            imageFormat = imageFormat,
+            lowLightBoostPriority = lowLightBoostPriority
+        )
+    }
+
     @OptIn(ExperimentalCamera2Interop::class)
     override suspend fun runCamera() = coroutineScope {
         Log.d(TAG, "runCamera")
@@ -391,14 +452,7 @@ constructor(
         currentSettings
             .filterNotNull()
             .map { currentCameraSettings ->
-                transientSettings.value = TransientSessionSettings(
-                    isAudioEnabled = currentCameraSettings.audioEnabled,
-                    deviceRotation = currentCameraSettings.deviceRotation,
-                    flashMode = currentCameraSettings.flashMode,
-                    primaryLensFacing = currentCameraSettings.cameraLensFacing,
-                    zoomRatios = currentCameraSettings.defaultZoomRatios,
-                    testPattern = currentCameraSettings.debugSettings.testPattern
-                )
+                transientSettings.value = currentCameraSettings.toTransientSessionSettings()
 
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
@@ -409,24 +463,7 @@ constructor(
                                 "${currentCameraSettings.cameraLensFacing}"
                         }
 
-                        val resolvedStabilizationMode = resolveStabilizationMode(
-                            requestedStabilizationMode = currentCameraSettings.stabilizationMode,
-                            targetFrameRate = currentCameraSettings.targetFrameRate,
-                            cameraConstraints = cameraConstraints,
-                            concurrentCameraMode = currentCameraSettings.concurrentCameraMode
-                        )
-
-                        PerpetualSessionSettings.SingleCamera(
-                            aspectRatio = currentCameraSettings.aspectRatio,
-                            captureMode = currentCameraSettings.captureMode,
-                            streamConfig = currentCameraSettings.streamConfig,
-                            targetFrameRate = currentCameraSettings.targetFrameRate,
-                            stabilizationMode = resolvedStabilizationMode,
-                            dynamicRange = currentCameraSettings.dynamicRange,
-                            videoQuality = currentCameraSettings.videoQuality,
-                            imageFormat = currentCameraSettings.imageFormat,
-                            lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority
-                        )
+                        currentCameraSettings.toSingleCameraSessionSettings(cameraConstraints)
                     }
 
                     ConcurrentCameraMode.DUAL -> {
@@ -475,13 +512,29 @@ constructor(
                     ) {
                         try {
                             when (sessionSettings) {
-                                is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
-                                    sessionSettings,
-                                    systemConstraints.forCurrentLens(currentSettings.value!!),
-                                    onImageCaptureCreated = { imageCapture ->
-                                        imageCaptureUseCase = imageCapture
+                                is PerpetualSessionSettings.SingleCamera -> {
+                                    launch(backgroundDispatcher) {
+                                        // runSingleCameraSession never completes due to
+                                        // collectLatest on a StateFlow, so this must be launched
+                                        // beforehand
+
+                                        val duration =
+                                            measureTime { updateSystemConstraintsByFeatureGroups() }
+                                        Log.d(
+                                            TAG,
+                                            "runCamera: updateSystemConstraints" +
+                                                " completed in $duration"
+                                        )
                                     }
-                                )
+
+                                    runSingleCameraSession(
+                                        sessionSettings,
+                                        systemConstraints.forCurrentLens(currentSettings.value!!),
+                                        onImageCaptureCreated = { imageCapture ->
+                                            imageCaptureUseCase = imageCapture
+                                        }
+                                    )
+                                }
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
@@ -500,37 +553,360 @@ constructor(
             }
     }
 
-    private fun resolveStabilizationMode(
-        requestedStabilizationMode: StabilizationMode,
-        targetFrameRate: Int,
-        cameraConstraints: CameraConstraints,
-        concurrentCameraMode: ConcurrentCameraMode
-    ): StabilizationMode = if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
-        StabilizationMode.OFF
-    } else {
-        with(cameraConstraints) {
-            // Convert AUTO stabilization mode to the first supported stabilization mode
-            val stabilizationMode = if (requestedStabilizationMode == StabilizationMode.AUTO) {
-                // Choose between ON, OPTICAL, or OFF, depending on support, in that order
-                sequenceOf(StabilizationMode.ON, StabilizationMode.OPTICAL, StabilizationMode.OFF)
-                    .first {
-                        it in supportedStabilizationModes &&
-                            targetFrameRate !in it.unsupportedFpsSet
-                    }
-            } else {
-                requestedStabilizationMode
-            }
+    /**
+     * Updates the [CameraSystemConstraints] based on feature group compatibility.
+     *
+     * This function checks various combinations of settings (dynamic range, frame rate,
+     * stabilization, etc.) against the device's capabilities using the CameraX feature groups API.
+     * It filters out unsupported options from the system constraints, ensuring that the UI only
+     * presents valid combinations to the user.
+     *
+     * This update happens asynchronously after the initial camera session is started to avoid
+     * blocking the UI thread.
+     */
+    private suspend fun updateSystemConstraintsByFeatureGroups() {
+        val cameraAppSettings = requireNotNull(currentSettings.value)
+        val initialCameraConstraints =
+            requireNotNull(initialSystemConstraints.forCurrentLens(cameraAppSettings))
 
-            // Check that the stabilization mode can be supported, otherwise return OFF
-            if (stabilizationMode in supportedStabilizationModes &&
-                targetFrameRate !in stabilizationMode.unsupportedFpsSet
-            ) {
-                stabilizationMode
-            } else {
-                StabilizationMode.OFF
-            }
+        Log.d(
+            TAG,
+            "updateSystemConstraintsByFeatureGroups: cameraAppSettings = $cameraAppSettings" +
+                ", initialCameraConstraints = $initialCameraConstraints"
+        )
+
+        val featureDataSet =
+            cameraAppSettings
+                .toSingleCameraSessionSettings(initialCameraConstraints)
+                .toFeatureGroupDataSet()
+
+        if (featureDataSet.isInvalid()) {
+            Log.i(
+                TAG,
+                "updateSystemConstraintsByFeatureGroups: since the settings is incompatible" +
+                    " with CameraX feature groups API, falling back to initial" +
+                    " system constraints without using feature groups. featureDataSet = " +
+                    " $featureDataSet."
+            )
+
+            systemConstraints = initialSystemConstraints
+            constraintsRepository.updateSystemConstraints(systemConstraints)
+
+            return
+        }
+
+        val cameraInfo =
+            cameraProvider.getCameraInfo(cameraAppSettings.cameraLensFacing.toCameraSelector())
+
+        // TODO: More stabilization + FPS pairs can be supported with CameraX feature group API.
+        //  However, while the following code does provide such support, this function is called
+        //  only when camera session is recreated. So, updating unsupportedStabilizationFpsMap now
+        //  can cause regressions in scenarios where user tries to change both stabilization mode
+        //  and FPS mode from settings page directly. We need to ensure this function is used
+        //  for each setting value update to avoid that.
+
+//        val unsupportedStabilizationFpsMap = buildMap {
+//            initialCameraConstraints
+//                .unsupportedStabilizationFpsMap
+//                .forEach { (stabilizationMode, fpsList) ->
+//                    if (stabilizationMode.toGroupableFeatureData() is Nongroupable) {
+//                        put(stabilizationMode, fpsList)
+//                        return@forEach
+//                    }
+//
+//                    fpsList.forEach { fps ->
+//                        if (fps.toFpsGroupableFeatureData() is Nongroupable) {
+//                            put(stabilizationMode, fpsList)
+//                            return@forEach
+//                        }
+//
+//                        if (!cameraAppSettings.copyStabilizationMode(stabilizationMode)
+//                                .copyTargetFrameRate(fps).supportsGrouping(cameraInfo)
+//                        ) {
+//                            put(stabilizationMode, fpsList)
+//                        }
+//                    }
+//                }
+//        }
+
+        val updatedPerLensConstraints = initialSystemConstraints.perLensConstraints.toMutableMap()
+
+        updatedPerLensConstraints[cameraAppSettings.cameraLensFacing] =
+            initialCameraConstraints
+                .copy(
+                    supportedDynamicRanges = filterGroupableDynamicRanges(
+                        cameraAppSettings,
+                        initialCameraConstraints,
+                        cameraInfo
+                    ),
+                    supportedFixedFrameRates = filterGroupableFrameRates(
+                        cameraAppSettings,
+                        initialCameraConstraints,
+                        cameraInfo
+                    ),
+                    supportedStabilizationModes = filterGroupableStabilizationModes(
+                        cameraAppSettings,
+                        initialCameraConstraints,
+                        cameraInfo
+                    ),
+                    supportedImageFormatsMap = filterGroupableImageFormatsMap(
+                        cameraAppSettings,
+                        initialCameraConstraints,
+                        cameraInfo
+                    ),
+                    supportedVideoQualitiesMap = filterGroupableVideoQualitiesMap(
+                        cameraAppSettings,
+                        initialCameraConstraints,
+                        cameraInfo
+                    ),
+                    supportedStreamConfigs = filterStreamConfig(
+                        cameraAppSettings,
+                        initialCameraConstraints,
+                        cameraInfo
+                    )
+//                    unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
+                )
+
+        systemConstraints = systemConstraints.copy(perLensConstraints = updatedPerLensConstraints)
+
+        constraintsRepository.updateSystemConstraints(systemConstraints)
+
+        Log.d(TAG, "updateSystemConstraints: updated systemConstraints = $systemConstraints")
+    }
+
+    /**
+     * Filters supported [DynamicRange]s by checking groupability with current settings.
+     */
+    private suspend fun filterGroupableDynamicRanges(
+        cameraAppSettings: CameraAppSettings,
+        initialCameraConstraints: CameraConstraints,
+        cameraInfo: CameraInfo
+    ): Set<DynamicRange> {
+        Log.d(TAG, "filterGroupableDynamicRanges")
+
+        return initialCameraConstraints.supportedDynamicRanges.filter {
+            cameraAppSettings.copyDynamicRange(it, initialSystemConstraints)
+                .supportsGrouping(cameraInfo)
+        }.toSet()
+    }
+
+    /**
+     * Filters supported frame rates by checking groupability with current settings.
+     */
+    private suspend fun filterGroupableFrameRates(
+        cameraAppSettings: CameraAppSettings,
+        initialCameraConstraints: CameraConstraints,
+        cameraInfo: CameraInfo
+    ): Set<Int> {
+        Log.d(TAG, "filterGroupableFrameRates")
+
+        return initialCameraConstraints.supportedFixedFrameRates.filter {
+            cameraAppSettings.copyTargetFrameRate(it, initialSystemConstraints)
+                .supportsGrouping(cameraInfo)
+        }.toSet()
+    }
+
+    /**
+     * Filters supported [StabilizationMode]s by checking groupability with current settings.
+     */
+    private suspend fun filterGroupableStabilizationModes(
+        cameraAppSettings: CameraAppSettings,
+        initialCameraConstraints: CameraConstraints,
+        cameraInfo: CameraInfo
+    ): Set<StabilizationMode> {
+        Log.d(TAG, "filterGroupableStabilizationModes")
+
+        return initialCameraConstraints.supportedStabilizationModes.filter {
+            Log.d(TAG, "filterGroupableStabilizationModes: it = $it")
+
+            val resolvedStabilizationMode = resolveStabilizationMode(
+                requestedStabilizationMode = it,
+                cameraAppSettings = cameraAppSettings,
+                cameraConstraints = initialCameraConstraints
+            )
+            cameraAppSettings.copyStabilizationMode(resolvedStabilizationMode)
+                .supportsGrouping(cameraInfo)
+        }.toSet()
+    }
+
+    /**
+     * Filters supported [ImageOutputFormat]s by checking groupability with current settings.
+     */
+    private suspend fun filterGroupableImageFormatsMap(
+        cameraAppSettings: CameraAppSettings,
+        initialCameraConstraints: CameraConstraints,
+        cameraInfo: CameraInfo
+    ): Map<StreamConfig, Set<ImageOutputFormat>> {
+        Log.d(TAG, "filterGroupableImageFormatsMap")
+
+        return buildMap {
+            initialCameraConstraints
+                .supportedImageFormatsMap
+                .forEach { (streamConfig, imageFormats) ->
+                    put(
+                        streamConfig,
+                        imageFormats.filter {
+                            cameraAppSettings
+                                .copyStreamConfig(streamConfig, initialSystemConstraints)
+                                .copyImageFormat(it, initialSystemConstraints)
+                                .supportsGrouping(cameraInfo)
+                        }.toSet()
+                    )
+                }
         }
     }
+
+    /**
+     * Filters supported [VideoQuality]s by checking groupability with current settings.
+     */
+    private suspend fun filterGroupableVideoQualitiesMap(
+        cameraAppSettings: CameraAppSettings,
+        initialCameraConstraints: CameraConstraints,
+        cameraInfo: CameraInfo
+    ): Map<DynamicRange, List<VideoQuality>> {
+        Log.d(TAG, "filterGroupableVideoQualitiesMap")
+
+        return buildMap {
+            initialCameraConstraints
+                .supportedVideoQualitiesMap
+                .forEach { (dynamicRange, videoQualities) ->
+                    put(
+                        dynamicRange,
+                        videoQualities.filter {
+                            cameraAppSettings
+                                .copyDynamicRange(dynamicRange, initialSystemConstraints)
+                                .copyVideoQuality(it, initialSystemConstraints)
+                                .supportsGrouping(cameraInfo)
+                        }
+                    )
+                }
+        }
+    }
+
+    /**
+     * Filters supported [StreamConfig]s by checking groupability with current settings.
+     */
+    private suspend fun filterStreamConfig(
+        cameraAppSettings: CameraAppSettings,
+        initialCameraConstraints: CameraConstraints,
+        cameraInfo: CameraInfo
+    ): Set<StreamConfig> {
+        return initialCameraConstraints.supportedStreamConfigs.filter {
+            cameraAppSettings.copyStreamConfig(it).supportsGrouping(cameraInfo)
+        }.toSet()
+    }
+
+    /**
+     * Returns whether a [CameraAppSettings] is supported together as a group.
+     *
+     * High quality features sometimes can be supported individually cwhile being unsupported
+     * together as a group. This API utilizes the CameraX feature group APIs to know if a
+     * [CameraAppSettings] is supported as a group.
+     *
+     * However, not all [CameraAppSettings] feature values are queryable through the feature group
+     * APIs. So, this API works in a best-effort manner by using only the queryable features
+     */
+    private suspend fun CameraAppSettings.supportsGrouping(cameraInfo: CameraInfo): Boolean {
+        val cameraConstraints =
+            requireNotNull(initialSystemConstraints.forCurrentLens(this@supportsGrouping))
+
+        val transientSettings = this@supportsGrouping.toTransientSessionSettings()
+
+        val sessionSettings =
+            this@supportsGrouping.toSingleCameraSessionSettings(cameraConstraints)
+
+        if (sessionSettings.toFeatureGroupDataSet().isInvalid()) {
+            Log.d(
+                TAG,
+                "supportsGrouping: CameraX feature group is not compatible with this" +
+                    " session settings, so returning unsupported early." +
+                    " sessionSettings = $sessionSettings"
+            )
+            return false
+        }
+
+        // An explicit job is used here because simpler approach like `coroutineScope { ... }`
+        // seems to get stuck forever for StreamConfig.SINGLE_STREAM. The code flow for
+        // SINGLE_STREAM seems to be keeping the coroutine scope forever busy and thus the
+        // `coroutineScope` block never completes.
+        val job = Job()
+
+        val sessionConfig = with(
+            defaultCameraSessionContext.copy(
+                transientSettings = MutableStateFlow(transientSettings).asStateFlow()
+            )
+        ) {
+            val videoCaptureUseCase =
+                createVideoUseCase(
+                    cameraInfo,
+                    aspectRatio,
+                    captureMode,
+                    backgroundDispatcher,
+                    targetFrameRate.takeIfFeatureGroupInvalid(sessionSettings),
+                    stabilizationMode.takeIfFeatureGroupInvalid(sessionSettings),
+                    dynamicRange.takeIfFeatureGroupInvalid(sessionSettings),
+                    videoQuality.takeIfFeatureGroupInvalid(sessionSettings)
+                )
+
+            createSessionConfig(
+                cameraConstraints = cameraConstraints,
+                initialTransientSettings = transientSettings,
+                videoCaptureUseCase = videoCaptureUseCase,
+                sessionSettings = sessionSettings,
+                sessionScope = CoroutineScope(defaultDispatcher + job)
+            )
+        }
+
+        return cameraInfo.isSessionConfigSupported(sessionConfig).apply {
+            job.cancel()
+        }
+    }
+
+    private suspend fun resolveStabilizationMode(
+        requestedStabilizationMode: StabilizationMode,
+        cameraAppSettings: CameraAppSettings,
+        cameraConstraints: CameraConstraints
+    ): StabilizationMode =
+        if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+            StabilizationMode.OFF
+        } else {
+            with(cameraConstraints) {
+                // Convert AUTO stabilization mode to the first supported stabilization mode
+                val stabilizationMode = if (requestedStabilizationMode == StabilizationMode.AUTO) {
+                    // Choose between ON, OPTICAL, or OFF, depending on support, in that order
+                    sequenceOf(
+                        StabilizationMode.ON,
+                        StabilizationMode.OPTICAL,
+                        StabilizationMode.OFF
+                    )
+                        .first {
+                            it in supportedStabilizationModes &&
+                                cameraAppSettings.targetFrameRate !in it.unsupportedFpsSet && (
+                                    it == StabilizationMode.OFF ||
+                                        cameraAppSettings
+                                            .copyStabilizationMode(it)
+                                            .supportsGrouping(
+                                                cameraProvider.getCameraInfo(
+                                                    cameraAppSettings
+                                                        .cameraLensFacing.toCameraSelector()
+                                                )
+                                            )
+                                    )
+                        }
+                } else {
+                    requestedStabilizationMode
+                }
+
+                // Check that the stabilization mode can be supported, otherwise return OFF
+                if (stabilizationMode in supportedStabilizationModes &&
+                    cameraAppSettings.targetFrameRate !in stabilizationMode.unsupportedFpsSet
+                ) {
+                    stabilizationMode
+                } else {
+                    StabilizationMode.OFF
+                }
+            }
+        }
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
         if (imageCaptureUseCase == null) {
@@ -686,7 +1062,8 @@ constructor(
      * mode will be applied. If left null, it will not change the current capture mode.
      */
     private fun CameraAppSettings.tryApplyCaptureModeConstraints(
-        defaultCaptureMode: CaptureMode? = null
+        defaultCaptureMode: CaptureMode? = null,
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
     ): CameraAppSettings {
         Log.d(TAG, "applying capture mode constraints")
         return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
@@ -768,13 +1145,43 @@ constructor(
         } ?: this
     }
 
-    private fun CameraAppSettings.tryApplyDynamicRangeConstraints(): CameraAppSettings =
+    private suspend fun CameraAppSettings.tryApplyDynamicRangeConstraints(
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
+    ): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedDynamicRanges) {
                 val newDynamicRange = if (contains(dynamicRange) &&
                     flashMode != FlashMode.LOW_LIGHT_BOOST
                 ) {
-                    dynamicRange
+                    if (captureMode == CaptureMode.IMAGE_ONLY) {
+                        // Reaching this point in code flow means that JPEG_R will be requested
+                        // later, and some devices may not support HDR and JPEG_R together. So,
+                        // we should enable HDR here only if it is supported with JPEG_R.
+
+                        val isSupportedWithJpegR =
+                            this@tryApplyDynamicRangeConstraints
+                                .copy(dynamicRange = dynamicRange)
+                                .copyImageFormat(
+                                    imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
+                                    systemConstraints = systemConstraints.copy()
+                                )
+                                .supportsGrouping(
+                                    cameraProvider
+                                        .getCameraInfo(
+                                            this@tryApplyDynamicRangeConstraints
+                                                .cameraLensFacing
+                                                .toCameraSelector()
+                                        )
+                                )
+
+                        if (!isSupportedWithJpegR) {
+                            DynamicRange.SDR
+                        } else {
+                            dynamicRange
+                        }
+                    } else {
+                        dynamicRange
+                    }
                 } else {
                     DynamicRange.SDR
                 }
@@ -796,10 +1203,14 @@ constructor(
             this.copy(aspectRatio = AspectRatio.NINE_SIXTEEN)
     }
 
-    private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings =
+    private fun CameraAppSettings.tryApplyImageFormatConstraints(
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
+    ): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedImageFormatsMap[streamConfig]) {
-                val newImageFormat = if (this != null && contains(imageFormat)) {
+                val newImageFormat = if (this != null && contains(imageFormat) &&
+                    captureMode != CaptureMode.VIDEO_ONLY
+                ) {
                     imageFormat
                 } else {
                     ImageOutputFormat.JPEG
@@ -811,7 +1222,9 @@ constructor(
             }
         } ?: this
 
-    private fun CameraAppSettings.tryApplyFrameRateConstraints(): CameraAppSettings =
+    private fun CameraAppSettings.tryApplyFrameRateConstraints(
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
+    ): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedFixedFrameRates) {
                 val newTargetFrameRate = if (contains(targetFrameRate)) {
@@ -826,7 +1239,9 @@ constructor(
             }
         } ?: this
 
-    private fun CameraAppSettings.tryApplyStabilizationConstraints(): CameraAppSettings =
+    private fun CameraAppSettings.tryApplyStabilizationConstraints(
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
+    ): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints) {
                 val newStabilizationMode = if (stabilizationMode != StabilizationMode.AUTO &&
@@ -844,24 +1259,27 @@ constructor(
             }
         } ?: this
 
-    private fun CameraAppSettings.tryApplyConcurrentCameraModeConstraints(): CameraAppSettings =
-        when (concurrentCameraMode) {
-            ConcurrentCameraMode.OFF -> this
-            else ->
-                if (systemConstraints.concurrentCamerasSupported &&
-                    dynamicRange == DynamicRange.SDR &&
-                    streamConfig == StreamConfig.MULTI_STREAM &&
-                    flashMode != FlashMode.LOW_LIGHT_BOOST
-                ) {
-                    copy(
-                        targetFrameRate = TARGET_FPS_AUTO
-                    )
-                } else {
-                    copy(concurrentCameraMode = ConcurrentCameraMode.OFF)
-                }
-        }
+    private fun CameraAppSettings.tryApplyConcurrentCameraModeConstraints(
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
+    ): CameraAppSettings = when (concurrentCameraMode) {
+        ConcurrentCameraMode.OFF -> this
+        else ->
+            if (systemConstraints.concurrentCamerasSupported &&
+                dynamicRange == DynamicRange.SDR &&
+                streamConfig == StreamConfig.MULTI_STREAM &&
+                flashMode != FlashMode.LOW_LIGHT_BOOST
+            ) {
+                copy(
+                    targetFrameRate = TARGET_FPS_AUTO
+                )
+            } else {
+                copy(concurrentCameraMode = ConcurrentCameraMode.OFF)
+            }
+    }
 
-    private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings =
+    private fun CameraAppSettings.tryApplyVideoQualityConstraints(
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
+    ): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedVideoQualitiesMap) {
                 val newVideoQuality = get(dynamicRange).let {
@@ -911,7 +1329,7 @@ constructor(
     override fun getScreenFlashEvents() = screenFlashEvents
     override fun getCurrentSettings() = currentSettings.asStateFlow()
 
-    override fun setFlashMode(flashMode: FlashMode) {
+    override suspend fun setFlashMode(flashMode: FlashMode) {
         currentSettings.update { old ->
             old?.copy(flashMode = flashMode)
                 ?.tryApplyDynamicRangeConstraints()
@@ -931,9 +1349,17 @@ constructor(
 
     override suspend fun setVideoQuality(videoQuality: VideoQuality) {
         currentSettings.update { old ->
-            old?.copy(videoQuality = videoQuality)
-                ?.tryApplyVideoQualityConstraints()
+            old?.copyVideoQuality(videoQuality = videoQuality)
         }
+    }
+
+    /** Creates a copy of this [CameraAppSettings] with the provided [VideoQuality] applied. */
+    private fun CameraAppSettings.copyVideoQuality(
+        videoQuality: VideoQuality,
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
+    ): CameraAppSettings {
+        return copy(videoQuality = videoQuality)
+            .tryApplyVideoQualityConstraints(systemConstraints)
     }
 
     override suspend fun setLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
@@ -944,21 +1370,37 @@ constructor(
 
     override suspend fun setStreamConfig(streamConfig: StreamConfig) {
         currentSettings.update { old ->
-            old?.copy(streamConfig = streamConfig)
-                ?.tryApplyImageFormatConstraints()
-                ?.tryApplyConcurrentCameraModeConstraints()
-                ?.tryApplyCaptureModeConstraints()
-                ?.tryApplyVideoQualityConstraints()
+            old?.copyStreamConfig(streamConfig = streamConfig)
         }
+    }
+
+    /** Creates a copy of this [CameraAppSettings] with the provided [StreamConfig] applied. */
+    private fun CameraAppSettings.copyStreamConfig(
+        streamConfig: StreamConfig,
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
+    ): CameraAppSettings {
+        return copy(streamConfig = streamConfig)
+            .tryApplyImageFormatConstraints(systemConstraints)
+            .tryApplyConcurrentCameraModeConstraints(systemConstraints)
+            .tryApplyCaptureModeConstraints(systemConstraints = systemConstraints)
+            .tryApplyVideoQualityConstraints(systemConstraints)
     }
 
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
         currentSettings.update { old ->
-            old?.copy(dynamicRange = dynamicRange)
-                ?.tryApplyDynamicRangeConstraints()
-                ?.tryApplyConcurrentCameraModeConstraints()
-                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
+            old?.copyDynamicRange(dynamicRange)
         }
+    }
+
+    /** Creates a copy of this [CameraAppSettings] with the provided [DynamicRange] applied. */
+    private suspend fun CameraAppSettings.copyDynamicRange(
+        dynamicRange: DynamicRange,
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
+    ): CameraAppSettings {
+        return copy(dynamicRange = dynamicRange)
+            .tryApplyDynamicRangeConstraints(systemConstraints)
+            .tryApplyConcurrentCameraModeConstraints(systemConstraints)
+            .tryApplyCaptureModeConstraints(CaptureMode.STANDARD, systemConstraints)
     }
 
     override fun setDeviceRotation(deviceRotation: DeviceRotation) {
@@ -977,10 +1419,18 @@ constructor(
 
     override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
         currentSettings.update { old ->
-            old?.copy(imageFormat = imageFormat)
-                ?.tryApplyImageFormatConstraints()
-                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
+            old?.copyImageFormat(imageFormat = imageFormat)
         }
+    }
+
+    /** Creates a copy of this [CameraAppSettings] with the provided [ImageOutputFormat] applied. */
+    private fun CameraAppSettings.copyImageFormat(
+        imageFormat: ImageOutputFormat,
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
+    ): CameraAppSettings {
+        return copy(imageFormat = imageFormat)
+            .tryApplyImageFormatConstraints(systemConstraints)
+            .tryApplyCaptureModeConstraints(CaptureMode.STANDARD, systemConstraints)
     }
 
     override suspend fun setMaxVideoDuration(durationInMillis: Long) {
@@ -993,15 +1443,31 @@ constructor(
 
     override suspend fun setStabilizationMode(stabilizationMode: StabilizationMode) {
         currentSettings.update { old ->
-            old?.copy(stabilizationMode = stabilizationMode)
+            old?.copyStabilizationMode(stabilizationMode = stabilizationMode)
         }
+    }
+
+    /** Creates a copy of this [CameraAppSettings] with the provided [StabilizationMode] applied. */
+    private fun CameraAppSettings.copyStabilizationMode(
+        stabilizationMode: StabilizationMode
+    ): CameraAppSettings {
+        return copy(stabilizationMode = stabilizationMode)
     }
 
     override suspend fun setTargetFrameRate(targetFrameRate: Int) {
         currentSettings.update { old ->
-            old?.copy(targetFrameRate = targetFrameRate)?.tryApplyFrameRateConstraints()
-                ?.tryApplyConcurrentCameraModeConstraints()
+            old?.copyTargetFrameRate(targetFrameRate)
         }
+    }
+
+    /** Creates a copy of this [CameraAppSettings] with the provided frame rate applied. */
+    private fun CameraAppSettings.copyTargetFrameRate(
+        targetFrameRate: Int,
+        systemConstraints: CameraSystemConstraints = this@CameraXCameraSystem.systemConstraints
+    ): CameraAppSettings {
+        return copy(targetFrameRate = targetFrameRate)
+            .tryApplyFrameRateConstraints(systemConstraints)
+            .tryApplyConcurrentCameraModeConstraints(systemConstraints)
     }
 
     override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
@@ -1012,7 +1478,19 @@ constructor(
 
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
-            old?.copy(captureMode = captureMode)
+            val isHdrOn =
+                old?.dynamicRange == DynamicRange.HLG10 ||
+                    old?.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+
+            old?.copy(
+                captureMode = captureMode,
+                dynamicRange =
+                if (isHdrOn) DynamicRange.HLG10 else DynamicRange.SDR,
+                imageFormat =
+                if (isHdrOn) ImageOutputFormat.JPEG_ULTRA_HDR else ImageOutputFormat.JPEG
+            )
+                ?.tryApplyDynamicRangeConstraints()
+                ?.tryApplyImageFormatConstraints()
         }
     }
 
