@@ -294,6 +294,7 @@ class CameraXCameraSystem(
                                 supportedStabilizationModes = supportedStabilizationModes,
                                 supportedFixedFrameRates = supportedFixedFrameRates,
                                 supportedDynamicRanges = supportedDynamicRanges,
+                                supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedImageFormatsMap = mapOf(
                                     // Only JPEG is supported in single-stream mode, since
                                     // single-stream mode uses CameraEffect, which does not support
@@ -301,12 +302,15 @@ class CameraXCameraSystem(
                                     Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(StreamConfig.MULTI_STREAM, supportedImageFormats)
                                 ),
-                                supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
                                 supportedZoomRange = supportedZoomRange,
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap,
-                                supportedTestPatterns = supportedTestPatterns
+                                supportedTestPatterns = supportedTestPatterns,
+                                supportedStreamConfigs = setOf(
+                                    StreamConfig.SINGLE_STREAM,
+                                    StreamConfig.MULTI_STREAM
+                                )
                             )
                         )
                     }
@@ -315,6 +319,8 @@ class CameraXCameraSystem(
         )
 
         initialSystemConstraints = systemConstraints
+        Log.d(TAG, "initialize: initialSystemConstraints = $initialSystemConstraints")
+
         _systemConstraints.value = systemConstraints
 
         currentSettings.value =
@@ -1220,8 +1226,8 @@ class CameraXCameraSystem(
             imageFormat =
             if (isHdrOn) ImageOutputFormat.JPEG_ULTRA_HDR else ImageOutputFormat.JPEG
         )
-            .tryApplyDynamicRangeConstraints()
-            .tryApplyImageFormatConstraints()
+            .tryApplyDynamicRangeConstraints(systemConstraints)
+            .tryApplyImageFormatConstraints(systemConstraints)
     }
 
     private suspend fun handleLowLightBoostErrors() {

@@ -41,7 +41,8 @@ class FlashModeUiStateAdapterTest {
         supportedFlashModes = emptySet(),
         supportedZoomRange = null,
         unsupportedStabilizationFpsMap = emptyMap(),
-        supportedTestPatterns = emptySet()
+        supportedTestPatterns = emptySet(),
+        supportedStreamConfigs = emptySet()
     )
 
     private val defaultCameraAppSettings = CameraAppSettings()
