@@ -19,6 +19,7 @@ import android.app.Application
 import android.content.ContentResolver
 import android.graphics.SurfaceTexture
 import android.net.Uri
+import android.util.Log
 import android.view.Surface
 import androidx.annotation.GuardedBy
 import androidx.concurrent.futures.DirectExecutor
@@ -29,6 +30,12 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.truth.TruthJUnit.assume
+import com.google.jetpackcamera.core.camera.CameraXCameraSystemTest.Feature.DYNAMIC_RANGE_HLG10
+import com.google.jetpackcamera.core.camera.CameraXCameraSystemTest.Feature.FPS_60
+import com.google.jetpackcamera.core.camera.CameraXCameraSystemTest.Feature.IMAGE_FORMAT_JPEG_ULTRA_HDR
+import com.google.jetpackcamera.core.camera.CameraXCameraSystemTest.Feature.STABILIZATION_MODE_ON
+import com.google.jetpackcamera.core.camera.CameraXCameraSystemTest.Feature.STREAM_CONFIG_SINGLE
+import com.google.jetpackcamera.core.camera.CameraXCameraSystemTest.Feature.VIDEO_QUALITY_UHD
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecordError
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecorded
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
@@ -39,13 +46,17 @@ import com.google.jetpackcamera.core.common.FakeFilePathGenerator
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import java.io.File
@@ -89,6 +100,7 @@ class CameraXCameraSystemTest {
         private const val GENERAL_TIMEOUT_MS = 3_000L
         private const val RECORDING_TIMEOUT_MS = 10_000L
         private const val RECORDING_START_DURATION_MS = 500L
+        private const val TAG = "CameraXCameraSystemTest"
     }
 
     @get:Rule
@@ -281,65 +293,129 @@ class CameraXCameraSystemTest {
     }
 
     @Test
-    fun setMultipleFeatures_systemConstraintsUpdatedAndFeaturesSettableIfSupported() = runBlocking {
-        // Arrange.
-        val constraintsRepository = ObservableConstraintsRepository()
-        val cameraSystem = createAndInitCameraXCameraSystem(
-            constraintsRepository = constraintsRepository
+    fun setMultipleFeatures_systemConstraintsUpdatedAndFeaturesSetIfSupported() = runBlocking {
+        // TODO: Add STREAM_CONFIG_SINGLE to the featuresToTest list. This currently leads to flaky
+        //  crashes due to some camera effect related surface not being cleaned up properly somehow.
+        //  This doesn't seem to be related to the primary purpose of this test, so simply excluding
+        //  it for now.
+        val featuresToTest = listOf(
+            DYNAMIC_RANGE_HLG10,
+            FPS_60,
+            VIDEO_QUALITY_UHD
         )
 
-        // Each camera run/update should lead to a new systemConstraints update
-        var systemConstraints = constraintsRepository.observeNextUpdate()
-        cameraSystem.startCameraAndWaitUntilRunning()
+        featuresToTest.permutations().forEach { orderedFeatures ->
+            Log.d(TAG, "Testing $orderedFeatures")
 
-        val lensFacing = cameraSystem.getCurrentSettings().value?.cameraLensFacing
+            // Setup
+            val constraintsRepository = ObservableConstraintsRepository()
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                constraintsRepository = constraintsRepository
+            )
 
-        // Act: For each of the features — HDR, 60 FPS, UHD recording, await previous constraints
-        //  update and set the feature if the constraints supports it.
+            // Initial run: each camera run/update should lead to a new systemConstraints update
+            var currentConstraints = constraintsRepository.observeNextUpdate().let {
+                cameraSystem.startCameraAndWaitUntilRunning()
+                it.awaitUntil()
+            }
 
-        if (
-            systemConstraints
-                .awaitUntil()
-                .perLensConstraints[lensFacing]
-                ?.supportedDynamicRanges
-                ?.contains(DynamicRange.HLG10) == true
-        ) {
-            systemConstraints = constraintsRepository.observeNextUpdate()
-            cameraSystem.setDynamicRange(DynamicRange.HLG10)
+            val lensFacing =
+                requireNotNull(cameraSystem.getCurrentSettings().value?.cameraLensFacing)
+
+            orderedFeatures.forEach { feature ->
+                currentConstraints = when (feature) {
+                    DYNAMIC_RANGE_HLG10 -> feature.tryApplyFeature(
+                        expectedValue = DynamicRange.HLG10,
+                        lensFacing = lensFacing,
+                        cameraSystemConstraints = currentConstraints,
+                        constraintsRepository = constraintsRepository,
+                        cameraSystem = cameraSystem,
+                        setFeature = { cameraSystem.setDynamicRange(DynamicRange.HLG10) },
+                        getNewFeatureValue = { it?.dynamicRange }
+                    ) { constraints ->
+                        constraints
+                            ?.supportedDynamicRanges
+                            ?.contains(DynamicRange.HLG10) == true
+                    }
+
+                    FPS_60 -> feature.tryApplyFeature(
+                        expectedValue = 60,
+                        lensFacing = lensFacing,
+                        cameraSystemConstraints = currentConstraints,
+                        constraintsRepository = constraintsRepository,
+                        cameraSystem = cameraSystem,
+                        setFeature = { cameraSystem.setTargetFrameRate(60) },
+                        getNewFeatureValue = { it?.targetFrameRate }
+                    ) { constraints ->
+                        constraints
+                            ?.supportedFixedFrameRates
+                            ?.contains(60) == true
+                    }
+
+                    VIDEO_QUALITY_UHD -> feature.tryApplyFeature(
+                        expectedValue = VideoQuality.UHD,
+                        lensFacing = lensFacing,
+                        cameraSystemConstraints = currentConstraints,
+                        constraintsRepository = constraintsRepository,
+                        cameraSystem = cameraSystem,
+                        setFeature = { cameraSystem.setVideoQuality(VideoQuality.UHD) },
+                        getNewFeatureValue = { it?.videoQuality }
+                    ) { constraints ->
+                        constraints
+                            ?.supportedVideoQualitiesMap
+                            ?.get(cameraSystem.getCurrentSettings().value?.dynamicRange)
+                            ?.contains(VideoQuality.UHD) == true
+                    }
+
+                    STABILIZATION_MODE_ON -> feature.tryApplyFeature(
+                        expectedValue = StabilizationMode.ON,
+                        lensFacing = lensFacing,
+                        cameraSystemConstraints = currentConstraints,
+                        constraintsRepository = constraintsRepository,
+                        cameraSystem = cameraSystem,
+                        setFeature = { cameraSystem.setStabilizationMode(StabilizationMode.ON) },
+                        getNewFeatureValue = { it?.stabilizationMode }
+                    ) { constraints ->
+                        constraints
+                            ?.supportedStabilizationModes
+                            ?.contains(StabilizationMode.ON) == true
+                    }
+
+                    IMAGE_FORMAT_JPEG_ULTRA_HDR -> feature.tryApplyFeature(
+                        expectedValue = ImageOutputFormat.JPEG_ULTRA_HDR,
+                        lensFacing = lensFacing,
+                        cameraSystemConstraints = currentConstraints,
+                        constraintsRepository = constraintsRepository,
+                        cameraSystem = cameraSystem,
+                        setFeature = {
+                            cameraSystem.setImageFormat(
+                                ImageOutputFormat.JPEG_ULTRA_HDR
+                            )
+                        },
+                        getNewFeatureValue = { it?.imageFormat }
+                    ) { constraints ->
+                        constraints
+                            ?.supportedImageFormatsMap
+                            ?.get(cameraSystem.getCurrentSettings().value?.streamConfig)
+                            ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+                    }
+
+                    STREAM_CONFIG_SINGLE -> feature.tryApplyFeature(
+                        expectedValue = StreamConfig.SINGLE_STREAM,
+                        lensFacing = lensFacing,
+                        cameraSystemConstraints = currentConstraints,
+                        constraintsRepository = constraintsRepository,
+                        cameraSystem = cameraSystem,
+                        setFeature = { cameraSystem.setStreamConfig(StreamConfig.SINGLE_STREAM) },
+                        getNewFeatureValue = { it?.streamConfig }
+                    ) { constraints ->
+                        constraints
+                            ?.supportedStreamConfigs
+                            ?.contains(StreamConfig.SINGLE_STREAM) == true
+                    }
+                }
+            }
         }
-
-        if (
-            systemConstraints
-                .awaitUntil()
-                .perLensConstraints[lensFacing]
-                ?.supportedFixedFrameRates
-                ?.contains(60) == true
-        ) {
-            systemConstraints = constraintsRepository.observeNextUpdate()
-            cameraSystem.setTargetFrameRate(60)
-        }
-
-        if (
-            systemConstraints
-                .awaitUntil()
-                .perLensConstraints[lensFacing]
-                ?.supportedVideoQualitiesMap
-                ?.get(cameraSystem.getCurrentSettings().value?.dynamicRange)
-                ?.contains(VideoQuality.UHD) == true
-        ) {
-            systemConstraints = constraintsRepository.observeNextUpdate()
-            cameraSystem.setVideoQuality(VideoQuality.UHD)
-        }
-
-        // Wait to ensure the async updateSystemConstraintsByFeatureGroups has time to run
-        // and potentially crash if there's an issue.
-        systemConstraints.awaitUntil()
-
-        // Assert.
-        // If the test reaches here without crashing, it passes.
-        // This ensures that the feature group logic doesn't cause runtime exceptions
-        // even when high-end features are requested.
-        return@runBlocking
     }
 
     suspend fun <T> Deferred<T>.awaitUntil(timeout: Duration = 2.seconds): T {
@@ -401,7 +477,8 @@ class CameraXCameraSystemTest {
             getCurrentCameraState().transform { cameraState ->
                 (cameraState.videoRecordingState as? VideoRecordingState.Active)?.let {
                     emit(
-                        it.elapsedTimeNanos.toDuration(DurationUnit.NANOSECONDS).inWholeMilliseconds
+                        it.elapsedTimeNanos
+                            .toDuration(DurationUnit.NANOSECONDS).inWholeMilliseconds
                     )
                 }
             }.first { elapsedTimeMs ->
@@ -474,6 +551,71 @@ class CameraXCameraSystemTest {
                 )
             )
         )
+    }
+
+    suspend fun <T> Feature.tryApplyFeature(
+        expectedValue: T,
+        lensFacing: LensFacing,
+        cameraSystemConstraints: CameraSystemConstraints,
+        constraintsRepository: ObservableConstraintsRepository,
+        cameraSystem: CameraSystem,
+        setFeature: suspend () -> Unit,
+        getNewFeatureValue: (CameraAppSettings?) -> T?,
+        isSupported: (CameraConstraints?) -> Boolean
+    ): CameraSystemConstraints {
+        // Check support
+        if (!isSupported(cameraSystemConstraints.perLensConstraints[lensFacing])) {
+            Log.d(TAG, "Skipping $this: Not supported by current constraints.")
+            return cameraSystemConstraints
+        }
+
+        Log.d(TAG, "Applying $this...")
+
+        // Prepare observer
+        val nextUpdate = constraintsRepository.observeNextUpdate()
+
+        setFeature()
+
+        // Wait to verify constraints is updated
+        val newConstraints = nextUpdate.awaitUntil()
+
+        // Verify feature is set according to current settings
+        assertThat(getNewFeatureValue(cameraSystem.getCurrentSettings().value)).isEqualTo(
+            expectedValue
+        )
+
+        return newConstraints
+    }
+
+    fun <T> List<T>.permutations(): List<List<T>> {
+        if (isEmpty()) {
+            // Base case: an empty list has one permutation (the empty list itself)
+            return listOf(emptyList())
+        }
+
+        val result = mutableListOf<List<T>>()
+        val head = first() // Take the first element
+        val tail = drop(1) // Get the rest of the list
+
+        // Recursively get permutations of the tail
+        tail.permutations().forEach { permOfTail ->
+            // Insert the head element at all possible positions in each permutation of the tail
+            for (i in 0..permOfTail.size) {
+                val newPerm = permOfTail.toMutableList()
+                newPerm.add(i, head)
+                result.add(newPerm)
+            }
+        }
+        return result
+    }
+
+    enum class Feature {
+        DYNAMIC_RANGE_HLG10,
+        FPS_60,
+        VIDEO_QUALITY_UHD,
+        STABILIZATION_MODE_ON,
+        IMAGE_FORMAT_JPEG_ULTRA_HDR,
+        STREAM_CONFIG_SINGLE
     }
 }
 

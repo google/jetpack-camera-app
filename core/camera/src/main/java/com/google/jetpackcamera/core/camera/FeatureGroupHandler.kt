@@ -166,6 +166,12 @@ internal class FeatureGroupHandler(
                         initialSystemConstraints,
                         initialCameraConstraints,
                         cameraInfo
+                    ),
+                    supportedStreamConfigs = filterStreamConfig(
+                        currentSettings,
+                        initialSystemConstraints,
+                        initialCameraConstraints,
+                        cameraInfo
                     )
 //                    unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap
                 )
@@ -323,6 +329,23 @@ internal class FeatureGroupHandler(
                     )
                 }
         }
+    }
+
+    /**
+     * Filters supported [StreamConfig]s by checking groupability with current settings.
+     */
+    private suspend fun filterStreamConfig(
+        cameraAppSettings: CameraAppSettings,
+        initialSystemConstraints: CameraSystemConstraints,
+        initialCameraConstraints: CameraConstraints,
+        cameraInfo: CameraInfo
+    ): Set<StreamConfig> {
+        return initialCameraConstraints.supportedStreamConfigs.filter {
+            val settings = with(cameraSystem) {
+                cameraAppSettings.applyStreamConfig(it)
+            }
+            isGroupingSupported(settings, cameraInfo, initialSystemConstraints)
+        }.toSet()
     }
 
     /**

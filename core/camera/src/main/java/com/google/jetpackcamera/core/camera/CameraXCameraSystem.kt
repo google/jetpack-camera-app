@@ -290,6 +290,7 @@ constructor(
                                 supportedStabilizationModes = supportedStabilizationModes,
                                 supportedFixedFrameRates = supportedFixedFrameRates,
                                 supportedDynamicRanges = supportedDynamicRanges,
+                                supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedImageFormatsMap = mapOf(
                                     // Only JPEG is supported in single-stream mode, since
                                     // single-stream mode uses CameraEffect, which does not support
@@ -297,12 +298,15 @@ constructor(
                                     Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                                     Pair(StreamConfig.MULTI_STREAM, supportedImageFormats)
                                 ),
-                                supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
                                 supportedZoomRange = supportedZoomRange,
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap,
-                                supportedTestPatterns = supportedTestPatterns
+                                supportedTestPatterns = supportedTestPatterns,
+                                supportedStreamConfigs = setOf(
+                                    StreamConfig.SINGLE_STREAM,
+                                    StreamConfig.MULTI_STREAM
+                                )
                             )
                         )
                     }
@@ -311,6 +315,8 @@ constructor(
         )
 
         initialSystemConstraints = systemConstraints
+
+        Log.d(TAG, "initialize: initialSystemConstraints = $initialSystemConstraints")
 
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
