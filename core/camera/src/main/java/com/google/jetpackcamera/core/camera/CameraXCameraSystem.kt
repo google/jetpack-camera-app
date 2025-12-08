@@ -147,6 +147,8 @@ constructor(
     private val lowLightBoostAvailabilityChecker: LowLightBoostAvailabilityChecker?
     private val lowLightBoostEffectProvider: LowLightBoostEffectProvider?
 
+    private lateinit var defaultCameraSessionContext: CameraSessionContext
+
     init {
         val entry = availabilityCheckers.entries.firstOrNull()
         if (entry == null) {
@@ -171,6 +173,20 @@ constructor(
         cameraProvider = configureAndGetCameraProvider(
             context = application,
             singleLensMode = debugSettings.singleLensMode
+        )
+
+        defaultCameraSessionContext = CameraSessionContext(
+            context = application,
+            cameraProvider = cameraProvider,
+            backgroundDispatcher = defaultDispatcher,
+            screenFlashEvents = Channel(),
+            filePathGenerator = filePathGenerator,
+            focusMeteringEvents = Channel(),
+            videoCaptureControlEvents = Channel(),
+            currentCameraState = MutableStateFlow(CameraState()),
+            surfaceRequests = MutableStateFlow(null),
+            transientSettings = MutableStateFlow(null),
+            lowLightBoostEffectProvider = lowLightBoostEffectProvider
         )
 
         // updates values for available cameras
@@ -816,18 +832,8 @@ constructor(
         val job = Job()
 
         val sessionConfig = with(
-            CameraSessionContext(
-                context = application,
-                cameraProvider = cameraProvider,
-                backgroundDispatcher = defaultDispatcher,
-                screenFlashEvents = Channel(),
-                filePathGenerator = filePathGenerator,
-                focusMeteringEvents = Channel(),
-                videoCaptureControlEvents = Channel(),
-                currentCameraState = MutableStateFlow(CameraState()),
-                surfaceRequests = MutableStateFlow(null),
-                transientSettings = MutableStateFlow(transientSettings).asStateFlow(),
-                lowLightBoostEffectProvider = lowLightBoostEffectProvider
+            defaultCameraSessionContext.copy(
+                transientSettings = MutableStateFlow(transientSettings).asStateFlow()
             )
         ) {
             val videoCaptureUseCase =
