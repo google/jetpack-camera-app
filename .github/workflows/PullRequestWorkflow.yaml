@@ -137,20 +137,14 @@ jobs:
           cmdline-tools-version: 9477386
           log-accepted-android-sdk-licenses: 'false'
 
-      - name: List Available System Images
+      - name: List Specific System Image Details
         run: |
-          sdkmanager --list --verbose > sdkmanager_list.txt
+          echo "Fetching all package info to extract details for ${{ matrix.device.img }}..."
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list --verbose > sdkmanager_list-${{ matrix.device.name }}.txt
 
-          echo "Available system images with versions:"
-          # Filter for system-images and print the first three fields, assuming pipe delimiter
-          grep "system-images;" sdkmanager_list.txt | awk -F'|' '{printf "%-70s | %-12s | %s\n", $1, $2, $3}' || echo "No system-images found in expected format"
-
-      - name: Upload raw sdkmanager list
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sdkmanager-list-raw
-          path: sdkmanager_list.txt
+          echo "Details for ${{ matrix.device.img }}:"
+          # Use awk to find the block for the specific system image
+          awk -v RS='' -v img="${{ matrix.device.img }}" 'index($0, img) {print; exit}' sdkmanager_list-${{ matrix.device.name }}.txt || echo "Details for ${{ matrix.device.img }} not found."
 
       - name: Install Emulator
         run: |
