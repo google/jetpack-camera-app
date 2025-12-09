@@ -139,7 +139,6 @@ jobs:
 
       - name: List Available System Images
         run: |
-          echo "Available system images:"
           sdkmanager --list --verbose > sdkmanager_list.txt
 
           echo "Available system images with versions:"
@@ -148,7 +147,7 @@ jobs:
 
       - name: Upload raw sdkmanager list
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sdkmanager-list-raw
           path: sdkmanager_list.txt
