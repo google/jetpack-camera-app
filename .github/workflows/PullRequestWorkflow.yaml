@@ -120,6 +120,10 @@ jobs:
           distribution: ${{ env.DISTRIBUTION }}
           java-version: ${{ env.JDK_VERSION }}
 
+      - name: Clean up existing preinstalled cmdline-tools (to avoid conflicts)
+        run: |
+          rm -rf $ANDROID_HOME/cmdline-tools
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
