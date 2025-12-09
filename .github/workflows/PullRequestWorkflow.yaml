@@ -140,7 +140,7 @@ jobs:
       - name: List Specific System Image Details
         run: |
           echo "Fetching all package info to extract details for ${{ matrix.device.img }}..."
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list --verbose > sdkmanager_list-${{ matrix.device.name }}.txt
+          sdkmanager --list --verbose > sdkmanager_list-${{ matrix.device.name }}.txt
 
           echo "Details for ${{ matrix.device.img }}:"
           # Use awk to find the block for the specific system image
@@ -154,16 +154,36 @@ jobs:
         run: |
           echo "Emulator source.properties:"
           cat $ANDROID_HOME/emulator/source.properties || echo "emulator/source.properties not found"
-          echo "SDK Manager on $ANDROID_HOME"
-          which sdkmanager && sdkmanager --version || echo "sdkmanager not found"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
+      - name: Setup Emulator Device (${{ matrix.device.name }})
+        run: |
+          ./gradlew :app:${{ matrix.device.name }}Setup \
+            --debug \
+            --max-workers=1
+
       - name: Run instrumentation tests
         run: ./gradlew ${{ matrix.device.name }}StableDebugAndroidTest
+
+      - name: Dump dmesg on failure
+        if: failure()
+        run: |
+          echo "---- dmesg tail ----"
+          sudo dmesg | tail -n 100
+
+      - name: Archive Emulator Logs (${{ matrix.device.name }})
+        if: failure() # Run even if the setup/test step failed
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-logs-${{ matrix.device.name }}
+          path: |
+            */build/outputs/managed_device_android_test/devices/${{ matrix.device.name }}/**/*.log
+            */build/tmp/managedDevice_*/**/emulator-*.log
+          if-no-files-found: warn
 
       - name: Upload instrumentation test reports and logs on failure
         if: failure()
