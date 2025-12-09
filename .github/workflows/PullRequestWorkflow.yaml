@@ -128,6 +128,13 @@ jobs:
       - name: Accept licenses
         run: yes | "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
+      - name: Log Emulator Version
+        run: |
+          echo "Emulator source.properties:"
+          cat $ANDROID_HOME/emulator/source.properties || echo "emulator/source.properties not found"
+          echo "SDK Manager on $ANDROID_HOME"
+          ls -l $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager && $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --version || echo "sdkmanager not found"
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
