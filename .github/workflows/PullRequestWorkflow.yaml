@@ -140,7 +140,18 @@ jobs:
       - name: List Available System Images
         run: |
           echo "Available system images:"
-          sdkmanager --list --verbose | grep system-images || echo "No system-images found"
+          sdkmanager --list --verbose > sdkmanager_list.txt
+
+          echo "Available system images with versions:"
+          # Filter for system-images and print the first three fields, assuming pipe delimiter
+          grep "system-images;" sdkmanager_list.txt | awk -F'|' '{printf "%-70s | %-12s | %s\n", $1, $2, $3}' || echo "No system-images found in expected format"
+
+      - name: Upload raw sdkmanager list
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: sdkmanager-list-raw
+          path: sdkmanager_list.txt
 
       - name: Install Emulator
         run: |
