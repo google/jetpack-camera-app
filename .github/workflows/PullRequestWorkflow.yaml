@@ -122,6 +122,9 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 9477386
+          log-accepted-android-sdk-licenses: 'false'
 
       - name: Install Emulator
         run: |
@@ -132,7 +135,7 @@ jobs:
           echo "Emulator source.properties:"
           cat $ANDROID_HOME/emulator/source.properties || echo "emulator/source.properties not found"
           echo "SDK Manager on $ANDROID_HOME"
-          ls -l sdkmanager && sdkmanager --version || echo "sdkmanager not found"
+          which sdkmanager && sdkmanager --version || echo "sdkmanager not found"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
