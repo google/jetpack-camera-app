@@ -162,7 +162,7 @@ jobs:
 
       - name: Setup Emulator Device (${{ matrix.device.name }})
         run: |
-          ./gradlew :app:${{ matrix.device.name }}Setup --max-workers=1
+          ./gradlew :app:${{ matrix.device.name }}Setup --debug --max-workers=1 2>&1 | tee setup_emulator_${{ matrix.device.name }}.log
 
       - name: Run instrumentation tests
         run: ./gradlew ${{ matrix.device.name }}StableDebugAndroidTest
