@@ -160,12 +160,18 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Setup Emulator Device (${{ matrix.device.name }})
-        run: |
-          ./gradlew :app:${{ matrix.device.name }}Setup --debug --max-workers=1 2>&1 | tee setup_emulator_${{ matrix.device.name }}.log
-
       - name: Run instrumentation tests
-        run: ./gradlew ${{ matrix.device.name }}StableDebugAndroidTest
+        run: ./gradlew ${{ matrix.device.name }}StableDebugAndroidTest \
+          --debug \     
+          > run_tests_${{ matrix.device.name }}.log 2>&1
+
+      - name: Upload Test Execution Console Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-execution-log-${{ matrix.device.name }}
+          path: run_tests_${{ matrix.device.name }}.log
+          if-no-files-found: warn
 
       - name: Dump dmesg on failure
         if: failure()
