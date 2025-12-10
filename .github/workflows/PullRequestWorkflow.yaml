@@ -161,9 +161,7 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Run instrumentation tests
-        run: ./gradlew ${{ matrix.device.name }}StableDebugAndroidTest \
-          --debug \     
-          > run_tests_${{ matrix.device.name }}.log 2>&1
+        run: ./gradlew ${{ matrix.device.name }}StableDebugAndroidTest --debug > run_tests_${{ matrix.device.name }}.log 2>&1
 
       - name: Upload Test Execution Console Log
         if: always()
