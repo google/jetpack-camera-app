@@ -54,6 +54,7 @@ import java.io.FileNotFoundException
 import java.util.LinkedList
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -158,9 +159,11 @@ class PostCaptureViewModel @Inject constructor(
         releasePlayer()
         val mediaDescriptor: MediaDescriptor = loadedMediaFlow.value.first
 
-        if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
-            viewModelScope.launch {
-                mediaRepository.deleteMedia(mediaDescriptor)
+        if (mediaDescriptor is MediaDescriptor.Content && mediaDescriptor.isCached) {
+            viewModelScope.launch(NonCancellable) {
+                if (!mediaRepository.deleteMedia(mediaDescriptor)) {
+                    Log.e(TAG, "Failed to delete media from cache: ${mediaDescriptor.uri}")
+                }
             }
         }
         super.onCleared()
