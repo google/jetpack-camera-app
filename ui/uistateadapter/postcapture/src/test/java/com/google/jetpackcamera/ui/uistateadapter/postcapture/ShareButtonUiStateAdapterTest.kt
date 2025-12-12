@@ -17,31 +17,33 @@ package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
 import android.graphics.Bitmap
 import android.net.Uri
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
-import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.mockito.Mockito.mock
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class ShareButtonUiStateAdapterTest {
-    private val testUri: Uri = mock(Uri::class.java)
+    private val testUri: Uri = Uri.EMPTY
 
-    val mockBitmap: Bitmap = mock(Bitmap::class.java)
+    val testBitmap: Bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
 
     @Test
     fun shareButtonUiState_fromContentImage_returnsReady() {
-        val mediaDescriptor = MediaDescriptor.Content.Image(testUri, mockBitmap)
+        val mediaDescriptor = MediaDescriptor.Content.Image(testUri, testBitmap)
         val expectedUiState = ShareButtonUiState.Ready
         val actualUiState = ShareButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
     fun shareButtonUiState_fromContentVideo_returnsReady() {
-        val mediaDescriptor = MediaDescriptor.Content.Video(testUri, mockBitmap)
+        val mediaDescriptor = MediaDescriptor.Content.Video(testUri, testBitmap)
         val expectedUiState = ShareButtonUiState.Ready
         val actualUiState = ShareButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -49,6 +51,6 @@ class ShareButtonUiStateAdapterTest {
         val mediaDescriptor = MediaDescriptor.None
         val expectedUiState = ShareButtonUiState.Unavailable
         val actualUiState = ShareButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 }
