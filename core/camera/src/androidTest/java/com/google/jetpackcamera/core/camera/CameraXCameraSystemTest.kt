@@ -21,7 +21,6 @@ import android.graphics.SurfaceTexture
 import android.net.Uri
 import android.view.Surface
 import androidx.concurrent.futures.DirectExecutor
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -31,7 +30,6 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecordError
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecorded
-import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.PostProcessModule.Companion.provideImagePostProcessorMap
@@ -47,6 +45,8 @@ import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import java.io.File
+import java.util.AbstractMap
+import javax.inject.Provider
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.coroutines.CompletableDeferred
@@ -70,8 +70,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.AbstractMap
-import javax.inject.Provider
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
@@ -115,7 +113,8 @@ class CameraXCameraSystemTest {
     fun canCaptureImage(): Unit = runBlocking {
         // Arrange.
         val imagePostProcessor = FakeImagePostProcessor()
-        val cameraSystem = createAndInitCameraXCameraSystem(fakeImagePostProcessor = imagePostProcessor)
+        val cameraSystem =
+            createAndInitCameraXCameraSystem(fakeImagePostProcessor = imagePostProcessor)
         cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
@@ -312,7 +311,9 @@ class CameraXCameraSystemTest {
         }
     }
 
-    private fun getFakePostProcessorMap(imagePostProcessor: FakeImagePostProcessor?): Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>> {
+    private fun getFakePostProcessorMap(
+        imagePostProcessor: FakeImagePostProcessor?
+    ): Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>> {
         if (imagePostProcessor == null) {
             return emptyMap()
         }
@@ -320,7 +321,8 @@ class CameraXCameraSystemTest {
             entries = setOf(
                 AbstractMap.SimpleImmutableEntry(
                     FakeImagePostProcessorFeatureKey,
-                    Provider { imagePostProcessor })
+                    Provider { imagePostProcessor }
+                )
             )
         )
     }
