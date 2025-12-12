@@ -38,5 +38,14 @@ enum class ExternalCaptureMode {
     /**
      * Under this mode, the app is launched by an external intent to capture multiple images.
      */
-    MultipleImageCapture
+    MultipleImageCapture;
+
+    companion object {
+        fun ExternalCaptureMode.toCaptureMode() = when (this) {
+            ImageCapture -> CaptureMode.IMAGE_ONLY
+            MultipleImageCapture -> CaptureMode.IMAGE_ONLY
+            VideoCapture -> CaptureMode.VIDEO_ONLY
+            Standard -> null
+        }
+    }
 }
