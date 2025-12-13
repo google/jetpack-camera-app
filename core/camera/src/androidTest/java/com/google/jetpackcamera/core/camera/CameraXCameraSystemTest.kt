@@ -112,9 +112,8 @@ class CameraXCameraSystemTest {
     @Test
     fun canCaptureImage(): Unit = runBlocking {
         // Arrange.
-        val imagePostProcessor = FakeImagePostProcessor()
         val cameraSystem =
-            createAndInitCameraXCameraSystem(fakeImagePostProcessor = imagePostProcessor)
+            createAndInitCameraXCameraSystem()
         cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
@@ -126,6 +125,20 @@ class CameraXCameraSystemTest {
         if (savedUri != null) {
             filesToDelete.add(savedUri)
         }
+    }
+
+    @Test
+    fun canPostProcessImage(): Unit = runBlocking {
+        // Arrange.
+        val imagePostProcessor = FakeImagePostProcessor()
+        val cameraSystem =
+            createAndInitCameraXCameraSystem(fakeImagePostProcessor = imagePostProcessor)
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        // Act.
+        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+
+        // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
     }
 
