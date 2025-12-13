@@ -128,7 +128,7 @@ class CameraXCameraSystemTest {
     }
 
     @Test
-    fun canPostProcessImage(): Unit = runBlocking {
+    fun captureImage_withPostProcessor_postProcessIsCalled(): Unit = runBlocking {
         // Arrange.
         val imagePostProcessor = FakeImagePostProcessor()
         val cameraSystem =
