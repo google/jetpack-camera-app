@@ -143,7 +143,7 @@ class CameraXCameraSystemTest {
     }
 
     @Test
-    fun captureImage_withPostProcessor_postProcessNotCalledIfFailed(): Unit = runBlocking {
+    fun captureImage_withPostProcessor_postProcessNotCalled(): Unit = runBlocking {
         // Arrange.
         val imagePostProcessor = FakeImagePostProcessor()
         val cameraSystem =
@@ -160,6 +160,30 @@ class CameraXCameraSystemTest {
 
         // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isFalse()
+    }
+
+    @Test
+    fun canCaptureImage_withPostProcessor_postProcessFailed(): Unit = runBlocking {
+        // Arrange.
+        val imagePostProcessor = FakeImagePostProcessor(shouldError = true)
+        val cameraSystem =
+            createAndInitCameraXCameraSystem(fakeImagePostProcessor = imagePostProcessor)
+        cameraSystem.startCameraAndWaitUntilRunning()
+        val uri = Uri.parse(FakeFilePathGenerator().generateImageFilename())
+
+        // Act.
+        try {
+            cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+        } catch (e: RuntimeException) {
+            // Assert.
+            assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
+
+            val savedUri = imagePostProcessor.savedUri
+            assertThat(savedUri).isNotNull()
+            if (savedUri != null) {
+                filesToDelete.add(savedUri)
+            }
+        }
     }
 
     @Test
@@ -378,9 +402,12 @@ class CameraXCameraSystemTest {
 
 object FakeImagePostProcessorFeatureKey : ImagePostProcessorFeatureKey
 
-class FakeImagePostProcessor : ImagePostProcessor {
+class FakeImagePostProcessor(val shouldError: Boolean = false) : ImagePostProcessor {
     var postProcessImageCalled = false
+    var savedUri: Uri? = null
     override suspend fun postProcessImage(uri: Uri) {
         postProcessImageCalled = true
+        savedUri = uri
+        if (shouldError) throw RuntimeException("Post process failed")
     }
 }
