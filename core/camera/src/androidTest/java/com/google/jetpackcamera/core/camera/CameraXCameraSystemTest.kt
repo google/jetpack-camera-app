@@ -143,6 +143,41 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun captureImage_withPostProcessor_postProcessNotCalledIfFailed(): Unit = runBlocking {
+        // Arrange.
+        val imagePostProcessor = FakeImagePostProcessor()
+        val cameraSystem =
+            createAndInitCameraXCameraSystem(fakeImagePostProcessor = imagePostProcessor)
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        // Act.
+        try {
+            cameraSystem.takePicture(
+                context.contentResolver,
+                SaveLocation.Explicit(Uri.parse("asdfasdf"))
+            ) {}
+        } catch (e: Exception) {}
+
+        // Assert.
+        assertThat(imagePostProcessor.postProcessImageCalled).isFalse()
+    }
+
+    @Test
+    fun captureImage_noPostProcessor(): Unit = runBlocking {
+        // Arrange.
+        val imagePostProcessor = FakeImagePostProcessor()
+        val cameraSystem =
+            createAndInitCameraXCameraSystem()
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        // Act.
+        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+
+        // Assert.
+        assertThat(imagePostProcessor.postProcessImageCalled).isFalse()
+    }
+
+    @Test
     fun canRecordVideo(): Unit = runBlocking {
         // Arrange.
         val cameraSystem = createAndInitCameraXCameraSystem()
