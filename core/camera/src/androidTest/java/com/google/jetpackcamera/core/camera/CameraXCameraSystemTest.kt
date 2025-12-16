@@ -143,7 +143,7 @@ class CameraXCameraSystemTest {
     }
 
     @Test
-    fun captureImage_withPostProcessor_postProcessNotCalled(): Unit = runBlocking {
+    fun captureImage_withInvalidUri_postProcessNotCalled(): Unit = runBlocking {
         // Arrange.
         val imagePostProcessor = FakeImagePostProcessor()
         val cameraSystem =
@@ -163,7 +163,7 @@ class CameraXCameraSystemTest {
     }
 
     @Test
-    fun canCaptureImage_withPostProcessor_postProcessFailed(): Unit = runBlocking {
+    fun captureImage_withFailingPostProcessor_imageStillSaved(): Unit = runBlocking {
         // Arrange.
         val imagePostProcessor = FakeImagePostProcessor(shouldError = true)
         val cameraSystem =
