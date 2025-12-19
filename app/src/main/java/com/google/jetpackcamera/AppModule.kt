@@ -1,0 +1,49 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.google.jetpackcamera
+
+import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
+import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
+import com.google.jetpackcamera.core.common.DefaultSaveMode
+import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.SaveMode
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+
+@Module
+@InstallIn(SingletonComponent::class)
+object AppModule {
+    /**
+     * provides the default [CaptureMode] to override by the app
+     */
+    @Provides
+    @DefaultCaptureModeOverride
+    fun providesDefaultCaptureModeOverride(): CaptureMode = CaptureMode.STANDARD
+
+    /**
+     * provides the default [SaveMode] to be used by the app
+     */
+    @Provides
+    @DefaultSaveMode
+    fun providesSaveMode(): SaveMode = SaveMode.Immediate
+
+    @Provides
+    @DefaultFilePathGenerator
+    fun providesFilePathGenerator(): FilePathGenerator = JcaFilePathGenerator()
+}

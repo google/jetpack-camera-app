@@ -115,11 +115,11 @@ dependencies {
     // Media3
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui.compose)
+    implementation(libs.androidx.media3.ui.compose.media3)
 
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.mockito.core)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     debugImplementation(libs.androidx.test.monitor)
@@ -135,6 +135,12 @@ dependencies {
     // Project dependencies
     implementation(project(":core:common"))
     implementation(project(":data:media"))
+    implementation(project(":ui:uistate:postcapture"))
+    implementation(project(":ui:uistate:capture"))
+    implementation(project(":ui:components:capture"))
+    implementation(project(":ui:uistateadapter:capture"))
+    implementation(project(":ui:uistateadapter:postcapture"))
+    testImplementation(project(":ui:uistate:postcapture"))
     testImplementation(project(":core:common"))
 }
 

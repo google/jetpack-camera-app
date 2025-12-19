@@ -73,6 +73,7 @@ android {
 
     @Suppress("UnstableApiUsage")
     testOptions {
+        unitTests.isIncludeAndroidResources = true
         managedDevices {
             localDevices {
                 create("pixel2Api28") {
@@ -106,7 +107,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.mockito.core)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.rules)
@@ -141,6 +142,7 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:common"))
     implementation(project(":core:camera:low-light"))
+    implementation(project(":core:camera:postprocess"))
 
 }
 

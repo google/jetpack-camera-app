@@ -29,11 +29,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 private const val TAG = "CameraCoreUtil"
-object CameraCoreUtil {
-    fun getDefaultMediaSaveLocation(): String {
-        return Environment.DIRECTORY_DCIM + File.separator + "Camera"
-    }
 
+object CameraCoreUtil {
     @OptIn(ExperimentalCamera2Interop::class)
     @RequiresApi(Build.VERSION_CODES.P)
     fun getAllCamerasPropertiesJSONArray(cameraInfos: List<CameraInfo>): JSONArray {

@@ -23,6 +23,16 @@ import android.net.Uri
 sealed interface SaveLocation {
 
     /**
+     * Indicates that the application should capture media to a temporary file.
+     *
+     * @param cacheDir the [Uri] where captured media should be cached.
+     *
+     * If [cacheDir] is null, then the app's cache location will default to
+     * [android.content.Context.getCacheDir].
+     */
+    data class Cache(val cacheDir: Uri? = null) : SaveLocation
+
+    /**
      * Indicates that the application's default logic for capturing media
      * should determine the save location and filename. The CameraUseCase typically
      * creates a new entry in the MediaStore with a generated name.

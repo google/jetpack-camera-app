@@ -15,17 +15,22 @@
  */
 package com.google.jetpackcamera.model
 
-import android.util.Rational
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 
-enum class AspectRatio(val ratio: Rational) {
-    THREE_FOUR(Rational(3, 4)),
-    NINE_SIXTEEN(Rational(9, 16)),
-    ONE_ONE(Rational(1, 1));
+enum class AspectRatio(val numerator: Int, val denominator: Int) {
+    THREE_FOUR(3, 4),
+    NINE_SIXTEEN(9, 16),
+    ONE_ONE(1, 1);
 
-    val landscapeRatio: Rational by lazy {
-        Rational(ratio.denominator, ratio.numerator)
-    }
+    /**
+     * Returns the [Float] representation of the [AspectRatio].
+     */
+    fun toFloat(): Float = numerator.toFloat() / denominator
+
+    /**
+     * Returns the landscape aspect ratio as a [Float].
+     */
+    fun toLandscapeFloat(): Float = denominator.toFloat() / numerator
 
     companion object {
 

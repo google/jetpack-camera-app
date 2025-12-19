@@ -16,12 +16,15 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.test.FakeCameraSystem
 import com.google.jetpackcamera.data.media.FakeMediaRepository
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.test.FakeSettingsRepository
@@ -39,7 +42,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -59,8 +61,9 @@ class PreviewViewModelTest {
             cameraSystem = cameraSystem,
             constraintsRepository = constraintsRepository,
             settingsRepository = FakeSettingsRepository,
-            mediaRepository = FakeMediaRepository,
-            savedStateHandle = SavedStateHandle()
+            mediaRepository = FakeMediaRepository(),
+            savedStateHandle = SavedStateHandle(),
+            defaultSaveMode = SaveMode.Immediate
         )
         advanceUntilIdle()
     }
@@ -74,15 +77,16 @@ class PreviewViewModelTest {
 
     @Test
     fun runCamera() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCameraUntilRunning()
+        startCameraUntilRunning()
 
         assertThat(cameraSystem.previewStarted).isTrue()
     }
 
     @Test
     fun captureImageWithUri() = runTest(StandardTestDispatcher()) {
-        val contentResolver: ContentResolver = mock()
-        previewViewModel.startCameraUntilRunning()
+        val contentResolver: ContentResolver =
+            ApplicationProvider.getApplicationContext<Context>().contentResolver
+        startCameraUntilRunning()
         previewViewModel.captureImage(contentResolver)
         advanceUntilIdle()
         assertThat(cameraSystem.numPicturesTaken).isEqualTo(1)
@@ -90,7 +94,7 @@ class PreviewViewModelTest {
 
     @Test
     fun startVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCameraUntilRunning()
+        startCameraUntilRunning()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         assertThat(cameraSystem.recordingInProgress).isTrue()
@@ -98,7 +102,7 @@ class PreviewViewModelTest {
 
     @Test
     fun stopVideoRecording() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCameraUntilRunning()
+        startCameraUntilRunning()
         previewViewModel.startVideoRecording()
         advanceUntilIdle()
         previewViewModel.stopVideoRecording()
@@ -171,9 +175,8 @@ class PreviewViewModelTest {
         }
     }
 
-    context(TestScope)
-    private fun PreviewViewModel.startCameraUntilRunning() {
-        startCamera()
+    private fun TestScope.startCameraUntilRunning() {
+        previewViewModel.startCamera()
         advanceUntilIdle()
     }
 }

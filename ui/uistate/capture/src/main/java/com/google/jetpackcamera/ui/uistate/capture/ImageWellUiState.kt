@@ -17,11 +17,10 @@ package com.google.jetpackcamera.ui.uistate.capture
 
 import com.google.jetpackcamera.data.media.MediaDescriptor
 
-// TODO(yasith): Add support for Video
 sealed interface ImageWellUiState {
     data object Unavailable : ImageWellUiState
 
-    data class LastCapture(val mediaDescriptor: MediaDescriptor) : ImageWellUiState
+    data class LastCapture(val mediaDescriptor: MediaDescriptor.Content) : ImageWellUiState
 
     companion object
 }

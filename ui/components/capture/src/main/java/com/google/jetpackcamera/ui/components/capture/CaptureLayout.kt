@@ -45,19 +45,20 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
-    viewfinder: @Composable (modifier: Modifier) -> Unit,
-    captureButton: @Composable (modifier: Modifier) -> Unit,
-    flipCameraButton: @Composable (modifier: Modifier) -> Unit,
-    zoomLevelDisplay: @Composable (modifier: Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable (modifier: Modifier) -> Unit,
-    quickSettingsButton: @Composable (modifier: Modifier) -> Unit,
-    indicatorRow: @Composable (modifier: Modifier) -> Unit,
-    captureModeToggle: @Composable (modifier: Modifier) -> Unit,
-    quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
-    debugOverlay: @Composable (modifier: Modifier) -> Unit,
+    viewfinder: @Composable (Modifier) -> Unit,
+    captureButton: @Composable (Modifier) -> Unit,
+    imageWell: @Composable (Modifier) -> Unit,
+    flipCameraButton: @Composable (Modifier) -> Unit,
+    zoomLevelDisplay: @Composable (Modifier) -> Unit,
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    quickSettingsButton: @Composable (Modifier) -> Unit,
+    indicatorRow: @Composable (Modifier) -> Unit,
+    captureModeToggle: @Composable (Modifier) -> Unit,
+    quickSettingsOverlay: @Composable (Modifier) -> Unit,
+    debugOverlay: @Composable (Modifier) -> Unit,
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
-    screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
-    snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit
+    screenFlashOverlay: @Composable (Modifier) -> Unit,
+    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
@@ -80,6 +81,7 @@ fun PreviewLayout(
                 debugVisibilityWrapper {
                     VerticalMaterialControls(
                         captureButton = captureButton,
+                        imageWell = imageWell,
                         flipCameraButton = flipCameraButton,
                         quickSettingsToggleButton = quickSettingsButton,
                         captureModeToggleSwitch = captureModeToggle,
@@ -102,6 +104,7 @@ private fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
     captureButton: @Composable (Modifier) -> Unit,
     zoomControls: @Composable (Modifier) -> Unit,
+    imageWell: @Composable (Modifier) -> Unit,
     flipCameraButton: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     bottomSheetQuickSettings: @Composable (Modifier) -> Unit,
@@ -132,7 +135,7 @@ private fun VerticalMaterialControls(
                                     .height(120.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                //  item to be placed left of capture button goes here
+                                imageWell(Modifier)
                             }
                         }
                         captureButton(Modifier)
@@ -215,6 +218,13 @@ private fun CaptureLayoutPreview() {
             )
         },
         flipCameraButton = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(48.dp)
+                    .background(Color.Cyan)
+            )
+        },
+        imageWell = { modifier ->
             Box(
                 modifier = modifier
                     .size(48.dp)

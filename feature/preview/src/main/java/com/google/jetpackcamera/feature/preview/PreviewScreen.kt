@@ -72,11 +72,13 @@ import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CaptureButton
@@ -109,6 +111,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
@@ -155,6 +158,11 @@ fun PreviewScreen(
     LaunchedEffect(Unit) {
         for (event in viewModel.captureEvents) {
             currentOnCaptureEvent(event)
+            if (event is ImageCaptureEvent.SingleImageCached ||
+                event is VideoCaptureEvent.VideoCached
+            ) {
+                onNavigateToPostCapture()
+            }
         }
     }
 
@@ -272,7 +280,7 @@ fun PreviewScreen(
                 onSetLensFacing = viewModel::setLensFacing,
                 onTapToFocus = viewModel::tapToFocus,
                 onSetTestPattern = viewModel::setTestPattern,
-
+                onSetImageWell = viewModel::imageWellToRepository,
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
                         zoomState.absoluteZoom(
@@ -326,7 +334,7 @@ fun PreviewScreen(
                 onLockVideoRecording = viewModel::setLockedRecording,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                onImageWellClick = onNavigateToPostCapture
+                onNavigatePostCapture = onNavigateToPostCapture
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -356,6 +364,7 @@ private fun ContentScreen(
     onSetLensFacing: (newLensFacing: LensFacing) -> Unit = {},
     onTapToFocus: (x: Float, y: Float) -> Unit = { _, _ -> },
     onSetTestPattern: (TestPattern) -> Unit = {},
+    onSetImageWell: () -> Unit = {},
     onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onScaleZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onIncrementZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
@@ -379,7 +388,7 @@ private fun ContentScreen(
     onLockVideoRecording: (Boolean) -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
-    onImageWellClick: () -> Unit = {}
+    onNavigatePostCapture: () -> Unit = {}
 ) {
     val onFlipCamera = {
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
@@ -430,7 +439,8 @@ private fun ContentScreen(
                 onTapToFocus = onTapToFocus,
                 onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
                 surfaceRequest = surfaceRequest,
-                onRequestWindowColorMode = onRequestWindowColorMode
+                onRequestWindowColorMode = onRequestWindowColorMode,
+                focusMeteringUiState = captureUiState.focusMeteringUiState
             )
         },
         captureButton = {
@@ -605,11 +615,16 @@ private fun ContentScreen(
         },
         imageWell = { modifier ->
             if (captureUiState.externalCaptureMode == ExternalCaptureMode.Standard) {
-                ImageWell(
-                    modifier = modifier,
-                    imageWellUiState = captureUiState.imageWellUiState,
-                    onClick = onImageWellClick
-                )
+                (captureUiState.imageWellUiState as? ImageWellUiState.LastCapture)?.let {
+                    ImageWell(
+                        modifier = modifier,
+                        imageWellUiState = it,
+                        onClick = {
+                            onSetImageWell()
+                            onNavigatePostCapture()
+                        }
+                    )
+                }
             }
         }
     )
@@ -659,6 +674,7 @@ private fun LayoutWrapper(
         modifier = modifier,
         viewfinder = viewfinder,
         captureButton = captureButton,
+        imageWell = imageWell,
         flipCameraButton = flipCameraButton,
         zoomLevelDisplay = zoomLevelDisplay,
         elapsedTimeDisplay = elapsedTimeDisplay,
@@ -683,7 +699,6 @@ private fun LayoutWrapper(
                 modifier,
                 arrayOf(
                     { audioToggleButton(Modifier) },
-                    { imageWell(Modifier) },
                     { pauseToggleButton(Modifier) }
                 )
             )

@@ -77,6 +77,10 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.truth)
@@ -85,6 +89,8 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core:common"))
+    testImplementation(project(":core:common"))
+
 }
 
 // Allow references to generated code

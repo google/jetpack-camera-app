@@ -24,6 +24,7 @@ import android.os.Environment
 import android.provider.BaseColumns
 import android.provider.MediaStore
 import android.util.Log
+import java.io.File
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -56,6 +57,10 @@ internal val MOVIES_DIR_PATH: String = Environment.getExternalStoragePublicDirec
     Environment.DIRECTORY_MOVIES
 ).path
 
+internal val JCA_MEDIA_DIR_PATH: String = Environment.getExternalStoragePublicDirectory(
+    Environment.DIRECTORY_DCIM + File.separator + "Camera"
+
+).path
 fun mediaStoreInsertedFlow(
     mediaUri: Uri,
     instrumentation: Instrumentation,

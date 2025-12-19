@@ -74,10 +74,6 @@ android {
             }
         }
     }
-
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
-    }
 }
 
 dependencies {
@@ -116,7 +112,6 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.mockito.core)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     debugImplementation(libs.androidx.test.monitor)
