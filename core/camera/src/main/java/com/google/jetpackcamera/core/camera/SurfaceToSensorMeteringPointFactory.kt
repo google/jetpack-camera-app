@@ -56,8 +56,9 @@ class SurfaceToSensorMeteringPointFactory(
     }
 
     override fun convertPoint(x: Float, y: Float): PointF {
-        val point = floatArrayOf(x, y)
-        surfaceToNormalizedSensorTransform.mapPoints(point)
-        return PointF(point[0], point[1])
+//        val point = floatArrayOf(x, y)
+//        surfaceToNormalizedSensorTransform.mapPoints(point)
+//        return PointF(point[0], point[1])
+        return PointF(0.5f, 0.5f)
     }
 }

@@ -19,6 +19,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.dagger.hilt.android)
+    id("maven-publish")
 }
 
 android {
@@ -84,4 +85,29 @@ dependencies {
 
 kapt {
     correctErrorTypes = true
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("stableRelease") {
+            groupId = "com.diveroid"
+            artifactId = "android-camerax-common"
+            version = "0.0.1"
+
+            afterEvaluate {
+                from(components["stableRelease"])
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/DIVEROID-software/jetpack-camera-app")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }
