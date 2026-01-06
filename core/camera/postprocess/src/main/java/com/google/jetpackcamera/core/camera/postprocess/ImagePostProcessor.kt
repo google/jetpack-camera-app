@@ -30,6 +30,7 @@ interface ImagePostProcessor {
      * performing the post-processing.
      *
      * @param uri The [Uri] of the saved image that needs to be processed.
+     * @param contentResolver The [ContentResolver] used for post processing.
      */
     suspend fun postProcessImage(uri: Uri, contentResolver: ContentResolver)
 }

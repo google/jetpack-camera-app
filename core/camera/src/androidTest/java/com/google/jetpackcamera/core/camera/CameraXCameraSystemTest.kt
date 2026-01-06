@@ -405,7 +405,7 @@ object FakeImagePostProcessorFeatureKey : ImagePostProcessorFeatureKey
 class FakeImagePostProcessor(val shouldError: Boolean = false) : ImagePostProcessor {
     var postProcessImageCalled = false
     var savedUri: Uri? = null
-    override suspend fun postProcessImage(uri: Uri) {
+    override suspend fun postProcessImage(uri: Uri, contentResolver: ContentResolver) {
         postProcessImageCalled = true
         savedUri = uri
         if (shouldError) throw RuntimeException("Post process failed")
