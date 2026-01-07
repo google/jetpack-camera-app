@@ -34,13 +34,13 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
-import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.searchForQuickSetting
+import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,9 +60,7 @@ class NavigationTest {
     @Test
     fun backAfterReturnFromSettings_doesNotReturnToSettings() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         // open quick settings
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
@@ -96,9 +94,7 @@ class NavigationTest {
     @Test
     fun returnFromSettings_afterFlipCamera_returnsToPreview() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         // If flipping the camera is available, flip it. Otherwise skip test.
         composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON)
@@ -131,9 +127,7 @@ class NavigationTest {
     @Test
     fun backFromQuickSettings_returnToPreview() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         // Navigate to the quick settings screen
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
@@ -155,9 +149,7 @@ class NavigationTest {
     @Test
     fun backFromQuickSettingsExpended_returnToQuickSettings() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         // Navigate to the quick settings screen
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)

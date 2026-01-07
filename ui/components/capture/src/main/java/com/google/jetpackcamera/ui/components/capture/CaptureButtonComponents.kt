@@ -47,6 +47,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +68,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -166,9 +169,9 @@ fun CaptureButton(
     captureButtonUiState: CaptureButtonUiState,
     captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE
 ) {
-    var currentUiState = rememberUpdatedState(captureButtonUiState)
+    val currentUiState = rememberUpdatedState(captureButtonUiState)
     val firstKeyPressed = remember { mutableStateOf<CaptureSource?>(null) }
-    val isLongPressing = remember { mutableStateOf<Boolean>(false) }
+    val isLongPressing = remember { mutableStateOf(false) }
     var longPressJob by remember { mutableStateOf<Job?>(null) }
     val scope = rememberCoroutineScope()
     val longPressTimeout = LocalViewConfiguration.current.longPressTimeoutMillis
@@ -183,7 +186,7 @@ fun CaptureButton(
         }
     }
     fun onLongPress() {
-        if (isLongPressing.value == false) {
+        if (!isLongPressing.value) {
             when (val current = currentUiState.value) {
                 is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
                     CaptureMode.STANDARD,
@@ -268,6 +271,25 @@ fun CaptureButton(
 }
 
 @Composable
+private fun rememberDebouncedVisuallyDisabled(
+    captureButtonUiState: CaptureButtonUiState,
+    delayMillis: Long = 1000L
+): State<Boolean> {
+    val isVisuallyDisabled = remember {
+        mutableStateOf(captureButtonUiState is CaptureButtonUiState.Unavailable)
+    }
+    LaunchedEffect(captureButtonUiState) {
+        if (captureButtonUiState is CaptureButtonUiState.Unavailable) {
+            delay(delayMillis)
+            isVisuallyDisabled.value = true
+        } else {
+            isVisuallyDisabled.value = false
+        }
+    }
+    return isVisuallyDisabled
+}
+
+@Composable
 private fun CaptureButton(
     modifier: Modifier = Modifier,
     onPress: () -> Unit,
@@ -289,9 +311,24 @@ private fun CaptureButton(
 
     val currentUiState = rememberUpdatedState(captureButtonUiState)
     val switchWidth = (captureButtonSize * LOCK_SWITCH_WIDTH_SCALE)
-    val currentColor = LocalContentColor.current
 
     var relativeCaptureButtonBounds by remember { mutableStateOf<Rect?>(null) }
+
+    val isEnabled = captureButtonUiState !is CaptureButtonUiState.Unavailable
+
+    val isVisuallyDisabled by rememberDebouncedVisuallyDisabled(
+        captureButtonUiState = captureButtonUiState
+    )
+
+    val animatedColor by animateColorAsState(
+        targetValue = if (isVisuallyDisabled) {
+            LocalContentColor.current.copy(alpha = 0.38f)
+        } else {
+            LocalContentColor.current
+        },
+        animationSpec = tween(durationMillis = if (isVisuallyDisabled) 1000 else 300),
+        label = "Capture Button Color"
+    )
 
     fun shouldBeLocked(): Boolean = switchPosition > MINIMUM_LOCK_THRESHOLD
 
@@ -323,12 +360,8 @@ private fun CaptureButton(
                 LOCK_SWITCH_POSITION_ON
         }
     }
-    CaptureButtonRing(
-        modifier = modifier
-            .onSizeChanged {
-                relativeCaptureButtonBounds =
-                    Rect(0f, 0f, it.width.toFloat(), it.height.toFloat())
-            }
+    val gestureModifier = if (isEnabled) {
+        Modifier
             .pointerInput(Unit) {
                 detectTapGestures(
                     // onLongPress cannot be null, otherwise it won't detect the release if the
@@ -385,9 +418,24 @@ private fun CaptureButton(
                         }
                     }
                 )
-            },
+            }
+    } else {
+        Modifier
+    }
+    CaptureButtonRing(
+        modifier = modifier
+            .onSizeChanged {
+                relativeCaptureButtonBounds =
+                    Rect(0f, 0f, it.width.toFloat(), it.height.toFloat())
+            }
+            .semantics {
+                if (!isEnabled) {
+                    disabled()
+                }
+            }
+            .then(gestureModifier),
         captureButtonSize = captureButtonSize,
-        color = currentColor
+        color = animatedColor
     ) {
         if (useLockSwitch) {
             LockSwitchCaptureButtonNucleus(
@@ -631,6 +679,19 @@ private fun CaptureButtonNucleus(
             }
         }
     }
+}
+
+@Preview
+@Composable
+private fun CaptureButtonUnavailablePreview() {
+    CaptureButton(
+        onImageCapture = {},
+        onStartRecording = {},
+        onStopRecording = {},
+        onLockVideoRecording = {},
+        onIncrementZoom = {},
+        captureButtonUiState = CaptureButtonUiState.Unavailable
+    )
 }
 
 @Preview
