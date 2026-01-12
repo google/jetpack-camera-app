@@ -19,10 +19,10 @@ import com.google.jetpackcamera.model.CaptureMode
 
 sealed interface CaptureButtonUiState {
     data object Unavailable : CaptureButtonUiState
-    sealed interface Enabled : CaptureButtonUiState {
-        data class Idle(val captureMode: CaptureMode) : Enabled
+    sealed interface Available : CaptureButtonUiState {
+        data class Idle(val captureMode: CaptureMode) : Available
 
-        sealed interface Recording : Enabled {
+        sealed interface Recording : Available {
             data object PressedRecording : Recording
             data object LockedRecording : Recording
         }

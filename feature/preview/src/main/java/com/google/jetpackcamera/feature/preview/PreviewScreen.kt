@@ -739,7 +739,7 @@ private fun ContentScreen_ImageOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
-                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
+                captureButtonUiState = CaptureButtonUiState.Available.Idle(CaptureMode.IMAGE_ONLY)
             ),
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
@@ -753,7 +753,7 @@ private fun ContentScreen_VideoOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
-                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
+                captureButtonUiState = CaptureButtonUiState.Available.Idle(CaptureMode.VIDEO_ONLY)
             ),
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
@@ -793,12 +793,12 @@ private val FAKE_PREVIEW_UI_STATE_READY = CaptureUiState.Ready(
 
 private val FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(
     videoRecordingState = VideoRecordingState.Active.Recording(0, 0.0, 0),
-    captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording,
+    captureButtonUiState = CaptureButtonUiState.Available.Recording.PressedRecording,
     audioUiState = AudioUiState.Enabled.On(1.0)
 )
 
 private val FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(
     videoRecordingState = VideoRecordingState.Active.Recording(0, 0.0, 0),
-    captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording,
+    captureButtonUiState = CaptureButtonUiState.Available.Recording.LockedRecording,
     audioUiState = AudioUiState.Enabled.On(1.0)
 )

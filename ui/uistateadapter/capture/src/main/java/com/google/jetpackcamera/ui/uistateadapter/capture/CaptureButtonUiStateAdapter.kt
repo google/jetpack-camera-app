@@ -29,19 +29,19 @@ fun CaptureButtonUiState.Companion.from(
         // if not currently recording, check capturemode to determine idle capture button UI
         is VideoRecordingState.Inactive ->
             CaptureButtonUiState
-                .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
+                .Available.Idle(captureMode = cameraAppSettings.captureMode)
 
         // display different capture button UI depending on if recording is pressed or locked
         is VideoRecordingState.Active.Recording, is VideoRecordingState.Active.Paused ->
             if (lockedState) {
-                CaptureButtonUiState.Enabled.Recording.LockedRecording
+                CaptureButtonUiState.Available.Recording.LockedRecording
             } else {
-                CaptureButtonUiState.Enabled.Recording.PressedRecording
+                CaptureButtonUiState.Available.Recording.PressedRecording
             }
 
         is VideoRecordingState.Starting ->
             CaptureButtonUiState
-                .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
+                .Available.Idle(captureMode = cameraAppSettings.captureMode)
     }
 } else {
     CaptureButtonUiState.Unavailable
