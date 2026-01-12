@@ -29,7 +29,6 @@ import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
-import androidx.camera.core.UseCaseGroup
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
@@ -224,9 +223,9 @@ val CameraInfo.supportedImageFormats: Set<ImageOutputFormat>
         .mapNotNull(Int::toAppImageFormat)
         .toSet()
 
-fun UseCaseGroup.getVideoCapture() = getUseCaseOrNull<VideoCapture<Recorder>>()
-fun UseCaseGroup.getImageCapture() = getUseCaseOrNull<ImageCapture>()
+fun List<UseCase>.getVideoCapture() = getUseCaseOrNull<VideoCapture<Recorder>>()
+fun List<UseCase>.getImageCapture() = getUseCaseOrNull<ImageCapture>()
 
-private inline fun <reified T : UseCase> UseCaseGroup.getUseCaseOrNull(): T? {
-    return useCases.filterIsInstance<T>().singleOrNull()
+private inline fun <reified T : UseCase> List<UseCase>.getUseCaseOrNull(): T? {
+    return filterIsInstance<T>().singleOrNull()
 }
