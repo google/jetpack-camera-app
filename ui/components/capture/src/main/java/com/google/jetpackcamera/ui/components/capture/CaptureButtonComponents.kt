@@ -209,6 +209,7 @@ fun CaptureButton(
     }
 
     fun onPress(captureSource: CaptureSource) {
+        if (!captureButtonUiState.isEnabled) return
         if (firstKeyPressed.value == null) {
             firstKeyPressed.value = captureSource
             longPressJob = scope.launch {
@@ -290,10 +291,10 @@ private fun rememberDebouncedVisuallyDisabled(
     delayMillis: Long = 1000L
 ): State<Boolean> {
     val isVisuallyDisabled = remember {
-        mutableStateOf(captureButtonUiState is CaptureButtonUiState.Unavailable)
+        mutableStateOf(!captureButtonUiState.isEnabled)
     }
     LaunchedEffect(captureButtonUiState) {
-        if (captureButtonUiState is CaptureButtonUiState.Unavailable) {
+        if (!captureButtonUiState.isEnabled) {
             delay(delayMillis)
             isVisuallyDisabled.value = true
         } else {
@@ -327,8 +328,6 @@ private fun CaptureButton(
     val switchWidth = (captureButtonSize * LOCK_SWITCH_WIDTH_SCALE)
 
     var relativeCaptureButtonBounds by remember { mutableStateOf<Rect?>(null) }
-
-    val isEnabled = captureButtonUiState !is CaptureButtonUiState.Unavailable
 
     val isVisuallyDisabled by rememberDebouncedVisuallyDisabled(
         captureButtonUiState = captureButtonUiState
@@ -374,7 +373,7 @@ private fun CaptureButton(
                 LOCK_SWITCH_POSITION_ON
         }
     }
-    val gestureModifier = if (isEnabled) {
+    val gestureModifier = if (captureButtonUiState.isEnabled) {
         Modifier
             .pointerInput(Unit) {
                 detectTapGestures(
@@ -443,7 +442,7 @@ private fun CaptureButton(
                     Rect(0f, 0f, it.width.toFloat(), it.height.toFloat())
             }
             .semantics {
-                if (!isEnabled) {
+                if (!captureButtonUiState.isEnabled) {
                     disabled()
                 }
             }

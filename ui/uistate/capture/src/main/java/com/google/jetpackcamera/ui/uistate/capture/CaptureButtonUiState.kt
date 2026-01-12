@@ -18,11 +18,21 @@ package com.google.jetpackcamera.ui.uistate.capture
 import com.google.jetpackcamera.model.CaptureMode
 
 sealed interface CaptureButtonUiState {
-    data object Unavailable : CaptureButtonUiState
+    val isEnabled: Boolean
+
+    data object Unavailable : CaptureButtonUiState {
+        override val isEnabled: Boolean = false
+    }
+
     sealed interface Available : CaptureButtonUiState {
-        data class Idle(val captureMode: CaptureMode) : Available
+        data class Idle(
+            val captureMode: CaptureMode,
+            override val isEnabled: Boolean = true
+        ) : Available
 
         sealed interface Recording : Available {
+            override val isEnabled: Boolean get() = true
+
             data object PressedRecording : Recording
             data object LockedRecording : Recording
         }

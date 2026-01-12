@@ -44,5 +44,6 @@ fun CaptureButtonUiState.Companion.from(
                 .Available.Idle(captureMode = cameraAppSettings.captureMode)
     }
 } else {
-    CaptureButtonUiState.Unavailable
+    CaptureButtonUiState
+        .Available.Idle(captureMode = cameraAppSettings.captureMode, isEnabled = false)
 }
