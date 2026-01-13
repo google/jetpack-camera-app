@@ -725,19 +725,22 @@ private fun CaptureButtonUnavailablePreview() {
 private fun PreviewCaptureButton(
     captureButtonUiState: CaptureButtonUiState,
     modifier: Modifier = Modifier,
+    contentAlignment: Alignment = Alignment.Center,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
 ) {
-    Surface(color = Color.Black, contentColor = Color.White) {
-        CaptureButton(
-            modifier = modifier,
-            onImageCapture = {},
-            onStartRecording = {},
-            onStopRecording = {},
-            onLockVideoRecording = {},
-            onIncrementZoom = {},
-            captureButtonUiState = captureButtonUiState,
-            interactionSource = interactionSource
-        )
+    Surface(color = Color.Black, contentColor = Color.White, modifier = modifier) {
+        Box(contentAlignment = contentAlignment) {
+            CaptureButton(
+                modifier = Modifier,
+                onImageCapture = {},
+                onStartRecording = {},
+                onStopRecording = {},
+                onLockVideoRecording = {},
+                onIncrementZoom = {},
+                captureButtonUiState = captureButtonUiState,
+                interactionSource = interactionSource
+            )
+        }
     }
 }
 
@@ -813,10 +816,12 @@ private fun PressedImageCaptureButtonPreview() {
 
 @Preview
 @Composable
-private fun SimpleNucleusPressedRecordingPreview() {
-    // This state is visual only based on UI State, doesn't require press interaction to look pressed
+private fun LockSwitchUnlockedPressedRecordingPreview() {
+    // box is here to account for the offset lock switch
     PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Available.Recording.PressedRecording
+        captureButtonUiState = CaptureButtonUiState.Available.Recording.PressedRecording,
+        modifier = Modifier.width(150.dp),
+        contentAlignment = Alignment.CenterEnd
     )
 }
 
@@ -826,24 +831,6 @@ private fun LockedRecordingPreview() {
     PreviewCaptureButton(
         captureButtonUiState = CaptureButtonUiState.Available.Recording.LockedRecording
     )
-}
-
-@Preview
-@Composable
-private fun LockSwitchUnlockedPressedRecordingPreview() {
-    // box is here to account for the offset lock switch
-    Box(modifier = Modifier.width(150.dp), contentAlignment = Alignment.CenterEnd) {
-        CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.White) {
-            LockSwitchCaptureButtonNucleus(
-                captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
-                captureButtonUiState = CaptureButtonUiState.Available.Recording.PressedRecording,
-                switchWidth = (DEFAULT_CAPTURE_BUTTON_SIZE * LOCK_SWITCH_WIDTH_SCALE).dp,
-                switchPosition = 0f,
-                onToggleSwitchPosition = {},
-                shouldBeLocked = { false }
-            )
-        }
-    }
 }
 
 @Preview
