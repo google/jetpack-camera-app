@@ -186,6 +186,9 @@ fun CaptureButton(
     val scope = rememberCoroutineScope()
     val longPressTimeout = LocalViewConfiguration.current.longPressTimeoutMillis
 
+    // To handle press interactions from key events
+    var currentPressInteraction by remember { mutableStateOf<PressInteraction.Press?>(null) }
+
     LaunchedEffect(captureButtonUiState) {
         if (captureButtonUiState is CaptureButtonUiState.Available.Idle) {
             onLockVideoRecording(false)
@@ -221,6 +224,16 @@ fun CaptureButton(
         if (!captureButtonUiState.isEnabled) return
         if (firstKeyPressed.value == null) {
             firstKeyPressed.value = captureSource
+
+            // Emit press interaction for key events to trigger UI feedback
+            if (captureSource != CaptureSource.CAPTURE_BUTTON) {
+                val press = PressInteraction.Press(Offset.Zero)
+                currentPressInteraction = press
+                scope.launch {
+                    interactionSource.emit(press)
+                }
+            }
+
             longPressJob = scope.launch {
                 delay(longPressTimeout)
                 onLongPress()
@@ -231,6 +244,18 @@ fun CaptureButton(
     fun onKeyUp(captureSource: CaptureSource, isLocked: Boolean = false) {
         // releasing while pressed recording
         if (firstKeyPressed.value == captureSource) {
+            // Emit release interaction for key events
+            if (captureSource != CaptureSource.CAPTURE_BUTTON) {
+                val interactionToRelease = currentPressInteraction
+                currentPressInteraction = null
+                if (interactionToRelease != null) {
+                    scope.launch {
+                        delay(50) // Ensure visible press state for fast taps
+                        interactionSource.emit(PressInteraction.Release(interactionToRelease))
+                    }
+                }
+            }
+
             if (isLongPressing.value) {
                 if (!isLocked &&
                     currentUiState.value is
