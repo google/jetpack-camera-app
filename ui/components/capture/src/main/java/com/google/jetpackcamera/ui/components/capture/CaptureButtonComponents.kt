@@ -21,6 +21,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
@@ -348,7 +349,11 @@ private fun CaptureButton(
         } else {
             LocalContentColor.current
         },
-        animationSpec = tween(durationMillis = if (isVisuallyDisabled) 1000 else 300),
+        animationSpec = if (isVisuallyDisabled) {
+            tween(durationMillis = 1000)
+        } else {
+            tween(durationMillis = 300)
+        },
         label = "Capture Button Color"
     )
 
@@ -639,7 +644,7 @@ private fun CaptureButtonNucleus(
     val currentUiState = rememberUpdatedState(captureButtonUiState)
 
     // smoothly animate between the size changes of the capture button center
-    val centerShapeSize by animateDpAsState(
+    val standardShapeSize by animateDpAsState(
         targetValue = when (val uiState = currentUiState.value) {
             // inner circle fills white ring when locked
             CaptureButtonUiState.Available.Recording.LockedRecording -> captureButtonSize.dp
@@ -659,6 +664,31 @@ private fun CaptureButtonNucleus(
         },
         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
     )
+    
+    val pressTransition = updateTransition(
+        targetState = isPressed &&
+            currentUiState.value.let {
+                it is CaptureButtonUiState.Available.Idle && it.captureMode == CaptureMode.IMAGE_ONLY
+            },
+        label = "Press Size Transition"
+    )
+
+    val centerShapeSize by pressTransition.animateDp(
+        transitionSpec = {
+            if (targetState) {
+                snap()
+            } else {
+                tween(durationMillis = 200)
+            }
+        },
+        label = "Nucleus Size"
+    ) { isPressedImage ->
+        if (isPressedImage) {
+            captureButtonSize.dp
+        } else {
+            standardShapeSize
+        }
+    }
 
     // used to fade between red/white in the center of the capture button
     val isPressableImageMode = currentUiState.value.let {
@@ -678,6 +708,7 @@ private fun CaptureButtonNucleus(
             when {
                 NucleusState.Disabled isTransitioningTo NucleusState.Idle -> tween(durationMillis = 300)
                 NucleusState.Idle isTransitioningTo NucleusState.Disabled -> tween(durationMillis = 1000)
+                NucleusState.Pressed isTransitioningTo NucleusState.Idle -> tween(durationMillis = 100)
                 else -> snap()
             }
         }
