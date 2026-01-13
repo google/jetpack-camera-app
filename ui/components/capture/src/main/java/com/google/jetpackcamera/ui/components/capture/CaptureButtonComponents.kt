@@ -733,6 +733,63 @@ private fun IdleImageCaptureButtonPreview() {
 
 @Preview
 @Composable
+private fun IdleVideoOnlyCaptureButtonPreview() {
+    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.White) {
+        CaptureButtonNucleus(
+            captureButtonUiState = CaptureButtonUiState.Available.Idle(CaptureMode.VIDEO_ONLY),
+            isPressed = false,
+            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun IdleStandardCaptureButtonDisabledPreview() {
+    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.Gray) {
+        CaptureButtonNucleus(
+            captureButtonUiState = CaptureButtonUiState.Available.Idle(
+                CaptureMode.STANDARD,
+                isEnabled = false
+            ),
+            isPressed = false,
+            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun IdleImageCaptureButtonDisabledPreview() {
+    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.Gray) {
+        CaptureButtonNucleus(
+            captureButtonUiState = CaptureButtonUiState.Available.Idle(
+                CaptureMode.IMAGE_ONLY,
+                isEnabled = false
+            ),
+            isPressed = false,
+            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun IdleVideoOnlyCaptureButtonDisabledPreview() {
+    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.Gray) {
+        CaptureButtonNucleus(
+            captureButtonUiState = CaptureButtonUiState.Available.Idle(
+                CaptureMode.VIDEO_ONLY,
+                isEnabled = false
+            ),
+            isPressed = false,
+            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
+        )
+    }
+}
+
+@Preview
+@Composable
 private fun PressedImageCaptureButtonPreview() {
     CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.White) {
         CaptureButtonNucleus(
