@@ -20,7 +20,6 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -33,7 +32,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.MainActivity
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
-import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
@@ -44,7 +42,6 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTO
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.assume
@@ -53,6 +50,8 @@ import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedT
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.stateDescriptionMatches
+import com.google.jetpackcamera.utils.waitForCaptureButton
+import com.google.jetpackcamera.utils.waitForNodeWithTag
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -280,9 +279,7 @@ class ConcurrentCameraTest {
 
             longClickForVideoRecordingCheckingElapsedTime()
 
-            waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
-            }
+            waitForNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG, VIDEO_CAPTURE_TIMEOUT_MILLIS)
         }
     }
 
@@ -296,9 +293,7 @@ class ConcurrentCameraTest {
     ) {
         val wrappedBlock: ActivityScenario<MainActivity>.() -> Unit = {
             // Wait for the capture button to be displayed
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-            }
+            composeTestRule.waitForCaptureButton()
 
             // ///////////////////////////////////////////////////
             // Check that the device supports concurrent camera //
