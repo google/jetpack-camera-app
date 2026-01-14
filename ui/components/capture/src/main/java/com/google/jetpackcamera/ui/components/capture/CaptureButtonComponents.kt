@@ -51,9 +51,9 @@ import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -72,6 +72,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -807,12 +808,7 @@ private fun CaptureButtonNucleus(
 @Preview
 @Composable
 private fun CaptureButtonUnavailablePreview() {
-    CaptureButton(
-        onImageCapture = {},
-        onStartRecording = {},
-        onStopRecording = {},
-        onLockVideoRecording = {},
-        onIncrementZoom = {},
+    PreviewCaptureButton(
         captureButtonUiState = CaptureButtonUiState.Unavailable
     )
 }
@@ -825,8 +821,16 @@ private fun PreviewCaptureButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
 ) {
     MaterialTheme(colorScheme = darkColorScheme()) {
-        Surface(color = Color.Black, contentColor = Color.White, modifier = modifier) {
-            Box(contentAlignment = contentAlignment) {
+        CompositionLocalProvider(LocalContentColor provides Color.White) {
+            Box(
+                modifier = modifier
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Gray, Color.DarkGray)
+                        )
+                    ),
+                contentAlignment = contentAlignment
+            ) {
                 CaptureButton(
                     modifier = Modifier,
                     onImageCapture = {},
@@ -904,20 +908,26 @@ private fun IdleVideoOnlyCaptureButtonDisabledPreview() {
 private fun PressedImageCaptureButtonPreview() {
     // Manually constructed preview to verify visual state without relying on interaction source
     MaterialTheme(colorScheme = darkColorScheme()) {
-        Surface(color = Color.Black, contentColor = Color.White) {
-            Box(contentAlignment = Alignment.Center) {
-                CaptureButtonRing(
-                    captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
-                    color = Color.White
-                ) {
-                    CaptureButtonNucleus(
-                        captureButtonUiState = CaptureButtonUiState.Available.Idle(
-                            CaptureMode.IMAGE_ONLY
-                        ),
-                        isPressed = true,
-                        captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Gray, Color.DarkGray)
                     )
-                }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            CaptureButtonRing(
+                captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
+                color = Color.White
+            ) {
+                CaptureButtonNucleus(
+                    captureButtonUiState = CaptureButtonUiState.Available.Idle(
+                        CaptureMode.IMAGE_ONLY
+                    ),
+                    isPressed = true,
+                    captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
+                )
             }
         }
     }
@@ -946,7 +956,16 @@ private fun LockedRecordingPreview() {
 @Composable
 private fun LockSwitchLockedAtThresholdPressedRecordingPreview() {
     // box is here to account for the offset lock switch
-    Box(modifier = Modifier.width(150.dp), contentAlignment = Alignment.CenterEnd) {
+    Box(
+        modifier = Modifier
+            .width(150.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color.Gray, Color.DarkGray)
+                )
+            ),
+        contentAlignment = Alignment.CenterEnd
+    ) {
         CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.White) {
             LockSwitchCaptureButtonNucleus(
                 captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
@@ -965,7 +984,16 @@ private fun LockSwitchLockedAtThresholdPressedRecordingPreview() {
 @Composable
 private fun LockSwitchLockedPressedRecordingPreview() {
     // box is here to account for the offset lock switch
-    Box(modifier = Modifier.width(150.dp), contentAlignment = Alignment.CenterEnd) {
+    Box(
+        modifier = Modifier
+            .width(150.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color.Gray, Color.DarkGray)
+                )
+            ),
+        contentAlignment = Alignment.CenterEnd
+    ) {
         CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.White) {
             LockSwitchCaptureButtonNucleus(
                 captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
