@@ -756,7 +756,8 @@ private fun CaptureButtonNucleus(
                     is CaptureButtonUiState.Available.Idle -> when (uiState.captureMode) {
                         CaptureMode.STANDARD -> imageCaptureModeColor
                         CaptureMode.IMAGE_ONLY -> imageCaptureModeColor
-                        CaptureMode.VIDEO_ONLY -> recordingColor
+                        CaptureMode.VIDEO_ONLY ->
+                            if (isPressed) recordingColor else imageCaptureModeColor
                     }
 
                     is CaptureButtonUiState.Available.Recording -> recordingColor
