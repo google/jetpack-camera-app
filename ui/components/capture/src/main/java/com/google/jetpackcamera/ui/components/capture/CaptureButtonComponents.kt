@@ -629,7 +629,9 @@ private fun LockSwitchCaptureButtonNucleus(
 }
 
 private enum class NucleusState {
-    Disabled, Idle, Pressed
+    Disabled,
+    Idle,
+    Pressed
 }
 
 /**
@@ -689,11 +691,12 @@ private fun CaptureButtonNucleus(
         },
         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
     )
-    
+
     val pressTransition = updateTransition(
         targetState = isPressed &&
             currentUiState.value.let {
-                it is CaptureButtonUiState.Available.Idle && it.captureMode == CaptureMode.IMAGE_ONLY
+                it is CaptureButtonUiState.Available.Idle &&
+                    it.captureMode == CaptureMode.IMAGE_ONLY
             },
         label = "Press Size Transition"
     )
@@ -718,7 +721,7 @@ private fun CaptureButtonNucleus(
     // used to fade between red/white in the center of the capture button
     val isPressableImageMode = currentUiState.value.let {
         it is CaptureButtonUiState.Available.Idle &&
-                (it.captureMode == CaptureMode.IMAGE_ONLY || it.captureMode == CaptureMode.STANDARD)
+            (it.captureMode == CaptureMode.IMAGE_ONLY || it.captureMode == CaptureMode.STANDARD)
     }
     val nucleusState = when {
         isVisuallyDisabled -> NucleusState.Disabled
@@ -726,14 +729,21 @@ private fun CaptureButtonNucleus(
         else -> NucleusState.Idle
     }
 
-    val transition = updateTransition(targetState = nucleusState, label = "Nucleus Color Transition")
+    val transition =
+        updateTransition(targetState = nucleusState, label = "Nucleus Color Transition")
     val animatedColor by transition.animateColor(
         label = "Nucleus Color",
         transitionSpec = {
             when {
-                NucleusState.Disabled isTransitioningTo NucleusState.Idle -> tween(durationMillis = 300)
-                NucleusState.Idle isTransitioningTo NucleusState.Disabled -> tween(durationMillis = 1000)
-                NucleusState.Pressed isTransitioningTo NucleusState.Idle -> tween(durationMillis = 100)
+                NucleusState.Disabled isTransitioningTo NucleusState.Idle -> tween(
+                    durationMillis = 300
+                )
+                NucleusState.Idle isTransitioningTo NucleusState.Disabled -> tween(
+                    durationMillis = 1000
+                )
+                NucleusState.Pressed isTransitioningTo NucleusState.Idle -> tween(
+                    durationMillis = 100
+                )
                 else -> snap()
             }
         }
@@ -895,7 +905,9 @@ private fun PressedImageCaptureButtonPreview() {
                     color = Color.White
                 ) {
                     CaptureButtonNucleus(
-                        captureButtonUiState = CaptureButtonUiState.Available.Idle(CaptureMode.IMAGE_ONLY),
+                        captureButtonUiState = CaptureButtonUiState.Available.Idle(
+                            CaptureMode.IMAGE_ONLY
+                        ),
                         isPressed = true,
                         captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
                     )
