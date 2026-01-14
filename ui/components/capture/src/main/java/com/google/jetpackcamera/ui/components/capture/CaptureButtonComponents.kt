@@ -90,7 +90,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val TAG = "CaptureButton"
-private const val DEFAULT_CAPTURE_BUTTON_SIZE = 80f
+private const val DEFAULT_CAPTURE_BUTTON_SIZE = 76f
 
 // scales against the size of the capture button
 private const val LOCK_SWITCH_PRESSED_NUCLEUS_SCALE = .5f
@@ -519,7 +519,7 @@ fun CaptureButtonRing(
     modifier: Modifier = Modifier,
     captureButtonSize: Float,
     color: Color,
-    borderWidth: Float = 4f,
+    borderWidth: Float = 3f,
     contents: (@Composable () -> Unit)? = null
 ) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -653,8 +653,8 @@ private fun CaptureButtonNucleus(
     offsetX: Dp = 0.dp,
     recordingColor: Color = Color.Red,
     imageCaptureModeColor: Color = Color.White,
-    idleImageCaptureScale: Float = .7f,
-    idleVideoCaptureScale: Float = .35f,
+    idleImageCaptureScale: Float = .74f,
+    idleVideoCaptureScale: Float = .26f,
     pressedVideoCaptureScale: Float = .7f,
     isVisuallyDisabled: Boolean = false
 ) {
