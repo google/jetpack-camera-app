@@ -523,6 +523,11 @@ fun CaptureButtonRing(
     contents: (@Composable () -> Unit)? = null
 ) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .size(captureButtonSize.dp)
+                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+        )
         contents?.invoke()
         // todo(): use a canvas instead of a box.
         //  the sizing gets funny so the scales need to be completely readjusted
