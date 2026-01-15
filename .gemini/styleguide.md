@@ -43,6 +43,9 @@ When reviewing a pull request, focus on the following key areas:
     * **Descriptive Test Names:** Test function names must be clear, descriptive, and follow a consistent pattern.
     * **Use Truth Assertions:** Always prefer [Truth](https://truth.dev/) assertions (`assertThat(...)`) over JUnit assertions (`assertEquals`, `assertTrue`, etc.). Truth provides more readable assertion chains and more informative failure messages. Avoid functions from `org.junit.Assert` such as `assertEquals`, `assertTrue`, `assertFalse`, `assertNull`, and `assertNotNull`.
     * **Explicit Test Runners:** All test classes must be annotated with `@RunWith(...)` to explicitly declare which test runner should be used (e.g., `@RunWith(AndroidJUnit4::class)`, `@RunWith(RobolectricTestRunner::class)`, or `@RunWith(JUnit4::class)` for host tests with no Android dependencies).
+    * **Test Stability & Timeouts:**
+        *   **Explicit Timeouts:** Avoid using `waitUntil` (or similar synchronization) without explicitly defining a `timeoutMillis`. Default timeouts are often too short for slower emulators (like API 28) or low-end devices, leading to flakiness.
+        *   **Helper Functions for Waits:** If a wait condition is repeated (e.g., waiting for a specific UI element), extract it into a helper function (e.g., `waitForNodeWithTag`). This consolidates the logic and allows the timeout duration to be tuned centrally for that specific scenario.
 
 6.  **Documentation Sync**
     * **Check for necessary updates:** Analyze if the PR's changes (e.g., adding a new feature, changing build logic, deprecating functionality) require updates to `README.md` or other documentation files.

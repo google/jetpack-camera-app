@@ -46,6 +46,7 @@ import com.google.jetpackcamera.utils.pressAndDragToLockVideoRecording
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTestForResult
 import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
+import com.google.jetpackcamera.utils.waitForNodeWithTag
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,9 +73,7 @@ internal class VideoRecordingDeviceTest {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
         }
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
-        composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
-        }
+        composeTestRule.waitForNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG, VIDEO_CAPTURE_TIMEOUT_MILLIS)
         deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, timeStamp)
     }
 
@@ -95,9 +94,10 @@ internal class VideoRecordingDeviceTest {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
 
-            composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                VIDEO_CAPTURE_SUCCESS_TAG,
+                VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
 
             deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, timeStamp)
         }
@@ -157,9 +157,10 @@ internal class VideoRecordingDeviceTest {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
                 composeTestRule.longClickForVideoRecording()
-                composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).isDisplayed()
-                }
+                composeTestRule.waitForNodeWithTag(
+                    VIDEO_CAPTURE_FAILURE_TAG,
+                    VIDEO_CAPTURE_TIMEOUT_MILLIS
+                )
                 uiDevice.pressBack()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)

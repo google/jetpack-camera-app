@@ -46,6 +46,7 @@ import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedT
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.runScenarioTestForResult
 import com.google.jetpackcamera.utils.waitForCaptureButton
+import com.google.jetpackcamera.utils.waitForNodeWithTag
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,14 +71,11 @@ class CachedVideoRecordingDeviceTest {
             composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
             // navigate to postcapture screen
-            composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_VIDEO).isDisplayed()
-            }
-            composeTestRule.waitUntil {
-                composeTestRule.onNodeWithTag(
-                    BUTTON_POST_CAPTURE_EXIT
-                ).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                VIEWER_POST_CAPTURE_VIDEO,
+                VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
+            composeTestRule.waitForNodeWithTag(BUTTON_POST_CAPTURE_EXIT)
 
             composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
             composeTestRule.waitForCaptureButton()
@@ -116,9 +114,10 @@ class CachedVideoRecordingDeviceTest {
                     composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
                 }
                 composeTestRule.longClickForVideoRecording()
-                composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).isDisplayed()
-                }
+                composeTestRule.waitForNodeWithTag(
+                    VIDEO_CAPTURE_FAILURE_TAG,
+                    VIDEO_CAPTURE_TIMEOUT_MILLIS
+                )
                 uiDevice.pressBack()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)

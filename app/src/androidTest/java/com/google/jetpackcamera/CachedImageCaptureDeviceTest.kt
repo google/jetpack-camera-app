@@ -51,6 +51,7 @@ import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
 import com.google.jetpackcamera.utils.waitForCaptureButton
+import com.google.jetpackcamera.utils.waitForNodeWithTag
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -79,12 +80,11 @@ class CachedImageCaptureDeviceTest {
                 .performClick()
 
             // navigate to postcapture screen
-            composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(VIEWER_POST_CAPTURE_IMAGE).isDisplayed()
-            }
-            composeTestRule.waitUntil {
-                composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                VIEWER_POST_CAPTURE_IMAGE,
+                timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
+            composeTestRule.waitForNodeWithTag(BUTTON_POST_CAPTURE_EXIT)
 
             composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
             composeTestRule.waitForCaptureButton()
@@ -135,9 +135,10 @@ class CachedImageCaptureDeviceTest {
                     .assertExists()
                     .performClick()
 
-                composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(IMAGE_CAPTURE_FAILURE_TAG).isDisplayed()
-                }
+                composeTestRule.waitForNodeWithTag(
+                    IMAGE_CAPTURE_FAILURE_TAG,
+                    timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS
+                )
                 uiDevice.pressBack()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
