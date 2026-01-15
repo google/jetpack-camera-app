@@ -113,6 +113,15 @@ internal class CaptureModeSettingsTest {
         onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertExists()
     }
 
+    private fun flip(mode: CaptureMode): CaptureMode {
+        require(mode == CaptureMode.IMAGE_ONLY || mode == CaptureMode.VIDEO_ONLY)
+        return if (mode == CaptureMode.IMAGE_ONLY) {
+            CaptureMode.VIDEO_ONLY
+        } else {
+            CaptureMode.IMAGE_ONLY
+        }
+    }
+
     @Test
     fun can_set_capture_mode_in_quick_settings() {
         runMainActivityScenarioTest {
@@ -391,11 +400,7 @@ internal class CaptureModeSettingsTest {
 
         composeTestRule.initializeCaptureSwitch()
         val initialCaptureMode = composeTestRule.getCaptureModeToggleState()
-        val targetCaptureMode = if (initialCaptureMode == CaptureMode.IMAGE_ONLY) {
-            CaptureMode.VIDEO_ONLY
-        } else {
-            CaptureMode.IMAGE_ONLY
-        }
+        val targetCaptureMode = flip(initialCaptureMode)
 
         // should be different from initial capture mode
         composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
@@ -412,11 +417,7 @@ internal class CaptureModeSettingsTest {
         composeTestRule.waitForCaptureButton()
         composeTestRule.initializeCaptureSwitch()
         val initialCaptureMode = composeTestRule.getCaptureModeToggleState()
-        val targetCaptureMode = if (initialCaptureMode == CaptureMode.IMAGE_ONLY) {
-            CaptureMode.VIDEO_ONLY
-        } else {
-            CaptureMode.IMAGE_ONLY
-        }
+        val targetCaptureMode = flip(initialCaptureMode)
         val captureToggleNode = composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
         val toggleNodeWidth = captureToggleNode.fetchSemanticsNode().size.width.toFloat()
         val offsetToSwitch = when (initialCaptureMode) {
