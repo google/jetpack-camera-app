@@ -21,10 +21,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-object FakeMediaRepository : MediaRepository {
+class FakeMediaRepository : MediaRepository {
     private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
 
     override val currentMedia = _currentMedia.asStateFlow()
+
+    var loadHandler: (MediaDescriptor) -> Media = { Media.None }
+    var saveToMediaStoreHandler: (MediaDescriptor.Content) -> Uri? = { mediaDescriptor ->
+        when (mediaDescriptor) {
+            is MediaDescriptor.Content.Image -> "img.jpg".toUri()
+            is MediaDescriptor.Content.Video -> "video.mp4".toUri()
+        }
+    }
+    var deleteMediaHandler: (MediaDescriptor.Content) -> Boolean = { true }
 
     override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
         _currentMedia.update { pendingMedia }
@@ -35,24 +44,22 @@ object FakeMediaRepository : MediaRepository {
     }
 
     override suspend fun load(mediaDescriptor: MediaDescriptor): Media {
-        return Media.None
+        return loadHandler(mediaDescriptor)
     }
 
     override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
-        if (mediaDescriptor == currentMedia.value) {
+        val result = deleteMediaHandler(mediaDescriptor)
+        if (result && mediaDescriptor == currentMedia.value) {
             _currentMedia.update { MediaDescriptor.None }
         }
-        return true
+        return result
     }
 
     override suspend fun saveToMediaStore(
         mediaDescriptor: MediaDescriptor.Content,
-        filename: String
+        outputFilename: String?
     ): Uri? {
-        return when (mediaDescriptor) {
-            is MediaDescriptor.Content.Image -> "img.jpg".toUri()
-            is MediaDescriptor.Content.Video -> "video.mp4".toUri()
-        }
+        return saveToMediaStoreHandler(mediaDescriptor)
     }
 
     override suspend fun copyToUri(mediaDescriptor: MediaDescriptor.Content, destinationUri: Uri) {

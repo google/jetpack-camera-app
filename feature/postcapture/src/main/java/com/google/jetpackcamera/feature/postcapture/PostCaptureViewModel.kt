@@ -51,12 +51,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileNotFoundException
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.LinkedList
-import java.util.Locale
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -161,9 +159,11 @@ class PostCaptureViewModel @Inject constructor(
         releasePlayer()
         val mediaDescriptor: MediaDescriptor = loadedMediaFlow.value.first
 
-        if ((mediaDescriptor as? MediaDescriptor.Content)?.isCached == true) {
-            viewModelScope.launch {
-                mediaRepository.deleteMedia(mediaDescriptor)
+        if (mediaDescriptor is MediaDescriptor.Content && mediaDescriptor.isCached) {
+            viewModelScope.launch(NonCancellable) {
+                if (!mediaRepository.deleteMedia(mediaDescriptor)) {
+                    Log.e(TAG, "Failed to delete media from cache: ${mediaDescriptor.uri}")
+                }
             }
         }
         super.onCleared()
@@ -300,7 +300,7 @@ class PostCaptureViewModel @Inject constructor(
         try {
             result = mediaRepository.saveToMediaStore(
                 mediaDescriptor,
-                createFilename(mediaDescriptor)
+                null
             )
             if (result != null) {
                 val (stringResource, testTag) = when (mediaDescriptor) {
@@ -444,28 +444,6 @@ class PostCaptureViewModel @Inject constructor(
                     state
                 }
             }
-        }
-    }
-}
-
-/**
- * Creates a filename for the media descriptor.
- *
- * @param mediaDescriptor the [MediaDescriptor] to create a filename for.
- *
- * @return a filename for the media descriptor.
- */
-private fun createFilename(mediaDescriptor: MediaDescriptor.Content): String {
-    val timeStamp =
-        SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US).format(Date())
-
-    return when (mediaDescriptor) {
-        is MediaDescriptor.Content.Image -> {
-            "JCA-photo-$timeStamp.jpg"
-        }
-
-        is MediaDescriptor.Content.Video -> {
-            "JCA-recording-$timeStamp.mp4"
         }
     }
 }

@@ -47,12 +47,21 @@ class CommonModule {
         CoroutineScope(SupervisorJob() + dispatcher)
 }
 
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultFilePathGenerator
+
 /**
  * provides the default [CaptureMode] to override in [LocalSettingsRepository]
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DefaultCaptureModeOverride
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultSaveMode
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)

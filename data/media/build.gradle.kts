@@ -80,7 +80,6 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.kotlinx.coroutines.test)
 
-    testImplementation(libs.mockito.core)
     testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
@@ -90,7 +89,7 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core:common"))
-    implementation(project(":core:camera"))
+    testImplementation(project(":core:common"))
 
 }
 

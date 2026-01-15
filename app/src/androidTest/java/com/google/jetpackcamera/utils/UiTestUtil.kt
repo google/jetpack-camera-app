@@ -72,6 +72,8 @@ val compatMainActivityExtras: Bundle?
     }
 
 val debugExtra: Bundle = Bundle().apply { putBoolean("KEY_DEBUG_MODE", true) }
+val cacheExtra: Bundle = Bundle().apply { putBoolean("KEY_REVIEW_AFTER_CAPTURE", true) }
+
 const val DEFAULT_TIMEOUT_MILLIS = 1_000L
 const val APP_START_TIMEOUT_MILLIS = 10_000L
 const val ELAPSED_TIME_TEXT_TIMEOUT_MILLIS = 45_000L
@@ -83,6 +85,7 @@ const val IMAGE_WELL_LOAD_TIMEOUT_MILLIS = 10_000L
 
 const val VIDEO_DURATION_MILLIS = 3_000L
 const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 15_000L
+const val FOCUS_METERING_INDICATOR_TIMEOUT_MILLIS = 10_000L
 const val FILE_PREFIX = "JCA"
 const val VIDEO_PREFIX = "video"
 const val IMAGE_PREFIX = "image"

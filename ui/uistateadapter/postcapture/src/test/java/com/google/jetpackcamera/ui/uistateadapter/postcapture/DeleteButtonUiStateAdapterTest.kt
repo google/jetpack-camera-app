@@ -16,14 +16,16 @@
 package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
 import android.net.Uri
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
-import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.mockito.Mockito.mock
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class DeleteButtonUiStateAdapterTest {
-    private val testUri: Uri = mock(Uri::class.java)
+    private val testUri: Uri = Uri.EMPTY
 
     @Test
     fun deleteButtonUiState_fromNonCachedContent_returnsReady() {
@@ -34,7 +36,7 @@ class DeleteButtonUiStateAdapterTest {
         )
         val expectedUiState = DeleteButtonUiState.Ready
         val actualUiState = DeleteButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -46,7 +48,7 @@ class DeleteButtonUiStateAdapterTest {
         )
         val expectedUiState = DeleteButtonUiState.Unavailable
         val actualUiState = DeleteButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 
     @Test
@@ -54,6 +56,6 @@ class DeleteButtonUiStateAdapterTest {
         val mediaDescriptor = MediaDescriptor.None
         val expectedUiState = DeleteButtonUiState.Unavailable
         val actualUiState = DeleteButtonUiState.from(mediaDescriptor)
-        assertEquals(expectedUiState, actualUiState)
+        assertThat(actualUiState).isEqualTo(expectedUiState)
     }
 }

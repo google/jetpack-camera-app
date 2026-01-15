@@ -28,8 +28,8 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import androidx.core.net.toFile
-import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultMediaSaveLocation
-import com.google.jetpackcamera.core.camera.CameraCoreUtil.getDefaultVideoSaveLocation
+import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
+import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -51,7 +51,8 @@ private const val VIDEO_MIME_TYPE = "video/mp4"
 class LocalMediaRepository
 @Inject constructor(
     @ApplicationContext private val context: Context,
-    @IODispatcher private val iODispatcher: CoroutineDispatcher
+    @IODispatcher private val iODispatcher: CoroutineDispatcher,
+    @DefaultFilePathGenerator private val filePathGenerator: FilePathGenerator
 ) : MediaRepository {
     private val repositoryScope = CoroutineScope(iODispatcher + SupervisorJob())
     private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
@@ -179,16 +180,11 @@ class LocalMediaRepository
     override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
         val finalResult = withContext(repositoryScope.coroutineContext) {
             val result =
-                if (mediaDescriptor.uri.scheme != ContentResolver.SCHEME_CONTENT ||
-                    mediaDescriptor.isCached
-                ) {
-                    deleteCachedMedia(mediaDescriptor)
+                if (mediaDescriptor.uri.scheme == ContentResolver.SCHEME_CONTENT) {
+                    deleteContentMedia(mediaDescriptor.uri)
                 } else {
-                    context.contentResolver.delete(mediaDescriptor.uri, null, null) >= 1
+                    deleteCachedMedia(mediaDescriptor.uri)
                 }
-            if (result && !mediaDescriptor.isCached) {
-                Log.d(TAG, "deleted saved media")
-            }
             result
         }
         if (finalResult && currentMedia.value == mediaDescriptor) {
@@ -200,18 +196,34 @@ class LocalMediaRepository
     /**
      * Deletes a cached media file.
      *
-     * This function is specifically for deleting files that are *not* managed by a [ContentProvider].
+     * This function is specifically for deleting files that are *not* managed by a [android.content.ContentProvider].
      * It directly uses [Uri.toFile] to get a [File] object and then calls [File.delete].
-     * It is crucial that the [MediaDescriptor.Content.isCached] flag is correctly set
-     * to `true` when calling [deleteMedia] to ensure this function is invoked for appropriate URIs.
      *
-     * @param mediaDescriptor The [MediaDescriptor.Content] representing the cached media to delete.
+     * @param cachedUri The [Uri] of the cached media to delete.
      * @return `true` if the file was successfully deleted, `false` otherwise.
      */
-    private fun deleteCachedMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
-        val result = mediaDescriptor.uri.toFile().delete()
+    private fun deleteCachedMedia(cachedUri: Uri): Boolean {
+        val result = cachedUri.toFile().delete()
         if (result) {
             Log.d(TAG, "deleted cached media")
+        }
+        return result
+    }
+
+    /**
+     * Deletes media from its content uri.
+     *
+     * This function is specifically for deleting [Uri] that are managed by a [android.content.ContentProvider].
+     *
+     * @param contentUri The Content Uri to be deleted
+     * @return `true` if the file was successfully deleted, `false` otherwise.
+     *
+     * @throws IllegalArgumentException if the Uri is not managed by a ContentProvider
+     */
+    private fun deleteContentMedia(contentUri: Uri): Boolean {
+        val result = context.contentResolver.delete(contentUri, null, null) >= 1
+        if (result) {
+            Log.d(TAG, "deleted content media")
         }
         return result
     }
@@ -245,7 +257,7 @@ class LocalMediaRepository
     /**
      * Saves the specified media to the MediaStore.
      *
-     * @param filename The desired filename for the media (including file extension e.g. ".mp4" or ".jpg").
+     * @param outputFilename The desired filename for the media (including file extension e.g. ".mp4" or ".jpg").
      *
      * @return The [Uri] of the saved media, or `null` if the save attempt fails.
      * @throws IOException if an I/O error occurs during the save operation.
@@ -254,24 +266,40 @@ class LocalMediaRepository
     @Throws(IOException::class)
     override suspend fun saveToMediaStore(
         mediaDescriptor: MediaDescriptor.Content,
-        filename: String
+        outputFilename: String?
     ): Uri? = withContext(repositoryScope.coroutineContext) {
+        val finalOutputFilename: String
         val mimeType: String
         val mediaUrl: Uri
+        val outputDirectory: String
         if (mediaDescriptor is MediaDescriptor.Content.Video) {
             mimeType = VIDEO_MIME_TYPE
+            finalOutputFilename = outputFilename ?: filePathGenerator.generateVideoFilename()
+            outputDirectory = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                filePathGenerator.absoluteVideoOutputPath
+            } else {
+                filePathGenerator.relativeVideoOutputPath
+            }
+
             mediaUrl = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         } else {
             mimeType = IMAGE_MIME_TYPE
+            finalOutputFilename = outputFilename ?: filePathGenerator.generateImageFilename()
+            outputDirectory = filePathGenerator.relativeImageOutputPath
             mediaUrl = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         }
-        copyToMediaStore(context.contentResolver, mediaDescriptor.uri, filename, mimeType, mediaUrl)
+        copyToMediaStore(
+            sourceUri = mediaDescriptor.uri,
+            outputFilename = finalOutputFilename,
+            fileOutputDirectory = outputDirectory,
+            mimeType = mimeType,
+            mediaUrl = mediaUrl
+        )
     }
 
     /**
      * Copies content from a source URI to the MediaStore.
      *
-     * @param contentResolver The [ContentResolver] used for MediaStore operations.
      * @param sourceUri The [Uri] of the source content.
      * @param outputFilename The desired filename for the new MediaStore entry (including file extension e.g. ".mp4" or ".jpg").
      * @param mimeType The MIME type of the content (e.g., "image/jpeg", "video/mp4").
@@ -280,12 +308,13 @@ class LocalMediaRepository
      * @return The [Uri] of the newly created MediaStore entry, or `null` if the operation fails.
      */
     private fun copyToMediaStore(
-        contentResolver: ContentResolver,
         sourceUri: Uri,
         outputFilename: String,
+        fileOutputDirectory: String,
         mimeType: String,
         mediaUrl: Uri
     ): Uri? {
+        val contentResolver = context.contentResolver
         val destinationUri: Uri?
 
         val contentValues = ContentValues().apply {
@@ -296,12 +325,11 @@ class LocalMediaRepository
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && mediaUrl ==
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI
             ) {
-                val volumePath = getDefaultVideoSaveLocation()
-                if (volumePath.isNotEmpty()) {
-                    put(MediaStore.MediaColumns.DATA, "$volumePath/$outputFilename")
+                if (fileOutputDirectory.isNotEmpty()) {
+                    put(MediaStore.MediaColumns.DATA, "$fileOutputDirectory/$outputFilename")
                     Log.d(
                         TAG,
-                        "API 28- Video Fix: Setting _DATA to $volumePath/$outputFilename"
+                        "API 28- Video Fix: Setting _DATA to $fileOutputDirectory/$outputFilename"
                     )
                 } else {
                     Log.d(
@@ -314,7 +342,7 @@ class LocalMediaRepository
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 put(
                     MediaStore.MediaColumns.RELATIVE_PATH,
-                    getDefaultMediaSaveLocation()
+                    fileOutputDirectory
                 )
                 // Mark as "pending" so the file isn't visible until we're done writing
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
