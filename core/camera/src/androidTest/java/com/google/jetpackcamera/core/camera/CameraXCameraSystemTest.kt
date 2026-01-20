@@ -30,6 +30,9 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecordError
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecorded
+import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
+import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
+import com.google.jetpackcamera.core.camera.postprocess.PostProcessModule.Companion.provideImagePostProcessorMap
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.common.FakeFilePathGenerator
 import com.google.jetpackcamera.model.FlashMode
@@ -42,6 +45,8 @@ import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import java.io.File
+import java.util.AbstractMap
+import javax.inject.Provider
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.coroutines.CompletableDeferred
@@ -88,9 +93,12 @@ class CameraXCameraSystemTest {
     private lateinit var cameraSystemScope: CoroutineScope
     private var cameraJob: Job? = null
 
+    private lateinit var contentResolver: ContentResolver
+
     @Before
     fun setup() {
         cameraSystemScope = CoroutineScope(Dispatchers.Main)
+        contentResolver = context.contentResolver
     }
 
     @After
@@ -104,7 +112,8 @@ class CameraXCameraSystemTest {
     @Test
     fun canCaptureImage(): Unit = runBlocking {
         // Arrange.
-        val cameraSystem = createAndInitCameraXCameraSystem()
+        val cameraSystem =
+            createAndInitCameraXCameraSystem()
         cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
@@ -116,6 +125,80 @@ class CameraXCameraSystemTest {
         if (savedUri != null) {
             filesToDelete.add(savedUri)
         }
+    }
+
+    @Test
+    fun captureImage_withPostProcessor_postProcessIsCalled(): Unit = runBlocking {
+        // Arrange.
+        val imagePostProcessor = FakeImagePostProcessor()
+        val cameraSystem =
+            createAndInitCameraXCameraSystem(fakeImagePostProcessor = imagePostProcessor)
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        // Act.
+        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+
+        // Assert.
+        assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
+    }
+
+    @Test
+    fun captureImage_withInvalidUri_postProcessNotCalled(): Unit = runBlocking {
+        // Arrange.
+        val imagePostProcessor = FakeImagePostProcessor()
+        val cameraSystem =
+            createAndInitCameraXCameraSystem(fakeImagePostProcessor = imagePostProcessor)
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        // Act.
+        try {
+            cameraSystem.takePicture(
+                context.contentResolver,
+                SaveLocation.Explicit(Uri.parse("asdfasdf"))
+            ) {}
+        } catch (e: Exception) {}
+
+        // Assert.
+        assertThat(imagePostProcessor.postProcessImageCalled).isFalse()
+    }
+
+    @Test
+    fun captureImage_withFailingPostProcessor_imageStillSaved(): Unit = runBlocking {
+        // Arrange.
+        val imagePostProcessor = FakeImagePostProcessor(shouldError = true)
+        val cameraSystem =
+            createAndInitCameraXCameraSystem(fakeImagePostProcessor = imagePostProcessor)
+        cameraSystem.startCameraAndWaitUntilRunning()
+        val uri = Uri.parse(FakeFilePathGenerator().generateImageFilename())
+
+        // Act.
+        try {
+            cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+        } catch (e: RuntimeException) {
+            // Assert.
+            assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
+
+            val savedUri = imagePostProcessor.savedUri
+            assertThat(savedUri).isNotNull()
+            if (savedUri != null) {
+                filesToDelete.add(savedUri)
+            }
+        }
+    }
+
+    @Test
+    fun captureImage_noPostProcessor(): Unit = runBlocking {
+        // Arrange.
+        val imagePostProcessor = FakeImagePostProcessor()
+        val cameraSystem =
+            createAndInitCameraXCameraSystem()
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        // Act.
+        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+
+        // Assert.
+        assertThat(imagePostProcessor.postProcessImageCalled).isFalse()
     }
 
     @Test
@@ -190,7 +273,8 @@ class CameraXCameraSystemTest {
 
     private suspend fun createAndInitCameraXCameraSystem(
         appSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-        constraintsRepository: SettableConstraintsRepository = SettableConstraintsRepositoryImpl()
+        constraintsRepository: SettableConstraintsRepository = SettableConstraintsRepositoryImpl(),
+        fakeImagePostProcessor: FakeImagePostProcessor? = null
     ) = CameraXCameraSystem(
         application = application,
         defaultDispatcher = Dispatchers.Default,
@@ -198,6 +282,7 @@ class CameraXCameraSystemTest {
         constraintsRepository = constraintsRepository,
         availabilityCheckers = emptyMap(),
         effectProviders = emptyMap(),
+        imagePostProcessors = getFakePostProcessorMap(fakeImagePostProcessor),
         filePathGenerator = FakeFilePathGenerator()
     ).apply {
         initialize(appSettings) {}
@@ -296,5 +381,33 @@ class CameraXCameraSystemTest {
                 }
             }
         }
+    }
+
+    private fun getFakePostProcessorMap(
+        imagePostProcessor: FakeImagePostProcessor?
+    ): Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>> {
+        if (imagePostProcessor == null) {
+            return emptyMap()
+        }
+        return provideImagePostProcessorMap(
+            entries = setOf(
+                AbstractMap.SimpleImmutableEntry(
+                    FakeImagePostProcessorFeatureKey,
+                    Provider { imagePostProcessor }
+                )
+            )
+        )
+    }
+}
+
+object FakeImagePostProcessorFeatureKey : ImagePostProcessorFeatureKey
+
+class FakeImagePostProcessor(val shouldError: Boolean = false) : ImagePostProcessor {
+    var postProcessImageCalled = false
+    var savedUri: Uri? = null
+    override suspend fun postProcessImage(uri: Uri) {
+        postProcessImageCalled = true
+        savedUri = uri
+        if (shouldError) throw RuntimeException("Post process failed")
     }
 }
