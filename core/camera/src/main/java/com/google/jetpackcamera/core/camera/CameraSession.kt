@@ -748,7 +748,7 @@ private fun createPreviewUseCase(
         targetCameraInfo = cameraInfo,
         captureResults = captureResults
     )
-    
+
     // set preview stabilization
     when (stabilizationMode) {
         StabilizationMode.ON -> {
