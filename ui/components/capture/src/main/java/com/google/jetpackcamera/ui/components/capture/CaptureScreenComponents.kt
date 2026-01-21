@@ -529,7 +529,7 @@ fun CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onIncrementZoom = onIncrementZoom,
         onImageCapture = {
-            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+            if (captureButtonUiState is CaptureButtonUiState.Available) {
                 multipleEventsCutter.processEvent {
                     onCaptureImage(context.contentResolver)
                 }
@@ -539,7 +539,7 @@ fun CaptureButton(
             }
         },
         onStartRecording = {
-            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+            if (captureButtonUiState is CaptureButtonUiState.Available) {
                 onStartVideoRecording()
             }
         },
