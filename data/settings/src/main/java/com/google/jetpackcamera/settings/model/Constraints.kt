@@ -96,7 +96,8 @@ data class CameraConstraints(
     val supportedFlashModes: Set<FlashMode>,
     val supportedZoomRange: Range<Float>?,
     val unsupportedStabilizationFpsMap: Map<StabilizationMode, Set<Int>>,
-    val supportedTestPatterns: Set<TestPattern>
+    val supportedTestPatterns: Set<TestPattern>,
+    val supportedStreamConfigs: Set<StreamConfig>
 ) {
     val StabilizationMode.unsupportedFpsSet
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
@@ -121,19 +122,23 @@ val TYPICAL_SYSTEM_CONSTRAINTS =
                 put(
                     lensFacing,
                     CameraConstraints(
-                        supportedFixedFrameRates = setOf(15, 30),
                         supportedStabilizationModes = setOf(StabilizationMode.OFF),
+                        supportedFixedFrameRates = setOf(15, 30),
                         supportedDynamicRanges = setOf(DynamicRange.SDR),
+                        supportedVideoQualitiesMap = emptyMap(),
                         supportedImageFormatsMap = mapOf(
                             Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
                             Pair(StreamConfig.MULTI_STREAM, setOf(ImageOutputFormat.JPEG))
                         ),
-                        supportedVideoQualitiesMap = emptyMap(),
                         supportedIlluminants = setOf(Illuminant.FLASH_UNIT),
                         supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO),
                         supportedZoomRange = Range(.5f, 10f),
                         unsupportedStabilizationFpsMap = emptyMap(),
-                        supportedTestPatterns = setOf(TestPattern.Off)
+                        supportedTestPatterns = setOf(TestPattern.Off),
+                        supportedStreamConfigs = setOf(
+                            StreamConfig.SINGLE_STREAM,
+                            StreamConfig.MULTI_STREAM
+                        )
                     )
                 )
             }
