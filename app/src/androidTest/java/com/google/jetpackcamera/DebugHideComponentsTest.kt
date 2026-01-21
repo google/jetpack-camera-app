@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera
 
-import androidx.compose.ui.test.isDisplayed
-import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -39,6 +37,8 @@ import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.waitForCaptureButton
+import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithTagToDisappear
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -73,9 +73,7 @@ class DebugHideComponentsTest {
 
             composeTestRule.onNodeWithTag(BTN_DEBUG_HIDE_COMPONENTS_TAG).performClick()
 
-            composeTestRule.waitUntil {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isNotDisplayed()
-            }
+            composeTestRule.waitForNodeWithTagToDisappear(CAPTURE_BUTTON)
             composeTestRule.onNodeWithTag(ZOOM_BUTTON_ROW_TAG).assertDoesNotExist()
             composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
             composeTestRule.onNodeWithTag(AMPLITUDE_NONE_TAG).assertDoesNotExist()
@@ -87,9 +85,7 @@ class DebugHideComponentsTest {
 
             composeTestRule.onNodeWithTag(BTN_DEBUG_HIDE_COMPONENTS_TAG).performClick()
 
-            composeTestRule.waitUntil {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(CAPTURE_BUTTON)
             composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(DEBUG_OVERLAY_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(LOGICAL_CAMERA_ID_TAG).assertExists()

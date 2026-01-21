@@ -16,7 +16,6 @@
 package com.google.jetpackcamera
 
 import androidx.compose.ui.test.doubleClick
-import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -37,6 +36,7 @@ import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.getCurrentLensFacing
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.waitForNodeWithTag
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -141,9 +141,7 @@ inline fun runFlipCameraTest(
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
 ) = runMainActivityScenarioTest {
     // Wait for the preview display to be visible
-    composeTestRule.waitUntil(APP_START_TIMEOUT_MILLIS) {
-        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).isDisplayed()
-    }
+    composeTestRule.waitForNodeWithTag(PREVIEW_DISPLAY, APP_START_TIMEOUT_MILLIS)
 
     // If flipping the camera is available, flip it. Otherwise skip test.
     composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
