@@ -39,11 +39,13 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
+import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.util.AbstractMap
 import javax.inject.Provider
@@ -223,6 +225,60 @@ class CameraXCameraSystemTest {
 
         // Assert.
         recordingComplete.await()
+    }
+
+    @Test
+    fun setStabilizationMode_on_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.ON)
+    }
+
+    @Test
+    fun setStabilizationMode_optical_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.OPTICAL)
+    }
+
+    @Test
+    fun setStabilizationMode_highQuality_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.HIGH_QUALITY)
+    }
+
+    private suspend fun CoroutineScope.runSetStabilizationModeTest(
+        stabilizationMode: StabilizationMode
+    ) {
+        // Arrange.
+        val constraintsRepository = SettableConstraintsRepositoryImpl()
+        val appSettings = DEFAULT_CAMERA_APP_SETTINGS
+        val cameraConstraints =
+            constraintsRepository.systemConstraints.value?.forCurrentLens(appSettings)
+        assume().withMessage("Stabilisation $stabilizationMode not supported, skip the test.")
+            .that(
+                cameraConstraints != null && cameraConstraints.supportedStabilizationModes.contains(
+                    stabilizationMode
+                )
+            ).isTrue()
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = appSettings,
+            constraintsRepository = constraintsRepository
+        )
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        val stabilizationCheck: ReceiveChannel<Boolean> = cameraSystem.getCurrentCameraState()
+            .map { it.stabilizationMode == stabilizationMode }
+            .produceIn(this)
+        stabilizationCheck.awaitValue(false)
+
+        // Act.
+        cameraSystem.setStabilizationMode(stabilizationMode)
+        val result = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+
+        // Assert.
+        stabilizationCheck.awaitValue(true)
+
+        // Clean-up.
+        if (result.savedUri != null) {
+            filesToDelete.add(result.savedUri!!)
+        }
+        stabilizationCheck.cancel()
     }
 
     @Test
