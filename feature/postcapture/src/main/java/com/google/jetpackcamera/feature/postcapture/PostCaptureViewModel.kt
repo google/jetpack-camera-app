@@ -15,12 +15,9 @@
  */
 package com.google.jetpackcamera.feature.postcapture
 
-import android.content.ContentResolver
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
@@ -49,13 +46,12 @@ import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import com.google.jetpackcamera.ui.uistateadapter.postcapture.from
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.File
-import java.io.FileNotFoundException
 import java.util.LinkedList
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -63,6 +59,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -74,6 +71,13 @@ class PostCaptureViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    sealed class PostCaptureEvent {
+        data class ShareMedia(val media: MediaDescriptor.Content) : PostCaptureEvent()
+    }
+
+    private val _uiEvents = Channel<PostCaptureEvent>()
+    val uiEvents = _uiEvents.receiveAsFlow()
 
     /**
      * This flow maps the latest [MediaRepository.currentMedia] and its loaded [Media] counterpart to a [Pair]
@@ -278,16 +282,6 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
-    fun shareCurrentMedia() {
-        val currentMediaDescriptor = loadedMediaFlow.value.first
-        (currentMediaDescriptor as? MediaDescriptor.Content)?.let {
-            shareMedia(
-                context,
-                mediaDescriptor = it
-            )
-        }
-    }
-
     // private functions
     /**
      * saves the given media
@@ -406,6 +400,15 @@ class PostCaptureViewModel @Inject constructor(
             result
         }.await()
 
+    fun onShareCurrentMedia() {
+        val currentMediaDescriptor = loadedMediaFlow.value.first
+        (currentMediaDescriptor as? MediaDescriptor.Content)?.let { content ->
+            viewModelScope.launch {
+                _uiEvents.send(PostCaptureEvent.ShareMedia(content))
+            }
+        }
+    }
+
     // snackbar interaction
     private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
@@ -456,50 +459,4 @@ sealed interface PlayerState {
         val canSetMediaItem: Boolean = false,
         val canChangeMediaItem: Boolean = false
     ) : PlayerState
-}
-
-/**
- * Starts an intent to share media.
- *
- * @param context the context of the calling component.
- * @param mediaDescriptor the [MediaDescriptor] of the media to be shared.
- */
-private fun shareMedia(context: Context, mediaDescriptor: MediaDescriptor.Content) {
-    // todo(kc): support sharing multiple media
-    val uri = mediaDescriptor.uri
-    val mimeType: String = when (mediaDescriptor) {
-        is MediaDescriptor.Content.Image -> "image/jpeg"
-        is MediaDescriptor.Content.Video -> "video/mp4"
-    }
-
-    // if the uri isn't already managed by a content provider, we will need
-    val contentUri: Uri =
-        if (uri.scheme == ContentResolver.SCHEME_CONTENT) uri else getShareableUri(context, uri)
-
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = mimeType
-        putExtra(Intent.EXTRA_STREAM, contentUri)
-    }
-    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-    // todo(kc): prevent "edit image" from appearing in the ShareSheet.
-    context.startActivity(Intent.createChooser(intent, "Share Media"))
-}
-
-/**
- * Creates a content Uri for a given file Uri.
- *
- * @param context the context of the calling component.
- * @param uri the Uri of the file.
- *
- * @return a content Uri to be used for sharing.
- */
-private fun getShareableUri(context: Context, uri: Uri): Uri {
-    val authority = "${context.packageName}.fileprovider"
-    val file =
-        uri.path
-            ?.let { File(it) }
-            ?: throw FileNotFoundException("path does not exist")
-
-    return FileProvider.getUriForFile(context, authority, file)
 }
