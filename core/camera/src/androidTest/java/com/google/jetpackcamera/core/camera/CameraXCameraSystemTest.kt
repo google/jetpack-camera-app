@@ -248,12 +248,12 @@ class CameraXCameraSystemTest {
         // Arrange.
         val constraintsRepository = SettableConstraintsRepositoryImpl()
         val appSettings = DEFAULT_CAMERA_APP_SETTINGS
-        val cameraConstraints =
-            constraintsRepository.systemConstraints.value?.forCurrentLens(appSettings)
         val cameraSystem = createAndInitCameraXCameraSystem(
             appSettings = appSettings,
             constraintsRepository = constraintsRepository
         )
+        val cameraConstraints =
+            constraintsRepository.systemConstraints.value?.forCurrentLens(appSettings)
         assume().withMessage("Stabilisation $stabilizationMode not supported, skip the test.")
             .that(
                 cameraConstraints != null && cameraConstraints.supportedStabilizationModes.contains(
