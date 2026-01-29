@@ -33,12 +33,12 @@ import com.google.jetpackcamera.feature.postcapture.ui.MediaViewer
 import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.ShareCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.utils.MediaSharing
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
-import utils.MediaSharing
 
 private const val TAG = "PostCaptureScreen"
 
@@ -53,7 +53,7 @@ fun PostCaptureScreen(
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        viewModel.uiEvents.collect { event ->
+        for (event in viewModel.uiEvents) {
             when (event) {
                 is PostCaptureEvent.ShareMedia -> {
                     MediaSharing.shareMedia(context, event.media)

@@ -52,6 +52,7 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -72,12 +73,20 @@ class PostCaptureViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    /**
+     * Events that can be emitted from the [PostCaptureViewModel] to the UI.
+     */
     sealed class PostCaptureEvent {
+        /**
+         * Event to request sharing a specific media item.
+         *
+         * @param media The [MediaDescriptor.Content] of the media to be shared.
+         */
         data class ShareMedia(val media: MediaDescriptor.Content) : PostCaptureEvent()
     }
 
     private val _uiEvents = Channel<PostCaptureEvent>()
-    val uiEvents = _uiEvents.receiveAsFlow()
+    val uiEvents: ReceiveChannel<PostCaptureEvent> = _uiEvents
 
     /**
      * This flow maps the latest [MediaRepository.currentMedia] and its loaded [Media] counterpart to a [Pair]
@@ -400,6 +409,10 @@ class PostCaptureViewModel @Inject constructor(
             result
         }.await()
 
+    /**
+     * Sends a [ShareMedia] event to the UI to initiate sharing of the currently loaded media.
+     * no-op if no media is currently loaded
+     */
     fun onShareCurrentMedia() {
         val currentMediaDescriptor = loadedMediaFlow.value.first
         (currentMediaDescriptor as? MediaDescriptor.Content)?.let { content ->

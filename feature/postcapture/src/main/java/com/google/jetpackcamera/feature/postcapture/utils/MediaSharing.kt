@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package utils
+package com.google.jetpackcamera.feature.postcapture.utils
 
 import android.content.ContentResolver
 import android.content.Context
@@ -21,6 +21,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.feature.postcapture.R
 import java.io.File
 import java.io.FileNotFoundException
 
@@ -38,6 +39,7 @@ object MediaSharing {
             is MediaDescriptor.Content.Image -> "image/jpeg"
             is MediaDescriptor.Content.Video -> "video/mp4"
         }
+        val title = context.getString(R.string.title_share_media_chooser)
 
         // if the uri isn't already managed by a content provider, we will need
         val contentUri: Uri =
@@ -50,7 +52,7 @@ object MediaSharing {
         intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
         // todo(kc): prevent "edit image" from appearing in the ShareSheet.
-        context.startActivity(Intent.createChooser(intent, "Share Media"))
+        context.startActivity(Intent.createChooser(intent, title))
     }
 
     /**
