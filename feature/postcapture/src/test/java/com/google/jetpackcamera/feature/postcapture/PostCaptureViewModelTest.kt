@@ -129,13 +129,15 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
 
         assertThat(receivedEvent).isNotNull()
-        assertThat(receivedEvent).isInstanceOf(PostCaptureViewModel.PostCaptureEvent.ShareMedia::class.java)
+        assertThat(
+            receivedEvent
+        ).isInstanceOf(PostCaptureViewModel.PostCaptureEvent.ShareMedia::class.java)
         val shareEvent = receivedEvent as PostCaptureViewModel.PostCaptureEvent.ShareMedia
         assertThat(shareEvent.media).isEqualTo(testImageDesc)
 
-
         job.cancel()
     }
+
     @Test
     fun getUiState_image_viewerHasContent() = runTest(testDispatcher) {
         // Act
