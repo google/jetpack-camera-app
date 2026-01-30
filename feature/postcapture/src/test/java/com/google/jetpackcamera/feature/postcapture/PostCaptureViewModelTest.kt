@@ -36,7 +36,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -120,22 +119,16 @@ internal class PostCaptureViewModelTest {
         mediaRepository.setCurrentMedia(testImageDesc)
         advanceUntilIdle()
 
-        var receivedEvent: PostCaptureViewModel.PostCaptureEvent? = null
-        val job = launch {
-            receivedEvent = viewModel.uiEvents.first()
-        }
-
         viewModel.onShareCurrentMedia()
         advanceUntilIdle()
 
-        assertThat(receivedEvent).isNotNull()
+        val receivedEvent = viewModel.uiEvents.receive()
+
         assertThat(
             receivedEvent
         ).isInstanceOf(PostCaptureViewModel.PostCaptureEvent.ShareMedia::class.java)
         val shareEvent = receivedEvent as PostCaptureViewModel.PostCaptureEvent.ShareMedia
         assertThat(shareEvent.media).isEqualTo(testImageDesc)
-
-        job.cancel()
     }
 
     @Test
