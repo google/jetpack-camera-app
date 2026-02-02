@@ -29,7 +29,7 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
 
-fun QuickSettingsUiState.Companion.from(
+fun QuickSettingsUiState.Companion.captureUiState(
     captureModeUiState: CaptureModeUiState,
     flashModeUiState: FlashModeUiState,
     flipLensUiState: FlipLensUiState,

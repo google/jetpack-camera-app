@@ -22,14 +22,12 @@ import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
-import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
@@ -47,7 +45,6 @@ sealed interface CaptureUiState {
         val quickSettingsUiState: QuickSettingsUiState = QuickSettingsUiState.Unavailable,
         val aspectRatioUiState: AspectRatioUiState = AspectRatioUiState.Unavailable,
         val flipLensUiState: FlipLensUiState = FlipLensUiState.Unavailable,
-        val snackBarUiState: SnackBarUiState = SnackBarUiState(),
         val previewDisplayUiState: PreviewDisplayUiState =
             PreviewDisplayUiState(aspectRatioUiState = AspectRatioUiState.Unavailable),
         val lastBlinkTimeStamp: Long = 0,
@@ -55,7 +52,6 @@ sealed interface CaptureUiState {
         val captureModeToggleUiState: CaptureModeToggleUiState =
             CaptureModeToggleUiState.Unavailable,
         val sessionFirstFrameTimestamp: Long = 0L,
-        val debugUiState: DebugUiState = DebugUiState.Disabled,
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,
         val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,

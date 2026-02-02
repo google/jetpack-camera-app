@@ -70,14 +70,15 @@ import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNS
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.uistate.DisableRationale
+import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
-import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
-import com.google.jetpackcamera.ui.uistateadapter.capture.compound.update
-import com.google.jetpackcamera.ui.uistateadapter.capture.from
+import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiState
+import com.google.jetpackcamera.ui.uistateadapter.capture.debugUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.LinkedList
 import javax.inject.Inject
@@ -89,13 +90,13 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -116,13 +117,16 @@ class PreviewViewModel @Inject constructor(
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
     private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
-    private val _captureUiState: MutableStateFlow<CaptureUiState> =
-        MutableStateFlow(CaptureUiState.NotReady)
-    private val trackedPreviewUiState: MutableStateFlow<TrackedPreviewUiState> =
-        MutableStateFlow(TrackedPreviewUiState())
+    private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState> =
+        MutableStateFlow(TrackedCaptureUiState())
 
-    val captureUiState: StateFlow<CaptureUiState> =
-        _captureUiState.asStateFlow()
+    lateinit var captureUiState: StateFlow<CaptureUiState>
+    lateinit var debugUiState: StateFlow<DebugUiState>
+
+    private val _snackBarUiState: MutableStateFlow<SnackBarUiState> =
+        MutableStateFlow(SnackBarUiState())
+    val snackBarUiState: StateFlow<SnackBarUiState> =
+        _snackBarUiState.asStateFlow()
 
     val surfaceRequest: StateFlow<SurfaceRequest?> = cameraSystem.getSurfaceRequest()
 
@@ -189,34 +193,33 @@ class PreviewViewModel @Inject constructor(
                     }
             }
 
-            combine(
-                cameraSystem.getCurrentSettings().filterNotNull(),
-                constraintsRepository.systemConstraints.filterNotNull(),
-                cameraSystem.getCurrentCameraState(),
-                trackedPreviewUiState
-            ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
-                CaptureUiState.update(
-                    _captureUiState,
-                    cameraAppSettings,
-                    systemConstraints,
-                    cameraState,
-                    externalCaptureMode,
-                    debugSettings,
-                    cameraPropertiesJSON,
-                    trackedUiState.isQuickSettingsOpen,
-                    trackedUiState.focusedQuickSetting,
-                    trackedUiState.isDebugOverlayOpen,
-                    trackedUiState.isRecordingLocked,
-                    trackedUiState.zoomAnimationTarget,
-                    trackedUiState.debugHidingComponents,
-                    trackedUiState.recentCapturedMedia
+            captureUiState = CaptureUiState.captureUiState(
+                cameraSystem,
+                constraintsRepository,
+                trackedCaptureUiState,
+                externalCaptureMode
+            )
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5_000),
+                    initialValue = CaptureUiState.NotReady
                 )
-            }.collect {}
+            debugUiState = DebugUiState.debugUiState(
+                cameraSystem,
+                constraintsRepository,
+                debugSettings,
+                cameraPropertiesJSON,
+                trackedCaptureUiState
+            )
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5_000),
+                    initialValue = DebugUiState.Disabled
+                )
         }
     }
-
     fun toggleDebugHidingComponents() {
-        trackedPreviewUiState.update { old ->
+        trackedCaptureUiState.update { old ->
             old.copy(debugHidingComponents = !old.debugHidingComponents)
         }
     }
@@ -225,7 +228,7 @@ class PreviewViewModel @Inject constructor(
      * Sets the media from the image well to the [MediaRepository].
      */
     fun imageWellToRepository() {
-        (_captureUiState.value as? CaptureUiState.Ready)
+        (captureUiState.value as? CaptureUiState.Ready)
             ?.let { it.imageWellUiState as? ImageWellUiState.LastCapture }
             ?.let { postCurrentMediaToMediaRepository(it.mediaDescriptor) }
     }
@@ -238,7 +241,7 @@ class PreviewViewModel @Inject constructor(
 
     fun updateLastCapturedMedia() {
         viewModelScope.launch {
-            trackedPreviewUiState.update { old ->
+            trackedCaptureUiState.update { old ->
                 old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
             }
         }
@@ -252,7 +255,7 @@ class PreviewViewModel @Inject constructor(
                 launch(start = CoroutineStart.UNDISPATCHED) {
                     val startTraceTimestamp: Long = SystemClock.elapsedRealtimeNanos()
                     traceFirstFramePreview(cookie = 1) {
-                        _captureUiState.transformWhile {
+                        captureUiState.transformWhile {
                             var continueCollecting = true
                             (it as? CaptureUiState.Ready)?.let { uiState ->
                                 if (uiState.sessionFirstFrameTimestamp > startTraceTimestamp) {
@@ -331,13 +334,12 @@ class PreviewViewModel @Inject constructor(
 
     private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
-            _captureUiState.update { old ->
-                if (old !is CaptureUiState.Ready) return@update old
-                val newQueue = LinkedList(old.snackBarUiState.snackBarQueue)
+            _snackBarUiState.update { old ->
+                val newQueue = LinkedList(old.snackBarQueue)
                 newQueue.add(snackBarData)
                 Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
                 old.copy(
-                    snackBarUiState = SnackBarUiState.from(newQueue)
+                    snackBarQueue = newQueue
                 )
             }
         }
@@ -416,13 +418,8 @@ class PreviewViewModel @Inject constructor(
                 saveLocation = saveLocation,
                 doTakePicture = {
                     cameraSystem.takePicture(contentResolver, saveLocation) {
-                        _captureUiState.update { old ->
-                            (old as? CaptureUiState.Ready)?.copy(
-                                previewDisplayUiState = PreviewDisplayUiState(
-                                    lastBlinkTimeStamp = System.currentTimeMillis(),
-                                    aspectRatioUiState = old.aspectRatioUiState
-                                )
-                            ) ?: old
+                        trackedCaptureUiState.update { old ->
+                            old.copy(lastBlinkTimeStamp = System.currentTimeMillis())
                         }
                     }.savedUri
                 },
@@ -600,13 +597,13 @@ class PreviewViewModel @Inject constructor(
      "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
      */
     fun setLockedRecording(isLocked: Boolean) {
-        trackedPreviewUiState.update { old ->
+        trackedCaptureUiState.update { old ->
             old.copy(isRecordingLocked = isLocked)
         }
     }
 
     fun setZoomAnimationState(targetValue: Float?) {
-        trackedPreviewUiState.update { old ->
+        trackedCaptureUiState.update { old ->
             old.copy(zoomAnimationTarget = targetValue)
         }
     }
@@ -650,19 +647,19 @@ class PreviewViewModel @Inject constructor(
     }
 
     fun toggleQuickSettings() {
-        trackedPreviewUiState.update { old ->
+        trackedCaptureUiState.update { old ->
             old.copy(isQuickSettingsOpen = !old.isQuickSettingsOpen)
         }
     }
 
     fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting) {
-        trackedPreviewUiState.update { old ->
+        trackedCaptureUiState.update { old ->
             old.copy(focusedQuickSetting = focusedQuickSetting)
         }
     }
 
     fun toggleDebugOverlay() {
-        trackedPreviewUiState.update { old ->
+        trackedCaptureUiState.update { old ->
             old.copy(isDebugOverlayOpen = !old.isDebugOverlayOpen)
         }
     }
@@ -676,20 +673,18 @@ class PreviewViewModel @Inject constructor(
 
     fun onSnackBarResult(cookie: String) {
         viewModelScope.launch {
-            _captureUiState.update { old ->
-                (old as? CaptureUiState.Ready)?.let { readyState ->
-                    val newQueue = LinkedList(readyState.snackBarUiState.snackBarQueue)
-                    val snackBarData = newQueue.poll()
-                    if (snackBarData != null && snackBarData.cookie == cookie) {
-                        // If the latest snackBar had a result, then clear snackBarToShow
-                        Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
-                        readyState.copy(
-                            snackBarUiState = SnackBarUiState.from(newQueue)
-                        )
-                    } else {
-                        readyState
-                    }
-                } ?: old
+            _snackBarUiState.update { old ->
+                val newQueue = LinkedList(old.snackBarQueue)
+                val snackBarData = newQueue.poll()
+                if (snackBarData != null && snackBarData.cookie == cookie) {
+                    // If the latest snackBar had a result, then clear snackBarToShow
+                    Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
+                    old.copy(
+                        snackBarQueue = newQueue
+                    )
+                } else {
+                    old
+                }
             }
         }
     }
@@ -703,23 +698,4 @@ class PreviewViewModel @Inject constructor(
             cameraSystem.setDeviceRotation(deviceRotation)
         }
     }
-
-    /**
-     * Data class to track UI-specific states within the PreviewViewModel.
-     *
-     * This state is managed by the ViewModel and can be thought of as UI configuration
-     * or interaction states that might otherwise have been handled by Compose's
-     * `remember` if not hoisted to the ViewModel for broader logic integration
-     * or persistence. It is then transformed into the `PreviewUiState` that the UI
-     * directly observes.
-     */
-    data class TrackedPreviewUiState(
-        val isQuickSettingsOpen: Boolean = false,
-        val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE,
-        val isDebugOverlayOpen: Boolean = false,
-        val isRecordingLocked: Boolean = false,
-        val zoomAnimationTarget: Float? = null,
-        val debugHidingComponents: Boolean = false,
-        val recentCapturedMedia: MediaDescriptor = MediaDescriptor.None
-    )
 }

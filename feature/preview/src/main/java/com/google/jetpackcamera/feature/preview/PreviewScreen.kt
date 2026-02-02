@@ -113,6 +113,7 @@ import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
+import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
@@ -140,6 +141,8 @@ fun PreviewScreen(
     Log.d(TAG, "PreviewScreen")
 
     val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
+    val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
+    val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
@@ -273,6 +276,8 @@ fun PreviewScreen(
             ContentScreen(
                 modifier = modifier,
                 captureUiState = currentUiState,
+                debugUiState = debugUiState,
+                snackBarUiState = snackBarUiState,
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
@@ -355,6 +360,8 @@ fun PreviewScreen(
 @Composable
 private fun ContentScreen(
     captureUiState: CaptureUiState.Ready,
+    debugUiState: DebugUiState,
+    snackBarUiState: SnackBarUiState,
     screenFlashUiState: ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
@@ -567,7 +574,7 @@ private fun ContentScreen(
             )
         },
         debugOverlay = { modifier, extraControls ->
-            (captureUiState.debugUiState as? DebugUiState.Enabled)?.let {
+            (debugUiState as? DebugUiState.Enabled)?.let {
                 DebugOverlay(
                     modifier = modifier,
                     toggleIsOpen = onToggleDebugOverlay,
@@ -580,7 +587,7 @@ private fun ContentScreen(
             }
         },
         debugVisibilityWrapper = { content ->
-            val uiState = captureUiState.debugUiState
+            val uiState = debugUiState
             if (uiState !is DebugUiState.Enabled || !uiState.debugHidingComponents) {
                 content()
             }
@@ -597,7 +604,7 @@ private fun ContentScreen(
             )
         },
         snackBar = { modifier, snackbarHostState ->
-            val snackBarData = captureUiState.snackBarUiState.snackBarQueue.peek()
+            val snackBarData = snackBarUiState.snackBarQueue.peek()
             if (snackBarData != null) {
                 TestableSnackbar(
                     modifier = modifier.testTag(snackBarData.testTag),
@@ -716,6 +723,8 @@ private fun ContentScreenPreview() {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_READY,
             screenFlashUiState = ScreenFlashUiState(),
+            debugUiState = DebugUiState.Disabled,
+            snackBarUiState = SnackBarUiState(),
             surfaceRequest = null
         )
     }
@@ -728,6 +737,8 @@ private fun ContentScreen_Standard_Idle() {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(),
             screenFlashUiState = ScreenFlashUiState(),
+            debugUiState = DebugUiState.Disabled,
+            snackBarUiState = SnackBarUiState(),
             surfaceRequest = null
         )
     }
@@ -741,6 +752,8 @@ private fun ContentScreen_ImageOnly_Idle() {
             captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
             ),
+            debugUiState = DebugUiState.Disabled,
+            snackBarUiState = SnackBarUiState(),
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -755,6 +768,8 @@ private fun ContentScreen_VideoOnly_Idle() {
             captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
             ),
+            debugUiState = DebugUiState.Disabled,
+            snackBarUiState = SnackBarUiState(),
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -767,6 +782,8 @@ private fun ContentScreen_Standard_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING,
+            debugUiState = DebugUiState.Disabled,
+            snackBarUiState = SnackBarUiState(),
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -779,6 +796,8 @@ private fun ContentScreen_Locked_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING,
+            debugUiState = DebugUiState.Disabled,
+            snackBarUiState = SnackBarUiState(),
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )

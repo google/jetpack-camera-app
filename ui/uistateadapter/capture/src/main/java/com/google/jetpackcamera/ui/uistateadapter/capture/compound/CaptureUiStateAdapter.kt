@@ -15,18 +15,14 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 
-import com.google.jetpackcamera.core.camera.CameraState
-import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.model.DebugSettings
+import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.ExternalCaptureMode
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -34,78 +30,79 @@ import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
+import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
-import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 
-fun CaptureUiState.Companion.update(
-    captureUiState: MutableStateFlow<CaptureUiState>,
-    cameraAppSettings: CameraAppSettings,
-    systemConstraints: CameraSystemConstraints,
-    cameraState: CameraState,
-    externalCaptureMode: ExternalCaptureMode,
-    debugSettings: DebugSettings,
-    cameraPropertiesJSON: String,
-    isQuickSettingsOpen: Boolean,
-    focusedQuickSetting: FocusedQuickSetting,
-    isDebugOverlayOpen: Boolean,
-    isRecordingLocked: Boolean,
-    zoomAnimationTarget: Float?,
-    debugHidingComponents: Boolean,
-    recentCapturedMedia: MediaDescriptor
-) {
-    val captureModeUiState = CaptureModeUiState.from(
-        systemConstraints,
-        cameraAppSettings,
-        externalCaptureMode
-    )
-    val flipLensUiState = FlipLensUiState.from(
-        cameraAppSettings,
-        systemConstraints
-    )
-    val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
-    val hdrUiState = HdrUiState.from(
-        cameraAppSettings,
-        systemConstraints,
-        externalCaptureMode
-    )
-    captureUiState.update { old ->
-        val (baseState, flashModeUiState, focusMeteringUiState) = when (old) {
-            is CaptureUiState.NotReady -> Triple(
-                first = CaptureUiState.Ready(),
-                second = FlashModeUiState.from(
-                    cameraAppSettings,
-                    systemConstraints
-                ),
-                third = FocusMeteringUiState.from(cameraState)
-            )
+/**
+ * Creates a [Flow] of [CaptureUiState] by combining the latest values from various sources.
+ *
+ * This function acts as a central adapter to transform low-level camera and UI states into a
+ * comprehensive [CaptureUiState] that the UI can directly observe and react to.
+ *
+ * @param cameraSystem The [CameraSystem] providing real-time camera state and settings.
+ * @param constraintsRepository The [ConstraintsRepository] for accessing system-wide constraints.
+ * @param trackedCaptureUiState A [MutableStateFlow] representing the user-interacted UI state that
+ * needs to be tracked across recompositions (e.g., whether quick settings is open).
+ * @param externalCaptureMode The [ExternalCaptureMode] influencing UI behavior based on how the
+ * camera is launched (e.g., from an external intent).
+ *
+ * @return A [Flow] that emits a new [CaptureUiState] whenever any of its underlying
+ * data sources change.
+ */
+fun CaptureUiState.Companion.captureUiState(
+    cameraSystem: CameraSystem,
+    constraintsRepository: ConstraintsRepository,
+    trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
+    externalCaptureMode: ExternalCaptureMode
+): Flow<CaptureUiState> {
+    return combine(
+        cameraSystem.getCurrentSettings().filterNotNull(),
+        constraintsRepository.systemConstraints.filterNotNull(),
+        cameraSystem.getCurrentCameraState(),
+        trackedCaptureUiState
+    ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
+        val captureModeUiState = CaptureModeUiState.from(
+            systemConstraints,
+            cameraAppSettings,
+            externalCaptureMode
+        )
+        val flipLensUiState = FlipLensUiState.from(
+            cameraAppSettings,
+            systemConstraints
+        )
+        val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
+        val hdrUiState = HdrUiState.from(
+            cameraAppSettings,
+            systemConstraints,
+            externalCaptureMode
+        )
 
-            is CaptureUiState.Ready -> Triple(
-                first = old,
-                second = old.flashModeUiState.updateFrom(
-                    cameraAppSettings = cameraAppSettings,
-                    systemConstraints = systemConstraints,
-                    cameraState = cameraState
-                ),
-                third = old.focusMeteringUiState.updateFrom(cameraState)
-            )
-        }
+        // TODO: The old values of these 2 are needed:  flashModeUiState, focusMeteringUiState
+        val flashModeUiState = FlashModeUiState.from(
+            cameraAppSettings,
+            systemConstraints
+        )
+        val focusMeteringUiState = FocusMeteringUiState.from(cameraState)
 
-        baseState.copy(
-            // Update or initialize PreviewUiState.Ready
+        CaptureUiState.Ready(
             externalCaptureMode = externalCaptureMode,
             videoRecordingState = cameraState.videoRecordingState,
             flipLensUiState = flipLensUiState,
             aspectRatioUiState = aspectRatioUiState,
-            previewDisplayUiState = PreviewDisplayUiState(0, aspectRatioUiState),
-            quickSettingsUiState = QuickSettingsUiState.from(
+            previewDisplayUiState = PreviewDisplayUiState(
+                trackedUiState.lastBlinkTimeStamp,
+                aspectRatioUiState
+            ),
+            quickSettingsUiState = QuickSettingsUiState.captureUiState(
                 captureModeUiState,
                 flashModeUiState,
                 flipLensUiState,
@@ -113,20 +110,11 @@ fun CaptureUiState.Companion.update(
                 systemConstraints,
                 aspectRatioUiState,
                 hdrUiState,
-                isQuickSettingsOpen,
-                focusedQuickSetting,
+                trackedUiState.isQuickSettingsOpen,
+                trackedUiState.focusedQuickSetting,
                 externalCaptureMode
             ),
             sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
-            debugUiState = DebugUiState.from(
-                systemConstraints,
-                cameraAppSettings,
-                cameraState,
-                isDebugOverlayOpen,
-                debugHidingComponents,
-                debugSettings,
-                cameraPropertiesJSON
-            ),
             stabilizationUiState = StabilizationUiState.from(
                 cameraAppSettings,
                 cameraState
@@ -141,7 +129,7 @@ fun CaptureUiState.Companion.update(
             captureButtonUiState = CaptureButtonUiState.from(
                 cameraAppSettings,
                 cameraState,
-                isRecordingLocked
+                trackedUiState.isRecordingLocked
             ),
             zoomUiState = ZoomUiState.from(
                 systemConstraints,
@@ -149,7 +137,7 @@ fun CaptureUiState.Companion.update(
                 cameraState
             ),
             zoomControlUiState = ZoomControlUiState.from(
-                zoomAnimationTarget,
+                trackedUiState.zoomAnimationTarget,
                 systemConstraints,
                 cameraAppSettings,
                 cameraState
@@ -163,10 +151,31 @@ fun CaptureUiState.Companion.update(
             hdrUiState = hdrUiState,
             focusMeteringUiState = focusMeteringUiState,
             imageWellUiState = ImageWellUiState.from(
-                recentCapturedMedia,
+                trackedUiState.recentCapturedMedia,
                 cameraState.videoRecordingState
             )
-
         )
     }
 }
+
+//    captureUiState.update { old ->
+//        val (baseState, flashModeUiState, focusMeteringUiState) = when (old) {
+//            is CaptureUiState.NotReady -> Triple(
+//                first = CaptureUiState.Ready(),
+//                second = FlashModeUiState.from(
+//                    cameraAppSettings,
+//                    systemConstraints
+//                ),
+//                third = FocusMeteringUiState.from(cameraState)
+//            )
+//
+//            is CaptureUiState.Ready -> Triple(
+//                first = old,
+//                second = old.flashModeUiState.updateFrom(
+//                    cameraAppSettings = cameraAppSettings,
+//                    systemConstraints = systemConstraints,
+//                    cameraState = cameraState
+//                ),
+//                third = old.focusMeteringUiState.updateFrom(cameraState)
+//            )
+//        }
