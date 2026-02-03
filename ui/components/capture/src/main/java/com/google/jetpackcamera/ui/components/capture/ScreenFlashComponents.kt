@@ -36,6 +36,12 @@ import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 
 private const val TAG = "ScreenFlashComponents"
 
+/**
+ * A composable that manages the screen flash UI and brightness.
+ *
+ * @param screenFlashUiState The [ScreenFlashUiState] that controls the screen flash behavior.
+ * @param onInitialBrightnessCalculated Callback to provide the initial screen brightness when it's first calculated.
+ */
 @Composable
 fun ScreenFlashScreen(
     screenFlashUiState: ScreenFlashUiState,
@@ -55,6 +61,12 @@ fun ScreenFlashScreen(
     }
 }
 
+/**
+ * A composable that displays a white overlay to simulate a screen flash.
+ *
+ * @param screenFlashUiState The [ScreenFlashUiState] that controls the overlay's visibility and behavior.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun ScreenFlashOverlay(
     screenFlashUiState: ScreenFlashUiState,
@@ -118,7 +130,7 @@ private fun BrightnessRestoration(brightness: Float) {
 
 private fun getScreenBrightness(window: Window): Float = window.attributes.screenBrightness
 
-fun setBrightness(activity: Activity, value: Float) {
+private fun setBrightness(activity: Activity, value: Float) {
     Log.d(TAG, "setBrightness: value = $value")
     val layoutParams: WindowManager.LayoutParams = activity.window.attributes
     layoutParams.screenBrightness = value

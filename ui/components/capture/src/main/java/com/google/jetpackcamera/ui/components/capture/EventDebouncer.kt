@@ -16,14 +16,20 @@
 package com.google.jetpackcamera.ui.components.capture
 
 /**
- * A helper class that prevents multiple clicks.
+ * A helper class that debounces events, preventing multiple rapid-fire executions.
  */
-internal class MultipleEventsCutter {
+internal class EventDebouncer {
     private val now: Long
         get() = System.currentTimeMillis()
 
     private var lastEventTimeMs: Long = 0
 
+    /**
+     * Processes an event, executing it only if a specified duration has passed since the last
+     * event. This prevents multiple rapid-fire executions of the same event.
+     *
+     * @param event The lambda function representing the event to be executed.
+     */
     fun processEvent(event: () -> Unit) {
         if (now - lastEventTimeMs >= DURATION_BETWEEN_CLICKS_MS) {
             event.invoke()

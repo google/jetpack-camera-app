@@ -512,7 +512,7 @@ fun ToggleQuickSettingsButton(
 // ////////////////////////////////////////////////////
 
 @Composable
-fun QuickSettingToggleButton(
+private fun QuickSettingToggleButton(
     modifier: Modifier = Modifier,
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
@@ -530,6 +530,15 @@ fun QuickSettingToggleButton(
     )
 }
 
+/**
+ * A modal bottom sheet composable used to display a collection of quick setting buttons.
+ *
+ * @param modifier The [Modifier] to be applied to this composable.
+ * @param onDismiss The lambda function to be invoked when the bottom sheet is dismissed.
+ * @param sheetState The [SheetState] controlling the visibility and behavior of the bottom sheet.
+ * @param quickSettingButtons A variable number of composable functions that represent the buttons
+ * to be displayed within the quick settings bottom sheet.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickSettingsBottomSheet(
@@ -684,15 +693,21 @@ private fun QuickSettingsBottomSheetRow(
 }
 
 /**
- * @param isHighlighted true if the button is currently checked; false otherwise.
- * @param onClick will be called when the user clicks the button.
- * @param text The text label to display below the icon.
- * @param painter The icon to display inside the button.
- * @param modifier The Modifier to be applied to the button.
+ * A customizable toggle button used within the quick settings menu. This button displays an icon
+ * and a text label, and can be highlighted to indicate a selected state. It serves as a generic
+ * component for various quick settings options.
+ *
+ * @param onClick The lambda function to be invoked when the button is clicked.
+ * @param text The text label displayed below the icon.
+ * @param accessibilityText The content description for accessibility purposes.
+ * @param painter The [Painter] for the icon displayed inside the button.
+ * @param modifier The [Modifier] to be applied to this composable.
+ * @param isHighlighted A boolean indicating whether the button is currently in a highlighted (selected) state.
+ * @param enabled A boolean indicating whether the button is interactive.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun QuickSettingToggleButton(
+private fun QuickSettingToggleButton(
     onClick: () -> Unit,
     text: String,
     accessibilityText: String,
@@ -834,7 +849,7 @@ fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = 
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun TopBarQuickSettingIcon(
+private fun TopBarQuickSettingIcon(
     enum: QuickSettingsEnum,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,

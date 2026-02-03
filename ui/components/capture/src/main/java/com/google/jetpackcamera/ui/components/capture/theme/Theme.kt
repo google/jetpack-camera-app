@@ -25,6 +25,15 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
+/**
+ * A composable that provides a Material Design theme for previews within the Jetpack Camera App.
+ *
+ * This theme adapts to system dark mode settings and supports dynamic colors on Android 12+.
+ *
+ * @param darkTheme Whether the theme should be in dark mode. Defaults to `isSystemInDarkTheme()`.
+ * @param dynamicColor Whether dynamic color should be enabled. Defaults to `true`.
+ * @param content The composable content to which the theme will be applied.
+ */
 @Composable
 fun PreviewPreviewTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

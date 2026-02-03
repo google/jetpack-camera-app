@@ -69,23 +69,31 @@ class ZoomState(
     }
 
     /**
-     * Scale the current zoom level.
+     * Scales the current zoom level by the given [scalingFactor].
+     *
+     * @param scalingFactor The factor by which to scale the current zoom level.
+     * @param lensToZoom Specifies which lens's zoom to modify (primary or secondary).
      */
     suspend fun scaleZoom(scalingFactor: Float, lensToZoom: LensToZoom) {
         absoluteZoom(scalingFactor * functionalZoom, lensToZoom)
     }
 
     /**
-     * Increment the current zoom level.
+     * Increments the current zoom level by the given [increment].
+     *
+     * @param increment The amount to increment the current zoom level by.
+     * @param lensToZoom Specifies which lens's zoom to modify (primary or secondary).
      */
     suspend fun incrementZoom(increment: Float, lensToZoom: LensToZoom) {
         absoluteZoom(increment + functionalZoom, lensToZoom)
     }
 
     /**
-     * Ease towards a specific zoom level
+     * Animates the zoom level to the specified [targetZoomLevel].
      *
-     * @param animationSpec [androidx.compose.animation.core.AnimationSpec] used for the animation, default to tween over 500ms
+     * @param targetZoomLevel The target zoom level to animate to.
+     * @param animationSpec The [AnimationSpec] to use for the animation.
+     * @param lensToZoom Specifies which lens's zoom to modify (primary or secondary).
      */
     suspend fun animatedZoom(
         targetZoomLevel: Float,
@@ -113,6 +121,12 @@ class ZoomState(
         }
     }
 
+    /**
+     * Updates the zoom state when the camera lens changes.
+     *
+     * @param newInitialZoomLevel The new initial zoom level.
+     * @param newZoomRange The new zoom range.
+     */
     suspend fun onChangeLens(newInitialZoomLevel: Float, newZoomRange: Range<Float>) {
         mutatorMutex.mutate(MutatePriority.PreventUserInput) {
             functionalZoom = newInitialZoomLevel

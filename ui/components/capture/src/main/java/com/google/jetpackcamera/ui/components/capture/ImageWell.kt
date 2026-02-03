@@ -48,6 +48,15 @@ import androidx.core.graphics.createBitmap
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
+/**
+ * A composable that displays the last captured image.
+ *
+ * @param imageWellUiState the [ImageWellUiState.LastCapture] for this component
+ * @param onClick the callback for when the image well is clicked
+ * @param modifier the modifier for this component
+ * @param shape the shape of the image well
+ * @param enabled true if the image well is enabled
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun ImageWell(
