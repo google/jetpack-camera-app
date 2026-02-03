@@ -33,7 +33,7 @@ sealed interface PostCaptureUiState {
         val viewerUiState: MediaViewerUiState = MediaViewerUiState.Loading,
         val deleteButtonUiState: DeleteButtonUiState = DeleteButtonUiState.Unavailable,
         val shareButtonUiState: ShareButtonUiState = ShareButtonUiState.Unavailable,
-        val snackBarUiState: SnackBarUiState = SnackBarUiState()
+        val snackBarUiState: SnackBarUiState = SnackBarUiState.Enabled()
     ) : PostCaptureUiState
 
     companion object

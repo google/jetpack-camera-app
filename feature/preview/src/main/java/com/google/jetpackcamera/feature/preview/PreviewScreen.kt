@@ -276,8 +276,6 @@ fun PreviewScreen(
             ContentScreen(
                 modifier = modifier,
                 captureUiState = currentUiState,
-                debugUiState = debugUiState,
-                snackBarUiState = snackBarUiState,
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
@@ -339,7 +337,9 @@ fun PreviewScreen(
                 onLockVideoRecording = viewModel::setLockedRecording,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                onNavigatePostCapture = onNavigateToPostCapture
+                onNavigatePostCapture = onNavigateToPostCapture,
+                debugUiState = debugUiState,
+                snackBarUiState = snackBarUiState
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -360,8 +360,6 @@ fun PreviewScreen(
 @Composable
 private fun ContentScreen(
     captureUiState: CaptureUiState.Ready,
-    debugUiState: DebugUiState,
-    snackBarUiState: SnackBarUiState,
     screenFlashUiState: ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
@@ -395,7 +393,9 @@ private fun ContentScreen(
     onLockVideoRecording: (Boolean) -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
-    onNavigatePostCapture: () -> Unit = {}
+    onNavigatePostCapture: () -> Unit = {},
+    debugUiState: DebugUiState = DebugUiState.Disabled,
+    snackBarUiState: SnackBarUiState = SnackBarUiState.Disabled
 ) {
     val onFlipCamera = {
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
@@ -604,14 +604,16 @@ private fun ContentScreen(
             )
         },
         snackBar = { modifier, snackbarHostState ->
-            val snackBarData = snackBarUiState.snackBarQueue.peek()
-            if (snackBarData != null) {
-                TestableSnackbar(
-                    modifier = modifier.testTag(snackBarData.testTag),
-                    snackbarToShow = snackBarData,
-                    snackbarHostState = snackbarHostState,
-                    onSnackbarResult = onSnackBarResult
-                )
+            if (snackBarUiState is SnackBarUiState.Enabled) {
+                val snackBarData = snackBarUiState.snackBarQueue.peek()
+                if (snackBarData != null) {
+                    TestableSnackbar(
+                        modifier = modifier.testTag(snackBarData.testTag),
+                        snackbarToShow = snackBarData,
+                        snackbarHostState = snackbarHostState,
+                        onSnackbarResult = onSnackBarResult
+                    )
+                }
             }
         },
         pauseToggleButton = {
@@ -724,7 +726,7 @@ private fun ContentScreenPreview() {
             captureUiState = FAKE_PREVIEW_UI_STATE_READY,
             screenFlashUiState = ScreenFlashUiState(),
             debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState(),
+            snackBarUiState = SnackBarUiState.Disabled,
             surfaceRequest = null
         )
     }
@@ -738,7 +740,7 @@ private fun ContentScreen_Standard_Idle() {
             captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(),
             screenFlashUiState = ScreenFlashUiState(),
             debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState(),
+            snackBarUiState = SnackBarUiState.Disabled,
             surfaceRequest = null
         )
     }
@@ -753,7 +755,7 @@ private fun ContentScreen_ImageOnly_Idle() {
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
             ),
             debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState(),
+            snackBarUiState = SnackBarUiState.Disabled,
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -769,7 +771,7 @@ private fun ContentScreen_VideoOnly_Idle() {
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
             ),
             debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState(),
+            snackBarUiState = SnackBarUiState.Disabled,
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -783,7 +785,7 @@ private fun ContentScreen_Standard_Recording() {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING,
             debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState(),
+            snackBarUiState = SnackBarUiState.Disabled,
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -797,7 +799,7 @@ private fun ContentScreen_Locked_Recording() {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING,
             debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState(),
+            snackBarUiState = SnackBarUiState.Disabled,
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )

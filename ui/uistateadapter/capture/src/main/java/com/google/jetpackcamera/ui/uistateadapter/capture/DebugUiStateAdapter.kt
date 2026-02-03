@@ -32,7 +32,24 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 
-fun DebugUiState.Companion.debugUiState(
+/**
+ * Creates a [Flow] of [DebugUiState] for the debug overlay.
+ *
+ * This function combines various data sources to construct a comprehensive [DebugUiState]
+ * that drives the UI of the debug information overlay. It reacts to changes in camera settings,
+ * system constraints, camera state, and user interactions with the debug UI.
+ *
+ * @param cameraSystem The [CameraSystem] providing real-time camera state and settings.
+ * @param constraintsRepository The [ConstraintsRepository] for accessing system-wide constraints.
+ * @param debugSettings The current debug-specific settings.
+ * @param cameraPropertiesJSON A JSON string containing detailed camera properties for display.
+ * @param trackedCaptureUiState A [MutableStateFlow] representing user-interacted UI state,
+ * such as whether the debug overlay is open.
+ *
+ * @return A [Flow] that emits a new [DebugUiState] whenever any of its underlying data
+ * sources change.
+ */
+fun debugUiState(
     cameraSystem: CameraSystem,
     constraintsRepository: ConstraintsRepository,
     debugSettings: DebugSettings,
@@ -45,7 +62,7 @@ fun DebugUiState.Companion.debugUiState(
         cameraSystem.getCurrentCameraState(),
         trackedCaptureUiState
     ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
-        DebugUiState.from(
+        from(
             systemConstraints,
             cameraAppSettings,
             cameraState,
@@ -57,7 +74,25 @@ fun DebugUiState.Companion.debugUiState(
     }
 }
 
-fun DebugUiState.Companion.from(
+/**
+ * Constructs a [DebugUiState] based on the current camera and application state.
+ *
+ * This is a private factory function that determines whether the debug UI should be fully
+ * enabled and open, enabled but closed, or completely disabled. It gathers and transforms
+ * the necessary data for the UI.
+ *
+ * @param systemConstraints The system-level constraints for the current camera.
+ * @param cameraAppSettings The current application-level camera settings.
+ * @param cameraState The real-time state of the camera.
+ * @param isDebugOverlayOpen Indicates whether the user has opened the debug overlay.
+ * @param debugHidingComponents Indicates whether UI components are being hidden for debugging.
+ * @param debugSettings The general debug settings, e.g., if debug mode is on.
+ * @param cameraPropertiesJSON A JSON string containing detailed camera properties for display.
+ *
+ * @return An appropriate [DebugUiState] which can be [DebugUiState.Enabled.Open],
+ * [DebugUiState.Enabled.Closed], or [DebugUiState.Disabled].
+ */
+private fun from(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
@@ -75,7 +110,7 @@ fun DebugUiState.Companion.from(
             cameraPropertiesJSON
         )
     } else {
-        getDisabledDebugUiState(
+        getClosedDebugUiState(
             cameraState,
             cameraAppSettings.cameraLensFacing,
             debugHidingComponents
@@ -118,7 +153,7 @@ private fun getEnabledDebugUiState(
     )
 }
 
-private fun getDisabledDebugUiState(
+private fun getClosedDebugUiState(
     cameraState: CameraState,
     lensFacing: LensFacing,
     debugHidingComponents: Boolean

@@ -119,13 +119,9 @@ class PreviewViewModel @Inject constructor(
     private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState> =
         MutableStateFlow(TrackedCaptureUiState())
-
-    lateinit var captureUiState: StateFlow<CaptureUiState>
-    lateinit var debugUiState: StateFlow<DebugUiState>
-
-    private val _snackBarUiState: MutableStateFlow<SnackBarUiState> =
-        MutableStateFlow(SnackBarUiState())
-    val snackBarUiState: StateFlow<SnackBarUiState> =
+    private val _snackBarUiState: MutableStateFlow<SnackBarUiState.Enabled> =
+        MutableStateFlow(SnackBarUiState.Enabled())
+    val snackBarUiState: StateFlow<SnackBarUiState.Enabled> =
         _snackBarUiState.asStateFlow()
 
     val surfaceRequest: StateFlow<SurfaceRequest?> = cameraSystem.getSurfaceRequest()
@@ -160,6 +156,30 @@ class PreviewViewModel @Inject constructor(
         ) { cameraPropertiesJSON = it }
     }
 
+    val captureUiState: StateFlow<CaptureUiState> = captureUiState(
+        cameraSystem,
+        constraintsRepository,
+        trackedCaptureUiState,
+        externalCaptureMode
+    )
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = CaptureUiState.NotReady
+        )
+    val debugUiState: StateFlow<DebugUiState> = debugUiState(
+        cameraSystem,
+        constraintsRepository,
+        debugSettings,
+        cameraPropertiesJSON,
+        trackedCaptureUiState
+    )
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DebugUiState.Disabled
+        )
+
     init {
         viewModelScope.launch {
             launch {
@@ -192,30 +212,6 @@ class PreviewViewModel @Inject constructor(
                         }
                     }
             }
-
-            captureUiState = CaptureUiState.captureUiState(
-                cameraSystem,
-                constraintsRepository,
-                trackedCaptureUiState,
-                externalCaptureMode
-            )
-                .stateIn(
-                    scope = viewModelScope,
-                    started = SharingStarted.WhileSubscribed(5_000),
-                    initialValue = CaptureUiState.NotReady
-                )
-            debugUiState = DebugUiState.debugUiState(
-                cameraSystem,
-                constraintsRepository,
-                debugSettings,
-                cameraPropertiesJSON,
-                trackedCaptureUiState
-            )
-                .stateIn(
-                    scope = viewModelScope,
-                    started = SharingStarted.WhileSubscribed(5_000),
-                    initialValue = DebugUiState.Disabled
-                )
         }
     }
     fun toggleDebugHidingComponents() {

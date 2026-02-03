@@ -19,10 +19,13 @@ import androidx.compose.material3.SnackbarDuration
 import java.util.LinkedList
 import java.util.Queue
 
-data class SnackBarUiState(
-    val snackBarQueue: Queue<SnackbarData> = LinkedList()
-) {
-    companion object
+sealed interface SnackBarUiState {
+    data object Disabled : SnackBarUiState
+    data class Enabled(
+        val snackBarQueue: Queue<SnackbarData> = LinkedList()
+    ) : SnackBarUiState {
+        companion object
+    }
 }
 
 data class SnackbarData(

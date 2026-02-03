@@ -59,7 +59,7 @@ import kotlinx.coroutines.flow.filterNotNull
  * @return A [Flow] that emits a new [CaptureUiState] whenever any of its underlying
  * data sources change.
  */
-fun CaptureUiState.Companion.captureUiState(
+fun captureUiState(
     cameraSystem: CameraSystem,
     constraintsRepository: ConstraintsRepository,
     trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
@@ -90,7 +90,6 @@ fun CaptureUiState.Companion.captureUiState(
             externalCaptureMode
         )
 
-        // TODO: The old values of these 2 are needed:  flashModeUiState, focusMeteringUiState
         flashModeUiState = flashModeUiState.let {
             it?.updateFrom(
                 cameraAppSettings = cameraAppSettings,
@@ -170,25 +169,3 @@ fun CaptureUiState.Companion.captureUiState(
         )
     }
 }
-
-//    captureUiState.update { old ->
-//        val (baseState, flashModeUiState, focusMeteringUiState) = when (old) {
-//            is CaptureUiState.NotReady -> Triple(
-//                first = CaptureUiState.Ready(),
-//                second = FlashModeUiState.from(
-//                    cameraAppSettings,
-//                    systemConstraints
-//                ),
-//                third = FocusMeteringUiState.from(cameraState)
-//            )
-//
-//            is CaptureUiState.Ready -> Triple(
-//                first = old,
-//                second = old.flashModeUiState.updateFrom(
-//                    cameraAppSettings = cameraAppSettings,
-//                    systemConstraints = systemConstraints,
-//                    cameraState = cameraState
-//                ),
-//                third = old.focusMeteringUiState.updateFrom(cameraState)
-//            )
-//        }
