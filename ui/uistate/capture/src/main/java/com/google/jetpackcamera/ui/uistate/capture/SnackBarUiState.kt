@@ -19,12 +19,27 @@ import androidx.compose.material3.SnackbarDuration
 import java.util.LinkedList
 import java.util.Queue
 
+/**
+ * Defines the UI state for the snack-bar, which is used to display transient messages to the user.
+ *
+ * @param snackBarQueue A queue of [SnackbarData] objects to be displayed.
+ */
 data class SnackBarUiState(
     val snackBarQueue: Queue<SnackbarData> = LinkedList()
 ) {
     companion object
 }
 
+/**
+ * Represents the data for a single snack-bar message.
+ *
+ * @param cookie A unique identifier for the snack-bar message.
+ * @param stringResource The resource ID of the string to be displayed.
+ * @param duration The duration for which the snack-bar should be displayed.
+ * @param actionLabelRes The resource ID of the action label, if any.
+ * @param withDismissAction Whether to show a dismiss action.
+ * @param testTag A test tag for UI testing.
+ */
 data class SnackbarData(
     val cookie: String,
     val stringResource: Int,
