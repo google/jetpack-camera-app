@@ -750,7 +750,7 @@ fun QuickSettingToggleButton(
  * Should you want to have an expanded view of a single quick setting
  */
 @Composable
-fun ExpandedQuickSetting(
+private fun ExpandedQuickSetting(
     modifier: Modifier = Modifier,
     vararg quickSettingButtons: @Composable () -> Unit
 ) {
