@@ -37,6 +37,7 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
+import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -64,6 +65,9 @@ fun CaptureUiState.Companion.captureUiState(
     trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     externalCaptureMode: ExternalCaptureMode
 ): Flow<CaptureUiState> {
+    var flashModeUiState: FlashModeUiState? = null
+    var focusMeteringUiState: FocusMeteringUiState? = null
+
     return combine(
         cameraSystem.getCurrentSettings().filterNotNull(),
         constraintsRepository.systemConstraints.filterNotNull(),
@@ -87,11 +91,20 @@ fun CaptureUiState.Companion.captureUiState(
         )
 
         // TODO: The old values of these 2 are needed:  flashModeUiState, focusMeteringUiState
-        val flashModeUiState = FlashModeUiState.from(
-            cameraAppSettings,
-            systemConstraints
-        )
-        val focusMeteringUiState = FocusMeteringUiState.from(cameraState)
+        flashModeUiState = flashModeUiState.let {
+            it?.updateFrom(
+                cameraAppSettings = cameraAppSettings,
+                systemConstraints = systemConstraints,
+                cameraState = cameraState
+            )
+                ?: FlashModeUiState.from(cameraAppSettings, systemConstraints)
+        }
+        focusMeteringUiState = focusMeteringUiState.let {
+            it?.updateFrom(
+                cameraState = cameraState
+            )
+                ?: FocusMeteringUiState.from(cameraState)
+        }
 
         CaptureUiState.Ready(
             externalCaptureMode = externalCaptureMode,
