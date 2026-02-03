@@ -247,7 +247,7 @@ class CameraXCameraSystemTest {
     ) {
         // Arrange.
         val constraintsRepository = SettableConstraintsRepositoryImpl()
-        val appSettings = DEFAULT_CAMERA_APP_SETTINGS
+        val appSettings = CameraAppSettings(stabilizationMode = StabilizationMode.OFF)
         val cameraSystem = createAndInitCameraXCameraSystem(
             appSettings = appSettings,
             constraintsRepository = constraintsRepository
@@ -260,24 +260,34 @@ class CameraXCameraSystemTest {
                     stabilizationMode
                 )
             ).isTrue()
-        cameraSystem.startCameraAndWaitUntilRunning()
-
+        cameraSystem.setStabilizationMode(stabilizationMode)
         val stabilizationCheck: ReceiveChannel<Boolean> = cameraSystem.getCurrentCameraState()
             .map { it.stabilizationMode == stabilizationMode }
             .produceIn(this)
         stabilizationCheck.awaitValue(false)
+        cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
-        cameraSystem.setStabilizationMode(stabilizationMode)
-        val result = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+        val recordingComplete = CompletableDeferred<Unit>()
+        cameraSystem.startRecording {
+            when (it) {
+                is OnVideoRecorded -> {
+                    recordingComplete.complete(Unit)
+                }
+
+                is OnVideoRecordError -> recordingComplete.completeExceptionally(it.error)
+            }
+        }
 
         // Assert.
         stabilizationCheck.awaitValue(true)
 
+        cameraSystem.stopVideoRecording()
+
+        stabilizationCheck.awaitValue(true)
+
         // Clean-up.
-        if (result.savedUri != null) {
-            filesToDelete.add(result.savedUri!!)
-        }
+        recordingComplete.await()
         stabilizationCheck.cancel()
     }
 

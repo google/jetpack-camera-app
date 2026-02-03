@@ -748,7 +748,6 @@ private fun createPreviewUseCase(
         targetCameraInfo = cameraInfo,
         captureResults = captureResults
     )
-
     // set preview stabilization
     when (stabilizationMode) {
         StabilizationMode.ON -> {
@@ -765,9 +764,8 @@ private fun createPreviewUseCase(
             setOpticalStabilizationModeEnabled(false)
         }
         StabilizationMode.HIGH_QUALITY -> {
-            setPreviewStabilizationEnabled(false)
-            setOpticalStabilizationModeEnabled(false)
-        } // Handled by VideoCapture use case.
+            // No-op. Handled by VideoCapture use case.
+        }
         else -> throw UnsupportedOperationException(
             "Unexpected stabilization mode: $stabilizationMode. Stabilization mode should always " +
                 "an explicit mode, such as ON, OPTICAL, OFF or HIGH_QUALITY"
