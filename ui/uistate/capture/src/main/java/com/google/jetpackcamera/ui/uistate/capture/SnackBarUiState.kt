@@ -23,9 +23,9 @@ sealed interface SnackBarUiState {
     data object Disabled : SnackBarUiState
     data class Enabled(
         val snackBarQueue: Queue<SnackbarData> = LinkedList()
-    ) : SnackBarUiState {
-        companion object
-    }
+    ) : SnackBarUiState
+
+    companion object
 }
 
 data class SnackbarData(
