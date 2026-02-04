@@ -114,7 +114,9 @@ fun captureUiState(
                 trackedUiState.lastBlinkTimeStamp,
                 aspectRatioUiState
             ),
-            quickSettingsUiState = QuickSettingsUiState.captureUiState(
+            // TODO: add updateFrom() for all ui states to prevent re-updating if
+            // values are the same
+            quickSettingsUiState = QuickSettingsUiState.from(
                 captureModeUiState,
                 flashModeUiState,
                 flipLensUiState,
