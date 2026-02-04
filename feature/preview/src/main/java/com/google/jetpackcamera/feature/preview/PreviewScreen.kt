@@ -725,8 +725,6 @@ private fun ContentScreenPreview() {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_READY,
             screenFlashUiState = ScreenFlashUiState(),
-            debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState.Disabled,
             surfaceRequest = null
         )
     }
@@ -739,8 +737,6 @@ private fun ContentScreen_Standard_Idle() {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(),
             screenFlashUiState = ScreenFlashUiState(),
-            debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState.Disabled,
             surfaceRequest = null
         )
     }
@@ -754,8 +750,6 @@ private fun ContentScreen_ImageOnly_Idle() {
             captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
             ),
-            debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState.Disabled,
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -770,8 +764,6 @@ private fun ContentScreen_VideoOnly_Idle() {
             captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
             ),
-            debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState.Disabled,
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -784,8 +776,6 @@ private fun ContentScreen_Standard_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING,
-            debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState.Disabled,
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )
@@ -798,8 +788,6 @@ private fun ContentScreen_Locked_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING,
-            debugUiState = DebugUiState.Disabled,
-            snackBarUiState = SnackBarUiState.Disabled,
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
         )

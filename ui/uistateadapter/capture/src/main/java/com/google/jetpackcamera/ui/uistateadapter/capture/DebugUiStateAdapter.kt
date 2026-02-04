@@ -62,7 +62,7 @@ fun debugUiState(
         cameraSystem.getCurrentCameraState(),
         trackedCaptureUiState
     ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
-        from(
+        DebugUiState.from(
             systemConstraints,
             cameraAppSettings,
             cameraState,
@@ -92,7 +92,7 @@ fun debugUiState(
  * @return An appropriate [DebugUiState] which can be [DebugUiState.Enabled.Open],
  * [DebugUiState.Enabled.Closed], or [DebugUiState.Disabled].
  */
-private fun from(
+fun DebugUiState.Companion.from(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
