@@ -115,6 +115,23 @@ internal class PostCaptureViewModelTest {
     }
 
     @Test
+    fun onShareCurrentMedia_emitsShareMediaEvent() = runTest(testDispatcher) {
+        mediaRepository.setCurrentMedia(testImageDesc)
+        advanceUntilIdle()
+
+        viewModel.onShareCurrentMedia()
+        advanceUntilIdle()
+
+        val receivedEvent = viewModel.uiEvents.receive()
+
+        assertThat(
+            receivedEvent
+        ).isInstanceOf(PostCaptureViewModel.PostCaptureEvent.ShareMedia::class.java)
+        val shareEvent = receivedEvent as PostCaptureViewModel.PostCaptureEvent.ShareMedia
+        assertThat(shareEvent.media).isEqualTo(testImageDesc)
+    }
+
+    @Test
     fun getUiState_image_viewerHasContent() = runTest(testDispatcher) {
         // Act
         mediaRepository.setCurrentMedia(testImageDesc)
