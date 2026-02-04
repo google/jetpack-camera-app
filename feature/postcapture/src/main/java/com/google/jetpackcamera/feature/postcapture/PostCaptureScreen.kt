@@ -18,18 +18,22 @@ package com.google.jetpackcamera.feature.postcapture
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
+import com.google.jetpackcamera.feature.postcapture.PostCaptureViewModel.PostCaptureEvent
 import com.google.jetpackcamera.feature.postcapture.ui.DeleteCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.ExitPostCaptureButton
 import com.google.jetpackcamera.feature.postcapture.ui.MediaViewer
 import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.ShareCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.utils.MediaSharing
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
@@ -46,13 +50,25 @@ fun PostCaptureScreen(
 ) {
     Log.d(TAG, "PostCaptureScreen")
 
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        for (event in viewModel.uiEvents) {
+            when (event) {
+                is PostCaptureEvent.ShareMedia -> {
+                    MediaSharing.shareMedia(context, event.media)
+                }
+            }
+        }
+    }
+
     val uiState: PostCaptureUiState by viewModel.postCaptureUiState.collectAsState()
     PostCaptureComponent(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         onDeleteMedia = viewModel::deleteCurrentMedia,
         onSaveMedia = viewModel::saveCurrentMedia,
-        onShareCurrentMedia = viewModel::shareCurrentMedia,
+        onShareCurrentMedia = viewModel::onShareCurrentMedia,
         onLoadVideo = viewModel::loadCurrentVideo,
         onSnackBarResult = viewModel::onSnackBarResult
     )
