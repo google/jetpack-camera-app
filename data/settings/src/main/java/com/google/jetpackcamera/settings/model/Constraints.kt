@@ -23,6 +23,8 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TARGET_FPS_15
+import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 
@@ -53,38 +55,23 @@ inline fun <reified T> CameraSystemConstraints.forDevice(
 ) = perLensConstraints.values.asSequence().flatMap { constraintSelector(it) }.toSet()
 
 /**
- * Defines the specific capabilities, limitations, and supported settings for a single camera lens.
+ * Defines the capabilities and limitations for a single camera lens.
  *
- * This data class encapsulates various constraints related to video and image capture for a
- * particular camera, such as supported stabilization modes, frame rates, dynamic ranges,
- * image formats, and zoom capabilities.
+ * Encapsulates constraints for video and image capture, including stabilization,
+ * frame rates, dynamic ranges, formats, flash, zoom, and test patterns.
  *
- * @property supportedStabilizationModes A set of [com.google.jetpackcamera.model.StabilizationMode] values that are supported
- *                                       by this camera lens.
- * @property supportedFixedFrameRates A set of integers representing fixed frame rates (FPS)
- *                                    supported for video recording with this lens.
- *                                    May include values like [FPS_AUTO], [FPS_15], [FPS_30], [FPS_60].
- * @property supportedDynamicRanges A set of [com.google.jetpackcamera.model.DynamicRange] values (e.g., SDR, HDR10) that
- *                                  this camera lens can capture.
- * @property supportedVideoQualitiesMap A map where keys are [com.google.jetpackcamera.model.DynamicRange] values and values
- *                                      are lists of [VideoQuality] settings supported for that
- *                                      dynamic range.
- * @property supportedImageFormatsMap A map where keys are [com.google.jetpackcamera.model.StreamConfig] values (indicating single
- *                                    or multi-stream configurations) and values are sets of
- *                                    [ImageOutputFormat] (e.g., JPEG, DNG) supported for that
- *                                    stream configuration.
- * @property supportedIlluminants A set of [com.google.jetpackcamera.model.Illuminant] values supported by this camera, typically
- *                                indicating the type of flash unit available (e.g., FLASH_UNIT).
- * @property supportedFlashModes A set of [com.google.jetpackcamera.model.FlashMode] values (e.g., OFF, ON, AUTO) that can be
- *                               used with this camera lens.
- * @property supportedZoomRange An optional [Range] of floats indicating the minimum and maximum
- *                              zoom ratios supported by this lens. Null if zoom is not supported
- *                              or the range is not available.
- * @property unsupportedStabilizationFpsMap A map where keys are [com.google.jetpackcamera.model.StabilizationMode] values and
- *                                          values are sets of frame rates (FPS) that are
- *                                          *not* supported when that specific stabilization mode
- *                                          is active. This helps in understanding combinations
- *                                          that are disallowed.
+ * @property supportedStabilizationModes Set of [StabilizationMode] values supported by this lens.
+ * @property supportedFixedFrameRates A set of integers representing fixed frame rates that this
+ * lens supports for video recordings. Only 15, 30, or 60 FPS can be displayed, and a lens must
+ * exactly support ranges like `[15,15]` to be included in the set.
+ * @property supportedDynamicRanges Set of [DynamicRange] values (e.g., SDR, HLG10) this lens can capture.
+ * @property supportedVideoQualitiesMap Map of [DynamicRange] to a list of supported [VideoQuality] settings.
+ * @property supportedImageFormatsMap Map of [StreamConfig] to a set of supported [ImageOutputFormat]s.
+ * @property supportedIlluminants Set of supported [Illuminant] types (e.g., flash unit).
+ * @property supportedFlashModes Set of [FlashMode] values (e.g., ON, OFF, AUTO) supported by this lens.
+ * @property supportedZoomRange Optional [Range] of floats for zoom ratios. Null if zoom is not supported.
+ * @property unsupportedStabilizationFpsMap Map of [StabilizationMode] to a set of frame rates (FPS) that are unsupported with that mode.
+ * @property supportedTestPatterns Set of [TestPattern] values supported by this lens, used for debugging.
  */
 data class CameraConstraints(
     val supportedStabilizationModes: Set<StabilizationMode>,
@@ -100,13 +87,6 @@ data class CameraConstraints(
 ) {
     val StabilizationMode.unsupportedFpsSet
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
-
-    companion object {
-        const val FPS_AUTO = 0
-        const val FPS_15 = 15
-        const val FPS_30 = 30
-        const val FPS_60 = 60
-    }
 }
 
 /**
@@ -121,7 +101,7 @@ val TYPICAL_SYSTEM_CONSTRAINTS =
                 put(
                     lensFacing,
                     CameraConstraints(
-                        supportedFixedFrameRates = setOf(15, 30),
+                        supportedFixedFrameRates = setOf(TARGET_FPS_15, TARGET_FPS_30),
                         supportedStabilizationModes = setOf(StabilizationMode.OFF),
                         supportedDynamicRanges = setOf(DynamicRange.SDR),
                         supportedImageFormatsMap = mapOf(
