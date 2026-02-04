@@ -30,6 +30,7 @@ import androidx.media3.common.Player.COMMAND_PLAY_PAUSE
 import androidx.media3.common.Player.COMMAND_PREPARE
 import androidx.media3.common.Player.COMMAND_SET_MEDIA_ITEM
 import androidx.media3.exoplayer.ExoPlayer
+import com.example.uistateadapter.from
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
@@ -39,13 +40,12 @@ import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMA
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import com.google.jetpackcamera.ui.uistate.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
-import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import com.google.jetpackcamera.ui.uistateadapter.postcapture.from
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext

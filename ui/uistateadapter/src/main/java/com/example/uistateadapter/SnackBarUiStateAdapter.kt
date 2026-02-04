@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.capture
+package com.example.uistateadapter
 
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import com.google.jetpackcamera.ui.uistate.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.SnackbarData
 import java.util.Queue
 
 fun SnackBarUiState.Companion.from(snackBarQueue: Queue<SnackbarData>): SnackBarUiState {

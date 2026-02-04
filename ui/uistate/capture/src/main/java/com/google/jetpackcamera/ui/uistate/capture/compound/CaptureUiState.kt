@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.uistate.capture.compound
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -29,7 +30,6 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState

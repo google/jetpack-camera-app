@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistate.postcapture
 
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 
 /**
  * Defines the overall UI state for the PostCaptureScreen.

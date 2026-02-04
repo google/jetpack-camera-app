@@ -25,6 +25,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import androidx.tracing.traceAsync
+import com.example.uistateadapter.from
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
@@ -70,6 +71,8 @@ import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNS
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.uistate.DisableRationale
+import com.google.jetpackcamera.ui.uistate.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -83,8 +86,6 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
