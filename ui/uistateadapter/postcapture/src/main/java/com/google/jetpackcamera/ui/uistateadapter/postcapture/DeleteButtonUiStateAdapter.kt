@@ -18,6 +18,13 @@ package com.google.jetpackcamera.ui.uistateadapter.postcapture
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
 
+/**
+ * Creates a [DeleteButtonUiState] from a [MediaDescriptor].
+ *
+ * @param mediaDescriptor The descriptor for the media.
+ * @return [DeleteButtonUiState.Ready] if the media is not cached, otherwise
+ * [DeleteButtonUiState.Unavailable].
+ */
 fun DeleteButtonUiState.Companion.from(mediaDescriptor: MediaDescriptor) = when (mediaDescriptor) {
     is MediaDescriptor.Content ->
         if (!mediaDescriptor.isCached) {

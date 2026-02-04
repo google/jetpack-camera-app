@@ -19,15 +19,25 @@ import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 
 /**
  * Defines the overall UI state for the PostCaptureScreen.
+ *
+ * This sealed interface represents the different states of the post-capture screen, which is
+ * displayed after a photo or video has been taken.
  */
 sealed interface PostCaptureUiState {
     /**
-     * The screen is loading.
+     * The screen is in a loading state. This is the initial state before the media is ready to be
+     * displayed.
      */
     object Loading : PostCaptureUiState
 
     /**
-     * The screen is ready to display content and interact.
+     * The screen is ready to display content and interact with the user.
+     *
+     * @param viewerUiState The UI state for the media viewer, which displays the captured photo or
+     *   video.
+     * @param deleteButtonUiState The UI state for the delete button.
+     * @param shareButtonUiState The UI state for the share button.
+     * @param snackBarUiState The UI state for displaying snack-bar messages.
      */
     data class Ready(
         val viewerUiState: MediaViewerUiState = MediaViewerUiState.Loading,
