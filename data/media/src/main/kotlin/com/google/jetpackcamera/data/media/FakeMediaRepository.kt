@@ -35,6 +35,7 @@ class FakeMediaRepository : MediaRepository {
      * Tests can provide a custom implementation to simulate different loading scenarios.
      */
     var loadHandler: (MediaDescriptor) -> Media = { Media.None }
+
     /**
      * A handler for the [saveToMediaStore] function.
      *
@@ -46,6 +47,7 @@ class FakeMediaRepository : MediaRepository {
             is MediaDescriptor.Content.Video -> "video.mp4".toUri()
         }
     }
+
     /**
      * A handler for the [deleteMedia] function.
      *

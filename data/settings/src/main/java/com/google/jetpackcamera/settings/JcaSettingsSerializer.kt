@@ -34,6 +34,7 @@ import java.io.OutputStream
  * constant in the `OutputOptions` API [documentation](https://developer.android.com/reference/androidx/camera/video/OutputOptions#DURATION_UNLIMITED()) is `0`.
  */
 const val UNLIMITED_VIDEO_DURATION = 0L
+
 /**
  * [Serializer] for the [JcaSettings] proto.
  */
