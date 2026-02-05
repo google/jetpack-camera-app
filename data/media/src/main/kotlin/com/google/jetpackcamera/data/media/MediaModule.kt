@@ -28,6 +28,9 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 interface MediaModule {
 
+    /**
+     * Binds the [LocalMediaRepository] implementation to the [MediaRepository] interface.
+     */
     @Binds
     @Singleton
     fun bindsMediaRepository(localMediaRepository: LocalMediaRepository): MediaRepository

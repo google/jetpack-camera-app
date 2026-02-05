@@ -21,18 +21,36 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+/**
+ * A fake implementation of [MediaRepository] for use in tests.
+ */
 class FakeMediaRepository : MediaRepository {
     private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
 
     override val currentMedia = _currentMedia.asStateFlow()
 
+    /**
+     * A handler for the [load] function.
+     *
+     * Tests can provide a custom implementation to simulate different loading scenarios.
+     */
     var loadHandler: (MediaDescriptor) -> Media = { Media.None }
+    /**
+     * A handler for the [saveToMediaStore] function.
+     *
+     * Tests can provide a custom implementation to simulate different save scenarios.
+     */
     var saveToMediaStoreHandler: (MediaDescriptor.Content) -> Uri? = { mediaDescriptor ->
         when (mediaDescriptor) {
             is MediaDescriptor.Content.Image -> "img.jpg".toUri()
             is MediaDescriptor.Content.Video -> "video.mp4".toUri()
         }
     }
+    /**
+     * A handler for the [deleteMedia] function.
+     *
+     * Tests can provide a custom implementation to simulate different delete scenarios.
+     */
     var deleteMediaHandler: (MediaDescriptor.Content) -> Boolean = { true }
 
     override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {

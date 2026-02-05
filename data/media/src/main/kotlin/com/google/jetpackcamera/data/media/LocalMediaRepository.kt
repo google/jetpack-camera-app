@@ -48,6 +48,14 @@ private const val TAG = "LocalMediaRepository"
 private const val IMAGE_MIME_TYPE = "image/jpeg"
 private const val VIDEO_MIME_TYPE = "video/mp4"
 
+/**
+ * Implementation of [MediaRepository] that interacts with the device's local MediaStore and file
+ * system.
+ *
+ * @param context The application context.
+ * @param iODispatcher The [CoroutineDispatcher] for performing I/O operations.
+ * @param filePathGenerator The [FilePathGenerator] for creating paths for media files.
+ */
 class LocalMediaRepository
 @Inject constructor(
     @ApplicationContext private val context: Context,
