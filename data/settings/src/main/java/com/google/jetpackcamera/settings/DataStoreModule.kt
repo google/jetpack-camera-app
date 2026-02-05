@@ -30,12 +30,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
-// with hilt will ensure datastore instance access is unique per file
+/**
+ * Hilt module for providing [DataStore].
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {
     private const val FILE_LOCATION = "app_settings.pb"
 
+    /**
+     * Provides a singleton [DataStore] instance for [JcaSettings].
+     */
     @Provides
     @Singleton
     fun provideDataStore(@ApplicationContext context: Context): DataStore<JcaSettings> =

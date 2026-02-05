@@ -35,31 +35,99 @@ interface SettingsRepository {
 
     val defaultCameraAppSettings: Flow<CameraAppSettings>
 
+    /**
+     * Returns the current [CameraAppSettings].
+     */
     suspend fun getCurrentDefaultCameraAppSettings(): CameraAppSettings
 
+    /**
+     * Updates the default camera lens facing setting.
+     *
+     * @param lensFacing The new [LensFacing] to set as default.
+     */
     suspend fun updateDefaultLensFacing(lensFacing: LensFacing)
 
+    /**
+     * Updates the dark mode status setting.
+     *
+     * @param darkMode The new [DarkMode] status.
+     */
     suspend fun updateDarkModeStatus(darkMode: DarkMode)
 
+    /**
+     * Updates the flash mode status setting.
+     *
+     * @param flashMode The new [FlashMode] status.
+     */
     suspend fun updateFlashModeStatus(flashMode: FlashMode)
 
+    /**
+     * Updates the aspect ratio setting.
+     *
+     * @param aspectRatio The new [AspectRatio] to set.
+     */
     suspend fun updateAspectRatio(aspectRatio: AspectRatio)
 
+    /**
+     * Updates the stream configuration setting.
+     *
+     * @param streamConfig The new [StreamConfig] to set.
+     */
     suspend fun updateStreamConfig(streamConfig: StreamConfig)
 
+    /**
+     * Updates the low light boost priority setting.
+     *
+     * @param lowLightBoostPriority The new [LowLightBoostPriority] to set.
+     */
     suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority)
 
+    /**
+     * Updates the stabilization mode setting.
+     *
+     * @param stabilizationMode The new [StabilizationMode] to set.
+     */
     suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode)
 
+    /**
+     * Updates the dynamic range setting.
+     *
+     * @param dynamicRange The new [DynamicRange] to set.
+     */
     suspend fun updateDynamicRange(dynamicRange: DynamicRange)
 
+    /**
+     * Updates the target frame rate setting.
+     *
+     * @param targetFrameRate The new target frame rate to set.
+     */
     suspend fun updateTargetFrameRate(targetFrameRate: Int)
 
+    /**
+     * Updates the image output format setting.
+     *
+     * @param imageFormat The new [ImageOutputFormat] to set.
+     */
     suspend fun updateImageFormat(imageFormat: ImageOutputFormat)
 
+    /**
+     * Updates the maximum video duration setting.
+     *
+     * @param durationMillis The new maximum video duration in milliseconds.
+     */
     suspend fun updateMaxVideoDuration(durationMillis: Long)
 
+    /**
+     * Updates the video quality setting.
+     *
+     * @param videoQuality The new [VideoQuality] to set.
+     */
     suspend fun updateVideoQuality(videoQuality: VideoQuality)
 
+    /**
+     * Updates whether audio is enabled for video recording.
+     *
+     * @param isAudioEnabled True to enable audio, false to disable.
+     */
     suspend fun updateAudioEnabled(isAudioEnabled: Boolean)
 }

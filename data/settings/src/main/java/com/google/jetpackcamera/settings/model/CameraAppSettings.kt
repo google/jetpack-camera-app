@@ -35,6 +35,25 @@ const val UNLIMITED_VIDEO_DURATION = 0L
 
 /**
  * Data layer representation for settings.
+ *
+ * @param captureMode The current [CaptureMode] (e.g., photo, video).
+ * @param cameraLensFacing The default [LensFacing] for the camera.
+ * @param darkMode The current [DarkMode] setting.
+ * @param flashMode The current [FlashMode] setting.
+ * @param streamConfig The current [StreamConfig] setting.
+ * @param aspectRatio The current [AspectRatio] setting.
+ * @param stabilizationMode The current [StabilizationMode] setting.
+ * @param dynamicRange The current [DynamicRange] setting.
+ * @param videoQuality The current [VideoQuality] setting.
+ * @param defaultZoomRatios A map of default zoom ratios for each [LensFacing].
+ * @param targetFrameRate The target frame rate for video recording.
+ * @param imageFormat The output [ImageOutputFormat] for captured images.
+ * @param audioEnabled Whether audio is enabled for video recording.
+ * @param deviceRotation The current [DeviceRotation] of the device.
+ * @param concurrentCameraMode The current [ConcurrentCameraMode] setting.
+ * @param maxVideoDurationMillis The maximum duration for video recording in milliseconds.
+ * @param lowLightBoostPriority The current [LowLightBoostPriority] setting.
+ * @param debugSettings The current [DebugSettings].
  */
 data class CameraAppSettings(
     val captureMode: CaptureMode = CaptureMode.STANDARD,
@@ -57,8 +76,18 @@ data class CameraAppSettings(
     val debugSettings: DebugSettings = DebugSettings()
 )
 
+/**
+ * Retrieves the [CameraConstraints] for the currently selected camera lens from
+ * [CameraSystemConstraints].
+ *
+ * @param cameraAppSettings The current [CameraAppSettings] to determine the active lens.
+ * @return The [CameraConstraints] for the current lens, or null if not found.
+ */
 fun CameraSystemConstraints.forCurrentLens(
     cameraAppSettings: CameraAppSettings
 ): CameraConstraints? = perLensConstraints[cameraAppSettings.cameraLensFacing]
 
+/**
+ * The default [CameraAppSettings] for the application.
+ */
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

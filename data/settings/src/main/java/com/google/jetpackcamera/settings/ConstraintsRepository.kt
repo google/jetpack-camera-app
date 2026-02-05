@@ -21,14 +21,31 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+/**
+ * A repository for accessing camera system constraints.
+ */
 interface ConstraintsRepository {
+    /**
+     * A [StateFlow] of the [CameraSystemConstraints] for the current device.
+     */
     val systemConstraints: StateFlow<CameraSystemConstraints?>
 }
 
+/**
+ * A repository for setting and accessing camera system constraints.
+ */
 interface SettableConstraintsRepository : ConstraintsRepository {
+    /**
+     * Updates the system constraints.
+     *
+     * @param systemConstraints The new system constraints.
+     */
     fun updateSystemConstraints(systemConstraints: CameraSystemConstraints)
 }
 
+/**
+ * A [SettableConstraintsRepository] implementation that stores the system constraints in memory.
+ */
 class SettableConstraintsRepositoryImpl @Inject constructor() : SettableConstraintsRepository {
 
     private val _systemConstraints = MutableStateFlow<CameraSystemConstraints?>(null)

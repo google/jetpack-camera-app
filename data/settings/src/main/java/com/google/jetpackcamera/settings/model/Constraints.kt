@@ -48,6 +48,18 @@ data class CameraSystemConstraints(
     val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap()
 )
 
+/**
+ * Collects all unique constraints of a given type across all available cameras on the device.
+ *
+ * This function iterates through the [perLensConstraints] map and applies a [constraintSelector]
+ * to each [CameraConstraints] object. It then flattens the results and returns a set of unique
+ * constraints.
+ *
+ * @param T The type of the constraint to collect.
+ * @param constraintSelector A lambda function that selects an iterable of constraints from a
+ *                           [CameraConstraints] object.
+ * @return A [Set] of unique constraints of type [T] supported by the device.
+ */
 inline fun <reified T> CameraSystemConstraints.forDevice(
     crossinline constraintSelector: (CameraConstraints) -> Iterable<T>
 ) = perLensConstraints.values.asSequence().flatMap { constraintSelector(it) }.toSet()
@@ -85,6 +97,7 @@ inline fun <reified T> CameraSystemConstraints.forDevice(
  *                                          *not* supported when that specific stabilization mode
  *                                          is active. This helps in understanding combinations
  *                                          that are disallowed.
+ * @property supportedTestPatterns A set of [TestPattern] values supported by this camera lens.
  */
 data class CameraConstraints(
     val supportedStabilizationModes: Set<StabilizationMode>,
@@ -98,6 +111,9 @@ data class CameraConstraints(
     val unsupportedStabilizationFpsMap: Map<StabilizationMode, Set<Int>>,
     val supportedTestPatterns: Set<TestPattern>
 ) {
+    /**
+     * Returns the set of unsupported FPS values for a given [StabilizationMode].
+     */
     val StabilizationMode.unsupportedFpsSet
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
 

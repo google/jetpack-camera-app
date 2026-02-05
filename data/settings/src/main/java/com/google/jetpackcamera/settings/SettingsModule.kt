@@ -28,11 +28,18 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 interface SettingsModule {
 
+    /**
+     * Binds [LocalSettingsRepository] as the implementation for [SettingsRepository].
+     */
     @Binds
     fun bindsSettingsRepository(
         localSettingsRepository: LocalSettingsRepository
     ): SettingsRepository
 
+    /**
+     * Binds [SettableConstraintsRepositoryImpl] as the implementation for
+     * [SettableConstraintsRepository].
+     */
     @Binds
     @Singleton
     fun bindsSettableConstraintsRepository(
@@ -40,8 +47,7 @@ interface SettingsModule {
     ): SettableConstraintsRepository
 
     /**
-     * ConstraintsRepository without setter.
-     *
+     * Binds [SettableConstraintsRepository] as the implementation for [ConstraintsRepository].
      * This is the same instance as the singleton SettableConstraintsRepository, but does not
      * have the ability to update the constraints.
      */
