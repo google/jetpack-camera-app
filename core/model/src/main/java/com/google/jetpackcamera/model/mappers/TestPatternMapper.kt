@@ -65,7 +65,7 @@ fun TestPattern.toProto(): ProtoTestPattern {
  * Converts a [ProtoTestPattern] Protocol Buffer message to its Kotlin [TestPattern] sealed
  * interface representation.
  */
-fun ProtoTestPattern.fromProto(): TestPattern {
+fun ProtoTestPattern.toDomain(): TestPattern {
     return when (this.patternCase) {
         PatternCase.OFF,
         PatternCase.PATTERN_NOT_SET -> {

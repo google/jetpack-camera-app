@@ -23,7 +23,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat.JPEG_ULTRA_HDR
 import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 
 /** returns the DynamicRangeType enum equivalent of a provided DynamicRangeTypeProto */
-fun ImageOutputFormatProto.fromProto(): ImageOutputFormat {
+fun ImageOutputFormatProto.toDomain(): ImageOutputFormat {
     return when (this) {
         ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR -> JPEG_ULTRA_HDR
 

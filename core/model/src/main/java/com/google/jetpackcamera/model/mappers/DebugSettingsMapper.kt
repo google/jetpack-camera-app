@@ -31,11 +31,11 @@ object DebugSettingsMapper {
         return DebugSettings(
             isDebugModeEnabled = this.isDebugModeEnabled,
             singleLensMode = if (this.hasSingleLensMode()) {
-                this.singleLensMode.fromProto()
+                this.singleLensMode.toDomain()
             } else {
                 null
             },
-            testPattern = this.testPattern.fromProto()
+            testPattern = this.testPattern.toDomain()
         )
     }
 

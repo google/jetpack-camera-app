@@ -22,7 +22,7 @@ import com.google.jetpackcamera.model.LensFacing.FRONT
 import com.google.jetpackcamera.model.proto.LensFacing as LensFacingProto
 
 /** returns the LensFacing enum equivalent of a provided LensFacingProto */
-fun LensFacingProto.fromProto(): LensFacing {
+fun LensFacingProto.toDomain(): LensFacing {
     return when (this) {
         LensFacingProto.LENS_FACING_BACK -> BACK
 

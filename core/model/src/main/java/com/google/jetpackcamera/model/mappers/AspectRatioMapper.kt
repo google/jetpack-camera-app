@@ -24,7 +24,7 @@ import com.google.jetpackcamera.model.AspectRatio.THREE_FOUR
 
 
     /** returns the AspectRatio enum equivalent of a provided AspectRatioProto */
-    fun AspectRatioProto.fromProto(): AspectRatio {
+    fun AspectRatioProto.toDomain(): AspectRatio {
         return when (this) {
             AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> NINE_SIXTEEN
             AspectRatioProto.ASPECT_RATIO_ONE_ONE -> ONE_ONE

@@ -29,7 +29,7 @@ import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoo
      * @param lowLightBoostPriorityProto The proto to convert from.
      * @return The converted [LowLightBoostPriority].
      */
-    fun fromProto(
+    fun toDomain(
         lowLightBoostPriorityProto: LowLightBoostPriorityProto
     ): LowLightBoostPriority {
         return when (lowLightBoostPriorityProto) {

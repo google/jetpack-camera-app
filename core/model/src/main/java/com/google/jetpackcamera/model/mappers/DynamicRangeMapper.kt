@@ -23,7 +23,7 @@ import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
 
 
 /** returns the DynamicRangeType enum equivalent of a provided DynamicRangeTypeProto */
-fun DynamicRangeProto.fromProto(): DynamicRange {
+fun DynamicRangeProto.toDomain(): DynamicRange {
     return when (this) {
         DynamicRangeProto.DYNAMIC_RANGE_HLG10 -> HLG10
 

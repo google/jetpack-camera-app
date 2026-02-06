@@ -26,7 +26,7 @@ import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 
 
 /** returns the VideoQuality enum equivalent of a provided VideoQualityProto */
-fun VideoQualityProto.fromProto(): VideoQuality {
+fun VideoQualityProto.toDomain(): VideoQuality {
     return when (this) {
         VideoQualityProto.VIDEO_QUALITY_SD -> SD
         VideoQualityProto.VIDEO_QUALITY_HD -> HD

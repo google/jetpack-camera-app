@@ -18,7 +18,7 @@ package com.google.jetpackcamera.data.settings_datastore
 
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
-import com.google.jetpackcamera.model.mappers.fromProto
+import com.google.jetpackcamera.model.mappers.toDomain
 import com.google.jetpackcamera.model.mappers.toProto
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -56,7 +56,7 @@ class LocalSettingsRepository @Inject constructor(
     override val defaultCameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
-                cameraLensFacing = it.defaultLensFacing.fromProto(),
+                cameraLensFacing = it.defaultLensFacing.toDomain(),
                 darkMode = when (it.darkModeStatus) {
                     DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
@@ -70,19 +70,19 @@ class LocalSettingsRepository @Inject constructor(
                     FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST -> FlashMode.LOW_LIGHT_BOOST
                     else -> FlashMode.OFF
                 },
-                aspectRatio = it.aspectRatioStatus.fromProto(),
-                stabilizationMode = it.stabilizationMode.fromProto(),
+                aspectRatio = it.aspectRatioStatus.toDomain(),
+                stabilizationMode = it.stabilizationMode.toDomain(),
                 targetFrameRate = it.targetFrameRate,
                 streamConfig = when (it.streamConfigStatus) {
                     StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
                     StreamConfigProto.STREAM_CONFIG_MULTI_STREAM -> StreamConfig.MULTI_STREAM
                     else -> StreamConfig.MULTI_STREAM
                 },
-                lowLightBoostPriority = fromProto(it.lowLightBoostPriority),
-                dynamicRange = it.dynamicRangeStatus.fromProto(),
-                imageFormat = it.imageFormatStatus.fromProto(),
+                lowLightBoostPriority = toDomain(it.lowLightBoostPriority),
+                dynamicRange = it.dynamicRangeStatus.toDomain(),
+                imageFormat = it.imageFormatStatus.toDomain(),
                 maxVideoDurationMillis = it.maxVideoDurationMillis,
-                videoQuality = it.videoQuality.fromProto(),
+                videoQuality = it.videoQuality.toDomain(),
                 audioEnabled = it.audioEnabledStatus,
                 captureMode = defaultCaptureModeOverride
             )

@@ -26,7 +26,7 @@ import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationMo
 
 
 /** returns the AspectRatio enum equivalent of a provided AspectRatioProto */
-fun StabilizationModeProto.fromProto(): StabilizationMode =
+fun StabilizationModeProto.toDomain(): StabilizationMode =
     when (this) {
         StabilizationModeProto.STABILIZATION_MODE_OFF -> OFF
         StabilizationModeProto.STABILIZATION_MODE_ON -> ON
