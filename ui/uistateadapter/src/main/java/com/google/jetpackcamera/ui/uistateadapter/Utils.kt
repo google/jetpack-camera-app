@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.uistateadapter
+
+package com.google.jetpackcamera.ui.uistateadapter
 
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
@@ -22,7 +23,7 @@ object Utils {
     /**
      *  @param supportedValues a [Set] of options that are selectable in the current device configuration
      *  @param sortedValues a [List] of sorted options that always contains [supportedValues].
-     *  @return a new List of [SingleSelectableUiState.SelectableUi] that contains all [supportedValues] ordered in accordance to [sortedValues]
+     *  @return a new List of [com.google.jetpackcamera.ui.uistate.SingleSelectableUiState.SelectableUi] that contains all [supportedValues] ordered in accordance to [sortedValues]
      *  */
     fun <T> getSelectableListFromValues(
         valueSet: Set<T>,

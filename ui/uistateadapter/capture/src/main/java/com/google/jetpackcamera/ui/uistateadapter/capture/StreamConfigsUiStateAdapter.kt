@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
-import com.example.uistateadapter.Utils
+import com.google.jetpackcamera.ui.uistateadapter.Utils
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.StreamConfig
