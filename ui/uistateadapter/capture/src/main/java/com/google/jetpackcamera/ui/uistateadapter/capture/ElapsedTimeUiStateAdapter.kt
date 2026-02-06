@@ -31,7 +31,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
  *
  * @return An [ElapsedTimeUiState.Enabled] state containing the elapsed time in nanoseconds.
  *         - For [VideoRecordingState.Active], it provides the ongoing elapsed time.
- *         - For [VideoRecording_State.Inactive], it provides the final duration of the last recording.
+ *         - For [VideoRecordingState.Inactive], it provides the final duration of the last recording.
  *         - For [VideoRecordingState.Starting], it provides an initial value of 0.
  */
 fun ElapsedTimeUiState.Companion.from(cameraState: CameraState): ElapsedTimeUiState {
