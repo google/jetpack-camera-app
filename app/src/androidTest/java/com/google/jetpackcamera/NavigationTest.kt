@@ -17,7 +17,6 @@ package com.google.jetpackcamera
 
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
-import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -41,6 +40,8 @@ import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.searchForQuickSetting
+import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithTagToDisappear
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -141,9 +142,7 @@ class NavigationTest {
             .performClick()
 
         // Wait for the quick settings to be displayed
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON)
 
         // Press the device's back button
         uiDevice.pressBack()
@@ -172,16 +171,15 @@ class NavigationTest {
             .performClick()
 
         // Wait for the 1:1 ratio button to be displayed
-        composeTestRule.waitUntil {
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON)
 
         // Press the device's back button
         uiDevice.pressBack()
 
         // Assert bottom sheet closed
-        composeTestRule.waitUntil(DEFAULT_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
-        }
+        composeTestRule.waitForNodeWithTagToDisappear(
+            QUICK_SETTINGS_BOTTOM_SHEET,
+            DEFAULT_TIMEOUT_MILLIS
+        )
     }
 }

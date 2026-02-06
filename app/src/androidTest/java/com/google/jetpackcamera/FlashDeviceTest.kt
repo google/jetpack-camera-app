@@ -46,6 +46,7 @@ import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedT
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.setFlashMode
+import com.google.jetpackcamera.utils.waitForNodeWithTag
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -141,9 +142,7 @@ internal class FlashDeviceTest {
             .assertExists()
             .performClick()
 
-        composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
-        }
+        composeTestRule.waitForNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG, IMAGE_CAPTURE_TIMEOUT_MILLIS)
     }
 
     @Test
@@ -172,13 +171,15 @@ internal class FlashDeviceTest {
                 .assertExists()
                 .performClick()
 
-            composeTestRule.waitUntil(timeoutMillis = SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(SCREEN_FLASH_OVERLAY).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                SCREEN_FLASH_OVERLAY,
+                SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS
+            )
 
-            composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                IMAGE_CAPTURE_SUCCESS_TAG,
+                IMAGE_CAPTURE_TIMEOUT_MILLIS
+            )
         }
 
     @Test
@@ -209,8 +210,9 @@ internal class FlashDeviceTest {
             composeTestRule.setFlashMode(FlashMode.ON)
 
             composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
-            composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                VIDEO_CAPTURE_SUCCESS_TAG,
+                VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
         }
 }
