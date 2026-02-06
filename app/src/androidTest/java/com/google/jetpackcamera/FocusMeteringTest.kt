@@ -18,8 +18,6 @@ package com.google.jetpackcamera
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.test.click
-import androidx.compose.ui.test.isDisplayed
-import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -37,6 +35,8 @@ import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.wait
 import com.google.jetpackcamera.utils.waitForCaptureButton
+import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithTagToDisappear
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,9 +58,7 @@ class FocusMeteringTest {
             // Hide all components so we don't accidentally tap on them
             composeTestRule.onNodeWithTag(BTN_DEBUG_HIDE_COMPONENTS_TAG).performClick()
 
-            composeTestRule.waitUntil {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isNotDisplayed()
-            }
+            composeTestRule.waitForNodeWithTagToDisappear(CAPTURE_BUTTON)
 
             // Define the four quadrants of the screen
             val quadrants = listOf(
@@ -79,11 +77,10 @@ class FocusMeteringTest {
                     performTouchInput { click(position = percentOffset(x, y)) }
 
                     // Wait for the focus metering indicator to be visible
-                    composeTestRule.waitUntil(FOCUS_METERING_INDICATOR_TIMEOUT_MILLIS) {
-                        composeTestRule.onNodeWithTag(
-                            FOCUS_METERING_INDICATOR_TAG
-                        ).isDisplayed()
-                    }
+                    composeTestRule.waitForNodeWithTag(
+                        FOCUS_METERING_INDICATOR_TAG,
+                        FOCUS_METERING_INDICATOR_TIMEOUT_MILLIS
+                    )
 
                     composeTestRule.waitUntil(FOCUS_METERING_INDICATOR_TIMEOUT_MILLIS) {
                         composeTestRule.onAllNodesWithTag(FOCUS_METERING_INDICATOR_TAG).run {
