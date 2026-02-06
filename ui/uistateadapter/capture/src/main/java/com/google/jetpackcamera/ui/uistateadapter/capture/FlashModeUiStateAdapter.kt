@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
-import com.google.jetpackcamera.ui.uistateadapter.Utils
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -28,6 +27,7 @@ import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState.Available
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState.Unavailable
+import com.google.jetpackcamera.ui.uistateadapter.Utils
 
 private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
     FlashMode.OFF,

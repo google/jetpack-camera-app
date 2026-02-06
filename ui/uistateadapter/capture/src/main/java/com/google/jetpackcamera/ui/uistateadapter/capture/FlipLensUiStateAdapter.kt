@@ -15,11 +15,11 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
-import com.google.jetpackcamera.ui.uistateadapter.Utils
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistateadapter.Utils
 
 private val ORDERED_UI_SUPPORTED_LENS_FACINGS = listOf(
     LensFacing.FRONT,
