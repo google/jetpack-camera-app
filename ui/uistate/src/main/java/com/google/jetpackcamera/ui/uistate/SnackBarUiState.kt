@@ -19,6 +19,12 @@ import androidx.compose.material3.SnackbarDuration
 import java.util.LinkedList
 import java.util.Queue
 
+/**
+ * A sealed interface representing the UI state for the SnackBar component.
+ *
+ * This interface defines the possible states for a snack-bar display, which can either be
+ * completely disabled or enabled with a queue of messages to show.
+ */
 sealed interface SnackBarUiState {
     data object Disabled : SnackBarUiState
     data class Enabled(
