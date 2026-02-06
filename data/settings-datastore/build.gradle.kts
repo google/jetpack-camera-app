@@ -52,9 +52,13 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":data:settings"))
 
+    // Testing
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
+    testImplementation(libs.truth)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 }
 
 protobuf {
