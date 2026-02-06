@@ -27,6 +27,24 @@ private val ORDERED_UI_SUPPORTED_STREAM_CONFIGS = listOf(
     StreamConfig.MULTI_STREAM
 )
 
+/**
+ * Creates a [StreamConfigUiState] based on the provided camera settings.
+ *
+ * This function determines the availability and selection state of stream configurations, which
+ * control whether the camera operates using a single stream or multiple streams. The UI for this
+ * setting is made available only if more than one stream configuration is supported. The control
+ * is marked as inactive (disabled) if concurrent camera mode is active or if the image format
+ * is set to Ultra HDR, as these features are incompatible with changing the stream configuration.
+ *
+ * @param cameraAppSettings The current application settings, which provide the selected
+ *   [StreamConfig], [ConcurrentCameraMode], and [ImageOutputFormat].
+ *
+ * @return A [StreamConfigUiState] which will be:
+ * - [StreamConfigUiState.Available] if multiple stream configs are supported, containing the
+ *   current selection, the list of available options, and whether the UI control should be active.
+ * - [StreamConfigUiState.Unavailable] if only one or zero stream configs are supported, meaning
+ *   the user cannot change this setting.
+ */
 fun StreamConfigUiState.Companion.from(cameraAppSettings: CameraAppSettings): StreamConfigUiState {
     return createFrom(
         cameraAppSettings.streamConfig,

@@ -27,6 +27,20 @@ private val ORDERED_UI_SUPPORTED_LENS_FACINGS = listOf(
 
 )
 
+/**
+ * Creates a [FlipLensUiState] based on the current camera settings and system constraints.
+ *
+ * This function determines the UI state for the lens flipping control (e.g., front/back camera
+ * button). It gathers the list of all physically available lenses from the system constraints
+ * and combines it with the currently selected lens from the application settings.
+ *
+ * @param cameraAppSettings The current application settings, used to determine the currently
+ * selected [LensFacing].
+ * @param systemConstraints The hardware capabilities of the camera system, used to get the list
+ * of all available lenses on the device.
+ * @return A [FlipLensUiState.Available] object containing the currently selected lens and a list
+ * of all available lenses for the UI to display.
+ */
 fun FlipLensUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints
