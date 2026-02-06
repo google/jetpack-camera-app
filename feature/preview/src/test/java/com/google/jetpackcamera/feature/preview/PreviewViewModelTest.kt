@@ -70,7 +70,7 @@ class PreviewViewModelTest {
 
     @Test
     fun getPreviewUiState() = runTest(StandardTestDispatcher()) {
-        advanceUntilIdle()
+        startCameraUntilRunning()
         val uiState = previewViewModel.captureUiState.value
         assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
     }
@@ -128,7 +128,7 @@ class PreviewViewModelTest {
     @Test
     fun flipCamera() = runTest(StandardTestDispatcher()) {
         // initial default value should be back
-        previewViewModel.startCamera()
+        startCameraUntilRunning()
         assertIsReady(previewViewModel.captureUiState.value).also {
             assertThat(it.flipLensUiState is FlipLensUiState.Available).isTrue()
             assertThat(
@@ -152,6 +152,7 @@ class PreviewViewModelTest {
 
     @Test
     fun toggleQuickSettings() = runTest(StandardTestDispatcher()) {
+        startCameraUntilRunning()
         // Initial state should be closed
         assertIsReady(previewViewModel.captureUiState.value).also {
             val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available
