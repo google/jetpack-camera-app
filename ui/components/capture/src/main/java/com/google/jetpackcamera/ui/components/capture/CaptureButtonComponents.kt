@@ -155,8 +155,20 @@ private fun CaptureKeyHandler(
     }
 }
 
+/**
+ * A capture button that can be used for both image and video capture.
+ *
+ * @param modifier the modifier for this component
+ * @param onImageCapture the callback for an image capture event
+ * @param onStartRecording the callback for a start recording event
+ * @param onStopRecording the callback for a stop recording event
+ * @param onLockVideoRecording the callback for a lock video recording event
+ * @param onIncrementZoom the callback for a zoom increment event
+ * @param captureButtonUiState the [CaptureButtonUiState] for this component
+ * @param captureButtonSize the size of the capture button
+ */
 @Composable
-fun CaptureButton(
+internal fun CaptureButton(
     modifier: Modifier = Modifier,
     onImageCapture: () -> Unit,
     onStartRecording: () -> Unit,
@@ -409,7 +421,7 @@ private fun CaptureButton(
 }
 
 @Composable
-fun CaptureButtonRing(
+private fun CaptureButtonRing(
     modifier: Modifier = Modifier,
     captureButtonSize: Float,
     color: Color,
