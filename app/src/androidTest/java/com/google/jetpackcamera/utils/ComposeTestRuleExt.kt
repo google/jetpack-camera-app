@@ -154,6 +154,24 @@ fun ComposeTestRule.waitForNodeWithTag(tag: String, timeoutMillis: Long = DEFAUL
     waitUntil(timeoutMillis = timeoutMillis) { onNodeWithTag(tag).isDisplayed() }
 }
 
+fun ComposeTestRule.waitForNodeWithTagToDisappear(
+    tag: String,
+    timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
+) {
+    waitUntil(timeoutMillis = timeoutMillis) {
+        onNodeWithTag(tag).isNotDisplayed()
+    }
+}
+
+fun ComposeTestRule.waitForNodeWithText(
+    @StringRes textResId: Int,
+    timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
+) {
+    waitUntil(timeoutMillis = timeoutMillis) {
+        onNodeWithText(textResId).isDisplayed()
+    }
+}
+
 private fun ComposeTestRule.idleForVideoDuration(
     durationMillis: Long = VIDEO_DURATION_MILLIS,
     earlyExitPredicate: () -> Boolean = {
@@ -341,6 +359,15 @@ fun ComposeTestRule.getCaptureModeToggleState(): CaptureMode =
             else -> throw (AssertionError("Unexpected content description: $description"))
         }
     }
+
+fun ComposeTestRule.waitForCaptureModeToggleState(
+    targetState: CaptureMode,
+    timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
+) {
+    waitUntil(timeoutMillis = timeoutMillis) {
+        getCaptureModeToggleState() == targetState
+    }
+}
 
 // //////////////////////
 //
