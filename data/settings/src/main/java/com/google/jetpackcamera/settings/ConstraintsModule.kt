@@ -22,11 +22,11 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * Dagger [Module] for settings data layer.
+ * Dagger [Module] for constraints data layer.
  */
 @Module
 @InstallIn(SingletonComponent::class)
-interface SettingsModule {
+interface ConstraintsModule {
     @Binds
     @Singleton
     fun bindsSettableConstraintsRepository(
