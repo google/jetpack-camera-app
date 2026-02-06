@@ -57,9 +57,7 @@ sealed interface DebugUiState {
             override val currentLogicalCameraId: String? = null,
             override val currentPrimaryZoomRatio: Float?,
             override val debugHidingComponents: Boolean = false
-        ) : Enabled {
-            companion object
-        }
+        ) : Enabled
 
         /**
          * The debug overlay is open, displaying detailed camera and system information.
@@ -81,8 +79,8 @@ sealed interface DebugUiState {
             val videoResolution: Size? = null,
             val selectedTestPattern: TestPattern = TestPattern.Off,
             val availableTestPatterns: Set<TestPattern> = setOf(TestPattern.Off)
-        ) : Enabled {
-            companion object
-        }
+        ) : Enabled
     }
+
+    companion object
 }

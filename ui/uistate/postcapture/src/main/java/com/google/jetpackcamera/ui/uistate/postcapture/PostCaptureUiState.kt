@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.ui.uistate.postcapture
 
-import com.google.jetpackcamera.ui.uistate.SnackBarUiState
-
 /**
  * Defines the overall UI state for the PostCaptureScreen.
  */
@@ -32,8 +30,7 @@ sealed interface PostCaptureUiState {
     data class Ready(
         val viewerUiState: MediaViewerUiState = MediaViewerUiState.Loading,
         val deleteButtonUiState: DeleteButtonUiState = DeleteButtonUiState.Unavailable,
-        val shareButtonUiState: ShareButtonUiState = ShareButtonUiState.Unavailable,
-        val snackBarUiState: SnackBarUiState = SnackBarUiState()
+        val shareButtonUiState: ShareButtonUiState = ShareButtonUiState.Unavailable
     ) : PostCaptureUiState
 
     companion object

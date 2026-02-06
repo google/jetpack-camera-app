@@ -56,6 +56,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -105,6 +106,11 @@ class PostCaptureViewModel @Inject constructor(
         MutableStateFlow<PostCaptureUiState>(PostCaptureUiState.Loading)
 
     val postCaptureUiState: StateFlow<PostCaptureUiState> = _postCaptureUiState
+
+    private val _snackBarUiState: MutableStateFlow<SnackBarUiState.Enabled> =
+        MutableStateFlow(SnackBarUiState.Enabled())
+    val snackBarUiState: StateFlow<SnackBarUiState.Enabled> =
+        _snackBarUiState.asStateFlow()
     private val snackBarCount = atomic(0)
 
     private var player: ExoPlayer? = null
@@ -424,37 +430,29 @@ class PostCaptureViewModel @Inject constructor(
     // snackbar interaction
     private fun addSnackBarData(snackBarData: SnackbarData) {
         viewModelScope.launch {
-            _postCaptureUiState.update { old ->
-                if (old is PostCaptureUiState.Ready) {
-                    val newQueue = LinkedList(old.snackBarUiState.snackBarQueue)
+            _snackBarUiState.update { old ->
+                val newQueue = LinkedList(old.snackBarQueue)
 
-                    newQueue.add(snackBarData)
-                    Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
-                    old.copy(
-                        snackBarUiState = SnackBarUiState.from(newQueue)
-                    )
-                } else {
-                    old
-                }
+                newQueue.add(snackBarData)
+                Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
+                old.copy(
+                    snackBarQueue = newQueue
+                )
             }
         }
     }
 
     fun onSnackBarResult(cookie: String) {
         viewModelScope.launch {
-            _postCaptureUiState.update { state ->
-                if (state is PostCaptureUiState.Ready) {
-                    val newQueue = LinkedList(state.snackBarUiState.snackBarQueue)
-                    val snackBarData = newQueue.poll()
-                    if (snackBarData != null && snackBarData.cookie == cookie) {
-                        // If the latest snackBar had a result, then clear snackBarToShow
-                        Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
-                        state.copy(
-                            snackBarUiState = SnackBarUiState.from(newQueue)
-                        )
-                    } else {
-                        state
-                    }
+            _snackBarUiState.update { state ->
+                val newQueue = LinkedList(state.snackBarQueue)
+                val snackBarData = newQueue.poll()
+                if (snackBarData != null && snackBarData.cookie == cookie) {
+                    // If the latest snackBar had a result, then clear snackBarToShow
+                    Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
+                    state.copy(
+                        snackBarQueue = newQueue
+                    )
                 } else {
                     state
                 }

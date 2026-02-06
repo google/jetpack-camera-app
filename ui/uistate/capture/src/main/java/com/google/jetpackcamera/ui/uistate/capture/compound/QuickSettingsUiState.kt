@@ -62,6 +62,8 @@ sealed interface QuickSettingsUiState {
         val quickSettingsIsOpen: Boolean = false,
         val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE
     ) : QuickSettingsUiState
+
+    companion object
 }
 
 /**

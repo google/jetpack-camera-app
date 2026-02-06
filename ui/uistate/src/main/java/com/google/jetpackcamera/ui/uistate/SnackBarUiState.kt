@@ -19,14 +19,12 @@ import androidx.compose.material3.SnackbarDuration
 import java.util.LinkedList
 import java.util.Queue
 
-/**
- * Defines the UI state for the snack-bar, which is used to display transient messages to the user.
- *
- * @param snackBarQueue A queue of [SnackbarData] objects to be displayed.
- */
-data class SnackBarUiState(
-    val snackBarQueue: Queue<SnackbarData> = LinkedList()
-) {
+sealed interface SnackBarUiState {
+    data object Disabled : SnackBarUiState
+    data class Enabled(
+        val snackBarQueue: Queue<SnackbarData> = LinkedList()
+    ) : SnackBarUiState
+
     companion object
 }
 

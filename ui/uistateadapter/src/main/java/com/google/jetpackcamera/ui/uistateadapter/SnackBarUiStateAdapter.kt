@@ -27,5 +27,5 @@ import java.util.Queue
  * @return A [SnackBarUiState] instance containing the provided queue.
  */
 fun SnackBarUiState.Companion.from(snackBarQueue: Queue<SnackbarData>): SnackBarUiState {
-    return SnackBarUiState(snackBarQueue)
+    return SnackBarUiState.Enabled(snackBarQueue)
 }
