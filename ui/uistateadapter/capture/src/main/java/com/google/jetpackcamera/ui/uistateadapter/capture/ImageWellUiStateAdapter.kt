@@ -19,6 +19,19 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
+/**
+ * Creates an [ImageWellUiState] based on the most recently captured media and video recording status.
+ *
+ * This function determines the state of the image well component, which displays a thumbnail of
+ * the last captured photo or video. The image well is only shown if there is a valid media
+ * thumbnail available and if a video recording is not currently in progress.
+ *
+ * @param mediaDescriptor The descriptor for the most recently captured media, which may contain a
+ *   thumbnail.
+ * @param videoRecordingState The current state of video recording.
+ * @return [ImageWellUiState.LastCapture] containing the [mediaDescriptor] if a thumbnail exists
+ *   and recording is inactive, otherwise returns [ImageWellUiState.Unavailable].
+ */
 fun ImageWellUiState.Companion.from(
     mediaDescriptor: MediaDescriptor,
     videoRecordingState: VideoRecordingState

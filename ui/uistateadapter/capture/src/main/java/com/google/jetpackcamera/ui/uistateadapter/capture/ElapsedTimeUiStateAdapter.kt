@@ -19,6 +19,21 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 
+/**
+ * Creates an [ElapsedTimeUiState] based on the current [CameraState].
+ *
+ * This function translates the [VideoRecordingState] from the core camera layer into a UI-specific
+ * state for displaying the elapsed time of a video recording. It handles different recording
+ * phases: active recording, the final time after recording stops, and the initial state when
+ * a recording is starting.
+ *
+ * @param cameraState The real-time state from the camera, which includes the video recording status.
+ *
+ * @return An [ElapsedTimeUiState.Enabled] state containing the elapsed time in nanoseconds.
+ *         - For [VideoRecordingState.Active], it provides the ongoing elapsed time.
+ *         - For [VideoRecording_State.Inactive], it provides the final duration of the last recording.
+ *         - For [VideoRecordingState.Starting], it provides an initial value of 0.
+ */
 fun ElapsedTimeUiState.Companion.from(cameraState: CameraState): ElapsedTimeUiState {
     val videoRecordingState = cameraState.videoRecordingState
     return when (videoRecordingState) {

@@ -20,6 +20,19 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.FocusState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 
+/**
+ * Updates an existing [FocusMeteringUiState] based on a new [CameraState].
+ *
+ * This function provides an efficient way to update the focus UI state by comparing the incoming
+ * camera state with the current UI state. It avoids creating a new object if the underlying
+ * focus parameters (like coordinates and status) have not changed, reducing unnecessary
+ * recompositions. If the state has meaningfully changed, it delegates to the [from] factory
+ * function to create a new, updated state.
+ *
+ * @param cameraState The new, real-time state from the camera.
+ * @return The existing [FocusMeteringUiState] instance if no change is detected, or a new
+ *         [FocusMeteringUiState] reflecting the updated camera focus state.
+ */
 fun FocusMeteringUiState.updateFrom(cameraState: CameraState): FocusMeteringUiState {
     val focusState = cameraState.focusState
     return when (this) {
@@ -45,6 +58,17 @@ fun FocusMeteringUiState.updateFrom(cameraState: CameraState): FocusMeteringUiSt
     }
 }
 
+/**
+ * Creates a [FocusMeteringUiState] from the given [CameraState].
+ *
+ * This factory function translates the low-level [FocusState] from the core camera layer into its
+ * corresponding UI representation. It maps the coordinates and status (e.g., RUNNING, SUCCESS)
+ * to the appropriate [FocusMeteringUiState] subtype, which can be either [FocusMeteringUiState.Unspecified]
+ * or [FocusMeteringUiState.Specified].
+ *
+ * @param cameraState The real-time state from the camera containing the focus information.
+ * @return A [FocusMeteringUiState] that represents the current focus state for the UI.
+ */
 fun FocusMeteringUiState.Companion.from(cameraState: CameraState): FocusMeteringUiState {
     return when (val focusState = cameraState.focusState) {
         is FocusState.Unspecified -> FocusMeteringUiState.Unspecified

@@ -20,6 +20,32 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 
+/**
+ * Creates a [StabilizationUiState] based on the current camera settings and real-time camera state.
+ *
+ * This function translates the user's intended stabilization setting (`expectedMode`) and the
+ * camera's actual, currently active stabilization (`actualMode`) into a UI-specific state.
+ * It handles the differences between what the user has selected and what the hardware is
+ * currently providing.
+ *
+ * @param cameraAppSettings The current application settings, which contain the user's desired
+ *   [StabilizationMode].
+ * @param cameraState The real-time state from the camera, which reports the currently active
+ *   [StabilizationMode].
+ *
+ * @return A [StabilizationUiState] representing the current stabilization status.
+ * - [StabilizationUiState.Disabled] if the user setting is `OFF`, or if `AUTO` is selected but
+ *   the camera is not actively using `ON` or `OPTICAL` stabilization.
+ * - [StabilizationUiState.Auto] if the user setting is `AUTO` and the camera has resolved it
+ *   to an active stabilization mode (e.g., `ON` or `OPTICAL`).
+ * - [StabilizationUiState.Specific] if the user has selected a specific mode like `ON`,
+ *   `OPTICAL`, or `HIGH_QUALITY`. The `active` property will indicate if the camera's
+ *   `actualMode` matches the user's `expectedMode`.
+ *
+ * @throws IllegalStateException if the `cameraState` reports `StabilizationMode.AUTO`, as the
+ *   camera implementation should always resolve `AUTO` to a specific, active mode (`ON`,
+ *   `OPTICAL`, or `OFF`).
+ */
 fun StabilizationUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState

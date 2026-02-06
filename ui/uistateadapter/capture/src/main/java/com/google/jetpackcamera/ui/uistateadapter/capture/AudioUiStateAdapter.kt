@@ -20,6 +20,13 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 
+/**
+ * Creates an [AudioUiState] from the given camera application settings.
+ *
+ * @param cameraAppSettings The current settings of the camera application.
+ * @return [AudioUiState.Enabled] if audio is enabled in the settings, otherwise
+ * [AudioUiState.Disabled].
+ */
 fun AudioUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState

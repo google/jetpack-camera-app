@@ -27,6 +27,28 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 
+/**
+ * Creates a [ConcurrentCameraUiState] based on the current camera and system state.
+ *
+ * This function determines the availability and current selection of the concurrent camera feature.
+ * It synthesizes various states and settings to decide if the concurrent camera mode can be
+ * enabled. The feature is considered disabled if any of the following conditions are true:
+ * - The device hardware does not support concurrent cameras.
+ * - The camera was launched with an external intent for single image capture.
+ * - The selected capture mode is exclusively for single image capture (`IMAGE_ONLY`).
+ * - An HDR mode (either HLG10 for video or ULTRA_HDR for images) is active.
+ * - The stream configuration is set to `SINGLE_STREAM`.
+ * - Low Light Boost flash mode is active.
+ *
+ * @param cameraAppSettings The current application-level camera settings.
+ * @param systemConstraints The capabilities and limitations of the device's camera hardware.
+ * @param externalCaptureMode The mode indicating if the camera was launched by an external intent.
+ * @param captureModeUiState The current state of the capture mode selection UI.
+ * @param streamConfigUiState The current state of the stream configuration UI.
+ * @return A [ConcurrentCameraUiState.Available] object containing the currently selected
+ * concurrent camera mode and a boolean indicating if the feature is currently enabled and
+ * can be interacted with.
+ */
 fun ConcurrentCameraUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
