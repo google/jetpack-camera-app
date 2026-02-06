@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.data.settings_datastore.mappers
+package com.google.jetpackcamera.model.mappers
 
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.LowLightBoostPriority.PRIORITIZE_AE_MODE

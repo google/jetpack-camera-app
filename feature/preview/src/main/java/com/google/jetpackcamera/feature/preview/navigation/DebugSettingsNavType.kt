@@ -17,11 +17,11 @@ package com.google.jetpackcamera.feature.preview.navigation
 
 import android.os.Bundle
 import androidx.navigation.NavType
-import com.google.jetpackcamera.data.settings_datastore.mappers.DebugSettingsMapper.encodeAsByteArray
+import com.google.jetpackcamera.model.mappers.DebugSettingsMapper.encodeAsByteArray
 import com.google.jetpackcamera.model.DebugSettings
-import com.google.jetpackcamera.data.settings_datastore.mappers.DebugSettingsMapper.parseFromByteArray
-import com.google.jetpackcamera.data.settings_datastore.mappers.DebugSettingsMapper.encodeAsString
-import com.google.jetpackcamera.data.settings_datastore.mappers.DebugSettingsMapper.parseFromString
+import com.google.jetpackcamera.model.mappers.DebugSettingsMapper.parseFromByteArray
+import com.google.jetpackcamera.model.mappers.DebugSettingsMapper.encodeAsString
+import com.google.jetpackcamera.model.mappers.DebugSettingsMapper.parseFromString
 
 
 /**

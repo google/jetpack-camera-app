@@ -31,7 +31,7 @@ import androidx.navigation.navArgument
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.jetpackcamera.data.settings_datastore.mappers.DebugSettingsMapper
+import com.google.jetpackcamera.model.mappers.DebugSettingsMapper
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_CAPTURE_URIS
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_DEBUG_SETTINGS

@@ -18,8 +18,8 @@ package com.google.jetpackcamera.data.settings_datastore
 
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
-import com.google.jetpackcamera.data.settings_datastore.mappers.fromProto
-import com.google.jetpackcamera.data.settings_datastore.mappers.toProto
+import com.google.jetpackcamera.model.mappers.fromProto
+import com.google.jetpackcamera.model.mappers.toProto
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode

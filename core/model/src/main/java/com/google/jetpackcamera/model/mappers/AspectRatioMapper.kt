@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.data.settings_datastore.mappers
+package com.google.jetpackcamera.model.mappers
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 
 import com.google.jetpackcamera.model.AspectRatio

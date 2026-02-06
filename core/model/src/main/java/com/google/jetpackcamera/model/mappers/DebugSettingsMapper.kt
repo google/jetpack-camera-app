@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package com.google.jetpackcamera.data.settings_datastore.mappers
+package com.google.jetpackcamera.model.mappers
 
 import android.util.Base64
 import com.google.jetpackcamera.model.DebugSettings
-import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.TestPattern
-
 import com.google.jetpackcamera.model.proto.DebugSettings as DebugSettingsProto
 import com.google.jetpackcamera.model.proto.debugSettings as debugSettingsProto
 
