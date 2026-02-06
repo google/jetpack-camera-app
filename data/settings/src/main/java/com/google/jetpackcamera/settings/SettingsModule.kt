@@ -27,12 +27,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 interface SettingsModule {
-
-    @Binds
-    fun bindsSettingsRepository(
-        localSettingsRepository: LocalSettingsRepository
-    ): SettingsRepository
-
     @Binds
     @Singleton
     fun bindsSettableConstraintsRepository(

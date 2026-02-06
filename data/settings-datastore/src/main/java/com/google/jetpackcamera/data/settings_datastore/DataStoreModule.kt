@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings
+
+package com.google.jetpackcamera.data.settings_datastore
 
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import com.google.jetpackcamera.settings.JcaSettings
 import androidx.datastore.dataStoreFile
 import dagger.Module
 import dagger.Provides
@@ -30,7 +32,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
-// with hilt will ensure datastore instance access is unique per file
 @Module
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {

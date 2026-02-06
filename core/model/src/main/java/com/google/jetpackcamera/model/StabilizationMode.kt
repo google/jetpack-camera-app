@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.model
 
-import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 
 /** Enum class representing the device's supported stabilization configurations. */
 enum class StabilizationMode {
@@ -38,20 +37,4 @@ enum class StabilizationMode {
     /** Optical Stabilization (OIS) */
     OPTICAL;
 
-    companion object {
-        /** returns the AspectRatio enum equivalent of a provided AspectRatioProto */
-        fun fromProto(stabilizationModeProto: StabilizationModeProto): StabilizationMode =
-            when (stabilizationModeProto) {
-                StabilizationModeProto.STABILIZATION_MODE_OFF -> OFF
-                StabilizationModeProto.STABILIZATION_MODE_ON -> ON
-                StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY -> HIGH_QUALITY
-                StabilizationModeProto.STABILIZATION_MODE_OPTICAL -> OPTICAL
-
-                // Default to AUTO
-                StabilizationModeProto.STABILIZATION_MODE_UNDEFINED,
-                StabilizationModeProto.UNRECOGNIZED,
-                StabilizationModeProto.STABILIZATION_MODE_AUTO
-                -> AUTO
-            }
-    }
 }

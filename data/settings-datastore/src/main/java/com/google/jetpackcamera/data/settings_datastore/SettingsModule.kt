@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.model
 
+package com.google.jetpackcamera.data.settings_datastore
 
-val DEFAULT_HDR_IMAGE_OUTPUT = ImageOutputFormat.JPEG_ULTRA_HDR
+import com.google.jetpackcamera.settings.SettingsRepository
 
-enum class ImageOutputFormat {
-    JPEG,
-    JPEG_ULTRA_HDR;
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 
+/**
+ * Dagger [Module] for settings data layer.
+ */
+@Module
+@InstallIn(SingletonComponent::class)
+interface SettingsModule {
 
+    @Binds
+    fun bindsSettingsRepository(
+        localSettingsRepository: LocalSettingsRepository
+    ): SettingsRepository
 }

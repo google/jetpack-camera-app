@@ -31,6 +31,7 @@ import androidx.navigation.navArgument
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.jetpackcamera.data.settings_datastore.mappers.DebugSettingsMapper
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_CAPTURE_URIS
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_DEBUG_SETTINGS
@@ -40,6 +41,7 @@ import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.SaveMode
+
 
 object PreviewRoute {
     internal const val ARG_EXTERNAL_CAPTURE_MODE: String = "externalCaptureMode"
@@ -188,5 +190,5 @@ internal fun SavedStateHandle.getCaptureUris(defaultIfMissing: List<Uri> = empty
 
 internal fun SavedStateHandle.getDebugSettings(
     defaultIfMissing: DebugSettings = DebugSettings()
-): DebugSettings = get<ByteArray>(ARG_DEBUG_SETTINGS)?.let(DebugSettings::parseFromByteArray)
+): DebugSettings = get<ByteArray>(ARG_DEBUG_SETTINGS)?.let(DebugSettingsMapper::parseFromByteArray)
     ?: defaultIfMissing

@@ -17,9 +17,12 @@ package com.google.jetpackcamera.feature.preview.navigation
 
 import android.os.Bundle
 import androidx.navigation.NavType
+import com.google.jetpackcamera.data.settings_datastore.mappers.DebugSettingsMapper.encodeAsByteArray
 import com.google.jetpackcamera.model.DebugSettings
-import com.google.jetpackcamera.model.DebugSettings.Companion.encodeAsByteArray
-import com.google.jetpackcamera.model.DebugSettings.Companion.encodeAsString
+import com.google.jetpackcamera.data.settings_datastore.mappers.DebugSettingsMapper.parseFromByteArray
+import com.google.jetpackcamera.data.settings_datastore.mappers.DebugSettingsMapper.encodeAsString
+import com.google.jetpackcamera.data.settings_datastore.mappers.DebugSettingsMapper.parseFromString
+
 
 /**
  * Custom NavType to handle DebugSettings data class.
@@ -39,14 +42,14 @@ internal object DebugSettingsNavType : NavType<DebugSettings>(isNullableAllowed 
      */
     override fun get(bundle: Bundle, key: String): DebugSettings? {
         return bundle.getByteArray(key)?.let { bytes ->
-            DebugSettings.parseFromByteArray(bytes)
+            parseFromByteArray(bytes)
         }
     }
 
     /**
      * Parses the Base64 encoded Proto string from the navigation route.
      */
-    override fun parseValue(value: String): DebugSettings = DebugSettings.parseFromString(value)
+    override fun parseValue(value: String): DebugSettings = parseFromString(value)
 
     /**
      * Encodes the [DebugSettings] data class to a Base64 string for navigation routes.

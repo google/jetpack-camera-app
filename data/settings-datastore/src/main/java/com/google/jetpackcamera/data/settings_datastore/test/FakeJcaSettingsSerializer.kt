@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings
+package com.google.jetpackcamera.data.settings_datastore.test
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
+import com.google.jetpackcamera.data.settings_datastore.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.proto.AspectRatio
 import com.google.jetpackcamera.model.proto.DarkMode
 import com.google.jetpackcamera.model.proto.DynamicRange
@@ -26,31 +27,35 @@ import com.google.jetpackcamera.model.proto.LensFacing
 import com.google.jetpackcamera.model.proto.StabilizationMode
 import com.google.jetpackcamera.model.proto.StreamConfig
 import com.google.jetpackcamera.model.proto.VideoQuality
+import com.google.jetpackcamera.settings.JcaSettings
 import com.google.protobuf.InvalidProtocolBufferException
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-/**
- * This constant is `0L` because the `DURATION_UNLIMITED`
- * constant in the `OutputOptions` API [documentation](https://developer.android.com/reference/androidx/camera/video/OutputOptions#DURATION_UNLIMITED()) is `0`.
- */
-const val UNLIMITED_VIDEO_DURATION = 0L
-object JcaSettingsSerializer : Serializer<JcaSettings> {
+
+class FakeJcaSettingsSerializer(var failReadWithCorruptionException: Boolean = false) :
+    Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
-        .setDarkModeStatus(DarkMode.DARK_MODE_DARK)
+        .setDarkModeStatus(DarkMode.DARK_MODE_SYSTEM)
         .setDefaultLensFacing(LensFacing.LENS_FACING_BACK)
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
         .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
         .setStreamConfigStatus(StreamConfig.STREAM_CONFIG_MULTI_STREAM)
         .setStabilizationMode(StabilizationMode.STABILIZATION_MODE_AUTO)
-        .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_UNSPECIFIED)
+        .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_SDR)
+        .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
         .setImageFormatStatus(ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG)
         .setMaxVideoDurationMillis(UNLIMITED_VIDEO_DURATION)
-        .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
-        .setAudioEnabledStatus(true)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {
+        if (failReadWithCorruptionException) {
+            throw CorruptionException(
+                "Corruption Exception",
+                IOException()
+            )
+        }
         try {
             return JcaSettings.parseFrom(input)
         } catch (exception: InvalidProtocolBufferException) {

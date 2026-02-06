@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,39 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings
+
+package com.google.jetpackcamera.data.settings_datastore
 
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
+import com.google.jetpackcamera.data.settings_datastore.mappers.fromProto
+import com.google.jetpackcamera.data.settings_datastore.mappers.toProto
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
-import com.google.jetpackcamera.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
-import com.google.jetpackcamera.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.model.LowLightBoostPriority
-import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.fromProto
-import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.toProto
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
-import com.google.jetpackcamera.model.VideoQuality.Companion.toProto
+import com.google.jetpackcamera.settings.JcaSettings
+import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.CameraAppSettings
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import javax.inject.Inject
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+
 
 /**
- * Implementation of [SettingsRepository] with locally stored settings.
+ * Implementation of [com.google.jetpackcamera.settings.SettingsRepository] with locally stored settings.
  */
 class LocalSettingsRepository @Inject constructor(
     private val jcaSettings: DataStore<JcaSettings>,
@@ -56,7 +56,7 @@ class LocalSettingsRepository @Inject constructor(
     override val defaultCameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
-                cameraLensFacing = LensFacing.fromProto(it.defaultLensFacing),
+                cameraLensFacing = it.defaultLensFacing.fromProto(),
                 darkMode = when (it.darkModeStatus) {
                     DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
@@ -70,8 +70,8 @@ class LocalSettingsRepository @Inject constructor(
                     FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST -> FlashMode.LOW_LIGHT_BOOST
                     else -> FlashMode.OFF
                 },
-                aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
-                stabilizationMode = StabilizationMode.fromProto(it.stabilizationMode),
+                aspectRatio = it.aspectRatioStatus.fromProto(),
+                stabilizationMode = it.stabilizationMode.fromProto(),
                 targetFrameRate = it.targetFrameRate,
                 streamConfig = when (it.streamConfigStatus) {
                     StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
@@ -79,10 +79,10 @@ class LocalSettingsRepository @Inject constructor(
                     else -> StreamConfig.MULTI_STREAM
                 },
                 lowLightBoostPriority = fromProto(it.lowLightBoostPriority),
-                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
-                imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
+                dynamicRange = it.dynamicRangeStatus.fromProto(),
+                imageFormat = it.imageFormatStatus.fromProto(),
                 maxVideoDurationMillis = it.maxVideoDurationMillis,
-                videoQuality = VideoQuality.fromProto(it.videoQuality),
+                videoQuality = it.videoQuality.fromProto(),
                 audioEnabled = it.audioEnabledStatus,
                 captureMode = defaultCaptureModeOverride
             )
@@ -189,6 +189,7 @@ class LocalSettingsRepository @Inject constructor(
                 .build()
         }
     }
+
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
