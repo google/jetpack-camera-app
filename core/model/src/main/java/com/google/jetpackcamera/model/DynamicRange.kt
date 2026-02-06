@@ -19,5 +19,5 @@ val DEFAULT_HDR_DYNAMIC_RANGE = DynamicRange.HLG10
 
 enum class DynamicRange {
     SDR,
-    HLG10;
+    HLG10
 }

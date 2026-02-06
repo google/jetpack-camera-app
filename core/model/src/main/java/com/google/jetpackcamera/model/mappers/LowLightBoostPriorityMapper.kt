@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.model.mappers
 
 import com.google.jetpackcamera.model.LowLightBoostPriority
@@ -21,29 +20,25 @@ import com.google.jetpackcamera.model.LowLightBoostPriority.PRIORITIZE_AE_MODE
 import com.google.jetpackcamera.model.LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
 import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoostPriorityProto
 
-
-
-    /**
-     * Returns the [LowLightBoostPriority] enum equivalent of a provided [LowLightBoostPriorityProto].
-     *
-     * @param lowLightBoostPriorityProto The proto to convert from.
-     * @return The converted [LowLightBoostPriority].
-     */
-    fun toDomain(
-        lowLightBoostPriorityProto: LowLightBoostPriorityProto
-    ): LowLightBoostPriority {
-        return when (lowLightBoostPriorityProto) {
-            LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_AE_MODE -> PRIORITIZE_AE_MODE
-            LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES ->
-                PRIORITIZE_GOOGLE_PLAY_SERVICES
-            LowLightBoostPriorityProto.UNRECOGNIZED -> PRIORITIZE_AE_MODE // Default to AE mode
-        }
+/**
+ * Returns the [LowLightBoostPriority] enum equivalent of a provided [LowLightBoostPriorityProto].
+ *
+ * @param lowLightBoostPriorityProto The proto to convert from.
+ * @return The converted [LowLightBoostPriority].
+ */
+fun toDomain(lowLightBoostPriorityProto: LowLightBoostPriorityProto): LowLightBoostPriority {
+    return when (lowLightBoostPriorityProto) {
+        LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_AE_MODE -> PRIORITIZE_AE_MODE
+        LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES ->
+            PRIORITIZE_GOOGLE_PLAY_SERVICES
+        LowLightBoostPriorityProto.UNRECOGNIZED -> PRIORITIZE_AE_MODE // Default to AE mode
     }
+}
 
-    fun LowLightBoostPriority.toProto(): LowLightBoostPriorityProto {
-        return when (this) {
-            PRIORITIZE_AE_MODE -> LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_AE_MODE
-            PRIORITIZE_GOOGLE_PLAY_SERVICES ->
-                LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES
-        }
+fun LowLightBoostPriority.toProto(): LowLightBoostPriorityProto {
+    return when (this) {
+        PRIORITIZE_AE_MODE -> LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_AE_MODE
+        PRIORITIZE_GOOGLE_PLAY_SERVICES ->
+            LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES
     }
+}

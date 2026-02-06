@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.model.mappers
 
 import com.google.jetpackcamera.model.VideoQuality
@@ -24,7 +23,6 @@ import com.google.jetpackcamera.model.VideoQuality.UHD
 import com.google.jetpackcamera.model.VideoQuality.UNSPECIFIED
 import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 
-
 /** returns the VideoQuality enum equivalent of a provided VideoQualityProto */
 fun VideoQualityProto.toDomain(): VideoQuality {
     return when (this) {
@@ -34,7 +32,7 @@ fun VideoQualityProto.toDomain(): VideoQuality {
         VideoQualityProto.VIDEO_QUALITY_UHD -> UHD
         VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED,
         VideoQualityProto.UNRECOGNIZED
-            -> UNSPECIFIED
+        -> UNSPECIFIED
     }
 }
 
@@ -45,6 +43,5 @@ fun VideoQuality.toProto(): VideoQualityProto {
         HD -> VideoQualityProto.VIDEO_QUALITY_HD
         FHD -> VideoQualityProto.VIDEO_QUALITY_FHD
         UHD -> VideoQualityProto.VIDEO_QUALITY_UHD
-
     }
 }

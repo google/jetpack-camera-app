@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.model.mappers
 
 import com.google.jetpackcamera.model.StabilizationMode
@@ -24,18 +23,16 @@ import com.google.jetpackcamera.model.StabilizationMode.ON
 import com.google.jetpackcamera.model.StabilizationMode.OPTICAL
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 
-
 /** returns the AspectRatio enum equivalent of a provided AspectRatioProto */
-fun StabilizationModeProto.toDomain(): StabilizationMode =
-    when (this) {
-        StabilizationModeProto.STABILIZATION_MODE_OFF -> OFF
-        StabilizationModeProto.STABILIZATION_MODE_ON -> ON
-        StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY -> HIGH_QUALITY
-        StabilizationModeProto.STABILIZATION_MODE_OPTICAL -> OPTICAL
+fun StabilizationModeProto.toDomain(): StabilizationMode = when (this) {
+    StabilizationModeProto.STABILIZATION_MODE_OFF -> OFF
+    StabilizationModeProto.STABILIZATION_MODE_ON -> ON
+    StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY -> HIGH_QUALITY
+    StabilizationModeProto.STABILIZATION_MODE_OPTICAL -> OPTICAL
 
-        // Default to AUTO
-        StabilizationModeProto.STABILIZATION_MODE_UNDEFINED,
-        StabilizationModeProto.UNRECOGNIZED,
-        StabilizationModeProto.STABILIZATION_MODE_AUTO
-            -> AUTO
-    }
+    // Default to AUTO
+    StabilizationModeProto.STABILIZATION_MODE_UNDEFINED,
+    StabilizationModeProto.UNRECOGNIZED,
+    StabilizationModeProto.STABILIZATION_MODE_AUTO
+    -> AUTO
+}

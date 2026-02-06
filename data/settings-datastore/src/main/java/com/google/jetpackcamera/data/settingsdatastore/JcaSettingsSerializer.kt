@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.data.settings_datastore
+package com.google.jetpackcamera.data.settingsdatastore
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer

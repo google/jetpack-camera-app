@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.model.mappers
 
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.ImageOutputFormat.JPEG
 import com.google.jetpackcamera.model.ImageOutputFormat.JPEG_ULTRA_HDR
-
 import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 
 /** returns the DynamicRangeType enum equivalent of a provided DynamicRangeTypeProto */

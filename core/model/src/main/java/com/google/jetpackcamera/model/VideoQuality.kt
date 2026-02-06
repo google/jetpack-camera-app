@@ -15,11 +15,10 @@
  */
 package com.google.jetpackcamera.model
 
-
 enum class VideoQuality {
     UNSPECIFIED,
     SD,
     HD,
     FHD,
-    UHD;
+    UHD
 }

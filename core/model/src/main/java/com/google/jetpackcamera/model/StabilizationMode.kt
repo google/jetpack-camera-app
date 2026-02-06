@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.model
 
-
 /** Enum class representing the device's supported stabilization configurations. */
 enum class StabilizationMode {
     /** Stabilization off */
@@ -35,6 +34,5 @@ enum class StabilizationMode {
     HIGH_QUALITY,
 
     /** Optical Stabilization (OIS) */
-    OPTICAL;
-
+    OPTICAL
 }

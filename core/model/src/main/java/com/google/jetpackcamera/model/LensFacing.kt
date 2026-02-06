@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.model
 
-
 enum class LensFacing {
     BACK,
     FRONT;

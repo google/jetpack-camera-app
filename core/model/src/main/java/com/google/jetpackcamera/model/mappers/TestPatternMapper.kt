@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.model.mappers
 
 import com.google.jetpackcamera.model.TestPattern
@@ -23,7 +22,6 @@ import com.google.jetpackcamera.model.TestPattern.Custom1
 import com.google.jetpackcamera.model.TestPattern.Off
 import com.google.jetpackcamera.model.TestPattern.PN9
 import com.google.jetpackcamera.model.TestPattern.SolidColor
-
 import com.google.jetpackcamera.model.proto.TestPattern as ProtoTestPattern
 import com.google.jetpackcamera.model.proto.TestPattern.PatternCase
 import com.google.jetpackcamera.model.proto.testPattern as protoTestPattern
@@ -33,9 +31,6 @@ import com.google.jetpackcamera.model.proto.testPatternCustom1
 import com.google.jetpackcamera.model.proto.testPatternOff
 import com.google.jetpackcamera.model.proto.testPatternPN9
 import com.google.jetpackcamera.model.proto.testPatternSolidColor
-
-
-
 
 /**
  * Converts a [TestPattern] sealed interface instance to its Protocol Buffer representation

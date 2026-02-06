@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.model.mappers
 
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.DynamicRange.HLG10
 import com.google.jetpackcamera.model.DynamicRange.SDR
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
-
 
 /** returns the DynamicRangeType enum equivalent of a provided DynamicRangeTypeProto */
 fun DynamicRangeProto.toDomain(): DynamicRange {
@@ -38,6 +36,5 @@ fun DynamicRange.toProto(): DynamicRangeProto {
     return when (this) {
         SDR -> DynamicRangeProto.DYNAMIC_RANGE_SDR
         HLG10 -> DynamicRangeProto.DYNAMIC_RANGE_HLG10
-
     }
 }

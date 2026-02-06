@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.google.jetpackcamera.data.settings_datastore
+package com.google.jetpackcamera.data.settingsdatastore
 
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
-import com.google.jetpackcamera.model.mappers.toDomain
-import com.google.jetpackcamera.model.mappers.toProto
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
@@ -31,21 +28,22 @@ import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
-import com.google.jetpackcamera.settings.JcaSettings
-import com.google.jetpackcamera.settings.SettingsRepository
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import javax.inject.Inject
+import com.google.jetpackcamera.model.mappers.toDomain
+import com.google.jetpackcamera.model.mappers.toProto
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
-
+import com.google.jetpackcamera.settings.JcaSettings
+import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.CameraAppSettings
+import javax.inject.Inject
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 /**
- * Implementation of [com.google.jetpackcamera.settings.SettingsRepository] with locally stored settings.
+ * Implementation of [SettingsRepository] with locally stored settings.
  */
 class LocalSettingsRepository @Inject constructor(
     private val jcaSettings: DataStore<JcaSettings>,

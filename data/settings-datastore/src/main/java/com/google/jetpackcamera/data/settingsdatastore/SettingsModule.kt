@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.google.jetpackcamera.data.settings_datastore
+package com.google.jetpackcamera.data.settingsdatastore
 
 import com.google.jetpackcamera.settings.SettingsRepository
-
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

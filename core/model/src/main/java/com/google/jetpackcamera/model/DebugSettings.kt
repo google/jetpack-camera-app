@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.model
 
-
-
 /**
  * Data class for defining settings used in debug flows within the app.
  *

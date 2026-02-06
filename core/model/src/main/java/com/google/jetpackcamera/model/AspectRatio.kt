@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.model
 
-
 enum class AspectRatio(val numerator: Int, val denominator: Int) {
     THREE_FOUR(3, 4),
     NINE_SIXTEEN(9, 16),
@@ -30,6 +29,4 @@ enum class AspectRatio(val numerator: Int, val denominator: Int) {
      * Returns the landscape aspect ratio as a [Float].
      */
     fun toLandscapeFloat(): Float = denominator.toFloat() / numerator
-
-
 }

@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.google.jetpackcamera.data.settings_datastore
+package com.google.jetpackcamera.data.settingsdatastore
 
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
-import com.google.jetpackcamera.settings.JcaSettings
 import androidx.datastore.dataStoreFile
+import com.google.jetpackcamera.settings.JcaSettings
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

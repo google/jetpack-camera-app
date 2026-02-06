@@ -13,26 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.model.mappers
-import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
-
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.AspectRatio.NINE_SIXTEEN
 import com.google.jetpackcamera.model.AspectRatio.ONE_ONE
 import com.google.jetpackcamera.model.AspectRatio.THREE_FOUR
+import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 
+/** returns the AspectRatio enum equivalent of a provided AspectRatioProto */
+fun AspectRatioProto.toDomain(): AspectRatio {
+    return when (this) {
+        AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> NINE_SIXTEEN
+        AspectRatioProto.ASPECT_RATIO_ONE_ONE -> ONE_ONE
 
-    /** returns the AspectRatio enum equivalent of a provided AspectRatioProto */
-    fun AspectRatioProto.toDomain(): AspectRatio {
-        return when (this) {
-            AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> NINE_SIXTEEN
-            AspectRatioProto.ASPECT_RATIO_ONE_ONE -> ONE_ONE
-
-            // defaults to 3:4 aspect ratio
-            AspectRatioProto.ASPECT_RATIO_THREE_FOUR,
-            AspectRatioProto.ASPECT_RATIO_UNDEFINED,
-            AspectRatioProto.UNRECOGNIZED
-                -> THREE_FOUR
-        }
+        // defaults to 3:4 aspect ratio
+        AspectRatioProto.ASPECT_RATIO_THREE_FOUR,
+        AspectRatioProto.ASPECT_RATIO_UNDEFINED,
+        AspectRatioProto.UNRECOGNIZED
+        -> THREE_FOUR
     }
+}
