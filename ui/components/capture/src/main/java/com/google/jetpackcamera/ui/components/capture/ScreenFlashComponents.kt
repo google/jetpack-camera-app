@@ -118,7 +118,7 @@ private fun BrightnessRestoration(brightness: Float) {
 
 private fun getScreenBrightness(window: Window): Float = window.attributes.screenBrightness
 
-fun setBrightness(activity: Activity, value: Float) {
+private fun setBrightness(activity: Activity, value: Float) {
     Log.d(TAG, "setBrightness: value = $value")
     val layoutParams: WindowManager.LayoutParams = activity.window.attributes
     layoutParams.screenBrightness = value

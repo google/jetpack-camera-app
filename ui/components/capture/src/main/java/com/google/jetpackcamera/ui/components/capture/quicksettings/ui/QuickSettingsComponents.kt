@@ -512,7 +512,7 @@ fun ToggleQuickSettingsButton(
 // ////////////////////////////////////////////////////
 
 @Composable
-fun QuickSettingToggleButton(
+private fun QuickSettingToggleButton(
     modifier: Modifier = Modifier,
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
@@ -692,7 +692,7 @@ private fun QuickSettingsBottomSheetRow(
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun QuickSettingToggleButton(
+private fun QuickSettingToggleButton(
     onClick: () -> Unit,
     text: String,
     accessibilityText: String,
@@ -834,7 +834,7 @@ fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = 
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun TopBarQuickSettingIcon(
+private fun TopBarQuickSettingIcon(
     enum: QuickSettingsEnum,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
