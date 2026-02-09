@@ -17,10 +17,7 @@ package com.google.jetpackcamera.core.camera
 
 import android.app.Application
 import android.content.ContentResolver
-import android.graphics.SurfaceTexture
 import android.net.Uri
-import android.view.Surface
-import androidx.concurrent.futures.DirectExecutor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -34,16 +31,19 @@ import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.PostProcessModule.Companion.provideImagePostProcessorMap
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
 import com.google.jetpackcamera.core.common.FakeFilePathGenerator
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
+import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.util.AbstractMap
 import javax.inject.Provider
@@ -226,6 +226,58 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun setStabilizationMode_on_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.ON)
+    }
+
+    @Test
+    fun setStabilizationMode_optical_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.OPTICAL)
+    }
+
+    @Test
+    fun setStabilizationMode_highQuality_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.HIGH_QUALITY)
+    }
+
+    private suspend fun CoroutineScope.runSetStabilizationModeTest(
+        stabilizationMode: StabilizationMode
+    ) {
+        // Arrange.
+        val constraintsRepository = SettableConstraintsRepositoryImpl()
+        val appSettings = CameraAppSettings(stabilizationMode = StabilizationMode.OFF)
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = appSettings,
+            constraintsRepository = constraintsRepository
+        )
+        val cameraConstraints =
+            constraintsRepository.systemConstraints.value?.forCurrentLens(appSettings)
+        assume().withMessage("Stabilisation $stabilizationMode not supported, skip the test.")
+            .that(
+                cameraConstraints != null && cameraConstraints.supportedStabilizationModes.contains(
+                    stabilizationMode
+                )
+            ).isTrue()
+        val stabilizationCheck: ReceiveChannel<StabilizationMode> =
+            cameraSystem.getCurrentCameraState()
+                .map { it.stabilizationMode }
+                .produceIn(this)
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        // Ensure we start in a state with stabilization mode OFF
+        stabilizationCheck.awaitValue(StabilizationMode.OFF)
+
+        // Act.
+        cameraSystem.setStabilizationMode(stabilizationMode)
+
+        // Assert.
+        stabilizationCheck.awaitValue(stabilizationMode)
+
+        // Clean-up.
+        stabilizationCheck.cancel()
+    }
+
+    @Test
     fun recordVideoWithFlashModeOn_shouldEnableTorch(): Unit = runBlocking {
         // Arrange.
         val lensFacing = LensFacing.BACK
@@ -335,14 +387,8 @@ class CameraXCameraSystemTest {
 
     private fun CameraXCameraSystem.providePreviewSurface() {
         cameraSystemScope.launch {
-            getSurfaceRequest().filterNotNull().first().let { surfaceRequest ->
-                val surfaceTexture = SurfaceTexture(0)
-                surfaceTexture.setDefaultBufferSize(640, 480)
-                val surface = Surface(surfaceTexture)
-                surfaceRequest.provideSurface(surface, DirectExecutor.INSTANCE) {
-                    surface.release()
-                    surfaceTexture.release()
-                }
+            getSurfaceRequest().filterNotNull().collect {
+                it.provideUpdatingSurface()
             }
         }
     }
