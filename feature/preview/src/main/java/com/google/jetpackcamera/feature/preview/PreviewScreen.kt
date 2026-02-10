@@ -113,6 +113,7 @@ import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
+import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
@@ -140,6 +141,8 @@ fun PreviewScreen(
     Log.d(TAG, "PreviewScreen")
 
     val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
+    val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
+    val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlashUiState
         by viewModel.screenFlash.screenFlashUiState.collectAsState()
@@ -334,7 +337,9 @@ fun PreviewScreen(
                 onLockVideoRecording = viewModel::setLockedRecording,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
-                onNavigatePostCapture = onNavigateToPostCapture
+                onNavigatePostCapture = onNavigateToPostCapture,
+                debugUiState = debugUiState,
+                snackBarUiState = snackBarUiState
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -388,7 +393,9 @@ private fun ContentScreen(
     onLockVideoRecording: (Boolean) -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
-    onNavigatePostCapture: () -> Unit = {}
+    onNavigatePostCapture: () -> Unit = {},
+    debugUiState: DebugUiState = DebugUiState.Disabled,
+    snackBarUiState: SnackBarUiState = SnackBarUiState.Disabled
 ) {
     val onFlipCamera = {
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
@@ -567,7 +574,7 @@ private fun ContentScreen(
             )
         },
         debugOverlay = { modifier, extraControls ->
-            (captureUiState.debugUiState as? DebugUiState.Enabled)?.let {
+            (debugUiState as? DebugUiState.Enabled)?.let {
                 DebugOverlay(
                     modifier = modifier,
                     toggleIsOpen = onToggleDebugOverlay,
@@ -580,7 +587,7 @@ private fun ContentScreen(
             }
         },
         debugVisibilityWrapper = { content ->
-            val uiState = captureUiState.debugUiState
+            val uiState = debugUiState
             if (uiState !is DebugUiState.Enabled || !uiState.debugHidingComponents) {
                 content()
             }
@@ -597,14 +604,16 @@ private fun ContentScreen(
             )
         },
         snackBar = { modifier, snackbarHostState ->
-            val snackBarData = captureUiState.snackBarUiState.snackBarQueue.peek()
-            if (snackBarData != null) {
-                TestableSnackbar(
-                    modifier = modifier.testTag(snackBarData.testTag),
-                    snackbarToShow = snackBarData,
-                    snackbarHostState = snackbarHostState,
-                    onSnackbarResult = onSnackBarResult
-                )
+            if (snackBarUiState is SnackBarUiState.Enabled) {
+                val snackBarData = snackBarUiState.snackBarQueue.peek()
+                if (snackBarData != null) {
+                    TestableSnackbar(
+                        modifier = modifier.testTag(snackBarData.testTag),
+                        snackbarToShow = snackBarData,
+                        snackbarHostState = snackbarHostState,
+                        onSnackbarResult = onSnackBarResult
+                    )
+                }
             }
         },
         pauseToggleButton = {
