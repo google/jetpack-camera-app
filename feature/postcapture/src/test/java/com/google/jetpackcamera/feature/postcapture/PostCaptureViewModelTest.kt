@@ -30,6 +30,7 @@ import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMA
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
+import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState
 import kotlinx.coroutines.Dispatchers
@@ -241,10 +242,10 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
 
         // Then
-        val uiState = viewModel.postCaptureUiState.value.asReady()
+        val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
 
-        assertThat(uiState.snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(uiState.snackBarUiState.snackBarQueue.first().testTag)
+        assertThat(snackBarUiState.snackBarQueue).hasSize(1)
+        assertThat(snackBarUiState.snackBarQueue.first().testTag)
             .isEqualTo(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS)
     }
 
@@ -259,11 +260,9 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
 
         // Then
-        val uiState: PostCaptureUiState.Ready = viewModel.postCaptureUiState.first {
-            (it is PostCaptureUiState.Ready)
-        } as PostCaptureUiState.Ready
-        assertThat(uiState.snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(uiState.snackBarUiState.snackBarQueue.first().testTag)
+        val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
+        assertThat(snackBarUiState.snackBarQueue).hasSize(1)
+        assertThat(snackBarUiState.snackBarQueue.first().testTag)
             .isEqualTo(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS)
     }
 
@@ -279,9 +278,9 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
 
         // Then
-        val uiState = viewModel.postCaptureUiState.value.asReady()
-        assertThat(uiState.snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(uiState.snackBarUiState.snackBarQueue.first().testTag)
+        val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
+        assertThat(snackBarUiState.snackBarQueue).hasSize(1)
+        assertThat(snackBarUiState.snackBarQueue.first().testTag)
             .isEqualTo(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE)
     }
 
@@ -297,9 +296,9 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
 
         // Then
-        val uiState = viewModel.postCaptureUiState.value.asReady()
-        assertThat(uiState.snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(uiState.snackBarUiState.snackBarQueue.first().testTag)
+        val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
+        assertThat(snackBarUiState.snackBarQueue).hasSize(1)
+        assertThat(snackBarUiState.snackBarQueue.first().testTag)
             .isEqualTo(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE)
     }
 
@@ -315,9 +314,9 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
 
         // Then
-        val uiState = viewModel.postCaptureUiState.value.asReady()
-        assertThat(uiState.snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(uiState.snackBarUiState.snackBarQueue.first().testTag)
+        val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
+        assertThat(snackBarUiState.snackBarQueue).hasSize(1)
+        assertThat(snackBarUiState.snackBarQueue.first().testTag)
             .isEqualTo(SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE)
     }
 
@@ -333,9 +332,9 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
 
         // Then
-        val uiState = viewModel.postCaptureUiState.value.asReady()
-        assertThat(uiState.snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(uiState.snackBarUiState.snackBarQueue.first().testTag)
+        val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
+        assertThat(snackBarUiState.snackBarQueue).hasSize(1)
+        assertThat(snackBarUiState.snackBarQueue.first().testTag)
             .isEqualTo(SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE)
     }
 
@@ -346,16 +345,16 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
         viewModel.saveCurrentMedia() // This will add a snackbar for the image
         advanceUntilIdle()
-        val uiStateWithSnackbar = viewModel.postCaptureUiState.value.asReady()
-        val cookie = uiStateWithSnackbar.snackBarUiState.snackBarQueue.first().cookie
+        val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
+        val cookie = snackBarUiState.snackBarQueue.first().cookie
 
         // When
         viewModel.onSnackBarResult(cookie)
         advanceUntilIdle()
 
         // Then
-        val updatedUiState = viewModel.postCaptureUiState.value.asReady()
-        assertThat(updatedUiState.snackBarUiState.snackBarQueue).isEmpty()
+        val updatedSnackBarUiState = viewModel.snackBarUiState.value.asEnabled()
+        assertThat(updatedSnackBarUiState.snackBarQueue).isEmpty()
     }
 
     @Test
@@ -372,23 +371,23 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
 
         // Then
-        val updatedUiState = viewModel.postCaptureUiState.value.asReady()
-        assertThat(updatedUiState.snackBarUiState.snackBarQueue).hasSize(1)
+        val updatedSnackBarUiState = viewModel.snackBarUiState.value.asEnabled()
+        assertThat(updatedSnackBarUiState.snackBarQueue).hasSize(1)
     }
 
     @Test
     fun onSnackBarResult_withEmptyQueue_doesNotChangeQueue() = runTest(testDispatcher) {
         // Given an empty snackbar queue (initial state)
-        val initialUiState = viewModel.postCaptureUiState.value.asReady()
-        assertThat(initialUiState.snackBarUiState.snackBarQueue).isEmpty()
+        val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
+        assertThat(snackBarUiState.snackBarQueue).isEmpty()
 
         // When
         viewModel.onSnackBarResult("any_cookie")
         advanceUntilIdle()
 
         // Then
-        val updatedUiState = viewModel.postCaptureUiState.value.asReady()
-        assertThat(updatedUiState.snackBarUiState.snackBarQueue).isEmpty()
+        val updatedSnackBarUiState = viewModel.snackBarUiState.value.asEnabled()
+        assertThat(updatedSnackBarUiState.snackBarQueue).isEmpty()
     }
 
     // Helper to access protected method without extending class
@@ -398,5 +397,5 @@ internal class PostCaptureViewModelTest {
         onClearedMethod.invoke(viewModel)
     }
 
-    private fun PostCaptureUiState.asReady() = this as PostCaptureUiState.Ready
+    private fun SnackBarUiState.asEnabled() = this as SnackBarUiState.Enabled
 }
