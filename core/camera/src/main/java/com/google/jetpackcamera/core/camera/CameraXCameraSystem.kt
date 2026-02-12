@@ -182,7 +182,8 @@ constructor(
                 cameraProvider.hasCamera(it.toCameraSelector())
             }
 
-        val validatedAppSettings =
+        // verify the initial camera exists
+        val settingsWithVerifiedLens =
             if (cameraAppSettings.cameraLensFacing !in availableCameraLenses &&
                 availableCameraLenses.isNotEmpty()
             ) {
@@ -257,7 +258,7 @@ constructor(
                         val supportedIlluminants = generateSupportedIlluminants(
                             camInfo,
                             lensFacing,
-                            validatedAppSettings
+                            settingsWithVerifiedLens
                         )
                         val supportedFlashModes = generateSupportedFlashModes(supportedIlluminants)
 
@@ -296,9 +297,9 @@ constructor(
         constraintsRepository.updateSystemConstraints(systemConstraints)
 
         currentSettings.value =
-            validatedAppSettings
+            settingsWithVerifiedLens
                 .tryApplyDynamicRangeConstraints()
-                .tryApplyAspectRatioForExternalCapture(validatedAppSettings.captureMode)
+                .tryApplyAspectRatioForExternalCapture(settingsWithVerifiedLens.captureMode)
                 .tryApplyImageFormatConstraints()
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
