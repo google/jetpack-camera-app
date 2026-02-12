@@ -346,7 +346,7 @@ fun TestableSnackbar(
 }
 
 @Composable
-fun DetectWindowColorModeChanges(
+private fun DetectWindowColorModeChanges(
     surfaceRequest: SurfaceRequest,
     implementationMode: ImplementationMode,
     onRequestWindowColorMode: (Int) -> Unit
@@ -733,7 +733,7 @@ fun FlipCameraButton(
  * to screen coordinates. This should come from [CameraXViewfinder].
  */
 @Composable
-fun FocusMeteringIndicator(
+private fun FocusMeteringIndicator(
     focusMeteringUiState: FocusMeteringUiState,
     coordinateTransformer: CoordinateTransformer
 ) {
