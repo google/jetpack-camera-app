@@ -25,7 +25,7 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
-import com.google.jetpackcamera.utils.isRanchuApi28
+import com.google.jetpackcamera.utils.isEmulatorWithFakeFrontCamera
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.Rule
@@ -52,12 +52,12 @@ class SingleLensModeTest(private val lensFacing: String) {
     fun singleLensMode_flipCameraButtonDisabled() {
         val pm = InstrumentationRegistry.getInstrumentation().targetContext.packageManager
 
-        // The GMD API 28 emulator reports having a front camera but doesn't actually work with it.
-        // Skip this test on that specific device configuration if testing front camera.
+        // The GMD API 28 and 34 emulators report having a front camera but don't actually work with it.
+        // Skip this test on those specific device configurations if testing front camera.
         if (lensFacing == "front") {
             assume()
-                .withMessage("Skipping test on GMD API 28 emulator")
-                .that(isRanchuApi28)
+                .withMessage("Skipping test on emulator with fake front camera")
+                .that(isEmulatorWithFakeFrontCamera)
                 .isFalse()
 
             assume()
