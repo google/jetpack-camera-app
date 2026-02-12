@@ -15,32 +15,9 @@
  */
 package com.google.jetpackcamera.model
 
-import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
-
 val DEFAULT_HDR_IMAGE_OUTPUT = ImageOutputFormat.JPEG_ULTRA_HDR
 
 enum class ImageOutputFormat {
     JPEG,
-    JPEG_ULTRA_HDR;
-
-    companion object {
-
-        /** returns the DynamicRangeType enum equivalent of a provided DynamicRangeTypeProto */
-        fun fromProto(imageOutputFormatProto: ImageOutputFormatProto): ImageOutputFormat {
-            return when (imageOutputFormatProto) {
-                ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR -> JPEG_ULTRA_HDR
-
-                // Treat unrecognized as JPEG as a fallback
-                ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG,
-                ImageOutputFormatProto.UNRECOGNIZED -> JPEG
-            }
-        }
-
-        fun ImageOutputFormat.toProto(): ImageOutputFormatProto {
-            return when (this) {
-                JPEG -> ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG
-                JPEG_ULTRA_HDR -> ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
-            }
-        }
-    }
+    JPEG_ULTRA_HDR
 }

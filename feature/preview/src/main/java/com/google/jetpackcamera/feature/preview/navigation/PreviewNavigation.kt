@@ -40,6 +40,7 @@ import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.SaveMode
+import com.google.jetpackcamera.model.mappers.DebugSettingsMapper
 
 object PreviewRoute {
     internal const val ARG_EXTERNAL_CAPTURE_MODE: String = "externalCaptureMode"
@@ -188,5 +189,5 @@ internal fun SavedStateHandle.getCaptureUris(defaultIfMissing: List<Uri> = empty
 
 internal fun SavedStateHandle.getDebugSettings(
     defaultIfMissing: DebugSettings = DebugSettings()
-): DebugSettings = get<ByteArray>(ARG_DEBUG_SETTINGS)?.let(DebugSettings::parseFromByteArray)
+): DebugSettings = get<ByteArray>(ARG_DEBUG_SETTINGS)?.let(DebugSettingsMapper::parseFromByteArray)
     ?: defaultIfMissing
