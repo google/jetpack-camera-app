@@ -26,6 +26,15 @@ private val ORDERED_UI_SUPPORTED_ASPECT_RATIOS = listOf(
     AspectRatio.ONE_ONE
 )
 
+/**
+ * Creates an [AspectRatioUiState] from [CameraAppSettings].
+ *
+ * @param cameraAppSettings The current camera application settings.
+ *
+ * @return An [AspectRatioUiState] representing the available aspect ratios and the currently
+ * selected one. If only one or no aspect ratios are supported, it returns
+ * [AspectRatioUiState.Unavailable].
+ */
 fun AspectRatioUiState.Companion.from(cameraAppSettings: CameraAppSettings): AspectRatioUiState {
     val supportedAspectRatios = ORDERED_UI_SUPPORTED_ASPECT_RATIOS.toSet()
     val availableAspectRatios =
