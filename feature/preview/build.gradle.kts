@@ -140,6 +140,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":data:media"))
     implementation(project(":data:settings"))
+    implementation(project(":data:settings-datastore"))
     implementation(project(":core:model"))
     testImplementation(project(":core:common"))
     implementation(project(":ui:components:capture"))
