@@ -68,14 +68,13 @@ import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFI
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_DURATION_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG
-import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
-import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.selectLensFacing
 import com.google.jetpackcamera.utils.visitSettingDialog
 import com.google.jetpackcamera.utils.visitSettingsScreen
+import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -105,9 +104,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
         action: ComposeTestRule.() -> Unit
     ): Unit = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         composeTestRule.visitSettingsScreen {
             // Ensure appropriate lens facing is selected

@@ -34,7 +34,6 @@ import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_PREFIX
 import com.google.jetpackcamera.utils.MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
@@ -101,9 +100,7 @@ class CachedImageCaptureDeviceTest {
                 cacheExtra
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-                }
+                composeTestRule.waitForCaptureButton()
 
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                     .assertExists()
@@ -127,9 +124,7 @@ class CachedImageCaptureDeviceTest {
                 cacheExtra
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-                }
+                composeTestRule.waitForCaptureButton()
 
                 composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                     .assertExists()
@@ -162,9 +157,7 @@ class CachedImageCaptureDeviceTest {
                 cacheExtra
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-                }
+                composeTestRule.waitForCaptureButton()
                 repeat(2) {
                     clickCaptureAndWaitUntilMessageDisappears(
                         IMAGE_CAPTURE_TIMEOUT_MILLIS,
@@ -191,9 +184,7 @@ class CachedImageCaptureDeviceTest {
                 cacheExtra
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-                }
+                composeTestRule.waitForCaptureButton()
                 repeat(2) {
                     clickCaptureAndWaitUntilMessageDisappears(
                         IMAGE_CAPTURE_TIMEOUT_MILLIS,
@@ -219,9 +210,7 @@ class CachedImageCaptureDeviceTest {
                 cacheExtra
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-                }
+                composeTestRule.waitForCaptureButton()
                 uiDevice.pressBack()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
@@ -242,9 +231,7 @@ class CachedImageCaptureDeviceTest {
                 cacheExtra
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-                }
+                composeTestRule.waitForCaptureButton()
                 clickCaptureAndWaitUntilMessageDisappears(
                     IMAGE_CAPTURE_TIMEOUT_MILLIS,
                     IMAGE_CAPTURE_FAILURE_TAG

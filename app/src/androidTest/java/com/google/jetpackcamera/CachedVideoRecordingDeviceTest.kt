@@ -18,7 +18,6 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.net.Uri
 import android.provider.MediaStore
-import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -29,9 +28,7 @@ import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_EXIT
 import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_VIDEO
-import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
@@ -92,9 +89,7 @@ class CachedVideoRecordingDeviceTest {
                 cacheExtra
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-                }
+                composeTestRule.waitForCaptureButton()
                 composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
@@ -110,9 +105,7 @@ class CachedVideoRecordingDeviceTest {
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE)
             ) {
                 // Wait for the capture button to be displayed
-                composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                    composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-                }
+                composeTestRule.waitForCaptureButton()
                 composeTestRule.longClickForVideoRecording()
                 composeTestRule.waitForNodeWithTag(
                     VIDEO_CAPTURE_FAILURE_TAG,
