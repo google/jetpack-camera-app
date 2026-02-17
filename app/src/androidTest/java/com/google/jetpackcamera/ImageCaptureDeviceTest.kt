@@ -17,7 +17,6 @@ package com.google.jetpackcamera
 
 import android.app.Activity
 import android.net.Uri
-import android.os.Bundle
 import android.provider.MediaStore
 import android.view.KeyEvent
 import androidx.compose.ui.test.hasContentDescription
@@ -30,13 +29,13 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth
-import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_EXIT
 import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.CacheParam
 import com.google.jetpackcamera.utils.FILE_PREFIX
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_PREFIX
@@ -45,18 +44,17 @@ import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.VIDEO_PREFIX
-import com.google.jetpackcamera.utils.cacheExtra
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesFileExist
 import com.google.jetpackcamera.utils.doesMediaExist
 import com.google.jetpackcamera.utils.ensureTagNotAppears
+import com.google.jetpackcamera.utils.expectedNumFiles
 import com.google.jetpackcamera.utils.getMultipleImageCaptureIntent
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.longClickForVideoRecording
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
-import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
@@ -77,15 +75,6 @@ internal class ImageCaptureDeviceTest {
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiDevice = UiDevice.getInstance(instrumentation)
-
-    enum class CacheParam(val extras: Bundle?) {
-        NO_CACHE(null),
-        WITH_CACHE(cacheExtra)
-    }
-    private fun CacheParam.expectedNumFiles() = when (this) {
-        CacheParam.NO_CACHE -> 1
-        CacheParam.WITH_CACHE -> 0
-    }
 
     @TestParameter
     lateinit var cacheParam: CacheParam
@@ -118,12 +107,6 @@ internal class ImageCaptureDeviceTest {
                 VIEWER_POST_CAPTURE_IMAGE,
                 timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS
             )
-
-            // attempt to exit postcapturre screen
-            composeTestRule.waitForNodeWithTag(BUTTON_POST_CAPTURE_EXIT)
-
-            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
-            composeTestRule.waitForCaptureButton()
         }
     }
 
@@ -154,12 +137,6 @@ internal class ImageCaptureDeviceTest {
                 VIEWER_POST_CAPTURE_IMAGE,
                 timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS
             )
-
-            // attempt to exit postcapturre screen
-            composeTestRule.waitForNodeWithTag(BUTTON_POST_CAPTURE_EXIT)
-
-            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
-            composeTestRule.waitForCaptureButton()
         }
     }
 
@@ -189,12 +166,6 @@ internal class ImageCaptureDeviceTest {
                 VIEWER_POST_CAPTURE_IMAGE,
                 timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS
             )
-
-            // attempt to exit postcapturre screen
-            composeTestRule.waitForNodeWithTag(BUTTON_POST_CAPTURE_EXIT)
-
-            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
-            composeTestRule.waitForCaptureButton()
         }
     }
 
