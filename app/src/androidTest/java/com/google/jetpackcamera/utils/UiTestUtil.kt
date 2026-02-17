@@ -114,11 +114,15 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
             mediaUri = mediaUri,
             instrumentation = instrumentation,
             filePrefix = filePrefix
-        ).take(expectedNumFiles)
-            .collect {
-                Log.d(debugTag, "Discovered new media store file: ${it.first}")
-                insertedMediaStoreEntries[it.first] = it.second
+        ).apply {
+            if (expectedNumFiles > 0) {
+                take(expectedNumFiles)
+                    .collect {
+                        Log.d(debugTag, "Discovered new media store file: ${it.first}")
+                        insertedMediaStoreEntries[it.first] = it.second
+                    }
             }
+        }
     }
 
     var succeeded = false

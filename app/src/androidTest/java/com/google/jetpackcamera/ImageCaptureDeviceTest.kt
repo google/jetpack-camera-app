@@ -17,6 +17,7 @@ package com.google.jetpackcamera
 
 import android.app.Activity
 import android.net.Uri
+import android.os.Bundle
 import android.provider.MediaStore
 import android.view.KeyEvent
 import androidx.compose.ui.test.hasContentDescription
@@ -25,11 +26,12 @@ import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth
+import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_EXIT
+import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
@@ -43,6 +45,7 @@ import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.VIDEO_PREFIX
+import com.google.jetpackcamera.utils.cacheExtra
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesFileExist
 import com.google.jetpackcamera.utils.doesMediaExist
@@ -53,12 +56,15 @@ import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.longClickForVideoRecording
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
+import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(TestParameterInjector::class)
 internal class ImageCaptureDeviceTest {
     // TODO(b/319733374): Return bitmap for external mediastore capture without URI
 
@@ -72,10 +78,24 @@ internal class ImageCaptureDeviceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiDevice = UiDevice.getInstance(instrumentation)
 
+    enum class CacheParam(val extras: Bundle?) {
+        NO_CACHE(null),
+        WITH_CACHE(cacheExtra)
+    }
+    private fun CacheParam.expectedNumFiles() = when (this) {
+        CacheParam.NO_CACHE -> 1
+        CacheParam.WITH_CACHE -> 0
+    }
+
+    @TestParameter
+    lateinit var cacheParam: CacheParam
+
     @Test
     fun image_capture_button() = runMainActivityMediaStoreAutoDeleteScenarioTest(
         mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        filePrefix = FILE_PREFIX
+        filePrefix = FILE_PREFIX,
+        expectedNumFiles = cacheParam.expectedNumFiles(),
+        extras = cacheParam.extras
     ) {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -85,13 +105,35 @@ internal class ImageCaptureDeviceTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
             .assertExists()
             .performClick()
-        composeTestRule.waitForNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG, IMAGE_CAPTURE_TIMEOUT_MILLIS)
+
+        if (cacheParam == CacheParam.NO_CACHE) {
+            composeTestRule.waitForNodeWithTag(
+                IMAGE_CAPTURE_SUCCESS_TAG,
+                IMAGE_CAPTURE_TIMEOUT_MILLIS
+            )
+        }
+        if (cacheParam == CacheParam.WITH_CACHE) {
+            // navigate to postcapture screen
+            composeTestRule.waitForNodeWithTag(
+                VIEWER_POST_CAPTURE_IMAGE,
+                timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
+
+            // attempt to exit postcapturre screen
+            composeTestRule.waitForNodeWithTag(BUTTON_POST_CAPTURE_EXIT)
+
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
+            composeTestRule.waitForCaptureButton()
+        }
     }
 
     @Test
     fun image_capture_volumeUp() = runMainActivityMediaStoreAutoDeleteScenarioTest(
         mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        filePrefix = FILE_PREFIX
+        filePrefix = FILE_PREFIX,
+        expectedNumFiles = cacheParam.expectedNumFiles(),
+        extras = cacheParam.extras
+
     ) {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -100,13 +142,34 @@ internal class ImageCaptureDeviceTest {
 
         uiDevice.pressKeyCode(KeyEvent.KEYCODE_VOLUME_UP)
 
-        composeTestRule.waitForNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG, IMAGE_CAPTURE_TIMEOUT_MILLIS)
+        if (cacheParam == CacheParam.NO_CACHE) {
+            composeTestRule.waitForNodeWithTag(
+                IMAGE_CAPTURE_SUCCESS_TAG,
+                IMAGE_CAPTURE_TIMEOUT_MILLIS
+            )
+        }
+        if (cacheParam == CacheParam.WITH_CACHE) {
+            // navigate to postcapture screen
+            composeTestRule.waitForNodeWithTag(
+                VIEWER_POST_CAPTURE_IMAGE,
+                timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
+
+            // attempt to exit postcapturre screen
+            composeTestRule.waitForNodeWithTag(BUTTON_POST_CAPTURE_EXIT)
+
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
+            composeTestRule.waitForCaptureButton()
+        }
     }
 
     @Test
     fun image_capture_volumeDown() = runMainActivityMediaStoreAutoDeleteScenarioTest(
         mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        filePrefix = FILE_PREFIX
+        filePrefix = FILE_PREFIX,
+        expectedNumFiles = cacheParam.expectedNumFiles(),
+        extras = cacheParam.extras
+
     ) {
         // Wait for the capture button to be displayed
         composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -114,7 +177,25 @@ internal class ImageCaptureDeviceTest {
         }
         uiDevice.pressKeyCode(KeyEvent.KEYCODE_VOLUME_DOWN)
 
-        composeTestRule.waitForNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG, IMAGE_CAPTURE_TIMEOUT_MILLIS)
+        if (cacheParam == CacheParam.NO_CACHE) {
+            composeTestRule.waitForNodeWithTag(
+                IMAGE_CAPTURE_SUCCESS_TAG,
+                IMAGE_CAPTURE_TIMEOUT_MILLIS
+            )
+        }
+        if (cacheParam == CacheParam.WITH_CACHE) {
+            // navigate to postcapture screen
+            composeTestRule.waitForNodeWithTag(
+                VIEWER_POST_CAPTURE_IMAGE,
+                timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
+
+            // attempt to exit postcapturre screen
+            composeTestRule.waitForNodeWithTag(BUTTON_POST_CAPTURE_EXIT)
+
+            composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
+            composeTestRule.waitForCaptureButton()
+        }
     }
 
     @Test
@@ -123,7 +204,8 @@ internal class ImageCaptureDeviceTest {
         val uri = getTestUri(PICTURES_DIR_PATH, timeStamp, "jpg")
         val result =
             runMainActivityScenarioTestForResult(
-                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE),
+                extras = cacheParam.extras
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -148,7 +230,9 @@ internal class ImageCaptureDeviceTest {
         val uri = Uri.parse("asdfasdf")
         val result =
             runMainActivityScenarioTestForResult(
-                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE),
+                extras = cacheParam.extras
+
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -175,7 +259,9 @@ internal class ImageCaptureDeviceTest {
         val uri = getTestUri(PICTURES_DIR_PATH, timeStamp, "mp4")
         val result =
             runMainActivityScenarioTestForResult(
-                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE)
+                getSingleImageCaptureIntent(uri, MediaStore.ACTION_IMAGE_CAPTURE),
+                extras = cacheParam.extras
+
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -208,7 +294,8 @@ internal class ImageCaptureDeviceTest {
                 getMultipleImageCaptureIntent(
                     uriStrings,
                     MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA
-                )
+                ),
+                extras = cacheParam.extras
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -236,7 +323,9 @@ internal class ImageCaptureDeviceTest {
         val timeStamp = System.currentTimeMillis()
         val result =
             runMainActivityScenarioTestForResult(
-                getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+                getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA),
+                extras = cacheParam.extras
+
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -260,7 +349,9 @@ internal class ImageCaptureDeviceTest {
     fun multipleImageCaptureExternal_withNullUriList_returnsResultCancel() {
         val result =
             runMainActivityScenarioTestForResult(
-                getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+                getMultipleImageCaptureIntent(null, MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA),
+                extras = cacheParam.extras
+
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
@@ -282,7 +373,9 @@ internal class ImageCaptureDeviceTest {
                 getMultipleImageCaptureIntent(
                     uriStrings,
                     MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA
-                )
+                ),
+                extras = cacheParam.extras
+
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
