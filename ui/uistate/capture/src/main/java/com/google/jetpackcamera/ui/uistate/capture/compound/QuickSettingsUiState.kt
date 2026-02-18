@@ -26,8 +26,6 @@ import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 /**
  * Defines the UI state for the quick settings panel.
  *
- * This sealed interface represents all possible states for the quick settings UI, which provides
- * easy access to common camera settings like flash, aspect ratio, and more.
  */
 sealed interface QuickSettingsUiState {
     /**
