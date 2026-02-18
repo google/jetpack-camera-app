@@ -53,7 +53,7 @@ sealed interface CaptureUiState {
      * @property flipLensUiState The UI state for the flip lens (front/back camera) button.
      * @property snackBarUiState The UI state for the snack bar, used for showing messages to the user.
      * @property previewDisplayUiState The UI state for the preview display.
-     * @property lastBlinkTimeStamp The timestamp of the last preview blink animation.
+     * @property lastBlinkTimeStamp The timestamp of the last image capture blink animation.
      * @property externalCaptureMode The external capture mode, if any, that launched the camera.
      * @property captureModeToggleUiState The UI state for the photo/video toggle.
      * @property sessionFirstFrameTimestamp The timestamp of the first frame of the current camera session.
