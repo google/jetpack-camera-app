@@ -95,19 +95,7 @@ internal class ImageCaptureDeviceTest {
             .assertExists()
             .performClick()
 
-        if (cacheParam == CacheParam.NO_CACHE) {
-            composeTestRule.waitForNodeWithTag(
-                IMAGE_CAPTURE_SUCCESS_TAG,
-                IMAGE_CAPTURE_TIMEOUT_MILLIS
-            )
-        }
-        if (cacheParam == CacheParam.WITH_CACHE) {
-            // navigate to postcapture screen
-            composeTestRule.waitForNodeWithTag(
-                VIEWER_POST_CAPTURE_IMAGE,
-                timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS
-            )
-        }
+        verifyImageCaptureSuccess()
     }
 
     @Test
@@ -125,19 +113,7 @@ internal class ImageCaptureDeviceTest {
 
         uiDevice.pressKeyCode(KeyEvent.KEYCODE_VOLUME_UP)
 
-        if (cacheParam == CacheParam.NO_CACHE) {
-            composeTestRule.waitForNodeWithTag(
-                IMAGE_CAPTURE_SUCCESS_TAG,
-                IMAGE_CAPTURE_TIMEOUT_MILLIS
-            )
-        }
-        if (cacheParam == CacheParam.WITH_CACHE) {
-            // navigate to postcapture screen
-            composeTestRule.waitForNodeWithTag(
-                VIEWER_POST_CAPTURE_IMAGE,
-                timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS
-            )
-        }
+        verifyImageCaptureSuccess()
     }
 
     @Test
@@ -154,19 +130,7 @@ internal class ImageCaptureDeviceTest {
         }
         uiDevice.pressKeyCode(KeyEvent.KEYCODE_VOLUME_DOWN)
 
-        if (cacheParam == CacheParam.NO_CACHE) {
-            composeTestRule.waitForNodeWithTag(
-                IMAGE_CAPTURE_SUCCESS_TAG,
-                IMAGE_CAPTURE_TIMEOUT_MILLIS
-            )
-        }
-        if (cacheParam == CacheParam.WITH_CACHE) {
-            // navigate to postcapture screen
-            composeTestRule.waitForNodeWithTag(
-                VIEWER_POST_CAPTURE_IMAGE,
-                timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS
-            )
-        }
+        verifyImageCaptureSuccess()
     }
 
     @Test
@@ -387,5 +351,24 @@ internal class ImageCaptureDeviceTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
             .assertExists()
             .performClick()
+    }
+
+    private fun verifyImageCaptureSuccess() {
+        when (cacheParam) {
+            CacheParam.NO_CACHE -> {
+                composeTestRule.waitForNodeWithTag(
+                    IMAGE_CAPTURE_SUCCESS_TAG,
+                    IMAGE_CAPTURE_TIMEOUT_MILLIS
+                )
+            }
+
+            CacheParam.WITH_CACHE -> {
+                // navigate to postcapture screen
+                composeTestRule.waitForNodeWithTag(
+                    VIEWER_POST_CAPTURE_IMAGE,
+                    timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS
+                )
+            }
+        }
     }
 }

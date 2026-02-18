@@ -83,18 +83,7 @@ internal class VideoRecordingDeviceTest {
         }
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
-        if (cacheParam == CacheParam.NO_CACHE) {
-            composeTestRule.waitForNodeWithTag(
-                VIDEO_CAPTURE_SUCCESS_TAG,
-                VIDEO_CAPTURE_TIMEOUT_MILLIS
-            )
-        } else if (cacheParam == CacheParam.WITH_CACHE) {
-            // navigate to postcapture screen
-            composeTestRule.waitForNodeWithTag(
-                VIEWER_POST_CAPTURE_VIDEO,
-                VIDEO_CAPTURE_TIMEOUT_MILLIS
-            )
-        }
+        verifyVideoCaptureSuccess()
         deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, timeStamp)
     }
 
@@ -117,18 +106,7 @@ internal class VideoRecordingDeviceTest {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
 
-            if (cacheParam == CacheParam.NO_CACHE) {
-                composeTestRule.waitForNodeWithTag(
-                    VIDEO_CAPTURE_SUCCESS_TAG,
-                    VIDEO_CAPTURE_TIMEOUT_MILLIS
-                )
-            } else if (cacheParam == CacheParam.WITH_CACHE) {
-                // navigate to postcapture screen
-                composeTestRule.waitForNodeWithTag(
-                    VIEWER_POST_CAPTURE_VIDEO,
-                    VIDEO_CAPTURE_TIMEOUT_MILLIS
-                )
-            }
+            verifyVideoCaptureSuccess()
 
             deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, timeStamp)
         }
@@ -199,5 +177,24 @@ internal class VideoRecordingDeviceTest {
             }
         Truth.assertThat(result.resultCode).isEqualTo(Activity.RESULT_CANCELED)
         Truth.assertThat(doesMediaExist(uri, VIDEO_PREFIX)).isFalse()
+    }
+
+    private fun verifyVideoCaptureSuccess() {
+        when (cacheParam) {
+            CacheParam.NO_CACHE -> {
+                composeTestRule.waitForNodeWithTag(
+                    VIDEO_CAPTURE_SUCCESS_TAG,
+                    VIDEO_CAPTURE_TIMEOUT_MILLIS
+                )
+            }
+
+            CacheParam.WITH_CACHE -> {
+                // navigate to postcapture screen
+                composeTestRule.waitForNodeWithTag(
+                    VIEWER_POST_CAPTURE_VIDEO,
+                    VIDEO_CAPTURE_TIMEOUT_MILLIS
+                )
+            }
+        }
     }
 }
