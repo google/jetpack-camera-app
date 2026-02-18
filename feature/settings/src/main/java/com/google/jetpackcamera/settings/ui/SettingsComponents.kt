@@ -513,8 +513,7 @@ private fun getTargetFpsTestTag(fpsOption: Int): String = when (fpsOption) {
     TARGET_FPS_30 -> BTN_DIALOG_FPS_OPTION_30_TAG
     TARGET_FPS_60 -> BTN_DIALOG_FPS_OPTION_60_TAG
     TARGET_FPS_AUTO -> BTN_DIALOG_FPS_OPTION_AUTO_TAG
-    else -> BTN_DIALOG_FPS_OPTION_AUTO_TAG
-}
+    else -> TODO("Unhandled FPS option for test tag: $fpsOption")}
 
 @Composable
 fun TargetFpsSetting(
