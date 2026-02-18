@@ -54,7 +54,7 @@ sealed interface CaptureUiState {
      * @property snackBarUiState The UI state for the snack bar, used for showing messages to the user.
      * @property previewDisplayUiState The UI state for the preview display.
      * @property lastBlinkTimeStamp The timestamp of the last image capture blink animation.
-     * @property externalCaptureMode The external capture mode, if any, that launched the camera.
+     * @property externalCaptureMode The external capture mode used by the intent that launched the camera. Default is [ExternalCaptureMode.Standard].
      * @property captureModeToggleUiState The UI state for the photo/video toggle.
      * @property sessionFirstFrameTimestamp The timestamp of the first frame of the current camera session.
      * @property debugUiState The UI state for the debug overlay.
