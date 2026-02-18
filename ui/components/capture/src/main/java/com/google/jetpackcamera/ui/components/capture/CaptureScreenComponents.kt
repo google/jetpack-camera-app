@@ -554,11 +554,11 @@ fun PreviewDisplay(
  * @param captureButtonUiState the [CaptureButtonUiState] for this component
  * @param isQuickSettingsOpen true if the quick settings are open
  * @param onToggleQuickSettings the callback for toggling the quick settings
- * @param onIncrementZoom the callback for incrementing the zoom
- * @param onCaptureImage the callback for capturing an image
- * @param onStartVideoRecording the callback for starting a video recording
- * @param onStopVideoRecording the callback for stopping a video recording
- * @param onLockVideoRecording the callback for locking the video recording
+ * @param onIncrementZoom A callback to increment the zoom, providing the zoom increment value.
+ * @param onCaptureImage A callback to capture an image, providing the `ContentResolver` for saving.
+ * @param onStartVideoRecording The callback for starting a video recording.
+ * @param onStopVideoRecording The callback for stopping a video recording.
+ * @param onLockVideoRecording A callback to lock video recording. The boolean parameter indicates if the recording should be locked.
  */
 @Composable
 fun CaptureButton(
