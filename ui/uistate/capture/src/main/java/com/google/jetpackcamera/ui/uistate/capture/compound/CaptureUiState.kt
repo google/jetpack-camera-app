@@ -64,7 +64,7 @@ sealed interface CaptureUiState {
      * @property audioUiState The UI state for audio recording.
      * @property elapsedTimeUiState The UI state for the elapsed time display during video recording.
      * @property captureButtonUiState The UI state for the capture button.
-     * @property imageWellUiState The UI state for the image well, which shows the last captured media.
+     * @property imageWellUiState The UI state for the image well, which displays a thumbnail of a captured media.
      * @property zoomUiState The UI state for the zoom level display.
      * @property zoomControlUiState The UI state for the zoom control buttons.
      * @property hdrUiState The UI state for the HDR setting.
