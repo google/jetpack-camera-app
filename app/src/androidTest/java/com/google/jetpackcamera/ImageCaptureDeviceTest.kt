@@ -18,6 +18,7 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isDisplayed
@@ -41,6 +42,7 @@ import com.google.jetpackcamera.utils.IMAGE_PREFIX
 import com.google.jetpackcamera.utils.MESSAGE_DISAPPEAR_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.utils.UI_IDLE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.VIDEO_PREFIX
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
@@ -317,6 +319,7 @@ internal class ImageCaptureDeviceTest {
             val node = composeTestRule.onNodeWithTag(testTag = msgTag, useUnmergedTree = true)
             node.isNotDisplayed()
         }
+        uiDevice.waitForIdle(UI_IDLE_TIMEOUT_MILLIS)
     }
 
     private fun clickCapture() {
