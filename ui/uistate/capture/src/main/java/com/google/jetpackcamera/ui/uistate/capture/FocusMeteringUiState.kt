@@ -18,9 +18,9 @@ package com.google.jetpackcamera.ui.uistate.capture
 import androidx.compose.ui.geometry.Offset
 
 /**
- * Defines the UI state for focus and metering.
+ * Defines the UI state for focus metering. See [FocusMeteringIndicator]
  *
- * This sealed interface represents the different states of the focus and metering UI
+ * This sealed interface represents the different states of the focus metering UI
  */
 sealed interface FocusMeteringUiState {
 
@@ -31,7 +31,7 @@ sealed interface FocusMeteringUiState {
     data object Unspecified : FocusMeteringUiState
 
     /**
-     * A specific focus and metering point has been set by the user.
+     * A specific focus metering point has been set by the user.
      *
      * @param surfaceCoordinates The coordinates on the surface where the user tapped.
      * @param status The current [Status] of the focus and metering operation.
@@ -46,22 +46,22 @@ sealed interface FocusMeteringUiState {
      */
     enum class Status {
         /**
-         * The focus and metering operation is currently in progress.
+         * The focus metering operation is currently in progress.
          */
         RUNNING,
 
         /**
-         * The focus and metering operation completed successfully.
+         * The focus metering operation completed successfully.
          */
         SUCCESS,
 
         /**
-         * The focus and metering operation failed.
+         * The focus metering operation failed.
          */
         FAILURE,
 
         /**
-         * The focus and metering operation was cancelled.
+         * The focus metering operation was cancelled.
          */
         CANCELLED
     }
