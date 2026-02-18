@@ -20,8 +20,7 @@ import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 /**
  * The UI state for the preview display.
  *
- * @param lastBlinkTimeStamp The timestamp of the last time the preview blinked. This is used to
- *   trigger the blink animation.
+ * @param lastBlinkTimeStamp The timestamp of the most recent capture blink animation.
  * @param aspectRatioUiState The UI state for the aspect ratio of the preview.
  */
 data class PreviewDisplayUiState(
