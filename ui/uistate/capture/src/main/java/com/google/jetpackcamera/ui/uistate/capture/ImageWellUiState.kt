@@ -18,10 +18,7 @@ package com.google.jetpackcamera.ui.uistate.capture
 import com.google.jetpackcamera.data.media.MediaDescriptor
 
 /**
- * Defines the UI state for the image well, which displays the most recently captured media.
- *
- * This sealed interface represents the possible states of the image well, such as being
- * unavailable or displaying information about the last capture.
+ * Defines the UI state for the image well, a component used to display the thumbnail of a captured media.
  */
 sealed interface ImageWellUiState {
     /**
