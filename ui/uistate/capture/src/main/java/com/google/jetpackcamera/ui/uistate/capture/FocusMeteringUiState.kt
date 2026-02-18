@@ -20,8 +20,7 @@ import androidx.compose.ui.geometry.Offset
 /**
  * Defines the UI state for focus and metering.
  *
- * This sealed interface represents the different states of the focus and metering UI, which
- * includes tap-to-focus indicators and the general focus status.
+ * This sealed interface represents the different states of the focus and metering UI
  */
 sealed interface FocusMeteringUiState {
 
