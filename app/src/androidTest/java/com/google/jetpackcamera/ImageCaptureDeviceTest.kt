@@ -18,7 +18,6 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.net.Uri
 import android.provider.MediaStore
-import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isDisplayed
