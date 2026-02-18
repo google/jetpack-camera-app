@@ -231,8 +231,8 @@ constructor(
                         val unsupportedStabilizationFpsMap = buildMap {
                             for (stabilizationMode in supportedStabilizationModes) {
                                 when (stabilizationMode) {
-                                    StabilizationMode.ON -> setOf(TARGET_FPS_15, TARGET_FPS_30)
-                                    StabilizationMode.HIGH_QUALITY -> setOf(TARGET_FPS_30)
+                                    StabilizationMode.ON -> setOf(TARGET_FPS_15, TARGET_FPS_60)
+                                    StabilizationMode.HIGH_QUALITY -> setOf(TARGET_FPS_60)
                                     StabilizationMode.OPTICAL -> emptySet()
                                     else -> null
                                 }?.let { put(stabilizationMode, it) }
