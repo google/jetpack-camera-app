@@ -17,6 +17,7 @@ package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
+import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.proto.AspectRatio
 import com.google.jetpackcamera.model.proto.DarkMode
 import com.google.jetpackcamera.model.proto.DynamicRange
@@ -29,11 +30,6 @@ import com.google.jetpackcamera.model.proto.VideoQuality
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
-/**
- * This constant is `0L` because the `DURATION_UNLIMITED`
- * constant in the `OutputOptions` API [documentation](https://developer.android.com/reference/androidx/camera/video/OutputOptions#DURATION_UNLIMITED()) is `0`.
- */
-const val UNLIMITED_VIDEO_DURATION = 0L
 object JcaSettingsSerializer : Serializer<JcaSettings> {
 
     override val defaultValue: JcaSettings = JcaSettings.newBuilder()
