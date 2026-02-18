@@ -20,17 +20,18 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
 /**
- * Creates an [ImageWellUiState] based on the most recently captured media and video recording status.
+ * Creates an [ImageWellUiState] for a given [MediaDescriptor] and [VideoRecordingState].
  *
- * This function determines the state of the image well component, which displays a thumbnail of
- * the last captured photo or video. The image well is only shown if there is a valid media
- * thumbnail available and if a video recording is not currently in progress.
+ * This function determines the state of the image well, a component that displays the
+ * [MediaDescriptor]'s thumbnail. This state will be unavailable if any of the following are true:
+ * - mediaDescriptor is not MediaDescriptor.Content
+ * - mediaDescriptor does not have a thumbnail
  *
- * @param mediaDescriptor The descriptor for the most recently captured media, which may contain a
- *   thumbnail.
+ * @param mediaDescriptor the media's correlating [MediaDescriptor]
  * @param videoRecordingState The current state of video recording.
- * @return [ImageWellUiState.LastCapture] containing the [mediaDescriptor] if a thumbnail exists
- *   and recording is inactive, otherwise returns [ImageWellUiState.Unavailable].
+ * @return [ImageWellUiState.Content] only if the mediaDescriptor is MediaDescriptor.Content,
+ *  has a non-null thumbnail, and video recording state is inactive.
+ *  otherwise return [ImageWellUiState.Unavailable]
  */
 fun ImageWellUiState.Companion.from(
     mediaDescriptor: MediaDescriptor,
@@ -40,7 +41,7 @@ fun ImageWellUiState.Companion.from(
         mediaDescriptor.thumbnail != null &&
         videoRecordingState is VideoRecordingState.Inactive
     ) {
-        ImageWellUiState.LastCapture(mediaDescriptor = mediaDescriptor)
+        ImageWellUiState.Content(mediaDescriptor = mediaDescriptor)
     } else {
         ImageWellUiState.Unavailable
     }

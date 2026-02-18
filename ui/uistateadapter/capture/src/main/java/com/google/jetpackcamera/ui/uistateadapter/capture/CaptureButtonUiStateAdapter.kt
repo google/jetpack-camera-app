@@ -23,8 +23,8 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 /**
  * Creates a [CaptureButtonUiState] based on the current camera settings and state.
  *
- * This function determines the appropriate UI state for the main capture button, which can change
- * depending on the current capture mode, video recording status, and whether the recording is locked.
+ * This function determines the UI state for the capture button based on the capture mode, video
+ * recording status, and whether the recording has been locked.
  *
  * @param cameraAppSettings The current application settings, used to determine the capture mode.
  * @param cameraState The current state of the camera, used to check video recording status.

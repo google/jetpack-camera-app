@@ -23,11 +23,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 /**
  * Updates an existing [FocusMeteringUiState] based on a new [CameraState].
  *
- * This function provides an efficient way to update the focus UI state by comparing the incoming
- * camera state with the current UI state. It avoids creating a new object if the underlying
- * focus parameters (like coordinates and status) have not changed, reducing unnecessary
- * recompositions. If the state has meaningfully changed, it delegates to the [from] factory
- * function to create a new, updated state.
+ * This factory function translates the [FocusState] into its corresponding UI representation.
  *
  * @param cameraState The new, real-time state from the camera.
  * @return The existing [FocusMeteringUiState] instance if no change is detected, or a new
