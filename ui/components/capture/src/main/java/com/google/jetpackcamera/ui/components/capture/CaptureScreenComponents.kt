@@ -522,7 +522,6 @@ fun CaptureButton(
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
-    val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
 
     CaptureButton(
@@ -530,9 +529,7 @@ fun CaptureButton(
         onIncrementZoom = onIncrementZoom,
         onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
-                multipleEventsCutter.processEvent {
-                    onCaptureImage(context.contentResolver)
-                }
+                onCaptureImage(context.contentResolver)
             }
             if (isQuickSettingsOpen) {
                 onToggleQuickSettings()

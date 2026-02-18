@@ -78,7 +78,6 @@ val compatMainActivityExtras: Bundle?
 val debugExtra: Bundle = Bundle().apply { putBoolean("KEY_DEBUG_MODE", true) }
 val cacheExtra: Bundle = Bundle().apply { putBoolean("KEY_REVIEW_AFTER_CAPTURE", true) }
 
-const val UI_IDLE_TIMEOUT_MILLIS = 1_000L
 const val DEFAULT_TIMEOUT_MILLIS = 5_000L
 const val APP_START_TIMEOUT_MILLIS = 20_000L
 const val ELAPSED_TIME_TEXT_TIMEOUT_MILLIS = 45_000L
