@@ -346,7 +346,7 @@ fun TestableSnackbar(
 }
 
 @Composable
-fun DetectWindowColorModeChanges(
+private fun DetectWindowColorModeChanges(
     surfaceRequest: SurfaceRequest,
     implementationMode: ImplementationMode,
     onRequestWindowColorMode: (Int) -> Unit
@@ -522,7 +522,6 @@ fun CaptureButton(
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
-    val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
 
     CaptureButton(
@@ -530,9 +529,7 @@ fun CaptureButton(
         onIncrementZoom = onIncrementZoom,
         onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
-                multipleEventsCutter.processEvent {
-                    onCaptureImage(context.contentResolver)
-                }
+                onCaptureImage(context.contentResolver)
             }
             if (isQuickSettingsOpen) {
                 onToggleQuickSettings()
@@ -733,7 +730,7 @@ fun FlipCameraButton(
  * to screen coordinates. This should come from [CameraXViewfinder].
  */
 @Composable
-fun FocusMeteringIndicator(
+private fun FocusMeteringIndicator(
     focusMeteringUiState: FocusMeteringUiState,
     coordinateTransformer: CoordinateTransformer
 ) {

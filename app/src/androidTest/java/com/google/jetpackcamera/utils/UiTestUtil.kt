@@ -59,9 +59,13 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
+val isEmulatorWithFakeFrontCamera: Boolean
+    get() = Build.HARDWARE == "ranchu" &&
+        (Build.VERSION.SDK_INT == 28 || Build.VERSION.SDK_INT == 34)
+
 val compatMainActivityExtras: Bundle?
-    get() = if (Build.HARDWARE == "ranchu" && Build.VERSION.SDK_INT == 28) {
-        // The GMD API 28 emulator's PackageInfo reports it has front and back cameras, but
+    get() = if (isEmulatorWithFakeFrontCamera) {
+        // The GMD API 28 and 34 emulators' PackageInfo reports it has front and back cameras, but
         // GMD is only configured for a back camera. This causes CameraX to take a long time
         // to initialize. Set the device to use single lens mode to work around this issue.
         Bundle().apply {
