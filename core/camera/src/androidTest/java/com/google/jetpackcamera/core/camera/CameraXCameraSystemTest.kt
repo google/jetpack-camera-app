@@ -243,12 +243,12 @@ class CameraXCameraSystemTest {
 
     @Test
     fun setStabilizationMode_off_imageOnly_updatesCameraState(): Unit = runBlocking {
-        runSetStabilizationModeTest(StabilizationMode.HIGH_QUALITY, CaptureMode.IMAGE_ONLY)
+        runSetStabilizationModeTest(StabilizationMode.OFF, CaptureMode.IMAGE_ONLY)
     }
 
     private suspend fun CoroutineScope.runSetStabilizationModeTest(
         stabilizationMode: StabilizationMode,
-        captureMode: CaptureMode = CaptureMode.STANDARD
+        captureMode: CaptureMode? = null
     ) {
         // Arrange.
         val constraintsRepository = SettableConstraintsRepositoryImpl()
@@ -257,17 +257,15 @@ class CameraXCameraSystemTest {
             appSettings = appSettings,
             constraintsRepository = constraintsRepository
         )
-        if (stabilizationMode != StabilizationMode.OFF) {
-            val cameraConstraints =
-                constraintsRepository.systemConstraints.value?.forCurrentLens(appSettings)
-            assume().withMessage("Stabilisation $stabilizationMode not supported, skip the test.")
-                .that(
-                    cameraConstraints != null &&
-                        cameraConstraints.supportedStabilizationModes.contains(
-                            stabilizationMode
-                        )
-                ).isTrue()
-        }
+        val cameraConstraints =
+            constraintsRepository.systemConstraints.value?.forCurrentLens(appSettings)
+        assume().withMessage("Stabilisation $stabilizationMode not supported, skip the test.")
+            .that(
+                cameraConstraints != null &&
+                    cameraConstraints.supportedStabilizationModes.contains(
+                        stabilizationMode
+                    )
+            ).isTrue()
         val stabilizationCheck: ReceiveChannel<StabilizationMode> =
             cameraSystem.getCurrentCameraState()
                 .map { it.stabilizationMode }
@@ -279,7 +277,7 @@ class CameraXCameraSystemTest {
 
         // Act.
         cameraSystem.setStabilizationMode(stabilizationMode)
-        cameraSystem.setCaptureMode(captureMode)
+        captureMode?.let { cameraSystem.setCaptureMode(it) }
 
         // Assert.
         stabilizationCheck.awaitValue(stabilizationMode)
