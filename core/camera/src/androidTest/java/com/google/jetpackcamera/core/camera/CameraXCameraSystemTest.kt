@@ -267,22 +267,25 @@ class CameraXCameraSystemTest {
                         stabilizationMode
                     )
             ).isTrue()
-        cameraSystem.startCameraAndWaitUntilRunning()
+        var initialStabilizationMode: StabilizationMode? = StabilizationMode.OFF
         if (stabilizationMode == StabilizationMode.OFF) {
-            val initialStabilizationMode = cameraConstraints?.supportedStabilizationModes
+            initialStabilizationMode = cameraConstraints?.supportedStabilizationModes
                 ?.firstOrNull { it != StabilizationMode.OFF }
             assume().withMessage("No stabilisation other than OFF is supported, skip the test.")
                 .that(initialStabilizationMode != null).isTrue()
-            cameraSystem.setStabilizationMode(initialStabilizationMode!!)
+            initialStabilizationMode?.let {
+                cameraSystem.setStabilizationMode(initialStabilizationMode)
+            }
         }
 
+        cameraSystem.startCameraAndWaitUntilRunning()
         val stabilizationCheck: ReceiveChannel<StabilizationMode> =
             cameraSystem.getCurrentCameraState()
                 .map { it.stabilizationMode }
                 .produceIn(this)
 
-        // Ensure we start in a state with stabilization mode OFF
-        stabilizationCheck.awaitValue(StabilizationMode.OFF)
+        // Ensure we start in a state with the initial stabilization mode
+        stabilizationCheck.awaitValue(initialStabilizationMode)
 
         // Act.
         cameraSystem.setStabilizationMode(stabilizationMode)
