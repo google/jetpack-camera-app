@@ -252,13 +252,14 @@ class CameraXCameraSystemTest {
     ) {
         // Arrange.
         val constraintsRepository = SettableConstraintsRepositoryImpl()
-        val appSettings = CameraAppSettings(stabilizationMode = StabilizationMode.OFF)
         val cameraSystem = createAndInitCameraXCameraSystem(
-            appSettings = appSettings,
+            appSettings = CameraAppSettings(stabilizationMode = StabilizationMode.OFF),
             constraintsRepository = constraintsRepository
         )
         val cameraConstraints =
-            constraintsRepository.systemConstraints.value?.forCurrentLens(appSettings)
+            constraintsRepository.systemConstraints.value?.forCurrentLens(
+                DEFAULT_CAMERA_APP_SETTINGS
+            )
         assume().withMessage("Stabilisation $stabilizationMode not supported, skip the test.")
             .that(
                 cameraConstraints != null &&
@@ -266,11 +267,19 @@ class CameraXCameraSystemTest {
                         stabilizationMode
                     )
             ).isTrue()
+        cameraSystem.startCameraAndWaitUntilRunning()
+        if (stabilizationMode == StabilizationMode.OFF) {
+            val initialStabilizationMode = cameraConstraints?.supportedStabilizationModes
+                ?.firstOrNull { it != StabilizationMode.OFF }
+            assume().withMessage("No stabilisation other than OFF is supported, skip the test.")
+                .that(initialStabilizationMode != null).isTrue()
+            cameraSystem.setStabilizationMode(initialStabilizationMode!!)
+        }
+
         val stabilizationCheck: ReceiveChannel<StabilizationMode> =
             cameraSystem.getCurrentCameraState()
                 .map { it.stabilizationMode }
                 .produceIn(this)
-        cameraSystem.startCameraAndWaitUntilRunning()
 
         // Ensure we start in a state with stabilization mode OFF
         stabilizationCheck.awaitValue(StabilizationMode.OFF)
