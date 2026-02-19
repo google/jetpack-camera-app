@@ -24,13 +24,53 @@ import android.os.Environment
 import android.provider.BaseColumns
 import android.provider.MediaStore
 import android.util.Log
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.transform
+import org.junit.rules.TestRule
+import org.junit.runner.Description
+import org.junit.runners.model.Statement
 
 private const val TAG = "AppTestUtil"
+private const val CAMERAX_RESET_TIMEOUT_SECONDS = 10L
+
+/**
+ * A [TestRule] that resets CameraX before each test.
+ *
+ * This is useful for tests that need to configure CameraX (e.g. using
+ * [ProcessCameraProvider.configureInstance]), which can only be done once per process.
+ */
+class CameraXResetRule : TestRule {
+    override fun apply(base: Statement, description: Description): Statement {
+        return object : Statement() {
+            override fun evaluate() {
+                val context = InstrumentationRegistry.getInstrumentation().targetContext
+                initializeAndShutdown(context)
+                try {
+                    base.evaluate()
+                } finally {
+                    initializeAndShutdown(context)
+                }
+            }
+        }
+    }
+
+    private fun initializeAndShutdown(context: android.content.Context) {
+        try {
+            ProcessCameraProvider.getInstance(context)
+                .get(CAMERAX_RESET_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .shutdownAsync()
+                .get(CAMERAX_RESET_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to shutdown CameraX", e)
+        }
+    }
+}
 
 internal val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
     add(android.Manifest.permission.CAMERA)
