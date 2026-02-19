@@ -572,7 +572,6 @@ fun CaptureButton(
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
-    val eventDebouncer = remember { EventDebouncer() }
     val context = LocalContext.current
 
     CaptureButton(
@@ -580,9 +579,7 @@ fun CaptureButton(
         onIncrementZoom = onIncrementZoom,
         onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
-                eventDebouncer.processEvent {
-                    onCaptureImage(context.contentResolver)
-                }
+                onCaptureImage(context.contentResolver)
             }
             if (isQuickSettingsOpen) {
                 onToggleQuickSettings()
