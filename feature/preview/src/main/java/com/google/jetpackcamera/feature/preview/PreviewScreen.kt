@@ -198,7 +198,9 @@ fun PreviewScreen(
 
             val context = LocalContext.current
             LaunchedEffect(Unit) {
-                debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
+                debouncedOrientationFlow(context).collect(
+                    viewModel.captureCallbacks.setDisplayRotation
+                )
             }
             val scope = rememberCoroutineScope()
             val zoomState = remember {
@@ -213,8 +215,8 @@ fun PreviewScreen(
                         )
                         ?.initialZoomRatio
                         ?: 1f,
-                    onAnimateStateChanged = viewModel::setZoomAnimationState,
-                    onChangeZoomLevel = viewModel::changeZoomRatio,
+                    onAnimateStateChanged = viewModel.captureCallbacks.setZoomAnimationState,
+                    onChangeZoomLevel = viewModel.captureCallbacks.changeZoomRatio,
                     zoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
                         ?.primaryZoomRange
                         ?: Range(1f, 1f)
@@ -251,8 +253,8 @@ fun PreviewScreen(
                                 val oldZoomRatios = it.zoomRatios
                                 val oldAudioEnabled = it.isAudioEnabled
                                 Log.d(TAG, "reset pre recording settings")
-                                viewModel.setAudioEnabled(oldAudioEnabled)
-                                viewModel.setLensFacing(oldPrimaryLensFacing)
+                                viewModel.captureCallbacks.setAudioEnabled(oldAudioEnabled)
+                                viewModel.quickSettingsCallbacks.setLensFacing(oldPrimaryLensFacing)
                                 zoomState.apply {
                                     absoluteZoom(
                                         targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing] ?: 1f,
@@ -279,11 +281,11 @@ fun PreviewScreen(
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
-                onClearUiScreenBrightness = viewModel::setClearUiScreenBrightness,
-                onSetLensFacing = viewModel::setLensFacing,
-                onTapToFocus = viewModel::tapToFocus,
-                onSetTestPattern = viewModel::setTestPattern,
-                onSetImageWell = viewModel::imageWellToRepository,
+                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+                onSetLensFacing = viewModel.quickSettingsCallbacks.setLensFacing,
+                onTapToFocus = viewModel.captureCallbacks.tapToFocus,
+                onSetTestPattern = viewModel.debugCallbacks.setTestPattern,
+                onSetImageWell = viewModel.captureCallbacks.imageWellToRepository,
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
                         zoomState.absoluteZoom(
@@ -317,26 +319,29 @@ fun PreviewScreen(
                     }
                 },
 
-                onSetCaptureMode = viewModel::setCaptureMode,
-                onChangeFlash = viewModel::setFlash,
-                onChangeAspectRatio = viewModel::setAspectRatio,
-                onSetStreamConfig = viewModel::setStreamConfig,
-                onChangeDynamicRange = viewModel::setDynamicRange,
-                onChangeConcurrentCameraMode = viewModel::setConcurrentCameraMode,
-                onChangeImageFormat = viewModel::setImageFormat,
-                onDisabledCaptureMode = viewModel::enqueueDisabledHdrToggleSnackBar,
-                onToggleQuickSettings = viewModel::toggleQuickSettings,
-                onSetFocusedSetting = viewModel::setFocusedSetting,
-                onToggleDebugOverlay = viewModel::toggleDebugOverlay,
-                onToggleDebugHidingComponents = viewModel::toggleDebugHidingComponents,
-                onSetPause = viewModel::setPaused,
-                onSetAudioEnabled = viewModel::setAudioEnabled,
+                onSetCaptureMode = viewModel.quickSettingsCallbacks.setCaptureMode,
+                onChangeFlash = viewModel.quickSettingsCallbacks.setFlash,
+                onChangeAspectRatio = viewModel.quickSettingsCallbacks.setAspectRatio,
+                onSetStreamConfig = viewModel.quickSettingsCallbacks.setStreamConfig,
+                onChangeDynamicRange = viewModel.quickSettingsCallbacks.setDynamicRange,
+                onChangeConcurrentCameraMode =
+                viewModel.quickSettingsCallbacks.setConcurrentCameraMode,
+                onChangeImageFormat = viewModel.quickSettingsCallbacks.setImageFormat,
+                onDisabledCaptureMode =
+                viewModel.snackBarCallbacks.enqueueDisabledHdrToggleSnackBar,
+                onToggleQuickSettings = viewModel.quickSettingsCallbacks.toggleQuickSettings,
+                onSetFocusedSetting = viewModel.quickSettingsCallbacks.setFocusedSetting,
+                onToggleDebugOverlay = viewModel.debugCallbacks.toggleDebugOverlay,
+                onToggleDebugHidingComponents =
+                viewModel.debugCallbacks.toggleDebugHidingComponents,
+                onSetPause = viewModel.captureCallbacks.setPaused,
+                onSetAudioEnabled = viewModel.captureCallbacks.setAudioEnabled,
                 onCaptureImage = viewModel::captureImage,
                 onStartVideoRecording = viewModel::startVideoRecording,
                 onStopVideoRecording = viewModel::stopVideoRecording,
-                onLockVideoRecording = viewModel::setLockedRecording,
+                onLockVideoRecording = viewModel.captureCallbacks.setLockedRecording,
                 onRequestWindowColorMode = onRequestWindowColorMode,
-                onSnackBarResult = viewModel::onSnackBarResult,
+                onSnackBarResult = viewModel.snackBarCallbacks.onSnackBarResult,
                 onNavigatePostCapture = onNavigateToPostCapture,
                 debugUiState = debugUiState,
                 snackBarUiState = snackBarUiState
@@ -349,7 +354,7 @@ fun PreviewScreen(
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P ||
                     readStoragePermission.status.isGranted
                 ) {
-                    viewModel.updateLastCapturedMedia()
+                    viewModel.captureCallbacks.updateLastCapturedMedia()
                 }
             }
         }
