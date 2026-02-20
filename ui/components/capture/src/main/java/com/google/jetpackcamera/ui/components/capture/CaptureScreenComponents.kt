@@ -134,6 +134,11 @@ private const val BLINK_TIME = 100L
 private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
 private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
 
+/**
+ * A composable that displays the elapsed time since the start of a video recording.
+ *
+ * @param elapsedTimeUiState the [ElapsedTimeUiState] for this component
+ */
 @Composable
 fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
     if (elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
@@ -146,6 +151,14 @@ fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTi
     }
 }
 
+/**
+ * A composable that displays a toggle button for pausing and resuming video recording.
+ *
+ * @param modifier the modifier for this component
+ * @param onSetPause the callback for setting the pause state
+ * @param size the size of the button
+ * @param currentRecordingState the current recording state
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PauseResumeToggleButton(
@@ -177,6 +190,14 @@ fun PauseResumeToggleButton(
     }
 }
 
+/**
+ * A composable that displays a toggle button for enabling and disabling audio.
+ *
+ * @param modifier the modifier for this component
+ * @param buttonSize the size of the button
+ * @param audioUiState the [AudioUiState] for this component
+ * @param onToggleAudio the callback for toggling audio
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AmplitudeToggleButton(
@@ -235,6 +256,14 @@ fun AmplitudeToggleButton(
     }
 }
 
+/**
+ * A composable that displays a toggle button for switching between image and video capture.
+ *
+ * @param uiState the [CaptureModeToggleUiState.Available] for this component
+ * @param onChangeCaptureMode the callback for changing the capture mode
+ * @param onToggleWhenDisabled the callback for when the toggle is disabled
+ * @param modifier the modifier for this component
+ */
 @Composable
 fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
@@ -304,6 +333,14 @@ fun CaptureModeToggleButton(
     )
 }
 
+/**
+ * A composable that displays a snackbar with a test tag.
+ *
+ * @param modifier the modifier for this component
+ * @param snackbarToShow the [SnackbarData] to show
+ * @param snackbarHostState the [SnackbarHostState] for this component
+ * @param onSnackbarResult the callback for the snackbar result
+ */
 @Composable
 fun TestableSnackbar(
     modifier: Modifier = Modifier,
@@ -510,6 +547,19 @@ fun PreviewDisplay(
     }
 }
 
+/**
+ * A composable that displays the capture button.
+ *
+ * @param modifier the modifier for this component
+ * @param captureButtonUiState the [CaptureButtonUiState] for this component
+ * @param isQuickSettingsOpen true if the quick settings are open
+ * @param onToggleQuickSettings the callback for toggling the quick settings
+ * @param onIncrementZoom A callback to increment the zoom, providing the zoom increment value.
+ * @param onCaptureImage A callback to capture an image, providing the `ContentResolver` for saving.
+ * @param onStartVideoRecording The callback for starting a video recording.
+ * @param onStopVideoRecording The callback for stopping a video recording.
+ * @param onLockVideoRecording A callback to lock video recording. The boolean parameter indicates if the recording should be locked.
+ */
 @Composable
 fun CaptureButton(
     modifier: Modifier = Modifier,
@@ -548,6 +598,12 @@ fun CaptureButton(
     )
 }
 
+/**
+ * A composable that displays the stabilization icon.
+ *
+ * @param stabilizationUiState the [StabilizationUiState] for this component
+ * @param modifier the modifier for this component
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modifier = Modifier) {
@@ -625,6 +681,12 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
     }
 }
 
+/**
+ * A composable that displays the video quality icon.
+ *
+ * @param videoQuality the [VideoQuality] for this component
+ * @param modifier the modifier for this component
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
@@ -671,6 +733,14 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
     }
 }
 
+/**
+ * A composable that displays the flip camera button.
+ *
+ * @param enabledCondition the enabled condition for this component
+ * @param flipLensUiState the [FlipLensUiState] for this component
+ * @param onClick the callback for when the button is clicked
+ * @param modifier the modifier for this component
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FlipCameraButton(

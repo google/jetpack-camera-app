@@ -31,6 +31,11 @@ import kotlinx.coroutines.flow.runningFold
 /** Orientation hysteresis amount used in rounding, in degrees. */
 private const val ORIENTATION_HYSTERESIS = 5
 
+/**
+ * A flow that emits the device's orientation, debounced to avoid rapid changes.
+ *
+ * @param context the application context
+ */
 fun debouncedOrientationFlow(context: Context) = callbackFlow {
     val orientationListener = object : OrientationEventListener(context) {
         override fun onOrientationChanged(orientation: Int) {
