@@ -36,25 +36,14 @@ import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
 import com.google.jetpackcamera.feature.preview.navigation.getExternalCaptureMode
 import com.google.jetpackcamera.feature.preview.navigation.getRequestedSaveMode
-import com.google.jetpackcamera.model.AspectRatio
-import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureEvent
-import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DebugSettings
-import com.google.jetpackcamera.model.DeviceRotation
-import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
-import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
-import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.IntProgress
-import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
-import com.google.jetpackcamera.model.StreamConfig
-import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
@@ -69,18 +58,20 @@ import com.google.jetpackcamera.ui.components.capture.ScreenFlash
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.uistate.DisableRationale
+import com.google.jetpackcamera.ui.components.capture.addSnackBarData
+import com.google.jetpackcamera.ui.components.capture.debug.getDebugCallbacks
+import com.google.jetpackcamera.ui.components.capture.getCaptureCallbacks
+import com.google.jetpackcamera.ui.components.capture.getSnackBarCallbacks
+import com.google.jetpackcamera.ui.components.capture.postCurrentMediaToMediaRepository
+import com.google.jetpackcamera.ui.components.capture.quicksettings.getQuickSettingsCallbacks
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
-import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.debugUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.LinkedList
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
@@ -180,6 +171,32 @@ class PreviewViewModel @Inject constructor(
             initialValue = DebugUiState.Disabled
         )
 
+    val quickSettingsCallbacks = getQuickSettingsCallbacks(
+        trackedCaptureUiState = trackedCaptureUiState,
+        viewModelScope = viewModelScope,
+        cameraSystem = cameraSystem,
+        externalCaptureMode = externalCaptureMode
+    )
+
+    val debugCallbacks = getDebugCallbacks(
+        trackedCaptureUiState = trackedCaptureUiState,
+        cameraSystem = cameraSystem
+    )
+
+    val snackBarCallbacks = getSnackBarCallbacks(
+        incrementSnackBarCount = { snackBarCount.incrementAndGet() },
+        viewModelScope = viewModelScope,
+        snackBarUiState = _snackBarUiState
+    )
+
+    val captureCallbacks = getCaptureCallbacks(
+        viewModelScope = viewModelScope,
+        cameraSystem = cameraSystem,
+        trackedCaptureUiState = trackedCaptureUiState,
+        mediaRepository = mediaRepository,
+        captureUiState = captureUiState
+    )
+
     init {
         viewModelScope.launch {
             launch {
@@ -202,6 +219,8 @@ class PreviewViewModel @Inject constructor(
                             val cookieInt = snackBarCount.incrementAndGet()
                             Log.d(TAG, "LowLightBoostState changed to Error #$cookieInt")
                             addSnackBarData(
+                                viewModelScope,
+                                _snackBarUiState,
                                 SnackbarData(
                                     cookie = "LowLightBoost-$cookieInt",
                                     stringResource = R.string.low_light_boost_error_toast_message,
@@ -211,34 +230,6 @@ class PreviewViewModel @Inject constructor(
                             )
                         }
                     }
-            }
-        }
-    }
-    fun toggleDebugHidingComponents() {
-        trackedCaptureUiState.update { old ->
-            old.copy(debugHidingComponents = !old.debugHidingComponents)
-        }
-    }
-
-    /**
-     * Sets the media from the image well to the [MediaRepository].
-     */
-    fun imageWellToRepository() {
-        (captureUiState.value as? CaptureUiState.Ready)
-            ?.let { it.imageWellUiState as? ImageWellUiState.LastCapture }
-            ?.let { postCurrentMediaToMediaRepository(it.mediaDescriptor) }
-    }
-
-    private fun postCurrentMediaToMediaRepository(mediaDescriptor: MediaDescriptor) {
-        viewModelScope.launch {
-            mediaRepository.setCurrentMedia(mediaDescriptor)
-        }
-    }
-
-    fun updateLastCapturedMedia() {
-        viewModelScope.launch {
-            trackedCaptureUiState.update { old ->
-                old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
             }
         }
     }
@@ -280,78 +271,6 @@ class PreviewViewModel @Inject constructor(
         }
     }
 
-    fun setFlash(flashMode: FlashMode) {
-        viewModelScope.launch {
-            // apply to cameraSystem
-            cameraSystem.setFlashMode(flashMode)
-        }
-    }
-
-    fun setAspectRatio(aspectRatio: AspectRatio) {
-        viewModelScope.launch {
-            cameraSystem.setAspectRatio(aspectRatio)
-        }
-    }
-
-    fun setStreamConfig(streamConfig: StreamConfig) {
-        viewModelScope.launch {
-            cameraSystem.setStreamConfig(streamConfig)
-        }
-    }
-
-    /** Sets the camera to a designated lens facing */
-    fun setLensFacing(newLensFacing: LensFacing) {
-        viewModelScope.launch {
-            // apply to cameraSystem
-            cameraSystem.setLensFacing(newLensFacing)
-        }
-    }
-
-    fun setAudioEnabled(shouldEnableAudio: Boolean) {
-        viewModelScope.launch {
-            cameraSystem.setAudioEnabled(shouldEnableAudio)
-        }
-
-        Log.d(
-            TAG,
-            "Toggle Audio: $shouldEnableAudio"
-        )
-    }
-
-    fun setPaused(shouldBePaused: Boolean) {
-        viewModelScope.launch {
-            if (shouldBePaused) {
-                cameraSystem.pauseVideoRecording()
-            } else {
-                cameraSystem.resumeVideoRecording()
-            }
-        }
-    }
-
-    private fun addSnackBarData(snackBarData: SnackbarData) {
-        viewModelScope.launch {
-            _snackBarUiState.update { old ->
-                val newQueue = LinkedList(old.snackBarQueue)
-                newQueue.add(snackBarData)
-                Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
-                old.copy(
-                    snackBarQueue = newQueue
-                )
-            }
-        }
-    }
-
-    private fun enqueueExternalImageCaptureUnsupportedSnackBar() {
-        addSnackBarData(
-            SnackbarData(
-                cookie = "Image-ExternalVideoCaptureMode",
-                stringResource = R.string.toast_image_capture_external_unsupported,
-                withDismissAction = true,
-                testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-            )
-        )
-    }
-
     private fun nextSaveLocation(saveMode: SaveMode): Pair<SaveLocation, IntProgress?> {
         return when (externalCaptureMode) {
             ExternalCaptureMode.ImageCapture,
@@ -389,7 +308,16 @@ class PreviewViewModel @Inject constructor(
             (captureUiState.value as CaptureUiState.Ready).externalCaptureMode ==
             ExternalCaptureMode.VideoCapture
         ) {
-            enqueueExternalImageCaptureUnsupportedSnackBar()
+            addSnackBarData(
+                viewModelScope,
+                _snackBarUiState,
+                SnackbarData(
+                    cookie = "Image-ExternalVideoCaptureMode",
+                    stringResource = R.string.toast_image_capture_external_unsupported,
+                    withDismissAction = true,
+                    testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+                )
+            )
             return
         }
 
@@ -398,6 +326,8 @@ class PreviewViewModel @Inject constructor(
             ExternalCaptureMode.VideoCapture
         ) {
             addSnackBarData(
+                viewModelScope,
+                _snackBarUiState,
                 SnackbarData(
                     cookie = "Image-ExternalVideoCaptureMode",
                     stringResource = R.string.toast_image_capture_external_unsupported,
@@ -430,10 +360,12 @@ class PreviewViewModel @Inject constructor(
                         }
                     }
                     if (saveLocation !is SaveLocation.Cache) {
-                        updateLastCapturedMedia()
+                        captureCallbacks.updateLastCapturedMedia()
                     } else {
                         savedUri?.let {
                             postCurrentMediaToMediaRepository(
+                                viewModelScope,
+                                mediaRepository,
                                 MediaDescriptor.Content.Image(it, null, true)
                             )
                         }
@@ -489,20 +421,13 @@ class PreviewViewModel @Inject constructor(
                 testTag = IMAGE_CAPTURE_FAILURE_TAG
             )
         }
-        snackBarData?.let { addSnackBarData(it) }
-    }
-
-    fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale) {
-        val cookieInt = snackBarCount.incrementAndGet()
-        val cookie = "DisabledHdrToggle-$cookieInt"
-        addSnackBarData(
-            SnackbarData(
-                cookie = cookie,
-                stringResource = disabledReason.reasonTextResId,
-                withDismissAction = true,
-                testTag = disabledReason.testTag
+        snackBarData?.let {
+            addSnackBarData(
+                viewModelScope,
+                _snackBarUiState,
+                it
             )
-        )
+        }
     }
 
     fun startVideoRecording() {
@@ -512,6 +437,8 @@ class PreviewViewModel @Inject constructor(
         ) {
             Log.d(TAG, "externalVideoRecording")
             addSnackBarData(
+                viewModelScope,
+                _snackBarUiState,
                 SnackbarData(
                     cookie = "Video-ExternalImageCaptureMode",
                     stringResource = R.string.toast_video_capture_external_unsupported,
@@ -539,9 +466,11 @@ class PreviewViewModel @Inject constructor(
                             }
 
                             if (saveLocation !is SaveLocation.Cache) {
-                                updateLastCapturedMedia()
+                                captureCallbacks.updateLastCapturedMedia()
                             } else {
                                 postCurrentMediaToMediaRepository(
+                                    viewModelScope,
+                                    mediaRepository,
                                     MediaDescriptor.Content.Video(it.savedUri, null, true)
                                 )
                             }
@@ -572,7 +501,13 @@ class PreviewViewModel @Inject constructor(
                         }
                     }
 
-                    snackbarToShow?.let { data -> addSnackBarData(data) }
+                    snackbarToShow?.let { data ->
+                        addSnackBarData(
+                            viewModelScope,
+                            _snackBarUiState,
+                            data
+                        )
+                    }
                 }
                 Log.d(TAG, "cameraSystem.startRecording success")
             } catch (exception: IllegalStateException) {
@@ -586,112 +521,6 @@ class PreviewViewModel @Inject constructor(
         viewModelScope.launch {
             cameraSystem.stopVideoRecording()
             recordingJob?.cancel()
-        }
-    }
-
-    /**
-     "Locks" the video recording such that the user no longer needs to keep their finger pressed on the capture button
-     */
-    fun setLockedRecording(isLocked: Boolean) {
-        trackedCaptureUiState.update { old ->
-            old.copy(isRecordingLocked = isLocked)
-        }
-    }
-
-    fun setZoomAnimationState(targetValue: Float?) {
-        trackedCaptureUiState.update { old ->
-            old.copy(zoomAnimationTarget = targetValue)
-        }
-    }
-
-    fun changeZoomRatio(newZoomState: CameraZoomRatio) {
-        cameraSystem.changeZoomRatio(newZoomState = newZoomState)
-    }
-
-    fun setTestPattern(newTestPattern: TestPattern) {
-        cameraSystem.setTestPattern(newTestPattern = newTestPattern)
-    }
-
-    fun setDynamicRange(dynamicRange: DynamicRange) {
-        if (externalCaptureMode != ExternalCaptureMode.ImageCapture &&
-            externalCaptureMode != ExternalCaptureMode.MultipleImageCapture
-        ) {
-            viewModelScope.launch {
-                cameraSystem.setDynamicRange(dynamicRange)
-            }
-        }
-    }
-
-    fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        viewModelScope.launch {
-            cameraSystem.setConcurrentCameraMode(concurrentCameraMode)
-        }
-    }
-
-    fun setImageFormat(imageFormat: ImageOutputFormat) {
-        if (externalCaptureMode != ExternalCaptureMode.VideoCapture) {
-            viewModelScope.launch {
-                cameraSystem.setImageFormat(imageFormat)
-            }
-        }
-    }
-
-    fun setCaptureMode(captureMode: CaptureMode) {
-        viewModelScope.launch {
-            cameraSystem.setCaptureMode(captureMode)
-        }
-    }
-
-    fun toggleQuickSettings() {
-        trackedCaptureUiState.update { old ->
-            old.copy(isQuickSettingsOpen = !old.isQuickSettingsOpen)
-        }
-    }
-
-    fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting) {
-        trackedCaptureUiState.update { old ->
-            old.copy(focusedQuickSetting = focusedQuickSetting)
-        }
-    }
-
-    fun toggleDebugOverlay() {
-        trackedCaptureUiState.update { old ->
-            old.copy(isDebugOverlayOpen = !old.isDebugOverlayOpen)
-        }
-    }
-
-    fun tapToFocus(x: Float, y: Float) {
-        Log.d(TAG, "tapToFocus")
-        viewModelScope.launch {
-            cameraSystem.tapToFocus(x, y)
-        }
-    }
-
-    fun onSnackBarResult(cookie: String) {
-        viewModelScope.launch {
-            _snackBarUiState.update { old ->
-                val newQueue = LinkedList(old.snackBarQueue)
-                val snackBarData = newQueue.poll()
-                if (snackBarData != null && snackBarData.cookie == cookie) {
-                    // If the latest snackBar had a result, then clear snackBarToShow
-                    Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
-                    old.copy(
-                        snackBarQueue = newQueue
-                    )
-                } else {
-                    old
-                }
-            }
-        }
-    }
-
-    fun setClearUiScreenBrightness(brightness: Float) {
-        screenFlash.setClearUiScreenBrightness(brightness)
-    }
-
-    fun setDisplayRotation(deviceRotation: DeviceRotation) {
-        viewModelScope.launch {
-            cameraSystem.setDeviceRotation(deviceRotation)
         }
     }
 }
