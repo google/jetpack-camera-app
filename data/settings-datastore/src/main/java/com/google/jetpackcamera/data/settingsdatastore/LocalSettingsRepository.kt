@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings
+package com.google.jetpackcamera.data.settingsdatastore
 
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
@@ -21,24 +21,18 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
-import com.google.jetpackcamera.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
-import com.google.jetpackcamera.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.model.LowLightBoostPriority
-import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.fromProto
-import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.toProto
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
-import com.google.jetpackcamera.model.VideoQuality.Companion.toProto
-import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.model.mappers.toDomain
+import com.google.jetpackcamera.model.mappers.toProto
 import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
-import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
-import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
-import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
+import com.google.jetpackcamera.settings.JcaSettings
+import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
@@ -56,33 +50,23 @@ class LocalSettingsRepository @Inject constructor(
     override val defaultCameraAppSettings = jcaSettings.data
         .map {
             CameraAppSettings(
-                cameraLensFacing = LensFacing.fromProto(it.defaultLensFacing),
+                cameraLensFacing = it.defaultLensFacing.toDomain(),
                 darkMode = when (it.darkModeStatus) {
                     DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
                     DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
                     DarkModeProto.DARK_MODE_SYSTEM -> DarkMode.SYSTEM
                     else -> DarkMode.DARK
                 },
-                flashMode = when (it.flashModeStatus) {
-                    FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
-                    FlashModeProto.FLASH_MODE_ON -> FlashMode.ON
-                    FlashModeProto.FLASH_MODE_OFF -> FlashMode.OFF
-                    FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST -> FlashMode.LOW_LIGHT_BOOST
-                    else -> FlashMode.OFF
-                },
-                aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
-                stabilizationMode = StabilizationMode.fromProto(it.stabilizationMode),
+                flashMode = it.flashModeStatus.toDomain(),
+                aspectRatio = it.aspectRatioStatus.toDomain(),
+                stabilizationMode = it.stabilizationMode.toDomain(),
                 targetFrameRate = it.targetFrameRate,
-                streamConfig = when (it.streamConfigStatus) {
-                    StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
-                    StreamConfigProto.STREAM_CONFIG_MULTI_STREAM -> StreamConfig.MULTI_STREAM
-                    else -> StreamConfig.MULTI_STREAM
-                },
-                lowLightBoostPriority = fromProto(it.lowLightBoostPriority),
-                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
-                imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
+                streamConfig = it.streamConfigStatus.toDomain(),
+                lowLightBoostPriority = it.lowLightBoostPriority.toDomain(),
+                dynamicRange = it.dynamicRangeStatus.toDomain(),
+                imageFormat = it.imageFormatStatus.toDomain(),
                 maxVideoDurationMillis = it.maxVideoDurationMillis,
-                videoQuality = VideoQuality.fromProto(it.videoQuality),
+                videoQuality = it.videoQuality.toDomain(),
                 audioEnabled = it.audioEnabledStatus,
                 captureMode = defaultCaptureModeOverride
             )
@@ -113,15 +97,9 @@ class LocalSettingsRepository @Inject constructor(
     }
 
     override suspend fun updateFlashModeStatus(flashMode: FlashMode) {
-        val newStatus = when (flashMode) {
-            FlashMode.AUTO -> FlashModeProto.FLASH_MODE_AUTO
-            FlashMode.ON -> FlashModeProto.FLASH_MODE_ON
-            FlashMode.OFF -> FlashModeProto.FLASH_MODE_OFF
-            FlashMode.LOW_LIGHT_BOOST -> FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST
-        }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setFlashModeStatus(newStatus)
+                .setFlashModeStatus(flashMode.toProto())
                 .build()
         }
     }
@@ -135,38 +113,23 @@ class LocalSettingsRepository @Inject constructor(
     }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
-        val newStatus = when (aspectRatio) {
-            AspectRatio.NINE_SIXTEEN -> AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN
-            AspectRatio.THREE_FOUR -> AspectRatioProto.ASPECT_RATIO_THREE_FOUR
-            AspectRatio.ONE_ONE -> AspectRatioProto.ASPECT_RATIO_ONE_ONE
-        }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setAspectRatioStatus(newStatus)
+                .setAspectRatioStatus(aspectRatio.toProto())
                 .build()
         }
     }
 
     override suspend fun updateStreamConfig(streamConfig: StreamConfig) {
-        val newStatus = when (streamConfig) {
-            StreamConfig.MULTI_STREAM -> StreamConfigProto.STREAM_CONFIG_MULTI_STREAM
-            StreamConfig.SINGLE_STREAM -> StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM
-        }
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setStreamConfigStatus(newStatus)
+                .setStreamConfigStatus(streamConfig.toProto())
                 .build()
         }
     }
 
     override suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode) {
-        val newStatus = when (stabilizationMode) {
-            StabilizationMode.OFF -> StabilizationModeProto.STABILIZATION_MODE_OFF
-            StabilizationMode.AUTO -> StabilizationModeProto.STABILIZATION_MODE_AUTO
-            StabilizationMode.ON -> StabilizationModeProto.STABILIZATION_MODE_ON
-            StabilizationMode.HIGH_QUALITY -> StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY
-            StabilizationMode.OPTICAL -> StabilizationModeProto.STABILIZATION_MODE_OPTICAL
-        }
+        val newStatus = stabilizationMode.toProto()
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setStabilizationMode(newStatus)
@@ -189,6 +152,7 @@ class LocalSettingsRepository @Inject constructor(
                 .build()
         }
     }
+
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
