@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings
+package com.google.jetpackcamera.data.settingsdatastore
 
 import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
@@ -39,13 +39,14 @@ import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
+import com.google.jetpackcamera.settings.JcaSettings
+import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-
 /**
- * Implementation of [SettingsRepository] with locally stored settings.
+ * Implementation of [com.google.jetpackcamera.settings.SettingsRepository] with locally stored settings.
  */
 class LocalSettingsRepository @Inject constructor(
     private val jcaSettings: DataStore<JcaSettings>,
