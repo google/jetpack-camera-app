@@ -20,7 +20,7 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 sealed interface ImageWellUiState {
     data object Unavailable : ImageWellUiState
 
-    data class LastCapture(val mediaDescriptor: MediaDescriptor.Content) : ImageWellUiState
+    data class Content(val mediaDescriptor: MediaDescriptor.Content) : ImageWellUiState
 
     companion object
 }

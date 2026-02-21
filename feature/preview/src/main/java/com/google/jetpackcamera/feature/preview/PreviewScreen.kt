@@ -624,7 +624,7 @@ private fun ContentScreen(
         },
         imageWell = { modifier ->
             if (captureUiState.externalCaptureMode == ExternalCaptureMode.Standard) {
-                (captureUiState.imageWellUiState as? ImageWellUiState.LastCapture)?.let {
+                (captureUiState.imageWellUiState as? ImageWellUiState.Content)?.let {
                     ImageWell(
                         modifier = modifier,
                         imageWellUiState = it,
