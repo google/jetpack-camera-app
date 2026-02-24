@@ -135,9 +135,9 @@ private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
 private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
 
 /**
- * A composable that displays the elapsed time since the start of a video recording.
+ * A composable that displays the elapsed time of a video recording in minutes and seconds.
  *
- * @param elapsedTimeUiState the [ElapsedTimeUiState] for this component
+ * @param elapsedTimeUiState the [ElapsedTimeUiState] for this component.
  */
 @Composable
 fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
@@ -152,12 +152,12 @@ fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTi
 }
 
 /**
- * A composable that displays a toggle button for pausing and resuming video recording.
+ * A composable that allows the user to pause and resume video recording.
  *
- * @param modifier the modifier for this component
- * @param onSetPause the callback for setting the pause state
- * @param size the size of the button
- * @param currentRecordingState the current recording state
+ * @param modifier the modifier for this component.
+ * @param onSetPause the callback for setting the pause state.
+ * @param size the size of the button.
+ * @param currentRecordingState the current recording state.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -191,12 +191,12 @@ fun PauseResumeToggleButton(
 }
 
 /**
- * A composable that displays a toggle button for enabling and disabling audio.
+ * A composable that allows the user to mute and unmute the microphone during video recording.
  *
- * @param modifier the modifier for this component
- * @param buttonSize the size of the button
- * @param audioUiState the [AudioUiState] for this component
- * @param onToggleAudio the callback for toggling audio
+ * @param modifier the modifier for this component.
+ * @param buttonSize the size of the button.
+ * @param audioUiState the [AudioUiState] for this component.
+ * @param onToggleAudio the callback for toggling audio.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -257,12 +257,12 @@ fun AmplitudeToggleButton(
 }
 
 /**
- * A composable that displays a toggle button for switching between image and video capture.
+ * A composable that allows the user to switch between image and video capture modes.
  *
- * @param uiState the [CaptureModeToggleUiState.Available] for this component
- * @param onChangeCaptureMode the callback for changing the capture mode
- * @param onToggleWhenDisabled the callback for when the toggle is disabled
- * @param modifier the modifier for this component
+ * @param uiState the [CaptureModeToggleUiState.Available] for this component.
+ * @param onChangeCaptureMode the callback for changing the capture mode.
+ * @param onToggleWhenDisabled the callback for when the toggle is disabled.
+ * @param modifier the modifier for this component.
  */
 @Composable
 fun CaptureModeToggleButton(
@@ -334,12 +334,12 @@ fun CaptureModeToggleButton(
 }
 
 /**
- * A composable that displays a snackbar with a test tag.
+ * A composable that displays a snackbar message to the user.
  *
- * @param modifier the modifier for this component
- * @param snackbarToShow the [SnackbarData] to show
- * @param snackbarHostState the [SnackbarHostState] for this component
- * @param onSnackbarResult the callback for the snackbar result
+ * @param modifier the modifier for this component.
+ * @param snackbarToShow the [SnackbarData] to show.
+ * @param snackbarHostState the [SnackbarHostState] for this component.
+ * @param onSnackbarResult the callback for the snackbar result.
  */
 @Composable
 fun TestableSnackbar(
@@ -432,8 +432,17 @@ private fun DetectWindowColorModeChanges(
 }
 
 /**
- * this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
- * and double-tap to flip camera
+ * A composable that displays the camera preview, and handles user input for focusing, zooming,
+ * and flipping the camera.
+ *
+ * @param previewDisplayUiState the [PreviewDisplayUiState] for this component.
+ * @param onTapToFocus the callback for tapping to focus.
+ * @param onFlipCamera the callback for flipping the camera.
+ * @param onScaleZoom the callback for scaling the zoom.
+ * @param onRequestWindowColorMode the callback for requesting a window color mode.
+ * @param surfaceRequest the [SurfaceRequest] for the preview.
+ * @param focusMeteringUiState the [FocusMeteringUiState] for this component.
+ * @param modifier the modifier for this component.
  */
 @Composable
 fun PreviewDisplay(
@@ -548,17 +557,17 @@ fun PreviewDisplay(
 }
 
 /**
- * A composable that displays the capture button.
+ * A composable that allows the user to capture an image or record a video.
  *
- * @param modifier the modifier for this component
- * @param captureButtonUiState the [CaptureButtonUiState] for this component
- * @param isQuickSettingsOpen true if the quick settings are open
- * @param onToggleQuickSettings the callback for toggling the quick settings
+ * @param modifier the modifier for this component.
+ * @param captureButtonUiState the [CaptureButtonUiState] for this component.
+ * @param isQuickSettingsOpen true if the quick settings are open.
+ * @param onToggleQuickSettings the callback for toggling the quick settings.
  * @param onIncrementZoom A callback to increment the zoom, providing the zoom increment value.
- * @param onCaptureImage A callback to capture an image, providing the `ContentResolver` for saving.
+ * @param onCaptureImage A callback to capture an image.
  * @param onStartVideoRecording The callback for starting a video recording.
  * @param onStopVideoRecording The callback for stopping a video recording.
- * @param onLockVideoRecording A callback to lock video recording. The boolean parameter indicates if the recording should be locked.
+ * @param onLockVideoRecording A callback to lock video recording.
  */
 @Composable
 fun CaptureButton(
@@ -599,10 +608,10 @@ fun CaptureButton(
 }
 
 /**
- * A composable that displays the stabilization icon.
+ * A composable that displays an icon indicating the current video stabilization mode.
  *
- * @param stabilizationUiState the [StabilizationUiState] for this component
- * @param modifier the modifier for this component
+ * @param stabilizationUiState the [StabilizationUiState] for this component.
+ * @param modifier the modifier for this component.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -682,10 +691,10 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
 }
 
 /**
- * A composable that displays the video quality icon.
+ * A composable that displays an icon indicating the current video quality.
  *
- * @param videoQuality the [VideoQuality] for this component
- * @param modifier the modifier for this component
+ * @param videoQuality the [VideoQuality] for this component.
+ * @param modifier the modifier for this component.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -734,12 +743,12 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
 }
 
 /**
- * A composable that displays the flip camera button.
+ * A composable that allows the user to flip between the front and rear cameras.
  *
- * @param enabledCondition the enabled condition for this component
- * @param flipLensUiState the [FlipLensUiState] for this component
- * @param onClick the callback for when the button is clicked
- * @param modifier the modifier for this component
+ * @param enabledCondition the enabled condition for this component.
+ * @param flipLensUiState the [FlipLensUiState] for this component.
+ * @param onClick the callback for when the button is clicked.
+ * @param modifier the modifier for this component.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -789,15 +798,11 @@ fun FlipCameraButton(
 }
 
 /**
- * A composable that displays a focus metering indicator on the viewfinder.
- *
- * This indicator is displayed when the user taps on the screen to focus. It shows a pulsing
- * animation while the focus is in progress, and then shows a success or failure animation
- * depending on the result of the focus operation.
+ * A composable that displays an indicator on the viewfinder when the user taps to focus.
  *
  * @param focusMeteringUiState The state of the focus metering operation.
  * @param coordinateTransformer The coordinate transformer to use to map the surface coordinates
- * to screen coordinates. This should come from [CameraXViewfinder].
+ * to screen coordinates.
  */
 @Composable
 private fun FocusMeteringIndicator(
