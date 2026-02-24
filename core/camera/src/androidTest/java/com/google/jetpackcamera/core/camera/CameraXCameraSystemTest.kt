@@ -33,6 +33,7 @@ import com.google.jetpackcamera.core.camera.postprocess.PostProcessModule.Compan
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
 import com.google.jetpackcamera.core.common.FakeFilePathGenerator
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
@@ -240,35 +241,55 @@ class CameraXCameraSystemTest {
         runSetStabilizationModeTest(StabilizationMode.HIGH_QUALITY)
     }
 
+    @Test
+    fun setStabilizationMode_off_imageOnly_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.OFF, CaptureMode.IMAGE_ONLY)
+    }
+
     private suspend fun CoroutineScope.runSetStabilizationModeTest(
-        stabilizationMode: StabilizationMode
+        stabilizationMode: StabilizationMode,
+        captureMode: CaptureMode? = null
     ) {
         // Arrange.
         val constraintsRepository = SettableConstraintsRepositoryImpl()
-        val appSettings = CameraAppSettings(stabilizationMode = StabilizationMode.OFF)
         val cameraSystem = createAndInitCameraXCameraSystem(
-            appSettings = appSettings,
+            appSettings = CameraAppSettings(stabilizationMode = StabilizationMode.OFF),
             constraintsRepository = constraintsRepository
         )
         val cameraConstraints =
-            constraintsRepository.systemConstraints.value?.forCurrentLens(appSettings)
+            constraintsRepository.systemConstraints.value?.forCurrentLens(
+                DEFAULT_CAMERA_APP_SETTINGS
+            )
         assume().withMessage("Stabilisation $stabilizationMode not supported, skip the test.")
             .that(
-                cameraConstraints != null && cameraConstraints.supportedStabilizationModes.contains(
-                    stabilizationMode
-                )
+                cameraConstraints != null &&
+                    cameraConstraints.supportedStabilizationModes.contains(
+                        stabilizationMode
+                    )
             ).isTrue()
+        var initialStabilizationMode: StabilizationMode? = StabilizationMode.OFF
+        if (stabilizationMode == StabilizationMode.OFF) {
+            initialStabilizationMode = cameraConstraints?.supportedStabilizationModes
+                ?.firstOrNull { it != StabilizationMode.OFF }
+            assume().withMessage("No stabilisation other than OFF is supported, skip the test.")
+                .that(initialStabilizationMode != null).isTrue()
+            initialStabilizationMode?.let {
+                cameraSystem.setStabilizationMode(initialStabilizationMode)
+            }
+        }
+
+        cameraSystem.startCameraAndWaitUntilRunning()
         val stabilizationCheck: ReceiveChannel<StabilizationMode> =
             cameraSystem.getCurrentCameraState()
                 .map { it.stabilizationMode }
                 .produceIn(this)
-        cameraSystem.startCameraAndWaitUntilRunning()
 
-        // Ensure we start in a state with stabilization mode OFF
-        stabilizationCheck.awaitValue(StabilizationMode.OFF)
+        // Ensure we start in a state with the initial stabilization mode
+        stabilizationCheck.awaitValue(initialStabilizationMode)
 
         // Act.
         cameraSystem.setStabilizationMode(stabilizationMode)
+        captureMode?.let { cameraSystem.setCaptureMode(it) }
 
         // Assert.
         stabilizationCheck.awaitValue(stabilizationMode)
