@@ -35,3 +35,4 @@ internal class MultipleEventsCutter {
         private const val DURATION_BETWEEN_CLICKS_MS = 300L
     }
 }
+

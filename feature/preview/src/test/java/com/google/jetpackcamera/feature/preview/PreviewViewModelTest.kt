@@ -113,7 +113,7 @@ class PreviewViewModelTest {
     @Test
     fun setFlash() = runTest(StandardTestDispatcher()) {
         previewViewModel.startCamera()
-        previewViewModel.quickSettingsCallbacks.setFlash(FlashMode.AUTO)
+        previewViewModel.quickSettingsController.setFlash(FlashMode.AUTO)
         advanceUntilIdle()
 
         assertIsReady(previewViewModel.captureUiState.value).also {
@@ -136,7 +136,7 @@ class PreviewViewModelTest {
                     .selectedLensFacing
             ).isEqualTo(LensFacing.BACK)
         }
-        previewViewModel.quickSettingsCallbacks.setLensFacing(LensFacing.FRONT)
+        previewViewModel.quickSettingsController.setLensFacing(LensFacing.FRONT)
 
         advanceUntilIdle()
         // ui state and camera should both be true now
@@ -160,7 +160,7 @@ class PreviewViewModelTest {
         }
 
         // Toggle to open
-        previewViewModel.quickSettingsCallbacks.toggleQuickSettings()
+        previewViewModel.quickSettingsController.toggleQuickSettings()
         advanceUntilIdle()
         assertIsReady(previewViewModel.captureUiState.value).also {
             val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available
@@ -168,7 +168,7 @@ class PreviewViewModelTest {
         }
 
         // Toggle back to closed
-        previewViewModel.quickSettingsCallbacks.toggleQuickSettings()
+        previewViewModel.quickSettingsController.toggleQuickSettings()
         advanceUntilIdle()
         assertIsReady(previewViewModel.captureUiState.value).also {
             val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available

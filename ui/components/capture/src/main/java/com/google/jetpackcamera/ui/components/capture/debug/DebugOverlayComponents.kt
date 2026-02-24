@@ -77,6 +77,8 @@ import com.google.jetpackcamera.ui.components.capture.LOGICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.components.capture.PHYSICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ZOOM_RATIO_TAG
+import com.google.jetpackcamera.ui.components.capture.debug.controller.DebugController
+import com.google.jetpackcamera.ui.components.capture.debug.controller.DebugControllerImpl
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import kotlin.math.abs
 
@@ -168,22 +170,20 @@ private fun ToggleVisibilityButton(
 fun DebugOverlay(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (Float) -> Unit,
-    onSetTestPattern: (TestPattern) -> Unit,
-    toggleIsOpen: () -> Unit,
-    onToggleHidingComponents: () -> Unit,
     debugUiState: DebugUiState.Enabled,
-    vararg extraControls: @Composable () -> Unit
+    vararg extraControls: @Composable () -> Unit,
+    debugController: DebugController
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(top = 100.dp)) {
             ToggleVisibilityButton(
-                onToggleHidingComponents = onToggleHidingComponents,
+                onToggleHidingComponents = debugController::toggleDebugHidingComponents,
                 isHidingComponents = debugUiState.debugHidingComponents
             )
             if (!debugUiState.debugHidingComponents) {
                 DebugConsole(
                     debugUiState = debugUiState,
-                    onToggleDebugOverlay = toggleIsOpen,
+                    onToggleDebugOverlay = debugController::toggleDebugOverlay,
                     extraControls = extraControls
                 )
             }
@@ -193,8 +193,8 @@ fun DebugOverlay(
                 DebugDialogContainer(
                     modifier = Modifier,
                     onChangeZoomRatio = onChangeZoomRatio,
-                    onSetTestPattern = onSetTestPattern,
-                    toggleIsOpen = toggleIsOpen,
+                    onSetTestPattern = debugController::setTestPattern,
+                    toggleIsOpen = debugController::toggleDebugOverlay,
                     debugUiState = it
                 )
             }

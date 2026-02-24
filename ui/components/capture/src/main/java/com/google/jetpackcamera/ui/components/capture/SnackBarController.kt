@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.capture
 
-import com.google.jetpackcamera.ui.uistate.SnackBarUiState
-import com.google.jetpackcamera.ui.uistate.SnackbarData
-import java.util.Queue
+package com.google.jetpackcamera.ui.components.capture
 
-fun SnackBarUiState.Companion.from(snackBarQueue: Queue<SnackbarData>): SnackBarUiState {
-    return SnackBarUiState.Enabled(snackBarQueue)
+import com.google.jetpackcamera.ui.uistate.DisableRationale
+import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+
+interface SnackBarController {
+    fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale)
+    fun onSnackBarResult(cookie: String)
+    fun incrementAndGetSnackBarCount(): Int
+    fun addSnackBarData(snackBarData: SnackbarData)
 }

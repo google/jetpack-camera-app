@@ -36,6 +36,8 @@ import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMA
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
+import com.google.jetpackcamera.ui.components.capture.SnackBarController
+import com.google.jetpackcamera.ui.components.capture.SnackBarControllerImpl
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
@@ -110,8 +112,10 @@ class PostCaptureViewModel @Inject constructor(
         MutableStateFlow(SnackBarUiState.Enabled())
     val snackBarUiState: StateFlow<SnackBarUiState.Enabled> =
         _snackBarUiState.asStateFlow()
-    private val snackBarCount = atomic(0)
-
+    val snackBarController: SnackBarController = SnackBarControllerImpl(
+        viewModelScope = viewModelScope,
+        snackBarUiState = _snackBarUiState
+    )
     private var player: ExoPlayer? = null
 
     private val playerState = MutableStateFlow<PlayerState>(PlayerState.Unavailable)
@@ -301,7 +305,7 @@ class PostCaptureViewModel @Inject constructor(
      */
 
     private suspend fun saveMedia(mediaDescriptor: MediaDescriptor.Content) {
-        val cookieInt = snackBarCount.incrementAndGet()
+        val cookieInt = snackBarController.incrementAndGetSnackBarCount()
         val cookie = "MediaSave-$cookieInt"
         val result: Uri?
         try {
@@ -320,7 +324,7 @@ class PostCaptureViewModel @Inject constructor(
                             SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
                 }
 
-                addSnackBarData(
+                snackBarController.addSnackBarData(
                     SnackbarData(
                         cookie = cookie,
                         stringResource = stringResource,
@@ -342,7 +346,7 @@ class PostCaptureViewModel @Inject constructor(
                             SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
                 }
 
-                addSnackBarData(
+                snackBarController.addSnackBarData(
                     SnackbarData(
                         cookie = cookie,
                         stringResource = stringResource,
@@ -363,7 +367,7 @@ class PostCaptureViewModel @Inject constructor(
                         SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
             }
 
-            addSnackBarData(
+            snackBarController.addSnackBarData(
                 SnackbarData(
                     cookie = cookie,
                     stringResource = stringResource,
@@ -387,9 +391,9 @@ class PostCaptureViewModel @Inject constructor(
                 false
             }
             if (!result) {
-                val cookieInt = snackBarCount.incrementAndGet()
+                val cookieInt = snackBarController.incrementAndGetSnackBarCount()
                 val cookie = "MediaDelete-$cookieInt"
-                addSnackBarData(
+                snackBarController.addSnackBarData(
                     SnackbarData(
                         cookie = cookie,
                         stringResource = when (mediaDescriptor) {
@@ -422,39 +426,6 @@ class PostCaptureViewModel @Inject constructor(
         (currentMediaDescriptor as? MediaDescriptor.Content)?.let { content ->
             viewModelScope.launch {
                 _uiEvents.send(PostCaptureEvent.ShareMedia(content))
-            }
-        }
-    }
-
-    // snackbar interaction
-    private fun addSnackBarData(snackBarData: SnackbarData) {
-        viewModelScope.launch {
-            _snackBarUiState.update { old ->
-                val newQueue = LinkedList(old.snackBarQueue)
-
-                newQueue.add(snackBarData)
-                Log.d(TAG, "SnackBar added. Queue size: ${newQueue.size}")
-                old.copy(
-                    snackBarQueue = newQueue
-                )
-            }
-        }
-    }
-
-    fun onSnackBarResult(cookie: String) {
-        viewModelScope.launch {
-            _snackBarUiState.update { state ->
-                val newQueue = LinkedList(state.snackBarQueue)
-                val snackBarData = newQueue.poll()
-                if (snackBarData != null && snackBarData.cookie == cookie) {
-                    // If the latest snackBar had a result, then clear snackBarToShow
-                    Log.d(TAG, "SnackBar removed. Queue size: ${newQueue.size}")
-                    state.copy(
-                        snackBarQueue = newQueue
-                    )
-                } else {
-                    state
-                }
             }
         }
     }

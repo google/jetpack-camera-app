@@ -55,15 +55,18 @@ import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.LOW_LIGHT_BOOST_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ScreenFlash
+import com.google.jetpackcamera.ui.components.capture.SnackBarController
+import com.google.jetpackcamera.ui.components.capture.SnackBarControllerImpl
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.components.capture.addSnackBarData
-import com.google.jetpackcamera.ui.components.capture.debug.getDebugCallbacks
+import com.google.jetpackcamera.ui.components.capture.debug.controller.DebugController
+import com.google.jetpackcamera.ui.components.capture.debug.controller.DebugControllerImpl
 import com.google.jetpackcamera.ui.components.capture.getCaptureCallbacks
 import com.google.jetpackcamera.ui.components.capture.getSnackBarCallbacks
 import com.google.jetpackcamera.ui.components.capture.postCurrentMediaToMediaRepository
-import com.google.jetpackcamera.ui.components.capture.quicksettings.getQuickSettingsCallbacks
+import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsController
+import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsControllerImpl
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
@@ -72,8 +75,8 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.debugUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.atomicfu.atomic
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -134,7 +137,6 @@ class PreviewViewModel @Inject constructor(
 
     val screenFlash = ScreenFlash(cameraSystem, viewModelScope)
 
-    private val snackBarCount = atomic(0)
     private val videoCaptureStartedCount = atomic(0)
 
     // Eagerly initialize the CameraSystem and encapsulate in a Deferred that can be
@@ -171,20 +173,24 @@ class PreviewViewModel @Inject constructor(
             initialValue = DebugUiState.Disabled
         )
 
-    val quickSettingsCallbacks = getQuickSettingsCallbacks(
+    val quickSettingsController: QuickSettingsController = QuickSettingsControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
         viewModelScope = viewModelScope,
         cameraSystem = cameraSystem,
         externalCaptureMode = externalCaptureMode
     )
 
-    val debugCallbacks = getDebugCallbacks(
-        trackedCaptureUiState = trackedCaptureUiState,
-        cameraSystem = cameraSystem
+    val debugController: DebugController = DebugControllerImpl(
+        cameraSystem = cameraSystem,
+        trackedCaptureUiState = trackedCaptureUiState
     )
 
     val snackBarCallbacks = getSnackBarCallbacks(
-        incrementSnackBarCount = { snackBarCount.incrementAndGet() },
+        viewModelScope = viewModelScope,
+        snackBarUiState = _snackBarUiState
+    )
+
+    val snackBarController: SnackBarController = SnackBarControllerImpl(
         viewModelScope = viewModelScope,
         snackBarUiState = _snackBarUiState
     )
@@ -216,11 +222,9 @@ class PreviewViewModel @Inject constructor(
                     .distinctUntilChanged()
                     .collect { state ->
                         if (state is LowLightBoostState.Error) {
-                            val cookieInt = snackBarCount.incrementAndGet()
+                            val cookieInt = snackBarController.incrementAndGetSnackBarCount()
                             Log.d(TAG, "LowLightBoostState changed to Error #$cookieInt")
-                            addSnackBarData(
-                                viewModelScope,
-                                _snackBarUiState,
+                            snackBarController.addSnackBarData(
                                 SnackbarData(
                                     cookie = "LowLightBoost-$cookieInt",
                                     stringResource = R.string.low_light_boost_error_toast_message,
@@ -308,9 +312,7 @@ class PreviewViewModel @Inject constructor(
             (captureUiState.value as CaptureUiState.Ready).externalCaptureMode ==
             ExternalCaptureMode.VideoCapture
         ) {
-            addSnackBarData(
-                viewModelScope,
-                _snackBarUiState,
+            snackBarController.addSnackBarData(
                 SnackbarData(
                     cookie = "Image-ExternalVideoCaptureMode",
                     stringResource = R.string.toast_image_capture_external_unsupported,
@@ -325,9 +327,7 @@ class PreviewViewModel @Inject constructor(
             (captureUiState.value as CaptureUiState.Ready).externalCaptureMode ==
             ExternalCaptureMode.VideoCapture
         ) {
-            addSnackBarData(
-                viewModelScope,
-                _snackBarUiState,
+            snackBarController.addSnackBarData(
                 SnackbarData(
                     cookie = "Image-ExternalVideoCaptureMode",
                     stringResource = R.string.toast_image_capture_external_unsupported,
@@ -391,7 +391,7 @@ class PreviewViewModel @Inject constructor(
         onSuccess: (T) -> Unit = {},
         onFailure: (exception: Exception) -> Unit = {}
     ) {
-        val cookieInt = snackBarCount.incrementAndGet()
+        val cookieInt = snackBarController.incrementAndGetSnackBarCount()
         val cookie = "Image-$cookieInt"
         val snackBarData = try {
             traceAsync(IMAGE_CAPTURE_TRACE, cookieInt) {
@@ -422,9 +422,7 @@ class PreviewViewModel @Inject constructor(
             )
         }
         snackBarData?.let {
-            addSnackBarData(
-                viewModelScope,
-                _snackBarUiState,
+            snackBarController.addSnackBarData(
                 it
             )
         }
@@ -436,9 +434,7 @@ class PreviewViewModel @Inject constructor(
             ExternalCaptureMode.ImageCapture
         ) {
             Log.d(TAG, "externalVideoRecording")
-            addSnackBarData(
-                viewModelScope,
-                _snackBarUiState,
+            snackBarController.addSnackBarData(
                 SnackbarData(
                     cookie = "Video-ExternalImageCaptureMode",
                     stringResource = R.string.toast_video_capture_external_unsupported,
@@ -502,11 +498,7 @@ class PreviewViewModel @Inject constructor(
                     }
 
                     snackbarToShow?.let { data ->
-                        addSnackBarData(
-                            viewModelScope,
-                            _snackBarUiState,
-                            data
-                        )
+                        snackBarController.addSnackBarData(data)
                     }
                 }
                 Log.d(TAG, "cameraSystem.startRecording success")

@@ -108,6 +108,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -238,8 +239,8 @@ fun AmplitudeToggleButton(
 @Composable
 fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
-    onChangeCaptureMode: (CaptureMode) -> Unit,
-    onToggleWhenDisabled: (DisableRationale) -> Unit,
+    quickSettingsController: QuickSettingsController?,
+    snackBarController: SnackBarController?,
     modifier: Modifier = Modifier
 ) {
     // Captures image (left), else captures video (right).
@@ -261,7 +262,7 @@ fun CaptureModeToggleButton(
         checked = toggleState,
         onCheckedChange = { isChecked ->
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
-            onChangeCaptureMode(newCaptureMode)
+            quickSettingsController?.setCaptureMode(newCaptureMode)
         },
         onToggleWhenDisabled = {
             val disabledReason: DisableRationale? =
@@ -274,7 +275,7 @@ fun CaptureModeToggleButton(
                             as? SingleSelectableUiState.Disabled<CaptureMode>
                         )
                         ?.disabledReason
-            disabledReason?.let { onToggleWhenDisabled(it) }
+            disabledReason?.let { snackBarController?.enqueueDisabledHdrToggleSnackBar(it) }
         },
         enabled = enabled,
         leftIcon = if (uiState.selectedCaptureMode ==
@@ -309,7 +310,7 @@ fun TestableSnackbar(
     modifier: Modifier = Modifier,
     snackbarToShow: SnackbarData,
     snackbarHostState: SnackbarHostState,
-    onSnackbarResult: (String) -> Unit
+    snackBarController: SnackBarController
 ) {
     Box(
         // box seems to need to have some size to be detected by UiAutomator
@@ -335,11 +336,12 @@ fun TestableSnackbar(
                     )
                 when (result) {
                     SnackbarResult.ActionPerformed,
-                    SnackbarResult.Dismissed -> onSnackbarResult(snackbarToShow.cookie)
+                    SnackbarResult.Dismissed -> snackBarController.onSnackBarResult(
+                        snackbarToShow.cookie)
                 }
             } catch (e: Exception) {
                 // This is equivalent to dismissing the snackbar
-                onSnackbarResult(snackbarToShow.cookie)
+               snackBarController.onSnackBarResult(snackbarToShow.cookie)
             }
         }
     }
@@ -515,12 +517,12 @@ fun CaptureButton(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
     isQuickSettingsOpen: Boolean,
-    onToggleQuickSettings: () -> Unit = {},
     onIncrementZoom: (Float) -> Unit = {},
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onLockVideoRecording: (Boolean) -> Unit = {}
+    onLockVideoRecording: (Boolean) -> Unit = {},
+    quickSettingsController: QuickSettingsController? = null
 ) {
     val context = LocalContext.current
 
@@ -532,7 +534,7 @@ fun CaptureButton(
                 onCaptureImage(context.contentResolver)
             }
             if (isQuickSettingsOpen) {
-                onToggleQuickSettings()
+                quickSettingsController?.toggleQuickSettings()
             }
         },
         onStartRecording = {
