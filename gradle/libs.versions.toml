@@ -47,6 +47,7 @@ junit = "4.13.2"
 protobuf = "4.31.1"
 robolectric = "4.15.1"
 truth = "1.4.4"
+testParameterInjector = "1.21"
 playServices = "18.9.0"
 playServicesCoroutines = "1.10.2"
 playServicesTasks = "18.4.0"
@@ -103,7 +104,7 @@ play-services-base = { module = "com.google.android.gms:play-services-base", ver
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutines" }
 play-services-camera-low-light-boost = { module = "com.google.android.gms:play-services-camera-low-light-boost", version.ref = "cameraLowLightBoost" }
 play-services-tasks = { module = "com.google.android.gms:play-services-tasks", version.ref = "playServicesTasks" }
-
+testParameterInjector = { group = "com.google.testparameterinjector", name = "test-parameter-injector", version.ref = "testParameterInjector" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 

@@ -20,8 +20,6 @@ import android.provider.MediaStore
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.isDisplayed
-import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -63,7 +61,9 @@ import com.google.jetpackcamera.utils.unFocusQuickSetting
 import com.google.jetpackcamera.utils.visitQuickSettings
 import com.google.jetpackcamera.utils.wait
 import com.google.jetpackcamera.utils.waitForCaptureButton
+import com.google.jetpackcamera.utils.waitForCaptureModeToggleState
 import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithTagToDisappear
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -108,11 +108,18 @@ internal class CaptureModeSettingsTest {
             setCaptureMode(captureMode)
         }
 
-        waitUntil(DEFAULT_TIMEOUT_MILLIS) {
-            onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).isDisplayed()
-        }
+        waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON, DEFAULT_TIMEOUT_MILLIS)
 
         onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertExists()
+    }
+
+    private fun flip(mode: CaptureMode): CaptureMode {
+        require(mode == CaptureMode.IMAGE_ONLY || mode == CaptureMode.VIDEO_ONLY)
+        return if (mode == CaptureMode.IMAGE_ONLY) {
+            CaptureMode.VIDEO_ONLY
+        } else {
+            CaptureMode.IMAGE_ONLY
+        }
     }
 
     @Test
@@ -393,18 +400,15 @@ internal class CaptureModeSettingsTest {
 
         composeTestRule.initializeCaptureSwitch()
         val initialCaptureMode = composeTestRule.getCaptureModeToggleState()
+        val targetCaptureMode = flip(initialCaptureMode)
 
         // should be different from initial capture mode
         composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
-        composeTestRule.waitUntil {
-            composeTestRule.getCaptureModeToggleState() != initialCaptureMode
-        }
+        composeTestRule.waitForCaptureModeToggleState(targetCaptureMode)
 
         // should now be  she same as the initial capture mode.
         composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
-        composeTestRule.waitUntil {
-            composeTestRule.getCaptureModeToggleState() == initialCaptureMode
-        }
+        composeTestRule.waitForCaptureModeToggleState(initialCaptureMode)
     }
 
     @Test
@@ -413,6 +417,7 @@ internal class CaptureModeSettingsTest {
         composeTestRule.waitForCaptureButton()
         composeTestRule.initializeCaptureSwitch()
         val initialCaptureMode = composeTestRule.getCaptureModeToggleState()
+        val targetCaptureMode = flip(initialCaptureMode)
         val captureToggleNode = composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
         val toggleNodeWidth = captureToggleNode.fetchSemanticsNode().size.width.toFloat()
         val offsetToSwitch = when (initialCaptureMode) {
@@ -442,9 +447,7 @@ internal class CaptureModeSettingsTest {
         captureToggleNode.performTouchInput {
             up()
         }
-        composeTestRule.waitUntil {
-            initialCaptureMode != composeTestRule.getCaptureModeToggleState()
-        }
+        composeTestRule.waitForCaptureModeToggleState(targetCaptureMode)
     }
 
     @Test
@@ -459,17 +462,13 @@ internal class CaptureModeSettingsTest {
             // start recording
             composeTestRule.tapStartLockedVideoRecording()
             // check that recording
-            composeTestRule.waitUntil {
-                composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).isNotDisplayed()
-            }
+            composeTestRule.waitForNodeWithTagToDisappear(CAPTURE_MODE_TOGGLE_BUTTON)
 
             // stop recording
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
 
-            composeTestRule.waitUntil {
-                composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).isDisplayed() &&
-                    composeTestRule.getCaptureModeToggleState() == CaptureMode.VIDEO_ONLY
-            }
+            composeTestRule.waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
+            composeTestRule.waitForCaptureModeToggleState(CaptureMode.VIDEO_ONLY)
 
             deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, timeStamp)
         }

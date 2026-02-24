@@ -22,6 +22,8 @@ import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.ExternalCaptureMode.Companion.toCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
@@ -59,5 +61,21 @@ data class CameraAppSettings(
 fun CameraSystemConstraints.forCurrentLens(
     cameraAppSettings: CameraAppSettings
 ): CameraConstraints? = perLensConstraints[cameraAppSettings.cameraLensFacing]
+
+/**
+ * updates the capture mode based on the preview mode
+ */
+fun CameraAppSettings.applyExternalCaptureMode(
+    externalCaptureMode: ExternalCaptureMode
+): CameraAppSettings {
+    val requiredCaptureModeOverride = externalCaptureMode.toCaptureMode()
+    return if (requiredCaptureModeOverride == null ||
+        requiredCaptureModeOverride == this.captureMode
+    ) {
+        this
+    } else {
+        this.copy(captureMode = requiredCaptureModeOverride)
+    }
+}
 
 val DEFAULT_CAMERA_APP_SETTINGS = CameraAppSettings()

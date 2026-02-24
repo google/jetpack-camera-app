@@ -37,6 +37,8 @@ sealed interface QuickSettingsUiState {
         val quickSettingsIsOpen: Boolean = false,
         val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE
     ) : QuickSettingsUiState
+
+    companion object
 }
 
 // enum representing which individual quick setting is currently focused
