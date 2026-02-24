@@ -165,6 +165,12 @@ private fun CaptureKeyHandler(
  * drag vertically *above* the capture button (where Y coordinates are negative relative to the button's top edge)
  * to zoom in (dragging upwards) or zoom out (dragging downwards).
  *
+ * The button supports three distinct capture modes: Hybrid, Image-only, and Video-only, each with its
+ * own UI and behavior:
+ * - **Hybrid Mode:** A single tap captures an image, and a long press initiates video recording.
+ * - **Image-only Mode:** Only single taps are active for image capture. Long press for video recording is disabled.
+ * - **Video-only Mode:** A single tap initiates video recording, and a long press also initiates video recording, with the drag-to-lock feature available.
+ *
  * @param modifier the modifier for this component
  * @param onImageCapture the callback for an image capture event
  * @param onStartRecording the callback for a start recording event

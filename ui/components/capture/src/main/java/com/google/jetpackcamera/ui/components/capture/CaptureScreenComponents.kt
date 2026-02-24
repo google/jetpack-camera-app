@@ -135,7 +135,8 @@ private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
 private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
 
 /**
- * A composable that displays the elapsed time of a video recording in minutes and seconds.
+ * A composable that displays the elapsed time of a video recording in a "MM:SS" format.
+ * This text is only visible during an active recording.
  *
  * @param elapsedTimeUiState the [ElapsedTimeUiState] for this component.
  */
@@ -152,10 +153,14 @@ fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTi
 }
 
 /**
- * A composable that allows the user to pause and resume video recording.
+ * A toggle button that allows the user to pause and resume video recording.
+ *
+ * The button's icon changes to reflect the current recording state: a pause icon is shown when
+ * recording is active, and a play icon is shown when the recording is paused. This component is only
+ * visible when a video recording is in progress.
  *
  * @param modifier the modifier for this component.
- * @param onSetPause the callback for setting the pause state.
+ * @param onSetPause the callback invoked when the button is tapped.
  * @param size the size of the button.
  * @param currentRecordingState the current recording state.
  */
@@ -191,12 +196,16 @@ fun PauseResumeToggleButton(
 }
 
 /**
- * A composable that allows the user to mute and unmute the microphone during video recording.
+ * A toggle button that allows the user to mute and unmute the microphone during video recording.
+ *
+ * When audio is enabled, the button displays a pulsing animation that visualizes the captured
+ * audio amplitude, providing real-time feedback. The icon switches between a microphone and a
+ * microphone-off symbol to indicate the current state.
  *
  * @param modifier the modifier for this component.
  * @param buttonSize the size of the button.
- * @param audioUiState the [AudioUiState] for this component.
- * @param onToggleAudio the callback for toggling audio.
+ * @param audioUiState the [AudioUiState] that determines the button's appearance and enabled status.
+ * @param onToggleAudio the callback invoked when the button is tapped.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -257,7 +266,10 @@ fun AmplitudeToggleButton(
 }
 
 /**
- * A composable that allows the user to switch between image and video capture modes.
+ * A toggle switch that allows the user to switch between image and video capture modes.
+ *
+ * This component visually represents the selected mode with distinct icons for photo and video.
+ * It is only enabled when both capture modes are available to the camera.
  *
  * @param uiState the [CaptureModeToggleUiState.Available] for this component.
  * @param onChangeCaptureMode the callback for changing the capture mode.
@@ -334,7 +346,8 @@ fun CaptureModeToggleButton(
 }
 
 /**
- * A composable that displays a snackbar message to the user.
+ * A composable that displays a snackbar message to the user, with an optional action button
+ * and a mandatory close button for dismissal.
  *
  * @param modifier the modifier for this component.
  * @param snackbarToShow the [SnackbarData] to show.
@@ -432,8 +445,13 @@ private fun DetectWindowColorModeChanges(
 }
 
 /**
- * A composable that displays the camera preview, and handles user input for focusing, zooming,
- * and flipping the camera.
+ * A composable that displays the camera preview and handles user input gestures.
+ *
+ * This component is the core of the camera's UI, showing the live feed from the camera.
+ * It supports several gestures:
+ * - **Single Tap:** Triggers a tap-to-focus event at the tapped location.
+ * - **Double Tap:** Flips the camera between front and back lenses.
+ * - **Pinch Gesture:** Scales the camera's zoom level.
  *
  * @param previewDisplayUiState the [PreviewDisplayUiState] for this component.
  * @param onTapToFocus the callback for tapping to focus.
@@ -557,17 +575,25 @@ fun PreviewDisplay(
 }
 
 /**
- * A composable that allows the user to capture an image or record a video.
+ * A wrapper composable for the primary capture button.
+ *
+ * This component serves as the main user interaction point for capturing photos and recording videos.
+ * It adapts its behavior based on the current [CaptureMode]:
+ * - In **Hybrid mode**, a tap takes a picture, and a long press starts a video recording.
+ * - In **Image-only mode**, it only responds to taps for image capture.
+ * - In **Video-only mode**, a tap starts a video recording that can be locked for hands-free operation.
+ *
+ * It also handles gestures for zooming and locking the video recording.
  *
  * @param modifier the modifier for this component.
- * @param captureButtonUiState the [CaptureButtonUiState] for this component.
- * @param isQuickSettingsOpen true if the quick settings are open.
- * @param onToggleQuickSettings the callback for toggling the quick settings.
- * @param onIncrementZoom A callback to increment the zoom, providing the zoom increment value.
- * @param onCaptureImage A callback to capture an image.
- * @param onStartVideoRecording The callback for starting a video recording.
- * @param onStopVideoRecording The callback for stopping a video recording.
- * @param onLockVideoRecording A callback to lock video recording.
+ * @param captureButtonUiState the [CaptureButtonUiState] that dictates the button's behavior.
+ * @param isQuickSettingsOpen true if the quick settings panel is open.
+ * @param onToggleQuickSettings callback to open or close the quick settings.
+ * @param onIncrementZoom callback to adjust the camera's zoom level.
+ * @param onCaptureImage callback to trigger image capture.
+ * @param onStartVideoRecording callback to start video recording.
+ * @param onStopVideoRecording callback to stop video recording.
+ * @param onLockVideoRecording callback to lock the video recording for hands-free operation.
  */
 @Composable
 fun CaptureButton(
@@ -609,6 +635,10 @@ fun CaptureButton(
 
 /**
  * A composable that displays an icon indicating the current video stabilization mode.
+ *
+ * The icon is only visible when a stabilization mode other than 'OFF' is active. It is rendered in
+ * full white when stabilization is actively being applied, and is greyed out (with reduced alpha)
+ * if the stabilization mode is enabled but not currently active.
  *
  * @param stabilizationUiState the [StabilizationUiState] for this component.
  * @param modifier the modifier for this component.
@@ -691,7 +721,10 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
 }
 
 /**
- * A composable that displays an icon indicating the current video quality.
+ * A composable that displays an icon indicating the current video quality setting.
+ *
+ * The icon dynamically changes to represent the selected resolution, such as SD, HD, FHD, or UHD.
+ * It is not displayed if the video quality is unspecified.
  *
  * @param videoQuality the [VideoQuality] for this component.
  * @param modifier the modifier for this component.
@@ -743,7 +776,9 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
 }
 
 /**
- * A composable that allows the user to flip between the front and rear cameras.
+ * A button that allows the user to flip between the front and rear cameras.
+ *
+ * This button is only visible and enabled if the device has more than one camera lens available.
  *
  * @param enabledCondition the enabled condition for this component.
  * @param flipLensUiState the [FlipLensUiState] for this component.
@@ -802,7 +837,7 @@ fun FlipCameraButton(
  *
  * @param focusMeteringUiState The state of the focus metering operation.
  * @param coordinateTransformer The coordinate transformer to use to map the surface coordinates
- * to screen coordinates.
+ * to screen coordinates. This should come from [CameraXViewfinder].
  */
 @Composable
 private fun FocusMeteringIndicator(
