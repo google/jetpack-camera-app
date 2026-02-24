@@ -133,6 +133,7 @@ dependencies {
     androidTestImplementation(libs.androidx.uiautomator)
     androidTestImplementation(libs.camera.lifecycle) // to reset CameraX between tests
     androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.testParameterInjector)
     androidTestImplementation(project(":ui:components:capture"))
     androidTestUtil(libs.androidx.orchestrator)
 

@@ -97,6 +97,16 @@ const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
 const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
 private const val TAG = "UiTestUtil"
 
+internal enum class CacheParam(val extras: Bundle?) {
+    NO_CACHE(null),
+    WITH_CACHE(cacheExtra)
+}
+
+internal fun CacheParam.expectedNumFiles() = when (this) {
+    CacheParam.NO_CACHE -> 1
+    CacheParam.WITH_CACHE -> 0
+}
+
 inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     mediaUri: Uri,
     filePrefix: String = "",
@@ -114,11 +124,15 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
             mediaUri = mediaUri,
             instrumentation = instrumentation,
             filePrefix = filePrefix
-        ).take(expectedNumFiles)
-            .collect {
-                Log.d(debugTag, "Discovered new media store file: ${it.first}")
-                insertedMediaStoreEntries[it.first] = it.second
+        ).apply {
+            if (expectedNumFiles > 0) {
+                take(expectedNumFiles)
+                    .collect {
+                        Log.d(debugTag, "Discovered new media store file: ${it.first}")
+                        insertedMediaStoreEntries[it.first] = it.second
+                    }
             }
+        }
     }
 
     var succeeded = false
