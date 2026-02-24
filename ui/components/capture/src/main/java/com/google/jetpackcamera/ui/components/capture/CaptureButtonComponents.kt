@@ -161,7 +161,9 @@ private fun CaptureKeyHandler(
  * This component handles user interactions such as tap for image capture, long-press for video recording,
  * and a drag-to-lock gesture to enable continuous, "hands-free recording." When a video recording
  * is initiated via a long press, the user can drag their finger towards the lock icon to lock the recording,
- * allowing them to lift their finger and continue recording without interruption.
+ * allowing them to lift their finger and continue recording without interruption. Additionally, users can
+ * drag vertically *above* the capture button (where Y coordinates are negative relative to the button's top edge)
+ * to zoom in (dragging upwards) or zoom out (dragging downwards).
  *
  * @param modifier the modifier for this component
  * @param onImageCapture the callback for an image capture event
