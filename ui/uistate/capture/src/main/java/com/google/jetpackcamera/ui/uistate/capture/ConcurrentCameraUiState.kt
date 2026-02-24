@@ -17,9 +17,26 @@ package com.google.jetpackcamera.ui.uistate.capture
 
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 
+/**
+ * Defines the UI state for concurrent camera mode.
+ *
+ * This sealed interface represents the different states of the concurrent camera UI, which allows
+ * the user to see a picture-in-picture preview of another camera.
+ */
 sealed interface ConcurrentCameraUiState {
+    /**
+     * Concurrent camera mode is unavailable.
+     * This may be because the device does not support it, or it is disabled by a constraint.
+     */
     data object Unavailable : ConcurrentCameraUiState
 
+    /**
+     * Concurrent camera mode is available.
+     *
+     * @param selectedConcurrentCameraMode The currently selected [ConcurrentCameraMode].
+     * @param isEnabled Whether the concurrent camera mode is currently enabled (e.g. the PiP
+     * window is visible).
+     */
     data class Available(
         val selectedConcurrentCameraMode: ConcurrentCameraMode,
         val isEnabled: Boolean
