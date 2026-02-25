@@ -30,7 +30,7 @@ import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMA
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState
 import kotlinx.coroutines.Dispatchers

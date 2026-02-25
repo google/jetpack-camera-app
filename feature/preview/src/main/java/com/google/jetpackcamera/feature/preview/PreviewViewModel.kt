@@ -58,8 +58,8 @@ import com.google.jetpackcamera.ui.components.capture.debug.controller.DebugCont
 import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsController
 import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsControllerImpl
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import com.google.jetpackcamera.ui.uistate.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiState

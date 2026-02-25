@@ -38,8 +38,8 @@ import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VID
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
 import com.google.jetpackcamera.ui.components.capture.SnackBarController
 import com.google.jetpackcamera.ui.components.capture.SnackBarControllerImpl
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import com.google.jetpackcamera.ui.uistate.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState

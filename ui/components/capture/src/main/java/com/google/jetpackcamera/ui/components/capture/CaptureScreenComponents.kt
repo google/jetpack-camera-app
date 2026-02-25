@@ -111,6 +111,7 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -120,7 +121,6 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unav
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import kotlin.time.Duration.Companion.nanoseconds
