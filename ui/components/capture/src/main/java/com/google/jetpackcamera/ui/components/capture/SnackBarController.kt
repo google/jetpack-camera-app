@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import com.google.jetpackcamera.ui.uistate.DisableRationale
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import com.google.jetpackcamera.ui.uistate.SnackbarData
 
 interface SnackBarController {
     fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale)

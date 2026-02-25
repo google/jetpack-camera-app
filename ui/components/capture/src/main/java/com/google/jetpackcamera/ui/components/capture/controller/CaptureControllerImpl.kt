@@ -39,7 +39,7 @@ import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.controller.Utils.nextSaveLocation
 import com.google.jetpackcamera.ui.components.capture.controller.Utils.postCurrentMediaToMediaRepository
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import kotlinx.atomicfu.atomic

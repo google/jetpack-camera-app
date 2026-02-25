@@ -17,8 +17,8 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.util.Log
 import com.google.jetpackcamera.ui.uistate.DisableRationale
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import com.google.jetpackcamera.ui.uistate.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.SnackbarData
 import java.util.LinkedList
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope

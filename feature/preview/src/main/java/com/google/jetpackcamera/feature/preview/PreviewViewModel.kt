@@ -57,9 +57,9 @@ import com.google.jetpackcamera.ui.components.capture.debug.controller.DebugCont
 import com.google.jetpackcamera.ui.components.capture.debug.controller.DebugControllerImpl
 import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsController
 import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsControllerImpl
-import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
+import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiState
@@ -95,7 +95,7 @@ class PreviewViewModel @Inject constructor(
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
     private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
-    private val _trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState> =
+    private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState> =
         MutableStateFlow(TrackedCaptureUiState())
     private val _snackBarUiState: MutableStateFlow<SnackBarUiState.Enabled> =
         MutableStateFlow(SnackBarUiState.Enabled())
@@ -130,7 +130,7 @@ class PreviewViewModel @Inject constructor(
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         cameraSystem,
         constraintsRepository,
-        _trackedCaptureUiState,
+        trackedCaptureUiState,
         externalCaptureMode
     )
         .stateIn(
@@ -143,7 +143,7 @@ class PreviewViewModel @Inject constructor(
         constraintsRepository,
         debugSettings,
         cameraPropertiesJSON,
-        _trackedCaptureUiState
+        trackedCaptureUiState
     )
         .stateIn(
             scope = viewModelScope,
@@ -152,7 +152,7 @@ class PreviewViewModel @Inject constructor(
         )
 
     val quickSettingsController: QuickSettingsController = QuickSettingsControllerImpl(
-        trackedCaptureUiState = _trackedCaptureUiState,
+        trackedCaptureUiState = trackedCaptureUiState,
         viewModelScope = viewModelScope,
         cameraSystem = cameraSystem,
         externalCaptureMode = externalCaptureMode
@@ -160,7 +160,7 @@ class PreviewViewModel @Inject constructor(
 
     val debugController: DebugController = DebugControllerImpl(
         cameraSystem = cameraSystem,
-        trackedCaptureUiState = _trackedCaptureUiState
+        trackedCaptureUiState = trackedCaptureUiState
     )
 
     val snackBarController: SnackBarController = SnackBarControllerImpl(
@@ -171,14 +171,14 @@ class PreviewViewModel @Inject constructor(
     val captureScreenController: CaptureScreenController = CaptureScreenControllerImpl(
         viewModelScope = viewModelScope,
         cameraSystem = cameraSystem,
-        trackedCaptureUiState = _trackedCaptureUiState,
+        trackedCaptureUiState = trackedCaptureUiState,
         mediaRepository = mediaRepository,
         captureUiState = captureUiState
     )
 
     val zoomController: ZoomController = ZoomControllerImpl(
         cameraSystem = cameraSystem,
-        trackedCaptureUiState = _trackedCaptureUiState
+        trackedCaptureUiState = trackedCaptureUiState
     )
 
     val cameraController: CameraController = CameraControllerImpl(
@@ -189,7 +189,7 @@ class PreviewViewModel @Inject constructor(
     )
 
     val captureController: CaptureController = CaptureControllerImpl(
-        trackedCaptureUiState = _trackedCaptureUiState,
+        trackedCaptureUiState = trackedCaptureUiState,
         captureUiState = captureUiState,
         viewModelScope = viewModelScope,
         cameraSystem = cameraSystem,
