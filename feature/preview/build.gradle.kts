@@ -146,6 +146,7 @@ dependencies {
     implementation(project(":ui:components:capture"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
+    implementation(project(":ui:uistateadapter"))
     implementation(project(":ui:uistateadapter:capture"))
 
 }
