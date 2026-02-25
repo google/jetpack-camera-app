@@ -127,7 +127,8 @@ fun QuickSettingsBottomSheet(
                             QuickFlipCamera(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
                                 setLensFacing = { l: LensFacing ->
-                                    quickSettingsController.setLensFacing(l) },
+                                    quickSettingsController.setLensFacing(l)
+                                },
                                 flipLensUiState = quickSettingsUiState.flipLensUiState
                             )
                         }
@@ -136,7 +137,9 @@ fun QuickSettingsBottomSheet(
                             ToggleFocusedQuickSetRatio(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
                                 setRatio = {
-                                    quickSettingsController.setFocusedSetting(FocusedQuickSetting.ASPECT_RATIO)
+                                    quickSettingsController.setFocusedSetting(
+                                        FocusedQuickSetting.ASPECT_RATIO
+                                    )
                                 },
                                 isHighlightEnabled = false,
                                 aspectRatioUiState = quickSettingsUiState.aspectRatioUiState
@@ -148,7 +151,9 @@ fun QuickSettingsBottomSheet(
                                 modifier = Modifier.testTag(
                                     QUICK_SETTINGS_STREAM_CONFIG_BUTTON
                                 ),
-                                setStreamConfig = { c: StreamConfig -> quickSettingsController.setStreamConfig(c) },
+                                setStreamConfig = { c: StreamConfig ->
+                                    quickSettingsController.setStreamConfig(c)
+                                },
                                 streamConfigUiState = quickSettingsUiState.streamConfigUiState
                             )
                         }
@@ -351,5 +356,4 @@ class MockQuickSettingsController : QuickSettingsController {
     override fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {}
 
     override fun setCaptureMode(captureMode: CaptureMode) {}
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.capture
+package com.google.jetpackcamera.ui.components.capture.controller
 
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
-import java.util.Queue
+import com.google.jetpackcamera.model.DeviceRotation
 
-fun SnackBarUiState.Companion.from(snackBarQueue: Queue<SnackbarData>): SnackBarUiState {
-    return SnackBarUiState.Enabled(snackBarQueue)
+interface CaptureScreenController {
+    fun setDisplayRotation(deviceRotation: DeviceRotation)
+    fun tapToFocus(x: Float, y: Float)
+    fun setAudioEnabled(shouldEnableAudio: Boolean)
+    fun updateLastCapturedMedia()
+    fun imageWellToRepository()
+    fun setPaused(shouldBePaused: Boolean)
 }

@@ -13,26 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.components.capture
 
 import android.util.Log
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import java.util.LinkedList
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.LinkedList
 
 private const val TAG = "SnackBarControllerImpl"
 
 class SnackBarControllerImpl(
     private val viewModelScope: CoroutineScope,
     private val snackBarUiState: MutableStateFlow<SnackBarUiState.Enabled>
-): SnackBarController {
+) : SnackBarController {
     val snackBarCount = atomic(0)
     override fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale) {
         val cookieInt = incrementAndGetSnackBarCount()

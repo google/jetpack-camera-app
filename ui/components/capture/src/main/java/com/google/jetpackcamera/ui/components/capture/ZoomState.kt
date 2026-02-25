@@ -25,15 +25,15 @@ import androidx.core.util.toClosedRange
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.ZoomStrategy
+import com.google.jetpackcamera.ui.components.capture.controller.ZoomController
 
 class ZoomState(
     initialZoomLevel: Float,
     zoomRange: Range<Float>,
-    val onChangeZoomLevel: (CameraZoomRatio) -> Unit,
-    val onAnimateStateChanged: (Float?) -> Unit
+    private val zoomController: ZoomController
 ) {
     init {
-        onAnimateStateChanged(null)
+        zoomController.setZoomAnimationState(null)
     }
 
     private var functionalZoom = initialZoomLevel
@@ -44,7 +44,7 @@ class ZoomState(
 
     private suspend fun mutateZoom(block: suspend () -> Unit) {
         mutatorMutex.mutate {
-            onAnimateStateChanged(null)
+            zoomController.setZoomAnimationState(null)
             block()
         }
     }
@@ -57,7 +57,7 @@ class ZoomState(
             if (lensToZoom == LensToZoom.PRIMARY) {
                 functionalZoom = targetZoomLevel.coerceIn(functionalZoomRange.toClosedRange())
             }
-            onChangeZoomLevel(
+            zoomController.setZoomRatio(
                 CameraZoomRatio(
                     ZoomStrategy.Absolute(
                         targetZoomLevel.coerceIn(functionalZoomRange.toClosedRange()),
@@ -93,7 +93,7 @@ class ZoomState(
         lensToZoom: LensToZoom
     ) {
         mutatorMutex.mutate {
-            onAnimateStateChanged(targetZoomLevel)
+            zoomController.setZoomAnimationState(targetZoomLevel)
 
             Animatable(initialValue = functionalZoom).animateTo(
                 targetValue = targetZoomLevel,
@@ -101,7 +101,7 @@ class ZoomState(
             ) {
                 // this is called every animation frame
                 functionalZoom = value.coerceIn(functionalZoomRange.toClosedRange())
-                onChangeZoomLevel(
+                zoomController.setZoomRatio(
                     CameraZoomRatio(
                         ZoomStrategy.Absolute(
                             functionalZoom,

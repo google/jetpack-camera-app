@@ -87,7 +87,7 @@ class PreviewViewModelTest {
         val contentResolver: ContentResolver =
             ApplicationProvider.getApplicationContext<Context>().contentResolver
         startCameraUntilRunning()
-        previewViewModel.captureImage(contentResolver)
+        previewViewModel.captureController.captureImage(contentResolver)
         advanceUntilIdle()
         assertThat(cameraSystem.numPicturesTaken).isEqualTo(1)
     }
@@ -95,7 +95,7 @@ class PreviewViewModelTest {
     @Test
     fun startVideoRecording() = runTest(StandardTestDispatcher()) {
         startCameraUntilRunning()
-        previewViewModel.startVideoRecording()
+        previewViewModel.captureController.startVideoRecording()
         advanceUntilIdle()
         assertThat(cameraSystem.recordingInProgress).isTrue()
     }
@@ -103,16 +103,16 @@ class PreviewViewModelTest {
     @Test
     fun stopVideoRecording() = runTest(StandardTestDispatcher()) {
         startCameraUntilRunning()
-        previewViewModel.startVideoRecording()
+        previewViewModel.captureController.startVideoRecording()
         advanceUntilIdle()
-        previewViewModel.stopVideoRecording()
+        previewViewModel.captureController.stopVideoRecording()
         advanceUntilIdle()
         assertThat(cameraSystem.recordingInProgress).isFalse()
     }
 
     @Test
     fun setFlash() = runTest(StandardTestDispatcher()) {
-        previewViewModel.startCamera()
+        previewViewModel.cameraController.startCamera()
         previewViewModel.quickSettingsController.setFlash(FlashMode.AUTO)
         advanceUntilIdle()
 
@@ -177,7 +177,7 @@ class PreviewViewModelTest {
     }
 
     private fun TestScope.startCameraUntilRunning() {
-        previewViewModel.startCamera()
+        previewViewModel.cameraController.startCamera()
         advanceUntilIdle()
     }
 }

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.components.capture.quicksettings.controller
 
 import com.google.jetpackcamera.model.AspectRatio
@@ -28,7 +27,7 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 
 interface QuickSettingsController {
     fun toggleQuickSettings()
-    fun setFocusedSetting (focusedQuickSetting: FocusedQuickSetting)
+    fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting)
     fun setLensFacing(lensFace: LensFacing)
     fun setFlash(flashMode: FlashMode)
     fun setAspectRatio(aspectRatio: AspectRatio)
@@ -37,5 +36,4 @@ interface QuickSettingsController {
     fun setImageFormat(imageOutputFormat: ImageOutputFormat)
     fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
     fun setCaptureMode(captureMode: CaptureMode)
-
 }

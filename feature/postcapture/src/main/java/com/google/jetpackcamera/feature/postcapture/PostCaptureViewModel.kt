@@ -47,9 +47,7 @@ import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
 import com.google.jetpackcamera.ui.uistateadapter.postcapture.from
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.util.LinkedList
 import javax.inject.Inject
-import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel

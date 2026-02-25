@@ -337,11 +337,12 @@ fun TestableSnackbar(
                 when (result) {
                     SnackbarResult.ActionPerformed,
                     SnackbarResult.Dismissed -> snackBarController.onSnackBarResult(
-                        snackbarToShow.cookie)
+                        snackbarToShow.cookie
+                    )
                 }
             } catch (e: Exception) {
                 // This is equivalent to dismissing the snackbar
-               snackBarController.onSnackBarResult(snackbarToShow.cookie)
+                snackBarController.onSnackBarResult(snackbarToShow.cookie)
             }
         }
     }

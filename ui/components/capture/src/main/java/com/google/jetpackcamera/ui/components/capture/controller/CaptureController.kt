@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistateadapter.capture
+package com.google.jetpackcamera.ui.components.capture.controller
 
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
-import java.util.Queue
+import android.content.ContentResolver
 
-fun SnackBarUiState.Companion.from(snackBarQueue: Queue<SnackbarData>): SnackBarUiState {
-    return SnackBarUiState.Enabled(snackBarQueue)
+interface CaptureController {
+    fun captureImage(contentResolver: ContentResolver)
+    fun startVideoRecording()
+    fun stopVideoRecording()
+    fun setLockedRecording(isLocked: Boolean)
 }
