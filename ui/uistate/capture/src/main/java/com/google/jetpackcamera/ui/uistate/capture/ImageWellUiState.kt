@@ -17,7 +17,14 @@ package com.google.jetpackcamera.ui.uistate.capture
 
 import com.google.jetpackcamera.data.media.MediaDescriptor
 
+/**
+ * Defines the UI state for the image well, a component used to display the thumbnail of a captured media.
+ */
 sealed interface ImageWellUiState {
+    /**
+     * The image well is unavailable and should not be displayed.
+     * This may be the case if no camera is available or if the feature is disabled.
+     */
     data object Unavailable : ImageWellUiState
 
     data class Content(val mediaDescriptor: MediaDescriptor.Content) : ImageWellUiState
