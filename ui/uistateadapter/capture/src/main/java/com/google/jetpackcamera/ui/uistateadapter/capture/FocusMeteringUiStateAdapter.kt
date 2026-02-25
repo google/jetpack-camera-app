@@ -20,6 +20,15 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.FocusState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 
+/**
+ * Updates an existing [FocusMeteringUiState] based on a new [CameraState].
+ *
+ * This factory function translates the [FocusState] into its corresponding UI representation.
+ *
+ * @param cameraState The new, real-time state from the camera.
+ * @return The existing [FocusMeteringUiState] instance if no change is detected, or a new
+ *         [FocusMeteringUiState] reflecting the updated camera focus state.
+ */
 fun FocusMeteringUiState.updateFrom(cameraState: CameraState): FocusMeteringUiState {
     val focusState = cameraState.focusState
     return when (this) {
@@ -45,6 +54,17 @@ fun FocusMeteringUiState.updateFrom(cameraState: CameraState): FocusMeteringUiSt
     }
 }
 
+/**
+ * Creates a [FocusMeteringUiState] from the given [CameraState].
+ *
+ * This factory function translates the low-level [FocusState] from the core camera layer into its
+ * corresponding UI representation. It maps the coordinates and status (e.g., RUNNING, SUCCESS)
+ * to the appropriate [FocusMeteringUiState] subtype, which can be either [FocusMeteringUiState.Unspecified]
+ * or [FocusMeteringUiState.Specified].
+ *
+ * @param cameraState The real-time state from the camera containing the focus information.
+ * @return A [FocusMeteringUiState] that represents the current focus state for the UI.
+ */
 fun FocusMeteringUiState.Companion.from(cameraState: CameraState): FocusMeteringUiState {
     return when (val focusState = cameraState.focusState) {
         is FocusState.Unspecified -> FocusMeteringUiState.Unspecified

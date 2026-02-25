@@ -39,6 +39,21 @@ private val ORDERED_UI_SUPPORTED_CAPTURE_MODES = listOf(
     CaptureMode.VIDEO_ONLY
 )
 
+/**
+ * Creates a [CaptureModeToggleUiState] based on the current camera and system state.
+ *
+ * This adapter determines whether the simplified capture mode toggle (between IMAGE_ONLY and
+ * VIDEO_ONLY) should be available and what its state should be. The toggle is generally
+ * unavailable if video is recording or if the current capture mode is STANDARD.
+ *
+ * @param systemConstraints The constraints of the entire camera system.
+ * @param cameraAppSettings The current settings of the camera.
+ * @param cameraState The real-time state of the camera hardware.
+ * @param externalCaptureMode The mode influencing UI based on how the camera was launched.
+ * @return A [CaptureModeToggleUiState] which is either [CaptureModeToggleUiState.Available]
+ * containing the states for the image and video-only modes, or
+ * [CaptureModeToggleUiState.Unavailable] if the toggle should not be shown.
+ */
 fun CaptureModeToggleUiState.Companion.from(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
@@ -75,6 +90,19 @@ fun CaptureModeToggleUiState.Companion.from(
         )
     }
 
+/**
+ * Creates a [CaptureModeUiState] for the full capture mode selection UI (e.g., in quick settings).
+ *
+ * This adapter is responsible for determining the list of all available and selectable capture
+ * modes ([CaptureMode.STANDARD], [CaptureMode.IMAGE_ONLY], [CaptureMode.VIDEO_ONLY]) based on the
+ * current system and camera constraints.
+ *
+ * @param systemConstraints The constraints of the entire camera system.
+ * @param cameraAppSettings The current settings of the camera.
+ * @param externalCaptureMode The mode influencing UI based on how the camera was launched.
+ * @return A [CaptureModeUiState.Available] object containing the currently selected capture mode
+ * and a list of all available modes, each represented as a [SingleSelectableUiState].
+ */
 fun CaptureModeUiState.Companion.from(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,

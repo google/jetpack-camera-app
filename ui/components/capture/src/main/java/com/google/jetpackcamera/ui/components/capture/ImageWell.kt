@@ -60,7 +60,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun ImageWell(
-    imageWellUiState: ImageWellUiState.LastCapture,
+    imageWellUiState: ImageWellUiState.Content,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(16.dp),
@@ -109,7 +109,7 @@ private fun ImageWellPreview() {
         uri = Uri.EMPTY,
         thumbnail = previewBitmap
     )
-    val imageWellUiState = ImageWellUiState.LastCapture(
+    val imageWellUiState = ImageWellUiState.Content(
         mediaDescriptor = mediaDescriptor
     )
 

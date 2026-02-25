@@ -225,7 +225,7 @@ class PreviewViewModel @Inject constructor(
      */
     fun imageWellToRepository() {
         (captureUiState.value as? CaptureUiState.Ready)
-            ?.let { it.imageWellUiState as? ImageWellUiState.LastCapture }
+            ?.let { it.imageWellUiState as? ImageWellUiState.Content }
             ?.let { postCurrentMediaToMediaRepository(it.mediaDescriptor) }
     }
 
