@@ -98,7 +98,7 @@ import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import com.google.jetpackcamera.ui.components.capture.VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.ui.components.capture.VideoQualityIcon
 import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
-import com.google.jetpackcamera.ui.components.capture.ZoomState
+import com.google.jetpackcamera.ui.components.capture.ZoomStateManager
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
 import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlay
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsBottomSheet
@@ -201,12 +201,12 @@ fun PreviewScreen(
                 debouncedOrientationFlow(context).collect(viewModel::setDisplayRotation)
             }
             val scope = rememberCoroutineScope()
-            val zoomState = remember {
+            val zoomStateManager = remember {
                 // the initialZoomLevel must be fetched from the settings, not the cameraState.
                 // since we want to reset the ZoomState on flip, the zoomstate of the cameraState
                 // may not yet be congruent with the settings
 
-                ZoomState(
+                ZoomStateManager(
                     initialZoomLevel = (
                         currentUiState.zoomControlUiState as?
                             ZoomControlUiState.Enabled
@@ -225,7 +225,7 @@ fun PreviewScreen(
                 (currentUiState.flipLensUiState as? FlipLensUiState.Available)
                     ?.selectedLensFacing
             ) {
-                zoomState.onChangeLens(
+                zoomStateManager.onChangeLens(
                     newInitialZoomLevel = (
                         currentUiState.zoomControlUiState as?
                             ZoomControlUiState.Enabled
@@ -253,7 +253,7 @@ fun PreviewScreen(
                                 Log.d(TAG, "reset pre recording settings")
                                 viewModel.setAudioEnabled(oldAudioEnabled)
                                 viewModel.setLensFacing(oldPrimaryLensFacing)
-                                zoomState.apply {
+                                zoomStateManager.apply {
                                     absoluteZoom(
                                         targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing] ?: 1f,
                                         lensToZoom = LensToZoom.PRIMARY
@@ -286,7 +286,7 @@ fun PreviewScreen(
                 onSetImageWell = viewModel::imageWellToRepository,
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
-                        zoomState.absoluteZoom(
+                        zoomStateManager.absoluteZoom(
                             zoomRatio,
                             lensToZoom
                         )
@@ -294,7 +294,7 @@ fun PreviewScreen(
                 },
                 onScaleZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
-                        zoomState.scaleZoom(
+                        zoomStateManager.scaleZoom(
                             zoomRatio,
                             lensToZoom
                         )
@@ -302,7 +302,7 @@ fun PreviewScreen(
                 },
                 onAnimateZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
-                        zoomState.animatedZoom(
+                        zoomStateManager.animatedZoom(
                             targetZoomLevel = zoomRatio,
                             lensToZoom = lensToZoom
                         )
@@ -310,7 +310,7 @@ fun PreviewScreen(
                 },
                 onIncrementZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
-                        zoomState.incrementZoom(
+                        zoomStateManager.incrementZoom(
                             zoomRatio,
                             lensToZoom
                         )
