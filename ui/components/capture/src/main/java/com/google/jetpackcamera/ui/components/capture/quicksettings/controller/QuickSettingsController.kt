@@ -25,15 +25,79 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 
+/**
+ * This file contains the [QuickSettingsController] interface for managing quick settings actions.
+ */
+
+/**
+ * Interface for controlling quick settings.
+ */
 interface QuickSettingsController {
+    /**
+     * Toggles the visibility of the quick settings menu.
+     */
     fun toggleQuickSettings()
+
+    /**
+     * Sets the currently focused quick setting.
+     *
+     * @param focusedQuickSetting The quick setting to focus.
+     */
     fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting)
+
+    /**
+     * Sets the lens facing (front or back camera).
+     *
+     * @param lensFace The lens facing to set.
+     */
     fun setLensFacing(lensFace: LensFacing)
+
+    /**
+     * Sets the flash mode.
+     *
+     * @param flashMode The flash mode to set.
+     */
     fun setFlash(flashMode: FlashMode)
+
+    /**
+     * Sets the aspect ratio for capture.
+     *
+     * @param aspectRatio The aspect ratio to set.
+     */
     fun setAspectRatio(aspectRatio: AspectRatio)
+
+    /**
+     * Sets the stream configuration (e.g. preview, video capture).
+     *
+     * @param streamConfig The stream configuration to set.
+     */
     fun setStreamConfig(streamConfig: StreamConfig)
+
+    /**
+     * Sets the dynamic range (e.g. SDR, HDR).
+     *
+     * @param dynamicRange The dynamic range to set.
+     */
     fun setDynamicRange(dynamicRange: DynamicRange)
+
+    /**
+     * Sets the image output format (e.g. JPEG, RAW).
+     *
+     * @param imageOutputFormat The image format to set.
+     */
     fun setImageFormat(imageOutputFormat: ImageOutputFormat)
+
+    /**
+     * Sets the concurrent camera mode.
+     *
+     * @param concurrentCameraMode The concurrent camera mode to set.
+     */
     fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
+
+    /**
+     * Sets the capture mode (e.g. multi-camera, single-camera).
+     *
+     * @param captureMode The capture mode to set.
+     */
     fun setCaptureMode(captureMode: CaptureMode)
 }

@@ -32,6 +32,14 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "CameraControllerImpl"
 
+/**
+ * Implementation of [CameraController] that manages the camera lifecycle.
+ *
+ * @param initializationDeferred A [Deferred] that completes when the camera system is initialized.
+ * @param captureUiState The [StateFlow] of the capture UI state.
+ * @param viewModelScope The [CoroutineScope] for launching coroutines.
+ * @param cameraSystem The [CameraSystem] to interact with.
+ */
 class CameraControllerImpl(
     private val initializationDeferred: Deferred<Unit>,
     private val captureUiState: StateFlow<CaptureUiState>,
@@ -39,6 +47,7 @@ class CameraControllerImpl(
     private val cameraSystem: CameraSystem
 ) : CameraController {
     private var runningCameraJob: Job? = null
+
     override fun startCamera() {
         Log.d(TAG, "startCamera")
         stopCamera()

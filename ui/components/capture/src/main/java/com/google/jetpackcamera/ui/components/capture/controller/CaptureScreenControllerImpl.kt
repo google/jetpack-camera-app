@@ -31,6 +31,15 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "CaptureScreenControllerImpl"
 
+/**
+ * Implementation of [CaptureScreenController] that handles UI events on the capture screen.
+ *
+ * @param viewModelScope The [CoroutineScope] for launching coroutines.
+ * @param cameraSystem The [CameraSystem] to interact with.
+ * @param trackedCaptureUiState The [MutableStateFlow] of the tracked capture UI state.
+ * @param mediaRepository The [MediaRepository] to interact with media.
+ * @param captureUiState The [StateFlow] of the capture UI state.
+ */
 class CaptureScreenControllerImpl(
     private val viewModelScope: CoroutineScope,
     private val cameraSystem: CameraSystem,
@@ -38,6 +47,7 @@ class CaptureScreenControllerImpl(
     private val mediaRepository: MediaRepository,
     private val captureUiState: StateFlow<CaptureUiState>
 ) : CaptureScreenController {
+
     override fun setDisplayRotation(deviceRotation: DeviceRotation) {
         viewModelScope.launch {
             cameraSystem.setDeviceRotation(deviceRotation)

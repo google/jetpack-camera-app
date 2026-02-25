@@ -21,6 +21,13 @@ import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
+/**
+ * Implementation of [DebugController] that interacts with [CameraSystem] and updates
+ * [trackedCaptureUiState].
+ *
+ * @property cameraSystem The camera system to control.
+ * @property trackedCaptureUiState The state flow to update with debug information.
+ */
 class DebugControllerImpl(
     private val cameraSystem: CameraSystem,
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>

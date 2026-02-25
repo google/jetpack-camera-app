@@ -190,7 +190,6 @@ class PreviewViewModel @Inject constructor(
 
     val captureController: CaptureController = CaptureControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
-        captureUiState = captureUiState,
         viewModelScope = viewModelScope,
         cameraSystem = cameraSystem,
         mediaRepository = mediaRepository,

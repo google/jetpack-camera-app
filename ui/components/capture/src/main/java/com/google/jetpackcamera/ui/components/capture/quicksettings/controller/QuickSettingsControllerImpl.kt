@@ -32,6 +32,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * Implementation of [QuickSettingsController] that interacts with [CameraSystem] and updates
+ * [trackedCaptureUiState].
+ *
+ * @property trackedCaptureUiState The state flow to update with quick settings information.
+ * @property viewModelScope The coroutine scope for launching camera operations.
+ * @property cameraSystem The camera system to control.
+ * @property externalCaptureMode The current external capture mode.
+ */
 class QuickSettingsControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     private val viewModelScope: CoroutineScope,

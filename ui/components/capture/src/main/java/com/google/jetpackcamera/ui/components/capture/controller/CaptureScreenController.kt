@@ -17,11 +17,46 @@ package com.google.jetpackcamera.ui.components.capture.controller
 
 import com.google.jetpackcamera.model.DeviceRotation
 
+/**
+ * Interface for controlling actions on the capture screen.
+ */
 interface CaptureScreenController {
+    /**
+     * Sets the display rotation.
+     *
+     * @param deviceRotation The device rotation to set.
+     */
     fun setDisplayRotation(deviceRotation: DeviceRotation)
+
+    /**
+     * Initiates a tap-to-focus action at the given coordinates.
+     *
+     * @param x The x-coordinate of the tap.
+     * @param y The y-coordinate of the tap.
+     */
     fun tapToFocus(x: Float, y: Float)
+
+    /**
+     * Enables or disables audio recording.
+     *
+     * @param shouldEnableAudio Whether audio should be enabled.
+     */
     fun setAudioEnabled(shouldEnableAudio: Boolean)
+
+    /**
+     * Updates the UI with the last captured media.
+     */
     fun updateLastCapturedMedia()
+
+    /**
+     * Transfers the media from the image well to the repository.
+     */
     fun imageWellToRepository()
+
+    /**
+     * Pauses or resumes video recording.
+     *
+     * @param shouldBePaused Whether the recording should be paused.
+     */
     fun setPaused(shouldBePaused: Boolean)
 }

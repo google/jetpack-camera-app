@@ -42,6 +42,15 @@ object Utils {
         }
     }
 
+    /**
+     * Determines the next [SaveLocation] and optional [IntProgress] for a capture.
+     *
+     * @param saveMode The current [SaveMode].
+     * @param externalCaptureMode The current [ExternalCaptureMode].
+     * @param externalCapturesCallback A callback to retrieve the save location and progress for
+     * external captures.
+     * @return A [Pair] containing the [SaveLocation] and optional [IntProgress].
+     */
     fun nextSaveLocation(
         saveMode: SaveMode,
         externalCaptureMode: ExternalCaptureMode,

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,21 @@ package com.google.jetpackcamera.ui.components.capture.controller
 
 import com.google.jetpackcamera.model.CameraZoomRatio
 
+/**
+ * Interface for controlling camera zoom.
+ */
 interface ZoomController {
+    /**
+     * Sets the camera's zoom ratio.
+     *
+     * @param zoomRatio The [CameraZoomRatio] to set.
+     */
     fun setZoomRatio(zoomRatio: CameraZoomRatio)
+
+    /**
+     * Sets the target value for the zoom animation.
+     *
+     * @param targetValue The target zoom ratio for the animation, or null to clear it.
+     */
     fun setZoomAnimationState(targetValue: Float?)
 }

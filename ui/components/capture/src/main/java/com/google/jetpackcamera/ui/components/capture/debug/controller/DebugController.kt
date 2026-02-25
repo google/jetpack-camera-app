@@ -18,6 +18,10 @@ package com.google.jetpackcamera.ui.components.capture.debug.controller
 import com.google.jetpackcamera.model.TestPattern
 
 /**
+ * This file contains the [DebugController] interface for managing debug actions.
+ */
+
+/**
  * Interface for controlling debug features.
  */
 interface DebugController {

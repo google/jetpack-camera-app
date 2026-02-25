@@ -403,11 +403,7 @@ private fun ContentScreen(
             PreviewDisplay(
                 previewDisplayUiState = captureUiState.previewDisplayUiState,
                 onFlipCamera = onFlipCamera,
-                onTapToFocus = if (captureScreenController != null) {
-                    captureScreenController::tapToFocus
-                } else {
-                    { _, _ -> }
-                },
+                onTapToFocus = captureScreenController?.let { it::tapToFocus } ?: { _, _ -> },
                 onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode,
@@ -582,11 +578,7 @@ private fun ContentScreen(
         },
         pauseToggleButton = {
             PauseResumeToggleButton(
-                onSetPause = if (captureScreenController != null) {
-                    captureScreenController::setPaused
-                } else {
-                    { _ -> }
-                },
+                onSetPause = captureScreenController?.let { it::setPaused } ?: { _ -> },
                 currentRecordingState = captureUiState.videoRecordingState
             )
         },

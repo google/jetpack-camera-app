@@ -21,10 +21,17 @@ import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
+/**
+ * Implementation of [ZoomController] that updates the camera's zoom and tracked UI state.
+ *
+ * @param cameraSystem The camera system to update zoom on.
+ * @param trackedCaptureUiState State for tracking zoom changes.
+ */
 class ZoomControllerImpl(
     private val cameraSystem: CameraSystem,
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>
 ) : ZoomController {
+
     override fun setZoomRatio(zoomRatio: CameraZoomRatio) {
         cameraSystem.changeZoomRatio(
             newZoomState = zoomRatio

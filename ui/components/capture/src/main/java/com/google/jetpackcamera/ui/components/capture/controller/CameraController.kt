@@ -15,7 +15,17 @@
  */
 package com.google.jetpackcamera.ui.components.capture.controller
 
+/**
+ * Interface for controlling camera lifecycle and basic operations.
+ */
 interface CameraController {
+    /**
+     * Starts the camera.
+     */
     fun startCamera()
+
+    /**
+     * Stops the camera.
+     */
     fun stopCamera()
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,13 +41,11 @@ import com.google.jetpackcamera.ui.components.capture.controller.Utils.nextSaveL
 import com.google.jetpackcamera.ui.components.capture.controller.Utils.postCurrentMediaToMediaRepository
 import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -55,9 +53,22 @@ private const val TAG = "CaptureButtonControllerImpl"
 
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
+/**
+ * Implementation of [CaptureController] that interacts with [CameraSystem] and [MediaRepository].
+ *
+ * @property trackedCaptureUiState State for tracking UI changes during capture.
+ * @property viewModelScope Scope for launching coroutines.
+ * @property cameraSystem The camera system to perform capture operations.
+ * @property mediaRepository Repository for managing captured media.
+ * @property saveMode Mode for saving captured media.
+ * @property externalCaptureMode Mode for external capture requests.
+ * @property externalCapturesCallback Callback for getting external capture information.
+ * @property captureEvents Channel for sending capture-related events.
+ * @property captureScreenController Controller for UI-related capture screen actions.
+ * @property snackBarController Controller for showing snackbars.
+ */
 class CaptureControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    private val captureUiState: StateFlow<CaptureUiState>,
     private val viewModelScope: CoroutineScope,
     private val cameraSystem: CameraSystem,
     private val mediaRepository: MediaRepository,
@@ -74,25 +85,7 @@ class CaptureControllerImpl(
     private var recordingJob: Job? = null
 
     override fun captureImage(contentResolver: ContentResolver) {
-        if (captureUiState.value is CaptureUiState.Ready &&
-            (captureUiState.value as CaptureUiState.Ready).externalCaptureMode ==
-            ExternalCaptureMode.VideoCapture
-        ) {
-            snackBarController?.addSnackBarData(
-                SnackbarData(
-                    cookie = "Image-ExternalVideoCaptureMode",
-                    stringResource = R.string.toast_image_capture_external_unsupported,
-                    withDismissAction = true,
-                    testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-                )
-            )
-            return
-        }
-
-        if (captureUiState.value is CaptureUiState.Ready &&
-            (captureUiState.value as CaptureUiState.Ready).externalCaptureMode ==
-            ExternalCaptureMode.VideoCapture
-        ) {
+        if (externalCaptureMode == ExternalCaptureMode.VideoCapture) {
             snackBarController?.addSnackBarData(
                 SnackbarData(
                     cookie = "Image-ExternalVideoCaptureMode",
@@ -156,10 +149,7 @@ class CaptureControllerImpl(
     }
 
     override fun startVideoRecording() {
-        if (captureUiState.value is CaptureUiState.Ready &&
-            (captureUiState.value as CaptureUiState.Ready).externalCaptureMode ==
-            ExternalCaptureMode.ImageCapture
-        ) {
+        if (externalCaptureMode == ExternalCaptureMode.ImageCapture) {
             Log.d(TAG, "externalVideoRecording")
             snackBarController?.addSnackBarData(
                 SnackbarData(
