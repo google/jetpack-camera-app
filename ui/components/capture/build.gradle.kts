@@ -100,6 +100,8 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
+    implementation(libs.kotlinx.atomicfu)
+
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
     implementation(project(":core:camera"))

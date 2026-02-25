@@ -100,6 +100,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashM
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraLensFace
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraStreamConfig
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEnum
+import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -469,9 +470,9 @@ fun QuickSetConcurrentCamera(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ToggleQuickSettingsButton(
-    toggleBottomSheet: () -> Unit,
     isOpen: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    quickSettingsController: QuickSettingsController
 ) {
     val buttonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
@@ -490,7 +491,7 @@ fun ToggleQuickSettingsButton(
                     closedDescription
                 }
             },
-        onClick = toggleBottomSheet,
+        onClick = quickSettingsController::toggleQuickSettings,
         colors = IconButtonDefaults.iconButtonColors(
             // Set the background color of the button
             containerColor = Color.White.copy(alpha = 0.08f),
