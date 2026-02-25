@@ -18,9 +18,25 @@ package com.google.jetpackcamera.ui.uistate.capture
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
 
+/**
+ * Defines the UI state for the HDR (High Dynamic Range) setting.
+ *
+ * This sealed interface represents the different states of the HDR UI, such as being unavailable,
+ * or available with a specific mode selected.
+ */
 sealed interface HdrUiState {
+    /**
+     * The HDR setting is unavailable.
+     * This may be because the current camera or mode does not support HDR.
+     */
     data object Unavailable : HdrUiState
 
+    /**
+     * The HDR setting is available.
+     *
+     * @param selectedImageFormat The currently selected image output format, which may be related to HDR.
+     * @param selectedDynamicRange The currently selected [DynamicRange].
+     */
     data class Available(
         val selectedImageFormat: ImageOutputFormat,
         val selectedDynamicRange: DynamicRange

@@ -38,8 +38,38 @@ import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
  * settings, and display elements, providing a comprehensive view of the UI.
  */
 sealed interface CaptureUiState {
+    /**
+     * The capture UI is not ready and should display a loading state or be disabled.
+     * This is the initial state before the camera is fully initialized.
+     */
     data object NotReady : CaptureUiState
 
+    /**
+     * The capture UI is ready for user interaction.
+     *
+     * @property videoRecordingState The current state of video recording.
+     * @property quickSettingsUiState The UI state for the quick settings panel.
+     * @property aspectRatioUiState The UI state for the aspect ratio setting.
+     * @property flipLensUiState The UI state for the flip lens (front/back camera) button.
+     * @property snackBarUiState The UI state for the snack bar, used for showing messages to the user.
+     * @property previewDisplayUiState The UI state for the preview display.
+     * @property lastBlinkTimeStamp The timestamp of the last image capture blink animation.
+     * @property externalCaptureMode The external capture mode used by the intent that launched the camera. Default is [ExternalCaptureMode.Standard].
+     * @property captureModeToggleUiState The UI state for the photo/video toggle.
+     * @property sessionFirstFrameTimestamp The timestamp of the first frame of the current camera session.
+     * @property debugUiState The UI state for the debug overlay.
+     * @property stabilizationUiState The UI state for the video stabilization setting.
+     * @property flashModeUiState The UI state for the flash mode setting.
+     * @property videoQuality The currently selected video quality.
+     * @property audioUiState The UI state for audio recording.
+     * @property elapsedTimeUiState The UI state for the elapsed time display during video recording.
+     * @property captureButtonUiState The UI state for the capture button.
+     * @property imageWellUiState The UI state for the image well, which displays a thumbnail of a captured media.
+     * @property zoomUiState The UI state for the zoom level display.
+     * @property zoomControlUiState The UI state for the zoom control buttons.
+     * @property hdrUiState The UI state for the HDR setting.
+     * @property focusMeteringUiState The UI state for focus and metering.
+     */
     data class Ready(
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
         val quickSettingsUiState: QuickSettingsUiState = QuickSettingsUiState.Unavailable,
