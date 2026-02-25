@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -56,7 +57,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
 
 private const val DISABLED_ICON_ALPHA = 0.38f
 private const val TRACK_COLOR_ALPHA = .16f
@@ -385,69 +385,85 @@ private fun DrawScope.drawSwitchThumb(center: Offset, radius: Float, color: Colo
 @Preview(name = "Disabled On", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_On_Disabled() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleSwitch(
-            leftIcon = Icons.Outlined.CameraAlt,
-            rightIcon = Icons.Filled.Videocam,
-            checked = true,
-            onCheckedChange = {},
-            enabled = false
-        )
-    }
+    MaterialTheme(
+        colorScheme = darkColorScheme(),
+        content = {
+            ToggleSwitch(
+                leftIcon = Icons.Outlined.CameraAlt,
+                rightIcon = Icons.Filled.Videocam,
+                checked = true,
+                onCheckedChange = {},
+                enabled = false
+            )
+        }
+    )
 }
 
 @Preview(name = "Disabled off ", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_Off_Disabled() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleSwitch(
-            leftIcon = Icons.Filled.CameraAlt,
-            rightIcon = Icons.Outlined.Videocam,
-            checked = false,
-            onCheckedChange = {},
-            enabled = false
-        )
-    }
+    MaterialTheme(
+        colorScheme = darkColorScheme(),
+        content = {
+            ToggleSwitch(
+                leftIcon = Icons.Filled.CameraAlt,
+                rightIcon = Icons.Outlined.Videocam,
+                checked = false,
+                onCheckedChange = {},
+                enabled = false
+            )
+        }
+    )
 }
 
 @Preview(name = "on", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_On_Enabled() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleSwitch(
-            leftIcon = Icons.Outlined.CameraAlt,
-            rightIcon = Icons.Filled.Videocam,
-            checked = true,
-            onCheckedChange = {},
-            enabled = true
-        )
-    }
+    MaterialTheme(
+        colorScheme = darkColorScheme(),
+        content = {
+            ToggleSwitch(
+                leftIcon = Icons.Outlined.CameraAlt,
+                rightIcon = Icons.Filled.Videocam,
+                checked = true,
+                onCheckedChange = {},
+                enabled = true
+            )
+        }
+    )
 }
 
 @Preview(name = "off", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_Off_Enabled() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleSwitch(
-            leftIcon = Icons.Filled.CameraAlt,
-            rightIcon = Icons.Outlined.Videocam,
-            checked = false,
-            onCheckedChange = {},
-            enabled = true
-        )
-    }
+    MaterialTheme(
+        colorScheme = darkColorScheme(),
+        content = {
+            ToggleSwitch(
+                leftIcon = Icons.Filled.CameraAlt,
+                rightIcon = Icons.Outlined.Videocam,
+                checked = false,
+                onCheckedChange = {},
+                enabled = true
+            )
+        }
+    )
 }
 
 @Preview(name = "switch off", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_Switch_Off_Enabled() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleSwitch(
-            leftIcon = Icons.Filled.CameraAlt,
-            rightIcon = Icons.Outlined.Videocam,
-            checked = false,
-            onCheckedChange = {},
-            enabled = true
-        )
-    }
+    MaterialTheme(
+        colorScheme = darkColorScheme(),
+        content =
+        {
+            ToggleSwitch(
+                leftIcon = Icons.Filled.CameraAlt,
+                rightIcon = Icons.Outlined.Videocam,
+                checked = false,
+                onCheckedChange = {},
+                enabled = true
+            )
+        }
+    )
 }
