@@ -50,7 +50,7 @@ sealed interface CaptureModeToggleUiState {
                     selectedCaptureMode == CaptureMode.VIDEO_ONLY
 
             check(isSelectedModePresentAndSelectable) {
-                "Selected capture mode $selectedCaptureMode is not among video or image only }"
+                "Selected capture mode $selectedCaptureMode is not among video or image only"
             }
         }
     }
