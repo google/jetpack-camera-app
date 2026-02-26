@@ -30,16 +30,16 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TARGET_FPS_15
+import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_60
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.FpsUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.StabilizationUnsupportedRationale
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_30
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.settings.model.forDevice
@@ -55,7 +55,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
-private val fpsOptions = setOf(FPS_15, FPS_30, FPS_60)
+private val fpsOptions = setOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60)
 
 /**
  * [ViewModel] for [SettingsScreen].
@@ -174,7 +174,7 @@ class SettingsViewModel @Inject constructor(
                     DeviceUnsupportedRationale(R.string.flash_llb_rationale_prefix)
                 )
             } // llb unsupported above 30fps
-            else if (cameraAppSettings.targetFrameRate > FPS_30) {
+            else if (cameraAppSettings.targetFrameRate > TARGET_FPS_30) {
                 SingleSelectableState.Disabled(
                     FpsUnsupportedRationale(
                         R.string.flash_llb_rationale_prefix,
@@ -460,7 +460,7 @@ class SettingsViewModel @Inject constructor(
         // make sure all current settings wont break constraint when changing new default lens
 
         // if new lens won't support current fps
-        if (currentSettings.targetFrameRate != FPS_AUTO &&
+        if (currentSettings.targetFrameRate != TARGET_FPS_AUTO &&
             !newLensConstraints.supportedFixedFrameRates
                 .contains(currentSettings.targetFrameRate)
         ) {
@@ -557,9 +557,9 @@ class SettingsViewModel @Inject constructor(
         return FpsUiState.Enabled(
             currentSelection = cameraAppSettings.targetFrameRate,
             fpsAutoState = SingleSelectableState.Selectable,
-            fpsFifteenState = optionConstraintRationale[FPS_15]!!,
-            fpsThirtyState = optionConstraintRationale[FPS_30]!!,
-            fpsSixtyState = optionConstraintRationale[FPS_60]!!
+            fpsFifteenState = optionConstraintRationale[TARGET_FPS_15]!!,
+            fpsThirtyState = optionConstraintRationale[TARGET_FPS_30]!!,
+            fpsSixtyState = optionConstraintRationale[TARGET_FPS_60]!!
         )
     }
 
