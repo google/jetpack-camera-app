@@ -19,10 +19,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,14 +27,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -61,7 +61,7 @@ import androidx.compose.ui.unit.dp
  * @param snackBar the snack bar composable for showing messages
  */
 @Composable
-fun PreviewLayout(
+fun CaptureLayout(
     modifier: Modifier = Modifier,
     viewfinder: @Composable (Modifier) -> Unit,
     captureButton: @Composable (Modifier) -> Unit,
@@ -88,13 +88,11 @@ fun PreviewLayout(
                 indicatorRow(Modifier.statusBarsPadding())
                 viewfinder(Modifier)
             }
-
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
                     .safeDrawingPadding()
-
             ) {
                 debugVisibilityWrapper {
                     VerticalMaterialControls(
@@ -117,6 +115,7 @@ fun PreviewLayout(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
@@ -132,161 +131,207 @@ private fun VerticalMaterialControls(
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                // elapsed time
                 elapsedTimeDisplay(Modifier)
 
-                // zoom controls row
+                // zoom controls component
                 zoomControls(Modifier)
+
                 // capture button row
-                Column {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(IntrinsicSize.Max),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Row that holds flip camera, capture button, and audio
-                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
-                            // animation fades in/out this component based on quick settings
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(120.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                imageWell(Modifier)
-                            }
-                        }
-                        captureButton(Modifier)
-
-                        // right capturebutton item
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(120.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            flipCameraButton(Modifier)
-                        }
-                    }
-                }
-
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        // todo(kc): tune padding
-                        .padding(bottom = 50.dp)
+                CaptureButtonRow(
+                    modifier = Modifier.padding(24.dp),
+                    captureButton = { captureButton(Modifier) },
+                    leftItem = { imageWell(Modifier) },
+                    rightItem = { flipCameraButton(Modifier) }
                 )
 
                 // bottom controls row
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minHeight = 64.dp)
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    // Row that holds toggle buttons for quick settings and capture mode
-                    // quick settings toggle switch item to the left
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        quickSettingsToggleButton(Modifier)
-                    }
-
-                    // capture mode toggle switch center
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        captureModeToggleSwitch(Modifier)
-                    }
-
-                    // right toggle switch item to the right
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.CenterEnd
-                    ) {}
-                }
+                BottomControls(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 24.dp),
+                    centerItem = { captureModeToggleSwitch(Modifier) },
+                    leftItem = { quickSettingsToggleButton(Modifier) },
+                    rightItem = { }
+                )
             }
         }
         bottomSheetQuickSettings(Modifier)
     }
 }
 
+@Composable
+private fun CaptureButtonRow(
+    captureButton: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    leftItem: @Composable () -> Unit = {},
+    rightItem: @Composable () -> Unit = {}
+) {
+    Row(
+        modifier
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Left controls (imageWell)
+        Box(
+            modifier = Modifier
+                .weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            leftItem()
+        }
+
+        // Capture Button at Center
+        captureButton()
+
+        // Right controls (flipCameraButton)
+        Box(
+            modifier = Modifier
+                .weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            rightItem()
+        }
+    }
+}
+
+@Composable
+private fun BottomControls(
+    centerItem: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    leftItem: @Composable () -> Unit = {},
+    rightItem: @Composable () -> Unit = {}
+) {
+    Row(
+        modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        // Row that holds toggle buttons for quick settings and capture mode
+        // quick settings toggle switch item to the left
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            leftItem()
+        }
+
+        // capture mode toggle switch center
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            centerItem()
+        }
+
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            rightItem()
+        }
+    }
+}
+
 @Preview
 @Composable
 private fun CaptureLayoutPreview() {
-    PreviewLayout(
+    CaptureLayout(
         modifier = Modifier.background(Color.Black),
         viewfinder = { modifier ->
             Box(
                 modifier = modifier
                     .fillMaxWidth()
                     .height(600.dp)
-                    .background(Color.DarkGray)
-            )
+                    .background(Color.DarkGray),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "viewfinder", textAlign = TextAlign.Center, color = Color.White)
+            }
         },
         captureButton = { modifier ->
             Box(
                 modifier = modifier
                     .size(80.dp)
-                    .background(Color.White)
-            )
+                    .background(Color.White),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "capture button", textAlign = TextAlign.Center)
+            }
         },
         flipCameraButton = { modifier ->
             Box(
                 modifier = modifier
                     .size(48.dp)
-                    .background(Color.Cyan)
-            )
+                    .background(Color.Cyan),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "flip camera ", textAlign = TextAlign.Center)
+            }
         },
         imageWell = { modifier ->
             Box(
                 modifier = modifier
                     .size(48.dp)
-                    .background(Color.Cyan)
-            )
+                    .background(Color.Green),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "image well", textAlign = TextAlign.Center)
+            }
         },
         zoomLevelDisplay = { modifier ->
             Box(
                 modifier = modifier
                     .height(48.dp)
-                    .fillMaxWidth()
-                    .background(Color.Magenta)
-            )
+                    .fillMaxWidth(.5f)
+                    .background(Color.Magenta),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "zoom controls", textAlign = TextAlign.Center)
+            }
         },
         elapsedTimeDisplay = { modifier ->
             Box(
                 modifier = modifier
                     .height(24.dp)
-                    .fillMaxWidth(0.5f)
-                    .background(Color.Red)
-            )
+                    .fillMaxWidth(0.25f)
+                    .background(Color.Red),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "elapsed time", textAlign = TextAlign.Center)
+            }
         },
         quickSettingsButton = { modifier ->
             Box(
                 modifier = modifier
                     .size(48.dp)
-                    .background(Color.Yellow)
-            )
+                    .background(Color.Yellow),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "quick setting toggle", textAlign = TextAlign.Center)
+            }
         },
         indicatorRow = { modifier ->
             Box(
                 modifier = modifier
                     .height(48.dp)
                     .fillMaxWidth()
-                    .background(Color.Green)
-            )
+                    .background(Color.Green),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "indicators row")
+            }
         },
         captureModeToggle = { modifier ->
             Box(
                 modifier = modifier
                     .height(48.dp)
                     .fillMaxWidth(0.5f)
-                    .background(Color.Blue)
-            )
+                    .background(Color.Blue),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "capture toggle", textAlign = TextAlign.Center, color = Color.Yellow)
+            }
         },
         quickSettingsOverlay = {
             // No-op for preview

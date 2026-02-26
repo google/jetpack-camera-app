@@ -41,7 +41,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
@@ -54,7 +53,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.FlipCameraAndroid
@@ -94,6 +92,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -144,7 +143,7 @@ private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
 fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
     if (elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
         Text(
-            modifier = modifier,
+            modifier = modifier.testTag(ELAPSED_TIME_TAG),
             text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
                 .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
             textAlign = TextAlign.Center
@@ -471,7 +470,8 @@ fun PreviewDisplay(
     onRequestWindowColorMode: (Int) -> Unit,
     surfaceRequest: SurfaceRequest?,
     focusMeteringUiState: FocusMeteringUiState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    clippedShape: Shape? = null
 ) {
     if (previewDisplayUiState.aspectRatioUiState !is AspectRatioUiState.Available) {
         return
@@ -484,10 +484,7 @@ fun PreviewDisplay(
 
     surfaceRequest?.let {
         BoxWithConstraints(
-            modifier
-                .testTag(PREVIEW_DISPLAY)
-                .fillMaxSize()
-                .background(Color.Black),
+            modifier = modifier.testTag(PREVIEW_DISPLAY),
             contentAlignment = Alignment.TopCenter
         ) {
             val aspectRatio = (
@@ -524,7 +521,11 @@ fun PreviewDisplay(
                     .height(height)
                     .transformable(state = transformableState)
                     .alpha(imageAlpha)
-                    .clip(RoundedCornerShape(16.dp))
+                    .apply {
+                        clippedShape?.let {
+                            clip(clippedShape)
+                        }
+                    }
             ) {
                 val implementationMode = when {
                     Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
@@ -735,7 +736,9 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         if (videoQuality != VideoQuality.UNSPECIFIED) {
             Icon(
-                modifier = modifier.size(IconButtonDefaults.smallIconSize),
+                modifier = modifier
+                    .testTag(VIDEO_QUALITY_TAG)
+                    .size(IconButtonDefaults.smallIconSize),
 
                 painter = when (videoQuality) {
                     VideoQuality.SD ->
@@ -817,7 +820,7 @@ fun FlipCameraButton(
             }
         }
         IconButton(
-            modifier = modifier,
+            modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
             onClick = onClick,
             enabled = enabledCondition
         ) {
