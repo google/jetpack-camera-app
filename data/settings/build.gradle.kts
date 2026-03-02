@@ -30,6 +30,7 @@ android {
         testOptions.targetSdk = libs.versions.targetSdk.get().toInt()
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
 
@@ -77,4 +78,5 @@ dependencies {
     // Access Model data
     implementation(project(":core:model"))
     implementation(project(":core:common"))
+    androidTestImplementation(libs.androidx.junit)
 }
