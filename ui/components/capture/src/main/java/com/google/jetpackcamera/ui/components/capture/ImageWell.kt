@@ -49,7 +49,8 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
 /**
- * A composable that displays the last captured image.
+ * A composable that displays thumbnail image that can be clicked to open the full media in
+ * post-capture
  *
  * @param imageWellUiState the [ImageWellUiState.LastCapture] for this component
  * @param onClick the callback for when the image well is clicked
@@ -60,7 +61,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun ImageWell(
-    imageWellUiState: ImageWellUiState.LastCapture,
+    imageWellUiState: ImageWellUiState.Content,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(16.dp),
@@ -109,7 +110,7 @@ private fun ImageWellPreview() {
         uri = Uri.EMPTY,
         thumbnail = previewBitmap
     )
-    val imageWellUiState = ImageWellUiState.LastCapture(
+    val imageWellUiState = ImageWellUiState.Content(
         mediaDescriptor = mediaDescriptor
     )
 

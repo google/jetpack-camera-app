@@ -77,10 +77,6 @@ fun debugUiState(
 /**
  * Constructs a [DebugUiState] based on the current camera and application state.
  *
- * This is a private factory function that determines whether the debug UI should be fully
- * enabled and open, enabled but closed, or completely disabled. It gathers and transforms
- * the necessary data for the UI.
- *
  * @param systemConstraints The system-level constraints for the current camera.
  * @param cameraAppSettings The current application-level camera settings.
  * @param cameraState The real-time state of the camera.
