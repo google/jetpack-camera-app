@@ -49,7 +49,8 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
 /**
- * A composable that displays the last captured image.
+ * A composable that displays thumbnail image that can be clicked to open the full media in
+ * post-capture
  *
  * @param imageWellUiState the [ImageWellUiState.LastCapture] for this component
  * @param onClick the callback for when the image well is clicked
