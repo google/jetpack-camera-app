@@ -27,13 +27,7 @@ sealed interface ImageWellUiState {
      */
     data object Unavailable : ImageWellUiState
 
-    /**
-     * The image well is displaying information about the last captured media.
-     *
-     * @param mediaDescriptor A [MediaDescriptor.Content] object that contains information about
-     * the last captured media, such as its URI and whether it is a video.
-     */
-    data class LastCapture(val mediaDescriptor: MediaDescriptor.Content) : ImageWellUiState
+    data class Content(val mediaDescriptor: MediaDescriptor.Content) : ImageWellUiState
 
     companion object
 }
