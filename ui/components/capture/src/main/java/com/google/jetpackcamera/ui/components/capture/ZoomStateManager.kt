@@ -26,7 +26,19 @@ import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.ZoomStrategy
 
-class ZoomState(
+/**
+ * Manages the camera's zoom level and handles interactions related to zooming.
+ *
+ * This class provides functions to control the camera's zoom, including setting an absolute
+ * zoom level, scaling the current zoom, incrementing the zoom, and animating zoom transitions.
+ * It also handles updating the zoom state when the camera lens changes.
+ *
+ * @param initialZoomLevel The starting zoom level when the camera is initialized.
+ * @param zoomRange The supported zoom range of the current camera lens.
+ * @param onChangeZoomLevel A callback function that is invoked when the zoom level changes.
+ * @param onAnimateStateChanged A callback function to indicate whether a zoom animation is in progress.
+ */
+class ZoomStateManager(
     initialZoomLevel: Float,
     zoomRange: Range<Float>,
     val onChangeZoomLevel: (CameraZoomRatio) -> Unit,
@@ -38,8 +50,14 @@ class ZoomState(
 
     private var functionalZoom = initialZoomLevel
 
+    // The valid zoom range for the current camera lens.
     private var functionalZoomRange = zoomRange
 
+    // A mutex to ensure that zoom operations are atomic and thread-safe. This is crucial for
+    // preventing race conditions, as multiple zoom actions (e.g., pinch-to-zoom and button
+    // clicks) can be triggered concurrently. By using a MutatorMutex, we can ensure that
+    // only one zoom mutation is active at a time, and that new mutations can cancel
+    // existing ones.
     private val mutatorMutex = MutatorMutex()
 
     private suspend fun mutateZoom(block: suspend () -> Unit) {
@@ -50,7 +68,13 @@ class ZoomState(
     }
 
     /**
-     * Immediately set the current zoom level to [targetZoomLevel].
+     * Immediately sets the zoom level to a specified value.
+     *
+     * This function will ignore any ongoing animations and instantly update the zoom.
+     * The provided [targetZoomLevel] will be coerced to stay within the valid [functionalZoomRange].
+     *
+     * @param targetZoomLevel The absolute zoom level to set.
+     * @param lensToZoom Specifies which lens's zoom to modify (primary or secondary).
      */
     suspend fun absoluteZoom(targetZoomLevel: Float, lensToZoom: LensToZoom) {
         mutateZoom {
@@ -69,23 +93,39 @@ class ZoomState(
     }
 
     /**
-     * Scale the current zoom level.
+     * Scales the current zoom level by a given factor.
+     *
+     * This is useful for implementing pinch-to-zoom gestures, where the zoom level is adjusted
+     * multiplicatively.
+     *
+     * @param scalingFactor The factor by which to multiply the current zoom level.
+     * @param lensToZoom Specifies which lens's zoom to modify (primary or secondary).
      */
     suspend fun scaleZoom(scalingFactor: Float, lensToZoom: LensToZoom) {
         absoluteZoom(scalingFactor * functionalZoom, lensToZoom)
     }
 
     /**
-     * Increment the current zoom level.
+     * Increments the current zoom level by a given amount.
+     *
+     * This can be used for implementing zoom buttons that increase or decrease the zoom level
+     * by a fixed step.
+     *
+     * @param increment The amount to add to the current zoom level.
+     * @param lensToZoom Specifies which lens's zoom to modify (primary or secondary).
      */
     suspend fun incrementZoom(increment: Float, lensToZoom: LensToZoom) {
         absoluteZoom(increment + functionalZoom, lensToZoom)
     }
 
     /**
-     * Ease towards a specific zoom level
+     * Smoothly animates the zoom level to a target value.
      *
-     * @param animationSpec [androidx.compose.animation.core.AnimationSpec] used for the animation, default to tween over 500ms
+     * If there is an ongoing zoom animation, it will be canceled, and a new one will start.
+     *
+     * @param targetZoomLevel The target zoom level to animate to.
+     * @param animationSpec The [AnimationSpec] that defines the animation's timing and curve.
+     * @param lensToZoom Specifies which lens's zoom to modify (primary or secondary).
      */
     suspend fun animatedZoom(
         targetZoomLevel: Float,
@@ -113,6 +153,15 @@ class ZoomState(
         }
     }
 
+    /**
+     * Updates the internal state when the camera lens is changed.
+     *
+     * This function should be called when the active camera lens (e.g., front or back) is switched,
+     * as different lenses may have different zoom capabilities.
+     *
+     * @param newInitialZoomLevel The initial zoom level for the new lens.
+     * @param newZoomRange The valid zoom range for the new lens.
+     */
     suspend fun onChangeLens(newInitialZoomLevel: Float, newZoomRange: Range<Float>) {
         mutatorMutex.mutate(MutatePriority.PreventUserInput) {
             functionalZoom = newInitialZoomLevel

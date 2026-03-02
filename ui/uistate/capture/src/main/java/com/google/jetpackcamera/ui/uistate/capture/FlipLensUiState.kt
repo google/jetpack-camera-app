@@ -18,9 +18,26 @@ package com.google.jetpackcamera.ui.uistate.capture
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
+/**
+ * Defines the UI state for the flip lens button.
+ *
+ * This sealed interface represents the different states of the UI component that allows switching
+ * between front and back cameras.
+ */
 sealed interface FlipLensUiState {
+    /**
+     * The flip lens button is unavailable.
+     * This may occur when only one camera is present or when switching is temporarily disabled.
+     */
     data object Unavailable : FlipLensUiState
 
+    /**
+     * The flip lens button is available.
+     *
+     * @param selectedLensFacing The currently selected [LensFacing] (e.g., front or back).
+     * @param availableLensFacings A list of all available lens facings, each represented by a
+     * [SingleSelectableUiState] to indicate its selection status.
+     */
     data class Available(
         val selectedLensFacing: LensFacing,
         val availableLensFacings: List<SingleSelectableUiState<LensFacing>>
