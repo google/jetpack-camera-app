@@ -27,7 +27,6 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
-        testOptions.targetSdk = libs.versions.targetSdk.get().toInt()
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -49,23 +48,6 @@ android {
     kotlin {
         jvmToolchain(17)
     }
-
-    @Suppress("UnstableApiUsage")
-    testOptions {
-        managedDevices {
-            localDevices {
-                create("pixel2Api28") {
-                    device = "Pixel 2"
-                    apiLevel = 28
-                }
-                create("pixel8Api34") {
-                    device = "Pixel 8"
-                    apiLevel = 34
-                    systemImageSource = "aosp_atd"
-                }
-            }
-        }
-    }
 }
 
 dependencies {
@@ -78,5 +60,4 @@ dependencies {
     // Access Model data
     implementation(project(":core:model"))
     implementation(project(":core:common"))
-    androidTestImplementation(libs.androidx.junit)
 }

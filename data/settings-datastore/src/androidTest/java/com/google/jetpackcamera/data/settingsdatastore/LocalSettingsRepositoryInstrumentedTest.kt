@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.data.settings_datastore
+package com.google.jetpackcamera.data.settingsdatastore
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -23,8 +23,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.data.settingsdatastore.DataStoreModule.provideDataStore
-import com.google.jetpackcamera.data.settingsdatastore.JcaSettingsSerializer
-import com.google.jetpackcamera.data.settingsdatastore.LocalSettingsRepository
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -34,6 +32,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.JcaSettings
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -47,7 +46,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 /**
  * Instrumented test, which will execute on an Android device.
