@@ -72,6 +72,7 @@ import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
@@ -335,6 +336,7 @@ fun PreviewScreen(
                 onStartVideoRecording = viewModel::startVideoRecording,
                 onStopVideoRecording = viewModel::stopVideoRecording,
                 onLockVideoRecording = viewModel::setLockedRecording,
+                onUpdateGridType = viewModel::updateGridType,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
                 onNavigatePostCapture = onNavigateToPostCapture,
@@ -391,6 +393,7 @@ private fun ContentScreen(
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {},
+    onUpdateGridType: (GridType) -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
     onNavigatePostCapture: () -> Unit = {},
@@ -567,6 +570,7 @@ private fun ContentScreen(
                 onImageOutputFormatClick = onChangeImageFormat,
                 onConcurrentCameraModeClick = onChangeConcurrentCameraMode,
                 onCaptureModeClick = onSetCaptureMode,
+                onGridClick = onUpdateGridType,
                 onNavigateToSettings = {
                     onToggleQuickSettings()
                     onNavigateToSettings()

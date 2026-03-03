@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistate.capture.compound
+package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.model.GridType
-import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 
 /**
- * The UI state for the preview display.
+ * Creates a [GridType] from the given [TrackedCaptureUiState].
  *
- * @param lastBlinkTimeStamp The timestamp of the most recent capture blink animation.
- * @param aspectRatioUiState The UI state for the aspect ratio of the preview.
- * @param gridType The type of grid to display.
+ * This function acts as an adapter to extract the grid-related UI state.
+ *
+ * @param trackedCaptureUiState The UI state holder.
+ * @return The current [GridType].
  */
-data class PreviewDisplayUiState(
-    val lastBlinkTimeStamp: Long = 0,
-    val aspectRatioUiState: AspectRatioUiState,
-    val gridType: GridType = GridType.NONE
-)
+fun GridType.Companion.from(trackedCaptureUiState: TrackedCaptureUiState): GridType {
+    return trackedCaptureUiState.gridType
+}

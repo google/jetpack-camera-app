@@ -30,6 +30,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
@@ -46,6 +47,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickFlip
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetConcurrentCamera
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetFlash
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetGrid
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetStreamConfig
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
@@ -82,7 +84,8 @@ fun QuickSettingsBottomSheet(
     onDynamicRangeClick: (dynamicRange: DynamicRange) -> Unit,
     onImageOutputFormatClick: (imageOutputFormat: ImageOutputFormat) -> Unit,
     onConcurrentCameraModeClick: (concurrentCameraMode: ConcurrentCameraMode) -> Unit,
-    onCaptureModeClick: (CaptureMode) -> Unit
+    onCaptureModeClick: (CaptureMode) -> Unit,
+    onGridClick: (GridType) -> Unit
 ) {
     if (quickSettingsUiState is QuickSettingsUiState.Available) {
         val onUnFocus = { onSetFocusedSetting(FocusedQuickSetting.NONE) }
@@ -182,6 +185,18 @@ fun QuickSettingsBottomSheet(
                         }
 
                         add {
+                            QuickSetGrid(
+                                onClick = {
+                                    when (quickSettingsUiState.gridType) {
+                                        GridType.NONE -> onGridClick(GridType.RULE_OF_THIRDS)
+                                        GridType.RULE_OF_THIRDS -> onGridClick(GridType.NONE)
+                                    }
+                                },
+                                gridType = quickSettingsUiState.gridType
+                            )
+                        }
+
+                        add {
                             QuickNavSettings(
                                 modifier = Modifier
                                     .testTag(SETTINGS_BUTTON),
@@ -266,6 +281,7 @@ fun ExpandedQuickSettingsUiPreview() {
                     ),
                     isActive = false
                 ),
+                gridType = GridType.NONE,
                 quickSettingsIsOpen = true
             ),
             onLensFaceClick = { },
@@ -278,6 +294,7 @@ fun ExpandedQuickSettingsUiPreview() {
             toggleQuickSettings = { },
             onNavigateToSettings = { },
             onCaptureModeClick = { },
+            onGridClick = {},
             onSetFocusedSetting = {}
         )
     }
@@ -337,6 +354,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                     ),
                     isActive = false
                 ),
+                gridType = GridType.NONE,
                 quickSettingsIsOpen = true
             ),
             onLensFaceClick = { },
@@ -349,6 +367,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
             toggleQuickSettings = { },
             onNavigateToSettings = { },
             onCaptureModeClick = { },
+            onGridClick = {},
             onSetFocusedSetting = {}
         )
     }
