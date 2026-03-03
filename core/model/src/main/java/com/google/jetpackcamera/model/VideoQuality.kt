@@ -15,37 +15,10 @@
  */
 package com.google.jetpackcamera.model
 
-import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
-
 enum class VideoQuality {
     UNSPECIFIED,
     SD,
     HD,
     FHD,
-    UHD;
-
-    companion object {
-        /** returns the VideoQuality enum equivalent of a provided VideoQualityProto */
-        fun fromProto(videoQualityProto: VideoQualityProto): VideoQuality {
-            return when (videoQualityProto) {
-                VideoQualityProto.VIDEO_QUALITY_SD -> SD
-                VideoQualityProto.VIDEO_QUALITY_HD -> HD
-                VideoQualityProto.VIDEO_QUALITY_FHD -> FHD
-                VideoQualityProto.VIDEO_QUALITY_UHD -> UHD
-                VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED,
-                VideoQualityProto.UNRECOGNIZED
-                -> UNSPECIFIED
-            }
-        }
-
-        fun VideoQuality.toProto(): VideoQualityProto {
-            return when (this) {
-                UNSPECIFIED -> VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED
-                SD -> VideoQualityProto.VIDEO_QUALITY_SD
-                HD -> VideoQualityProto.VIDEO_QUALITY_HD
-                FHD -> VideoQualityProto.VIDEO_QUALITY_FHD
-                UHD -> VideoQualityProto.VIDEO_QUALITY_UHD
-            }
-        }
-    }
+    UHD
 }
