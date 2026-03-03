@@ -36,6 +36,20 @@ private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
     FlashMode.LOW_LIGHT_BOOST
 )
 
+/**
+ * Creates the initial [FlashModeUiState] from the given camera settings and system constraints.
+ *
+ * This factory function determines the set of available flash modes based on hardware support
+ * and current camera settings (like HDR or concurrent mode). If only [FlashMode.OFF] is available,
+ * or no modes are supported, it returns [FlashModeUiState.Unavailable].
+ *
+ * @param cameraAppSettings The current settings of the camera, used to determine which flash modes
+ * might be disabled due to other active settings (e.g., HDR).
+ * @param systemConstraints The hardware capabilities of the camera system, used to get the list
+ * of supported flash modes for the current lens.
+ * @return A [FlashModeUiState] which is either [Available] if multiple flash modes can be shown,
+ * or [Unavailable] if the flash controls should be hidden.
+ */
 fun FlashModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints
@@ -81,6 +95,20 @@ fun FlashModeUiState.Companion.from(
     }
 }
 
+/**
+ * Updates an existing [FlashModeUiState] based on new camera settings and state.
+ *
+ * This function efficiently updates the flash UI state without recreating it from scratch if
+ * possible. It checks for changes in supported modes, selected mode, and the real-time status
+ * of Low Light Boost.
+ *
+ * @param cameraAppSettings The current application settings for the camera.
+ * @param systemConstraints The hardware capabilities of the camera system.
+ * @param cameraState The real-time state from the camera, used to check [LowLightBoostState].
+ * @return An updated [FlashModeUiState]. This may be the same instance if no relevant
+ * state has changed, a copied instance with minor updates, or a completely new instance if
+ * supported flash modes have changed.
+ */
 fun FlashModeUiState.updateFrom(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,

@@ -40,7 +40,7 @@ class ImageWellUiStateAdapterTest {
         val result = ImageWellUiState.from(mediaDescriptor, videoRecordingState)
 
         // Then
-        assertThat(result).isEqualTo(ImageWellUiState.LastCapture(mediaDescriptor))
+        assertThat(result).isEqualTo(ImageWellUiState.Content(mediaDescriptor))
     }
 
     @Test
