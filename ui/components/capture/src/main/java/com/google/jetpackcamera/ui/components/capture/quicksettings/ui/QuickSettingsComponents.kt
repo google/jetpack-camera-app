@@ -471,7 +471,8 @@ fun QuickSetConcurrentCamera(
 fun ToggleQuickSettingsButton(
     toggleBottomSheet: () -> Unit,
     isOpen: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val buttonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
@@ -483,13 +484,13 @@ fun ToggleQuickSettingsButton(
             .size(buttonSize)
             .testTag(QUICK_SETTINGS_DROP_DOWN)
             .semantics {
-                testTag = QUICK_SETTINGS_DROP_DOWN
                 contentDescription = if (isOpen) {
                     openDescription
                 } else {
                     closedDescription
                 }
             },
+        enabled = enabled,
         onClick = toggleBottomSheet,
         colors = IconButtonDefaults.iconButtonColors(
             // Set the background color of the button
@@ -910,8 +911,7 @@ private fun QuickSettingToggleButtonPreview() {
     ) {
         Row(
             modifier = Modifier
-                .width(300.dp)
-                .height(180.dp),
+                .width(200.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Instance 1: Unchecked state
