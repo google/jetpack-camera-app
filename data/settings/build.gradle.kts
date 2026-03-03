@@ -19,7 +19,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.dagger.hilt.android)
-    alias(libs.plugins.google.protobuf)
 }
 
 android {
@@ -28,7 +27,6 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
-        testOptions.targetSdk = libs.versions.targetSdk.get().toInt()
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -50,23 +48,6 @@ android {
     kotlin {
         jvmToolchain(17)
     }
-
-    @Suppress("UnstableApiUsage")
-    testOptions {
-        managedDevices {
-            localDevices {
-                create("pixel2Api28") {
-                    device = "Pixel 2"
-                    apiLevel = 28
-                }
-                create("pixel8Api34") {
-                    device = "Pixel 8"
-                    apiLevel = 34
-                    systemImageSource = "aosp_atd"
-                }
-            }
-        }
-    }
 }
 
 dependencies {
@@ -76,46 +57,7 @@ dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
-    // proto datastore
-    implementation(libs.androidx.datastore)
-    implementation(libs.protobuf.kotlin.lite)
-
-    // Testing
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.kotlinx.coroutines.test)
-
     // Access Model data
     implementation(project(":core:model"))
     implementation(project(":core:common"))
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.21.12"
-    }
-
-    generateProtoTasks {
-        all().forEach { task ->
-            task.builtins {
-                create("java") {
-                    option("lite")
-                }
-            }
-
-            task.builtins {
-                create("kotlin") {
-                    option("lite")
-                }
-            }
-        }
-    }
-}
-
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
 }
