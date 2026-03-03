@@ -70,18 +70,16 @@ import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNS
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.uistate.DisableRationale
+import com.google.jetpackcamera.ui.uistate.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackBarUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.debugUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.LinkedList
-import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -100,6 +98,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.LinkedList
+import javax.inject.Inject
 
 private const val TAG = "PreviewViewModel"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
@@ -225,7 +225,7 @@ class PreviewViewModel @Inject constructor(
      */
     fun imageWellToRepository() {
         (captureUiState.value as? CaptureUiState.Ready)
-            ?.let { it.imageWellUiState as? ImageWellUiState.LastCapture }
+            ?.let { it.imageWellUiState as? ImageWellUiState.Content }
             ?.let { postCurrentMediaToMediaRepository(it.mediaDescriptor) }
     }
 

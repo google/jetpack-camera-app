@@ -36,6 +36,16 @@ import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 
 private const val TAG = "ScreenFlashComponents"
 
+/**
+ * A composable that manages the screen flash effect during image capture.
+ *
+ * This component displays a full-screen white overlay to simulate a flash and maximizes
+ * the device's screen brightness when enabled. After the flash, it restores the screen
+ * to its original brightness.
+ *
+ * @param screenFlashUiState The [ScreenFlashUiState] that controls the screen flash's state.
+ * @param onInitialBrightnessCalculated Callback to provide the initial screen brightness before maximization.
+ */
 @Composable
 fun ScreenFlashScreen(
     screenFlashUiState: ScreenFlashUiState,
@@ -55,6 +65,12 @@ fun ScreenFlashScreen(
     }
 }
 
+/**
+ * A composable that displays a white overlay to simulate a screen flash.
+ *
+ * @param screenFlashUiState The [ScreenFlashUiState] that controls the overlay's visibility and behavior.
+ * @param modifier The modifier for this composable.
+ */
 @Composable
 private fun ScreenFlashOverlay(
     screenFlashUiState: ScreenFlashUiState,

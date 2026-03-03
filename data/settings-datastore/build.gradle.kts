@@ -25,7 +25,9 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        minSdk = 23
+        minSdk = libs.versions.minSdk.get().toInt()
+        testOptions.targetSdk = libs.versions.targetSdk.get().toInt()
+        lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -46,6 +48,23 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+    }
+
+    @Suppress("UnstableApiUsage")
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("pixel2Api28") {
+                    device = "Pixel 2"
+                    apiLevel = 28
+                }
+                create("pixel8Api34") {
+                    device = "Pixel 8"
+                    apiLevel = 34
+                    systemImageSource = "aosp_atd"
+                }
+            }
+        }
     }
 }
 

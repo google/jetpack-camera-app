@@ -24,6 +24,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.utils.CameraXResetRule
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.isEmulatorWithFakeFrontCamera
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
@@ -35,6 +36,9 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 class SingleLensModeTest(private val lensFacing: String) {
+    @get:Rule
+    val cameraXResetRule = CameraXResetRule()
+
     @get:Rule
     val permissionsRule: GrantPermissionRule =
         GrantPermissionRule.grant(*(TEST_REQUIRED_PERMISSIONS).toTypedArray())

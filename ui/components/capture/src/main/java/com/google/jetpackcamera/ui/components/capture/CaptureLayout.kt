@@ -41,7 +41,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-// these layouts are only concerned with placement. nothing else. no state handling
+/**
+ * The base layout for the camera capture screen.
+ *
+ * @param modifier the modifier for this component
+ * @param viewfinder the viewfinder composable
+ * @param captureButton the capture button composable
+ * @param imageWell the image well composable
+ * @param flipCameraButton the flip camera button composable
+ * @param zoomLevelDisplay the zoom level display composable
+ * @param elapsedTimeDisplay the elapsed time display composable
+ * @param quickSettingsButton the quick settings button composable
+ * @param indicatorRow the indicator row composable
+ * @param captureModeToggle the capture mode toggle composable
+ * @param quickSettingsOverlay the quick settings overlay composable
+ * @param debugOverlay the debug overlay composable
+ * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug settings
+ * @param screenFlashOverlay the screen flash overlay composable
+ * @param snackBar the snack bar composable for showing messages
+ */
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,

@@ -124,6 +124,29 @@ class PostCaptureTest {
     }
 
     @Test
+    fun captureImage_navigatesPostcapture_canExit() = runMainActivityScenarioTest(cacheExtra) {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitForCaptureButton()
+
+        assertThat(newImageMediaExists()).isFalse()
+
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+
+        // navigate to postcapture screen
+        composeTestRule.waitForNodeWithTag(
+            VIEWER_POST_CAPTURE_IMAGE,
+            VIDEO_CAPTURE_TIMEOUT_MILLIS
+        )
+
+        // attempt to exit postcapture
+        composeTestRule.waitForNodeWithTag(BUTTON_POST_CAPTURE_EXIT)
+        composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_EXIT).performClick()
+        composeTestRule.waitForCaptureButton()
+
+        assertThat(newImageMediaExists()).isFalse()
+    }
+
+    @Test
     fun captureImage_navigatesPostcapture_canSaveCachedImage() =
         runMainActivityScenarioTest(cacheExtra) {
             // Wait for the capture button to be displayed

@@ -155,6 +155,31 @@ private fun CaptureKeyHandler(
     }
 }
 
+/**
+ * A capture button that can be used for both image and video capture, supporting drag-to-lock for hands-free recording.
+ *
+ * This component handles user interactions such as tap for image capture, long-press for video recording,
+ * and a drag-to-lock gesture to enable continuous, "hands-free recording." When a video recording
+ * is initiated via a long press, the user can drag their finger towards the lock icon to lock the recording,
+ * allowing them to lift their finger and continue recording without interruption. Additionally, users can
+ * drag vertically *above* the capture button (where Y coordinates are negative relative to the button's top edge)
+ * to zoom in (dragging upwards) or zoom out (dragging downwards).
+ *
+ * The button supports three distinct capture modes: Hybrid, Image-only, and Video-only, each with its
+ * own UI and behavior:
+ * - **Hybrid Mode:** A single tap captures an image, and a long press initiates video recording.
+ * - **Image-only Mode:** Only single taps are active for image capture. Long press for video recording is disabled.
+ * - **Video-only Mode:** A single tap initiates video recording, and a long press also initiates video recording, with the drag-to-lock feature available.
+ *
+ * @param modifier the modifier for this component
+ * @param onImageCapture the callback for an image capture event
+ * @param onStartRecording the callback for a start recording event
+ * @param onStopRecording the callback for a stop recording event
+ * @param onLockVideoRecording The callback for a lock video recording event. The boolean parameter indicates if the recording should be locked.
+ * @param onIncrementZoom The callback for a zoom increment event, providing the zoom increment value.
+ * @param captureButtonUiState the [CaptureButtonUiState] for this component
+ * @param captureButtonSize the size of the capture button
+ */
 @Composable
 internal fun CaptureButton(
     modifier: Modifier = Modifier,
