@@ -41,6 +41,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -92,6 +93,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -101,11 +103,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.uistate.DisableRationale
@@ -123,11 +127,14 @@ import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.withContext
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -471,6 +478,7 @@ fun PreviewDisplay(
     onRequestWindowColorMode: (Int) -> Unit,
     surfaceRequest: SurfaceRequest?,
     focusMeteringUiState: FocusMeteringUiState,
+    debugHidingComponents: Boolean,
     modifier: Modifier = Modifier
 ) {
     if (previewDisplayUiState.aspectRatioUiState !is AspectRatioUiState.Available) {
@@ -482,50 +490,51 @@ fun PreviewDisplay(
         }
     )
 
-    surfaceRequest?.let {
-        BoxWithConstraints(
-            modifier
-                .testTag(PREVIEW_DISPLAY)
-                .fillMaxSize()
-                .background(Color.Black),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            val aspectRatio = (
-                previewDisplayUiState.aspectRatioUiState as
-                    AspectRatioUiState.Available
-                ).selectedAspectRatio
-            val maxAspectRatio: Float = maxWidth / maxHeight
-            val aspectRatioFloat: Float = aspectRatio.toFloat()
-            val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
-            var imageVisible by remember { mutableStateOf(true) }
+    BoxWithConstraints(
+        modifier
+            .testTag(PREVIEW_DISPLAY)
+            .fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        val aspectRatio = (
+            previewDisplayUiState.aspectRatioUiState as
+                AspectRatioUiState.Available
+            ).selectedAspectRatio
+        val maxAspectRatio: Float = maxWidth / maxHeight
+        val aspectRatioFloat: Float = aspectRatio.toFloat()
+        val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
+        val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
+        val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+        var imageVisible by remember { mutableStateOf(true) }
 
-            val imageAlpha: Float by animateFloatAsState(
-                targetValue = if (imageVisible) 1f else 0f,
-                animationSpec = tween(
-                    durationMillis = (BLINK_TIME / 2).toInt(),
-                    easing = LinearEasing
-                ),
-                label = ""
-            )
+        val imageAlpha: Float by animateFloatAsState(
+            targetValue = if (imageVisible) 1f else 0f,
+            animationSpec = tween(
+                durationMillis = (BLINK_TIME / 2).toInt(),
+                easing = LinearEasing
+            ),
+            label = ""
+        )
 
-            LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
-                if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
-                    imageVisible = false
-                    delay(BLINK_TIME)
-                    imageVisible = true
-                }
+        LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
+            if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
+                imageVisible = false
+                delay(BLINK_TIME)
+                imageVisible = true
             }
+        }
 
-            Box(
-                modifier = Modifier
-                    .width(width)
-                    .height(height)
-                    .transformable(state = transformableState)
-                    .alpha(imageAlpha)
-                    .clip(RoundedCornerShape(16.dp))
-            ) {
+        Box(
+            modifier = Modifier
+                .width(width)
+                .height(height)
+                .transformable(state = transformableState)
+                .alpha(imageAlpha)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.Black)
+        ) {
+            val coordinateTransformer = remember { MutableCoordinateTransformer() }
+            if (surfaceRequest != null) {
                 val implementationMode = when {
                     Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
                     else -> ImplementationMode.EMBEDDED
@@ -536,8 +545,6 @@ fun PreviewDisplay(
                     implementationMode = implementationMode,
                     onRequestWindowColorMode = onRequestWindowColorMode
                 )
-
-                val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 CameraXViewfinder(
                     modifier = Modifier
                         .fillMaxSize()
@@ -561,15 +568,24 @@ fun PreviewDisplay(
                                 }
                             )
                         },
-                    surfaceRequest = it,
+                    surfaceRequest = surfaceRequest,
                     implementationMode = implementationMode,
                     coordinateTransformer = coordinateTransformer
                 )
-                FocusMeteringIndicator(
-                    focusMeteringUiState = focusMeteringUiState,
-                    coordinateTransformer = coordinateTransformer
+            } else {
+                // for preview
+                Box(modifier = Modifier.fillMaxSize().background(Color.Black))
+            }
+            if (!debugHidingComponents) {
+                RuleOfThirdsGrid(
+                    gridType = previewDisplayUiState.gridType,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
+            FocusMeteringIndicator(
+                focusMeteringUiState = focusMeteringUiState,
+                coordinateTransformer = coordinateTransformer
+            )
         }
     }
 }
@@ -914,5 +930,131 @@ private fun FocusMeteringIndicator(
                     .size(TAP_TO_FOCUS_INDICATOR_SIZE)
             )
         }
+    }
+}
+
+/**
+ * A composable that draws a 3x3 grid (Rule of Thirds) overlay.
+ */
+@Composable
+fun RuleOfThirdsGrid(modifier: Modifier = Modifier, gridType: GridType) {
+    val alpha = remember { Animatable(0f) }
+
+    val currentGridType by rememberUpdatedState(gridType)
+
+    // This LaunchedEffect creates a long-lived coroutine that won't be canceled when the
+    // showGrid state changes. This is important because we want the fade-out animation to
+    // always complete, even if the state changes quickly. The snapshotFlow and collectLatest
+    // will handle the cancellation and restart of the animation logic when showGrid changes,
+    // but the delay in the NonCancellable block will always complete.
+    LaunchedEffect(Unit) {
+        snapshotFlow { currentGridType }
+            .collectLatest { show ->
+                if (show == GridType.RULE_OF_THIRDS) {
+                    alpha.animateTo(0.5f)
+                } else {
+                    withContext(NonCancellable) {
+                        alpha.animateTo(0f)
+                        delay(200)
+                    }
+                }
+            }
+    }
+    if (alpha.value != 0f) {
+        Canvas(
+            modifier = modifier
+                .fillMaxSize()
+                .alpha(alpha.value)
+                .testTag(GRID_OVERLAY)
+        ) {
+            val strokeWidth = 1.dp.toPx()
+            val thirdWidth = size.width / 3
+            val thirdHeight = size.height / 3
+            val lineColor = Color.White
+
+            // Vertical lines
+            drawLine(
+                color = lineColor,
+                start = Offset(thirdWidth, 0f),
+                end = Offset(thirdWidth, size.height),
+                strokeWidth = strokeWidth
+            )
+            drawLine(
+                color = lineColor,
+                start = Offset(thirdWidth * 2, 0f),
+                end = Offset(thirdWidth * 2, size.height),
+                strokeWidth = strokeWidth
+            )
+
+            // Horizontal lines
+            drawLine(
+                color = lineColor,
+                start = Offset(0f, thirdHeight),
+                end = Offset(size.width, thirdHeight),
+                strokeWidth = strokeWidth
+            )
+            drawLine(
+                color = lineColor,
+                start = Offset(0f, thirdHeight * 2),
+                end = Offset(size.width, thirdHeight * 2),
+                strokeWidth = strokeWidth
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun RuleOfThirdsGridPreview() {
+    Box(
+        modifier = Modifier
+            .background(Color.Black)
+            .fillMaxSize()
+    ) {
+        RuleOfThirdsGrid(gridType = GridType.RULE_OF_THIRDS)
+    }
+}
+
+@Preview
+@Composable
+private fun PreviewDisplayGridAnimation() {
+    var gridType by remember { mutableStateOf(GridType.RULE_OF_THIRDS) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            gridType = if (gridType == GridType.RULE_OF_THIRDS) {
+                GridType.NONE
+            } else {
+                GridType.RULE_OF_THIRDS
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.DarkGray)
+    ) {
+        PreviewDisplay(
+            previewDisplayUiState = PreviewDisplayUiState(
+                aspectRatioUiState = AspectRatioUiState.Available(
+                    selectedAspectRatio = com.google.jetpackcamera.model.AspectRatio.NINE_SIXTEEN,
+                    availableAspectRatios = listOf(
+                        SingleSelectableUiState.SelectableUi(
+                            com.google.jetpackcamera.model.AspectRatio.NINE_SIXTEEN
+                        )
+                    )
+                ),
+                gridType = gridType
+            ),
+            onTapToFocus = { _, _ -> },
+            onFlipCamera = { },
+            onScaleZoom = { },
+            onRequestWindowColorMode = { },
+            surfaceRequest = null,
+            focusMeteringUiState = FocusMeteringUiState.Unspecified,
+            debugHidingComponents = false
+        )
     }
 }

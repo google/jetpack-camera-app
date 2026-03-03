@@ -26,6 +26,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.DataStoreModule.provideDataStore
@@ -165,5 +166,17 @@ class LocalSettingsRepositoryInstrumentedTest {
 
         assertThat(initialImageFormat).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(newImageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
+
+    @Test
+    fun can_update_grid_type() = runTest {
+        val initialGridType = repository.getCurrentDefaultCameraAppSettings().gridType
+        repository.updateGridType(GridType.RULE_OF_THIRDS)
+        val newGridType = repository.getCurrentDefaultCameraAppSettings().gridType
+
+        advanceUntilIdle()
+        assertThat(initialGridType).isNotEqualTo(newGridType)
+        assertThat(initialGridType).isEqualTo(GridType.NONE)
+        assertThat(newGridType).isEqualTo(GridType.RULE_OF_THIRDS)
     }
 }

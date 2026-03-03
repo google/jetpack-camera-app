@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Grid3x3
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -110,6 +111,23 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import kotlin.math.min
+
+@Composable
+fun QuickSettingsGrid(modifier: Modifier = Modifier, onClick: () -> Unit, isGridOn: Boolean) {
+    val painter = if (isGridOn) {
+        rememberVectorPainter(image = Icons.Default.Grid3x3)
+    } else {
+        painterResource(id = R.drawable.grid_3x3_off)
+    }
+    QuickSettingToggleButton(
+        modifier = modifier,
+        text = stringResource(id = R.string.quick_settings_grid_text),
+        accessibilityText = stringResource(id = R.string.quick_settings_grid_description),
+        onClick = onClick,
+        isHighlighted = isGridOn,
+        painter = painter
+    )
+}
 
 @Composable
 fun QuickSetRatio(

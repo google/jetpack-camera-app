@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.uistate.capture
 
 import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 
 /**
@@ -35,5 +36,6 @@ data class TrackedCaptureUiState(
     val zoomAnimationTarget: Float? = null,
     val debugHidingComponents: Boolean = false,
     val recentCapturedMedia: MediaDescriptor = MediaDescriptor.None,
-    val lastBlinkTimeStamp: Long = 0
+    val lastBlinkTimeStamp: Long = 0,
+    val gridType: GridType = GridType.NONE
 )

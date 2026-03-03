@@ -72,6 +72,7 @@ import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
@@ -335,6 +336,7 @@ fun PreviewScreen(
                 onStartVideoRecording = viewModel::startVideoRecording,
                 onStopVideoRecording = viewModel::stopVideoRecording,
                 onLockVideoRecording = viewModel::setLockedRecording,
+                onUpdateGridType = viewModel::updateGridType,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 onSnackBarResult = viewModel::onSnackBarResult,
                 onNavigatePostCapture = onNavigateToPostCapture,
@@ -391,6 +393,7 @@ private fun ContentScreen(
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {},
+    onUpdateGridType: (GridType) -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onSnackBarResult: (String) -> Unit = {},
     onNavigatePostCapture: () -> Unit = {},
@@ -417,8 +420,11 @@ private fun ContentScreen(
         }
     }
 
+    val debugHidingComponents =
+        (debugUiState as? DebugUiState.Enabled)?.debugHidingComponents == true
     LayoutWrapper(
         modifier = modifier,
+        debugHidingComponents = debugHidingComponents,
         hdrIndicator = { HdrIndicator(modifier = it, hdrUiState = captureUiState.hdrUiState) },
         flashModeIndicator = {
             FlashModeIndicator(
@@ -447,7 +453,8 @@ private fun ContentScreen(
                 onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode,
-                focusMeteringUiState = captureUiState.focusMeteringUiState
+                focusMeteringUiState = captureUiState.focusMeteringUiState,
+                debugHidingComponents = debugHidingComponents
             )
         },
         captureButton = {
@@ -567,6 +574,7 @@ private fun ContentScreen(
                 onImageOutputFormatClick = onChangeImageFormat,
                 onConcurrentCameraModeClick = onChangeConcurrentCameraMode,
                 onCaptureModeClick = onSetCaptureMode,
+                onGridClick = onUpdateGridType,
                 onNavigateToSettings = {
                     onToggleQuickSettings()
                     onNavigateToSettings()
@@ -656,6 +664,7 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun LayoutWrapper(
     modifier: Modifier = Modifier,
+    debugHidingComponents: Boolean,
     viewfinder: @Composable (modifier: Modifier) -> Unit,
     captureButton: @Composable (modifier: Modifier) -> Unit,
     flipCameraButton: @Composable (modifier: Modifier) -> Unit,

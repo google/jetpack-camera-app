@@ -46,6 +46,7 @@ import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.IntProgress
@@ -182,6 +183,9 @@ class PreviewViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            val initialGridType =
+                settingsRepository.getCurrentDefaultCameraAppSettings().gridType
+            trackedCaptureUiState.update { it.copy(gridType = initialGridType) }
             launch {
                 var oldCameraAppSettings: CameraAppSettings? = null
                 settingsRepository.defaultCameraAppSettings
@@ -692,6 +696,13 @@ class PreviewViewModel @Inject constructor(
     fun setDisplayRotation(deviceRotation: DeviceRotation) {
         viewModelScope.launch {
             cameraSystem.setDeviceRotation(deviceRotation)
+        }
+    }
+
+    fun updateGridType(gridType: GridType) {
+        trackedCaptureUiState.update { it.copy(gridType = gridType) }
+        viewModelScope.launch {
+            settingsRepository.updateGridType(gridType)
         }
     }
 }
