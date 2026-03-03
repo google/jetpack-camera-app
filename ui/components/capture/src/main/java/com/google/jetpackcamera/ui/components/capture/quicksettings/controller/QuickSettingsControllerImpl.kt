@@ -27,7 +27,9 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -36,17 +38,20 @@ import kotlinx.coroutines.launch
  * Implementation of [QuickSettingsController] that interacts with [CameraSystem] and updates
  * [trackedCaptureUiState].
  *
- * @property trackedCaptureUiState The state flow to update with quick settings information.
- * @property viewModelScope The coroutine scope for launching camera operations.
- * @property cameraSystem The camera system to control.
- * @property externalCaptureMode The current external capture mode.
+ * @param trackedCaptureUiState The state flow to update with quick settings information.
+ * @param scope The coroutine scope for launching camera operations.
+ * @param cameraSystem The camera system to control.
+ * @param externalCaptureMode The current external capture mode.
+ * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class QuickSettingsControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    private val viewModelScope: CoroutineScope,
     private val cameraSystem: CameraSystem,
-    private val externalCaptureMode: ExternalCaptureMode
+    private val externalCaptureMode: ExternalCaptureMode,
+    coroutineContext: CoroutineContext
 ) : QuickSettingsController {
+    private val job = Job(parent = coroutineContext[Job])
+    private val scope = CoroutineScope(coroutineContext + job)
     override fun toggleQuickSettings() {
         trackedCaptureUiState.update { old ->
             old.copy(isQuickSettingsOpen = !old.isQuickSettingsOpen)
@@ -60,27 +65,27 @@ class QuickSettingsControllerImpl(
     }
 
     override fun setLensFacing(lensFace: LensFacing) {
-        viewModelScope.launch {
+        scope.launch {
             // apply to cameraSystem
             cameraSystem.setLensFacing(lensFace)
         }
     }
 
     override fun setFlash(flashMode: FlashMode) {
-        viewModelScope.launch {
+        scope.launch {
             // apply to cameraSystem
             cameraSystem.setFlashMode(flashMode)
         }
     }
 
     override fun setAspectRatio(aspectRatio: AspectRatio) {
-        viewModelScope.launch {
+        scope.launch {
             cameraSystem.setAspectRatio(aspectRatio)
         }
     }
 
     override fun setStreamConfig(streamConfig: StreamConfig) {
-        viewModelScope.launch {
+        scope.launch {
             cameraSystem.setStreamConfig(streamConfig)
         }
     }
@@ -89,7 +94,7 @@ class QuickSettingsControllerImpl(
         if (externalCaptureMode != ExternalCaptureMode.ImageCapture &&
             externalCaptureMode != ExternalCaptureMode.MultipleImageCapture
         ) {
-            viewModelScope.launch {
+            scope.launch {
                 cameraSystem.setDynamicRange(dynamicRange)
             }
         }
@@ -97,20 +102,20 @@ class QuickSettingsControllerImpl(
 
     override fun setImageFormat(imageOutputFormat: ImageOutputFormat) {
         if (externalCaptureMode != ExternalCaptureMode.VideoCapture) {
-            viewModelScope.launch {
+            scope.launch {
                 cameraSystem.setImageFormat(imageOutputFormat)
             }
         }
     }
 
     override fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        viewModelScope.launch {
+        scope.launch {
             cameraSystem.setConcurrentCameraMode(concurrentCameraMode)
         }
     }
 
     override fun setCaptureMode(captureMode: CaptureMode) {
-        viewModelScope.launch {
+        scope.launch {
             cameraSystem.setCaptureMode(captureMode)
         }
     }

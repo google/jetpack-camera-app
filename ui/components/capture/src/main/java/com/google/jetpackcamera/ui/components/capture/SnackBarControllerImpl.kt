@@ -20,18 +20,28 @@ import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
 import java.util.LinkedList
+import kotlin.coroutines.CoroutineContext
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "SnackBarControllerImpl"
 
+/**
+ * Implementation of [SnackBarController] that manages a queue of snack bars.
+ *
+ * @param snackBarUiState The [MutableStateFlow] of the [SnackBarUiState.Enabled] to update.
+ * @param coroutineContext The [CoroutineContext] to use for launching coroutines.
+ */
 class SnackBarControllerImpl(
-    private val viewModelScope: CoroutineScope,
-    private val snackBarUiState: MutableStateFlow<SnackBarUiState.Enabled>
+    private val snackBarUiState: MutableStateFlow<SnackBarUiState.Enabled>,
+    coroutineContext: CoroutineContext
 ) : SnackBarController {
+    private val job = Job(parent = coroutineContext[Job])
+    private val scope = CoroutineScope(coroutineContext + job)
     val snackBarCount = atomic(0)
     override fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale) {
         val cookieInt = incrementAndGetSnackBarCount()
@@ -45,9 +55,8 @@ class SnackBarControllerImpl(
             )
         )
     }
-
     override fun onSnackBarResult(cookie: String) {
-        viewModelScope.launch {
+        scope.launch {
             snackBarUiState.update { old ->
                 val newQueue = LinkedList(old.snackBarQueue)
                 val snackBarData = newQueue.poll()
@@ -63,13 +72,11 @@ class SnackBarControllerImpl(
             }
         }
     }
-
     override fun incrementAndGetSnackBarCount(): Int {
         return snackBarCount.incrementAndGet()
     }
-
     override fun addSnackBarData(snackBarData: SnackbarData) {
-        viewModelScope.launch {
+        scope.launch {
             snackBarUiState.update { old ->
                 val newQueue = LinkedList(old.snackBarQueue)
                 newQueue.add(snackBarData)

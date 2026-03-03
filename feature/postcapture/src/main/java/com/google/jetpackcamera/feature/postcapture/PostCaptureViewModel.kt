@@ -111,8 +111,8 @@ class PostCaptureViewModel @Inject constructor(
     val snackBarUiState: StateFlow<SnackBarUiState.Enabled> =
         _snackBarUiState.asStateFlow()
     val snackBarController: SnackBarController = SnackBarControllerImpl(
-        viewModelScope = viewModelScope,
-        snackBarUiState = _snackBarUiState
+        snackBarUiState = _snackBarUiState,
+        coroutineContext = viewModelScope.coroutineContext
     )
     private var player: ExoPlayer? = null
 

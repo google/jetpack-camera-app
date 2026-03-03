@@ -17,11 +17,11 @@ package com.google.jetpackcamera.ui.components.capture.controller
 
 import android.os.SystemClock
 import android.util.Log
-import androidx.lifecycle.viewModelScope
 import androidx.tracing.Trace
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -37,21 +37,22 @@ private const val TAG = "CameraControllerImpl"
  *
  * @param initializationDeferred A [Deferred] that completes when the camera system is initialized.
  * @param captureUiState The [StateFlow] of the capture UI state.
- * @param viewModelScope The [CoroutineScope] for launching coroutines.
+ * @param coroutineContext The [CoroutineContext] for launching coroutines.
  * @param cameraSystem The [CameraSystem] to interact with.
  */
 class CameraControllerImpl(
     private val initializationDeferred: Deferred<Unit>,
     private val captureUiState: StateFlow<CaptureUiState>,
-    private val viewModelScope: CoroutineScope,
-    private val cameraSystem: CameraSystem
+    private val cameraSystem: CameraSystem,
+    coroutineContext: CoroutineContext
 ) : CameraController {
     private var runningCameraJob: Job? = null
-
+    private val job = Job(parent = coroutineContext[Job])
+    private val scope = CoroutineScope(coroutineContext + job)
     override fun startCamera() {
         Log.d(TAG, "startCamera")
         stopCamera()
-        runningCameraJob = viewModelScope.launch {
+        runningCameraJob = scope.launch {
             if (Trace.isEnabled()) {
                 launch(start = CoroutineStart.UNDISPATCHED) {
                     val startTraceTimestamp: Long = SystemClock.elapsedRealtimeNanos()
@@ -82,6 +83,13 @@ class CameraControllerImpl(
             if (isActive) {
                 cancel()
             }
+        }
+    }
+
+    override fun tapToFocus(x: Float, y: Float) {
+        Log.d(TAG, "tapToFocus")
+        scope.launch {
+            cameraSystem.tapToFocus(x, y)
         }
     }
 }

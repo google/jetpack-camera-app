@@ -25,8 +25,8 @@ import kotlinx.coroutines.flow.update
  * Implementation of [DebugController] that interacts with [CameraSystem] and updates
  * [trackedCaptureUiState].
  *
- * @property cameraSystem The camera system to control.
- * @property trackedCaptureUiState The state flow to update with debug information.
+ * @param cameraSystem The camera system to control.
+ * @param trackedCaptureUiState The state flow to update with debug information.
  */
 class DebugControllerImpl(
     private val cameraSystem: CameraSystem,

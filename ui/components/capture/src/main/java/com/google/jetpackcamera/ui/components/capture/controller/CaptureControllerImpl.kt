@@ -41,6 +41,7 @@ import com.google.jetpackcamera.ui.components.capture.controller.Utils.nextSaveL
 import com.google.jetpackcamera.ui.components.capture.controller.Utils.postCurrentMediaToMediaRepository
 import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
+import kotlin.coroutines.CoroutineContext
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -56,33 +57,35 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 /**
  * Implementation of [CaptureController] that interacts with [CameraSystem] and [MediaRepository].
  *
- * @property trackedCaptureUiState State for tracking UI changes during capture.
- * @property viewModelScope Scope for launching coroutines.
- * @property cameraSystem The camera system to perform capture operations.
- * @property mediaRepository Repository for managing captured media.
- * @property saveMode Mode for saving captured media.
- * @property externalCaptureMode Mode for external capture requests.
- * @property externalCapturesCallback Callback for getting external capture information.
+ * @param trackedCaptureUiState State for tracking UI changes during capture.
+ * @param cameraSystem The camera system to perform capture operations.
+ * @param mediaRepository Repository for managing captured media.
+ * @param saveMode Mode for saving captured media.
+ * @param externalCaptureMode Mode for external capture requests.
+ * @param externalCapturesCallback Callback for getting external capture information.
  * @property captureEvents Channel for sending capture-related events.
- * @property captureScreenController Controller for UI-related capture screen actions.
- * @property snackBarController Controller for showing snackbars.
+ * @param captureScreenController Controller for UI-related capture screen actions.
+ * @param snackBarController Controller for showing snackbars.
+ * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class CaptureControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    private val viewModelScope: CoroutineScope,
     private val cameraSystem: CameraSystem,
     private val mediaRepository: MediaRepository,
     private val saveMode: SaveMode,
     private val externalCaptureMode: ExternalCaptureMode,
     private val externalCapturesCallback: () -> Pair<SaveLocation, IntProgress?>,
-    private val captureEvents: Channel<CaptureEvent>,
+    override val captureEvents: Channel<CaptureEvent>,
     private val captureScreenController: CaptureScreenController,
-    private val snackBarController: SnackBarController?
+    private val snackBarController: SnackBarController?,
+    coroutineContext: CoroutineContext
 ) : CaptureController {
 
     private val traceCookie = atomic(0)
     private val videoCaptureStartedCount = atomic(0)
     private var recordingJob: Job? = null
+    private val job = Job(parent = coroutineContext[Job])
+    private val scope = CoroutineScope(coroutineContext + job)
 
     override fun captureImage(contentResolver: ContentResolver) {
         if (externalCaptureMode == ExternalCaptureMode.VideoCapture) {
@@ -97,7 +100,7 @@ class CaptureControllerImpl(
             return
         }
         Log.d(TAG, "captureImage")
-        viewModelScope.launch {
+        scope.launch {
             val (saveLocation, progress) = nextSaveLocation(
                 saveMode,
                 externalCaptureMode,
@@ -126,11 +129,12 @@ class CaptureControllerImpl(
                         captureScreenController.updateLastCapturedMedia()
                     } else {
                         savedUri?.let {
-                            postCurrentMediaToMediaRepository(
-                                viewModelScope,
-                                mediaRepository,
-                                MediaDescriptor.Content.Image(it, null, true)
-                            )
+                            scope.launch {
+                                postCurrentMediaToMediaRepository(
+                                    mediaRepository,
+                                    MediaDescriptor.Content.Image(it, null, true)
+                                )
+                            }
                         }
                     }
                     captureEvents.trySend(event)
@@ -162,7 +166,7 @@ class CaptureControllerImpl(
             return
         }
         Log.d(TAG, "startVideoRecording")
-        recordingJob = viewModelScope.launch {
+        recordingJob = scope.launch {
             val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             val (saveLocation, _) = nextSaveLocation(
                 saveMode,
@@ -184,11 +188,12 @@ class CaptureControllerImpl(
                             if (saveLocation !is SaveLocation.Cache) {
                                 captureScreenController.updateLastCapturedMedia()
                             } else {
-                                postCurrentMediaToMediaRepository(
-                                    viewModelScope,
-                                    mediaRepository,
-                                    MediaDescriptor.Content.Video(it.savedUri, null, true)
-                                )
+                                scope.launch {
+                                    postCurrentMediaToMediaRepository(
+                                        mediaRepository,
+                                        MediaDescriptor.Content.Video(it.savedUri, null, true)
+                                    )
+                                }
                             }
 
                             captureEvents.trySend(event)
@@ -230,7 +235,7 @@ class CaptureControllerImpl(
 
     override fun stopVideoRecording() {
         Log.d(TAG, "stopVideoRecording")
-        viewModelScope.launch {
+        scope.launch {
             cameraSystem.stopVideoRecording()
             recordingJob?.cancel()
         }
@@ -284,5 +289,26 @@ class CaptureControllerImpl(
         trackedCaptureUiState.update { old ->
             old.copy(isRecordingLocked = isLocked)
         }
+    }
+
+    override fun setPaused(shouldBePaused: Boolean) {
+        scope.launch {
+            if (shouldBePaused) {
+                cameraSystem.pauseVideoRecording()
+            } else {
+                cameraSystem.resumeVideoRecording()
+            }
+        }
+    }
+
+    override fun setAudioEnabled(shouldEnableAudio: Boolean) {
+        scope.launch {
+            cameraSystem.setAudioEnabled(shouldEnableAudio)
+        }
+
+        Log.d(
+            TAG,
+            "Toggle Audio: $shouldEnableAudio"
+        )
     }
 }

@@ -21,25 +21,19 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 object Utils {
     /**
      * Posts the given [MediaDescriptor] to the [MediaRepository] as the current media.
      *
-     * @param viewModelScope The [CoroutineScope] for launching the coroutine.
      * @param mediaRepository The repository to update.
      * @param mediaDescriptor The media to set as current.
      */
-    fun postCurrentMediaToMediaRepository(
-        viewModelScope: CoroutineScope,
+    suspend fun postCurrentMediaToMediaRepository(
         mediaRepository: MediaRepository,
         mediaDescriptor: MediaDescriptor
     ) {
-        viewModelScope.launch {
-            mediaRepository.setCurrentMedia(mediaDescriptor)
-        }
+        mediaRepository.setCurrentMedia(mediaDescriptor)
     }
 
     /**

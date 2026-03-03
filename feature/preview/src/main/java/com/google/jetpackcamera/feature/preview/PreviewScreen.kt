@@ -91,8 +91,10 @@ import com.google.jetpackcamera.ui.components.capture.VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.ui.components.capture.VideoQualityIcon
 import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
 import com.google.jetpackcamera.ui.components.capture.ZoomStateManager
+import com.google.jetpackcamera.ui.components.capture.controller.CameraController
 import com.google.jetpackcamera.ui.components.capture.controller.CaptureController
 import com.google.jetpackcamera.ui.components.capture.controller.CaptureScreenController
+import com.google.jetpackcamera.ui.components.capture.controller.ImageWellController
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
 import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlay
 import com.google.jetpackcamera.ui.components.capture.debug.controller.DebugController
@@ -246,7 +248,7 @@ fun PreviewScreen(
                                 val oldZoomRatios = it.zoomRatios
                                 val oldAudioEnabled = it.isAudioEnabled
                                 Log.d(TAG, "reset pre recording settings")
-                                viewModel.captureScreenController.setAudioEnabled(oldAudioEnabled)
+                                viewModel.captureController.setAudioEnabled(oldAudioEnabled)
                                 viewModel.quickSettingsController.setLensFacing(
                                     oldPrimaryLensFacing
                                 )
@@ -317,7 +319,9 @@ fun PreviewScreen(
                 snackBarController = viewModel.snackBarController,
                 quickSettingsController = viewModel.quickSettingsController,
                 captureScreenController = viewModel.captureScreenController,
-                captureController = viewModel.captureController
+                captureController = viewModel.captureController,
+                imageWellController = viewModel.imageWellController,
+                cameraController = viewModel.cameraController
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -355,7 +359,9 @@ private fun ContentScreen(
     quickSettingsController: QuickSettingsController? = null,
     snackBarController: SnackBarController? = null,
     captureScreenController: CaptureScreenController? = null,
-    captureController: CaptureController? = null
+    captureController: CaptureController? = null,
+    imageWellController: ImageWellController? = null,
+    cameraController: CameraController? = null
 ) {
     val onFlipCamera = {
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
@@ -373,7 +379,7 @@ private fun ContentScreen(
     }
     val onToggleAudio: () -> Unit = remember(isAudioEnabled) {
         {
-            captureScreenController?.setAudioEnabled(!isAudioEnabled)
+            captureController?.setAudioEnabled(!isAudioEnabled)
         }
     }
 
@@ -403,7 +409,7 @@ private fun ContentScreen(
             PreviewDisplay(
                 previewDisplayUiState = captureUiState.previewDisplayUiState,
                 onFlipCamera = onFlipCamera,
-                onTapToFocus = captureScreenController?.let { it::tapToFocus } ?: { _, _ -> },
+                onTapToFocus = cameraController?.let { it::tapToFocus } ?: { _, _ -> },
                 onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode,
@@ -578,7 +584,7 @@ private fun ContentScreen(
         },
         pauseToggleButton = {
             PauseResumeToggleButton(
-                onSetPause = captureScreenController?.let { it::setPaused } ?: { _ -> },
+                onSetPause = captureController?.let { it::setPaused } ?: { _ -> },
                 currentRecordingState = captureUiState.videoRecordingState
             )
         },
@@ -589,7 +595,7 @@ private fun ContentScreen(
                         modifier = modifier,
                         imageWellUiState = it,
                         onClick = {
-                            captureScreenController?.imageWellToRepository()
+                            imageWellController?.imageWellToRepository(it.mediaDescriptor)
                             onNavigatePostCapture()
                         }
                     )

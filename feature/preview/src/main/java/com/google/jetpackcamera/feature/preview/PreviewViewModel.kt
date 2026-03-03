@@ -51,6 +51,8 @@ import com.google.jetpackcamera.ui.components.capture.controller.CaptureControll
 import com.google.jetpackcamera.ui.components.capture.controller.CaptureControllerImpl
 import com.google.jetpackcamera.ui.components.capture.controller.CaptureScreenController
 import com.google.jetpackcamera.ui.components.capture.controller.CaptureScreenControllerImpl
+import com.google.jetpackcamera.ui.components.capture.controller.ImageWellController
+import com.google.jetpackcamera.ui.components.capture.controller.ImageWellControllerImpl
 import com.google.jetpackcamera.ui.components.capture.controller.ZoomController
 import com.google.jetpackcamera.ui.components.capture.controller.ZoomControllerImpl
 import com.google.jetpackcamera.ui.components.capture.debug.controller.DebugController
@@ -66,6 +68,7 @@ import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiStat
 import com.google.jetpackcamera.ui.uistateadapter.capture.debugUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
@@ -78,6 +81,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val TAG = "PreviewViewModel"
@@ -153,9 +157,9 @@ class PreviewViewModel @Inject constructor(
 
     val quickSettingsController: QuickSettingsController = QuickSettingsControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
-        viewModelScope = viewModelScope,
         cameraSystem = cameraSystem,
-        externalCaptureMode = externalCaptureMode
+        externalCaptureMode = externalCaptureMode,
+        coroutineContext = viewModelScope.coroutineContext
     )
 
     val debugController: DebugController = DebugControllerImpl(
@@ -164,16 +168,20 @@ class PreviewViewModel @Inject constructor(
     )
 
     val snackBarController: SnackBarController = SnackBarControllerImpl(
-        viewModelScope = viewModelScope,
-        snackBarUiState = _snackBarUiState
+        snackBarUiState = _snackBarUiState,
+        coroutineContext = viewModelScope.coroutineContext
     )
 
     val captureScreenController: CaptureScreenController = CaptureScreenControllerImpl(
-        viewModelScope = viewModelScope,
         cameraSystem = cameraSystem,
-        trackedCaptureUiState = trackedCaptureUiState,
-        mediaRepository = mediaRepository,
-        captureUiState = captureUiState
+        updateLastCapturedMediaCallback = {
+            viewModelScope.launch {
+                trackedCaptureUiState.update { old ->
+                    old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
+                }
+            }
+        },
+        coroutineContext = viewModelScope.coroutineContext
     )
 
     val zoomController: ZoomController = ZoomControllerImpl(
@@ -181,16 +189,20 @@ class PreviewViewModel @Inject constructor(
         trackedCaptureUiState = trackedCaptureUiState
     )
 
+    val imageWellController: ImageWellController = ImageWellControllerImpl(
+        mediaRepository = mediaRepository,
+        coroutineContext = viewModelScope.coroutineContext
+    )
+
     val cameraController: CameraController = CameraControllerImpl(
         initializationDeferred = initializationDeferred,
         captureUiState = captureUiState,
-        viewModelScope = viewModelScope,
+        coroutineContext = viewModelScope.coroutineContext,
         cameraSystem = cameraSystem
     )
 
     val captureController: CaptureController = CaptureControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
-        viewModelScope = viewModelScope,
         cameraSystem = cameraSystem,
         mediaRepository = mediaRepository,
         saveMode = saveMode,
@@ -212,7 +224,8 @@ class PreviewViewModel @Inject constructor(
         },
         captureEvents = _captureEvents,
         captureScreenController = captureScreenController,
-        snackBarController = snackBarController
+        snackBarController = snackBarController,
+        coroutineContext = viewModelScope.coroutineContext
     )
 
     init {

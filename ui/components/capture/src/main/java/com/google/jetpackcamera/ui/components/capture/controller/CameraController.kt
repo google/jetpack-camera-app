@@ -28,4 +28,12 @@ interface CameraController {
      * Stops the camera.
      */
     fun stopCamera()
+
+    /**
+     * Initiates a tap-to-focus action at the given coordinates.
+     *
+     * @param x The x-coordinate of the tap.
+     * @param y The y-coordinate of the tap.
+     */
+    fun tapToFocus(x: Float, y: Float)
 }

@@ -15,90 +15,35 @@
  */
 package com.google.jetpackcamera.ui.components.capture.controller
 
-import android.util.Log
 import com.google.jetpackcamera.core.camera.CameraSystem
-import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.model.DeviceRotation
-import com.google.jetpackcamera.ui.components.capture.controller.Utils.postCurrentMediaToMediaRepository
-import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
-import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-
-private const val TAG = "CaptureScreenControllerImpl"
 
 /**
  * Implementation of [CaptureScreenController] that handles UI events on the capture screen.
  *
- * @param viewModelScope The [CoroutineScope] for launching coroutines.
  * @param cameraSystem The [CameraSystem] to interact with.
- * @param trackedCaptureUiState The [MutableStateFlow] of the tracked capture UI state.
- * @param mediaRepository The [MediaRepository] to interact with media.
- * @param captureUiState The [StateFlow] of the capture UI state.
+ * @param updateLastCapturedMediaCallback Callback to update the last captured media.
+ * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class CaptureScreenControllerImpl(
-    private val viewModelScope: CoroutineScope,
     private val cameraSystem: CameraSystem,
-    private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    private val mediaRepository: MediaRepository,
-    private val captureUiState: StateFlow<CaptureUiState>
+    private val updateLastCapturedMediaCallback: () -> Unit,
+    coroutineContext: CoroutineContext
 ) : CaptureScreenController {
+    private val job = Job(parent = coroutineContext[Job])
+    private val scope = CoroutineScope(coroutineContext + job)
 
     override fun setDisplayRotation(deviceRotation: DeviceRotation) {
-        viewModelScope.launch {
+        scope.launch {
             cameraSystem.setDeviceRotation(deviceRotation)
         }
     }
 
-    override fun tapToFocus(x: Float, y: Float) {
-        Log.d(TAG, "tapToFocus")
-        viewModelScope.launch {
-            cameraSystem.tapToFocus(x, y)
-        }
-    }
-
-    override fun setAudioEnabled(shouldEnableAudio: Boolean) {
-        viewModelScope.launch {
-            cameraSystem.setAudioEnabled(shouldEnableAudio)
-        }
-
-        Log.d(
-            TAG,
-            "Toggle Audio: $shouldEnableAudio"
-        )
-    }
-
     override fun updateLastCapturedMedia() {
-        viewModelScope.launch {
-            trackedCaptureUiState.update { old ->
-                old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
-            }
-        }
-    }
-
-    override fun imageWellToRepository() {
-        (captureUiState.value as? CaptureUiState.Ready)
-            ?.let { it.imageWellUiState as? ImageWellUiState.LastCapture }
-            ?.let {
-                postCurrentMediaToMediaRepository(
-                    viewModelScope,
-                    mediaRepository,
-                    it.mediaDescriptor
-                )
-            }
-    }
-
-    override fun setPaused(shouldBePaused: Boolean) {
-        viewModelScope.launch {
-            if (shouldBePaused) {
-                cameraSystem.pauseVideoRecording()
-            } else {
-                cameraSystem.resumeVideoRecording()
-            }
-        }
+        updateLastCapturedMediaCallback()
     }
 }

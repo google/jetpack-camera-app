@@ -269,7 +269,7 @@ fun ExpandedQuickSettingsUiPreview() {
                 quickSettingsIsOpen = true
             ),
             onNavigateToSettings = {},
-            quickSettingsController = MockQuickSettingsController()
+            quickSettingsController = NoOpQuickSettingsController()
         )
     }
 }
@@ -331,12 +331,12 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                 quickSettingsIsOpen = true
             ),
             onNavigateToSettings = { },
-            quickSettingsController = MockQuickSettingsController()
+            quickSettingsController = NoOpQuickSettingsController()
         )
     }
 }
 
-class MockQuickSettingsController : QuickSettingsController {
+class NoOpQuickSettingsController : QuickSettingsController {
     override fun toggleQuickSettings() {}
 
     override fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting) {}

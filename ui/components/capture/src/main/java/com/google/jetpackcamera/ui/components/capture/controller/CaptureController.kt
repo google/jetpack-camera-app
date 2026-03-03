@@ -16,11 +16,18 @@
 package com.google.jetpackcamera.ui.components.capture.controller
 
 import android.content.ContentResolver
+import com.google.jetpackcamera.model.CaptureEvent
+import kotlinx.coroutines.channels.ReceiveChannel
 
 /**
  * Interface for controlling capture operations like taking photos and recording videos.
  */
 interface CaptureController {
+    /**
+     * A channel of [CaptureEvent]s that can be observed by the UI.
+     */
+    val captureEvents: ReceiveChannel<CaptureEvent>
+
     /**
      * Captures a single image.
      *
@@ -44,4 +51,18 @@ interface CaptureController {
      * @param isLocked True if the recording should be locked, false otherwise.
      */
     fun setLockedRecording(isLocked: Boolean)
+
+    /**
+     * Pauses or resumes video recording.
+     *
+     * @param shouldBePaused Whether the recording should be paused.
+     */
+    fun setPaused(shouldBePaused: Boolean)
+
+    /**
+     * Enables or disables audio recording.
+     *
+     * @param shouldEnableAudio Whether audio should be enabled.
+     */
+    fun setAudioEnabled(shouldEnableAudio: Boolean)
 }
