@@ -957,43 +957,46 @@ fun RuleOfThirdsGrid(modifier: Modifier = Modifier, gridType: GridType) {
                 }
             }
     }
-    Canvas(
-        modifier = modifier
-            .fillMaxSize()
-            .alpha(alpha.value)
-    ) {
-        val strokeWidth = 1.dp.toPx()
-        val thirdWidth = size.width / 3
-        val thirdHeight = size.height / 3
-        val lineColor = Color.White
+    if (alpha.value != 0f) {
+        Canvas(
+            modifier = modifier
+                .fillMaxSize()
+                .alpha(alpha.value)
+                .testTag(GRID_OVERLAY)
+        ) {
+            val strokeWidth = 1.dp.toPx()
+            val thirdWidth = size.width / 3
+            val thirdHeight = size.height / 3
+            val lineColor = Color.White
 
-        // Vertical lines
-        drawLine(
-            color = lineColor,
-            start = Offset(thirdWidth, 0f),
-            end = Offset(thirdWidth, size.height),
-            strokeWidth = strokeWidth
-        )
-        drawLine(
-            color = lineColor,
-            start = Offset(thirdWidth * 2, 0f),
-            end = Offset(thirdWidth * 2, size.height),
-            strokeWidth = strokeWidth
-        )
+            // Vertical lines
+            drawLine(
+                color = lineColor,
+                start = Offset(thirdWidth, 0f),
+                end = Offset(thirdWidth, size.height),
+                strokeWidth = strokeWidth
+            )
+            drawLine(
+                color = lineColor,
+                start = Offset(thirdWidth * 2, 0f),
+                end = Offset(thirdWidth * 2, size.height),
+                strokeWidth = strokeWidth
+            )
 
-        // Horizontal lines
-        drawLine(
-            color = lineColor,
-            start = Offset(0f, thirdHeight),
-            end = Offset(size.width, thirdHeight),
-            strokeWidth = strokeWidth
-        )
-        drawLine(
-            color = lineColor,
-            start = Offset(0f, thirdHeight * 2),
-            end = Offset(size.width, thirdHeight * 2),
-            strokeWidth = strokeWidth
-        )
+            // Horizontal lines
+            drawLine(
+                color = lineColor,
+                start = Offset(0f, thirdHeight),
+                end = Offset(size.width, thirdHeight),
+                strokeWidth = strokeWidth
+            )
+            drawLine(
+                color = lineColor,
+                start = Offset(0f, thirdHeight * 2),
+                end = Offset(size.width, thirdHeight * 2),
+                strokeWidth = strokeWidth
+            )
+        }
     }
 }
 

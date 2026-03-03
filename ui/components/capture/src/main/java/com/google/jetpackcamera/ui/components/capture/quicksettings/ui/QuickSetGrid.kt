@@ -17,12 +17,14 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.google.jetpackcamera.model.GridType
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_GRID_BUTTON
 
 @Composable
 fun QuickSetGrid(modifier: Modifier = Modifier, onClick: (GridType) -> Unit, gridType: GridType) {
     QuickSettingsGrid(
-        modifier = modifier,
+        modifier = modifier.testTag(QUICK_SETTINGS_GRID_BUTTON),
         onClick = {
             when (gridType) {
                 GridType.NONE -> onClick(GridType.RULE_OF_THIRDS)

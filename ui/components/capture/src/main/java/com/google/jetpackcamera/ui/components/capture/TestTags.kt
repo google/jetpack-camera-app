@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.components.capture
 const val CAPTURE_BUTTON = "CaptureButton"
 const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
+const val GRID_OVERLAY = "GridOverlay"
 const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
 const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
 const val IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
@@ -95,3 +96,4 @@ const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY =
     "quick_settings_focused_capture_mode_btn_option_video_only"
 const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY =
     "quick_settings_focused_capture_mode_btn_option_image_only"
+const val QUICK_SETTINGS_GRID_BUTTON = "QuickSettingsGridButton"
