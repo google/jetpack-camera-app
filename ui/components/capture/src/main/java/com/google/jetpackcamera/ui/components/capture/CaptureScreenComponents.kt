@@ -478,6 +478,7 @@ fun PreviewDisplay(
     onRequestWindowColorMode: (Int) -> Unit,
     surfaceRequest: SurfaceRequest?,
     focusMeteringUiState: FocusMeteringUiState,
+    debugHidingComponents: Boolean,
     modifier: Modifier = Modifier
 ) {
     if (previewDisplayUiState.aspectRatioUiState !is AspectRatioUiState.Available) {
@@ -575,10 +576,12 @@ fun PreviewDisplay(
                 // for preview
                 Box(modifier = Modifier.fillMaxSize().background(Color.Black))
             }
-            RuleOfThirdsGrid(
-                gridType = previewDisplayUiState.gridType,
-                modifier = Modifier.fillMaxSize()
-            )
+            if (!debugHidingComponents) {
+                RuleOfThirdsGrid(
+                    gridType = previewDisplayUiState.gridType,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
             FocusMeteringIndicator(
                 focusMeteringUiState = focusMeteringUiState,
                 coordinateTransformer = coordinateTransformer
@@ -1050,7 +1053,8 @@ private fun PreviewDisplayGridAnimation() {
             onScaleZoom = { },
             onRequestWindowColorMode = { },
             surfaceRequest = null,
-            focusMeteringUiState = FocusMeteringUiState.Unspecified
+            focusMeteringUiState = FocusMeteringUiState.Unspecified,
+            debugHidingComponents = false
         )
     }
 }
