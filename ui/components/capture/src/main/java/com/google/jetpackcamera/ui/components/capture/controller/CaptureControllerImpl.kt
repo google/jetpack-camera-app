@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ class CaptureControllerImpl(
     private val externalCaptureMode: ExternalCaptureMode,
     private val externalCapturesCallback: () -> Pair<SaveLocation, IntProgress?>,
     override val captureEvents: Channel<CaptureEvent>,
-    private val captureScreenController: CaptureScreenController,
+    private val imageWellController: ImageWellController,
     private val snackBarController: SnackBarController?,
     coroutineContext: CoroutineContext
 ) : CaptureController {
@@ -126,7 +126,7 @@ class CaptureControllerImpl(
                         }
                     }
                     if (saveLocation !is SaveLocation.Cache) {
-                        captureScreenController.updateLastCapturedMedia()
+                        imageWellController.updateLastCapturedMedia()
                     } else {
                         savedUri?.let {
                             scope.launch {
@@ -186,7 +186,7 @@ class CaptureControllerImpl(
                             }
 
                             if (saveLocation !is SaveLocation.Cache) {
-                                captureScreenController.updateLastCapturedMedia()
+                                imageWellController.updateLastCapturedMedia()
                             } else {
                                 scope.launch {
                                     postCurrentMediaToMediaRepository(
@@ -310,5 +310,17 @@ class CaptureControllerImpl(
             TAG,
             "Toggle Audio: $shouldEnableAudio"
         )
+    }
+
+    suspend fun join() {
+        job.join()
+    }
+
+    fun cancel() {
+        job.cancel()
+    }
+
+    fun close() {
+        job.cancel()
     }
 }

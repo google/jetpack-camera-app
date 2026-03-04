@@ -87,4 +87,16 @@ class SnackBarControllerImpl(
             }
         }
     }
+
+    suspend fun join() {
+        job.join()
+    }
+
+    fun cancel() {
+        job.cancel()
+    }
+
+    fun close() {
+        job.cancel()
+    }
 }

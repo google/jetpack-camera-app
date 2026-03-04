@@ -93,7 +93,6 @@ import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
 import com.google.jetpackcamera.ui.components.capture.ZoomStateManager
 import com.google.jetpackcamera.ui.components.capture.controller.CameraController
 import com.google.jetpackcamera.ui.components.capture.controller.CaptureController
-import com.google.jetpackcamera.ui.components.capture.controller.CaptureScreenController
 import com.google.jetpackcamera.ui.components.capture.controller.ImageWellController
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
 import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlay
@@ -195,7 +194,7 @@ fun PreviewScreen(
             val context = LocalContext.current
             LaunchedEffect(Unit) {
                 debouncedOrientationFlow(context).collect(
-                    viewModel.captureScreenController::setDisplayRotation
+                    viewModel.cameraController::setDisplayRotation
                 )
             }
             val scope = rememberCoroutineScope()
@@ -318,7 +317,6 @@ fun PreviewScreen(
                 debugController = viewModel.debugController,
                 snackBarController = viewModel.snackBarController,
                 quickSettingsController = viewModel.quickSettingsController,
-                captureScreenController = viewModel.captureScreenController,
                 captureController = viewModel.captureController,
                 imageWellController = viewModel.imageWellController,
                 cameraController = viewModel.cameraController
@@ -331,7 +329,7 @@ fun PreviewScreen(
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P ||
                     readStoragePermission.status.isGranted
                 ) {
-                    viewModel.captureScreenController.updateLastCapturedMedia()
+                    viewModel.imageWellController.updateLastCapturedMedia()
                 }
             }
         }
@@ -358,7 +356,6 @@ private fun ContentScreen(
     debugController: DebugController? = null,
     quickSettingsController: QuickSettingsController? = null,
     snackBarController: SnackBarController? = null,
-    captureScreenController: CaptureScreenController? = null,
     captureController: CaptureController? = null,
     imageWellController: ImageWellController? = null,
     cameraController: CameraController? = null

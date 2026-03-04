@@ -20,6 +20,7 @@ import android.util.Log
 import androidx.tracing.Trace
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -91,5 +92,23 @@ class CameraControllerImpl(
         scope.launch {
             cameraSystem.tapToFocus(x, y)
         }
+    }
+
+    override fun setDisplayRotation(deviceRotation: DeviceRotation) {
+        scope.launch {
+            cameraSystem.setDeviceRotation(deviceRotation)
+        }
+    }
+
+    suspend fun join() {
+        job.join()
+    }
+
+    fun cancel() {
+        job.cancel()
+    }
+
+    fun close() {
+        job.cancel()
     }
 }

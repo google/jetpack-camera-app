@@ -119,4 +119,16 @@ class QuickSettingsControllerImpl(
             cameraSystem.setCaptureMode(captureMode)
         }
     }
+
+    suspend fun join() {
+        job.join()
+    }
+
+    fun cancel() {
+        job.cancel()
+    }
+
+    fun close() {
+        job.cancel()
+    }
 }

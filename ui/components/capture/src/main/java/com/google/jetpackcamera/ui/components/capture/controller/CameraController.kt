@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.ui.components.capture.controller
 
+import com.google.jetpackcamera.model.DeviceRotation
+
 /**
  * Interface for controlling camera lifecycle and basic operations.
  */
@@ -36,4 +38,11 @@ interface CameraController {
      * @param y The y-coordinate of the tap.
      */
     fun tapToFocus(x: Float, y: Float)
+
+    /**
+     * Sets the display rotation.
+     *
+     * @param deviceRotation The device rotation to set.
+     */
+    fun setDisplayRotation(deviceRotation: DeviceRotation)
 }

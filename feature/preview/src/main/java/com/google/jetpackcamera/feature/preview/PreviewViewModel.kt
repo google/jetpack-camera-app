@@ -49,8 +49,6 @@ import com.google.jetpackcamera.ui.components.capture.controller.CameraControlle
 import com.google.jetpackcamera.ui.components.capture.controller.CameraControllerImpl
 import com.google.jetpackcamera.ui.components.capture.controller.CaptureController
 import com.google.jetpackcamera.ui.components.capture.controller.CaptureControllerImpl
-import com.google.jetpackcamera.ui.components.capture.controller.CaptureScreenController
-import com.google.jetpackcamera.ui.components.capture.controller.CaptureScreenControllerImpl
 import com.google.jetpackcamera.ui.components.capture.controller.ImageWellController
 import com.google.jetpackcamera.ui.components.capture.controller.ImageWellControllerImpl
 import com.google.jetpackcamera.ui.components.capture.controller.ZoomController
@@ -172,18 +170,6 @@ class PreviewViewModel @Inject constructor(
         coroutineContext = viewModelScope.coroutineContext
     )
 
-    val captureScreenController: CaptureScreenController = CaptureScreenControllerImpl(
-        cameraSystem = cameraSystem,
-        updateLastCapturedMediaCallback = {
-            viewModelScope.launch {
-                trackedCaptureUiState.update { old ->
-                    old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
-                }
-            }
-        },
-        coroutineContext = viewModelScope.coroutineContext
-    )
-
     val zoomController: ZoomController = ZoomControllerImpl(
         cameraSystem = cameraSystem,
         trackedCaptureUiState = trackedCaptureUiState
@@ -191,6 +177,13 @@ class PreviewViewModel @Inject constructor(
 
     val imageWellController: ImageWellController = ImageWellControllerImpl(
         mediaRepository = mediaRepository,
+        updateLastCapturedMediaCallback = {
+            viewModelScope.launch {
+                trackedCaptureUiState.update { old ->
+                    old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
+                }
+            }
+        },
         coroutineContext = viewModelScope.coroutineContext
     )
 
@@ -223,7 +216,7 @@ class PreviewViewModel @Inject constructor(
             }
         },
         captureEvents = _captureEvents,
-        captureScreenController = captureScreenController,
+        imageWellController = imageWellController,
         snackBarController = snackBarController,
         coroutineContext = viewModelScope.coroutineContext
     )

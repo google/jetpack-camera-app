@@ -27,4 +27,9 @@ interface ImageWellController {
      * @param mediaDescriptor The media descriptor to be transferred.
      */
     fun imageWellToRepository(mediaDescriptor: MediaDescriptor)
+
+    /**
+     * Updates the UI with the last captured media.
+     */
+    fun updateLastCapturedMedia()
 }
