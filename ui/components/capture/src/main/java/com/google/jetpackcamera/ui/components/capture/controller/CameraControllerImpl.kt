@@ -27,8 +27,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.transformWhile
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
 private const val TAG = "CameraControllerImpl"
@@ -100,15 +102,12 @@ class CameraControllerImpl(
         }
     }
 
-    suspend fun join() {
-        job.join()
-    }
-
-    fun cancel() {
-        job.cancel()
-    }
-
-    fun close() {
-        job.cancel()
+    /**
+     * Initiates the cancellation of this controller's scope and returns its Job.
+     * To wait for cancellation to complete, call .join() on the returned Job.
+     */
+    fun cancelScope(): Job {
+        scope.cancel()
+        return scope.coroutineContext.job
     }
 }

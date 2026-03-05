@@ -24,8 +24,10 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
 private const val TAG = "SnackBarControllerImpl"
@@ -88,15 +90,12 @@ class SnackBarControllerImpl(
         }
     }
 
-    suspend fun join() {
-        job.join()
-    }
-
-    fun cancel() {
-        job.cancel()
-    }
-
-    fun close() {
-        job.cancel()
+    /**
+     * Initiates the cancellation of this controller's scope and returns its Job.
+     * To wait for cancellation to complete, call .join() on the returned Job.
+     */
+    fun cancelScope(): Job {
+        scope.cancel()
+        return scope.coroutineContext.job
     }
 }
