@@ -22,7 +22,7 @@ plugins {
 }
 
 android {
-    namespace = "com.google.jetpackcamera.ui.components.capture"
+    namespace = "com.google.jetpackcamera.ui.controller"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -60,56 +60,12 @@ android {
 }
 
 dependencies {
-    // Compose
-    val composeBom = platform(libs.compose.bom)
-    implementation(composeBom)
-
-    // Accompanist - Permissions
-    implementation(libs.accompanist.permissions)
-
-    // Compose - Material Design 3
-    implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons.extended)
-
-    // Compose - Android Studio Preview support
-    implementation(libs.compose.ui.tooling.preview)
-    debugImplementation(libs.compose.ui.tooling)
-
-    // Compose - Integration with ViewModels with Navigation and Hilt
-    implementation(libs.hilt.navigation.compose)
-
-    // CameraX
-    implementation(libs.camera.core)
     implementation(libs.camera.compose)
 
-    // Compose - Testing
-    androidTestImplementation(libs.compose.junit)
-    debugImplementation(libs.compose.test.manifest)
-    // noinspection TestManifestGradleConfiguration: required for release build unit tests
-    testImplementation(libs.compose.test.manifest)
-    testImplementation(libs.compose.junit)
-
-    // Testing
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
-    androidTestImplementation(libs.truth)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.robolectric)
-    debugImplementation(libs.androidx.test.monitor)
-    implementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-
+    implementation(project(":data:media"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
-    implementation(project(":ui:controller"))
-    implementation(project(":core:camera"))
-    implementation(project(":core:common"))
-    implementation(project(":data:media"))
     implementation(project(":core:model"))
-    testImplementation(project(":core:common"))
-    testImplementation(project(":data:settings"))
-
 }
 
 // Allow references to generated code

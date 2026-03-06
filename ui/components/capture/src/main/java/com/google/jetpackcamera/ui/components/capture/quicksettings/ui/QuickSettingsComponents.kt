@@ -100,7 +100,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashM
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraLensFace
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraStreamConfig
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEnum
-import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsController
+import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState

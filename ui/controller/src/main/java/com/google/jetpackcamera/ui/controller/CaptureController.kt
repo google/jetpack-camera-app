@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.controller
+package com.google.jetpackcamera.ui.controller
 
 import android.content.ContentResolver
 import com.google.jetpackcamera.model.CaptureEvent
@@ -24,14 +24,14 @@ import kotlinx.coroutines.channels.ReceiveChannel
  */
 interface CaptureController {
     /**
-     * A channel of [CaptureEvent]s that can be observed by the UI.
+     * A channel of [com.google.jetpackcamera.model.CaptureEvent]s that can be observed by the UI.
      */
     val captureEvents: ReceiveChannel<CaptureEvent>
 
     /**
      * Captures a single image.
      *
-     * @param contentResolver The [ContentResolver] to use for saving the image.
+     * @param contentResolver The [android.content.ContentResolver] to use for saving the image.
      */
     fun captureImage(contentResolver: ContentResolver)
 

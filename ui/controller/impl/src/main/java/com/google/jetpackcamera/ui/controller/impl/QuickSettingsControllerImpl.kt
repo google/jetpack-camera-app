@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.quicksettings.controller
+package com.google.jetpackcamera.ui.controller.impl
 
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.AspectRatio
@@ -25,6 +25,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import kotlin.coroutines.CoroutineContext
@@ -52,7 +53,7 @@ class QuickSettingsControllerImpl(
     private val externalCaptureMode: ExternalCaptureMode,
     coroutineContext: CoroutineContext
 ) : QuickSettingsController {
-    private val job = Job(parent = coroutineContext[Job])
+    private val job = Job(parent = coroutineContext[Job.Key])
     private val scope = CoroutineScope(coroutineContext + job)
     override fun toggleQuickSettings() {
         trackedCaptureUiState.update { old ->

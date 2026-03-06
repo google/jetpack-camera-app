@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.controller
+package com.google.jetpackcamera.ui.controller
 
-import com.google.jetpackcamera.model.CameraZoomRatio
+import com.google.jetpackcamera.data.media.MediaDescriptor
 
 /**
- * Interface for controlling camera zoom.
+ * Interface for controlling the image well.
  */
-interface ZoomController {
+interface ImageWellController {
     /**
-     * Sets the camera's zoom ratio.
+     * Transfers the media from the image well to the repository.
      *
-     * @param zoomRatio The [CameraZoomRatio] to set.
+     * @param mediaDescriptor The media descriptor to be transferred.
      */
-    fun setZoomRatio(zoomRatio: CameraZoomRatio)
+    fun imageWellToRepository(mediaDescriptor: MediaDescriptor)
 
     /**
-     * Sets the target value for the zoom animation.
-     *
-     * @param targetValue The target zoom ratio for the animation, or null to clear it.
+     * Updates the UI with the last captured media.
      */
-    fun setZoomAnimationState(targetValue: Float?)
+    fun updateLastCapturedMedia()
 }

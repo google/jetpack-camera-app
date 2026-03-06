@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.controller
+package com.google.jetpackcamera.ui.controller.impl
 
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository

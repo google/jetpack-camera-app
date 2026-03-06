@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.controller
+package com.google.jetpackcamera.ui.controller.impl
 
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
-import com.google.jetpackcamera.ui.components.capture.controller.Utils.postCurrentMediaToMediaRepository
+import com.google.jetpackcamera.ui.controller.ImageWellController
+import com.google.jetpackcamera.ui.controller.impl.Utils.postCurrentMediaToMediaRepository
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -37,7 +38,7 @@ class ImageWellControllerImpl(
     private val updateLastCapturedMediaCallback: () -> Unit,
     coroutineContext: CoroutineContext
 ) : ImageWellController {
-    private val job = Job(parent = coroutineContext[Job])
+    private val job = Job(parent = coroutineContext[Job.Key])
     private val scope = CoroutineScope(coroutineContext + job)
     override fun imageWellToRepository(mediaDescriptor: MediaDescriptor) {
         scope.launch {

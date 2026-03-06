@@ -13,34 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.controller
+package com.google.jetpackcamera.ui.controller.impl
 
 import com.google.jetpackcamera.core.camera.CameraSystem
-import com.google.jetpackcamera.model.CameraZoomRatio
+import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.ui.controller.debug.DebugController
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Implementation of [ZoomController] that updates the camera's zoom and tracked UI state.
+ * Implementation of [DebugController] that interacts with [CameraSystem] and updates
+ * [trackedCaptureUiState].
  *
- * @param cameraSystem The camera system to update zoom on.
- * @param trackedCaptureUiState State for tracking zoom changes.
+ * @param cameraSystem The camera system to control.
+ * @param trackedCaptureUiState The state flow to update with debug information.
  */
-class ZoomControllerImpl(
+class DebugControllerImpl(
     private val cameraSystem: CameraSystem,
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>
-) : ZoomController {
-
-    override fun setZoomRatio(zoomRatio: CameraZoomRatio) {
-        cameraSystem.changeZoomRatio(
-            newZoomState = zoomRatio
-        )
+) : DebugController {
+    override fun toggleDebugHidingComponents() {
+        trackedCaptureUiState.update { old ->
+            old.copy(debugHidingComponents = !old.debugHidingComponents)
+        }
     }
 
-    override fun setZoomAnimationState(targetValue: Float?) {
+    override fun toggleDebugOverlay() {
         trackedCaptureUiState.update { old ->
-            old.copy(zoomAnimationTarget = targetValue)
+            old.copy(isDebugOverlayOpen = !old.isDebugOverlayOpen)
         }
+    }
+
+    override fun setTestPattern(testPattern: TestPattern) {
+        cameraSystem.setTestPattern(
+            newTestPattern = testPattern
+        )
     }
 }

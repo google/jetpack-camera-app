@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.quicksettings.controller
+package com.google.jetpackcamera.ui.controller.quicksettings
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -24,10 +24,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
-
-/**
- * This file contains the [QuickSettingsController] interface for managing quick settings actions.
- */
 
 /**
  * Interface for controlling quick settings.

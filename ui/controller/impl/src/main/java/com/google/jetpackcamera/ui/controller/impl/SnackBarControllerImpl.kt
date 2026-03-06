@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture
+package com.google.jetpackcamera.ui.controller.impl
 
 import android.util.Log
+import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData

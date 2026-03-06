@@ -13,23 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.controller
+package com.google.jetpackcamera.ui.controller.debug
 
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.model.TestPattern
 
 /**
- * Interface for controlling the image well.
+ * Interface for controlling debug features.
  */
-interface ImageWellController {
+interface DebugController {
     /**
-     * Transfers the media from the image well to the repository.
-     *
-     * @param mediaDescriptor The media descriptor to be transferred.
+     * Toggles the visibility of debug UI components.
      */
-    fun imageWellToRepository(mediaDescriptor: MediaDescriptor)
+    fun toggleDebugHidingComponents()
 
     /**
-     * Updates the UI with the last captured media.
+     * Toggles the debug overlay.
      */
-    fun updateLastCapturedMedia()
+    fun toggleDebugOverlay()
+
+    /**
+     * Sets the test pattern for the camera.
+     *
+     * @param testPattern The test pattern to set.
+     */
+    fun setTestPattern(testPattern: TestPattern)
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.controller
+package com.google.jetpackcamera.ui.controller.impl
 
 import android.os.SystemClock
 import android.util.Log
@@ -21,6 +21,7 @@ import androidx.tracing.Trace
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.model.DeviceRotation
+import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -41,7 +42,7 @@ private const val TAG = "CameraControllerImpl"
  * @param initializationDeferred A [Deferred] that completes when the camera system is initialized.
  * @param captureUiState The [StateFlow] of the capture UI state.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
- * @param cameraSystem The [CameraSystem] to interact with.
+ * @param cameraSystem The [com.google.jetpackcamera.core.camera.CameraSystem] to interact with.
  */
 class CameraControllerImpl(
     private val initializationDeferred: Deferred<Unit>,

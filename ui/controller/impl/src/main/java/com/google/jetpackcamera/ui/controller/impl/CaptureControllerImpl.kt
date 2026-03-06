@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.controller
+package com.google.jetpackcamera.ui.controller.impl
 
 import android.content.ContentResolver
 import android.util.Log
@@ -32,13 +32,14 @@ import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.components.capture.R
-import com.google.jetpackcamera.ui.components.capture.SnackBarController
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.components.capture.controller.Utils.nextSaveLocation
-import com.google.jetpackcamera.ui.components.capture.controller.Utils.postCurrentMediaToMediaRepository
+import com.google.jetpackcamera.ui.controller.CaptureController
+import com.google.jetpackcamera.ui.controller.ImageWellController
+import com.google.jetpackcamera.ui.controller.SnackBarController
+import com.google.jetpackcamera.ui.controller.impl.Utils.nextSaveLocation
+import com.google.jetpackcamera.ui.controller.impl.Utils.postCurrentMediaToMediaRepository
 import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlin.coroutines.CoroutineContext

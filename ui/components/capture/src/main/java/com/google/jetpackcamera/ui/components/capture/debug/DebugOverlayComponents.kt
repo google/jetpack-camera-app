@@ -77,7 +77,7 @@ import com.google.jetpackcamera.ui.components.capture.LOGICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.components.capture.PHYSICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ZOOM_RATIO_TAG
-import com.google.jetpackcamera.ui.components.capture.debug.controller.DebugController
+import com.google.jetpackcamera.ui.controller.debug.DebugController
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import kotlin.math.abs
 

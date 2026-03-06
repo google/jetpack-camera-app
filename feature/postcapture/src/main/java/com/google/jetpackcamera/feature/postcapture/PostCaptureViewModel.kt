@@ -36,8 +36,8 @@ import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMA
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
-import com.google.jetpackcamera.ui.components.capture.SnackBarController
-import com.google.jetpackcamera.ui.components.capture.SnackBarControllerImpl
+import com.google.jetpackcamera.ui.controller.SnackBarController
+import com.google.jetpackcamera.ui.controller.impl.SnackBarControllerImpl
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState

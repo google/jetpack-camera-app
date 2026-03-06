@@ -25,7 +25,7 @@ import androidx.core.util.toClosedRange
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.ZoomStrategy
-import com.google.jetpackcamera.ui.components.capture.controller.ZoomController
+import com.google.jetpackcamera.ui.controller.ZoomController
 
 /**
  * Manages the camera's zoom level and handles interactions related to zooming.

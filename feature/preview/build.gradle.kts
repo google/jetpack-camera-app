@@ -143,6 +143,8 @@ dependencies {
     implementation(project(":core:model"))
     testImplementation(project(":core:common"))
     implementation(project(":ui:components:capture"))
+    implementation(project(":ui:controller"))
+    implementation(project(":ui:controller:impl"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:uistateadapter"))

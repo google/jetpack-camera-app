@@ -13,32 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.debug.controller
+package com.google.jetpackcamera.ui.controller
 
-import com.google.jetpackcamera.model.TestPattern
-
-/**
- * This file contains the [DebugController] interface for managing debug actions.
- */
+import com.google.jetpackcamera.model.CameraZoomRatio
 
 /**
- * Interface for controlling debug features.
+ * Interface for controlling camera zoom.
  */
-interface DebugController {
+interface ZoomController {
     /**
-     * Toggles the visibility of debug UI components.
-     */
-    fun toggleDebugHidingComponents()
-
-    /**
-     * Toggles the debug overlay.
-     */
-    fun toggleDebugOverlay()
-
-    /**
-     * Sets the test pattern for the camera.
+     * Sets the camera's zoom ratio.
      *
-     * @param testPattern The test pattern to set.
+     * @param zoomRatio The [com.google.jetpackcamera.model.CameraZoomRatio] to set.
      */
-    fun setTestPattern(testPattern: TestPattern)
+    fun setZoomRatio(zoomRatio: CameraZoomRatio)
+
+    /**
+     * Sets the target value for the zoom animation.
+     *
+     * @param targetValue The target zoom ratio for the animation, or null to clear it.
+     */
+    fun setZoomAnimationState(targetValue: Float?)
 }

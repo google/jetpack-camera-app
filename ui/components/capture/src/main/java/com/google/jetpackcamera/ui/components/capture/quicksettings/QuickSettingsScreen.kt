@@ -42,7 +42,6 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTO
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
-import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsController
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetConcurrentCamera
@@ -54,6 +53,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFoc
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.focusedCaptureModeButtons
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.focusedRatioButtons
+import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState

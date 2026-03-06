@@ -108,7 +108,8 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
-import com.google.jetpackcamera.ui.components.capture.quicksettings.controller.QuickSettingsController
+import com.google.jetpackcamera.ui.controller.SnackBarController
+import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
