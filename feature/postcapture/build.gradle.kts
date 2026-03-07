@@ -135,6 +135,8 @@ dependencies {
     // Project dependencies
     implementation(project(":core:common"))
     implementation(project(":data:media"))
+    implementation(project(":ui:controller"))
+    implementation(project(":ui:controller:impl"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:postcapture"))
     implementation(project(":ui:components:capture"))
