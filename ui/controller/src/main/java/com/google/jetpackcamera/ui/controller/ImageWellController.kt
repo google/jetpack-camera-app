@@ -22,14 +22,14 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
  */
 interface ImageWellController {
     /**
-     * Transfers the media from the image well to the repository.
+     * Sets the specified media as the current item in the media repository, typically before
+     * navigating to the post-capture screen.
      *
-     * @param mediaDescriptor The media descriptor to be transferred.
+     * @param mediaDescriptor The media descriptor to be set.
      */
     fun imageWellToRepository(mediaDescriptor: MediaDescriptor)
-
     /**
-     * Updates the UI with the last captured media.
+     * Updates the image well to display the most recently captured media from the repository.
      */
     fun updateLastCapturedMedia()
 }
