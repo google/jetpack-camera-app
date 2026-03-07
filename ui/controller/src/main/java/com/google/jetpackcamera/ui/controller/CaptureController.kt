@@ -24,14 +24,14 @@ import kotlinx.coroutines.channels.ReceiveChannel
  */
 interface CaptureController {
     /**
-     * A channel of [com.google.jetpackcamera.model.CaptureEvent]s that can be observed by the UI.
+     * A channel of [CaptureEvent]s that can be observed by the UI.
      */
     val captureEvents: ReceiveChannel<CaptureEvent>
 
     /**
      * Captures a single image.
      *
-     * @param contentResolver The [android.content.ContentResolver] to use for saving the image.
+     * @param contentResolver The [ContentResolver] to use for saving the image.
      */
     fun captureImage(contentResolver: ContentResolver)
 
@@ -46,7 +46,7 @@ interface CaptureController {
     fun stopVideoRecording()
 
     /**
-     * Sets whether the recording is locked.
+     * Sets whether the recording is locked, allowing for hands-free recording.
      *
      * @param isLocked True if the recording should be locked, false otherwise.
      */
@@ -55,14 +55,14 @@ interface CaptureController {
     /**
      * Pauses or resumes video recording.
      *
-     * @param shouldBePaused Whether the recording should be paused.
+     * @param shouldBePaused True to pause the recording, false to resume.
      */
     fun setPaused(shouldBePaused: Boolean)
 
     /**
-     * Enables or disables audio recording.
+     * Enables or disables audio recording for video capture.
      *
-     * @param shouldEnableAudio Whether audio should be enabled.
+     * @param shouldEnableAudio True to enable audio, false to disable.
      */
     fun setAudioEnabled(shouldEnableAudio: Boolean)
 }

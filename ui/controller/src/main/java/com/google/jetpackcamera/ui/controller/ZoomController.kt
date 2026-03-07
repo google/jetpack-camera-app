@@ -24,12 +24,12 @@ interface ZoomController {
     /**
      * Sets the camera's zoom ratio.
      *
-     * @param zoomRatio The [com.google.jetpackcamera.model.CameraZoomRatio] to set.
+     * @param zoomRatio The [CameraZoomRatio] to set.
      */
     fun setZoomRatio(zoomRatio: CameraZoomRatio)
-
     /**
-     * Sets the target value for the zoom animation.
+     * Sets the target value for the zoom animation, which can be observed by the UI to show
+     * animation state.
      *
      * @param targetValue The target zoom ratio for the animation, or null to clear it.
      */

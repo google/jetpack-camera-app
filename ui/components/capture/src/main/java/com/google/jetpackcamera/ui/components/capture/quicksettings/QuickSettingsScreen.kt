@@ -336,6 +336,9 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
     }
 }
 
+/**
+ * A no-op implementation of [QuickSettingsController] for use in Compose previews and tests.
+ */
 class NoOpQuickSettingsController : QuickSettingsController {
     override fun toggleQuickSettings() {}
 

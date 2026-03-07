@@ -22,17 +22,17 @@ import com.google.jetpackcamera.model.DeviceRotation
  */
 interface CameraController {
     /**
-     * Starts the camera.
+     * Starts the camera, initializing resources and beginning the preview stream.
      */
     fun startCamera()
 
     /**
-     * Stops the camera.
+     * Stops the camera and releases its resources.
      */
     fun stopCamera()
 
     /**
-     * Initiates a tap-to-focus action at the given coordinates.
+     * Initiates a tap-to-focus action at the given coordinates on the preview surface.
      *
      * @param x The x-coordinate of the tap.
      * @param y The y-coordinate of the tap.
@@ -40,7 +40,7 @@ interface CameraController {
     fun tapToFocus(x: Float, y: Float)
 
     /**
-     * Sets the display rotation.
+     * Informs the camera system of the current device display rotation.
      *
      * @param deviceRotation The device rotation to set.
      */

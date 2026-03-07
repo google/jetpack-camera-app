@@ -45,7 +45,7 @@ class SnackBarControllerImpl(
 ) : SnackBarController {
     private val job = Job(parent = coroutineContext[Job])
     private val scope = CoroutineScope(coroutineContext + job)
-    val snackBarCount = atomic(0)
+    private val snackBarCount = atomic(0)
     override fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale) {
         val cookieInt = incrementAndGetSnackBarCount()
         val cookie = "DisabledHdrToggle-$cookieInt"

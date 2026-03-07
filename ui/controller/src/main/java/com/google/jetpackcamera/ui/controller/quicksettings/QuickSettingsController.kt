@@ -35,14 +35,14 @@ interface QuickSettingsController {
     fun toggleQuickSettings()
 
     /**
-     * Sets the currently focused quick setting.
+     * Sets the currently focused quick setting, used for expanding a setting's options.
      *
      * @param focusedQuickSetting The quick setting to focus.
      */
     fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting)
 
     /**
-     * Sets the lens facing (front or back camera).
+     * Sets the lens facing (e.g., front or back camera).
      *
      * @param lensFace The lens facing to set.
      */
@@ -63,21 +63,21 @@ interface QuickSettingsController {
     fun setAspectRatio(aspectRatio: AspectRatio)
 
     /**
-     * Sets the stream configuration (e.g. preview, video capture).
+     * Sets the stream configuration (e.g., single stream for performance, multi-stream for flexibility).
      *
      * @param streamConfig The stream configuration to set.
      */
     fun setStreamConfig(streamConfig: StreamConfig)
 
     /**
-     * Sets the dynamic range (e.g. SDR, HDR).
+     * Sets the dynamic range (e.g., SDR, HDR).
      *
      * @param dynamicRange The dynamic range to set.
      */
     fun setDynamicRange(dynamicRange: DynamicRange)
 
     /**
-     * Sets the image output format (e.g. JPEG, RAW).
+     * Sets the image output format (e.g., JPEG, RAW, Ultra HDR).
      *
      * @param imageOutputFormat The image format to set.
      */
@@ -91,7 +91,7 @@ interface QuickSettingsController {
     fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
 
     /**
-     * Sets the capture mode (e.g. multi-camera, single-camera).
+     * Sets the capture mode (e.g., single image, single video, or hybrid).
      *
      * @param captureMode The capture mode to set.
      */

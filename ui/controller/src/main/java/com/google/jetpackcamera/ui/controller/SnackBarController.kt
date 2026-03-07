@@ -18,9 +18,27 @@ package com.google.jetpackcamera.ui.controller
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SnackbarData
 
+/**
+ * Interface for managing and displaying snackbar messages.
+ */
 interface SnackBarController {
+    /**
+     * Enqueues a snackbar to inform the user why a feature (like HDR) is disabled.
+     */
     fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale)
+
+    /**
+     * Handles the result of a snackbar being dismissed or its action being performed.
+     */
     fun onSnackBarResult(cookie: String)
+
+    /**
+     * Atomically increments and returns the snackbar count, used for generating unique cookies.
+     */
     fun incrementAndGetSnackBarCount(): Int
+
+    /**
+     * Adds a new [SnackbarData] to the queue to be displayed.
+     */
     fun addSnackBarData(snackBarData: SnackbarData)
 }
