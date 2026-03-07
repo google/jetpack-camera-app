@@ -27,6 +27,7 @@ interface ZoomController {
      * @param zoomRatio The [CameraZoomRatio] to set.
      */
     fun setZoomRatio(zoomRatio: CameraZoomRatio)
+
     /**
      * Sets the target value for the zoom animation, which can be observed by the UI to show
      * animation state.
