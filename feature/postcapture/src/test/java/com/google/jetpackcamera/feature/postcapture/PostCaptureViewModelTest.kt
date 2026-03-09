@@ -349,7 +349,7 @@ internal class PostCaptureViewModelTest {
         val cookie = snackBarUiState.snackBarQueue.first().cookie
 
         // When
-        viewModel.onSnackBarResult(cookie)
+        viewModel.snackBarController.onSnackBarResult(cookie)
         advanceUntilIdle()
 
         // Then
@@ -367,7 +367,7 @@ internal class PostCaptureViewModelTest {
         advanceUntilIdle()
 
         // When
-        viewModel.onSnackBarResult("incorrect_cookie")
+        viewModel.snackBarController.onSnackBarResult("incorrect_cookie")
         advanceUntilIdle()
 
         // Then
@@ -382,7 +382,7 @@ internal class PostCaptureViewModelTest {
         assertThat(snackBarUiState.snackBarQueue).isEmpty()
 
         // When
-        viewModel.onSnackBarResult("any_cookie")
+        viewModel.snackBarController.onSnackBarResult("any_cookie")
         advanceUntilIdle()
 
         // Then
