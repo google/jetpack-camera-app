@@ -266,4 +266,8 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
             old.copy(captureMode = captureMode)
         }
     }
+
+    override suspend fun getSupportedMimeTypes(lensFacing: LensFacing): List<String> {
+        return listOf("image/jpeg", "video/mp4")
+    }
 }

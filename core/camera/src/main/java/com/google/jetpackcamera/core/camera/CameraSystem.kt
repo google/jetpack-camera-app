@@ -131,6 +131,8 @@ interface CameraSystem {
 
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
+    suspend fun getSupportedMimeTypes(lensFacing: LensFacing): List<String>
+
     /**
      * Represents the events required for screen flash.
      */
