@@ -131,6 +131,14 @@ interface CameraSystem {
 
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
+    /**
+     * Returns a list of supported MIME types for the given [lensFacing].
+     *
+     * This function queries the underlying camera hardware for its capabilities.
+     *
+     * @param lensFacing The camera lens to query.
+     * @return A list of supported MIME type strings (e.g., "image/jpeg", "video/mp4").
+     */
     suspend fun getSupportedMimeTypes(lensFacing: LensFacing): List<String>
 
     /**

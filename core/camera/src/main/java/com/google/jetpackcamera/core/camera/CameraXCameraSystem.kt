@@ -36,7 +36,6 @@ import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
-import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.concurrent.futures.await
 import androidx.core.net.toFile
@@ -1036,6 +1035,15 @@ constructor(
         }
     }
 
+    /**
+     * Returns a list of supported MIME types for the given [lensFacing].
+     *
+     * This function can be called before the camera is initialized. It will temporarily create a
+     * [ProcessCameraProvider] instance if one is not already available.
+     *
+     * @param lensFacing The camera lens to query for supported types.
+     * @return A list of MIME type strings. Returns an empty list if capabilities cannot be queried.
+     */
     override suspend fun getSupportedMimeTypes(lensFacing: LensFacing): List<String> {
         val localCameraProvider = if (::cameraProvider.isInitialized) {
             cameraProvider
@@ -1058,10 +1066,8 @@ constructor(
 
             for (supportedImageFormat in supportedImageFormats) {
                 when (supportedImageFormat) {
-                    ImageCapture.OUTPUT_FORMAT_JPEG -> { result.add("image/jpeg")}
-                    ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR -> {
-                        result.add("image/jpeg-ultrahdr")
-                    }
+                    ImageCapture.OUTPUT_FORMAT_JPEG -> result.add("image/jpeg")
+                    ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR -> result.add("image/jpeg-ultrahdr")
                 }
             }
             if (videoCapabilities.getSupportedQualities(
@@ -1073,7 +1079,9 @@ constructor(
                 result.add("video/avc")
                 // If it supports HLG 10-bit HDR, CameraX will use HEVC (H.265) under the hood
                 if (videoCapabilities.supportedDynamicRanges.contains(
-                        DynamicRange.HLG10.toCXDynamicRange())) {
+                        DynamicRange.HLG10.toCXDynamicRange()
+                    )
+                ) {
                     result.add("video/hevc")
                 }
             }
