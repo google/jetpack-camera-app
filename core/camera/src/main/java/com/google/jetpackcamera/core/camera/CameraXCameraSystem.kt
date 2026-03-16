@@ -37,7 +37,6 @@ import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
-import androidx.concurrent.futures.await
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
@@ -1036,54 +1035,34 @@ constructor(
     }
 
     /**
-     * Returns a list of supported MIME types for the given [lensFacing].
+     * Returns a set of MIME types supported by the underlying camera hardware capabilities and JCA.
      *
-     * This function can be called before the camera is initialized. It will temporarily create a
-     * [ProcessCameraProvider] instance if one is not already available.
+     * Empty set is returned if there are is available [CameraInfo].
+     * The [CameraConstraints] of the default lens is used to determine the supported MIME types.
+     * image/jpeg is supported if the device supports JPEG format for the default stream.
+     * video/mp4 is supported if any dynamic ranges are supported.
      *
-     * @param lensFacing The camera lens to query for supported types.
-     * @return A list of MIME type strings. Returns an empty list if capabilities cannot be queried.
+     * @return A [Set] of strings representing the supported MIME types.
      */
-    override suspend fun getSupportedMimeTypes(lensFacing: LensFacing): List<String> {
-        val localCameraProvider = if (::cameraProvider.isInitialized) {
-            cameraProvider
-        } else {
-            try {
-                ProcessCameraProvider.getInstance(application).await()
-            } catch (e: Exception) {
-                return emptyList()
+    override suspend fun getSupportedMimeTypes(): Set<String> {
+        val result = mutableSetOf<String>()
+        currentSettings.value?.let { cameraAppSettings ->
+            val lensFacing = cameraAppSettings.cameraLensFacing
+            val cameraConstraints = systemConstraints.perLensConstraints[lensFacing]
+            if (cameraConstraints == null) {
+                return result
             }
-        }
-        val availableCameras = localCameraProvider.availableCameraInfos
-        if (availableCameras.isEmpty()) return emptyList()
-
-        val result = mutableListOf<String>()
-        val selector = lensFacing.toCameraSelector()
-        selector.filter(availableCameras).firstOrNull()?.let { camInfo ->
-            val imageCapabilities = ImageCapture.getImageCaptureCapabilities(camInfo)
-            val supportedImageFormats = imageCapabilities.supportedOutputFormats
-            val videoCapabilities = Recorder.getVideoCapabilities(camInfo)
-
-            for (supportedImageFormat in supportedImageFormats) {
-                when (supportedImageFormat) {
-                    ImageCapture.OUTPUT_FORMAT_JPEG -> result.add("image/jpeg")
-                    ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR -> result.add("image/jpeg-ultrahdr")
-                }
-            }
-            if (videoCapabilities.getSupportedQualities(
-                    DynamicRange.SDR.toCXDynamicRange()
-                ).isNotEmpty()
-            ) {
-                // If it supports any SDR quality (SD, HD, FHD, etc.), it can record standard AVC/MP4
-                result.add("video/mp4")
-                result.add("video/avc")
-                // If it supports HLG 10-bit HDR, CameraX will use HEVC (H.265) under the hood
-                if (videoCapabilities.supportedDynamicRanges.contains(
-                        DynamicRange.HLG10.toCXDynamicRange()
+            val streamConfig = cameraAppSettings.streamConfig
+            cameraConstraints.supportedImageFormatsMap[streamConfig]?.let {
+                if (it.contains(
+                        ImageOutputFormat.JPEG
                     )
                 ) {
-                    result.add("video/hevc")
+                    result.add("image/jpeg")
                 }
+            }
+            if (cameraConstraints.supportedDynamicRanges.isNotEmpty()) {
+                result.add("video/mp4")
             }
         }
         return result

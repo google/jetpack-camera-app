@@ -132,14 +132,11 @@ interface CameraSystem {
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
     /**
-     * Returns a list of supported MIME types for the given [lensFacing].
+     * Returns a set of MIME types supported by the underlying camera hardware capabilities and JCA.
      *
-     * This function queries the underlying camera hardware for its capabilities.
-     *
-     * @param lensFacing The camera lens to query.
-     * @return A list of supported MIME type strings (e.g., "image/jpeg", "video/mp4").
+     * @return A [Set] of strings representing the supported MIME types (e.g. image/jpeg, ""video/mp4).
      */
-    suspend fun getSupportedMimeTypes(lensFacing: LensFacing): List<String>
+    suspend fun getSupportedMimeTypes(): Set<String>
 
     /**
      * Represents the events required for screen flash.
