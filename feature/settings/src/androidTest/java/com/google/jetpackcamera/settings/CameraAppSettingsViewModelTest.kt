@@ -29,6 +29,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,7 +44,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
