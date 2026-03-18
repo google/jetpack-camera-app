@@ -132,13 +132,6 @@ interface CameraSystem {
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
     /**
-     * Returns a set of MIME types supported by the underlying camera hardware capabilities and JCA.
-     *
-     * @return A [Set] of strings representing the supported MIME types (e.g. image/jpeg, ""video/mp4).
-     */
-    suspend fun getSupportedMimeTypes(): Set<String>
-
-    /**
      * Represents the events required for screen flash.
      */
     data class ScreenFlashEvent(val type: Type, val onComplete: () -> Unit) {

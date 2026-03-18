@@ -1034,40 +1034,6 @@ constructor(
         }
     }
 
-    /**
-     * Returns a set of MIME types supported by the underlying camera hardware capabilities and JCA.
-     *
-     * Empty set is returned if there are is available [CameraInfo].
-     * The [CameraConstraints] of the default lens is used to determine the supported MIME types.
-     * image/jpeg is supported if the device supports JPEG format for the default stream.
-     * video/mp4 is supported if any dynamic ranges are supported.
-     *
-     * @return A [Set] of strings representing the supported MIME types.
-     */
-    override suspend fun getSupportedMimeTypes(): Set<String> {
-        val result = mutableSetOf<String>()
-        currentSettings.value?.let { cameraAppSettings ->
-            val lensFacing = cameraAppSettings.cameraLensFacing
-            val cameraConstraints = systemConstraints.perLensConstraints[lensFacing]
-            if (cameraConstraints == null) {
-                return result
-            }
-            val streamConfig = cameraAppSettings.streamConfig
-            cameraConstraints.supportedImageFormatsMap[streamConfig]?.let {
-                if (it.contains(
-                        ImageOutputFormat.JPEG
-                    )
-                ) {
-                    result.add("image/jpeg")
-                }
-            }
-            if (cameraConstraints.supportedDynamicRanges.isNotEmpty()) {
-                result.add("video/mp4")
-            }
-        }
-        return result
-    }
-
     private suspend fun handleLowLightBoostErrors() {
         currentCameraState.map { it.lowLightBoostState }.distinctUntilChanged().collect { state ->
             if (state is LowLightBoostState.Error) {

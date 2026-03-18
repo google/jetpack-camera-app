@@ -266,11 +266,4 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
             old.copy(captureMode = captureMode)
         }
     }
-
-    /**
-     * Returns a fake list of supported MIME types.
-     */
-    override suspend fun getSupportedMimeTypes(): Set<String> {
-        return setOf("image/jpeg", "video/mp4")
-    }
 }
