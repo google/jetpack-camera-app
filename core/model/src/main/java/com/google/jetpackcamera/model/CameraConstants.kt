@@ -19,4 +19,9 @@ const val TARGET_FPS_AUTO = 0
 const val TARGET_FPS_15 = 15
 const val TARGET_FPS_30 = 30
 const val TARGET_FPS_60 = 60
+
+/**
+ * This constant is `0L` because the `DURATION_UNLIMITED`
+ * constant in the `OutputOptions` API [documentation](https://developer.android.com/reference/androidx/camera/video/OutputOptions#DURATION_UNLIMITED()) is `0`.
+ */
 const val UNLIMITED_VIDEO_DURATION = 0L

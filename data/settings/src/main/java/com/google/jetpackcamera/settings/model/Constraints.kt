@@ -61,9 +61,7 @@ inline fun <reified T> CameraSystemConstraints.forDevice(
  * frame rates, dynamic ranges, formats, flash, zoom, and test patterns.
  *
  * @property supportedStabilizationModes Set of [StabilizationMode] values supported by this lens.
- * @property supportedFixedFrameRates A set of integers representing fixed frame rates that this
- * lens supports for video recordings. Only 15, 30, or 60 FPS can be displayed, and a lens must
- * exactly support ranges like `[15,15]` to be included in the set.
+ * @property supportedFixedFrameRates A set of integers representing fixed frame rates supported for video recording with this lens.
  * @property supportedDynamicRanges Set of [DynamicRange] values (e.g., SDR, HLG10) this lens can capture.
  * @property supportedVideoQualitiesMap Map of [DynamicRange] to a list of supported [VideoQuality] settings.
  * @property supportedImageFormatsMap Map of [StreamConfig] to a set of supported [ImageOutputFormat]s.
