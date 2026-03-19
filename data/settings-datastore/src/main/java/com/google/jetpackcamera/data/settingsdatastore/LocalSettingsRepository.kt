@@ -30,13 +30,13 @@ import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.mappers.toDomain
 import com.google.jetpackcamera.model.mappers.toProto
+import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.settings.JcaSettings
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 
 /**
  * Implementation of [SettingsRepository] with locally stored settings.

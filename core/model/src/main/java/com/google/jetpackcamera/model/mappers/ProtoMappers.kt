@@ -45,13 +45,6 @@ import com.google.jetpackcamera.model.VideoQuality.HD
 import com.google.jetpackcamera.model.VideoQuality.SD
 import com.google.jetpackcamera.model.VideoQuality.UHD
 import com.google.jetpackcamera.model.VideoQuality.UNSPECIFIED
-import com.google.jetpackcamera.model.proto.TestPattern.PatternCase
-import com.google.jetpackcamera.model.proto.testPatternColorBars
-import com.google.jetpackcamera.model.proto.testPatternColorBarsFadeToGray
-import com.google.jetpackcamera.model.proto.testPatternCustom1
-import com.google.jetpackcamera.model.proto.testPatternOff
-import com.google.jetpackcamera.model.proto.testPatternPN9
-import com.google.jetpackcamera.model.proto.testPatternSolidColor
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.model.proto.DebugSettings as DebugSettingsProto
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
@@ -62,9 +55,16 @@ import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoo
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.model.proto.TestPattern as ProtoTestPattern
+import com.google.jetpackcamera.model.proto.TestPattern.PatternCase
 import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 import com.google.jetpackcamera.model.proto.debugSettings as debugSettingsProto
 import com.google.jetpackcamera.model.proto.testPattern as protoTestPattern
+import com.google.jetpackcamera.model.proto.testPatternColorBars
+import com.google.jetpackcamera.model.proto.testPatternColorBarsFadeToGray
+import com.google.jetpackcamera.model.proto.testPatternCustom1
+import com.google.jetpackcamera.model.proto.testPatternOff
+import com.google.jetpackcamera.model.proto.testPatternPN9
+import com.google.jetpackcamera.model.proto.testPatternSolidColor
 
 /**
  * Converts an [AspectRatio] enum to its corresponding [AspectRatioProto] representation.
