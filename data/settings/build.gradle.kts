@@ -61,3 +61,8 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:common"))
 }
+
+// Allow references to generated code
+kapt {
+    correctErrorTypes = true
+}
