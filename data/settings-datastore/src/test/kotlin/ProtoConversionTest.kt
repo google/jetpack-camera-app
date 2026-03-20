@@ -1,18 +1,18 @@
 /*
-* Copyright (C) 2024 The Android Open Source Project
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.google.jetpackcamera.settings
 
 import com.google.common.truth.Truth.assertThat
@@ -36,7 +36,7 @@ class ProtoConversionTest {
                 DynamicRange.HLG10 -> DynamicRangeProto.DYNAMIC_RANGE_HLG10
                 else -> TODO(
                     "Test does not yet contain correct conversion for dynamic range " +
-                            "type: ${dynamicRange.name}"
+                        "type: ${dynamicRange.name}"
                 )
             }
         }
@@ -53,12 +53,12 @@ class ProtoConversionTest {
                 DynamicRangeProto.DYNAMIC_RANGE_SDR,
                 DynamicRangeProto.UNRECOGNIZED,
                 DynamicRangeProto.DYNAMIC_RANGE_UNSPECIFIED
-                    -> DynamicRange.SDR
+                -> DynamicRange.SDR
 
                 DynamicRangeProto.DYNAMIC_RANGE_HLG10 -> DynamicRange.HLG10
                 else -> TODO(
                     "Test does not yet contain correct conversion for dynamic range " +
-                            "proto type: ${dynamicRangeProto.name}"
+                        "proto type: ${dynamicRangeProto.name}"
                 )
             }
         }
@@ -74,11 +74,11 @@ class ProtoConversionTest {
             when (imageOutputFormat) {
                 ImageOutputFormat.JPEG -> ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG
                 ImageOutputFormat.JPEG_ULTRA_HDR
-                    -> ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
+                -> ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
 
                 else -> TODO(
                     "Test does not yet contain correct conversion for image output format " +
-                            "type: ${imageOutputFormat.name}"
+                        "type: ${imageOutputFormat.name}"
                 )
             }
         }
@@ -94,14 +94,14 @@ class ProtoConversionTest {
             when (imageOutputFormatProto) {
                 ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG,
                 ImageOutputFormatProto.UNRECOGNIZED
-                    -> ImageOutputFormat.JPEG
+                -> ImageOutputFormat.JPEG
 
                 ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
-                    -> ImageOutputFormat.JPEG_ULTRA_HDR
+                -> ImageOutputFormat.JPEG_ULTRA_HDR
 
                 else -> TODO(
                     "Test does not yet contain correct conversion for image output format " +
-                            "proto type: ${imageOutputFormatProto.name}"
+                        "proto type: ${imageOutputFormatProto.name}"
                 )
             }
         }
