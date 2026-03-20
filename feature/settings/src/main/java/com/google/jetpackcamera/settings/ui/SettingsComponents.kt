@@ -66,6 +66,11 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TARGET_FPS_15
+import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_60
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
+import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.AspectRatioUiState
 import com.google.jetpackcamera.settings.AudioUiState
@@ -84,12 +89,7 @@ import com.google.jetpackcamera.settings.StabilizationUiState
 import com.google.jetpackcamera.settings.StreamConfigUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
-import com.google.jetpackcamera.settings.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.settings.VideoQualityUiState
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_30
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_AUTO
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
@@ -509,11 +509,11 @@ fun MaxVideoDurationSetting(
 }
 
 private fun getTargetFpsTestTag(fpsOption: Int): String = when (fpsOption) {
-    FPS_15 -> BTN_DIALOG_FPS_OPTION_15_TAG
-    FPS_30 -> BTN_DIALOG_FPS_OPTION_30_TAG
-    FPS_60 -> BTN_DIALOG_FPS_OPTION_60_TAG
-    FPS_AUTO -> BTN_DIALOG_FPS_OPTION_AUTO_TAG
-    else -> BTN_DIALOG_FPS_OPTION_AUTO_TAG
+    TARGET_FPS_15 -> BTN_DIALOG_FPS_OPTION_15_TAG
+    TARGET_FPS_30 -> BTN_DIALOG_FPS_OPTION_30_TAG
+    TARGET_FPS_60 -> BTN_DIALOG_FPS_OPTION_60_TAG
+    TARGET_FPS_AUTO -> BTN_DIALOG_FPS_OPTION_AUTO_TAG
+    else -> TODO("Unhandled FPS option for test tag: $fpsOption")
 }
 
 @Composable
@@ -529,12 +529,11 @@ fun TargetFpsSetting(
         leadingIcon = null,
         description = if (fpsUiState is FpsUiState.Enabled) {
             when (fpsUiState.currentSelection) {
-                FPS_15 -> stringResource(id = R.string.fps_description, FPS_15)
-                FPS_30 -> stringResource(id = R.string.fps_description, FPS_30)
-                FPS_60 -> stringResource(id = R.string.fps_description, FPS_60)
-                else -> stringResource(
-                    id = R.string.fps_description_auto
-                )
+                TARGET_FPS_15 -> stringResource(id = R.string.fps_description, TARGET_FPS_15)
+                TARGET_FPS_30 -> stringResource(id = R.string.fps_description, TARGET_FPS_30)
+                TARGET_FPS_60 -> stringResource(id = R.string.fps_description, TARGET_FPS_60)
+                TARGET_FPS_AUTO -> stringResource(id = R.string.fps_description_auto)
+                else -> TODO("Unhandled Target FPS")
             }
         } else {
             disabledRationaleString((fpsUiState as FpsUiState.Disabled).disabledRationale)
@@ -543,7 +542,7 @@ fun TargetFpsSetting(
             if (fpsUiState is FpsUiState.Enabled) {
                 Column(Modifier.selectableGroup()) {
                     Text(
-                        modifier = Modifier.testTag(getTargetFpsTestTag(FPS_AUTO)),
+                        modifier = Modifier.testTag(getTargetFpsTestTag(TARGET_FPS_AUTO)),
                         text = stringResource(id = R.string.fps_stabilization_disclaimer),
                         fontStyle = FontStyle.Italic,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -551,26 +550,26 @@ fun TargetFpsSetting(
 
                     SingleChoiceSelector(
                         text = stringResource(id = R.string.fps_selector_auto),
-                        selected = fpsUiState.currentSelection == FPS_AUTO,
-                        onClick = { setTargetFps(FPS_AUTO) },
+                        selected = fpsUiState.currentSelection == TARGET_FPS_AUTO,
+                        onClick = { setTargetFps(TARGET_FPS_AUTO) },
                         enabled = fpsUiState.fpsAutoState is SingleSelectableState.Selectable
                     )
-                    listOf(FPS_15, FPS_30, FPS_60).forEach { fpsOption ->
+                    listOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60).forEach { fpsOption ->
                         SingleChoiceSelector(
                             modifier = Modifier.testTag(getTargetFpsTestTag(fpsOption)),
                             text = "%d".format(fpsOption),
                             selected = fpsUiState.currentSelection == fpsOption,
                             onClick = { setTargetFps(fpsOption) },
                             enabled = when (fpsOption) {
-                                FPS_15 ->
+                                TARGET_FPS_15 ->
                                     fpsUiState.fpsFifteenState is
                                         SingleSelectableState.Selectable
 
-                                FPS_30 ->
+                                TARGET_FPS_30 ->
                                     fpsUiState.fpsThirtyState is
                                         SingleSelectableState.Selectable
 
-                                FPS_60 ->
+                                TARGET_FPS_60 ->
                                     fpsUiState.fpsSixtyState is
                                         SingleSelectableState.Selectable
 
