@@ -75,7 +75,9 @@ fun AspectRatio.toProto(): AspectRatioProto = when (this) {
     AspectRatio.ONE_ONE -> AspectRatioProto.ASPECT_RATIO_ONE_ONE
 }
 
-/** returns the AspectRatio enum equivalent of a provided AspectRatioProto */
+/**
+ * Converts an [AspectRatioProto] representation to its corresponding [AspectRatio] enum.
+ */
 fun AspectRatioProto.toDomain(): AspectRatio {
     return when (this) {
         AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> AspectRatio.NINE_SIXTEEN
@@ -120,7 +122,9 @@ fun DebugSettings.toProto(): DebugSettingsProto = debugSettingsProto {
     testPattern = this@toProto.testPattern.toProto()
 }
 
-/** returns the DynamicRangeType enum equivalent of a provided DynamicRangeTypeProto */
+/**
+ * Converts a [DynamicRangeProto] representation to its corresponding [DynamicRange] enum.
+ */
 fun DynamicRangeProto.toDomain(): DynamicRange {
     return when (this) {
         DynamicRangeProto.DYNAMIC_RANGE_HLG10 -> HLG10
@@ -163,7 +167,9 @@ fun FlashModeProto.toDomain(): FlashMode = when (this) {
     else -> FlashMode.OFF
 }
 
-/** returns the DynamicRangeType enum equivalent of a provided DynamicRangeTypeProto */
+/**
+ * Converts an [ImageOutputFormatProto] representation to its corresponding [ImageOutputFormat] enum.
+ */
 fun ImageOutputFormatProto.toDomain(): ImageOutputFormat {
     return when (this) {
         ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR -> JPEG_ULTRA_HDR
@@ -184,7 +190,9 @@ fun ImageOutputFormat.toProto(): ImageOutputFormatProto {
     }
 }
 
-/** returns the LensFacing enum equivalent of a provided LensFacingProto */
+/**
+ * Converts a [LensFacingProto] representation to its corresponding [LensFacing] enum.
+ */
 fun LensFacingProto.toDomain(): LensFacing {
     return when (this) {
         LensFacingProto.LENS_FACING_FRONT -> FRONT
@@ -243,7 +251,9 @@ fun StabilizationMode.toProto(): StabilizationModeProto = when (this) {
     StabilizationMode.OPTICAL -> StabilizationModeProto.STABILIZATION_MODE_OPTICAL
 }
 
-/** returns the StabilizationMode enum equivalent of a provided StablizationModeProto */
+/**
+ * Converts a [StabilizationModeProto] representation to its corresponding [StabilizationMode] enum.
+ */
 fun StabilizationModeProto.toDomain(): StabilizationMode = when (this) {
     StabilizationModeProto.STABILIZATION_MODE_OFF -> StabilizationMode.OFF
     StabilizationModeProto.STABILIZATION_MODE_ON -> StabilizationMode.ON
@@ -326,7 +336,9 @@ fun ProtoTestPattern.toDomain(): TestPattern {
     }
 }
 
-/** returns the VideoQuality enum equivalent of a provided VideoQualityProto */
+/**
+ * Converts a [VideoQualityProto] representation to its corresponding [VideoQuality] enum.
+ */
 fun VideoQualityProto.toDomain(): VideoQuality {
     return when (this) {
         VideoQualityProto.VIDEO_QUALITY_SD -> SD
@@ -339,6 +351,9 @@ fun VideoQualityProto.toDomain(): VideoQuality {
     }
 }
 
+/**
+ * Converts a [VideoQuality] enum to its corresponding [VideoQualityProto] representation.
+ */
 fun VideoQuality.toProto(): VideoQualityProto {
     return when (this) {
         UNSPECIFIED -> VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED
