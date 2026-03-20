@@ -22,6 +22,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
@@ -32,13 +33,10 @@ import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.VIDEO_QUALITY_UNSUPPORTED_TAG
-
-// seconds duration in millis
-const val UNLIMITED_VIDEO_DURATION = 0L
-const val FIVE_SECONDS_DURATION = 5_000L
-const val TEN_SECONDS_DURATION = 10_000L
-const val THIRTY_SECONDS_DURATION = 30_000L
-const val SIXTY_SECONDS_DURATION = 60_000L
+internal const val FIVE_SECONDS_DURATION = 5_000L
+internal const val TEN_SECONDS_DURATION = 10_000L
+internal const val THIRTY_SECONDS_DURATION = 30_000L
+internal const val SIXTY_SECONDS_DURATION = 60_000L
 
 /**
  * Defines the current state of the [SettingsScreen].
