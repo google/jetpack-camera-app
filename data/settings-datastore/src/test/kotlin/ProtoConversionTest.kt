@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import com.google.common.truth.Truth
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DebugSettings
@@ -28,6 +27,16 @@ import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.mappers.toDomain
 import com.google.jetpackcamera.model.mappers.toProto
+import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.model.proto.DebugSettings as DebugSettingsProto
+import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
+import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
+import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
+import com.google.jetpackcamera.model.proto.LensFacing as LensFacingProto
+import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoostPriorityProto
+import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
+import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
+import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 import com.google.jetpackcamera.model.proto.debugSettings
 import com.google.jetpackcamera.model.proto.testPattern
 import com.google.jetpackcamera.model.proto.testPatternColorBars
@@ -42,8 +51,8 @@ class ProtoConversionTest {
     fun dynamicRange_convertsToCorrectProto() {
         val correctConversions = { dynamicRange: DynamicRange ->
             when (dynamicRange) {
-                DynamicRange.SDR -> com.google.jetpackcamera.model.proto.DynamicRange.DYNAMIC_RANGE_SDR
-                DynamicRange.HLG10 -> com.google.jetpackcamera.model.proto.DynamicRange.DYNAMIC_RANGE_HLG10
+                DynamicRange.SDR -> DynamicRangeProto.DYNAMIC_RANGE_SDR
+                DynamicRange.HLG10 -> DynamicRangeProto.DYNAMIC_RANGE_HLG10
             }
         }
 
@@ -54,18 +63,18 @@ class ProtoConversionTest {
 
     @Test
     fun dynamicRangeProto_convertsToCorrectDynamicRange() {
-        val correctConversions = { dynamicRangeProto: com.google.jetpackcamera.model.proto.DynamicRange ->
+        val correctConversions = { dynamicRangeProto: DynamicRangeProto ->
             when (dynamicRangeProto) {
-                com.google.jetpackcamera.model.proto.DynamicRange.DYNAMIC_RANGE_SDR,
-                com.google.jetpackcamera.model.proto.DynamicRange.UNRECOGNIZED,
-                com.google.jetpackcamera.model.proto.DynamicRange.DYNAMIC_RANGE_UNSPECIFIED
+                DynamicRangeProto.DYNAMIC_RANGE_SDR,
+                DynamicRangeProto.UNRECOGNIZED,
+                DynamicRangeProto.DYNAMIC_RANGE_UNSPECIFIED
                 -> DynamicRange.SDR
 
-                com.google.jetpackcamera.model.proto.DynamicRange.DYNAMIC_RANGE_HLG10 -> DynamicRange.HLG10
+                DynamicRangeProto.DYNAMIC_RANGE_HLG10 -> DynamicRange.HLG10
             }
         }
 
-        enumValues<com.google.jetpackcamera.model.proto.DynamicRange>().forEach {
+        enumValues<DynamicRangeProto>().forEach {
             Truth.assertThat(correctConversions(it)).isEqualTo(it.toDomain())
         }
     }
@@ -74,9 +83,9 @@ class ProtoConversionTest {
     fun imageOutputFormat_convertsToCorrectProto() {
         val correctConversions = { imageOutputFormat: ImageOutputFormat ->
             when (imageOutputFormat) {
-                ImageOutputFormat.JPEG -> com.google.jetpackcamera.model.proto.ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG
+                ImageOutputFormat.JPEG -> ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG
                 ImageOutputFormat.JPEG_ULTRA_HDR
-                -> com.google.jetpackcamera.model.proto.ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
+                -> ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
             }
         }
 
@@ -87,18 +96,18 @@ class ProtoConversionTest {
 
     @Test
     fun imageOutputFormatProto_convertsToCorrectImageOutputFormat() {
-        val correctConversions = { imageOutputFormatProto: com.google.jetpackcamera.model.proto.ImageOutputFormat ->
+        val correctConversions = { imageOutputFormatProto: ImageOutputFormatProto ->
             when (imageOutputFormatProto) {
-                com.google.jetpackcamera.model.proto.ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG,
-                com.google.jetpackcamera.model.proto.ImageOutputFormat.UNRECOGNIZED
+                ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG,
+                ImageOutputFormatProto.UNRECOGNIZED
                 -> ImageOutputFormat.JPEG
 
-                com.google.jetpackcamera.model.proto.ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
+                ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
                 -> ImageOutputFormat.JPEG_ULTRA_HDR
             }
         }
 
-        enumValues<com.google.jetpackcamera.model.proto.ImageOutputFormat>().forEach {
+        enumValues<ImageOutputFormatProto>().forEach {
             Truth.assertThat(correctConversions(it)).isEqualTo(it.toDomain())
         }
     }
@@ -107,9 +116,9 @@ class ProtoConversionTest {
     fun aspectRatio_convertsToCorrectProto() {
         val correctConversions = { aspectRatio: AspectRatio ->
             when (aspectRatio) {
-                AspectRatio.NINE_SIXTEEN -> com.google.jetpackcamera.model.proto.AspectRatio.ASPECT_RATIO_NINE_SIXTEEN
-                AspectRatio.THREE_FOUR -> com.google.jetpackcamera.model.proto.AspectRatio.ASPECT_RATIO_THREE_FOUR
-                AspectRatio.ONE_ONE -> com.google.jetpackcamera.model.proto.AspectRatio.ASPECT_RATIO_ONE_ONE
+                AspectRatio.NINE_SIXTEEN -> AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN
+                AspectRatio.THREE_FOUR -> AspectRatioProto.ASPECT_RATIO_THREE_FOUR
+                AspectRatio.ONE_ONE -> AspectRatioProto.ASPECT_RATIO_ONE_ONE
             }
         }
 
@@ -120,16 +129,16 @@ class ProtoConversionTest {
 
     @Test
     fun aspectRatioProto_convertsToCorrectAspectRatio() {
-        val correctConversions = { aspectRatioProto: com.google.jetpackcamera.model.proto.AspectRatio ->
+        val correctConversions = { aspectRatioProto: AspectRatioProto ->
             when (aspectRatioProto) {
-                com.google.jetpackcamera.model.proto.AspectRatio.ASPECT_RATIO_NINE_SIXTEEN -> AspectRatio.NINE_SIXTEEN
-                com.google.jetpackcamera.model.proto.AspectRatio.ASPECT_RATIO_THREE_FOUR -> AspectRatio.THREE_FOUR
-                com.google.jetpackcamera.model.proto.AspectRatio.ASPECT_RATIO_ONE_ONE -> AspectRatio.ONE_ONE
+                AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> AspectRatio.NINE_SIXTEEN
+                AspectRatioProto.ASPECT_RATIO_THREE_FOUR -> AspectRatio.THREE_FOUR
+                AspectRatioProto.ASPECT_RATIO_ONE_ONE -> AspectRatio.ONE_ONE
                 else -> AspectRatio.THREE_FOUR // Default value
             }
         }
 
-        enumValues<com.google.jetpackcamera.model.proto.AspectRatio>().forEach {
+        enumValues<AspectRatioProto>().forEach {
             Truth.assertThat(correctConversions(it)).isEqualTo(it.toDomain())
         }
     }
@@ -138,8 +147,8 @@ class ProtoConversionTest {
     fun lensFacing_convertsToCorrectProto() {
         val correctConversions = { lensFacing: LensFacing ->
             when (lensFacing) {
-                LensFacing.FRONT -> com.google.jetpackcamera.model.proto.LensFacing.LENS_FACING_FRONT
-                LensFacing.BACK -> com.google.jetpackcamera.model.proto.LensFacing.LENS_FACING_BACK
+                LensFacing.FRONT -> LensFacingProto.LENS_FACING_FRONT
+                LensFacing.BACK -> LensFacingProto.LENS_FACING_BACK
             }
         }
 
@@ -150,15 +159,15 @@ class ProtoConversionTest {
 
     @Test
     fun lensFacingProto_convertsToCorrectLensFacing() {
-        val correctConversions = { lensFacingProto: com.google.jetpackcamera.model.proto.LensFacing ->
+        val correctConversions = { lensFacingProto: LensFacingProto ->
             when (lensFacingProto) {
-                com.google.jetpackcamera.model.proto.LensFacing.LENS_FACING_FRONT -> LensFacing.FRONT
-                com.google.jetpackcamera.model.proto.LensFacing.LENS_FACING_BACK -> LensFacing.BACK
+                LensFacingProto.LENS_FACING_FRONT -> LensFacing.FRONT
+                LensFacingProto.LENS_FACING_BACK -> LensFacing.BACK
                 else -> LensFacing.BACK // Default value
             }
         }
 
-        enumValues<com.google.jetpackcamera.model.proto.LensFacing>().forEach {
+        enumValues<LensFacingProto>().forEach {
             Truth.assertThat(correctConversions(it)).isEqualTo(it.toDomain())
         }
     }
@@ -168,9 +177,9 @@ class ProtoConversionTest {
         val correctConversions = { lowLightBoostPriority: LowLightBoostPriority ->
             when (lowLightBoostPriority) {
                 LowLightBoostPriority.PRIORITIZE_AE_MODE ->
-                    com.google.jetpackcamera.model.proto.LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_AE_MODE
+                    LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_AE_MODE
                 LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES ->
-                    com.google.jetpackcamera.model.proto.LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES
+                    LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES
             }
         }
 
@@ -181,17 +190,17 @@ class ProtoConversionTest {
 
     @Test
     fun lowLightBoostPriorityProto_convertsToCorrectLowLightBoostPriority() {
-        val correctConversions = { lowLightBoostPriorityProto: com.google.jetpackcamera.model.proto.LowLightBoostPriority ->
+        val correctConversions = { lowLightBoostPriorityProto: LowLightBoostPriorityProto ->
             when (lowLightBoostPriorityProto) {
-                com.google.jetpackcamera.model.proto.LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_AE_MODE ->
+                LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_AE_MODE ->
                     LowLightBoostPriority.PRIORITIZE_AE_MODE
-                com.google.jetpackcamera.model.proto.LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES ->
+                LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES ->
                     LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
                 else -> LowLightBoostPriority.PRIORITIZE_AE_MODE // Default value
             }
         }
 
-        enumValues<com.google.jetpackcamera.model.proto.LowLightBoostPriority>().forEach {
+        enumValues<LowLightBoostPriorityProto>().forEach {
             Truth.assertThat(correctConversions(it)).isEqualTo(it.toDomain())
         }
     }
@@ -200,12 +209,12 @@ class ProtoConversionTest {
     fun stabilizationMode_convertsToCorrectProto() {
         val correctConversions = { stabilizationMode: StabilizationMode ->
             when (stabilizationMode) {
-                StabilizationMode.OFF -> com.google.jetpackcamera.model.proto.StabilizationMode.STABILIZATION_MODE_OFF
-                StabilizationMode.ON -> com.google.jetpackcamera.model.proto.StabilizationMode.STABILIZATION_MODE_ON
+                StabilizationMode.OFF -> StabilizationModeProto.STABILIZATION_MODE_OFF
+                StabilizationMode.ON -> StabilizationModeProto.STABILIZATION_MODE_ON
                 StabilizationMode.HIGH_QUALITY ->
-                    com.google.jetpackcamera.model.proto.StabilizationMode.STABILIZATION_MODE_HIGH_QUALITY
-                StabilizationMode.OPTICAL -> com.google.jetpackcamera.model.proto.StabilizationMode.STABILIZATION_MODE_OPTICAL
-                StabilizationMode.AUTO -> com.google.jetpackcamera.model.proto.StabilizationMode.STABILIZATION_MODE_AUTO
+                    StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY
+                StabilizationMode.OPTICAL -> StabilizationModeProto.STABILIZATION_MODE_OPTICAL
+                StabilizationMode.AUTO -> StabilizationModeProto.STABILIZATION_MODE_AUTO
             }
         }
 
@@ -216,18 +225,18 @@ class ProtoConversionTest {
 
     @Test
     fun stabilizationModeProto_convertsToCorrectStabilizationMode() {
-        val correctConversions = { stabilizationModeProto: com.google.jetpackcamera.model.proto.StabilizationMode ->
+        val correctConversions = { stabilizationModeProto: StabilizationModeProto ->
             when (stabilizationModeProto) {
-                com.google.jetpackcamera.model.proto.StabilizationMode.STABILIZATION_MODE_OFF -> StabilizationMode.OFF
-                com.google.jetpackcamera.model.proto.StabilizationMode.STABILIZATION_MODE_ON -> StabilizationMode.ON
-                com.google.jetpackcamera.model.proto.StabilizationMode.STABILIZATION_MODE_HIGH_QUALITY ->
+                StabilizationModeProto.STABILIZATION_MODE_OFF -> StabilizationMode.OFF
+                StabilizationModeProto.STABILIZATION_MODE_ON -> StabilizationMode.ON
+                StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY ->
                     StabilizationMode.HIGH_QUALITY
-                com.google.jetpackcamera.model.proto.StabilizationMode.STABILIZATION_MODE_OPTICAL -> StabilizationMode.OPTICAL
+                StabilizationModeProto.STABILIZATION_MODE_OPTICAL -> StabilizationMode.OPTICAL
                 else -> StabilizationMode.AUTO // Default value
             }
         }
 
-        enumValues<com.google.jetpackcamera.model.proto.StabilizationMode>().forEach {
+        enumValues<StabilizationModeProto>().forEach {
             Truth.assertThat(correctConversions(it)).isEqualTo(it.toDomain())
         }
     }
@@ -236,11 +245,11 @@ class ProtoConversionTest {
     fun videoQuality_convertsToCorrectProto() {
         val correctConversions = { videoQuality: VideoQuality ->
             when (videoQuality) {
-                VideoQuality.SD -> com.google.jetpackcamera.model.proto.VideoQuality.VIDEO_QUALITY_SD
-                VideoQuality.HD -> com.google.jetpackcamera.model.proto.VideoQuality.VIDEO_QUALITY_HD
-                VideoQuality.FHD -> com.google.jetpackcamera.model.proto.VideoQuality.VIDEO_QUALITY_FHD
-                VideoQuality.UHD -> com.google.jetpackcamera.model.proto.VideoQuality.VIDEO_QUALITY_UHD
-                VideoQuality.UNSPECIFIED -> com.google.jetpackcamera.model.proto.VideoQuality.VIDEO_QUALITY_UNSPECIFIED
+                VideoQuality.SD -> VideoQualityProto.VIDEO_QUALITY_SD
+                VideoQuality.HD -> VideoQualityProto.VIDEO_QUALITY_HD
+                VideoQuality.FHD -> VideoQualityProto.VIDEO_QUALITY_FHD
+                VideoQuality.UHD -> VideoQualityProto.VIDEO_QUALITY_UHD
+                VideoQuality.UNSPECIFIED -> VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED
             }
         }
 
@@ -251,17 +260,17 @@ class ProtoConversionTest {
 
     @Test
     fun videoQualityProto_convertsToCorrectVideoQuality() {
-        val correctConversions = { videoQualityProto: com.google.jetpackcamera.model.proto.VideoQuality ->
+        val correctConversions = { videoQualityProto: VideoQualityProto ->
             when (videoQualityProto) {
-                com.google.jetpackcamera.model.proto.VideoQuality.VIDEO_QUALITY_SD -> VideoQuality.SD
-                com.google.jetpackcamera.model.proto.VideoQuality.VIDEO_QUALITY_HD -> VideoQuality.HD
-                com.google.jetpackcamera.model.proto.VideoQuality.VIDEO_QUALITY_FHD -> VideoQuality.FHD
-                com.google.jetpackcamera.model.proto.VideoQuality.VIDEO_QUALITY_UHD -> VideoQuality.UHD
+                VideoQualityProto.VIDEO_QUALITY_SD -> VideoQuality.SD
+                VideoQualityProto.VIDEO_QUALITY_HD -> VideoQuality.HD
+                VideoQualityProto.VIDEO_QUALITY_FHD -> VideoQuality.FHD
+                VideoQualityProto.VIDEO_QUALITY_UHD -> VideoQuality.UHD
                 else -> VideoQuality.UNSPECIFIED // Default value
             }
         }
 
-        enumValues<com.google.jetpackcamera.model.proto.VideoQuality>().forEach {
+        enumValues<VideoQualityProto>().forEach {
             Truth.assertThat(correctConversions(it)).isEqualTo(it.toDomain())
         }
     }
@@ -270,10 +279,10 @@ class ProtoConversionTest {
     fun flashMode_convertsToCorrectProto() {
         val correctConversions = { flashMode: FlashMode ->
             when (flashMode) {
-                FlashMode.AUTO -> com.google.jetpackcamera.model.proto.FlashMode.FLASH_MODE_AUTO
-                FlashMode.ON -> com.google.jetpackcamera.model.proto.FlashMode.FLASH_MODE_ON
-                FlashMode.OFF -> com.google.jetpackcamera.model.proto.FlashMode.FLASH_MODE_OFF
-                FlashMode.LOW_LIGHT_BOOST -> com.google.jetpackcamera.model.proto.FlashMode.FLASH_MODE_LOW_LIGHT_BOOST
+                FlashMode.AUTO -> FlashModeProto.FLASH_MODE_AUTO
+                FlashMode.ON -> FlashModeProto.FLASH_MODE_ON
+                FlashMode.OFF -> FlashModeProto.FLASH_MODE_OFF
+                FlashMode.LOW_LIGHT_BOOST -> FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST
             }
         }
 
@@ -284,17 +293,17 @@ class ProtoConversionTest {
 
     @Test
     fun flashModeProto_convertsToCorrectFlashMode() {
-        val correctConversions = { flashModeProto: com.google.jetpackcamera.model.proto.FlashMode ->
+        val correctConversions = { flashModeProto: FlashModeProto ->
             when (flashModeProto) {
-                com.google.jetpackcamera.model.proto.FlashMode.FLASH_MODE_AUTO -> FlashMode.AUTO
-                com.google.jetpackcamera.model.proto.FlashMode.FLASH_MODE_ON -> FlashMode.ON
-                com.google.jetpackcamera.model.proto.FlashMode.FLASH_MODE_OFF -> FlashMode.OFF
-                com.google.jetpackcamera.model.proto.FlashMode.FLASH_MODE_LOW_LIGHT_BOOST -> FlashMode.LOW_LIGHT_BOOST
+                FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
+                FlashModeProto.FLASH_MODE_ON -> FlashMode.ON
+                FlashModeProto.FLASH_MODE_OFF -> FlashMode.OFF
+                FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST -> FlashMode.LOW_LIGHT_BOOST
                 else -> FlashMode.OFF // Default value
             }
         }
 
-        enumValues<com.google.jetpackcamera.model.proto.FlashMode>().forEach {
+        enumValues<FlashModeProto>().forEach {
             Truth.assertThat(correctConversions(it)).isEqualTo(it.toDomain())
         }
     }
@@ -303,8 +312,8 @@ class ProtoConversionTest {
     fun streamConfig_convertsToCorrectProto() {
         val correctConversions = { streamConfig: StreamConfig ->
             when (streamConfig) {
-                StreamConfig.MULTI_STREAM -> com.google.jetpackcamera.model.proto.StreamConfig.STREAM_CONFIG_MULTI_STREAM
-                StreamConfig.SINGLE_STREAM -> com.google.jetpackcamera.model.proto.StreamConfig.STREAM_CONFIG_SINGLE_STREAM
+                StreamConfig.MULTI_STREAM -> StreamConfigProto.STREAM_CONFIG_MULTI_STREAM
+                StreamConfig.SINGLE_STREAM -> StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM
             }
         }
 
@@ -315,15 +324,15 @@ class ProtoConversionTest {
 
     @Test
     fun streamConfigProto_convertsToCorrectStreamConfig() {
-        val correctConversions = { streamConfigProto: com.google.jetpackcamera.model.proto.StreamConfig ->
+        val correctConversions = { streamConfigProto: StreamConfigProto ->
             when (streamConfigProto) {
-                com.google.jetpackcamera.model.proto.StreamConfig.STREAM_CONFIG_MULTI_STREAM -> StreamConfig.MULTI_STREAM
-                com.google.jetpackcamera.model.proto.StreamConfig.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
+                StreamConfigProto.STREAM_CONFIG_MULTI_STREAM -> StreamConfig.MULTI_STREAM
+                StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
                 else -> StreamConfig.MULTI_STREAM // Default value
             }
         }
 
-        enumValues<com.google.jetpackcamera.model.proto.StreamConfig>().forEach {
+        enumValues<StreamConfigProto>().forEach {
             Truth.assertThat(correctConversions(it)).isEqualTo(it.toDomain())
         }
     }
@@ -359,7 +368,7 @@ class ProtoConversionTest {
 
     @Test
     fun debugSettingsProto_convertsToCorrectDebugSettings() {
-        val correctConversions = { debugSettingsProto: com.google.jetpackcamera.model.proto.DebugSettings ->
+        val correctConversions = { debugSettingsProto: DebugSettingsProto ->
             DebugSettings(
                 isDebugModeEnabled = debugSettingsProto.isDebugModeEnabled,
                 singleLensMode = if (debugSettingsProto.hasSingleLensMode()) {
@@ -371,11 +380,11 @@ class ProtoConversionTest {
             )
         }
 
-        val debugSettingsProtosToTest: List<com.google.jetpackcamera.model.proto.DebugSettings> = listOf(
+        val debugSettingsProtosToTest: List<DebugSettingsProto> = listOf(
             debugSettings { },
             debugSettings { isDebugModeEnabled = true },
             debugSettings {
-                singleLensMode = com.google.jetpackcamera.model.proto.LensFacing.LENS_FACING_FRONT
+                singleLensMode = LensFacingProto.LENS_FACING_FRONT
             },
             debugSettings {
                 testPattern = testPattern {
@@ -384,7 +393,7 @@ class ProtoConversionTest {
             },
             debugSettings {
                 isDebugModeEnabled = true
-                singleLensMode = com.google.jetpackcamera.model.proto.LensFacing.LENS_FACING_BACK
+                singleLensMode = LensFacingProto.LENS_FACING_BACK
                 testPattern = testPattern {
                     pn9 = testPatternPN9 { }
                 }
