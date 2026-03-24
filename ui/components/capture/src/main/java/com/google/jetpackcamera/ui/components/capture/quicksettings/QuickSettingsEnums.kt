@@ -19,8 +19,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import com.google.jetpackcamera.ui.components.capture.R
 
@@ -144,7 +142,6 @@ enum class CameraDynamicRange : QuickSettingsEnum {
 enum class CameraCaptureMode : QuickSettingsEnum {
     STANDARD {
 
-
         override fun getDrawableResId() = R.drawable.ic_photo_camera_front
 
         override fun getTextResId() = R.string.quick_settings_text_capture_mode_standard
@@ -154,7 +151,6 @@ enum class CameraCaptureMode : QuickSettingsEnum {
     },
     VIDEO_ONLY {
 
-
         override fun getDrawableResId() = R.drawable.ic_videocam
 
         override fun getTextResId() = R.string.quick_settings_text_capture_mode_video_only
@@ -163,7 +159,6 @@ enum class CameraCaptureMode : QuickSettingsEnum {
             R.string.quick_settings_description_capture_mode_video_only
     },
     IMAGE_ONLY {
-
 
         override fun getDrawableResId() = R.drawable.ic_camera_alt
 
