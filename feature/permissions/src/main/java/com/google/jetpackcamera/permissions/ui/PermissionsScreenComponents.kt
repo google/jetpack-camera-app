@@ -191,11 +191,7 @@ private fun Preview_Audio_Permission_Page() {
 Permission UI Subcomponents
  */
 @Composable
-fun PermissionImage(
-    modifier: Modifier = Modifier,
-    painter: Painter,
-    accessibilityText: String
-) {
+fun PermissionImage(modifier: Modifier = Modifier, painter: Painter, accessibilityText: String) {
     Box(modifier = modifier) {
         Icon(
             modifier = Modifier

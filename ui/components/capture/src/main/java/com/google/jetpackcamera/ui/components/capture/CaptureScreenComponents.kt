@@ -83,7 +83,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -178,7 +177,9 @@ fun PauseResumeToggleButton(
                     .size(ButtonDefaults.MediumIconSize),
                 painter = when (currentRecordingState) {
                     is VideoRecordingState.Active.Recording -> painterResource(R.drawable.ic_pause)
-                    is VideoRecordingState.Active.Paused -> painterResource(R.drawable.ic_play_arrow)
+                    is VideoRecordingState.Active.Paused -> painterResource(
+                        R.drawable.ic_play_arrow
+                    )
                 },
                 contentDescription = stringResource(id = R.string.pause_resume_button_description)
             )
