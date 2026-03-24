@@ -39,9 +39,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
@@ -533,10 +531,10 @@ private fun LockSwitchCaptureButtonNucleus(
                         onToggleSwitchPosition()
                     },
                 tint = Color.White,
-                imageVector = if (shouldBeLocked()) {
-                    Icons.Default.Lock
+                painter = if (shouldBeLocked()) {
+                    painterResource(R.drawable.ic_lock)
                 } else {
-                    Icons.Default.LockOpen
+                    painterResource(R.drawable.ic_lock_open)
                 },
                 contentDescription = null
             )

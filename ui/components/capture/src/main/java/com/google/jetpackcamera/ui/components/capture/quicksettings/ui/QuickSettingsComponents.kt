@@ -34,9 +34,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
@@ -236,7 +234,7 @@ fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modi
         onClick = onNavigateToSettings,
         text = stringResource(R.string.quick_settings_more_text),
         accessibilityText = stringResource(R.string.quick_settings_more_description),
-        painter = rememberVectorPainter(Icons.Filled.MoreHoriz),
+        painter = painterResource(R.drawable.ic_more_horiz),
         modifier = modifier.testTag(SETTINGS_BUTTON)
     )
 }
@@ -658,7 +656,7 @@ private fun CloseExpandedSettingsButton(onUnFocus: () -> Unit, modifier: Modifie
         onClick = onUnFocus
     ) {
         Icon(
-            imageVector = Icons.Default.Close,
+            painter = painterResource(R.drawable.ic_close),
             contentDescription = stringResource(
                 R.string.quick_settings_btn_close_expanded_settings_description
             )
