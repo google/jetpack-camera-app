@@ -18,10 +18,6 @@ package com.google.jetpackcamera.permissions
 import android.Manifest
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.CreateNewFolder
-import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -90,9 +86,9 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getTestTag(): String = CAMERA_PERMISSION_BUTTON
 
-        override fun getDrawableResId(): Int? = null
+        override fun getDrawableResId(): Int? = R.drawable.ic_camera_alt
 
-        override fun getImageVector(): ImageVector = Icons.Outlined.CameraAlt
+        override fun getImageVector(): ImageVector? = null
 
         override fun getPermissionTitleResId(): Int = R.string.camera_permission_screen_title
 
@@ -113,9 +109,9 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getTestTag(): String = RECORD_AUDIO_PERMISSION_BUTTON
 
-        override fun getDrawableResId(): Int? = null
+        override fun getDrawableResId(): Int? = R.drawable.ic_mic
 
-        override fun getImageVector(): ImageVector = Icons.Outlined.Mic
+        override fun getImageVector(): ImageVector? = null
 
         override fun getPermissionTitleResId(): Int = R.string.microphone_permission_screen_title
 
@@ -135,9 +131,9 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getTestTag(): String = WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
 
-        override fun getDrawableResId(): Int? = null
+        override fun getDrawableResId(): Int? = R.drawable.ic_create_new_folder
 
-        override fun getImageVector(): ImageVector = Icons.Outlined.CreateNewFolder
+        override fun getImageVector(): ImageVector? = null
 
         override fun getPermissionTitleResId(): Int = R.string.write_storage_permission_screen_title
 
