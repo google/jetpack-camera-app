@@ -42,4 +42,10 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // Access Model data
+    implementation(project(":core:model"))
+    implementation(project(":core:common"))
+    implementation(project(":data:settings"))
+
 }
