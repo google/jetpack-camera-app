@@ -63,25 +63,25 @@ enum class CameraFlashMode : QuickSettingsEnum {
     },
     AUTO {
 
-        override fun getDrawableResId() = R.drawable.ic_flash_auto
+        override fun getDrawableResId() = R.drawable.ic_flash_auto_filled
         override fun getTextResId() = R.string.quick_settings_flash_auto
         override fun getDescriptionResId() = R.string.quick_settings_flash_auto_description
     },
     ON {
 
-        override fun getDrawableResId() = R.drawable.ic_flash_on
+        override fun getDrawableResId() = R.drawable.ic_flash_on_filled
         override fun getTextResId() = R.string.quick_settings_flash_on
         override fun getDescriptionResId() = R.string.quick_settings_flash_on_description
     },
     LOW_LIGHT_BOOST_INACTIVE {
 
-        override fun getDrawableResId() = R.drawable.ic_nightlight
+        override fun getDrawableResId() = R.drawable.ic_nightlight_outline
         override fun getTextResId() = R.string.quick_settings_flash_llb
         override fun getDescriptionResId() = R.string.quick_settings_flash_llb_description
     },
     LOW_LIGHT_BOOST_ACTIVE {
 
-        override fun getDrawableResId() = R.drawable.ic_nightlight
+        override fun getDrawableResId() = R.drawable.ic_nightlight_filled
         override fun getTextResId() = R.string.quick_settings_flash_llb
         override fun getDescriptionResId() = R.string.quick_settings_flash_llb_description
     }
@@ -151,7 +151,7 @@ enum class CameraCaptureMode : QuickSettingsEnum {
     },
     VIDEO_ONLY {
 
-        override fun getDrawableResId() = R.drawable.ic_videocam
+        override fun getDrawableResId() = R.drawable.ic_videocam_outline
 
         override fun getTextResId() = R.string.quick_settings_text_capture_mode_video_only
 
@@ -160,7 +160,7 @@ enum class CameraCaptureMode : QuickSettingsEnum {
     },
     IMAGE_ONLY {
 
-        override fun getDrawableResId() = R.drawable.ic_camera_alt
+        override fun getDrawableResId() = R.drawable.ic_camera_alt_outline
 
         override fun getTextResId() = R.string.quick_settings_text_capture_mode_image_only
 

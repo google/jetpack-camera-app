@@ -313,16 +313,16 @@ fun CaptureModeToggleButton(
         leftIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.IMAGE_ONLY
         ) {
-            R.drawable.ic_camera_alt
+            R.drawable.ic_camera_alt_filled
         } else {
-            R.drawable.ic_camera_alt
+            R.drawable.ic_camera_alt_outline
         },
         rightIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.VIDEO_ONLY
         ) {
-            R.drawable.ic_videocam
+            R.drawable.ic_videocam_filled
         } else {
-            R.drawable.ic_videocam
+            R.drawable.ic_videocam_outline
         },
         leftIconDescription = if (enabled) {
             stringResource(id = R.string.capture_mode_image_capture_content_description)
