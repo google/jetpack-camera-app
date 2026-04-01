@@ -98,6 +98,9 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
                         }
                     } catch (_: CameraControl.OperationCanceledException) {
                         FocusState.Status.FAILURE
+                    } catch (e: IllegalArgumentException) {
+                        Log.d(TAG, "tapToFocus failed: ${e.message}")
+                        FocusState.Status.FAILURE
                     }
 
                     Log.d(
