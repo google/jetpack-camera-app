@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.res.Configuration
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -25,11 +26,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -49,9 +45,9 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
@@ -86,8 +82,8 @@ fun ToggleSwitch(
     trackColor: Color = Color.White.copy(alpha = TRACK_COLOR_ALPHA),
     thumbColor: Color = MaterialTheme.colorScheme.primaryFixedDim,
     disableColor: Color = MaterialTheme.colorScheme.onSurface,
-    leftIcon: ImageVector? = null,
-    rightIcon: ImageVector? = null,
+    @DrawableRes leftIcon: Int? = null,
+    @DrawableRes rightIcon: Int? = null,
     leftIconDescription: String = "leftIcon",
     rightIconDescription: String = "rightIcon",
     unselectedIconColor: Color = MaterialTheme.colorScheme.secondaryFixed,
@@ -135,8 +131,8 @@ fun ToggleSwitch(
     )
 
     // --- 4. Icon Painters ---
-    val offIconPainter = leftIcon?.let { rememberVectorPainter(image = leftIcon) }
-    val onIconPainter = rightIcon?.let { rememberVectorPainter(image = rightIcon) }
+    val offIconPainter = leftIcon?.let { painterResource(id = leftIcon) }
+    val onIconPainter = rightIcon?.let { painterResource(id = rightIcon) }
 
     // --- 5. Gesture Handlers ---
     val draggableState = rememberDraggableState { delta ->
@@ -389,8 +385,8 @@ private fun Capture_ToggleSwitch_On_Disabled() {
         colorScheme = darkColorScheme(),
         content = {
             ToggleSwitch(
-                leftIcon = Icons.Outlined.CameraAlt,
-                rightIcon = Icons.Filled.Videocam,
+                leftIcon = R.drawable.ic_camera_alt_outline,
+                rightIcon = R.drawable.ic_videocam_filled,
                 checked = true,
                 onCheckedChange = {},
                 enabled = false
@@ -406,8 +402,8 @@ private fun Capture_ToggleSwitch_Off_Disabled() {
         colorScheme = darkColorScheme(),
         content = {
             ToggleSwitch(
-                leftIcon = Icons.Filled.CameraAlt,
-                rightIcon = Icons.Outlined.Videocam,
+                leftIcon = R.drawable.ic_camera_alt_filled,
+                rightIcon = R.drawable.ic_videocam_outline,
                 checked = false,
                 onCheckedChange = {},
                 enabled = false
@@ -423,8 +419,8 @@ private fun Capture_ToggleSwitch_On_Enabled() {
         colorScheme = darkColorScheme(),
         content = {
             ToggleSwitch(
-                leftIcon = Icons.Outlined.CameraAlt,
-                rightIcon = Icons.Filled.Videocam,
+                leftIcon = R.drawable.ic_camera_alt_outline,
+                rightIcon = R.drawable.ic_videocam_filled,
                 checked = true,
                 onCheckedChange = {},
                 enabled = true
@@ -440,8 +436,8 @@ private fun Capture_ToggleSwitch_Off_Enabled() {
         colorScheme = darkColorScheme(),
         content = {
             ToggleSwitch(
-                leftIcon = Icons.Filled.CameraAlt,
-                rightIcon = Icons.Outlined.Videocam,
+                leftIcon = R.drawable.ic_camera_alt_filled,
+                rightIcon = R.drawable.ic_videocam_outline,
                 checked = false,
                 onCheckedChange = {},
                 enabled = true
@@ -458,8 +454,8 @@ private fun Capture_Switch_Off_Enabled() {
         content =
         {
             ToggleSwitch(
-                leftIcon = Icons.Filled.CameraAlt,
-                rightIcon = Icons.Outlined.Videocam,
+                leftIcon = R.drawable.ic_camera_alt_filled,
+                rightIcon = R.drawable.ic_videocam_outline,
                 checked = false,
                 onCheckedChange = {},
                 enabled = true
