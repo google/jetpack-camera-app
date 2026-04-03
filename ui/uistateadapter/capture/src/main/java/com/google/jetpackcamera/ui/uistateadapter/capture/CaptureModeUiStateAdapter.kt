@@ -33,7 +33,6 @@ import com.google.jetpackcamera.ui.components.capture.DisabledReason
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.*
 
 private val ORDERED_UI_SUPPORTED_CAPTURE_MODES = listOf(
     CaptureMode.STANDARD,
@@ -122,15 +121,10 @@ fun CaptureModeUiState.Companion.from(
         externalCaptureMode,
         restrictionConfig
     )
-    return when (restrictionConfig) {
-        is OptionRestrictionConfig.FullyRestricted -> CaptureModeUiState.Unavailable
-        is OptionRestrictionConfig.NotRestricted, is OptionRestrictionConfig.OptionsEnabled ->
-            CaptureModeUiState.Available(
-                selectedCaptureMode = cameraAppSettings.captureMode,
-                availableCaptureModes = availableCaptureModes
-            )
-
-    }
+    return CaptureModeUiState.Available(
+        selectedCaptureMode = cameraAppSettings.captureMode,
+        availableCaptureModes = availableCaptureModes
+    )
 }
 
 private fun getSupportedCaptureModes(
