@@ -89,6 +89,7 @@ class CaptureControllerImpl(
     private var recordingJob: Job? = null
     private val job = Job(parent = coroutineContext[Job])
     private val scope = CoroutineScope(coroutineContext + job)
+    private val multipleEventsCutter = MultipleEventsCutter()
 
     override fun captureImage(contentResolver: ContentResolver) {
         if (externalCaptureMode == ExternalCaptureMode.VideoCapture) {
@@ -102,56 +103,66 @@ class CaptureControllerImpl(
             )
             return
         }
-        Log.d(TAG, "captureImage")
-        scope.launch {
-            val (saveLocation, progress) = nextSaveLocation(
-                saveMode,
-                externalCaptureMode,
-                externalCapturesCallback
-            )
-            captureImageInternal(
-                saveLocation = saveLocation,
-                doTakePicture = {
-                    cameraSystem.takePicture(contentResolver, saveLocation) {
-                        trackedCaptureUiState.update { old ->
-                            old.copy(lastBlinkTimeStamp = System.currentTimeMillis())
-                        }
-                    }.savedUri
-                },
-                onSuccess = { savedUri ->
-                    val event = if (progress != null) {
-                        ImageCaptureEvent.SequentialImageSaved(savedUri, progress)
-                    } else {
-                        if (saveLocation is SaveLocation.Cache) {
-                            ImageCaptureEvent.SingleImageCached(savedUri)
-                        } else {
-                            ImageCaptureEvent.SingleImageSaved(savedUri)
-                        }
-                    }
-                    if (saveLocation !is SaveLocation.Cache) {
-                        imageWellController.updateLastCapturedMedia()
-                    } else {
-                        savedUri?.let {
-                            scope.launch {
-                                postCurrentMediaToMediaRepository(
-                                    mediaRepository,
-                                    MediaDescriptor.Content.Image(it, null, true)
-                                )
+        multipleEventsCutter.processEvent {
+            Log.d(TAG, "captureImage")
+            scope.launch {
+                try {
+                    val (saveLocation, progress) = nextSaveLocation(
+                        saveMode,
+                        externalCaptureMode,
+                        externalCapturesCallback
+                    )
+                    captureImageInternal(
+                        saveLocation = saveLocation,
+                        doTakePicture = {
+                            cameraSystem.takePicture(contentResolver, saveLocation) {
+                                trackedCaptureUiState.update { old ->
+                                    old.copy(lastBlinkTimeStamp = System.currentTimeMillis())
+                                }
+                            }.savedUri
+                        },
+                        onSuccess = { savedUri ->
+                            val event = if (progress != null) {
+                                ImageCaptureEvent.SequentialImageSaved(savedUri, progress)
+                            } else {
+                                if (saveLocation is SaveLocation.Cache) {
+                                    ImageCaptureEvent.SingleImageCached(savedUri)
+                                } else {
+                                    ImageCaptureEvent.SingleImageSaved(savedUri)
+                                }
                             }
-                        }
-                    }
-                    captureEvents.trySend(event)
-                },
-                onFailure = { exception ->
-                    val event = if (progress != null) {
-                        ImageCaptureEvent.SequentialImageCaptureError(exception, progress)
-                    } else {
-                        ImageCaptureEvent.SingleImageCaptureError(exception)
-                    }
+                            if (saveLocation !is SaveLocation.Cache) {
+                                imageWellController.updateLastCapturedMedia()
+                            } else {
+                                savedUri?.let {
+                                    scope.launch {
+                                        postCurrentMediaToMediaRepository(
+                                            mediaRepository,
+                                            MediaDescriptor.Content.Image(it, null, true)
+                                        )
+                                    }
+                                }
+                            }
+                            captureEvents.trySend(event)
+                            multipleEventsCutter.done()
+                        },
+                        onFailure = { exception ->
+                            val event = if (progress != null) {
+                                ImageCaptureEvent.SequentialImageCaptureError(exception, progress)
+                            } else {
+                                ImageCaptureEvent.SingleImageCaptureError(exception)
+                            }
 
-                    captureEvents.trySend(event)
+                            captureEvents.trySend(event)
+                            multipleEventsCutter.done()
+                        }
+                    )
+                } catch (exception: Exception) {
+                    Log.e(TAG, "captureImage error: $exception")
+                    multipleEventsCutter.done()
+                    captureEvents.trySend(ImageCaptureEvent.SingleImageCaptureError(exception))
                 }
-            )
+            }
         }
     }
 
@@ -169,69 +180,75 @@ class CaptureControllerImpl(
             return
         }
         Log.d(TAG, "startVideoRecording")
-        recordingJob = scope.launch {
-            val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
-            val (saveLocation, _) = nextSaveLocation(
-                saveMode,
-                externalCaptureMode,
-                externalCapturesCallback
-            )
-            try {
-                cameraSystem.startVideoRecording(saveLocation) {
-                    var snackbarToShow: SnackbarData?
-                    when (it) {
-                        is OnVideoRecordEvent.OnVideoRecorded -> {
-                            Log.d(TAG, "cameraSystem.startRecording OnVideoRecorded")
-                            val event = if (saveLocation is SaveLocation.Cache) {
-                                VideoCaptureEvent.VideoCached(it.savedUri)
-                            } else {
-                                VideoCaptureEvent.VideoSaved(it.savedUri)
-                            }
+        multipleEventsCutter.processEvent {
+            recordingJob = scope.launch {
+                val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
+                try {
+                    val (saveLocation, _) = nextSaveLocation(
+                        saveMode,
+                        externalCaptureMode,
+                        externalCapturesCallback
+                    )
+                    cameraSystem.startVideoRecording(saveLocation) {
+                        var snackbarToShow: SnackbarData?
+                        when (it) {
+                            is OnVideoRecordEvent.OnVideoRecorded -> {
+                                Log.d(TAG, "cameraSystem.startRecording OnVideoRecorded")
+                                val event = if (saveLocation is SaveLocation.Cache) {
+                                    VideoCaptureEvent.VideoCached(it.savedUri)
+                                } else {
+                                    VideoCaptureEvent.VideoSaved(it.savedUri)
+                                }
 
-                            if (saveLocation !is SaveLocation.Cache) {
-                                imageWellController.updateLastCapturedMedia()
-                            } else {
-                                scope.launch {
-                                    postCurrentMediaToMediaRepository(
-                                        mediaRepository,
-                                        MediaDescriptor.Content.Video(it.savedUri, null, true)
+                                if (saveLocation !is SaveLocation.Cache) {
+                                    imageWellController.updateLastCapturedMedia()
+                                } else {
+                                    scope.launch {
+                                        postCurrentMediaToMediaRepository(
+                                            mediaRepository,
+                                            MediaDescriptor.Content.Video(it.savedUri, null, true)
+                                        )
+                                    }
+                                }
+
+                                captureEvents.trySend(event)
+                                // don't display snackbar for successful capture
+                                snackbarToShow = if (saveLocation is SaveLocation.Cache) {
+                                    null
+                                } else {
+                                    SnackbarData(
+                                        cookie = cookie,
+                                        stringResource = R.string.toast_video_capture_success,
+                                        withDismissAction = true,
+                                        testTag = VIDEO_CAPTURE_SUCCESS_TAG
                                     )
                                 }
+                                multipleEventsCutter.done()
                             }
 
-                            captureEvents.trySend(event)
-                            // don't display snackbar for successful capture
-                            snackbarToShow = if (saveLocation is SaveLocation.Cache) {
-                                null
-                            } else {
-                                SnackbarData(
+                            is OnVideoRecordEvent.OnVideoRecordError -> {
+                                Log.d(TAG, "cameraSystem.startRecording OnVideoRecordError")
+                                captureEvents.trySend(VideoCaptureEvent.VideoCaptureError(it.error))
+                                snackbarToShow = SnackbarData(
                                     cookie = cookie,
-                                    stringResource = R.string.toast_video_capture_success,
+                                    stringResource = R.string.toast_video_capture_failure,
                                     withDismissAction = true,
-                                    testTag = VIDEO_CAPTURE_SUCCESS_TAG
+                                    testTag = VIDEO_CAPTURE_FAILURE_TAG
                                 )
+                                multipleEventsCutter.done()
                             }
                         }
 
-                        is OnVideoRecordEvent.OnVideoRecordError -> {
-                            Log.d(TAG, "cameraSystem.startRecording OnVideoRecordError")
-                            captureEvents.trySend(VideoCaptureEvent.VideoCaptureError(it.error))
-                            snackbarToShow = SnackbarData(
-                                cookie = cookie,
-                                stringResource = R.string.toast_video_capture_failure,
-                                withDismissAction = true,
-                                testTag = VIDEO_CAPTURE_FAILURE_TAG
-                            )
+                        snackbarToShow?.let { data ->
+                            snackBarController?.addSnackBarData(data)
                         }
                     }
-
-                    snackbarToShow?.let { data ->
-                        snackBarController?.addSnackBarData(data)
-                    }
+                    Log.d(TAG, "cameraSystem.startRecording success")
+                } catch (exception: Exception) {
+                    Log.e(TAG, "cameraSystem.startVideoRecording error", exception)
+                    multipleEventsCutter.done()
+                    captureEvents.trySend(VideoCaptureEvent.VideoCaptureError(exception))
                 }
-                Log.d(TAG, "cameraSystem.startRecording success")
-            } catch (exception: IllegalStateException) {
-                Log.d(TAG, "cameraSystem.startVideoRecording error", exception)
             }
         }
     }
