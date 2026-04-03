@@ -23,6 +23,8 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.api.DeveloperAppConfig
+import com.google.jetpackcamera.settings.api.OptionRestrictionConfig
+import com.google.jetpackcamera.settings.api.SettingConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,7 +36,11 @@ object AppModule {
 
     @Provides
     @DefaultAppConfig
-    fun providesDeveloperAppConfig(): DeveloperAppConfig = DeveloperAppConfig.create()
+    fun providesDeveloperAppConfig(): DeveloperAppConfig = DeveloperAppConfig.create(
+        captureMode = SettingConfig(CaptureMode.IMAGE_ONLY,
+            uiRestriction = OptionRestrictionConfig.FullyRestricted())
+    )
+
     /**
      * provides the default [CaptureMode] to override by the app
      */

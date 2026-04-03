@@ -18,21 +18,24 @@ package com.google.jetpackcamera.settings.api
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 
 
-@ConsistentCopyVisibility
-data class DeveloperAppConfig private constructor(
+data class DeveloperAppConfig(
     val captureMode: SettingConfig<CaptureMode>,
+    val imageOutputFormat: SettingConfig<ImageOutputFormat>,
+    val videoDynamicRange: SettingConfig<DynamicRange>,
     val aspectRatio: SettingConfig<AspectRatio>,
     val flashMode: SettingConfig<FlashMode>,
     val audio: SettingConfig<Boolean>
 ) {
     // checks validity of all individual setting configs
     init {
-        fun <T: Any> SettingConfig<T>.containsIfOptionsEnabled(options: Set<T>): Boolean {
+        fun <T : Any> SettingConfig<T>.containsIfOptionsEnabled(options: Set<T>): Boolean {
             return when (val restriction = this.uiRestriction) {
                 is OptionRestrictionConfig.OptionsEnabled -> {
                     restriction.enabledOptions.containsAll(options)
@@ -43,6 +46,19 @@ data class DeveloperAppConfig private constructor(
         }
 
         require(flashMode.containsIfOptionsEnabled(setOf(FlashMode.OFF)))
+        //todo how to handle restrictions for hdr image/video formats if they share UI component
+        require(
+            when (imageOutputFormat.defaultValue) {
+                ImageOutputFormat.JPEG -> true
+                ImageOutputFormat.JPEG_ULTRA_HDR -> imageOutputFormat.uiRestriction !is OptionRestrictionConfig.FullyRestricted
+            }
+        )
+        require(
+            when (videoDynamicRange.defaultValue) {
+                DynamicRange.SDR -> true
+                DynamicRange.HLG10 -> imageOutputFormat.uiRestriction !is OptionRestrictionConfig.FullyRestricted
+            }
+        )
     }
 
     companion object {
@@ -51,7 +67,9 @@ data class DeveloperAppConfig private constructor(
             aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
             flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
             captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
-            audio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.audioEnabled)
+            audio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.audioEnabled),
+            imageOutputFormat = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
+            videoDynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
         )
 
         /**
@@ -66,24 +84,21 @@ data class DeveloperAppConfig private constructor(
         fun create(
             captureMode: SettingConfig<CaptureMode> = LibraryDefaults.captureMode,
             aspectRatio: SettingConfig<AspectRatio> = LibraryDefaults.aspectRatio,
+            imageOutputFormat: SettingConfig<ImageOutputFormat> = LibraryDefaults.imageOutputFormat,
+            videoDynamicRange: SettingConfig<DynamicRange> = LibraryDefaults.videoDynamicRange,
             flashMode: SettingConfig<FlashMode> = LibraryDefaults.flashMode,
             audio: SettingConfig<Boolean> = LibraryDefaults.audio
         ): DeveloperAppConfig {
-            fun <T : Any> SettingConfig<T>.merge(settingConfig: SettingConfig<T>): SettingConfig<T> {
-                return this.copy(
-                    defaultValue = this.defaultValue ?: settingConfig.defaultValue,
-                    uiRestriction = this.uiRestriction ?: settingConfig.uiRestriction
-                )
-            }
             return DeveloperAppConfig(
-                captureMode = captureMode.merge(LibraryDefaults.captureMode).ensureDefaultOption(),
-                aspectRatio = aspectRatio.merge(LibraryDefaults.aspectRatio).ensureDefaultOption(),
-                flashMode = flashMode.merge(LibraryDefaults.flashMode).ensureDefaultOption().ensureOption(FlashMode.OFF),
-                audio = audio.merge(LibraryDefaults.audio).ensureDefaultOption()
+                captureMode = captureMode,
+                aspectRatio = aspectRatio,
+                imageOutputFormat = imageOutputFormat,
+                videoDynamicRange = videoDynamicRange,
+                flashMode = flashMode,
+                audio = audio
             )
         }
     }
-
 
     fun toCameraAppSettings(
         defaultSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
@@ -99,45 +114,33 @@ data class DeveloperAppConfig private constructor(
 }
 
 
-data class SettingConfig<T:Any>(
-    val defaultValue: T?,
-    val uiRestriction: OptionRestrictionConfig<T>? = OptionRestrictionConfig.NotRestricted()
+data class SettingConfig<T>(
+    val defaultValue: T,
+    val uiRestriction: OptionRestrictionConfig<T> = OptionRestrictionConfig.NotRestricted()
 ) {
-    /**
-     * Returns a new [SettingConfig] ensuring the [defaultValue] is included
-     * in the [uiRestriction] if it's [OptionRestrictionConfig.OptionsEnabled].
-     */
-    fun ensureOption(option: T): SettingConfig<T> {
-        return when (val currentRestriction = this.uiRestriction) {
-            is OptionRestrictionConfig.OptionsEnabled<T> -> {
-                if (!currentRestriction.enabledOptions.contains(option)) {
-                    this.copy(
-                        uiRestriction = currentRestriction.copy(
-                            enabledOptions = currentRestriction.enabledOptions + option
-                        )
-                    )
-                } else this
+    init {
+        (uiRestriction as? OptionRestrictionConfig.OptionsEnabled)?.let {
+            require(
+                uiRestriction.enabledOptions.size >= 2 &&
+                        uiRestriction.enabledOptions.contains(
+                            defaultValue
+                        )){
+                "OptionsRestrictionConfig.OptionsEnabled#enabledOptions must also contain the defaultValue"
             }
-
-            else -> this // No change for NotRestricted or FullyRestricted
         }
     }
-
-    fun ensureDefaultOption(): SettingConfig<T> =
-        if (this.defaultValue != null && this.uiRestriction != null) this.ensureOption(this.defaultValue) else this
-
 }
 
 
-sealed interface OptionRestrictionConfig<T:Any> {
+sealed interface OptionRestrictionConfig<T> {
     /** All device-supported options are available. */
-    class NotRestricted<T : Any> : OptionRestrictionConfig<T>
+    class NotRestricted<T> : OptionRestrictionConfig<T>
 
     /** The entire setting is unavailable and hidden from the UI. */
-    class FullyRestricted<T : Any> : OptionRestrictionConfig<T>
+    class FullyRestricted<T> : OptionRestrictionConfig<T>
 
     /** ONLY the options in this set are allowed, if supported by the device. */
-    data class OptionsEnabled<T : Any>(val enabledOptions: Set<T>) : OptionRestrictionConfig<T> {
+    data class OptionsEnabled<T>(val enabledOptions: Set<T>) : OptionRestrictionConfig<T> {
         init {
             require(enabledOptions.isNotEmpty()) {
                 "enabledOptions must have at least one option. " +

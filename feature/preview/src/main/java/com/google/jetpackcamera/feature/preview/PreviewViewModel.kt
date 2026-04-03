@@ -23,6 +23,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
+import com.google.jetpackcamera.core.common.DefaultAppConfig
 import com.google.jetpackcamera.core.common.DefaultSaveMode
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
@@ -38,6 +39,7 @@ import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.api.DeveloperAppConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
 import com.google.jetpackcamera.ui.components.capture.LOW_LIGHT_BOOST_FAILURE_TAG
@@ -91,6 +93,7 @@ class PreviewViewModel @Inject constructor(
     private val cameraSystem: CameraSystem,
     private val savedStateHandle: SavedStateHandle,
     @DefaultSaveMode private val defaultSaveMode: SaveMode,
+    @DefaultAppConfig private val appConfig: DeveloperAppConfig?,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository,
     private val mediaRepository: MediaRepository
@@ -122,7 +125,10 @@ class PreviewViewModel @Inject constructor(
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraSystem.initialize(
-            cameraAppSettings = settingsRepository.defaultCameraAppSettings.first()
+            cameraAppSettings =
+                (appConfig?.toCameraAppSettings() ?:
+
+                settingsRepository.defaultCameraAppSettings.first())
                 .applyExternalCaptureMode(externalCaptureMode)
                 .copy(debugSettings = debugSettings)
         ) { cameraPropertiesJSON = it }
@@ -130,6 +136,7 @@ class PreviewViewModel @Inject constructor(
 
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         cameraSystem,
+        appConfig ?: DeveloperAppConfig.LibraryDefaults,
         constraintsRepository,
         trackedCaptureUiState,
         externalCaptureMode
