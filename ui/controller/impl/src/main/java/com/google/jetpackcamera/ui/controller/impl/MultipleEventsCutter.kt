@@ -23,12 +23,18 @@ import kotlinx.atomicfu.atomic
 internal class MultipleEventsCutter {
     private val isProcessing = atomic(false)
 
+    /**
+     * Executes the [event] if no other event is currently being processed.
+     */
     fun processEvent(event: () -> Unit) {
         if (isProcessing.compareAndSet(expect = false, update = true)) {
             event()
         }
     }
 
+    /**
+     * Signals that the current event processing is complete.
+     */
     fun done() {
         isProcessing.value = false
     }
