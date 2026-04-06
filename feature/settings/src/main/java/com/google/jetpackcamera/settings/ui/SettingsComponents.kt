@@ -914,16 +914,24 @@ fun BasicPopupSetting(
                 Text(
                     text = "Close",
                     modifier = Modifier
-                        .testTag(CLOSE_BUTTON)
+                        .testTag(BTN_CLOSE_POPUP)
                         .clickable { popupStatus.value = false }
                 )
             },
             title = { Text(text = title) },
             text = {
-                MaterialTheme(
-                    colorScheme = MaterialTheme.colorScheme.copy(surface = Color.Transparent),
-                    content = popupContents
-                )
+                // Apply a scroll state to ensure content is reachable
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .testTag(CONTAINER_DIALOG_CONTENTS)
+                        .verticalScroll(scrollState)
+                ) {
+                    MaterialTheme(
+                        colorScheme = MaterialTheme.colorScheme.copy(surface = Color.Transparent),
+                        content = popupContents
+                    )
+                }
             }
         )
     }
