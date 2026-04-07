@@ -791,11 +791,7 @@ fun VideoQualitySetting(
             }
         },
         popupContents = {
-            Column(
-                Modifier
-                    .selectableGroup()
-                    .verticalScroll(rememberScrollState())
-            ) {
+            Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
                     modifier = Modifier.testTag(
                         getVideoQualityOptionTestTag(VideoQuality.UNSPECIFIED)
