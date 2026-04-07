@@ -25,6 +25,10 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 
 
+/**
+ * Defines a configuration for the Jetpack Camera App that can be used by developers
+ * to override the default app settings.
+ */
 data class DeveloperAppConfig(
     val captureMode: SettingConfig<CaptureMode>,
     val aspectRatio: SettingConfig<AspectRatio>,
@@ -32,7 +36,7 @@ data class DeveloperAppConfig(
     val audio: SettingConfig<Boolean>,
     val hdrEnabled: SettingConfig<Boolean>,
 ) {
-    // checks validity of all individual setting configs
+    // Ensures that all individual setting configurations are valid.
     init {
         fun <T : Any> SettingConfig<T>.containsIfOptionsEnabled(options: Set<T>): Boolean {
             return when (val restriction = this.uiRestriction) {
@@ -48,7 +52,7 @@ data class DeveloperAppConfig(
     }
 
     companion object {
-        // Provides the baseline, fully non-restricted configuration
+        // Provides a foundation based on JCA's DEFAULT_CAMERA_APP_SETTINGS
         val LibraryDefaults: DeveloperAppConfig = DeveloperAppConfig(
             aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
             flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
@@ -58,6 +62,11 @@ data class DeveloperAppConfig(
         )
     }
 
+    /**
+     * Converts this [DeveloperAppConfig] into a [CameraAppSettings] object.
+     *
+     * This function maps the developer-defined settings to the internal camera app settings model.
+     */
     fun toCameraAppSettings(
         defaultSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
     ): CameraAppSettings {
@@ -81,11 +90,20 @@ data class DeveloperAppConfig(
     }
 }
 
+/**
+ * Represents a single configurable setting in the application, including its
+ * default value and any UI restrictions that apply to it.
+ *
+ * @param defaultValue The initial value for this setting.
+ * @param uiRestriction The restrictions applied to this setting in the UI.
+ */
 data class SettingConfig<T>(
     val defaultValue: T,
     val uiRestriction: OptionRestrictionConfig<T> = OptionRestrictionConfig.NotRestricted()
 ) {
     init {
+        // Validate that if options are enabled for this setting, the default value
+        // is always included in the set of enabled options.
         (uiRestriction as? OptionRestrictionConfig.OptionsEnabled)?.let {
             require(
                 uiRestriction.enabledOptions.size >= 2 &&
@@ -111,7 +129,7 @@ sealed interface OptionRestrictionConfig<T> {
     data class OptionsEnabled<T>(val enabledOptions: Set<T>) : OptionRestrictionConfig<T> {
         init {
             require(enabledOptions.isNotEmpty()) {
-                "enabledOptions must have at least one option. " +
+                "enabledOptions must not be empty. " +
                         "Use FullyRestricted to disable the feature."
             }
         }
