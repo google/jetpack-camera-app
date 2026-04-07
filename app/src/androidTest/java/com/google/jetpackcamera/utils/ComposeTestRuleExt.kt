@@ -50,8 +50,8 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
-import com.google.jetpackcamera.settings.ui.BTN_CLOSE_POPUP
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
+import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
@@ -623,7 +623,7 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
     try {
         return block()
     } finally {
-        onNodeWithTag(BTN_CLOSE_POPUP)
+        onNodeWithTag(CLOSE_BUTTON)
             .assertExists()
             .performClick()
 

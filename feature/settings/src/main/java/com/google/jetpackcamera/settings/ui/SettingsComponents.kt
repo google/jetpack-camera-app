@@ -910,7 +910,7 @@ fun BasicPopupSetting(
                 Text(
                     text = "Close",
                     modifier = Modifier
-                        .testTag(BTN_CLOSE_POPUP)
+                        .testTag(CLOSE_BUTTON)
                         .clickable { popupStatus.value = false }
                 )
             },
