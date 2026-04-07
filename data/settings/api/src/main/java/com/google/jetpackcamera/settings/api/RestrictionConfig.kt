@@ -27,11 +27,10 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 
 data class DeveloperAppConfig(
     val captureMode: SettingConfig<CaptureMode>,
-    val imageOutputFormat: SettingConfig<ImageOutputFormat>,
-    val videoDynamicRange: SettingConfig<DynamicRange>,
     val aspectRatio: SettingConfig<AspectRatio>,
     val flashMode: SettingConfig<FlashMode>,
-    val audio: SettingConfig<Boolean>
+    val audio: SettingConfig<Boolean>,
+    val hdrEnabled: SettingConfig<Boolean>,
 ) {
     // checks validity of all individual setting configs
     init {
@@ -46,19 +45,6 @@ data class DeveloperAppConfig(
         }
 
         require(flashMode.containsIfOptionsEnabled(setOf(FlashMode.OFF)))
-        //todo how to handle restrictions for hdr image/video formats if they share UI component
-        require(
-            when (imageOutputFormat.defaultValue) {
-                ImageOutputFormat.JPEG -> true
-                ImageOutputFormat.JPEG_ULTRA_HDR -> imageOutputFormat.uiRestriction !is OptionRestrictionConfig.FullyRestricted
-            }
-        )
-        require(
-            when (videoDynamicRange.defaultValue) {
-                DynamicRange.SDR -> true
-                DynamicRange.HLG10 -> imageOutputFormat.uiRestriction !is OptionRestrictionConfig.FullyRestricted
-            }
-        )
     }
 
     companion object {
@@ -68,51 +54,32 @@ data class DeveloperAppConfig(
             flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
             captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
             audio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.audioEnabled),
-            imageOutputFormat = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
-            videoDynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
+            hdrEnabled = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange != DynamicRange.SDR),
         )
-
-        /**
-         * Creates a [DeveloperAppConfig] instance, applying necessary corrections to ensure validity.
-         *
-         * This factory method ensures that for any [SettingConfig] using [OptionRestrictionConfig.OptionsEnabled]:
-         * - The `defaultValue` is always included in the `enabledOptions`.
-         * - Specific mandatory options are included (e.g., [FlashMode.OFF] for `flashMode`).
-         *
-         * Any adjustments are made silently by adding the required options to the `enabledOptions` set.
-         **/
-        fun create(
-            captureMode: SettingConfig<CaptureMode> = LibraryDefaults.captureMode,
-            aspectRatio: SettingConfig<AspectRatio> = LibraryDefaults.aspectRatio,
-            imageOutputFormat: SettingConfig<ImageOutputFormat> = LibraryDefaults.imageOutputFormat,
-            videoDynamicRange: SettingConfig<DynamicRange> = LibraryDefaults.videoDynamicRange,
-            flashMode: SettingConfig<FlashMode> = LibraryDefaults.flashMode,
-            audio: SettingConfig<Boolean> = LibraryDefaults.audio
-        ): DeveloperAppConfig {
-            return DeveloperAppConfig(
-                captureMode = captureMode,
-                aspectRatio = aspectRatio,
-                imageOutputFormat = imageOutputFormat,
-                videoDynamicRange = videoDynamicRange,
-                flashMode = flashMode,
-                audio = audio
-            )
-        }
     }
 
     fun toCameraAppSettings(
         defaultSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
     ): CameraAppSettings {
+        val imageOutputFormat = if (this.hdrEnabled.defaultValue)
+            ImageOutputFormat.JPEG_ULTRA_HDR
+        else
+            ImageOutputFormat.JPEG
+
+        val dynamicRange =
+            if (this.hdrEnabled.defaultValue) DynamicRange.HLG10 else DynamicRange.SDR
+
+
         return defaultSettings.copy(
-            aspectRatio = this.aspectRatio.defaultValue ?: defaultSettings.aspectRatio,
-            flashMode = this.flashMode.defaultValue ?: defaultSettings.flashMode,
-            captureMode = this.captureMode.defaultValue ?: defaultSettings.captureMode,
-            audioEnabled = this.audio.defaultValue ?: defaultSettings.audioEnabled
-            // ... copy other defaultValues from this config
+            aspectRatio = this.aspectRatio.defaultValue,
+            flashMode = this.flashMode.defaultValue,
+            captureMode = this.captureMode.defaultValue,
+            audioEnabled = this.audio.defaultValue,
+            imageFormat = imageOutputFormat,
+            dynamicRange = dynamicRange
         )
     }
 }
-
 
 data class SettingConfig<T>(
     val defaultValue: T,
@@ -124,7 +91,8 @@ data class SettingConfig<T>(
                 uiRestriction.enabledOptions.size >= 2 &&
                         uiRestriction.enabledOptions.contains(
                             defaultValue
-                        )){
+                        )
+            ) {
                 "OptionsRestrictionConfig.OptionsEnabled#enabledOptions must also contain the defaultValue"
             }
         }

@@ -36,9 +36,12 @@ object AppModule {
 
     @Provides
     @DefaultAppConfig
-    fun providesDeveloperAppConfig(): DeveloperAppConfig = DeveloperAppConfig.create(
-        captureMode = SettingConfig(CaptureMode.IMAGE_ONLY,
-            uiRestriction = OptionRestrictionConfig.FullyRestricted())
+    fun providesDeveloperAppConfig(): DeveloperAppConfig = DeveloperAppConfig.LibraryDefaults.copy(
+        captureMode = SettingConfig(
+            CaptureMode.IMAGE_ONLY,
+            uiRestriction = OptionRestrictionConfig.FullyRestricted()
+        ),
+        hdrEnabled = SettingConfig(defaultValue = true)
     )
 
     /**
