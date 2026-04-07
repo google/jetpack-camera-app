@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.settings.api
 
 import com.google.jetpackcamera.model.AspectRatio
@@ -24,7 +23,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 
-
 /**
  * Defines a configuration for the Jetpack Camera App that can be used by developers
  * to override the default app settings.
@@ -34,7 +32,7 @@ data class DeveloperAppConfig(
     val aspectRatio: SettingConfig<AspectRatio>,
     val flashMode: SettingConfig<FlashMode>,
     val audio: SettingConfig<Boolean>,
-    val hdrEnabled: SettingConfig<Boolean>,
+    val hdrEnabled: SettingConfig<Boolean>
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
@@ -58,7 +56,9 @@ data class DeveloperAppConfig(
             flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
             captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
             audio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.audioEnabled),
-            hdrEnabled = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange != DynamicRange.SDR),
+            hdrEnabled = SettingConfig(
+                DEFAULT_CAMERA_APP_SETTINGS.dynamicRange != DynamicRange.SDR
+            )
         )
     }
 
@@ -70,14 +70,14 @@ data class DeveloperAppConfig(
     fun toCameraAppSettings(
         defaultSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
     ): CameraAppSettings {
-        val imageOutputFormat = if (this.hdrEnabled.defaultValue)
+        val imageOutputFormat = if (this.hdrEnabled.defaultValue) {
             ImageOutputFormat.JPEG_ULTRA_HDR
-        else
+        } else {
             ImageOutputFormat.JPEG
+        }
 
         val dynamicRange =
             if (this.hdrEnabled.defaultValue) DynamicRange.HLG10 else DynamicRange.SDR
-
 
         return defaultSettings.copy(
             aspectRatio = this.aspectRatio.defaultValue,
@@ -107,16 +107,15 @@ data class SettingConfig<T>(
         (uiRestriction as? OptionRestrictionConfig.OptionsEnabled)?.let {
             require(
                 uiRestriction.enabledOptions.size >= 2 &&
-                        uiRestriction.enabledOptions.contains(
-                            defaultValue
-                        )
+                    uiRestriction.enabledOptions.contains(
+                        defaultValue
+                    )
             ) {
                 "OptionsRestrictionConfig.OptionsEnabled#enabledOptions must also contain the defaultValue"
             }
         }
     }
 }
-
 
 sealed interface OptionRestrictionConfig<T> {
     /** All device-supported options are available. */
@@ -130,7 +129,7 @@ sealed interface OptionRestrictionConfig<T> {
         init {
             require(enabledOptions.isNotEmpty()) {
                 "enabledOptions must not be empty. " +
-                        "Use FullyRestricted to disable the feature."
+                    "Use FullyRestricted to disable the feature."
             }
         }
     }

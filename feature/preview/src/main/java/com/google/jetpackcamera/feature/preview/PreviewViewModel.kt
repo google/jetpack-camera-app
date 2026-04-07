@@ -129,11 +129,11 @@ class PreviewViewModel @Inject constructor(
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraSystem.initialize(
             cameraAppSettings =
-                if (useDeveloperConfig) {
-                    appConfig.toCameraAppSettings()
-                } else {
-                    settingsRepository.defaultCameraAppSettings.first()
-                }
+            if (useDeveloperConfig) {
+                appConfig.toCameraAppSettings()
+            } else {
+                settingsRepository.defaultCameraAppSettings.first()
+            }
                 .applyExternalCaptureMode(externalCaptureMode)
                 .copy(debugSettings = debugSettings)
         ) { cameraPropertiesJSON = it }
