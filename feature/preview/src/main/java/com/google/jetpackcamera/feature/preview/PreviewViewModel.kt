@@ -30,6 +30,7 @@ import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
 import com.google.jetpackcamera.feature.preview.navigation.getExternalCaptureMode
 import com.google.jetpackcamera.feature.preview.navigation.getRequestedSaveMode
+import com.google.jetpackcamera.feature.preview.navigation.getUseDeveloperConfig
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -93,7 +94,7 @@ class PreviewViewModel @Inject constructor(
     private val cameraSystem: CameraSystem,
     private val savedStateHandle: SavedStateHandle,
     @DefaultSaveMode private val defaultSaveMode: SaveMode,
-    @DefaultAppConfig private val appConfig: DeveloperAppConfig?,
+    @DefaultAppConfig private val appConfig: DeveloperAppConfig,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository,
     private val mediaRepository: MediaRepository
@@ -115,6 +116,8 @@ class PreviewViewModel @Inject constructor(
     private val externalUris: List<Uri> = savedStateHandle.getCaptureUris()
     private lateinit var externalUriProgress: IntProgress
 
+    private val useDeveloperConfig: Boolean = savedStateHandle.getUseDeveloperConfig()
+
     private val debugSettings: DebugSettings = savedStateHandle.getDebugSettings()
 
     private var cameraPropertiesJSON = ""
@@ -126,9 +129,11 @@ class PreviewViewModel @Inject constructor(
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
         cameraSystem.initialize(
             cameraAppSettings =
-                (appConfig?.toCameraAppSettings() ?:
-
-                settingsRepository.defaultCameraAppSettings.first())
+                if (useDeveloperConfig) {
+                    appConfig.toCameraAppSettings()
+                } else {
+                    settingsRepository.defaultCameraAppSettings.first()
+                }
                 .applyExternalCaptureMode(externalCaptureMode)
                 .copy(debugSettings = debugSettings)
         ) { cameraPropertiesJSON = it }
@@ -136,7 +141,7 @@ class PreviewViewModel @Inject constructor(
 
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         cameraSystem,
-        appConfig ?: DeveloperAppConfig.LibraryDefaults,
+        if (useDeveloperConfig) appConfig else DeveloperAppConfig.LibraryDefaults,
         constraintsRepository,
         trackedCaptureUiState,
         externalCaptureMode
