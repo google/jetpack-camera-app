@@ -48,7 +48,9 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -762,6 +764,44 @@ private fun QuickSettingToggleButton(
     }
 }
 
+@Composable
+fun SettingRow(
+    title: String,
+    status: String,
+    modifier: Modifier = Modifier,
+    // Using vararg to accept multiple button components
+    vararg settingsButtons: @Composable () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp, horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = status,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            settingsButtons.forEach { button ->
+                button()
+            }
+        }
+    }
+}
 /**
  * Should you want to have an expanded view of a single quick setting
  */
@@ -943,6 +983,54 @@ private fun QuickSettingToggleButtonPreview() {
                 painter = CameraFlashMode.OFF.getPainter(),
                 isHighlighted = false,
                 enabled = false
+            )
+        }
+    }
+}
+
+@Preview(name = "JCA Setting Row - Dark Mode", showBackground = true, backgroundColor = 0xFF000000)
+@Composable
+private fun PreviewSettingRowDark() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color.Black // Consistent with Camera UI
+        ) {
+            SettingRow(
+                title = "Video Resolution",
+                status = "Standard Definition",
+                settingsButtons = arrayOf(
+                    {
+                        // Off State (Highlighted per your screenshot)
+                        QuickSettingToggleButton(
+                            text = "SD",
+                            accessibilityText = "Flash Off",
+                            painter = painterResource(id = R.drawable.video_resolution_sd_icon),
+                            isHighlighted = true,
+                            onClick = {}
+                        )
+                    },
+                    {
+                        // On State
+                        QuickSettingToggleButton(
+                            text = "HD",
+                            accessibilityText = "High Definition",
+                            painter = painterResource(id = R.drawable.video_resolution_hd_icon),
+                            isHighlighted = false,
+                            onClick = {}
+                        )
+                    },
+                    {
+                        // Auto State
+                        QuickSettingToggleButton(
+                            text = "FHD",
+                            accessibilityText = "Full High Definition",
+                            painter = painterResource(id = R.drawable.video_resolution_fhd_icon),
+                            isHighlighted = false,
+                            onClick = {}
+                        )
+                    }
+                )
             )
         }
     }
