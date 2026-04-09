@@ -15,15 +15,13 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -33,26 +31,20 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureModeRow
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetConcurrentCamera
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetStreamConfig
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetCaptureMode
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetRatio
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.focusedCaptureModeButtons
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.focusedRatioButtons
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -62,8 +54,8 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
 
 /**
  * The UI bottom sheet component for quick settings
@@ -77,119 +69,69 @@ fun QuickSettingsBottomSheet(
     quickSettingsController: QuickSettingsController
 ) {
     if (quickSettingsUiState is QuickSettingsUiState.Available) {
-        val onUnFocus = { quickSettingsController.setFocusedSetting(FocusedQuickSetting.NONE) }
+
 
         val displayedQuickSettings: List<@Composable () -> Unit> =
-            when (quickSettingsUiState.focusedQuickSetting) {
-                FocusedQuickSetting.ASPECT_RATIO -> focusedRatioButtons(
-                    onUnFocus = onUnFocus,
-                    onSetAspectRatio = quickSettingsController::setAspectRatio,
-                    aspectRatioUiState = quickSettingsUiState.aspectRatioUiState
-                )
 
-                FocusedQuickSetting.CAPTURE_MODE -> focusedCaptureModeButtons(
-                    onUnFocus = onUnFocus,
-                    onSetCaptureMode = quickSettingsController::setCaptureMode,
-                    captureModeUiState = quickSettingsUiState.captureModeUiState
-                )
+            buildList {
 
-                FocusedQuickSetting.NONE ->
-                    buildList {
-                        // todo(kc): change flash to expanded setting?
-                        add {
-                            QuickSetFlash(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
-                                onClick = { f: FlashMode -> quickSettingsController.setFlash(f) },
-                                flashModeUiState = quickSettingsUiState.flashModeUiState
-                            )
-                        }
 
-                        add {
-                            val description =
-                                quickSettingsUiState.captureModeUiState.stateDescription()
-                                    ?.let {
-                                        stringResource(it)
-                                    }
-                            ToggleFocusedQuickSetCaptureMode(
-                                modifier = Modifier
-                                    .testTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
-                                    .semantics { description?.let { stateDescription = it } },
-                                setCaptureMode = {
-                                    quickSettingsController.setFocusedSetting(
-                                        FocusedQuickSetting.CAPTURE_MODE
-                                    )
-                                },
-                                captureModeUiState = quickSettingsUiState.captureModeUiState
-                            )
-                        }
+                add {
+                    QuickFlipCamera(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
+                        setLensFacing = { l: LensFacing ->
+                            quickSettingsController.setLensFacing(l)
+                        },
+                        flipLensUiState = quickSettingsUiState.flipLensUiState
+                    )
+                }
 
-                        add {
-                            QuickFlipCamera(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
-                                setLensFacing = { l: LensFacing ->
-                                    quickSettingsController.setLensFacing(l)
-                                },
-                                flipLensUiState = quickSettingsUiState.flipLensUiState
-                            )
-                        }
 
-                        add {
-                            ToggleFocusedQuickSetRatio(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
-                                setRatio = {
-                                    quickSettingsController.setFocusedSetting(
-                                        FocusedQuickSetting.ASPECT_RATIO
-                                    )
-                                },
-                                isHighlightEnabled = false,
-                                aspectRatioUiState = quickSettingsUiState.aspectRatioUiState
-                            )
-                        }
 
-                        add {
-                            QuickSetStreamConfig(
-                                modifier = Modifier.testTag(
-                                    QUICK_SETTINGS_STREAM_CONFIG_BUTTON
-                                ),
-                                setStreamConfig = { c: StreamConfig ->
-                                    quickSettingsController.setStreamConfig(c)
-                                },
-                                streamConfigUiState = quickSettingsUiState.streamConfigUiState
-                            )
-                        }
+                add {
+                    QuickSetStreamConfig(
+                        modifier = Modifier.testTag(
+                            QUICK_SETTINGS_STREAM_CONFIG_BUTTON
+                        ),
+                        setStreamConfig = { c: StreamConfig ->
+                            quickSettingsController.setStreamConfig(c)
+                        },
+                        streamConfigUiState = quickSettingsUiState.streamConfigUiState
+                    )
+                }
 
-                        add {
-                            QuickSetHdr(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
-                                onClick = { d: DynamicRange, i: ImageOutputFormat ->
-                                    quickSettingsController.setDynamicRange(d)
-                                    quickSettingsController.setImageFormat(i)
-                                },
-                                hdrUiState = quickSettingsUiState.hdrUiState
-                            )
-                        }
+                add {
+                    QuickSetHdr(
+                        modifier = Modifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
+                        onClick = { d: DynamicRange, i: ImageOutputFormat ->
+                            quickSettingsController.setDynamicRange(d)
+                            quickSettingsController.setImageFormat(i)
+                        },
+                        hdrUiState = quickSettingsUiState.hdrUiState
+                    )
+                }
 
-                        add {
-                            QuickSetConcurrentCamera(
-                                modifier =
-                                Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
-                                setConcurrentCameraMode = { c: ConcurrentCameraMode ->
-                                    quickSettingsController.setConcurrentCameraMode(c)
-                                },
-                                concurrentCameraUiState = quickSettingsUiState
-                                    .concurrentCameraUiState
-                            )
-                        }
+                add {
+                    QuickSetConcurrentCamera(
+                        modifier =
+                            Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
+                        setConcurrentCameraMode = { c: ConcurrentCameraMode ->
+                            quickSettingsController.setConcurrentCameraMode(c)
+                        },
+                        concurrentCameraUiState = quickSettingsUiState
+                            .concurrentCameraUiState
+                    )
+                }
 
-                        add {
-                            QuickNavSettings(
-                                modifier = Modifier
-                                    .testTag(SETTINGS_BUTTON),
-                                onNavigateToSettings = onNavigateToSettings
-                            )
-                        }
-                    }
+                add {
+                    QuickNavSettings(
+                        modifier = Modifier
+                            .testTag(SETTINGS_BUTTON),
+                        onNavigateToSettings = onNavigateToSettings
+                    )
+                }
             }
+
 
         val sheetState = rememberModalBottomSheetState()
 
@@ -197,10 +139,25 @@ fun QuickSettingsBottomSheet(
             BottomSheetComponent(
                 modifier = modifier,
                 onDismiss = {
-                    onUnFocus()
                     quickSettingsController.toggleQuickSettings()
                 },
                 sheetState = sheetState,
+                wipCapButton = {
+                    Column {
+                        FlashRow(
+                            onSetFlashMode = quickSettingsController::setFlash,
+                            flashModeUiState = quickSettingsUiState.flashModeUiState
+                        )
+                        CaptureModeRow(
+                            captureModeUiState = quickSettingsUiState.captureModeUiState,
+                            onSetCaptureMode = quickSettingsController::setCaptureMode
+                        )
+                        AspectRatioRow(
+                            aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
+                            onSetAspectRatio = quickSettingsController::setAspectRatio
+                        )
+                    }
+                },
                 *displayedQuickSettings.toTypedArray()
             )
         }
@@ -341,8 +298,6 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
  */
 class NoOpQuickSettingsController : QuickSettingsController {
     override fun toggleQuickSettings() {}
-
-    override fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting) {}
 
     override fun setLensFacing(lensFace: LensFacing) {}
 

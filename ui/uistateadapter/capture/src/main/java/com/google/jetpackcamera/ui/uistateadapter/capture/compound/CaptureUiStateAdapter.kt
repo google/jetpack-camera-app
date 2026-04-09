@@ -125,7 +125,6 @@ fun captureUiState(
                 aspectRatioUiState,
                 hdrUiState,
                 trackedUiState.isQuickSettingsOpen,
-                trackedUiState.focusedQuickSetting,
                 externalCaptureMode
             ),
             sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,

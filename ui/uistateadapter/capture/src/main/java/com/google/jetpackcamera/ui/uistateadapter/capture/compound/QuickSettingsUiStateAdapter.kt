@@ -25,7 +25,6 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
 
@@ -43,7 +42,6 @@ import com.google.jetpackcamera.ui.uistateadapter.capture.from
  * @param aspectRatioUiState The UI state for the aspect ratio setting.
  * @param hdrUiState The UI state for the HDR setting.
  * @param quickSettingsIsOpen Indicates whether the quick settings panel is open.
- * @param focusedQuickSetting The currently focused quick setting, if any.
  * @param externalCaptureMode The external capture mode, if any.
  * @return A [QuickSettingsUiState.Available] instance containing the consolidated states.
  */
@@ -56,7 +54,6 @@ fun QuickSettingsUiState.Companion.from(
     aspectRatioUiState: AspectRatioUiState,
     hdrUiState: HdrUiState,
     quickSettingsIsOpen: Boolean,
-    focusedQuickSetting: FocusedQuickSetting,
     externalCaptureMode: ExternalCaptureMode
 ): QuickSettingsUiState {
     val streamConfigUiState = StreamConfigUiState.from(cameraAppSettings)
@@ -75,6 +72,5 @@ fun QuickSettingsUiState.Companion.from(
         hdrUiState = hdrUiState,
         streamConfigUiState = streamConfigUiState,
         quickSettingsIsOpen = quickSettingsIsOpen,
-        focusedQuickSetting = focusedQuickSetting
     )
 }
