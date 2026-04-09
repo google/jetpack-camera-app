@@ -35,11 +35,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -82,15 +80,8 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_9_16_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
@@ -152,40 +143,29 @@ fun CaptureModeRow(
             modifier = modifier,
             title = "Capture Mode",
             status = captureModeUiState.selectedCaptureMode.toString(),
-            settingsButtons = arrayOf(
-                {
-                    CaptureModeToggleButton(
-                        modifier = Modifier
-                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
-                        onClick = { onSetCaptureMode(CaptureMode.STANDARD) },
-                        assignedCaptureMode = CaptureMode.STANDARD,
-                        captureModeUiState = captureModeUiState,
-                        isHighlightEnabled = true
-                    )
-                },
-                {
-                    CaptureModeToggleButton(
-                        modifier = Modifier
-                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
-                        onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
-                        assignedCaptureMode = CaptureMode.IMAGE_ONLY,
-                        captureModeUiState = captureModeUiState,
-                        isHighlightEnabled = true
-                    )
-                },
-                {
-                    CaptureModeToggleButton(
-                        modifier = Modifier
-                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
-                        onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
-                        assignedCaptureMode = CaptureMode.VIDEO_ONLY,
-                        captureModeUiState = captureModeUiState,
-                        isHighlightEnabled = true
-                    )
-                }
-            )
+            settingsButtons = createCaptureModeButtons(captureModeUiState, onSetCaptureMode)
         )
     }
+}
+
+@Composable
+private fun createCaptureModeButtons(
+    captureModeUiState: CaptureModeUiState.Available,
+    onSetCaptureMode: (CaptureMode) -> Unit
+): Array<@Composable () -> Unit> {
+    return captureModeUiState.availableCaptureModes
+        .map { selectableMode ->
+            @Composable {
+                CaptureModeToggleButton(
+                    modifier = Modifier
+                        .testTag("CaptureMode_${selectableMode.value.name}"),
+                    onClick = { onSetCaptureMode(selectableMode.value) },
+                    assignedCaptureMode = selectableMode.value,
+                    captureModeUiState = captureModeUiState,
+                    isHighlightEnabled = true
+                )
+            }
+        }.toTypedArray()
 }
 
 @Composable
@@ -308,37 +288,28 @@ fun AspectRatioRow(
             modifier = modifier,
             title = "Capture Mode",
             status = aspectRatioUiState.selectedAspectRatio.toString(),
-            settingsButtons = arrayOf(
-
-                {
-                    QuickSetRatio(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
-                        onClick = { onSetAspectRatio(AspectRatio.THREE_FOUR) },
-                        assignedRatio = AspectRatio.THREE_FOUR,
-                        aspectRatioUiState = aspectRatioUiState,
-                        isHighlightEnabled = true
-                    )
-                },
-                {
-                    QuickSetRatio(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
-                        onClick = { onSetAspectRatio(AspectRatio.NINE_SIXTEEN) },
-                        assignedRatio = AspectRatio.NINE_SIXTEEN,
-                        aspectRatioUiState = aspectRatioUiState,
-                        isHighlightEnabled = true
-                    )
-                },
-                {
-                    QuickSetRatio(
-                        modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
-                        onClick = { onSetAspectRatio(AspectRatio.ONE_ONE) },
-                        assignedRatio = AspectRatio.ONE_ONE,
-                        aspectRatioUiState = aspectRatioUiState,
-                        isHighlightEnabled = true
-                    )
-                }
-            ))
+            settingsButtons = createAspectRatioButtons(aspectRatioUiState, onSetAspectRatio)
+        )
     }
+}
+
+@Composable
+private fun createAspectRatioButtons(
+    aspectRatioUiState: AspectRatioUiState.Available,
+    onSetAspectRatio: (AspectRatio) -> Unit
+): Array<@Composable () -> Unit> {
+    return aspectRatioUiState.availableAspectRatios
+        .map { selectableRatio ->
+            @Composable {
+                QuickSetRatio(
+                    modifier = Modifier.testTag("AspectRatio_${selectableRatio.value.name}"),
+                    onClick = { onSetAspectRatio(selectableRatio.value) },
+                    assignedRatio = selectableRatio.value,
+                    aspectRatioUiState = aspectRatioUiState,
+                    isHighlightEnabled = true
+                )
+            }
+        }.toTypedArray()
 }
 
 
@@ -354,34 +325,27 @@ fun FlashRow(
             modifier = modifier,
             title = "Capture Mode",
             status = flashModeUiState.selectedFlashMode.toString(),
-            settingsButtons = arrayOf(
-
-                {
-                    QuickSetFlash(
-                        modifier = Modifier.testTag("flashOn"),
-                        onClick = { onSetFlashMode(FlashMode.ON ) },
-                        assignedFlashMode = FlashMode.ON ,
-                        flashModeUiState = flashModeUiState,
-                    )
-                },
-                {
-                    QuickSetFlash(
-                        modifier = Modifier.testTag("flashAuto"),
-                        onClick = { onSetFlashMode(FlashMode.AUTO ) },
-                        assignedFlashMode = FlashMode.AUTO ,
-                        flashModeUiState = flashModeUiState,
-                    )
-                },
-                {
-                    QuickSetFlash(
-                        modifier = Modifier.testTag("flashOff"),
-                        onClick = { onSetFlashMode(FlashMode.OFF ) },
-                        assignedFlashMode = FlashMode.OFF ,
-                        flashModeUiState = flashModeUiState,
-                    )
-                }
-            ))
+            settingsButtons = createFlashModeButtons(flashModeUiState, onSetFlashMode)
+        )
     }
+}
+
+@Composable
+private fun createFlashModeButtons(
+    flashModeUiState: FlashModeUiState.Available,
+    onSetFlashMode: (FlashMode) -> Unit
+): Array<@Composable () -> Unit> {
+    return flashModeUiState.availableFlashModes
+        .map { selectableMode ->
+            @Composable {
+                QuickSetFlash(
+                    modifier = Modifier.testTag("FlashMode_${selectableMode.value.name}"),
+                    onClick = { onSetFlashMode(selectableMode.value) },
+                    assignedFlashMode = selectableMode.value,
+                    flashModeUiState = flashModeUiState,
+                )
+            }
+        }.toTypedArray()
 }
 
 
@@ -396,8 +360,13 @@ fun QuickSetFlash(
         FlashMode.OFF -> CameraFlashMode.OFF
         FlashMode.ON -> CameraFlashMode.ON
         FlashMode.AUTO -> CameraFlashMode.AUTO
-        FlashMode.LOW_LIGHT_BOOST -> TODO("not yet handled")
+        FlashMode.LOW_LIGHT_BOOST -> when (flashModeUiState.isLowLightBoostActive) {
+            true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
+            false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
+        }
     }
+
+
     QuickSettingToggleButton(
         modifier = modifier,
         enum = enum,
