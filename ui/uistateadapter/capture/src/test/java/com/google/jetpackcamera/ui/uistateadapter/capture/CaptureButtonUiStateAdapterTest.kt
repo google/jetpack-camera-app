@@ -39,9 +39,9 @@ class CaptureButtonUiStateAdapterTest {
             lockedState = false
         )
 
-        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Available.Idle::class.java)
+        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Enabled.Idle::class.java)
         assertThat(uiState.isEnabled).isFalse()
-        assertThat((uiState as CaptureButtonUiState.Available.Idle).captureMode)
+        assertThat((uiState as CaptureButtonUiState.Enabled.Idle).captureMode)
             .isEqualTo(CaptureMode.STANDARD)
     }
 
@@ -56,9 +56,9 @@ class CaptureButtonUiStateAdapterTest {
             lockedState = false
         )
 
-        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Available.Idle::class.java)
+        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Enabled.Idle::class.java)
         assertThat(uiState.isEnabled).isTrue()
-        assertThat((uiState as CaptureButtonUiState.Available.Idle).captureMode)
+        assertThat((uiState as CaptureButtonUiState.Enabled.Idle).captureMode)
             .isEqualTo(CaptureMode.STANDARD)
     }
 
@@ -74,7 +74,7 @@ class CaptureButtonUiStateAdapterTest {
         )
 
         assertThat(uiState)
-            .isInstanceOf(CaptureButtonUiState.Available.Recording.PressedRecording::class.java)
+            .isInstanceOf(CaptureButtonUiState.Enabled.Recording.PressedRecording::class.java)
         assertThat(uiState.isEnabled).isTrue()
     }
 
@@ -90,7 +90,7 @@ class CaptureButtonUiStateAdapterTest {
         )
 
         assertThat(uiState)
-            .isInstanceOf(CaptureButtonUiState.Available.Recording.LockedRecording::class.java)
+            .isInstanceOf(CaptureButtonUiState.Enabled.Recording.LockedRecording::class.java)
         assertThat(uiState.isEnabled).isTrue()
     }
 
@@ -105,7 +105,7 @@ class CaptureButtonUiStateAdapterTest {
             lockedState = false
         )
 
-        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Available.Idle::class.java)
+        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Enabled.Idle::class.java)
         assertThat(uiState.isEnabled).isTrue()
     }
 }

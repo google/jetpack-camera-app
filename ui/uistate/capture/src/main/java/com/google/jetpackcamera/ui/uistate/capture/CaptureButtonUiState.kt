@@ -19,6 +19,10 @@ import com.google.jetpackcamera.model.CaptureMode
 
 /**
  * Defines the UI state for the capture button.
+ *
+ * This sealed interface represents all possible states of the main capture button in the camera UI.
+ * It is used to control the button's appearance and behavior, such as whether it is enabled,
+ * what action it performs (photo vs. video), and its visual state during video recording.
  */
 sealed interface CaptureButtonUiState {
     /**
@@ -34,33 +38,37 @@ sealed interface CaptureButtonUiState {
     }
 
     /**
-     * The capture button is available to be shown.
+     * The capture button is enabled and ready for user interaction.
      */
-    sealed interface Available : CaptureButtonUiState {
+    sealed interface Enabled : CaptureButtonUiState {
+        override val isEnabled: Boolean get() = true
+
         /**
-         * The capture button is idle and ready to capture.
+         * The button is in an idle state, ready to start a capture.
          *
-         * @property captureMode The current capture mode.
+         * @param captureMode The current [CaptureMode] (e.g., [CaptureMode.IMAGE] or
+         *   [CaptureMode.VIDEO]) to indicate the button's primary action.
          * @property isEnabled Whether the button is enabled for interaction.
          */
         data class Idle(
             val captureMode: CaptureMode,
             override val isEnabled: Boolean = true
-        ) : Available
+        ) : Enabled
 
         /**
-         * The capture button is currently recording video.
+         * The button is in a video recording state.
          */
-        sealed interface Recording : Available {
+        sealed interface Recording : Enabled {
             override val isEnabled: Boolean get() = true
 
             /**
-             * The user is actively pressing the capture button to record.
+             * The user is actively pressing the button to record video (press-and-hold).
              */
             data object PressedRecording : Recording
 
             /**
-             * The recording is locked and continues without user interaction.
+             * The video recording has been locked and will continue until the user
+             * explicitly stops it.
              */
             data object LockedRecording : Recording
         }
