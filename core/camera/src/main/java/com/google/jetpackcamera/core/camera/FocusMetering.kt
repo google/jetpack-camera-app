@@ -90,30 +90,31 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
                         .setAutoCancelDuration(AUTO_FOCUS_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
                         .build()
 
-                    if (cameraInfo.isFocusMeteringSupported(action)) {
-                        updateFocusState(FocusState.Status.RUNNING)
-                        val completionStatus: FocusState.Status = try {
-                            if (cameraControl.startFocusAndMetering(action).await().isFocusSuccessful) {
-                                FocusState.Status.SUCCESS
-                            } else {
-                                FocusState.Status.FAILURE
-                            }
-                        } catch (_: CameraControl.OperationCanceledException) {
-                            FocusState.Status.FAILURE
-                        } catch (e: IllegalArgumentException) {
-                            Log.w(TAG, "tapToFocus failed", e)
+                    if (!cameraInfo.isFocusMeteringSupported(action)) {
+                        Log.w(TAG, "Focus metering not supported for action: $action")
+                        return@apply
+                    }
+
+                    updateFocusState(FocusState.Status.RUNNING)
+                    val completionStatus: FocusState.Status = try {
+                        if (cameraControl.startFocusAndMetering(action).await().isFocusSuccessful) {
+                            FocusState.Status.SUCCESS
+                        } else {
                             FocusState.Status.FAILURE
                         }
-
-                        Log.d(
-                            TAG,
-                            "tapToFocus, finished processing event: $event. Result: $completionStatus"
-                        )
-
-                        updateFocusState(completionStatus)
-                    } else {
-                        Log.w(TAG, "Focus metering not supported for action: $action")
+                    } catch (_: CameraControl.OperationCanceledException) {
+                        FocusState.Status.FAILURE
+                    } catch (e: IllegalArgumentException) {
+                        Log.w(TAG, "tapToFocus failed", e)
+                        FocusState.Status.FAILURE
                     }
+
+                    Log.d(
+                        TAG,
+                        "tapToFocus, finished processing event: $event. Result: $completionStatus"
+                    )
+
+                    updateFocusState(completionStatus)
                 }
             }
     }
