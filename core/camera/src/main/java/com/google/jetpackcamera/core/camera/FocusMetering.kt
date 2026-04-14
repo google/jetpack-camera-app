@@ -93,7 +93,10 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
                     if (cameraInfo.isFocusMeteringSupported(action)) {
                         updateFocusState(FocusState.Status.RUNNING)
                         val completionStatus: FocusState.Status = try {
-                            if (cameraControl.startFocusAndMetering(action).await().isFocusSuccessful) {
+                            if (cameraControl.startFocusAndMetering(
+                                    action
+                                ).await().isFocusSuccessful
+                            ) {
                                 FocusState.Status.SUCCESS
                             } else {
                                 FocusState.Status.FAILURE
