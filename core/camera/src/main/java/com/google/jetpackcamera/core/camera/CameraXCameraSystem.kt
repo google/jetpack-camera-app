@@ -79,7 +79,6 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
-import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
 import java.io.FileNotFoundException
 import javax.inject.Inject
@@ -103,7 +102,6 @@ private const val TAG = "CameraXCameraSystem"
 /**
  * CameraX based implementation for [CameraSystem]
  */
-@ViewModelScoped
 class CameraXCameraSystem
 @Inject
 constructor(
