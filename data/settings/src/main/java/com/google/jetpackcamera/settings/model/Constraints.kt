@@ -80,7 +80,7 @@ fun CameraSystemConstraints.getSupportedMimeTypes(): Map<LensFacing, Set<String>
             ) {
                 mimeTypes.add("image/jpeg")
             }
-            if (constraints.supportedVideoQualitiesMap[DynamicRange.SDR]?.isNotEmpty() == true) {
+            if (constraints.supportedDynamicRanges.isNotEmpty()) {
                 mimeTypes.add("video/mp4")
             }
         }
