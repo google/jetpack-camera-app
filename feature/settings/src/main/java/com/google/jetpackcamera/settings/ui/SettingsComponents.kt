@@ -791,11 +791,7 @@ fun VideoQualitySetting(
             }
         },
         popupContents = {
-            Column(
-                Modifier
-                    .selectableGroup()
-                    .verticalScroll(rememberScrollState())
-            ) {
+            Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
                     modifier = Modifier.testTag(
                         getVideoQualityOptionTestTag(VideoQuality.UNSPECIFIED)
@@ -920,10 +916,18 @@ fun BasicPopupSetting(
             },
             title = { Text(text = title) },
             text = {
-                MaterialTheme(
-                    colorScheme = MaterialTheme.colorScheme.copy(surface = Color.Transparent),
-                    content = popupContents
-                )
+                // Apply a scroll state to ensure content is reachable
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .testTag(CONTAINER_DIALOG_CONTENTS)
+                        .verticalScroll(scrollState)
+                ) {
+                    MaterialTheme(
+                        colorScheme = MaterialTheme.colorScheme.copy(surface = Color.Transparent),
+                        content = popupContents
+                    )
+                }
             }
         )
     }
