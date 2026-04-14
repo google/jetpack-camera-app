@@ -23,6 +23,9 @@ import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.GridType
+import com.google.jetpackcamera.model.GridType.Companion.fromProto
+import com.google.jetpackcamera.model.GridType.Companion.toProto
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.model.LensFacing
@@ -84,6 +87,7 @@ class LocalSettingsRepository @Inject constructor(
                 maxVideoDurationMillis = it.maxVideoDurationMillis,
                 videoQuality = VideoQuality.fromProto(it.videoQuality),
                 audioEnabled = it.audioEnabledStatus,
+                gridType = fromProto(it.gridType),
                 captureMode = defaultCaptureModeOverride
             )
         }
@@ -217,6 +221,14 @@ class LocalSettingsRepository @Inject constructor(
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setAudioEnabledStatus(isAudioEnabled)
+                .build()
+        }
+    }
+
+    override suspend fun updateGridType(gridType: GridType) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setGridType(gridType.toProto())
                 .build()
         }
     }

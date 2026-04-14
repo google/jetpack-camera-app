@@ -19,6 +19,7 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
@@ -62,4 +63,6 @@ interface SettingsRepository {
     suspend fun updateVideoQuality(videoQuality: VideoQuality)
 
     suspend fun updateAudioEnabled(isAudioEnabled: Boolean)
+
+    suspend fun updateGridType(gridType: GridType)
 }

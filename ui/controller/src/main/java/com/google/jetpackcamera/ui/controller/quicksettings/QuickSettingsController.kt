@@ -20,6 +20,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
@@ -96,4 +97,11 @@ interface QuickSettingsController {
      * @param captureMode The capture mode to set.
      */
     fun setCaptureMode(captureMode: CaptureMode)
+
+    /**
+     * Sets the grid type.
+     *
+     * @param gridType The grid type to set.
+     */
+    fun setGridType(gridType: GridType)
 }

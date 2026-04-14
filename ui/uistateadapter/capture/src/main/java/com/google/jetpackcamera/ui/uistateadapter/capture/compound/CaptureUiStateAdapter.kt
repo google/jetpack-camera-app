@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
@@ -111,22 +112,26 @@ fun captureUiState(
             flipLensUiState = flipLensUiState,
             aspectRatioUiState = aspectRatioUiState,
             previewDisplayUiState = PreviewDisplayUiState(
-                trackedUiState.lastBlinkTimeStamp,
-                aspectRatioUiState
+                lastBlinkTimeStamp = trackedUiState.lastBlinkTimeStamp,
+                aspectRatioUiState = aspectRatioUiState,
+                gridType = if (cameraState.isCameraRunning) {
+                    trackedUiState.gridType
+                } else {
+                    GridType.NONE
+                }
             ),
             // TODO: add updateFrom() for all ui states to prevent re-updating if
             // values are the same
             quickSettingsUiState = QuickSettingsUiState.from(
-                captureModeUiState,
-                flashModeUiState,
-                flipLensUiState,
-                cameraAppSettings,
-                systemConstraints,
-                aspectRatioUiState,
-                hdrUiState,
-                trackedUiState.isQuickSettingsOpen,
-                trackedUiState.focusedQuickSetting,
-                externalCaptureMode
+                captureModeUiState = captureModeUiState,
+                flashModeUiState = flashModeUiState,
+                flipLensUiState = flipLensUiState,
+                cameraAppSettings = cameraAppSettings,
+                systemConstraints = systemConstraints,
+                aspectRatioUiState = aspectRatioUiState,
+                hdrUiState = hdrUiState,
+                trackedCaptureUiState = trackedUiState,
+                externalCaptureMode = externalCaptureMode
             ),
             sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
             stabilizationUiState = StabilizationUiState.from(

@@ -18,9 +18,12 @@ package com.google.jetpackcamera.settings
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.DynamicRange.Companion.toProto
+import com.google.jetpackcamera.model.GridType
+import com.google.jetpackcamera.model.GridType.Companion.toProto
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
+import com.google.jetpackcamera.model.proto.GridTypeProto
 import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -105,6 +108,36 @@ class ProtoConversionTest {
 
         enumValues<ImageOutputFormatProto>().forEach {
             assertThat(correctConversions(it)).isEqualTo(ImageOutputFormat.fromProto(it))
+        }
+    }
+
+    @Test
+    fun gridType_convertsToCorrectProto() {
+        val correctConversions = { gridType: GridType ->
+            when (gridType) {
+                GridType.NONE -> GridTypeProto.GRID_TYPE_PROTO_NONE
+                GridType.RULE_OF_THIRDS -> GridTypeProto.GRID_TYPE_PROTO_RULE_OF_THIRDS
+            }
+        }
+
+        enumValues<GridType>().forEach {
+            assertThat(correctConversions(it)).isEqualTo(it.toProto())
+        }
+    }
+
+    @Test
+    fun gridTypeProto_convertsToCorrectGridType() {
+        val correctConversions = { gridTypeProto: GridTypeProto ->
+            when (gridTypeProto) {
+                GridTypeProto.GRID_TYPE_PROTO_NONE,
+                GridTypeProto.UNRECOGNIZED
+                -> GridType.NONE
+                GridTypeProto.GRID_TYPE_PROTO_RULE_OF_THIRDS -> GridType.RULE_OF_THIRDS
+            }
+        }
+
+        enumValues<GridTypeProto>().forEach {
+            assertThat(correctConversions(it)).isEqualTo(GridType.fromProto(it))
         }
     }
 }

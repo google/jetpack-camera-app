@@ -22,9 +22,11 @@ import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
@@ -42,14 +44,15 @@ import kotlinx.coroutines.launch
  * [trackedCaptureUiState].
  *
  * @param trackedCaptureUiState The state flow to update with quick settings information.
- * @param scope The coroutine scope for launching camera operations.
  * @param cameraSystem The camera system to control.
+ * @param settingsRepository The repository for app settings.
  * @param externalCaptureMode The current external capture mode.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class QuickSettingsControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     private val cameraSystem: CameraSystem,
+    private val settingsRepository: SettingsRepository,
     private val externalCaptureMode: ExternalCaptureMode,
     coroutineContext: CoroutineContext
 ) : QuickSettingsController {
@@ -120,6 +123,13 @@ class QuickSettingsControllerImpl(
     override fun setCaptureMode(captureMode: CaptureMode) {
         scope.launch {
             cameraSystem.setCaptureMode(captureMode)
+        }
+    }
+
+    override fun setGridType(gridType: GridType) {
+        trackedCaptureUiState.update { it.copy(gridType = gridType) }
+        scope.launch {
+            settingsRepository.updateGridType(gridType)
         }
     }
 
