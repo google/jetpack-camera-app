@@ -85,30 +85,35 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
                         }
                     }
 
-                    updateFocusState(FocusState.Status.RUNNING)
                     val meteringPoint = createPoint(event.x, event.y)
                     val action = FocusMeteringAction.Builder(meteringPoint)
                         .setAutoCancelDuration(AUTO_FOCUS_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
                         .build()
-                    val completionStatus: FocusState.Status = try {
-                        if (cameraControl.startFocusAndMetering(action).await().isFocusSuccessful) {
-                            FocusState.Status.SUCCESS
-                        } else {
+
+                    if (cameraInfo.isFocusMeteringSupported(action)) {
+                        updateFocusState(FocusState.Status.RUNNING)
+                        val completionStatus: FocusState.Status = try {
+                            if (cameraControl.startFocusAndMetering(action).await().isFocusSuccessful) {
+                                FocusState.Status.SUCCESS
+                            } else {
+                                FocusState.Status.FAILURE
+                            }
+                        } catch (_: CameraControl.OperationCanceledException) {
+                            FocusState.Status.FAILURE
+                        } catch (e: IllegalArgumentException) {
+                            Log.w(TAG, "tapToFocus failed", e)
                             FocusState.Status.FAILURE
                         }
-                    } catch (_: CameraControl.OperationCanceledException) {
-                        FocusState.Status.FAILURE
-                    } catch (e: IllegalArgumentException) {
-                        Log.w(TAG, "tapToFocus failed", e)
-                        FocusState.Status.FAILURE
+
+                        Log.d(
+                            TAG,
+                            "tapToFocus, finished processing event: $event. Result: $completionStatus"
+                        )
+
+                        updateFocusState(completionStatus)
+                    } else {
+                        Log.w(TAG, "Focus metering not supported for action: $action")
                     }
-
-                    Log.d(
-                        TAG,
-                        "tapToFocus, finished processing event: $event. Result: $completionStatus"
-                    )
-
-                    updateFocusState(completionStatus)
                 }
             }
     }
