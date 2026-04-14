@@ -55,6 +55,40 @@ inline fun <reified T> CameraSystemConstraints.forDevice(
 ) = perLensConstraints.values.asSequence().flatMap { constraintSelector(it) }.toSet()
 
 /**
+ * Analyzes the camera system constraints to determine supported MIME types for each lens.
+ *
+ * This function iterates through all available lenses and checks their specific [CameraConstraints]
+ * to identify support for common media formats.
+ *
+ * Currently, it identifies:
+ * - `"image/jpeg"`: If the lens supports [ImageOutputFormat.JPEG] in a [StreamConfig.SINGLE_STREAM] setup.
+ * - `"video/mp4"`: If the lens supports at least one [DynamicRange] for video recording.
+ *
+ * @return A [Map] where each key is a [LensFacing] and the value is a [Set] of MIME type strings
+ *         supported by that lens. If a lens has no constraints defined, its set will be empty.
+ */
+fun CameraSystemConstraints.getSupportedMimeTypes(): Map<LensFacing, Set<String>> {
+    val result = mutableMapOf<LensFacing, Set<String>>()
+    for (lensFacing in availableLenses) {
+        val mimeTypes = mutableSetOf<String>()
+        result.put(lensFacing, mimeTypes)
+        val constraints = perLensConstraints[lensFacing] ?: continue
+        constraints.supportedImageFormatsMap[StreamConfig.SINGLE_STREAM]?.let {
+            if (it.contains(
+                    ImageOutputFormat.JPEG
+                )
+            ) {
+                mimeTypes.add("image/jpeg")
+            }
+            if (constraints.supportedDynamicRanges.isNotEmpty()) {
+                mimeTypes.add("video/mp4")
+            }
+        }
+    }
+    return result
+}
+
+/**
  * Defines the capabilities and limitations for a single camera lens.
  *
  * Encapsulates constraints for video and image capture, including stabilization,
