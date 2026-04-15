@@ -35,8 +35,11 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(JUnit4::class)
 class FakeCameraSystemTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)

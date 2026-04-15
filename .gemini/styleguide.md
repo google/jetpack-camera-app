@@ -19,6 +19,7 @@ When reviewing a pull request, focus on the following key areas:
 
 2.  **Code Quality and Best Practices**
     * Check for adherence to official Kotlin style guides and Android best practices.
+    * **Proper Visibility Modifiers:** Ensure all new functions, properties, and classes use the most restrictive visibility modifier possible (e.g., `private`, `internal`) while still allowing necessary access. Avoid `public` visibility unless explicitly required for external API exposure.
     * **Simplify Complex Logic:** Look for needlessly complex code. If a multi-line block of logic can be condensed into a more concise and readable idiomatic expression (e.g., using Kotlin standard library functions), suggest the simplification.
     * **Decompose Large Components:** Identify large, monolithic functions or composables. Suggest breaking them down into smaller sub-functions or sub-composables to improve readability, testability, and reusability.
     * **Remove Unused Imports:** Check for and remove any unused import statements to maintain code cleanliness.
@@ -39,8 +40,13 @@ When reviewing a pull request, focus on the following key areas:
     * **When Tests are Missing:** If a PR introduces a significant feature or modifies logic without corresponding tests, flag this omission. Suggest a name for a new test class (e.g., `NewFeatureViewModelTest`) and outline what it should verify (e.g., "This test should check that the UI state updates correctly when the user performs X action").
     * **When Tests are Present in the PR:** If new or modified tests are included, review them for thoroughness. Check for coverage of happy paths, failure scenarios, and relevant edge cases.
     * **Analysis of Existing Tests:** Identify existing test files in the target branch that are relevant to the code being changed in the PR but were **not** modified. Analyze these files to see if the PR introduces new logic that is not covered. If you find coverage gaps, cite the filename (e.g., `ExistingViewModelTest.kt`) and suggest specific test cases to add (e.g., "Consider adding a test case here to handle the new `XYZ` state introduced in the PR.").
-    * **Testing Strategy: Fakes over Mocks for Unowned Classes:** Never mock concrete classes that the project doesn't own. Instead, for testing, use fakes that implement or extend the class's interface. This ensures that tests are robust against changes in third-party library internals and encourages testing against behavior rather than implementation details.
+    * **Testing Strategy: Use Fakes Over Mocks:** Avoid libraries such as Mockito. Instead of mocking, create fake implementations of dependencies. Fakes lead to more robust and maintainable tests by focusing on behavior rather than implementation details, and they avoid the brittleness associated with mocking concrete classes or third-party libraries.
     * **Descriptive Test Names:** Test function names must be clear, descriptive, and follow a consistent pattern.
+    * **Use Truth Assertions:** Always prefer [Truth](https://truth.dev/) assertions (`assertThat(...)`) over JUnit assertions (`assertEquals`, `assertTrue`, etc.). Truth provides more readable assertion chains and more informative failure messages. Avoid functions from `org.junit.Assert` such as `assertEquals`, `assertTrue`, `assertFalse`, `assertNull`, and `assertNotNull`.
+    * **Explicit Test Runners:** All test classes must be annotated with `@RunWith(...)` to explicitly declare which test runner should be used (e.g., `@RunWith(AndroidJUnit4::class)`, `@RunWith(RobolectricTestRunner::class)`, or `@RunWith(JUnit4::class)` for host tests with no Android dependencies).
+    * **Test Stability & Timeouts:**
+        *   **Explicit Timeouts:** Avoid using `waitUntil` (or similar synchronization) without explicitly defining a `timeoutMillis`. Default timeouts are often too short for slower emulators (like API 28) or low-end devices, leading to flakiness.
+        *   **Helper Functions for Waits:** If a wait condition is repeated (e.g., waiting for a specific UI element), extract it into a helper function (e.g., `waitForNodeWithTag`). This consolidates the logic and allows the timeout duration to be tuned centrally for that specific scenario.
 
 6.  **Documentation Sync**
     * **Check for necessary updates:** Analyze if the PR's changes (e.g., adding a new feature, changing build logic, deprecating functionality) require updates to `README.md` or other documentation files.
@@ -62,6 +68,12 @@ When reviewing a pull request, focus on the following key areas:
     *   **Scrutinize Debug Logs:** Question the use of `Log.d`, `Log.v`, and especially `println()`. These are often remnants of debugging and should be removed before merging unless they provide essential, long-term value. Calls to `println()` should always be replaced with a proper `Log` method.
     *   **KDoc for Complexity:** For new or significantly modified functions that are complex, have non-obvious logic, or a large number of parameters, suggest adding KDoc comments. Good documentation should explain the function's purpose, its parameters, and what it returns.
     *   **Keep KDoc Synchronized:** If a PR modifies a function with existing KDocs, verify that the comments are still accurate. Outdated documentation can be more misleading than no documentation at all.
+
+11. **KDoc Documentation Standards**
+    *   **Document all non-private members:** All non-private classes, functions, and composables must have KDoc documentation.
+    *   **Describe behavior, not signatures:** Documentation should provide more value than the function signature alone. Avoid redundant comments that just re-state parameter names and types.
+    *   **Explain features and states:** The documentation should clearly describe the component's features, its primary purpose, and any key visual or behavioral states it may have (e.g., "This button is greyed out when disabled," or "The icon changes based on the recording state.").
+    *   **Be Precise and Efficient:** Avoid unnecessarily embellished or "flourishing" language. KDocs should be clear, to the point, and as concise as possible while still conveying the necessary information.
 
 ***
 

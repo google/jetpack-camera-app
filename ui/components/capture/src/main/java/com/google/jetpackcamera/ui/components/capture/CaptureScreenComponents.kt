@@ -22,16 +22,27 @@ import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.viewfinder.compose.CoordinateTransformer
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -39,8 +50,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -80,6 +93,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -89,12 +103,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.round
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.controller.SnackBarController
+import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -103,7 +121,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unav
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
-import com.google.jetpackcamera.ui.uistate.capture.SnackbarData
+import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import kotlin.time.Duration.Companion.nanoseconds
@@ -115,7 +133,15 @@ import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
+private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
+private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
 
+/**
+ * A composable that displays the elapsed time of a video recording in a "MM:SS" format.
+ * This text is only visible during an active recording.
+ *
+ * @param elapsedTimeUiState the [ElapsedTimeUiState] for this component.
+ */
 @Composable
 fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
     if (elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
@@ -128,6 +154,18 @@ fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTi
     }
 }
 
+/**
+ * A toggle button that allows the user to pause and resume video recording.
+ *
+ * The button's icon changes to reflect the current recording state: a pause icon is shown when
+ * recording is active, and a play icon is shown when the recording is paused. This component is only
+ * visible when a video recording is in progress.
+ *
+ * @param modifier the modifier for this component.
+ * @param onSetPause the callback invoked when the button is tapped.
+ * @param size the size of the button.
+ * @param currentRecordingState the current recording state.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PauseResumeToggleButton(
@@ -159,6 +197,18 @@ fun PauseResumeToggleButton(
     }
 }
 
+/**
+ * A toggle button that allows the user to mute and unmute the microphone during video recording.
+ *
+ * When audio is enabled, the button displays a pulsing animation that visualizes the captured
+ * audio amplitude, providing real-time feedback. The icon switches between a microphone and a
+ * microphone-off symbol to indicate the current state.
+ *
+ * @param modifier the modifier for this component.
+ * @param buttonSize the size of the button.
+ * @param audioUiState the [AudioUiState] that determines the button's appearance and enabled status.
+ * @param onToggleAudio the callback invoked when the button is tapped.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AmplitudeToggleButton(
@@ -217,11 +267,22 @@ fun AmplitudeToggleButton(
     }
 }
 
+/**
+ * A toggle switch that allows the user to switch between image and video capture modes.
+ *
+ * This component visually represents the selected mode with distinct icons for photo and video.
+ * It is only enabled when both capture modes are available to the camera.
+ *
+ * @param uiState the [CaptureModeToggleUiState.Available] for this component.
+ * @param onChangeCaptureMode the callback for changing the capture mode.
+ * @param onToggleWhenDisabled the callback for when the toggle is disabled.
+ * @param modifier the modifier for this component.
+ */
 @Composable
 fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
-    onChangeCaptureMode: (CaptureMode) -> Unit,
-    onToggleWhenDisabled: (DisableRationale) -> Unit,
+    quickSettingsController: QuickSettingsController?,
+    snackBarController: SnackBarController?,
     modifier: Modifier = Modifier
 ) {
     // Captures image (left), else captures video (right).
@@ -243,7 +304,7 @@ fun CaptureModeToggleButton(
         checked = toggleState,
         onCheckedChange = { isChecked ->
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
-            onChangeCaptureMode(newCaptureMode)
+            quickSettingsController?.setCaptureMode(newCaptureMode)
         },
         onToggleWhenDisabled = {
             val disabledReason: DisableRationale? =
@@ -256,7 +317,7 @@ fun CaptureModeToggleButton(
                             as? SingleSelectableUiState.Disabled<CaptureMode>
                         )
                         ?.disabledReason
-            disabledReason?.let { onToggleWhenDisabled(it) }
+            disabledReason?.let { snackBarController?.enqueueDisabledHdrToggleSnackBar(it) }
         },
         enabled = enabled,
         leftIcon = if (uiState.selectedCaptureMode ==
@@ -286,12 +347,21 @@ fun CaptureModeToggleButton(
     )
 }
 
+/**
+ * A composable that displays a snackbar message to the user, with an optional action button
+ * and a mandatory close button for dismissal.
+ *
+ * @param modifier the modifier for this component.
+ * @param snackbarToShow the [SnackbarData] to show.
+ * @param snackbarHostState the [SnackbarHostState] for this component.
+ * @param onSnackbarResult the callback for the snackbar result.
+ */
 @Composable
 fun TestableSnackbar(
     modifier: Modifier = Modifier,
     snackbarToShow: SnackbarData,
     snackbarHostState: SnackbarHostState,
-    onSnackbarResult: (String) -> Unit
+    snackBarController: SnackBarController
 ) {
     Box(
         // box seems to need to have some size to be detected by UiAutomator
@@ -317,18 +387,20 @@ fun TestableSnackbar(
                     )
                 when (result) {
                     SnackbarResult.ActionPerformed,
-                    SnackbarResult.Dismissed -> onSnackbarResult(snackbarToShow.cookie)
+                    SnackbarResult.Dismissed -> snackBarController.onSnackBarResult(
+                        snackbarToShow.cookie
+                    )
                 }
             } catch (e: Exception) {
                 // This is equivalent to dismissing the snackbar
-                onSnackbarResult(snackbarToShow.cookie)
+                snackBarController.onSnackBarResult(snackbarToShow.cookie)
             }
         }
     }
 }
 
 @Composable
-fun DetectWindowColorModeChanges(
+private fun DetectWindowColorModeChanges(
     surfaceRequest: SurfaceRequest,
     implementationMode: ImplementationMode,
     onRequestWindowColorMode: (Int) -> Unit
@@ -377,8 +449,22 @@ fun DetectWindowColorModeChanges(
 }
 
 /**
- * this is the preview surface display. This view implements gestures tap to focus, pinch to zoom,
- * and double-tap to flip camera
+ * A composable that displays the camera preview and handles user input gestures.
+ *
+ * This component is the core of the camera's UI, showing the live feed from the camera.
+ * It supports several gestures:
+ * - **Single Tap:** Triggers a tap-to-focus event at the tapped location.
+ * - **Double Tap:** Flips the camera between front and back lenses.
+ * - **Pinch Gesture:** Scales the camera's zoom level.
+ *
+ * @param previewDisplayUiState the [PreviewDisplayUiState] for this component.
+ * @param onTapToFocus the callback for tapping to focus.
+ * @param onFlipCamera the callback for flipping the camera.
+ * @param onScaleZoom the callback for scaling the zoom.
+ * @param onRequestWindowColorMode the callback for requesting a window color mode.
+ * @param surfaceRequest the [SurfaceRequest] for the preview.
+ * @param focusMeteringUiState the [FocusMeteringUiState] for this component.
+ * @param modifier the modifier for this component.
  */
 @Composable
 fun PreviewDisplay(
@@ -388,6 +474,7 @@ fun PreviewDisplay(
     onScaleZoom: (Float) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     surfaceRequest: SurfaceRequest?,
+    focusMeteringUiState: FocusMeteringUiState,
     modifier: Modifier = Modifier
 ) {
     if (previewDisplayUiState.aspectRatioUiState !is AspectRatioUiState.Available) {
@@ -482,24 +569,48 @@ fun PreviewDisplay(
                     implementationMode = implementationMode,
                     coordinateTransformer = coordinateTransformer
                 )
+                FocusMeteringIndicator(
+                    focusMeteringUiState = focusMeteringUiState,
+                    coordinateTransformer = coordinateTransformer
+                )
             }
         }
     }
 }
 
+/**
+ * A wrapper composable for the primary capture button.
+ *
+ * This component serves as the main user interaction point for capturing photos and recording videos.
+ * It adapts its behavior based on the current [CaptureMode]:
+ * - In **Hybrid mode**, a tap takes a picture, and a long press starts a video recording.
+ * - In **Image-only mode**, it only responds to taps for image capture.
+ * - In **Video-only mode**, a tap starts a video recording that can be locked for hands-free operation.
+ *
+ * It also handles gestures for zooming and locking the video recording.
+ *
+ * @param modifier the modifier for this component.
+ * @param captureButtonUiState the [CaptureButtonUiState] that dictates the button's behavior.
+ * @param isQuickSettingsOpen true if the quick settings panel is open.
+ * @param onToggleQuickSettings callback to open or close the quick settings.
+ * @param onIncrementZoom callback to adjust the camera's zoom level.
+ * @param onCaptureImage callback to trigger image capture.
+ * @param onStartVideoRecording callback to start video recording.
+ * @param onStopVideoRecording callback to stop video recording.
+ * @param onLockVideoRecording callback to lock the video recording for hands-free operation.
+ */
 @Composable
 fun CaptureButton(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
     isQuickSettingsOpen: Boolean,
-    onToggleQuickSettings: () -> Unit = {},
     onIncrementZoom: (Float) -> Unit = {},
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onLockVideoRecording: (Boolean) -> Unit = {}
+    onLockVideoRecording: (Boolean) -> Unit = {},
+    quickSettingsController: QuickSettingsController? = null
 ) {
-    val multipleEventsCutter = remember { MultipleEventsCutter() }
     val context = LocalContext.current
 
     CaptureButton(
@@ -507,12 +618,10 @@ fun CaptureButton(
         onIncrementZoom = onIncrementZoom,
         onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled) {
-                multipleEventsCutter.processEvent {
-                    onCaptureImage(context.contentResolver)
-                }
+                onCaptureImage(context.contentResolver)
             }
             if (isQuickSettingsOpen) {
-                onToggleQuickSettings()
+                quickSettingsController?.toggleQuickSettings()
             }
         },
         onStartRecording = {
@@ -528,6 +637,16 @@ fun CaptureButton(
     )
 }
 
+/**
+ * A composable that displays an icon indicating the current video stabilization mode.
+ *
+ * The icon is only visible when a stabilization mode other than 'OFF' is active. It is rendered in
+ * full white when stabilization is actively being applied, and is greyed out (with reduced alpha)
+ * if the stabilization mode is enabled but not currently active.
+ *
+ * @param stabilizationUiState the [StabilizationUiState] for this component.
+ * @param modifier the modifier for this component.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modifier = Modifier) {
@@ -605,6 +724,15 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
     }
 }
 
+/**
+ * A composable that displays an icon indicating the current video quality setting.
+ *
+ * The icon dynamically changes to represent the selected resolution, such as SD, HD, FHD, or UHD.
+ * It is not displayed if the video quality is unspecified.
+ *
+ * @param videoQuality the [VideoQuality] for this component.
+ * @param modifier the modifier for this component.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
@@ -651,6 +779,16 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
     }
 }
 
+/**
+ * A button that allows the user to flip between the front and rear cameras.
+ *
+ * This button is only visible and enabled if the device has more than one camera lens available.
+ *
+ * @param enabledCondition the enabled condition for this component.
+ * @param flipLensUiState the [FlipLensUiState] for this component.
+ * @param onClick the callback for when the button is clicked.
+ * @param modifier the modifier for this component.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FlipCameraButton(
@@ -693,6 +831,91 @@ fun FlipCameraButton(
                 modifier = Modifier
                     .size(IconButtonDefaults.extraLargeIconSize)
                     .rotate(animatedRotation.value)
+            )
+        }
+    }
+}
+
+/**
+ * A composable that displays an indicator on the viewfinder when the user taps to focus.
+ *
+ * @param focusMeteringUiState The state of the focus metering operation.
+ * @param coordinateTransformer The coordinate transformer to use to map the surface coordinates
+ * to screen coordinates. This should come from [CameraXViewfinder].
+ */
+@Composable
+private fun FocusMeteringIndicator(
+    focusMeteringUiState: FocusMeteringUiState,
+    coordinateTransformer: CoordinateTransformer
+) {
+    if (focusMeteringUiState is FocusMeteringUiState.Specified) {
+        val transition = rememberInfiniteTransition(label = "FocusPulse")
+        val alpha by transition.animateFloat(
+            initialValue = 1f,
+            targetValue = 0.5f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(500),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "FocusPulseAlpha"
+        )
+
+        // The indicator for SUCCESS/FAILURE is shown for a short duration
+        var showResultIndicator by remember { mutableStateOf(false) }
+        val status = focusMeteringUiState.status
+        LaunchedEffect(status) {
+            if (status == FocusMeteringUiState.Status.SUCCESS ||
+                status == FocusMeteringUiState.Status.FAILURE
+            ) {
+                showResultIndicator = true
+                delay(FOCUS_INDICATOR_RESULT_DELAY)
+                showResultIndicator = false
+            } else {
+                showResultIndicator = false
+            }
+        }
+        // Map coordinates from surface coordinates back to screen coordinates
+        val tapCoords =
+            remember(
+                coordinateTransformer.transformMatrix,
+                focusMeteringUiState.surfaceCoordinates
+            ) {
+                Matrix().run {
+                    setFrom(coordinateTransformer.transformMatrix)
+                    invert()
+                    map(focusMeteringUiState.surfaceCoordinates)
+                }
+            }
+        val showFocusMeteringIndicator = status == FocusMeteringUiState.Status.RUNNING
+        AnimatedVisibility(
+            visible = showFocusMeteringIndicator || showResultIndicator,
+            enter = fadeIn() + scaleIn(initialScale = 1.5f),
+            exit = fadeOut() + when (focusMeteringUiState.status) {
+                FocusMeteringUiState.Status.SUCCESS -> scaleOut(targetScale = 0.5f)
+                FocusMeteringUiState.Status.FAILURE -> scaleOut(targetScale = 1.5f)
+                else -> fadeOut()
+            },
+            modifier = Modifier
+                .offset { tapCoords.round() }
+                // Offset the indicator to be centered on the tap coordinates
+                .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
+        ) {
+            Box(
+                Modifier
+                    .testTag(FOCUS_METERING_INDICATOR_TAG)
+                    .alpha(
+                        if (focusMeteringUiState.status == FocusMeteringUiState.Status.SUCCESS) {
+                            1f
+                        } else {
+                            alpha
+                        }
+                    )
+                    .border(
+                        1.dp,
+                        Color.White,
+                        CircleShape
+                    )
+                    .size(TAP_TO_FOCUS_INDICATOR_SIZE)
             )
         }
     }

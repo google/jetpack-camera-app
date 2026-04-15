@@ -90,6 +90,7 @@ dependencies {
 
     // Access Model data
     implementation(project(":core:model"))
+    implementation(project(":core:common"))
 }
 
 protobuf {

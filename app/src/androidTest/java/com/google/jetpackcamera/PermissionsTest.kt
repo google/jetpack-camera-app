@@ -18,7 +18,6 @@ package com.google.jetpackcamera
 import android.Manifest.permission.CAMERA
 import android.Manifest.permission.RECORD_AUDIO
 import androidx.compose.ui.test.isDisplayed
-import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -47,6 +46,9 @@ import com.google.jetpackcamera.utils.grantPermissionDialog
 import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.waitForCaptureButton
+import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithTagToDisappear
+import com.google.jetpackcamera.utils.waitForNodeWithText
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -94,9 +96,10 @@ class PermissionsTest {
     @Test
     fun cameraPermission_granted_closesPage() = runMainActivityScenarioTest {
         // Wait for the camera permission screen to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForNodeWithTag(
+            CAMERA_PERMISSION_BUTTON,
+            timeoutMillis = APP_START_TIMEOUT_MILLIS
+        )
 
         // Click button to request permission
         composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
@@ -117,9 +120,10 @@ class PermissionsTest {
         uiDevice.waitForIdle()
         runMainActivityScenarioTest {
             // Wait for the camera permission screen to be displayed
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                CAMERA_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
 
             // Click button to request permission
             composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
@@ -139,9 +143,10 @@ class PermissionsTest {
         // required permissions should persist on screen
         // Wait for the permission screen to be displayed
         runMainActivityScenarioTest {
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                CAMERA_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
 
             // Click button to request permission
             composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
@@ -157,13 +162,11 @@ class PermissionsTest {
             composeTestRule.onNodeWithTag(CAMERA_PERMISSION_BUTTON).isDisplayed()
 
             // text changed after permission denied
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithText(
-                    com.google.jetpackcamera.permissions.R.string
-                        .camera_permission_declined_rationale
-                )
-                    .isDisplayed()
-            }
+            composeTestRule.waitForNodeWithText(
+                com.google.jetpackcamera.permissions.R.string
+                    .camera_permission_declined_rationale,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
             // request permissions button should now say to navigate to settings
             composeTestRule.onNodeWithText(
                 com.google.jetpackcamera.permissions
@@ -176,9 +179,10 @@ class PermissionsTest {
     fun recordAudioPermission_granted_closesPage() {
         // optional permissions should close the screen after declining
         runMainActivityScenarioTest {
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(RECORD_AUDIO_PERMISSION_BUTTON).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                RECORD_AUDIO_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
 
             // Click button to request permission
             composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
@@ -190,9 +194,10 @@ class PermissionsTest {
             uiDevice.waitForIdle()
 
             // Assert we're on a different page
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(RECORD_AUDIO_PERMISSION_BUTTON).isNotDisplayed()
-            }
+            composeTestRule.waitForNodeWithTagToDisappear(
+                RECORD_AUDIO_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
         }
     }
 
@@ -200,9 +205,10 @@ class PermissionsTest {
     fun recordAudioPermission_denied_closesPage() {
         // optional permissions should close the screen after declining
         runMainActivityScenarioTest {
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(RECORD_AUDIO_PERMISSION_BUTTON).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                RECORD_AUDIO_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
 
             // Click button to request permission
             composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
@@ -214,9 +220,10 @@ class PermissionsTest {
             uiDevice.waitForIdle()
 
             // Assert we're on a different page
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(RECORD_AUDIO_PERMISSION_BUTTON).isNotDisplayed()
-            }
+            composeTestRule.waitForNodeWithTagToDisappear(
+                RECORD_AUDIO_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
         }
     }
 
@@ -229,11 +236,10 @@ class PermissionsTest {
         val timeStamp = System.currentTimeMillis()
         runMainActivityScenarioTest {
             // Wait for the camera permission screen to be displayed
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(
-                    WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
-                ).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
 
             // Click button to request permission
             composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
@@ -244,11 +250,10 @@ class PermissionsTest {
             uiDevice.grantPermissionDialog()
 
             // permission screen should close
-            composeTestRule.waitUntil(timeoutMillis = 5_000) {
-                composeTestRule
-                    .onNodeWithTag(WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON)
-                    .isNotDisplayed()
-            }
+            composeTestRule.waitForNodeWithTagToDisappear(
+                WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON,
+                timeoutMillis = 5_000
+            )
 
             composeTestRule.waitForCaptureButton()
 
@@ -258,9 +263,10 @@ class PermissionsTest {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                 .assertExists()
                 .performClick()
-            composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                IMAGE_CAPTURE_SUCCESS_TAG,
+                timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS
+            )
         }
 
         deleteFilesInDirAfterTimestamp(PICTURES_DIR_PATH, instrumentation, timeStamp)
@@ -272,11 +278,10 @@ class PermissionsTest {
         uiDevice.waitForIdle()
         runMainActivityScenarioTest {
             // Wait for the camera permission screen to be displayed
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(
-                    WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
-                ).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
 
             // Click button to request permission
             composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
@@ -287,20 +292,19 @@ class PermissionsTest {
             uiDevice.denyPermissionDialog()
 
             // storage permission is optional and the screen should close
-            composeTestRule.waitUntil {
-                composeTestRule
-                    .onNodeWithTag(WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON)
-                    .isNotDisplayed()
-            }
+            composeTestRule.waitForNodeWithTagToDisappear(
+                WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
+            )
 
             composeTestRule.waitForCaptureButton()
 
             // check for image capture failure
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
 
-            composeTestRule.waitUntil(timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(IMAGE_CAPTURE_FAILURE_TAG).isDisplayed()
-            }
+            composeTestRule.waitForNodeWithTag(
+                IMAGE_CAPTURE_FAILURE_TAG,
+                timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS
+            )
             // imageWell shouldn't appear
             composeTestRule.ensureTagNotAppears(IMAGE_WELL_TAG)
         }

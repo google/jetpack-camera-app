@@ -144,6 +144,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             JcaApp(
                                 externalCaptureMode = externalCaptureMode,
+                                shouldReviewAfterCapture = shouldReviewAfterCapture,
                                 captureUris = captureUris,
                                 debugSettings = debugSettings,
                                 openAppSettings = ::openAppSettings,
@@ -196,12 +197,19 @@ class MainActivity : ComponentActivity() {
                 MediaStore.ACTION_VIDEO_CAPTURE -> ExternalCaptureMode.VideoCapture
                 MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA ->
                     ExternalCaptureMode.MultipleImageCapture
+
                 else -> {
                     Log.w(TAG, "Ignoring external intent with unknown action: $action")
                     ExternalCaptureMode.Standard
                 }
             }
         } ?: ExternalCaptureMode.Standard
+
+    private val Intent.shouldReviewAfterCapture: Boolean
+        get() = this.getBooleanExtra(KEY_REVIEW_AFTER_CAPTURE, false)
+
+    private val shouldReviewAfterCapture: Boolean
+        get() = intent?.shouldReviewAfterCapture == true
 
     private val Intent.externalCaptureUri: Uri?
         get() = IntentCompat.getParcelableExtra(
@@ -218,8 +226,10 @@ class MainActivity : ComponentActivity() {
             ExternalCaptureMode.ImageCapture,
             ExternalCaptureMode.VideoCapture ->
                 intent?.externalCaptureUri?.let(::listOf) ?: emptyList()
+
             ExternalCaptureMode.MultipleImageCapture ->
                 intent?.multipleExternalCaptureUri ?: emptyList()
+
             ExternalCaptureMode.Standard -> emptyList()
         }
 
@@ -229,9 +239,9 @@ class MainActivity : ComponentActivity() {
             return when (externalCaptureMode) {
                 ExternalCaptureMode.ImageCapture -> { event ->
                     Log.d(TAG, "onImageCapture, event: $event")
-                    if (event is ImageCaptureEvent.ImageSaved) {
+                    if (event is ImageCaptureEvent.ImageCaptured) {
                         val resultIntent = Intent()
-                        resultIntent.putExtra(MediaStore.EXTRA_OUTPUT, event.savedUri)
+                        resultIntent.putExtra(MediaStore.EXTRA_OUTPUT, event.capturedUri)
                         setResult(RESULT_OK, resultIntent)
                         Log.d(TAG, "onImageCapture, finish()")
                         finish()
@@ -263,8 +273,8 @@ class MainActivity : ComponentActivity() {
                     }
 
                     if (progress == null) {
-                        if (event is ImageCaptureEvent.ImageSaved) {
-                            pictureTakenUriList.add(event.savedUri.toString())
+                        if (event is ImageCaptureEvent.ImageCaptured) {
+                            pictureTakenUriList.add(event.capturedUri.toString())
                         } else if (event is ImageCaptureEvent.ImageCaptureError) {
                             pictureTakenUriList.add("")
                         }
@@ -283,10 +293,12 @@ class MainActivity : ComponentActivity() {
                 }
 
                 ExternalCaptureMode.Standard -> { event ->
-                    if (event is ImageCaptureEvent.ImageSaved) {
+                    if (event is ImageCaptureEvent.ImageCaptured &&
+                        event !is ImageCaptureEvent.SingleImageCached
+                    ) {
                         @Suppress("DEPRECATION")
                         val intent = Intent(Camera.ACTION_NEW_PICTURE)
-                        intent.data = event.savedUri
+                        intent.data = event.capturedUri
                         sendBroadcast(intent)
                     }
                 }
@@ -294,6 +306,8 @@ class MainActivity : ComponentActivity() {
         }
 
     companion object {
+        private const val KEY_REVIEW_AFTER_CAPTURE = "KEY_REVIEW_AFTER_CAPTURE"
+
         private const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
         const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
     }

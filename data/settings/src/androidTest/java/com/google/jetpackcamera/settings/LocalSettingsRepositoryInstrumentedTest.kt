@@ -22,6 +22,7 @@ import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -71,7 +72,10 @@ class LocalSettingsRepositoryInstrumentedTest {
         ) {
             testContext.dataStoreFile("test_jca_settings.pb")
         }
-        repository = LocalSettingsRepository(testDataStore)
+        repository = LocalSettingsRepository(
+            jcaSettings = testDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD
+        )
         advanceUntilIdle()
     }
 

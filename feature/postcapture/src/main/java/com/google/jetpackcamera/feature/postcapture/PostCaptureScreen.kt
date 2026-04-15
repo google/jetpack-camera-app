@@ -15,174 +15,143 @@
  */
 package com.google.jetpackcamera.feature.postcapture
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import androidx.annotation.OptIn
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.ui.compose.PlayerSurface
-import androidx.media3.ui.compose.modifiers.resizeWithContentScale
-import androidx.media3.ui.compose.state.rememberPresentationState
-import com.google.jetpackcamera.data.media.Media
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.feature.postcapture.PostCaptureViewModel.PostCaptureEvent
+import com.google.jetpackcamera.feature.postcapture.ui.DeleteCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.ExitPostCaptureButton
+import com.google.jetpackcamera.feature.postcapture.ui.MediaViewer
+import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
+import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.ui.ShareCurrentMediaButton
+import com.google.jetpackcamera.feature.postcapture.utils.MediaSharing
+import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
+import com.google.jetpackcamera.ui.controller.SnackBarController
+import com.google.jetpackcamera.ui.uistate.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.postcapture.DeleteButtonUiState
+import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
+import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState
+import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
 
 private const val TAG = "PostCaptureScreen"
 
 @OptIn(UnstableApi::class)
 @Composable
-fun PostCaptureScreen(viewModel: PostCaptureViewModel = hiltViewModel()) {
+fun PostCaptureScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: PostCaptureViewModel = hiltViewModel()
+) {
     Log.d(TAG, "PostCaptureScreen")
 
-    val uiState: PostCaptureUiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        when (val media = uiState.media) {
-            is Media.Image -> {
-                val bitmap = media.bitmap
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawIntoCanvas { canvas ->
-                        val scale = maxOf(
-                            size.width / bitmap.width,
-                            size.height / bitmap.height
-                        )
-                        val imageSize = Size(bitmap.width * scale, bitmap.height * scale)
-                        canvas.nativeCanvas.drawBitmap(
-                            bitmap,
-                            null,
-                            android.graphics.RectF(
-                                0f,
-                                0f,
-                                imageSize.width,
-                                imageSize.height
-                            ),
-                            null
-                        )
-                    }
+    LaunchedEffect(Unit) {
+        for (event in viewModel.uiEvents) {
+            when (event) {
+                is PostCaptureEvent.ShareMedia -> {
+                    MediaSharing.shareMedia(context, event.media)
                 }
             }
-            is Media.Video -> {
-                val presentationState = rememberPresentationState(viewModel.player)
-                PlayerSurface(
-                    player = viewModel.player,
-                    modifier = Modifier.resizeWithContentScale(
-                        ContentScale.Fit,
-                        presentationState.videoSizeDp
-                    )
-                )
-                viewModel.playVideo()
-            }
-            Media.None -> {
-                Text(
-                    text = stringResource(R.string.no_media_available),
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-            Media.Error -> {
-                Text(
-                    text = stringResource(R.string.error_loading_media),
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
-            // Delete Image Button
-            IconButton(
-                onClick = { viewModel.deleteMedia(context.contentResolver) },
-                modifier = Modifier
-                    .size(56.dp)
-                    .shadow(10.dp, CircleShape),
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Share Media Button
-            IconButton(
-                onClick = {
-                    val mediaDescriptor = uiState.mediaDescriptor
-
-                    if (mediaDescriptor is MediaDescriptor.Image) {
-                        shareImage(context, mediaDescriptor.uri, "image/jpeg")
-                    }
-
-                    if (mediaDescriptor is MediaDescriptor.Video) {
-                        shareImage(context, mediaDescriptor.uri, "video/mp4")
-                    }
-                },
-                modifier = Modifier
-                    .size(56.dp)
-                    .shadow(10.dp, CircleShape),
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = "Share",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
         }
     }
+
+    val uiState: PostCaptureUiState by viewModel.postCaptureUiState.collectAsState()
+    val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
+
+    PostCaptureComponent(
+        uiState = uiState,
+        onNavigateBack = onNavigateBack,
+        onDeleteMedia = viewModel::deleteCurrentMedia,
+        onSaveMedia = viewModel::saveCurrentMedia,
+        onShareCurrentMedia = viewModel::onShareCurrentMedia,
+        onLoadVideo = viewModel::loadCurrentVideo,
+        snackBarUiState = snackBarUiState,
+        snackBarController = viewModel.snackBarController
+    )
 }
 
-/**
- * Starts an intent to share media
- */
-private fun shareImage(context: Context, uri: Uri, mimeType: String) {
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = mimeType
-        putExtra(Intent.EXTRA_STREAM, uri)
+@OptIn(UnstableApi::class)
+@Composable
+fun PostCaptureComponent(
+    uiState: PostCaptureUiState,
+    onNavigateBack: () -> Unit,
+    onSaveMedia: () -> Unit,
+    onShareCurrentMedia: () -> Unit,
+    onDeleteMedia: (onSuccessCallback: () -> Unit) -> Unit,
+    onLoadVideo: () -> Unit,
+    snackBarUiState: SnackBarUiState = SnackBarUiState.Disabled,
+    snackBarController: SnackBarController? = null
+) {
+    when (uiState) {
+        PostCaptureUiState.Loading -> {
+            MediaViewer(
+                modifier = Modifier,
+                onLoadVideo = {},
+                uiState = MediaViewerUiState.Loading
+            )
+        }
+
+        is PostCaptureUiState.Ready -> {
+            PostCaptureLayout(
+                mediaSurface = {
+                    MediaViewer(
+                        modifier = it,
+                        onLoadVideo = onLoadVideo,
+                        uiState = uiState.viewerUiState
+                    )
+                },
+                exitButton = {
+                    ExitPostCaptureButton(
+                        modifier = it,
+                        onExitPostCapture = onNavigateBack
+                    )
+                },
+                saveButton = {
+                    SaveCurrentMediaButton(modifier = it, onClick = onSaveMedia)
+                },
+                shareButton = {
+                    if (uiState.shareButtonUiState is ShareButtonUiState.Ready) {
+                        ShareCurrentMediaButton(
+                            modifier = it,
+                            onClick = onShareCurrentMedia
+                        )
+                    }
+                },
+                deleteButton = {
+                    if (uiState.deleteButtonUiState is DeleteButtonUiState.Ready) {
+                        DeleteCurrentMediaButton(
+                            modifier = it,
+                            onClick = {
+                                onDeleteMedia(onNavigateBack)
+                            }
+                        )
+                    }
+                },
+                snackBar = { modifier, snackbarHostState ->
+                    if (snackBarUiState is SnackBarUiState.Enabled) {
+                        val snackBarData = snackBarUiState.snackBarQueue.peek()
+                        if (snackBarData != null) {
+                            snackBarController?.let {
+                                TestableSnackbar(
+                                    modifier = modifier.testTag(snackBarData.testTag),
+                                    snackbarToShow = snackBarData,
+                                    snackbarHostState = snackbarHostState,
+                                    snackBarController = snackBarController
+                                )
+                            }
+                        }
+                    }
+                }
+            )
+        }
     }
-    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    context.startActivity(Intent.createChooser(intent, "Share Media"))
 }

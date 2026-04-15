@@ -19,6 +19,7 @@ import android.content.Context
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
+import com.google.jetpackcamera.core.common.FilePathGenerator
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
@@ -36,6 +37,7 @@ internal data class CameraSessionContext(
     val cameraProvider: ProcessCameraProvider,
     val backgroundDispatcher: CoroutineDispatcher,
     val screenFlashEvents: SendChannel<CameraSystem.ScreenFlashEvent>,
+    val filePathGenerator: FilePathGenerator,
     val focusMeteringEvents: Channel<CameraEvent.FocusMeteringEvent>,
     val videoCaptureControlEvents: Channel<VideoCaptureControlEvent>,
     val currentCameraState: MutableStateFlow<CameraState>,

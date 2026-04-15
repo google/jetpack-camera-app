@@ -59,9 +59,13 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
+val isEmulatorWithFakeFrontCamera: Boolean
+    get() = Build.HARDWARE == "ranchu" &&
+        (Build.VERSION.SDK_INT == 28 || Build.VERSION.SDK_INT == 34)
+
 val compatMainActivityExtras: Bundle?
-    get() = if (Build.HARDWARE == "ranchu" && Build.VERSION.SDK_INT == 28) {
-        // The GMD API 28 emulator's PackageInfo reports it has front and back cameras, but
+    get() = if (isEmulatorWithFakeFrontCamera) {
+        // The GMD API 28 and 34 emulators' PackageInfo reports it has front and back cameras, but
         // GMD is only configured for a back camera. This causes CameraX to take a long time
         // to initialize. Set the device to use single lens mode to work around this issue.
         Bundle().apply {
@@ -72,14 +76,20 @@ val compatMainActivityExtras: Bundle?
     }
 
 val debugExtra: Bundle = Bundle().apply { putBoolean("KEY_DEBUG_MODE", true) }
-const val DEFAULT_TIMEOUT_MILLIS = 1_000L
-const val APP_START_TIMEOUT_MILLIS = 10_000L
+val cacheExtra: Bundle = Bundle().apply { putBoolean("KEY_REVIEW_AFTER_CAPTURE", true) }
+
+const val DEFAULT_TIMEOUT_MILLIS = 5_000L
+const val APP_START_TIMEOUT_MILLIS = 20_000L
 const val ELAPSED_TIME_TEXT_TIMEOUT_MILLIS = 45_000L
 const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
 const val IMAGE_CAPTURE_TIMEOUT_MILLIS = 45_000L
-const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 5_000L
+const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 15_000L
+const val SAVE_MEDIA_TIMEOUT_MILLIS = 15_000L
+const val IMAGE_WELL_LOAD_TIMEOUT_MILLIS = 10_000L
+
 const val VIDEO_DURATION_MILLIS = 3_000L
 const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 15_000L
+const val FOCUS_METERING_INDICATOR_TIMEOUT_MILLIS = 10_000L
 const val FILE_PREFIX = "JCA"
 const val VIDEO_PREFIX = "video"
 const val IMAGE_PREFIX = "image"
@@ -87,12 +97,23 @@ const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
 const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
 private const val TAG = "UiTestUtil"
 
+internal enum class CacheParam(val extras: Bundle?) {
+    NO_CACHE(null),
+    WITH_CACHE(cacheExtra)
+}
+
+internal fun CacheParam.expectedNumFiles() = when (this) {
+    CacheParam.NO_CACHE -> 1
+    CacheParam.WITH_CACHE -> 0
+}
+
 inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     mediaUri: Uri,
     filePrefix: String = "",
     expectedNumFiles: Int = 1,
     fileWaitTimeoutMs: Duration = 10.seconds,
     fileObserverContext: CoroutineContext = Dispatchers.IO,
+    extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
 ) = runBlocking {
     val debugTag = "MediaStoreAutoDelete"
@@ -103,16 +124,20 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
             mediaUri = mediaUri,
             instrumentation = instrumentation,
             filePrefix = filePrefix
-        ).take(expectedNumFiles)
-            .collect {
-                Log.d(debugTag, "Discovered new media store file: ${it.first}")
-                insertedMediaStoreEntries[it.first] = it.second
+        ).apply {
+            if (expectedNumFiles > 0) {
+                take(expectedNumFiles)
+                    .collect {
+                        Log.d(debugTag, "Discovered new media store file: ${it.first}")
+                        insertedMediaStoreEntries[it.first] = it.second
+                    }
             }
+        }
     }
 
     var succeeded = false
     try {
-        runMainActivityScenarioTest(block = block)
+        runMainActivityScenarioTest(extras = extras, block = block)
         succeeded = true
     } finally {
         withContext(NonCancellable) {
@@ -182,9 +207,12 @@ inline fun <reified T : Activity> runScenarioTest(
 
 inline fun runMainActivityScenarioTestForResult(
     intent: Intent,
+    extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
-): Instrumentation.ActivityResult =
-    runScenarioTestForResult<MainActivity>(intent, compatMainActivityExtras, block)
+): Instrumentation.ActivityResult {
+    val activityExtras = compatMainActivityExtras?.apply { extras?.let { putAll(it) } } ?: extras
+    return runScenarioTestForResult<MainActivity>(intent, activityExtras, block)
+}
 
 inline fun <reified T : Activity> runScenarioTestForResult(
     intent: Intent,
@@ -221,6 +249,33 @@ fun getTestUri(directoryPath: String, timeStamp: Long, suffix: String): Uri = Ur
         "$timeStamp.$suffix"
     )
 )
+
+// Helper function to check if a MediaStore entry exists (Source of Truth)
+fun mediaStoreEntryExistsAfterTimestamp(
+    instrumentation: Instrumentation,
+    mediaUri: Uri, // MediaStore.Images.Media.EXTERNAL_CONTENT_URI or Video.Media...
+    timestamp: Long
+): Boolean {
+    val contentResolver = instrumentation.targetContext.contentResolver
+
+    // MediaStore.MediaColumns.DATE_ADDED is stored in seconds (s), convert ms to s
+    val timestampInSeconds = timestamp / 1000
+
+    // Check if any file was added to this collection since the test started
+    val selection = "${MediaStore.MediaColumns.DATE_ADDED} >= ?"
+    val selectionArgs = arrayOf(timestampInSeconds.toString())
+
+    val cursor = contentResolver.query(
+        mediaUri,
+        arrayOf(MediaStore.MediaColumns._ID), // Querying for just the ID is efficient
+        selection,
+        selectionArgs,
+        null // No sorting needed
+    )
+
+    // Return true if the cursor has any entries
+    return cursor?.use { it.count > 0 } ?: false
+}
 
 /**
  * @return - true if all eligible files were successfully deleted. False otherwise

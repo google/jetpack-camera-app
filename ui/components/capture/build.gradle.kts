@@ -92,7 +92,7 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.mockito.core)
+    androidTestImplementation(libs.truth)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     debugImplementation(libs.androidx.test.monitor)
@@ -102,6 +102,7 @@ dependencies {
 
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
+    implementation(project(":ui:controller"))
     implementation(project(":core:camera"))
     implementation(project(":core:common"))
     implementation(project(":data:media"))

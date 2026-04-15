@@ -20,13 +20,14 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import java.io.File
-import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,8 +41,10 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(AndroidJUnit4::class)
 internal class CameraAppSettingsViewModelTest {
     private val testContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
     private lateinit var testDataStore: DataStore<JcaSettings>
@@ -59,7 +62,10 @@ internal class CameraAppSettingsViewModelTest {
         ) {
             testContext.dataStoreFile("test_jca_settings.pb")
         }
-        val settingsRepository = LocalSettingsRepository(testDataStore)
+        val settingsRepository = LocalSettingsRepository(
+            jcaSettings = testDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD
+        )
         val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
             updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
         }
@@ -185,8 +191,8 @@ internal class CameraAppSettingsViewModelTest {
                 )
                 .currentDarkMode
 
-        assertEquals(initialDarkMode, DarkMode.DARK)
-        assertEquals(DarkMode.SYSTEM, newDarkMode)
+        assertThat(initialDarkMode).isEqualTo(DarkMode.DARK)
+        assertThat(newDarkMode).isEqualTo(DarkMode.SYSTEM)
     }
 }
 

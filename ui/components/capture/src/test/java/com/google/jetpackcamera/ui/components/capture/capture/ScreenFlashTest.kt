@@ -16,6 +16,8 @@
 package com.google.jetpackcamera.ui.components.capture.capture
 
 import android.content.ContentResolver
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.test.FakeCameraSystem
@@ -38,7 +40,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito
 import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -73,7 +74,8 @@ class ScreenFlashTest {
         // FlashMode.ON in front facing camera automatically enables screen flash
         cameraSystem.setLensFacing(lensFacing = LensFacing.FRONT)
         cameraSystem.setFlashMode(FlashMode.ON)
-        val contentResolver: ContentResolver = Mockito.mock()
+        val contentResolver: ContentResolver =
+            ApplicationProvider.getApplicationContext<Context>().contentResolver
         cameraSystem.takePicture(contentResolver, SaveLocation.Default).let { unused -> }
 
         advanceUntilIdle()
