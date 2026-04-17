@@ -198,7 +198,8 @@ fun DefaultCameraFacing(
         }
     )
     SwitchSettingUI(
-        modifier = modifier.testTag(BTN_SWITCH_SETTING_LENS_FACING_TAG)
+        modifier = modifier
+            .testTag(BTN_SWITCH_SETTING_LENS_FACING_TAG)
             .semantics {
                 stateDescription = description
             },
@@ -242,6 +243,7 @@ fun FlashModeSetting(
                     id = R.string.flash_mode_description_llb
                 )
             }
+
             is FlashUiState.Disabled -> stringResource(
                 flashUiState.disabledRationale.reasonTextResId,
                 stringResource(flashUiState.disabledRationale.affectedSettingNameResId)
@@ -307,8 +309,12 @@ fun AspectRatioSetting(
                     id = R.string.aspect_ratio_description_9_16
                 )
 
-                AspectRatio.THREE_FOUR -> stringResource(id = R.string.aspect_ratio_description_3_4)
-                AspectRatio.ONE_ONE -> stringResource(id = R.string.aspect_ratio_description_1_1)
+                AspectRatio.THREE_FOUR -> stringResource(
+                    id = R.string.aspect_ratio_description_3_4
+                )
+                AspectRatio.ONE_ONE -> stringResource(
+                    id = R.string.aspect_ratio_description_1_1
+                )
             }
         } else {
             TODO("aspect ratio currently has no disabled criteria")
@@ -843,9 +849,11 @@ fun RecordingAudioSetting(
             is AudioUiState.Enabled.On -> {
                 stringResource(R.string.audio_selector_on)
             }
+
             is AudioUiState.Enabled.Mute -> {
                 stringResource(R.string.audio_selector_off)
             }
+
             is AudioUiState.Disabled -> {
                 disabledRationaleString(disabledRationale = audioUiState.disabledRationale)
             }
@@ -906,6 +914,7 @@ fun BasicPopupSetting(
     )
     if (popupStatus.value) {
         AlertDialog(
+            modifier = Modifier.semantics { testTagsAsResourceId = true },
             onDismissRequest = { popupStatus.value = false },
             confirmButton = {
                 Text(
@@ -921,7 +930,6 @@ fun BasicPopupSetting(
                 val scrollState = rememberScrollState()
                 Column(
                     modifier = Modifier
-                        .semantics { testTagsAsResourceId = true }
                         .testTag(CONTAINER_DIALOG_CONTENTS)
                         .verticalScroll(scrollState)
                 ) {
