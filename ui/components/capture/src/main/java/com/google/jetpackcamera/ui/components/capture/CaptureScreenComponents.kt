@@ -617,7 +617,9 @@ fun CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onIncrementZoom = onIncrementZoom,
         onImageCapture = {
-            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+            if (captureButtonUiState is CaptureButtonUiState.Enabled &&
+                captureButtonUiState.isEnabled
+            ) {
                 onCaptureImage(context.contentResolver)
             }
             if (isQuickSettingsOpen) {
@@ -625,7 +627,9 @@ fun CaptureButton(
             }
         },
         onStartRecording = {
-            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+            if (captureButtonUiState is CaptureButtonUiState.Enabled &&
+                captureButtonUiState.isEnabled
+            ) {
                 onStartVideoRecording()
             }
         },
