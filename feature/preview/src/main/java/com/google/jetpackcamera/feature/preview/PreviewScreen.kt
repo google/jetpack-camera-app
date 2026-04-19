@@ -380,8 +380,11 @@ private fun ContentScreen(
         }
     }
 
+    val debugHidingComponents =
+        (debugUiState as? DebugUiState.Enabled)?.debugHidingComponents == true
     LayoutWrapper(
         modifier = modifier,
+        debugHidingComponents = debugHidingComponents,
         hdrIndicator = { HdrIndicator(modifier = it, hdrUiState = captureUiState.hdrUiState) },
         flashModeIndicator = {
             FlashModeIndicator(
@@ -410,7 +413,8 @@ private fun ContentScreen(
                 onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode,
-                focusMeteringUiState = captureUiState.focusMeteringUiState
+                focusMeteringUiState = captureUiState.focusMeteringUiState,
+                debugHidingComponents = debugHidingComponents
             )
         },
         captureButton = {
@@ -619,6 +623,7 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun LayoutWrapper(
     modifier: Modifier = Modifier,
+    debugHidingComponents: Boolean,
     viewfinder: @Composable (modifier: Modifier) -> Unit,
     captureButton: @Composable (modifier: Modifier) -> Unit,
     flipCameraButton: @Composable (modifier: Modifier) -> Unit,

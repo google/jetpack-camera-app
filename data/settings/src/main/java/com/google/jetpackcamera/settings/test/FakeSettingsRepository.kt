@@ -19,6 +19,7 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
@@ -97,5 +98,10 @@ object FakeSettingsRepository : SettingsRepository {
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
         currentCameraSettings =
             currentCameraSettings.copy(audioEnabled = isAudioEnabled)
+    }
+
+    override suspend fun updateGridType(gridType: GridType) {
+        currentCameraSettings =
+            currentCameraSettings.copy(gridType = gridType)
     }
 }

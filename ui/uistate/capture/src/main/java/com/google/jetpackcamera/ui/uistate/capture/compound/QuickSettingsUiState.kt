@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistate.capture.compound
 
+import com.google.jetpackcamera.model.GridType
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
@@ -55,6 +56,7 @@ sealed interface QuickSettingsUiState {
         val concurrentCameraUiState: ConcurrentCameraUiState,
         val flashModeUiState: FlashModeUiState,
         val flipLensUiState: FlipLensUiState,
+        val gridType: GridType,
         val hdrUiState: HdrUiState,
         val streamConfigUiState: StreamConfigUiState,
         val quickSettingsIsOpen: Boolean = false,

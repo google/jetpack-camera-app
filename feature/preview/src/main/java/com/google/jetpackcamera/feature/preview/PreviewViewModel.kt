@@ -155,6 +155,7 @@ class PreviewViewModel @Inject constructor(
     val quickSettingsController: QuickSettingsController = QuickSettingsControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
         cameraSystem = cameraSystem,
+        settingsRepository = settingsRepository,
         externalCaptureMode = externalCaptureMode,
         coroutineContext = viewModelScope.coroutineContext
     )
@@ -222,6 +223,9 @@ class PreviewViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            val initialGridType =
+                settingsRepository.getCurrentDefaultCameraAppSettings().gridType
+            trackedCaptureUiState.update { it.copy(gridType = initialGridType) }
             launch {
                 var oldCameraAppSettings: CameraAppSettings? = null
                 settingsRepository.defaultCameraAppSettings
