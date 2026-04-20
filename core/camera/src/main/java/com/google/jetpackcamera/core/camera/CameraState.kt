@@ -149,10 +149,12 @@ sealed interface VideoRecordingState {
          * The maximum duration of the recording in milliseconds.
          */
         val maxDurationMillis: Long
+
         /**
          * The current amplitude of the audio being recorded.
          */
         val audioAmplitude: Double
+
         /**
          * The elapsed time of the recording in nanoseconds.
          */
