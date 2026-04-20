@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera.test
+package com.google.jetpackcamera.core.camera.testing
 
 import com.google.common.truth.Truth
 import com.google.jetpackcamera.core.camera.CameraSystem

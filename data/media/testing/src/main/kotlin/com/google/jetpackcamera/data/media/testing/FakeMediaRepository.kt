@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.data.media
+package com.google.jetpackcamera.data.media.testing
 
 import android.net.Uri
 import androidx.core.net.toUri
+import com.google.jetpackcamera.data.media.Media
+import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.data.media.MediaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
