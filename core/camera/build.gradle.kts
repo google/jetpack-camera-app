@@ -126,6 +126,7 @@ dependencies {
     // CameraX
     implementation(libs.camera.core)
     implementation(libs.camera.camera2)
+    implementation(libs.camera.viewfinder.core)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.video)
 

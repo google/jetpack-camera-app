@@ -91,7 +91,12 @@ interface CameraSystem {
 
     fun getCurrentCameraState(): StateFlow<CameraState>
 
-    fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
+    /**
+     * Returns the current [PreviewSurfaceRequest].
+     *
+     * This will be null if no surface is currently requested.
+     */
+    fun getSurfaceRequest(): StateFlow<PreviewSurfaceRequest?>
 
     fun getScreenFlashEvents(): ReceiveChannel<ScreenFlashEvent>
 

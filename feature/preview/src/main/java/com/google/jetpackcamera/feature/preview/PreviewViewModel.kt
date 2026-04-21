@@ -17,7 +17,6 @@ package com.google.jetpackcamera.feature.preview
 
 import android.net.Uri
 import android.util.Log
-import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -102,8 +101,6 @@ class PreviewViewModel @Inject constructor(
         MutableStateFlow(SnackBarUiState.Enabled())
     val snackBarUiState: StateFlow<SnackBarUiState.Enabled> =
         _snackBarUiState.asStateFlow()
-
-    val surfaceRequest: StateFlow<SurfaceRequest?> = cameraSystem.getSurfaceRequest()
 
     private val _captureEvents = Channel<CaptureEvent>()
     val captureEvents: ReceiveChannel<CaptureEvent> = _captureEvents

@@ -52,10 +52,10 @@ dependencies {
     implementation(project(":core:camera"))
     implementation(project(":core:model"))
     implementation(project(":data:settings"))
-    
-    implementation(libs.camera.core)
-    implementation(libs.kotlinx.coroutines.core)
 
+    implementation(libs.camera.core)
+    implementation(libs.camera.viewfinder.core)
+    implementation(libs.kotlinx.coroutines.core)
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)

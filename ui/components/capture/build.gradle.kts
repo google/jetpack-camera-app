@@ -81,6 +81,8 @@ dependencies {
     // CameraX
     implementation(libs.camera.core)
     implementation(libs.camera.compose)
+    implementation(libs.camera.viewfinder.core)
+    implementation(libs.camera.viewfinder.compose)
 
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)

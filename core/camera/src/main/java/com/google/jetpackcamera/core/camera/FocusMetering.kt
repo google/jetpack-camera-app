@@ -44,7 +44,9 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
     cameraInfo: CameraInfo,
     cameraControl: CameraControl
 ) {
-    surfaceRequests.flatMapLatest { surfaceRequest ->
+    surfaceRequests.flatMapLatest { previewSurfaceRequest ->
+        val surfaceRequest =
+            (previewSurfaceRequest as? PreviewSurfaceRequest.CameraX)?.surfaceRequest
         surfaceRequest?.let { request ->
             Log.d(
                 TAG,

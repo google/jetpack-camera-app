@@ -773,7 +773,7 @@ private fun createPreviewUseCase(
 }.build()
     .apply {
         setSurfaceProvider { surfaceRequest ->
-            surfaceRequests.update { surfaceRequest }
+            surfaceRequests.update { PreviewSurfaceRequest.CameraX(surfaceRequest) }
         }
     }
 

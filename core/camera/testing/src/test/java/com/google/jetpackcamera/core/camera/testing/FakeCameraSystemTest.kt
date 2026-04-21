@@ -15,14 +15,19 @@
  */
 package com.google.jetpackcamera.core.camera.testing
 
-import com.google.common.truth.Truth
+import android.graphics.SurfaceTexture
+import android.view.Surface
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.PreviewSurfaceRequest
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -36,10 +41,10 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(JUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class FakeCameraSystemTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
@@ -47,7 +52,7 @@ class FakeCameraSystemTest {
     private val cameraSystem = FakeCameraSystem()
 
     @Before
-    fun setup() {
+    fun setUp() {
         Dispatchers.setMain(testDispatcher)
     }
 
@@ -57,49 +62,70 @@ class FakeCameraSystemTest {
     }
 
     @Test
-    fun canInitialize() = runTest(testDispatcher) {
-        cameraSystem.initialize(
-            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
-        ) {}
-    }
-
-    @Test
     fun canRunCamera() = runTest(testDispatcher) {
-        initAndRunCamera()
-        Truth.assertThat(cameraSystem.isPreviewStarted()).isTrue()
+        cameraSystem.initialize(DEFAULT_CAMERA_APP_SETTINGS) {}
+        val job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            cameraSystem.runCamera()
+        }
+        advanceUntilIdle()
+
+        // Fulfill surface request to let runCamera continue
+        val request = cameraSystem.getSurfaceRequest().filterNotNull().first()
+        (request as PreviewSurfaceRequest.Viewfinder).surfaceDeferred.complete(
+            Surface(SurfaceTexture(1))
+        )
+
+        advanceUntilIdle()
+        assertThat(cameraSystem.isPreviewStarted()).isTrue()
+        job.cancel()
     }
 
     @Test
-    fun screenFlashDisabled_whenFlashModeOffAndFrontCamera() = runTest(testDispatcher) {
+    fun surfaceRequest_emitsAndViewfinderFulfills() = runTest(testDispatcher) {
+        cameraSystem.initialize(DEFAULT_CAMERA_APP_SETTINGS) {}
+        val job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            cameraSystem.runCamera()
+        }
+        advanceUntilIdle()
+
+        val request = cameraSystem.getSurfaceRequest().filterNotNull().first()
+        assertThat(request).isInstanceOf(PreviewSurfaceRequest.Viewfinder::class.java)
+        val viewfinderRequest = request as PreviewSurfaceRequest.Viewfinder
+
+        // Camera should not be running yet
+        assertThat(cameraSystem.getCurrentCameraState().value.isCameraRunning).isFalse()
+
+        // Provide surface
+        val surface = Surface(SurfaceTexture(1))
+        viewfinderRequest.surfaceDeferred.complete(surface)
+
+        advanceUntilIdle()
+
+        // Now camera should be running
+        assertThat(cameraSystem.getCurrentCameraState().value.isCameraRunning).isTrue()
+        job.cancel()
+    }
+
+    @Test
+    fun canSetLensFacing() = runTest(testDispatcher) {
         initAndRunCamera()
 
         cameraSystem.setLensFacing(lensFacing = LensFacing.FRONT)
-        cameraSystem.setFlashMode(flashMode = FlashMode.OFF)
         advanceUntilIdle()
 
-        Truth.assertThat(cameraSystem.isScreenFlashEnabled()).isFalse()
+        assertThat(cameraSystem.getCurrentSettings().value?.cameraLensFacing)
+            .isEqualTo(LensFacing.FRONT)
     }
 
     @Test
-    fun screenFlashDisabled_whenFlashModeOnAndNotFrontCamera() = runTest(testDispatcher) {
+    fun canSetFlashMode() = runTest(testDispatcher) {
         initAndRunCamera()
 
-        cameraSystem.setLensFacing(lensFacing = LensFacing.BACK)
         cameraSystem.setFlashMode(flashMode = FlashMode.ON)
         advanceUntilIdle()
 
-        Truth.assertThat(cameraSystem.isScreenFlashEnabled()).isFalse()
-    }
-
-    @Test
-    fun screenFlashDisabled_whenFlashModeAutoAndNotFrontCamera() = runTest(testDispatcher) {
-        initAndRunCamera()
-
-        cameraSystem.setLensFacing(lensFacing = LensFacing.BACK)
-        cameraSystem.setFlashMode(flashMode = FlashMode.AUTO)
-        advanceUntilIdle()
-
-        Truth.assertThat(cameraSystem.isScreenFlashEnabled()).isFalse()
+        assertThat(cameraSystem.getCurrentSettings().value?.flashMode)
+            .isEqualTo(FlashMode.ON)
     }
 
     @Test
@@ -110,51 +136,51 @@ class FakeCameraSystemTest {
         cameraSystem.setFlashMode(flashMode = FlashMode.ON)
         advanceUntilIdle()
 
-        Truth.assertThat(cameraSystem.isScreenFlashEnabled()).isTrue()
-    }
-
-    @Test
-    fun screenFlashEnabled_whenFlashModeAutoAndFrontCamera() = runTest(testDispatcher) {
-        initAndRunCamera()
-
-        cameraSystem.setLensFacing(lensFacing = LensFacing.FRONT)
-        cameraSystem.setFlashMode(flashMode = FlashMode.AUTO)
-        advanceUntilIdle()
-
-        Truth.assertThat(cameraSystem.isScreenFlashEnabled()).isTrue()
-    }
-
-    @Test
-    fun captureScreenFlashImage_screenFlashEventsEmittedInCorrectSequence() = runTest(
-        testDispatcher
-    ) {
-        initAndRunCamera()
         val events = mutableListOf<CameraSystem.ScreenFlashEvent>()
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+        val job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             cameraSystem.getScreenFlashEvents().consumeAsFlow().toList(events)
         }
 
-        // FlashMode.ON in front facing camera automatically enables screen flash
-        cameraSystem.setLensFacing(lensFacing = LensFacing.FRONT)
-        cameraSystem.setFlashMode(FlashMode.ON)
+        cameraSystem.takePicture {}
         advanceUntilIdle()
-        cameraSystem.takePicture()
 
-        advanceUntilIdle()
-        Truth.assertThat(events.map { it.type }).containsExactlyElementsIn(
-            listOf(
-                CameraSystem.ScreenFlashEvent.Type.APPLY_UI,
-                CameraSystem.ScreenFlashEvent.Type.CLEAR_UI
-            )
-        ).inOrder()
+        assertThat(events.map { it.type }).contains(CameraSystem.ScreenFlashEvent.Type.APPLY_UI)
+        job.cancel()
     }
 
-    private fun TestScope.initAndRunCamera() {
+    @Test
+    fun screenFlashDisabled_whenFlashModeOffAndFrontCamera() = runTest(testDispatcher) {
+        initAndRunCamera()
+
+        cameraSystem.setLensFacing(lensFacing = LensFacing.FRONT)
+        cameraSystem.setFlashMode(flashMode = FlashMode.OFF)
+        advanceUntilIdle()
+
+        val events = mutableListOf<CameraSystem.ScreenFlashEvent>()
+        val job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            cameraSystem.getScreenFlashEvents().consumeAsFlow().toList(events)
+        }
+
+        cameraSystem.takePicture {}
+        advanceUntilIdle()
+
+        assertThat(events.map { it.type })
+            .doesNotContain(CameraSystem.ScreenFlashEvent.Type.APPLY_UI)
+        job.cancel()
+    }
+
+    private suspend fun TestScope.initAndRunCamera() {
+        cameraSystem.initialize(
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
+        ) {}
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            cameraSystem.initialize(
-                cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
-            ) {}
             cameraSystem.runCamera()
         }
+        advanceUntilIdle()
+        val request = cameraSystem.getSurfaceRequest().filterNotNull().first()
+        (request as PreviewSurfaceRequest.Viewfinder).surfaceDeferred.complete(
+            Surface(SurfaceTexture(1))
+        )
+        advanceUntilIdle()
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistate.capture.compound
 
+import com.google.jetpackcamera.core.camera.PreviewSurfaceRequest
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 
 /**
@@ -22,8 +23,10 @@ import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
  *
  * @param lastBlinkTimeStamp The timestamp of the most recent capture blink animation.
  * @param aspectRatioUiState The UI state for the aspect ratio of the preview.
+ * @param surfaceRequest The current surface request for the preview display.
  */
 data class PreviewDisplayUiState(
     val lastBlinkTimeStamp: Long = 0,
-    val aspectRatioUiState: AspectRatioUiState
+    val aspectRatioUiState: AspectRatioUiState,
+    val surfaceRequest: PreviewSurfaceRequest? = null
 )

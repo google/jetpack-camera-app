@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.core.camera
 
 import android.content.Context
-import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.common.FilePathGenerator
@@ -41,7 +40,7 @@ internal data class CameraSessionContext(
     val focusMeteringEvents: Channel<CameraEvent.FocusMeteringEvent>,
     val videoCaptureControlEvents: Channel<VideoCaptureControlEvent>,
     val currentCameraState: MutableStateFlow<CameraState>,
-    val surfaceRequests: MutableStateFlow<SurfaceRequest?>,
+    val surfaceRequests: MutableStateFlow<PreviewSurfaceRequest?>,
     val transientSettings: StateFlow<TransientSessionSettings?>,
     val lowLightBoostEffectProvider: LowLightBoostEffectProvider? = null
 )

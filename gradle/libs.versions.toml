@@ -31,8 +31,8 @@ androidxLifecycle = "2.9.2"
 androidxMedia3 = "1.9.0-alpha01"
 androidxNavigationCompose = "2.9.2"
 androidxProfileinstaller = "1.4.1"
-androidxTestCore = "1.5.0"
-androidxTestEspresso = "3.6.1"
+androidxTestCore = "1.6.1"
+androidxTestEspresso = "3.7.0"
 androidxTestJunit = "1.2.1"
 androidxTestMonitor = "1.7.2"
 androidxTestRules = "1.6.1"
@@ -81,9 +81,11 @@ androidx-tracing = { module = "androidx.tracing:tracing-ktx", version.ref = "and
 androidx-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "androidxTestUiautomator" }
 camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "androidxCamera" }
 camera-core = { module = "androidx.camera:camera-core", version.ref = "androidxCamera" }
+camera-compose = { module = "androidx.camera:camera-compose", version.ref = "androidxCamera" }
 camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "androidxCamera" }
 camera-video = { module = "androidx.camera:camera-video", version.ref = "androidxCamera" }
-camera-compose = { module = "androidx.camera:camera-compose", version.ref = "androidxCamera" }
+camera-viewfinder-core = { module = "androidx.camera.viewfinder:viewfinder-core", version.ref = "androidxCamera" }
+camera-viewfinder-compose = { module = "androidx.camera.viewfinder:viewfinder-compose", version.ref = "androidxCamera" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-junit = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "composeMaterial" }

@@ -17,11 +17,14 @@ package com.google.jetpackcamera.core.camera.testing
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
+import android.view.Surface
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.SurfaceRequest
+import androidx.camera.viewfinder.core.ImplementationMode
+import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
+import com.google.jetpackcamera.core.camera.PreviewSurfaceRequest
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -38,6 +41,7 @@ import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,12 +57,19 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     private var initialized = false
     private var useCasesBinded = false
 
+    /** Whether the preview has started. */
     var previewStarted = false
+
+    /** Number of pictures taken. */
     var numPicturesTaken = 0
 
+    /** Whether a recording is in progress. */
     var recordingInProgress = false
+
+    /** Whether the current recording is paused. */
     var isRecordingPaused = false
 
+    /** Whether the lens facing is front. */
     var isLensFacingFront = false
 
     private var isScreenFlash = true
@@ -85,9 +96,11 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
         currentSettings
             .onCompletion {
+                _surfaceRequest.value = null
                 useCasesBinded = false
                 previewStarted = false
                 recordingInProgress = false
+                _currentCameraState.update { CameraState() }
             }.collectLatest {
                 useCasesBinded = true
                 previewStarted = true
@@ -96,6 +109,18 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
                 isScreenFlash =
                     isLensFacingFront &&
                     (it.flashMode == FlashMode.AUTO || it.flashMode == FlashMode.ON)
+
+                val request = ViewfinderSurfaceRequest(
+                    1920,
+                    1080,
+                    ImplementationMode.EXTERNAL
+                )
+                val deferred = CompletableDeferred<Surface>()
+                _surfaceRequest.value = PreviewSurfaceRequest.Viewfinder(request, deferred)
+                deferred.await()
+                _currentCameraState.update { state ->
+                    state.copy(isCameraRunning = true)
+                }
             }
     }
 
@@ -163,8 +188,9 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
-    private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
-    override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
+    private val _surfaceRequest = MutableStateFlow<PreviewSurfaceRequest?>(null)
+    override fun getSurfaceRequest(): StateFlow<PreviewSurfaceRequest?> =
+        _surfaceRequest.asStateFlow()
 
     override fun getScreenFlashEvents() = screenFlashEvents
     override fun getCurrentSettings(): StateFlow<CameraAppSettings?> = currentSettings.asStateFlow()
