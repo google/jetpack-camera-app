@@ -26,7 +26,10 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class FakeQuickSettingsControllerTest {
     @Test
     fun toggleQuickSettings_invokesAction() {

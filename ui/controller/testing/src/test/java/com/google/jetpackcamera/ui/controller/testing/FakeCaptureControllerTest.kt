@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.CaptureEvent
 import kotlinx.coroutines.channels.Channel
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +29,7 @@ import org.robolectric.RobolectricTestRunner
 class FakeCaptureControllerTest {
     @Test
     fun captureEvents_returnsProvidedChannel() {
-        val channel = Channel<com.google.jetpackcamera.model.CaptureEvent>()
+        val channel = Channel<CaptureEvent>()
         val controller = FakeCaptureController(captureEvents = channel)
         assertThat(controller.captureEvents).isEqualTo(channel)
     }

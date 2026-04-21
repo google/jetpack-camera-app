@@ -18,7 +18,10 @@ package com.google.jetpackcamera.ui.controller.testing
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.DeviceRotation
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class FakeCameraControllerTest {
     @Test
     fun startCamera_invokesAction() {

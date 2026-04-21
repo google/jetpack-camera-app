@@ -19,7 +19,10 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.ZoomStrategy
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class FakeZoomControllerTest {
     @Test
     fun setZoomRatio_invokesAction() {

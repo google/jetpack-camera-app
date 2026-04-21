@@ -19,7 +19,10 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SnackbarData
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class FakeSnackBarControllerTest {
     private val testDisableRationale = object : DisableRationale {
         override val testTag: String = "test-tag"
