@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureEvent
+import com.google.jetpackcamera.model.ImageCaptureEvent
 import kotlinx.coroutines.channels.Channel
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,6 +33,16 @@ class FakeCaptureControllerTest {
         val channel = Channel<CaptureEvent>()
         val controller = FakeCaptureController(captureEvents = channel)
         assertThat(controller.captureEvents).isEqualTo(channel)
+    }
+
+    @Test
+    fun simulateCaptureEvent_emitsToCaptureEventsChannel() {
+        val controller = FakeCaptureController()
+        val event = ImageCaptureEvent.SingleImageSaved()
+        controller.simulateCaptureEvent(event)
+
+        val receivedEvent = controller.captureEvents.tryReceive().getOrNull()
+        assertThat(receivedEvent).isEqualTo(event)
     }
 
     @Test
