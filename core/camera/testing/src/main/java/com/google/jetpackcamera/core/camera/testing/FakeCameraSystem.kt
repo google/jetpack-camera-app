@@ -110,8 +110,9 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
                     isLensFacingFront &&
                     (it.flashMode == FlashMode.AUTO || it.flashMode == FlashMode.ON)
 
+                val aspectRatio = it.aspectRatio
                 val request = ViewfinderSurfaceRequest(
-                    1920,
+                    1080 * aspectRatio.denominator / aspectRatio.numerator,
                     1080,
                     ImplementationMode.EXTERNAL
                 )
