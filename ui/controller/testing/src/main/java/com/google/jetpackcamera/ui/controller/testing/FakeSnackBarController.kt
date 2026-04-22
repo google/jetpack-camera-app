@@ -18,23 +18,33 @@ package com.google.jetpackcamera.ui.controller.testing
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SnackbarData
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A fake implementation of [SnackBarController] that allows for configuring actions for its methods.
  *
- * @param enqueueDisabledHdrToggleSnackBarAction The action to perform when [enqueueDisabledHdrToggleSnackBar] is called.
  * @param onSnackBarResultAction The action to perform when [onSnackBarResult] is called.
  * @param incrementAndGetSnackBarCountAction The action to perform when [incrementAndGetSnackBarCount] is called.
  * @param addSnackBarDataAction The action to perform when [addSnackBarData] is called.
  */
 class FakeSnackBarController(
-    var enqueueDisabledHdrToggleSnackBarAction: (DisableRationale) -> Unit = {},
     var onSnackBarResultAction: (String) -> Unit = {},
-    var incrementAndGetSnackBarCountAction: () -> Int = { 0 },
+    var incrementAndGetSnackBarCountAction: (() -> Int)? = null,
     var addSnackBarDataAction: (SnackbarData) -> Unit = {}
 ) : SnackBarController {
+    private val snackBarCount by lazy { AtomicInteger(0) }
+
     override fun enqueueDisabledHdrToggleSnackBar(disabledReason: DisableRationale) {
-        enqueueDisabledHdrToggleSnackBarAction(disabledReason)
+        val cookieInt = incrementAndGetSnackBarCount()
+        val cookie = "DisabledHdrToggle-$cookieInt"
+        addSnackBarData(
+            SnackbarData(
+                cookie = cookie,
+                stringResource = disabledReason.reasonTextResId,
+                withDismissAction = true,
+                testTag = disabledReason.testTag
+            )
+        )
     }
 
     override fun onSnackBarResult(cookie: String) {
@@ -42,7 +52,7 @@ class FakeSnackBarController(
     }
 
     override fun incrementAndGetSnackBarCount(): Int {
-        return incrementAndGetSnackBarCountAction()
+        return incrementAndGetSnackBarCountAction?.invoke() ?: snackBarCount.incrementAndGet()
     }
 
     override fun addSnackBarData(snackBarData: SnackbarData) {

@@ -24,7 +24,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 /**
  * A fake implementation of [CaptureController] that allows for configuring actions for its methods.
  *
- * @param captureEvents The [ReceiveChannel] of [CaptureEvent]s to be used by the controller.
+ * @param captureEvents The [ReceiveChannel] for [CaptureEvent]s.
  * @param captureImageAction The action to perform when [captureImage] is called.
  * @param startVideoRecordingAction The action to perform when [startVideoRecording] is called.
  * @param stopVideoRecordingAction The action to perform when [stopVideoRecording] is called.
@@ -33,7 +33,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
  * @param setAudioEnabledAction The action to perform when [setAudioEnabled] is called.
  */
 class FakeCaptureController(
-    override val captureEvents: ReceiveChannel<CaptureEvent> = Channel(),
+    override val captureEvents: ReceiveChannel<CaptureEvent> = Channel(Channel.UNLIMITED),
     var captureImageAction: (ContentResolver) -> Unit = {},
     var startVideoRecordingAction: () -> Unit = {},
     var stopVideoRecordingAction: () -> Unit = {},
@@ -41,6 +41,15 @@ class FakeCaptureController(
     var setPausedAction: (Boolean) -> Unit = {},
     var setAudioEnabledAction: (Boolean) -> Unit = {}
 ) : CaptureController {
+    /**
+     * Simulates a [CaptureEvent] being emitted by the controller.
+     * This relies on the [captureEvents] instance being a [Channel].
+     */
+    fun simulateCaptureEvent(event: CaptureEvent) {
+        (captureEvents as? Channel<CaptureEvent>)?.trySend(event)
+            ?: throw IllegalStateException("captureEvents is not a Channel")
+    }
+
     override fun captureImage(contentResolver: ContentResolver) {
         captureImageAction(contentResolver)
     }

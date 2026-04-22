@@ -30,13 +30,17 @@ class FakeSnackBarControllerTest {
     }
 
     @Test
-    fun enqueueDisabledHdrToggleSnackBar_invokesAction() {
-        var calledValue: DisableRationale? = null
+    fun enqueueDisabledHdrToggleSnackBar_invokesAddSnackBarData() {
+        var calledValue: SnackbarData? = null
         val controller = FakeSnackBarController(
-            enqueueDisabledHdrToggleSnackBarAction = { calledValue = it }
+            addSnackBarDataAction = { calledValue = it }
         )
         controller.enqueueDisabledHdrToggleSnackBar(testDisableRationale)
-        assertThat(calledValue).isEqualTo(testDisableRationale)
+
+        assertThat(calledValue).isNotNull()
+        assertThat(calledValue?.cookie).isEqualTo("DisabledHdrToggle-1")
+        assertThat(calledValue?.stringResource).isEqualTo(testDisableRationale.reasonTextResId)
+        assertThat(calledValue?.testTag).isEqualTo(testDisableRationale.testTag)
     }
 
     @Test
@@ -48,7 +52,14 @@ class FakeSnackBarControllerTest {
     }
 
     @Test
-    fun incrementAndGetSnackBarCount_invokesAction() {
+    fun incrementAndGetSnackBarCount_usesInternalCounterByDefault() {
+        val controller = FakeSnackBarController()
+        assertThat(controller.incrementAndGetSnackBarCount()).isEqualTo(1)
+        assertThat(controller.incrementAndGetSnackBarCount()).isEqualTo(2)
+    }
+
+    @Test
+    fun incrementAndGetSnackBarCount_invokesActionIfProvided() {
         val controller = FakeSnackBarController(incrementAndGetSnackBarCountAction = { 42 })
         assertThat(controller.incrementAndGetSnackBarCount()).isEqualTo(42)
     }
