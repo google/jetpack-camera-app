@@ -117,6 +117,9 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
                     ImplementationMode.EXTERNAL
                 )
                 val deferred = CompletableDeferred<Surface>()
+                _currentCameraState.update { state ->
+                    state.copy(isCameraRunning = false)
+                }
                 _surfaceRequest.value = PreviewSurfaceRequest.Viewfinder(request, deferred)
                 deferred.await()
                 _currentCameraState.update { state ->
