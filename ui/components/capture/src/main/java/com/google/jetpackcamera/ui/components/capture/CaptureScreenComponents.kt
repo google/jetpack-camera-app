@@ -554,26 +554,11 @@ fun PreviewDisplay(
                         CameraXViewfinder(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .pointerInput(onFlipCamera) {
-                                    detectTapGestures(
-                                        onDoubleTap = { offset ->
-                                            // double tap to flip camera
-                                            Log.d(TAG, "onDoubleTap $offset")
-                                            onFlipCamera()
-                                        },
-                                        onTap = {
-                                            with(coordinateTransformer) {
-                                                val surfaceCoords = it.transform()
-                                                Log.d(
-                                                    "TAG",
-                                                    "onTapToFocus: " +
-                                                        "input{$it} -> surface{$surfaceCoords}"
-                                                )
-                                                onTapToFocus(surfaceCoords.x, surfaceCoords.y)
-                                            }
-                                        }
-                                    )
-                                },
+                                .previewGestures(
+                                    onFlipCamera = onFlipCamera,
+                                    onTapToFocus = onTapToFocus,
+                                    coordinateTransformer = coordinateTransformer
+                                ),
                             surfaceRequest = surfaceRequest.surfaceRequest,
                             implementationMode = implementationMode,
                             coordinateTransformer = coordinateTransformer
@@ -583,7 +568,14 @@ fun PreviewDisplay(
                     is PreviewSurfaceRequest.Viewfinder -> {
                         Viewfinder(
                             surfaceRequest = surfaceRequest.surfaceRequest,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .previewGestures(
+                                    onFlipCamera = onFlipCamera,
+                                    onTapToFocus = onTapToFocus,
+                                    coordinateTransformer = coordinateTransformer
+                                ),
+                            coordinateTransformer = coordinateTransformer
                         ) {
                             onSurfaceSession {
                                 surfaceRequest.surfaceDeferred.complete(surface)
@@ -942,4 +934,29 @@ private fun FocusMeteringIndicator(
             )
         }
     }
+}
+
+private fun Modifier.previewGestures(
+    onFlipCamera: () -> Unit,
+    onTapToFocus: (x: Float, y: Float) -> Unit,
+    coordinateTransformer: CoordinateTransformer
+): Modifier = pointerInput(onFlipCamera) {
+    detectTapGestures(
+        onDoubleTap = { offset ->
+            // double tap to flip camera
+            Log.d(TAG, "onDoubleTap $offset")
+            onFlipCamera()
+        },
+        onTap = {
+            with(coordinateTransformer) {
+                val surfaceCoords = it.transform()
+                Log.d(
+                    TAG,
+                    "onTapToFocus: " +
+                        "input{$it} -> surface{$surfaceCoords}"
+                )
+                onTapToFocus(surfaceCoords.x, surfaceCoords.y)
+            }
+        }
+    )
 }
