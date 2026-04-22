@@ -72,8 +72,9 @@ fun captureUiState(
         cameraSystem.getCurrentSettings().filterNotNull(),
         constraintsRepository.systemConstraints.filterNotNull(),
         cameraSystem.getCurrentCameraState(),
+        cameraSystem.getSurfaceRequest(),
         trackedCaptureUiState
-    ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
+    ) { cameraAppSettings, systemConstraints, cameraState, surfaceRequest, trackedUiState ->
         val captureModeUiState = CaptureModeUiState.from(
             systemConstraints,
             cameraAppSettings,
@@ -112,7 +113,8 @@ fun captureUiState(
             aspectRatioUiState = aspectRatioUiState,
             previewDisplayUiState = PreviewDisplayUiState(
                 trackedUiState.lastBlinkTimeStamp,
-                aspectRatioUiState
+                aspectRatioUiState,
+                surfaceRequest
             ),
             // TODO: add updateFrom() for all ui states to prevent re-updating if
             // values are the same

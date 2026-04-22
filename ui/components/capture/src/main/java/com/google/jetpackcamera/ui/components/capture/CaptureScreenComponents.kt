@@ -24,6 +24,7 @@ import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.CoordinateTransformer
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
+import androidx.camera.viewfinder.compose.Viewfinder
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -104,6 +105,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
+import com.google.jetpackcamera.core.camera.PreviewSurfaceRequest
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
@@ -125,6 +127,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -401,12 +404,12 @@ fun TestableSnackbar(
 
 @Composable
 private fun DetectWindowColorModeChanges(
-    surfaceRequest: SurfaceRequest,
+    surfaceRequest: SurfaceRequest?,
     implementationMode: ImplementationMode,
     onRequestWindowColorMode: (Int) -> Unit
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val currentSurfaceRequest: SurfaceRequest by rememberUpdatedState(surfaceRequest)
+        val currentSurfaceRequest: SurfaceRequest? by rememberUpdatedState(surfaceRequest)
         val currentImplementationMode: ImplementationMode by rememberUpdatedState(
             implementationMode
         )
@@ -414,11 +417,14 @@ private fun DetectWindowColorModeChanges(
             onRequestWindowColorMode
         )
 
-        LaunchedEffect(Unit) {
+        LaunchedEffect(currentSurfaceRequest) {
+            if (currentSurfaceRequest == null) {
+                return@LaunchedEffect
+            }
             val colorModeSnapshotFlow =
                 snapshotFlow {
                     Pair(
-                        currentSurfaceRequest.dynamicRange,
+                        currentSurfaceRequest!!.dynamicRange,
                         currentImplementationMode
                     )
                 }
@@ -462,7 +468,7 @@ private fun DetectWindowColorModeChanges(
  * @param onFlipCamera the callback for flipping the camera.
  * @param onScaleZoom the callback for scaling the zoom.
  * @param onRequestWindowColorMode the callback for requesting a window color mode.
- * @param surfaceRequest the [SurfaceRequest] for the preview.
+ * @param surfaceRequest the [PreviewSurfaceRequest] for the preview.
  * @param focusMeteringUiState the [FocusMeteringUiState] for this component.
  * @param modifier the modifier for this component.
  */
@@ -473,7 +479,7 @@ fun PreviewDisplay(
     onFlipCamera: () -> Unit,
     onScaleZoom: (Float) -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
-    surfaceRequest: SurfaceRequest?,
+    surfaceRequest: PreviewSurfaceRequest?,
     focusMeteringUiState: FocusMeteringUiState,
     modifier: Modifier = Modifier
 ) {
@@ -536,39 +542,48 @@ fun PreviewDisplay(
                 }
 
                 DetectWindowColorModeChanges(
-                    surfaceRequest = surfaceRequest,
+                    surfaceRequest = (surfaceRequest as? PreviewSurfaceRequest.CameraX)
+                        ?.surfaceRequest,
                     implementationMode = implementationMode,
                     onRequestWindowColorMode = onRequestWindowColorMode
                 )
 
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
-                CameraXViewfinder(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(onFlipCamera) {
-                            detectTapGestures(
-                                onDoubleTap = { offset ->
-                                    // double tap to flip camera
-                                    Log.d(TAG, "onDoubleTap $offset")
-                                    onFlipCamera()
-                                },
-                                onTap = {
-                                    with(coordinateTransformer) {
-                                        val surfaceCoords = it.transform()
-                                        Log.d(
-                                            "TAG",
-                                            "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
-                                        )
-                                        onTapToFocus(surfaceCoords.x, surfaceCoords.y)
-                                    }
-                                }
-                            )
-                        },
-                    surfaceRequest = it,
-                    implementationMode = implementationMode,
-                    coordinateTransformer = coordinateTransformer
-                )
+                when (surfaceRequest) {
+                    is PreviewSurfaceRequest.CameraX -> {
+                        CameraXViewfinder(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .previewGestures(
+                                    onFlipCamera = onFlipCamera,
+                                    onTapToFocus = onTapToFocus,
+                                    coordinateTransformer = coordinateTransformer
+                                ),
+                            surfaceRequest = surfaceRequest.surfaceRequest,
+                            implementationMode = implementationMode,
+                            coordinateTransformer = coordinateTransformer
+                        )
+                    }
+
+                    is PreviewSurfaceRequest.Viewfinder -> {
+                        Viewfinder(
+                            surfaceRequest = surfaceRequest.surfaceRequest,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .previewGestures(
+                                    onFlipCamera = onFlipCamera,
+                                    onTapToFocus = onTapToFocus,
+                                    coordinateTransformer = coordinateTransformer
+                                ),
+                            coordinateTransformer = coordinateTransformer
+                        ) {
+                            onSurfaceSession {
+                                surfaceRequest.surfaceDeferred.complete(surface)
+                                awaitCancellation()
+                            }
+                        }
+                    }
+                }
                 FocusMeteringIndicator(
                     focusMeteringUiState = focusMeteringUiState,
                     coordinateTransformer = coordinateTransformer
@@ -919,4 +934,29 @@ private fun FocusMeteringIndicator(
             )
         }
     }
+}
+
+private fun Modifier.previewGestures(
+    onFlipCamera: () -> Unit,
+    onTapToFocus: (x: Float, y: Float) -> Unit,
+    coordinateTransformer: CoordinateTransformer
+): Modifier = pointerInput(onFlipCamera) {
+    detectTapGestures(
+        onDoubleTap = { offset ->
+            // double tap to flip camera
+            Log.d(TAG, "onDoubleTap $offset")
+            onFlipCamera()
+        },
+        onTap = {
+            with(coordinateTransformer) {
+                val surfaceCoords = it.transform()
+                Log.d(
+                    TAG,
+                    "onTapToFocus: " +
+                        "input{$it} -> surface{$surfaceCoords}"
+                )
+                onTapToFocus(surfaceCoords.x, surfaceCoords.y)
+            }
+        }
+    )
 }
