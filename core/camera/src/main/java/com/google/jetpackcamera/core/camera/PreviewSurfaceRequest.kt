@@ -39,7 +39,7 @@ sealed interface PreviewSurfaceRequest {
      * @property surfaceDeferred A [CompletableDeferred] that will be completed with the [Surface]
      * once provided by the UI.
      */
-    class Viewfinder(
+    data class Viewfinder(
         val surfaceRequest: ViewfinderSurfaceRequest,
         val surfaceDeferred: CompletableDeferred<Surface> = CompletableDeferred()
     ) : PreviewSurfaceRequest
