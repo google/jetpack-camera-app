@@ -409,7 +409,9 @@ class CameraXCameraSystemTest {
     private fun CameraXCameraSystem.providePreviewSurface() {
         cameraSystemScope.launch {
             getSurfaceRequest().filterNotNull().collect {
-                it.provideUpdatingSurface()
+                if (it is PreviewSurfaceRequest.CameraX) {
+                    it.surfaceRequest.provideUpdatingSurface()
+                }
             }
         }
     }
