@@ -30,7 +30,7 @@ sealed interface PreviewSurfaceRequest {
      *
      * @property surfaceRequest The CameraX [SurfaceRequest].
      */
-    class CameraX(val surfaceRequest: SurfaceRequest) : PreviewSurfaceRequest
+    data class CameraX(val surfaceRequest: SurfaceRequest) : PreviewSurfaceRequest
 
     /**
      * Wraps a [ViewfinderSurfaceRequest] for the standalone Viewfinder composable.
