@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.common
+package com.google.jetpackcamera.core.common.testing
 
 import android.os.Environment
+import com.google.jetpackcamera.core.common.FilePathGenerator
 import java.io.File
 import java.util.Date
 
