@@ -19,17 +19,31 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 
 @Composable
 fun PostCaptureLayout(
@@ -44,8 +58,7 @@ fun PostCaptureLayout(
     val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
         Box(
             modifier = modifier
@@ -102,6 +115,50 @@ fun PostCaptureLayout(
                 }
             }
             snackBar(Modifier, snackbarHostState)
+
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxHeight(0.625f)
+                    .wrapContentHeight(Alignment.Bottom)
+            ) { data ->
+                val customVisuals = data.visuals as? CustomSnackbarVisuals
+                val isError = customVisuals?.isError ?: false
+
+                val containerColor = if (isError) {
+                    MaterialTheme.colorScheme.errorContainer
+                } else {
+                    MaterialTheme.colorScheme.tertiaryContainer
+                }
+                val contentColor = if (isError) {
+                    MaterialTheme.colorScheme.onErrorContainer
+                } else {
+                    MaterialTheme.colorScheme.onTertiaryContainer
+                }
+                val icon = if (isError) {
+                    Icons.Default.ErrorOutline
+                } else {
+                    Icons.Default.Info
+                }
+
+                Snackbar(
+                    modifier = Modifier.padding(12.dp),
+                    containerColor = containerColor,
+                    contentColor = contentColor,
+                    shape = MaterialTheme.shapes.extraLarge
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(data.visuals.message)
+                    }
+                }
+            }
         }
     }
 }

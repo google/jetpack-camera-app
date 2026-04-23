@@ -246,7 +246,8 @@ class PreviewViewModel @Inject constructor(
                                     cookie = "LowLightBoost-$cookieInt",
                                     stringResource = R.string.low_light_boost_error_toast_message,
                                     withDismissAction = true,
-                                    testTag = LOW_LIGHT_BOOST_FAILURE_TAG
+                                    testTag = LOW_LIGHT_BOOST_FAILURE_TAG,
+                                    isError = true
                                 )
                             )
                         }

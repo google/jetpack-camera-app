@@ -110,6 +110,7 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
+import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
@@ -354,7 +355,7 @@ fun CaptureModeToggleButton(
  * @param modifier the modifier for this component.
  * @param snackbarToShow the [SnackbarData] to show.
  * @param snackbarHostState the [SnackbarHostState] for this component.
- * @param onSnackbarResult the callback for the snackbar result.
+ * @param snackBarController the [SnackBarController] for this component.
  */
 @Composable
 fun TestableSnackbar(
@@ -374,17 +375,23 @@ fun TestableSnackbar(
             val message = context.getString(snackbarToShow.stringResource)
             Log.d(TAG, "Snackbar Displayed with message: $message")
             try {
-                val result =
-                    snackbarHostState.showSnackbar(
-                        message = message,
-                        duration = snackbarToShow.duration,
-                        withDismissAction = snackbarToShow.withDismissAction,
-                        actionLabel = if (snackbarToShow.actionLabelRes == null) {
-                            null
-                        } else {
-                            context.getString(snackbarToShow.actionLabelRes!!)
-                        }
-                    )
+                val actionLabel = if (snackbarToShow.actionLabelRes == null) {
+                    null
+                } else {
+                    context.getString(snackbarToShow.actionLabelRes!!)
+                }
+
+                // Convert SnackbarData into SnackbarVisuals so SnackbarHost can receive it
+                val visuals = CustomSnackbarVisuals(
+                    message = message,
+                    actionLabel = actionLabel,
+                    withDismissAction = snackbarToShow.withDismissAction,
+                    duration = snackbarToShow.duration,
+                    isError = snackbarToShow.isError
+                )
+
+                val result = snackbarHostState.showSnackbar(visuals)
+
                 when (result) {
                     SnackbarResult.ActionPerformed,
                     SnackbarResult.Dismissed -> snackBarController.onSnackBarResult(

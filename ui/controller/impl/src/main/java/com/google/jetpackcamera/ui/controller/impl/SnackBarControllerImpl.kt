@@ -54,7 +54,8 @@ class SnackBarControllerImpl(
                 cookie = cookie,
                 stringResource = disabledReason.reasonTextResId,
                 withDismissAction = true,
-                testTag = disabledReason.testTag
+                testTag = disabledReason.testTag,
+                isError = true
             )
         )
     }

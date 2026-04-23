@@ -97,7 +97,8 @@ class CaptureControllerImpl(
                     cookie = "Image-ExternalVideoCaptureMode",
                     stringResource = R.string.toast_image_capture_external_unsupported,
                     withDismissAction = true,
-                    testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+                    testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
+                    isError = true
                 )
             )
             return
@@ -163,7 +164,8 @@ class CaptureControllerImpl(
                     cookie = "Video-ExternalImageCaptureMode",
                     stringResource = R.string.toast_video_capture_external_unsupported,
                     withDismissAction = true,
-                    testTag = VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+                    testTag = VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
+                    isError = true
                 )
             )
             return
@@ -208,7 +210,8 @@ class CaptureControllerImpl(
                                     cookie = cookie,
                                     stringResource = R.string.toast_video_capture_success,
                                     withDismissAction = true,
-                                    testTag = VIDEO_CAPTURE_SUCCESS_TAG
+                                    testTag = VIDEO_CAPTURE_SUCCESS_TAG,
+                                    isError = false
                                 )
                             }
                         }
@@ -220,7 +223,8 @@ class CaptureControllerImpl(
                                 cookie = cookie,
                                 stringResource = R.string.toast_video_capture_failure,
                                 withDismissAction = true,
-                                testTag = VIDEO_CAPTURE_FAILURE_TAG
+                                testTag = VIDEO_CAPTURE_FAILURE_TAG,
+                                isError = true
                             )
                         }
                     }
@@ -268,7 +272,8 @@ class CaptureControllerImpl(
                     cookie = cookie,
                     stringResource = R.string.toast_image_capture_success,
                     withDismissAction = true,
-                    testTag = IMAGE_CAPTURE_SUCCESS_TAG
+                    testTag = IMAGE_CAPTURE_SUCCESS_TAG,
+                    isError = false
                 )
             }
         } catch (exception: Exception) {
@@ -278,7 +283,8 @@ class CaptureControllerImpl(
                 cookie = cookie,
                 stringResource = R.string.toast_capture_failure,
                 withDismissAction = true,
-                testTag = IMAGE_CAPTURE_FAILURE_TAG
+                testTag = IMAGE_CAPTURE_FAILURE_TAG,
+                isError = true
             )
         }
         snackBarData?.let {

@@ -327,7 +327,8 @@ class PostCaptureViewModel @Inject constructor(
                         cookie = cookie,
                         stringResource = stringResource,
                         withDismissAction = true,
-                        testTag = testTag
+                        testTag = testTag,
+                        isError = false
                     )
                 )
             } else {
