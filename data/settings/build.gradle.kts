@@ -33,6 +33,23 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    @Suppress("UnstableApiUsage")
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("pixel2Api28") {
+                    device = "Pixel 2"
+                    apiLevel = 28
+                }
+                create("pixel8Api34") {
+                    device = "Pixel 8"
+                    apiLevel = 34
+                    systemImageSource = "aosp_atd"
+                }
+            }
+        }
+    }
+
     flavorDimensions += "flavor"
     productFlavors {
         create("stable") {
@@ -60,6 +77,16 @@ dependencies {
     // Access Model data
     implementation(project(":core:model"))
     implementation(project(":core:common"))
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.truth) // For unit tests
+    testImplementation(project(":core:common")) // Explicitly add for unit tests
+
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.truth) // For instrumented tests
 }
 
 // Allow references to generated code
