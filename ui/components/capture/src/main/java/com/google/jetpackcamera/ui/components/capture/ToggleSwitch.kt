@@ -67,8 +67,8 @@ private const val TRACK_COLOR_ALPHA = .16f
  * @param enabled Whether the switch is interactive.
  * @param trackColor The color of the track when unchecked.
  * @param thumbColor The color of the thumb and the checked track.
- * @param leftIcon The [ImageVector] (e.g., Google Symbol) for the 'off' state.
- * @param rightIcon The [ImageVector] (e.g., Google Symbol) for the 'on' state.
+ * @param leftIcon The drawable resource ID for the 'off' state.
+ * @param rightIcon The drawable resource ID for the 'on' state.
  * @param unselectedIconColor The tint color for the 'off' icon.
  * @param selectedIconColor The tint color for the 'on' icon.
  */
@@ -131,8 +131,8 @@ fun ToggleSwitch(
     )
 
     // --- 4. Icon Painters ---
-    val offIconPainter = leftIcon?.let { painterResource(id = leftIcon) }
-    val onIconPainter = rightIcon?.let { painterResource(id = rightIcon) }
+    val offIconPainter = leftIcon?.let { painterResource(id = it) }
+    val onIconPainter = rightIcon?.let { painterResource(id = it) }
 
     // --- 5. Gesture Handlers ---
     val draggableState = rememberDraggableState { delta ->

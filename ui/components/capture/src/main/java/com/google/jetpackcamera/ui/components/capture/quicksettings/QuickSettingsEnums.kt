@@ -24,13 +24,10 @@ import com.google.jetpackcamera.ui.components.capture.R
 
 interface QuickSettingsEnum {
     @Composable
-    fun getPainter(): Painter {
-        val iconResId = getDrawableResId()
-        return iconResId?.let { painterResource(it) }!!
-    }
+    fun getPainter(): Painter = painterResource(getDrawableResId())
 
     @DrawableRes
-    fun getDrawableResId(): Int?
+    fun getDrawableResId(): Int
 
     @StringRes
     fun getTextResId(): Int
