@@ -144,6 +144,7 @@ dependencies {
     implementation(project(":ui:uistateadapter:postcapture"))
     testImplementation(project(":ui:uistate:postcapture"))
     testImplementation(project(":core:common"))
+    testImplementation(project(":data:media:testing"))
 }
 
 // Allow references to generated code
