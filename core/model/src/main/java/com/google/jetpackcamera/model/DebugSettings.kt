@@ -15,12 +15,6 @@
  */
 package com.google.jetpackcamera.model
 
-import android.util.Base64
-import com.google.jetpackcamera.model.LensFacing.Companion.toProto
-import com.google.jetpackcamera.model.TestPattern.Companion.toProto
-import com.google.jetpackcamera.model.proto.DebugSettings as DebugSettingsProto
-import com.google.jetpackcamera.model.proto.debugSettings as debugSettingsProto
-
 /**
  * Data class for defining settings used in debug flows within the app.
  *
@@ -35,67 +29,4 @@ data class DebugSettings(
     val isDebugModeEnabled: Boolean = false,
     val singleLensMode: LensFacing? = null,
     val testPattern: TestPattern = TestPattern.Off
-) {
-    companion object {
-        /**
-         * Creates a [DebugSettings] domain model from its protobuf representation.
-         *
-         * @param proto The [DebugSettingsProto] instance.
-         * @return The corresponding [DebugSettings] instance.
-         */
-        fun fromProto(proto: DebugSettingsProto): DebugSettings {
-            return DebugSettings(
-                isDebugModeEnabled = proto.isDebugModeEnabled,
-                singleLensMode = if (proto.hasSingleLensMode()) {
-                    LensFacing.fromProto(proto.singleLensMode)
-                } else {
-                    null
-                },
-                testPattern = TestPattern.fromProto(proto.testPattern)
-            )
-        }
-
-        /**
-         * Converts a [DebugSettings] domain model to its protobuf representation.
-         *
-         * @receiver The [DebugSettings] instance to convert.
-         * @return The corresponding [DebugSettingsProto] instance.
-         */
-        fun DebugSettings.toProto(): DebugSettingsProto = debugSettingsProto {
-            isDebugModeEnabled = this@toProto.isDebugModeEnabled
-            this@toProto.singleLensMode?.let { lensFacing ->
-                singleLensMode = lensFacing.toProto()
-            }
-            testPattern = this@toProto.testPattern.toProto()
-        }
-
-        /**
-         * Parses the encoded byte array into a [DebugSettings] instance.
-         */
-        fun parseFromByteArray(value: ByteArray): DebugSettings {
-            val protoValue = DebugSettingsProto.parseFrom(value)
-            return fromProto(protoValue)
-        }
-
-        /**
-         * Parses the Base64 encoded string into a [DebugSettings] instance.
-         */
-        fun parseFromString(value: String): DebugSettings {
-            val decodedBytes = Base64.decode(value, Base64.NO_WRAP)
-            return parseFromByteArray(decodedBytes)
-        }
-
-        /**
-         * Encodes the [DebugSettings] data class into a byte array.
-         */
-        fun DebugSettings.encodeAsByteArray(): ByteArray = this.toProto().toByteArray()
-
-        /**
-         * Encodes the [DebugSettings] data class to a Base64 string.
-         */
-        fun DebugSettings.encodeAsString(): String {
-            val protoValue = this.toProto() // Data class -> Proto
-            return Base64.encodeToString(protoValue.toByteArray(), Base64.NO_WRAP)
-        }
-    }
-}
+)
