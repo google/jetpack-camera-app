@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings.test
+package com.google.jetpackcamera.settings.testing
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DarkMode

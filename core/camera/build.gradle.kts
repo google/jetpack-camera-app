@@ -114,6 +114,8 @@ dependencies {
     androidTestImplementation(libs.androidx.rules)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(project(":core:common:testing"))
+    testImplementation(project(":core:camera:testing"))
 
     // Futures
     implementation(libs.futures.ktx)

@@ -87,6 +87,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(project(":data:settings:testing"))
 
     // Access Model data
     implementation(project(":core:model"))
