@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.core.camera.effects
 
-object GLDebug {
+internal object GLDebug {
     init {
         System.loadLibrary("opengl_debug_lib")
     }

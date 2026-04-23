@@ -20,7 +20,7 @@ import android.opengl.EGLConfig
 import android.opengl.EGLContext
 import androidx.graphics.opengl.egl.EGLSpec
 
-val EGLSpec.Companion.V14ES3: EGLSpec
+internal val EGLSpec.Companion.V14ES3: EGLSpec
     get() = object : EGLSpec by V14 {
 
         private val contextAttributes = intArrayOf(
