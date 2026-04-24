@@ -33,7 +33,7 @@ import java.util.Queue
  * @property duration How long the snack-bar should be displayed.
  * @property isError Whether the snack-bar represents an error state, used for custom styling.
  */
-class CustomSnackbarVisuals(
+data class CustomSnackbarVisuals(
     override val message: String,
     override val actionLabel: String?,
     override val withDismissAction: Boolean,
