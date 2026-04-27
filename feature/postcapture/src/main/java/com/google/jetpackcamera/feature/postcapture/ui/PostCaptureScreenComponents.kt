@@ -117,7 +117,9 @@ fun ExitPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = Mo
         Icon(
             modifier = it,
 
-            painter = painterResource(id = R.drawable.ic_close),
+            painter = painterResource(
+                id = com.google.jetpackcamera.ui.components.capture.R.drawable.ic_close
+            ),
             contentDescription = stringResource(R.string.button_exit_description)
         )
     }
