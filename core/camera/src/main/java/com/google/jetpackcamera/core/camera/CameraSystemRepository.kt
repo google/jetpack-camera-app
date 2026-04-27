@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,9 @@
  */
 package com.google.jetpackcamera.core.camera
 
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
-
 /**
- * Dagger [Module] for camera data layer.
+ * Repository that holds an instance of [CameraSystem].
  */
-@Module
-@InstallIn(SingletonComponent::class)
-interface CameraModule {
-    @Binds
-    @Singleton
-    fun bindsCameraSystemRepository(
-        cameraXCameraSystemRepository: CameraXCameraSystemRepository
-    ): CameraSystemRepository
+interface CameraSystemRepository {
+    val cameraSystem: CameraSystem
 }
