@@ -207,7 +207,7 @@ fun JcaSnackbarHost(snackbarHostState: SnackbarHostState, modifier: Modifier = M
                     IconButton(onClick = { data.dismiss() }) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = null,
+                            contentDescription = "dismiss",
                             tint = contentColor
                         )
                     }
