@@ -60,20 +60,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.CheckCircleOutline
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.FlipCameraAndroid
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.VideoStable
-import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconToggleButton
@@ -179,9 +165,9 @@ fun JcaSnackbarHost(snackbarHostState: SnackbarHostState, modifier: Modifier = M
             MaterialTheme.colorScheme.onTertiaryContainer
         }
         val icon = if (isError) {
-            Icons.Default.ErrorOutline
+            painterResource(R.drawable.ic_error_outline)
         } else {
-            Icons.Default.CheckCircleOutline
+            painterResource(R.drawable.ic_check_circle_outline)
         }
 
         Snackbar(
@@ -205,7 +191,7 @@ fun JcaSnackbarHost(snackbarHostState: SnackbarHostState, modifier: Modifier = M
                 {
                     IconButton(onClick = { data.dismiss() }) {
                         Icon(
-                            imageVector = Icons.Default.Close,
+                            painter = painterResource(R.drawable.ic_close),
                             contentDescription = "dismiss",
                             tint = contentColor
                         )
@@ -217,7 +203,7 @@ fun JcaSnackbarHost(snackbarHostState: SnackbarHostState, modifier: Modifier = M
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = icon,
+                    painter = icon,
                     contentDescription = null,
                     modifier = Modifier.size(24.dp)
                 )
