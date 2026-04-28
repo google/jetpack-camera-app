@@ -90,7 +90,7 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 fun CaptureModeRow(
     modifier: Modifier = Modifier,
     onSetCaptureMode: (CaptureMode) -> Unit,
-    captureModeUiState: CaptureModeUiState,
+    captureModeUiState: CaptureModeUiState
 ) {
     if (captureModeUiState is CaptureModeUiState.Available) {
         SettingRow(
@@ -141,7 +141,6 @@ fun CaptureModeToggleButton(
         enum = enum,
         onClick = { onClick() },
         enabled = when (assignedCaptureMode) {
-
             CaptureMode.STANDARD ->
                 captureModeUiState.isCaptureModeSelectable(CaptureMode.STANDARD)
 
@@ -152,7 +151,7 @@ fun CaptureModeToggleButton(
                 captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
         },
         isSelected =
-            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
+        isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
     )
 }
 
@@ -168,7 +167,6 @@ fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modi
         content = { Text(text = stringResource(R.string.quick_settings_more_text)) }
     )
 }
-
 
 @Composable
 fun QuickSetHdr(
@@ -211,15 +209,13 @@ fun QuickSetHdr(
     )
 }
 
-
 @Composable
 fun AspectRatioRow(
     modifier: Modifier = Modifier,
     onSetAspectRatio: (AspectRatio) -> Unit,
-    aspectRatioUiState: AspectRatioUiState,
+    aspectRatioUiState: AspectRatioUiState
 ) {
     if (aspectRatioUiState is AspectRatioUiState.Available) {
-
         val settingsButtons = aspectRatioUiState.availableAspectRatios
             .map { selectableRatio ->
                 @Composable {
@@ -247,15 +243,13 @@ fun AspectRatioRow(
     }
 }
 
-
 @Composable
 fun FlashRow(
     modifier: Modifier = Modifier,
     onSetFlashMode: (FlashMode) -> Unit,
-    flashModeUiState: FlashModeUiState,
+    flashModeUiState: FlashModeUiState
 ) {
     if (flashModeUiState is FlashModeUiState.Available) {
-
         SettingRow(
             modifier = modifier,
             title = "Capture Mode",
@@ -267,14 +261,13 @@ fun FlashRow(
                             modifier = Modifier.testTag("FlashMode_${selectableMode.value.name}"),
                             onClick = { onSetFlashMode(selectableMode.value) },
                             assignedFlashMode = selectableMode.value,
-                            flashModeUiState = flashModeUiState,
+                            flashModeUiState = flashModeUiState
                         )
                     }
                 }.toTypedArray()
         )
     }
 }
-
 
 @Composable
 fun QuickSetFlash(
@@ -326,7 +319,7 @@ fun QuickSetConcurrentCamera(
                 }
             },
             isSelected = concurrentCameraUiState.selectedConcurrentCameraMode ==
-                    ConcurrentCameraMode.DUAL,
+                ConcurrentCameraMode.DUAL,
             enabled = concurrentCameraUiState.isEnabled
         )
     }
@@ -393,7 +386,7 @@ fun QuickSettingsBottomSheet(
     modifier: Modifier,
     onDismiss: () -> Unit,
     sheetState: SheetState,
-     content: @Composable () -> Unit
+    content: @Composable () -> Unit
 ) {
     val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
 
@@ -410,7 +403,7 @@ fun QuickSettingsBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {
-       content()
+        content()
     }
 }
 
@@ -541,16 +534,15 @@ private fun QuickSettingToggleButton(
     }
 }
 
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
     val enum =
         if (hdrUiState is HdrUiState.Available &&
             (
-                    hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
-                            hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
-                    )
+                hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
+                    hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
+                )
         ) {
             CameraDynamicRange.HDR
         } else {

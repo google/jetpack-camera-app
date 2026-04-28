@@ -71,6 +71,6 @@ fun QuickSettingsUiState.Companion.from(
         flipLensUiState = flipLensUiState,
         hdrUiState = hdrUiState,
         streamConfigUiState = streamConfigUiState,
-        quickSettingsIsOpen = quickSettingsIsOpen,
+        quickSettingsIsOpen = quickSettingsIsOpen
     )
 }

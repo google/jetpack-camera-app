@@ -24,7 +24,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -39,17 +38,13 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRat
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureModeRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetHdr
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
-import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
-import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
 
 /**
  * The UI bottom sheet component for quick settings.
@@ -214,7 +209,6 @@ fun ImageQuickSettings(
         // TODO: Add pre-capture timer setting
     }
 }
-
 
 /**
  * A no-op implementation of [QuickSettingsController] for use in Compose previews and tests.

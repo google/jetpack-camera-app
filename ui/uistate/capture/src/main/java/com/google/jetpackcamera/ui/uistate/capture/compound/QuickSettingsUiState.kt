@@ -55,9 +55,8 @@ sealed interface QuickSettingsUiState {
         val flipLensUiState: FlipLensUiState,
         val hdrUiState: HdrUiState,
         val streamConfigUiState: StreamConfigUiState,
-        val quickSettingsIsOpen: Boolean = false,
+        val quickSettingsIsOpen: Boolean = false
     ) : QuickSettingsUiState
 
     companion object
 }
-
