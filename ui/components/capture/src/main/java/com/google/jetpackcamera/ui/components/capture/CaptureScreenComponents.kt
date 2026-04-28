@@ -157,12 +157,12 @@ fun JcaSnackbarHost(snackbarHostState: SnackbarHostState, modifier: Modifier = M
         val containerColor = if (isError) {
             MaterialTheme.colorScheme.errorContainer
         } else {
-            MaterialTheme.colorScheme.tertiaryContainer
+            MaterialTheme.colorScheme.secondaryContainer
         }
         val contentColor = if (isError) {
             MaterialTheme.colorScheme.onErrorContainer
         } else {
-            MaterialTheme.colorScheme.onTertiaryContainer
+            MaterialTheme.colorScheme.onSecondaryContainer
         }
         val icon = if (isError) {
             painterResource(R.drawable.ic_error_outline)
