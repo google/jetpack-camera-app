@@ -49,7 +49,7 @@ android {
         // release build (for example, with minification on). It"s signed with a debug key
         // for easy local/CI testing.
         create("benchmark") {
-            isDebuggable = true
+            isDebuggable = false
             signingConfig = getByName("debug").signingConfig
             matchingFallbacks += listOf("release")
         }
@@ -73,6 +73,7 @@ android {
 dependencies {
     implementation(libs.androidx.junit)
     implementation(libs.androidx.benchmark.macro.junit4)
+    implementation(libs.androidx.benchmark.junit4)
 }
 
 androidComponents {

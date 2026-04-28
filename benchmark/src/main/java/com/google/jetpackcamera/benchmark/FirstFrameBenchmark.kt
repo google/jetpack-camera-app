@@ -101,7 +101,7 @@ class FirstFrameBenchmark {
             setupBlock = setupBlock
         ) {
             pressHome()
-            if (intent == null) startActivityAndWait() else startActivityAndWait(intent)
+            device.executeShellCommand("am start -n $JCA_PACKAGE_NAME/$JCA_PACKAGE_NAME.MainActivity")
             device.waitForIdle()
 
             clickCaptureButton(device)

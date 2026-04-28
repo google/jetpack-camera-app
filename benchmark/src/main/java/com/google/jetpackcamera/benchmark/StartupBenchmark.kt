@@ -81,9 +81,9 @@ class StartupBenchmark {
             setupBlock = setupBlock
         ) {
             pressHome()
-            val intent = Intent()
-            intent.setClassName(JCA_PACKAGE_NAME, "$JCA_PACKAGE_NAME.MainActivity")
-            startActivityAndWait(intent)
+            device.executeShellCommand("am start -n $JCA_PACKAGE_NAME/$JCA_PACKAGE_NAME.MainActivity")
+            // Wait for the capture button to appear to ensure app is ready
+            device.wait(androidx.test.uiautomator.Until.hasObject(androidx.test.uiautomator.By.res("CaptureButton")), 20000)
         }
     }
 }
