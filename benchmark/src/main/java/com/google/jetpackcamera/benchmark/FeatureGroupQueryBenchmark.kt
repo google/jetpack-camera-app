@@ -49,12 +49,14 @@ class FeatureGroupQueryBenchmark {
                 TraceSectionMetric("JCA:UpdateSystemConstraints"),
                 TraceSectionMetric("JCA:IsGroupingSupported", TraceSectionMetric.Mode.Sum),
                 TraceSectionMetric("JCA:BuildPipeline", TraceSectionMetric.Mode.Sum),
+                TraceSectionMetric("JCA:OrchestrateQuery", TraceSectionMetric.Mode.Sum),
+                TraceSectionMetric("JCA:GetCameraInfo", TraceSectionMetric.Mode.Sum),
                 TraceSectionMetric("JCA:CreateVideoUseCase", TraceSectionMetric.Mode.Sum),
                 TraceSectionMetric("JCA:CreateSessionConfig", TraceSectionMetric.Mode.Sum),
                 TraceSectionMetric("JCA:CreatePreviewUseCase", TraceSectionMetric.Mode.Sum),
                 TraceSectionMetric("JCA:CreateImageUseCase", TraceSectionMetric.Mode.Sum),
                 TraceSectionMetric("JCA:CreateCameraEffects", TraceSectionMetric.Mode.Sum),
-                TraceSectionMetric("JCA:IsSessionConfigSupported", TraceSectionMetric.Mode.Sum)
+                TraceSectionMetric("JCA:FCQValidation", TraceSectionMetric.Mode.Sum)
             ),
             iterations = DEFAULT_TEST_ITERATIONS,
             startupMode = startupMode,

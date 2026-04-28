@@ -356,14 +356,13 @@ internal class FeatureGroupHandler(
         //  (HDR, 60FPS, etc.) and persisting the results in a database. This would make UI checks
         //  O(1) across app launches since hardware capabilities are generally static.
 
-        val cameraConstraints =
-            requireNotNull(initialSystemConstraints.forCurrentLens(cameraAppSettings))
-
-        val transientSettings =
-            with(cameraSystem) { cameraAppSettings.toTransientSessionSettings() }
-
-        val sessionSettings = with(cameraSystem) {
-            cameraAppSettings.toSingleCameraSessionSettings(cameraConstraints)
+        val (cameraConstraints, transientSettings, sessionSettings) = trace("JCA:OrchestrateQuery") {
+            val constraints = requireNotNull(initialSystemConstraints.forCurrentLens(cameraAppSettings))
+            val transient = with(cameraSystem) { cameraAppSettings.toTransientSessionSettings() }
+            val session = with(cameraSystem) {
+                cameraAppSettings.toSingleCameraSessionSettings(constraints)
+            }
+            Triple(constraints, transient, session)
         }
 
         if (!sessionSettings.toFeatureGroupabilities().isCompatible()) {
@@ -410,7 +409,7 @@ internal class FeatureGroupHandler(
             }
         }
 
-        return@traceAsync trace("JCA:IsSessionConfigSupported") {
+        return@traceAsync trace("JCA:FCQValidation") {
             cameraInfo.isSessionConfigSupported(sessionConfig).apply {
                 job.cancel()
             }

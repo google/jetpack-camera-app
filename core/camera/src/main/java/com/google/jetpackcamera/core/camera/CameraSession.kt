@@ -569,7 +569,9 @@ internal suspend fun createSessionConfig(
 ): SessionConfig = traceAsync("JCA:CreateSessionConfig", "JCA:CreateSessionConfig".hashCode()) {
     val currentCameraSelector = initialTransientSettings.primaryLensFacing
         .toCameraSelector()
-    val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
+    val cameraInfo = trace("JCA:GetCameraInfo") {
+        cameraProvider.getCameraInfo(currentCameraSelector)
+    }
     val camera2Info = Camera2CameraInfo.from(cameraInfo)
     val cameraId = camera2Info.cameraId
 
