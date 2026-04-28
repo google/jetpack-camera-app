@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.benchmark
 
 import android.content.Intent
+import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.TraceSectionMetric
@@ -40,13 +41,20 @@ class FeatureGroupQueryBenchmark {
     @Test
     fun featureGroupQueryWarm() = benchmarkFeatureQuery(StartupMode.WARM)
 
+    @OptIn(ExperimentalMetricApi::class)
     private fun benchmarkFeatureQuery(startupMode: StartupMode) {
         benchmarkRule.measureRepeated(
             packageName = JCA_PACKAGE_NAME,
             metrics = listOf(
-                StartupTimingMetric(),
                 TraceSectionMetric("JCA:UpdateSystemConstraints"),
-                TraceSectionMetric("JCA:IsGroupingSupported", TraceSectionMetric.Mode.Sum)
+                TraceSectionMetric("JCA:IsGroupingSupported", TraceSectionMetric.Mode.Sum),
+                TraceSectionMetric("JCA:BuildPipeline", TraceSectionMetric.Mode.Sum),
+                TraceSectionMetric("JCA:CreateVideoUseCase", TraceSectionMetric.Mode.Sum),
+                TraceSectionMetric("JCA:CreateSessionConfig", TraceSectionMetric.Mode.Sum),
+                TraceSectionMetric("JCA:CreatePreviewUseCase", TraceSectionMetric.Mode.Sum),
+                TraceSectionMetric("JCA:CreateImageUseCase", TraceSectionMetric.Mode.Sum),
+                TraceSectionMetric("JCA:CreateCameraEffects", TraceSectionMetric.Mode.Sum),
+                TraceSectionMetric("JCA:IsSessionConfigSupported", TraceSectionMetric.Mode.Sum)
             ),
             iterations = DEFAULT_TEST_ITERATIONS,
             startupMode = startupMode,
@@ -55,9 +63,9 @@ class FeatureGroupQueryBenchmark {
             }
         ) {
             pressHome()
-            val intent = Intent()
-            intent.setClassName(JCA_PACKAGE_NAME, "$JCA_PACKAGE_NAME.MainActivity")
-            startActivityAndWait(intent)
+            device.executeShellCommand("am start -n $JCA_PACKAGE_NAME/$JCA_PACKAGE_NAME.MainActivity")
+            // Wait for the capture button to appear to ensure app is ready
+            device.wait(androidx.test.uiautomator.Until.hasObject(androidx.test.uiautomator.By.res("CaptureButton")), 20000)
         }
     }
 }
