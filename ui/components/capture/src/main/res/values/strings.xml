@@ -141,4 +141,7 @@
 
     <!-- ImageWell -->
     <string name="image_well_content_description">View recently saved media</string>
+    <string name="quick_settings_title_video_settings">Video Settings</string>
+    <string name="quick_settings_title_photo_settings">Photo Settings</string>
+    <string name="quick_settings_title_photo_and_video_settings">Photo and Video Settings</string>
 </resources>
