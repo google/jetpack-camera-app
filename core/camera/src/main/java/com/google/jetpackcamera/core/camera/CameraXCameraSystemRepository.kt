@@ -23,7 +23,7 @@ import javax.inject.Singleton
  * Implementation of [CameraSystemRepository] that lazily constructs [CameraXCameraSystem].
  */
 @Singleton
-class CameraXCameraSystemRepository @Inject constructor(
+internal class CameraXCameraSystemRepository @Inject constructor(
     private val cameraXCameraSystemProvider: Provider<CameraXCameraSystem>
 ) : CameraSystemRepository {
     override val cameraSystem: CameraXCameraSystem by lazy {

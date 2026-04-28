@@ -21,6 +21,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
+import com.google.jetpackcamera.core.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
@@ -49,6 +50,9 @@ import org.robolectric.RobolectricTestRunner
 class PreviewViewModelTest {
 
     private val cameraSystem = FakeCameraSystem()
+    private val cameraSystemRepository = object : CameraSystemRepository {
+        override val cameraSystem = this@PreviewViewModelTest.cameraSystem
+    }
     private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
         updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
@@ -58,7 +62,7 @@ class PreviewViewModelTest {
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
         previewViewModel = PreviewViewModel(
-            cameraSystem = cameraSystem,
+            cameraSystemRepository = cameraSystemRepository,
             constraintsRepository = constraintsRepository,
             settingsRepository = FakeSettingsRepository,
             mediaRepository = FakeMediaRepository(),

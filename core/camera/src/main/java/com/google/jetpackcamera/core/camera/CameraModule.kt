@@ -26,7 +26,10 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
-interface CameraModule {
+internal interface CameraModule {
+    /**
+     * Binds the [CameraXCameraSystemRepository] implementation to [CameraSystemRepository].
+     */
     @Binds
     @Singleton
     fun bindsCameraSystemRepository(
