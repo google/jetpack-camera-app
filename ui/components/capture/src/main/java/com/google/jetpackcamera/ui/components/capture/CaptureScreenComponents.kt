@@ -55,17 +55,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.FlipCameraAndroid
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.VideoStable
-import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconToggleButton
@@ -94,7 +83,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -187,9 +175,11 @@ fun PauseResumeToggleButton(
             Icon(
                 modifier = Modifier
                     .size(ButtonDefaults.MediumIconSize),
-                imageVector = when (currentRecordingState) {
-                    is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
-                    is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
+                painter = when (currentRecordingState) {
+                    is VideoRecordingState.Active.Recording -> painterResource(R.drawable.ic_pause)
+                    is VideoRecordingState.Active.Paused -> painterResource(
+                        R.drawable.ic_play_arrow
+                    )
                 },
                 contentDescription = stringResource(id = R.string.pause_resume_button_description)
             )
@@ -256,10 +246,10 @@ fun AmplitudeToggleButton(
         ) {
             Icon(
                 modifier = Modifier.size(ButtonDefaults.MediumIconSize),
-                imageVector = if (currentUiState.value is AudioUiState.Enabled.On) {
-                    Icons.Filled.Mic
+                painter = if (currentUiState.value is AudioUiState.Enabled.On) {
+                    painterResource(R.drawable.ic_mic)
                 } else {
-                    Icons.Filled.MicOff
+                    painterResource(R.drawable.ic_mic_off)
                 },
                 contentDescription = stringResource(id = R.string.audio_visualizer_icon_description)
             )
@@ -323,16 +313,16 @@ fun CaptureModeToggleButton(
         leftIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.IMAGE_ONLY
         ) {
-            Icons.Filled.CameraAlt
+            R.drawable.ic_camera_alt_filled
         } else {
-            Icons.Outlined.CameraAlt
+            R.drawable.ic_camera_alt_outline
         },
         rightIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.VIDEO_ONLY
         ) {
-            Icons.Filled.Videocam
+            R.drawable.ic_videocam_filled
         } else {
-            Icons.Outlined.Videocam
+            R.drawable.ic_videocam_outline
         },
         leftIconDescription = if (enabled) {
             stringResource(id = R.string.capture_mode_image_capture_content_description)
@@ -678,7 +668,7 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                     painterResource(R.drawable.video_stable_ois_filled_icon)
 
                                 StabilizationMode.ON ->
-                                    rememberVectorPainter(Icons.Filled.VideoStable)
+                                    painterResource(R.drawable.ic_video_stable)
 
                                 else ->
                                     TODO(
@@ -830,7 +820,7 @@ fun FlipCameraButton(
             enabled = enabledCondition
         ) {
             Icon(
-                imageVector = Icons.Filled.FlipCameraAndroid,
+                painter = painterResource(R.drawable.ic_flip_camera_android),
                 contentDescription = stringResource(id = R.string.flip_camera_icon_description),
                 modifier = Modifier
                     .size(IconButtonDefaults.extraLargeIconSize)

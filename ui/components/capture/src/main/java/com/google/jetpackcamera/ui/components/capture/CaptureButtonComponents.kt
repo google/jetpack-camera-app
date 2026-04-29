@@ -39,9 +39,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
@@ -68,8 +65,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
-import androidx.compose.ui.semantics.disabled
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -594,10 +590,10 @@ private fun LockSwitchCaptureButtonNucleus(
                         onToggleSwitchPosition()
                     },
                 tint = Color.White,
-                imageVector = if (shouldBeLocked()) {
-                    Icons.Default.Lock
+                painter = if (shouldBeLocked()) {
+                    painterResource(R.drawable.ic_lock)
                 } else {
-                    Icons.Default.LockOpen
+                    painterResource(R.drawable.ic_lock_open)
                 },
                 contentDescription = null
             )

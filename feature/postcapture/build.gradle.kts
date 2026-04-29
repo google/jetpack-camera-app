@@ -88,7 +88,6 @@ dependencies {
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons.extended)
 
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
@@ -144,6 +143,7 @@ dependencies {
     implementation(project(":ui:uistateadapter:postcapture"))
     testImplementation(project(":ui:uistate:postcapture"))
     testImplementation(project(":core:common"))
+    testImplementation(project(":data:media:testing"))
 }
 
 // Allow references to generated code

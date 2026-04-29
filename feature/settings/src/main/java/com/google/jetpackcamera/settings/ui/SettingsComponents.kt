@@ -26,8 +26,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,10 +47,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toUpperCase
@@ -116,8 +116,8 @@ fun SettingsPageHeader(
                 onClick = { navBack() }
             ) {
                 Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    stringResource(id = R.string.nav_back_accessibility)
+                    painter = painterResource(id = R.drawable.ic_arrow_back),
+                    contentDescription = stringResource(id = R.string.nav_back_accessibility)
                 )
             }
         },
@@ -197,7 +197,8 @@ fun DefaultCameraFacing(
         }
     )
     SwitchSettingUI(
-        modifier = modifier.testTag(BTN_SWITCH_SETTING_LENS_FACING_TAG)
+        modifier = modifier
+            .testTag(BTN_SWITCH_SETTING_LENS_FACING_TAG)
             .semantics {
                 stateDescription = description
             },
@@ -241,6 +242,7 @@ fun FlashModeSetting(
                     id = R.string.flash_mode_description_llb
                 )
             }
+
             is FlashUiState.Disabled -> stringResource(
                 flashUiState.disabledRationale.reasonTextResId,
                 stringResource(flashUiState.disabledRationale.affectedSettingNameResId)
@@ -306,8 +308,12 @@ fun AspectRatioSetting(
                     id = R.string.aspect_ratio_description_9_16
                 )
 
-                AspectRatio.THREE_FOUR -> stringResource(id = R.string.aspect_ratio_description_3_4)
-                AspectRatio.ONE_ONE -> stringResource(id = R.string.aspect_ratio_description_1_1)
+                AspectRatio.THREE_FOUR -> stringResource(
+                    id = R.string.aspect_ratio_description_3_4
+                )
+                AspectRatio.ONE_ONE -> stringResource(
+                    id = R.string.aspect_ratio_description_1_1
+                )
             }
         } else {
             TODO("aspect ratio currently has no disabled criteria")
@@ -842,9 +848,11 @@ fun RecordingAudioSetting(
             is AudioUiState.Enabled.On -> {
                 stringResource(R.string.audio_selector_on)
             }
+
             is AudioUiState.Enabled.Mute -> {
                 stringResource(R.string.audio_selector_off)
             }
+
             is AudioUiState.Disabled -> {
                 disabledRationaleString(disabledRationale = audioUiState.disabledRationale)
             }
@@ -905,6 +913,7 @@ fun BasicPopupSetting(
     )
     if (popupStatus.value) {
         AlertDialog(
+            modifier = Modifier.semantics { testTagsAsResourceId = true },
             onDismissRequest = { popupStatus.value = false },
             confirmButton = {
                 Text(
