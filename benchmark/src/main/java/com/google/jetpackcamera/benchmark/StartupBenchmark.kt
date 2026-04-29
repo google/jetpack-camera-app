@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.benchmark
 
+import android.content.Intent
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
@@ -80,7 +81,9 @@ class StartupBenchmark {
             setupBlock = setupBlock
         ) {
             pressHome()
-            startActivityAndWait()
+            val intent = Intent()
+            intent.setClassName(JCA_PACKAGE_NAME, "$JCA_PACKAGE_NAME.MainActivity")
+            startActivityAndWait(intent)
         }
     }
 }
