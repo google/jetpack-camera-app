@@ -102,7 +102,8 @@ fun PreviewLayout(
     debugOverlay: @Composable (Modifier) -> Unit,
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (Modifier) -> Unit,
-    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit
+    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    topStartButton: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
@@ -139,7 +140,10 @@ fun PreviewLayout(
             Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
                 Column {
                     indicatorRow(Modifier.statusBarsPadding())
-                    viewfinder(Modifier)
+                    Box {
+                        viewfinder(Modifier)
+                        topStartButton(Modifier.align(Alignment.TopStart).padding(paddingValues))
+                    }
                 }
 
                 Box(
