@@ -89,7 +89,7 @@ fun PreviewLayout(
                 indicatorRow(Modifier.statusBarsPadding())
                 Box {
                     viewfinder(Modifier)
-                    topStartButton(Modifier.align(Alignment.TopStart).padding(paddingValues))
+                    topStartButton(Modifier.align(Alignment.TopStart))
                 }
             }
 
