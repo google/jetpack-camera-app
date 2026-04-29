@@ -25,6 +25,10 @@ val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
     if (Build.VERSION.SDK_INT <= 28) {
         add(permission.WRITE_EXTERNAL_STORAGE)
     }
+    if (Build.VERSION.SDK_INT >= 33) {
+        add(permission.READ_MEDIA_IMAGES)
+        add(permission.READ_MEDIA_VIDEO)
+    }
 }
 fun MacrobenchmarkScope.allowCamera() {
     val command = "pm grant $packageName ${permission.CAMERA}"

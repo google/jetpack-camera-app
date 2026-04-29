@@ -65,9 +65,12 @@ class FeatureGroupQueryBenchmark {
             }
         ) {
             pressHome()
-            device.executeShellCommand("am start -n $JCA_PACKAGE_NAME/$JCA_PACKAGE_NAME.MainActivity")
-            // Wait for the capture button to appear to ensure app is ready
-            device.wait(androidx.test.uiautomator.Until.hasObject(androidx.test.uiautomator.By.res("CaptureButton")), 20000)
+            val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().context
+            val intent = context.packageManager.getLaunchIntentForPackage(JCA_PACKAGE_NAME)?.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            context.startActivity(intent)
+            device.wait(androidx.test.uiautomator.Until.hasObject(androidx.test.uiautomator.By.res("CaptureButton").enabled(true)), 20000)
         }
     }
 }
