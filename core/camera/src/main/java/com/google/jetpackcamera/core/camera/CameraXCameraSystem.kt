@@ -31,7 +31,6 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
-import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -135,9 +134,10 @@ constructor(
     private var currentCameraState = MutableStateFlow(CameraState())
     override fun getCurrentCameraState(): StateFlow<CameraState> = currentCameraState.asStateFlow()
 
-    private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+    private val _surfaceRequest = MutableStateFlow<PreviewSurfaceRequest?>(null)
 
-    override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
+    override fun getSurfaceRequest(): StateFlow<PreviewSurfaceRequest?> =
+        _surfaceRequest.asStateFlow()
 
     private val lowLightBoostAvailabilityChecker: LowLightBoostAvailabilityChecker?
     private val lowLightBoostEffectProvider: LowLightBoostEffectProvider?
