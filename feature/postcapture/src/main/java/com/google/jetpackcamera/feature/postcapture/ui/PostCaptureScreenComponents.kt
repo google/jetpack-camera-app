@@ -20,11 +20,6 @@ import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.SaveAlt
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +34,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
@@ -121,7 +117,9 @@ fun ExitPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = Mo
         Icon(
             modifier = it,
 
-            imageVector = Icons.Default.Close,
+            painter = painterResource(
+                id = com.google.jetpackcamera.ui.components.capture.R.drawable.ic_close
+            ),
             contentDescription = stringResource(R.string.button_exit_description)
         )
     }
@@ -143,7 +141,7 @@ fun ShareCurrentMediaButton(
         Icon(
             modifier = it,
 
-            imageVector = Icons.Default.Share,
+            painter = painterResource(id = R.drawable.ic_share),
             contentDescription = stringResource(R.string.button_share_media_description),
             tint = MaterialTheme.colorScheme.onSurface
         )
@@ -166,7 +164,7 @@ fun SaveCurrentMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         Icon(
             modifier = it,
 
-            imageVector = Icons.Default.SaveAlt,
+            painter = painterResource(id = R.drawable.ic_save),
             contentDescription = stringResource(R.string.button_save_media_description)
         )
     }
@@ -185,7 +183,7 @@ fun DeleteCurrentMediaButton(
     ) {
         Icon(
             modifier = it,
-            imageVector = Icons.Default.Delete,
+            painter = painterResource(id = R.drawable.ic_delete),
             contentDescription = stringResource(
                 R.string.button_delete_media_description
             )
