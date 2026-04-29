@@ -161,6 +161,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onFirstFrameCaptureCompleted = {
                                     firstFrameComplete?.complete(Unit)
+                                    reportFullyDrawn()
                                 },
                                 onCaptureEvent = captureEventCallback
                             )
