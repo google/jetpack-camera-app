@@ -33,8 +33,6 @@ import android.util.Range
 import android.util.Rational
 import android.util.Size
 import androidx.annotation.OptIn
-import androidx.tracing.trace
-import androidx.tracing.traceAsync
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
@@ -70,6 +68,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.net.toFile
 import androidx.lifecycle.asFlow
+import androidx.tracing.trace
+import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.FeatureGroupability.ExplicitlyGroupable
 import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.core.common.FilePathGenerator
@@ -839,8 +839,8 @@ internal suspend fun createPreviewUseCase(
             StabilizationMode.HIGH_QUALITY -> {} // No-op. Handled by VideoCapture use case.
             null -> {} // No-op. Handled by feature groups API.
             else -> throw UnsupportedOperationException(
-                "Unexpected stabilization mode: $stabilizationMode. Stabilization mode should always " +
-                    "an explicit mode, such as ON, OPTICAL, OFF or HIGH_QUALITY"
+                "Unexpected stabilization mode: $stabilizationMode. Stabilization mode " +
+                    "should always an explicit mode, such as ON, OPTICAL, OFF or HIGH_QUALITY"
             )
         }
 

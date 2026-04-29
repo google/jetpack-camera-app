@@ -81,12 +81,21 @@ class StartupBenchmark {
             setupBlock = setupBlock
         ) {
             pressHome()
-            val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().context
+            val context = androidx.test.platform.app.InstrumentationRegistry
+                .getInstrumentation().context
             val intent = context.packageManager.getLaunchIntentForPackage(JCA_PACKAGE_NAME)?.apply {
-                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                addFlags(
+                    android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                        android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                )
             }
             context.startActivity(intent)
-            device.wait(androidx.test.uiautomator.Until.hasObject(androidx.test.uiautomator.By.res("CaptureButton").enabled(true)), 20000)
+            device.wait(
+                androidx.test.uiautomator.Until.hasObject(
+                    androidx.test.uiautomator.By.res("CaptureButton").enabled(true)
+                ),
+                20000
+            )
         }
     }
 }

@@ -101,12 +101,22 @@ class FirstFrameBenchmark {
             setupBlock = setupBlock
         ) {
             pressHome()
-            val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().context
-            val launchIntent = intent ?: context.packageManager.getLaunchIntentForPackage(JCA_PACKAGE_NAME)?.apply {
-                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }
+            val context = androidx.test.platform.app.InstrumentationRegistry
+                .getInstrumentation().context
+            val launchIntent = intent ?: context.packageManager
+                .getLaunchIntentForPackage(JCA_PACKAGE_NAME)?.apply {
+                    addFlags(
+                        android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                            android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    )
+                }
             context.startActivity(launchIntent)
-            device.wait(androidx.test.uiautomator.Until.hasObject(androidx.test.uiautomator.By.res("CaptureButton").enabled(true)), 20000)
+            device.wait(
+                androidx.test.uiautomator.Until.hasObject(
+                    androidx.test.uiautomator.By.res("CaptureButton").enabled(true)
+                ),
+                20000
+            )
             device.waitForIdle()
 
             clickCaptureButton(device)
