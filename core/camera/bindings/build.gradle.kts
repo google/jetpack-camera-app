@@ -43,6 +43,7 @@ android {
         }
         create("benchmark") {
             initWith(buildTypes.getByName("release"))
+            matchingFallbacks += listOf("release")
         }
     }
 
