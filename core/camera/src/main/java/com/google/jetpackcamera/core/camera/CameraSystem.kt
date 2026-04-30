@@ -61,12 +61,21 @@ interface CameraSystem {
      */
     suspend fun runCamera()
 
+    /**
+     * Takes a picture with the camera. The result of this operation is returned in
+     * [CameraState.viewfinderResult].
+     *
+     * @param onCaptureStarted A callback that is invoked when the capture starts.
+     */
     suspend fun takePicture(onCaptureStarted: (() -> Unit) = {})
 
     /**
-     * Takes a picture with the camera. If ignoreUri is set to true, the picture taken will be saved
-     * at the default directory for pictures on device. Otherwise, it will be saved at the uri
-     * location if the uri is not null. If it is null, an error will be thrown.
+     * Takes a picture with the camera and saves it to a specified [SaveLocation].
+     *
+     * @param contentResolver The [ContentResolver] to use for saving the image.
+     * @param saveLocation The location to save the captured image.
+     * @param onCaptureStarted A callback that is invoked when the capture starts.
+     * @return An [ImageCapture.OutputFileResults] object containing the result of the capture.
      */
     suspend fun takePicture(
         contentResolver: ContentResolver,
@@ -74,61 +83,182 @@ interface CameraSystem {
         onCaptureStarted: (() -> Unit) = {}
     ): ImageCapture.OutputFileResults
 
+    /**
+     * Starts video recording.
+     *
+     * @param saveLocation The location to save the recorded video.
+     * @param onVideoRecord A callback to handle video recording events.
+     */
     suspend fun startVideoRecording(
         saveLocation: SaveLocation,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
 
+    /**
+     * Pauses the current video recording.
+     */
     suspend fun pauseVideoRecording()
 
+    /**
+     * Resumes the current video recording.
+     */
     suspend fun resumeVideoRecording()
 
+    /**
+     * Stops the current video recording.
+     */
     suspend fun stopVideoRecording()
 
+    /**
+     * Sets the zoom ratio for the camera.
+     *
+     * @param newZoomState The new zoom state to apply.
+     */
     fun changeZoomRatio(newZoomState: CameraZoomRatio)
 
+    /**
+     * Sets the test pattern for the camera.
+     *
+     * @param newTestPattern The new test pattern to apply.
+     */
     fun setTestPattern(newTestPattern: TestPattern)
 
+    /**
+     * Returns a [StateFlow] of the current [CameraState].
+     */
     fun getCurrentCameraState(): StateFlow<CameraState>
 
+    /**
+     * Returns a [StateFlow] of the current [SurfaceRequest].
+     */
     fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 
+    /**
+     * Returns a [ReceiveChannel] for [ScreenFlashEvent]s.
+     */
     fun getScreenFlashEvents(): ReceiveChannel<ScreenFlashEvent>
 
+    /**
+     * Returns a [StateFlow] of the current [CameraAppSettings].
+     */
     fun getCurrentSettings(): StateFlow<CameraAppSettings?>
 
+    /**
+     * Sets the flash mode for the camera.
+     *
+     * @param flashMode The [FlashMode] to set.
+     */
     fun setFlashMode(flashMode: FlashMode)
 
+    /**
+     * Returns whether screen flash is currently enabled.
+     */
     fun isScreenFlashEnabled(): Boolean
 
+    /**
+     * Sets the aspect ratio for the camera.
+     *
+     * @param aspectRatio The [AspectRatio] to set.
+     */
     suspend fun setAspectRatio(aspectRatio: AspectRatio)
 
+    /**
+     * Sets the video quality for the camera.
+     *
+     * @param videoQuality The [VideoQuality] to set.
+     */
     suspend fun setVideoQuality(videoQuality: VideoQuality)
 
+    /**
+     * Sets the low light boost priority.
+     *
+     * @param lowLightBoostPriority The [LowLightBoostPriority] to set.
+     */
     suspend fun setLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority)
 
+    /**
+     * Sets the lens facing for the camera.
+     *
+     * @param lensFacing The [LensFacing] to set.
+     */
     suspend fun setLensFacing(lensFacing: LensFacing)
 
+    /**
+     * Initiates a tap-to-focus action at the specified coordinates.
+     *
+     * @param x The x-coordinate of the focus point.
+     * @param y The y-coordinate of the focus point.
+     */
     suspend fun tapToFocus(x: Float, y: Float)
 
+    /**
+     * Sets the stream configuration for the camera.
+     *
+     * @param streamConfig The [StreamConfig] to set.
+     */
     suspend fun setStreamConfig(streamConfig: StreamConfig)
 
+    /**
+     * Sets the dynamic range for the camera.
+     *
+     * @param dynamicRange The [DynamicRange] to set.
+     */
     suspend fun setDynamicRange(dynamicRange: DynamicRange)
 
+    /**
+     * Sets the device rotation.
+     *
+     * @param deviceRotation The [DeviceRotation] to set.
+     */
     fun setDeviceRotation(deviceRotation: DeviceRotation)
 
+    /**
+     * Sets the concurrent camera mode.
+     *
+     * @param concurrentCameraMode The [ConcurrentCameraMode] to set.
+     */
     suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
 
+    /**
+     * Sets the image output format.
+     *
+     * @param imageFormat The [ImageOutputFormat] to set.
+     */
     suspend fun setImageFormat(imageFormat: ImageOutputFormat)
 
+    /**
+     * Sets whether audio is enabled for video recording.
+     *
+     * @param isAudioEnabled Whether audio should be enabled.
+     */
     suspend fun setAudioEnabled(isAudioEnabled: Boolean)
 
+    /**
+     * Sets the video stabilization mode.
+     *
+     * @param stabilizationMode The [StabilizationMode] to set.
+     */
     suspend fun setStabilizationMode(stabilizationMode: StabilizationMode)
 
+    /**
+     * Sets the target frame rate for video recording.
+     *
+     * @param targetFrameRate The target frame rate in frames per second.
+     */
     suspend fun setTargetFrameRate(targetFrameRate: Int)
 
+    /**
+     * Sets the maximum video duration.
+     *
+     * @param durationInMillis The maximum duration in milliseconds.
+     */
     suspend fun setMaxVideoDuration(durationInMillis: Long)
 
+    /**
+     * Sets the capture mode for the camera.
+     *
+     * @param captureMode The [CaptureMode] to set.
+     */
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
     /**

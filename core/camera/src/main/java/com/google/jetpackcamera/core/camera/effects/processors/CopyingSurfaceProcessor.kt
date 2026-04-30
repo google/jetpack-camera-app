@@ -51,7 +51,7 @@ private const val TIMESTAMP_UNINITIALIZED = -1L
  * This is a [SurfaceProcessor] that passes on the same content from the input
  * surface to the output surface. Used to make a copies of surfaces.
  */
-class CopyingSurfaceProcessor(coroutineScope: CoroutineScope) : SurfaceProcessor {
+internal class CopyingSurfaceProcessor(coroutineScope: CoroutineScope) : SurfaceProcessor {
 
     private val inputSurfaceFlow = MutableStateFlow<SurfaceRequestScope?>(null)
     private val outputSurfaceFlow = MutableStateFlow<SurfaceOutputScope?>(null)
