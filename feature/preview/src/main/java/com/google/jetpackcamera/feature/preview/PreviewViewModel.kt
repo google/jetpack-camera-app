@@ -42,10 +42,10 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
 import com.google.jetpackcamera.ui.components.capture.LOW_LIGHT_BOOST_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.R
-import com.google.jetpackcamera.ui.components.capture.ScreenFlash
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
 import com.google.jetpackcamera.ui.controller.ImageWellController
+import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.ZoomController
 import com.google.jetpackcamera.ui.controller.debug.DebugController
@@ -54,6 +54,7 @@ import com.google.jetpackcamera.ui.controller.impl.CaptureControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.DebugControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.ImageWellControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.QuickSettingsControllerImpl
+import com.google.jetpackcamera.ui.controller.impl.ScreenFlashControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.SnackBarControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.ZoomControllerImpl
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
@@ -116,7 +117,10 @@ class PreviewViewModel @Inject constructor(
 
     private var cameraPropertiesJSON = ""
 
-    val screenFlash = ScreenFlash(cameraSystem, viewModelScope)
+    val screenFlashController: ScreenFlashController = ScreenFlashControllerImpl(
+        cameraSystem = cameraSystem,
+        coroutineContext = viewModelScope.coroutineContext
+    )
 
     // Eagerly initialize the CameraSystem and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.

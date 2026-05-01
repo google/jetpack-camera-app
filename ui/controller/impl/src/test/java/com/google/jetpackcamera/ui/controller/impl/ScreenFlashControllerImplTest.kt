@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.capture
+package com.google.jetpackcamera.ui.controller.impl
 
 import android.content.ContentResolver
 import android.content.Context
@@ -25,9 +25,9 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.ui.components.capture.ScreenFlash
-import com.google.jetpackcamera.ui.components.capture.capture.rules.MainDispatcherRule
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -35,16 +35,21 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestRule
+import org.junit.runner.Description
 import org.junit.runner.RunWith
+import org.junit.runners.model.Statement
 import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-class ScreenFlashTest {
+class ScreenFlashControllerImplTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
 
@@ -52,11 +57,11 @@ class ScreenFlashTest {
     val mainDispatcherRule = MainDispatcherRule(testDispatcher)
 
     private val cameraSystem = FakeCameraSystem()
-    private lateinit var screenFlash: ScreenFlash
+    private lateinit var screenFlash: ScreenFlashControllerImpl
 
     @Before
     fun setup() = runTest(testDispatcher) {
-        screenFlash = ScreenFlash(cameraSystem, testScope)
+        screenFlash = ScreenFlashControllerImpl(cameraSystem, testScope.coroutineContext)
     }
 
     @Test
@@ -129,5 +134,19 @@ class ScreenFlashTest {
 
     companion object {
         const val FLOAT_TOLERANCE = 0.001f
+    }
+}
+
+class MainDispatcherRule(private val dispatcher: CoroutineDispatcher) : TestRule {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun apply(base: Statement?, description: Description?) = object : Statement() {
+        override fun evaluate() {
+            Dispatchers.setMain(dispatcher)
+            try {
+                base!!.evaluate()
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
     }
 }

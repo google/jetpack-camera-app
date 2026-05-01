@@ -99,6 +99,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQui
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
 import com.google.jetpackcamera.ui.controller.ImageWellController
+import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.debug.DebugController
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
@@ -140,7 +141,7 @@ fun PreviewScreen(
     val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
 
     val screenFlashUiState: ScreenFlashUiState
-        by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        by viewModel.screenFlashController.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
         by viewModel.surfaceRequest.collectAsState()
@@ -277,7 +278,7 @@ fun PreviewScreen(
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
-                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
                         zoomStateManager.absoluteZoom(
@@ -319,7 +320,8 @@ fun PreviewScreen(
                 quickSettingsController = viewModel.quickSettingsController,
                 captureController = viewModel.captureController,
                 imageWellController = viewModel.imageWellController,
-                cameraController = viewModel.cameraController
+                cameraController = viewModel.cameraController,
+                screenFlashController = viewModel.screenFlashController
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -344,7 +346,6 @@ private fun ContentScreen(
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
-    onClearUiScreenBrightness: (Float) -> Unit = {},
     onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onScaleZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onIncrementZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
@@ -358,7 +359,8 @@ private fun ContentScreen(
     snackBarController: SnackBarController? = null,
     captureController: CaptureController? = null,
     imageWellController: ImageWellController? = null,
-    cameraController: CameraController? = null
+    cameraController: CameraController? = null,
+    screenFlashController: ScreenFlashController? = null
 ) {
     val onFlipCamera = {
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
@@ -561,7 +563,11 @@ private fun ContentScreen(
             // if the relevant states are no longer changing.
             ScreenFlashScreen(
                 screenFlashUiState = screenFlashUiState,
-                onInitialBrightnessCalculated = onClearUiScreenBrightness
+                onInitialBrightnessCalculated = {
+                    screenFlashController?.setClearUiScreenBrightness(
+                        it
+                    )
+                }
             )
         },
         snackBar = { modifier, snackbarHostState ->

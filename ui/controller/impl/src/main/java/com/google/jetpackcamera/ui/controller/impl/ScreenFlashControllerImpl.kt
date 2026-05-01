@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,30 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture
+package com.google.jetpackcamera.ui.controller.impl
 
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
-private const val TAG = "ScreenFlash"
-
 /**
- * Contains the UI state maintaining logic for screen flash feature.
+ * Implementation of [ScreenFlashController] that handles screen flash actions.
+ *
+ * @param cameraSystem The [CameraSystem] for accessing camera events.
+ * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
-// TODO: Add this to ViewModelScoped so that it can be injected automatically. However, the current
-//  ViewModel and Hilt APIs probably don't support injecting the viewModelScope.
-class ScreenFlash(
+class ScreenFlashControllerImpl(
     private val cameraSystem: CameraSystem,
-    private val scope: CoroutineScope
-) {
+    coroutineContext: CoroutineContext
+) : ScreenFlashController {
+    private val job = Job(parent = coroutineContext[Job.Key])
+    private val scope = CoroutineScope(coroutineContext + job)
 
     private val _screenFlashUiState: MutableStateFlow<ScreenFlashUiState> =
         MutableStateFlow(ScreenFlashUiState())
-    val screenFlashUiState: StateFlow<ScreenFlashUiState> = _screenFlashUiState
+    override val screenFlashUiState: StateFlow<ScreenFlashUiState> = _screenFlashUiState
 
     init {
         scope.launch {
@@ -68,15 +74,20 @@ class ScreenFlash(
         }
     }
 
-    /**
-     * Sets the screenBrightness value to the value right before APPLY_UI event for the next
-     * CLEAR_UI event, will be set to unknown (null) again after CLEAR_UI event is completed.
-     */
-    fun setClearUiScreenBrightness(brightness: Float) {
+    override fun setClearUiScreenBrightness(brightness: Float) {
         scope.launch {
             _screenFlashUiState.emit(
                 screenFlashUiState.value.copy(screenBrightnessToRestore = brightness)
             )
         }
+    }
+
+    /**
+     * Initiates the cancellation of this controller's scope and returns its Job.
+     * To wait for cancellation to complete, call .join() on the returned Job.
+     */
+    fun cancelScope(): Job {
+        scope.cancel()
+        return scope.coroutineContext.job
     }
 }
