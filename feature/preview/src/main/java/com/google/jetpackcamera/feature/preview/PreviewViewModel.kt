@@ -23,7 +23,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
-import com.google.jetpackcamera.core.common.DefaultSaveMode
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
@@ -90,12 +89,11 @@ private const val TAG = "PreviewViewModel"
 class PreviewViewModel @Inject constructor(
     private val cameraSystem: CameraSystem,
     private val savedStateHandle: SavedStateHandle,
-    @DefaultSaveMode private val defaultSaveMode: SaveMode,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: ConstraintsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
-    private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
+    private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: SaveMode.Immediate
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState> =
         MutableStateFlow(TrackedCaptureUiState())
     private val _snackBarUiState: MutableStateFlow<SnackBarUiState.Enabled> =
