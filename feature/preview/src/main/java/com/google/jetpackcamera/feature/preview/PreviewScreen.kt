@@ -96,6 +96,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSetting
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
+import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
 import com.google.jetpackcamera.ui.controller.ImageWellController
@@ -139,8 +140,8 @@ fun PreviewScreen(
     val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
     val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
 
-    val screenFlashUiState: ScreenFlashUiState
-        by viewModel.screenFlash.screenFlashUiState.collectAsState()
+        val screenFlashUiState: ScreenFlashUiState
+        by viewModel.screenFlashController.screenFlashUiState.collectAsState()
 
     val surfaceRequest: SurfaceRequest?
         by viewModel.surfaceRequest.collectAsState()
@@ -277,7 +278,7 @@ fun PreviewScreen(
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
-                onClearUiScreenBrightness = viewModel.screenFlash::setClearUiScreenBrightness,
+                
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
                         zoomStateManager.absoluteZoom(
@@ -318,8 +319,9 @@ fun PreviewScreen(
                 snackBarController = viewModel.snackBarController,
                 quickSettingsController = viewModel.quickSettingsController,
                 captureController = viewModel.captureController,
-                imageWellController = viewModel.imageWellController,
-                cameraController = viewModel.cameraController
+                                imageWellController = viewModel.imageWellController,
+                cameraController = viewModel.cameraController,
+                screenFlashController = viewModel.screenFlashController
             )
             val readStoragePermission: PermissionState = rememberPermissionState(
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -344,7 +346,7 @@ private fun ContentScreen(
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
-    onClearUiScreenBrightness: (Float) -> Unit = {},
+    
     onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onScaleZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onIncrementZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
@@ -357,8 +359,9 @@ private fun ContentScreen(
     quickSettingsController: QuickSettingsController? = null,
     snackBarController: SnackBarController? = null,
     captureController: CaptureController? = null,
-    imageWellController: ImageWellController? = null,
-    cameraController: CameraController? = null
+        imageWellController: ImageWellController? = null,
+    cameraController: CameraController? = null,
+    screenFlashController: ScreenFlashController? = null
 ) {
     val onFlipCamera = {
         if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
@@ -559,9 +562,9 @@ private fun ContentScreen(
             // may still be running after flash mode change and clear actions (e.g. brightness restore)
             // may need to be handled later. Compose smart recomposition should be able to optimize this
             // if the relevant states are no longer changing.
-            ScreenFlashScreen(
+                        ScreenFlashScreen(
                 screenFlashUiState = screenFlashUiState,
-                onInitialBrightnessCalculated = onClearUiScreenBrightness
+                onInitialBrightnessCalculated = { screenFlashController?.setClearUiScreenBrightness(it) }
             )
         },
         snackBar = { modifier, snackbarHostState ->

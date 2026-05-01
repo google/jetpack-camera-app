@@ -77,6 +77,16 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:common"))
     implementation(project(":core:camera"))
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(project(":core:common"))
+    testImplementation(project(":core:camera:testing"))
+    testImplementation(project(":data:settings"))
 }
 
 // Allow references to generated code
