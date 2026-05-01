@@ -327,7 +327,8 @@ class PostCaptureViewModel @Inject constructor(
                         cookie = cookie,
                         stringResource = stringResource,
                         withDismissAction = true,
-                        testTag = testTag
+                        testTag = testTag,
+                        isError = false
                     )
                 )
             } else {
@@ -349,7 +350,8 @@ class PostCaptureViewModel @Inject constructor(
                         cookie = cookie,
                         stringResource = stringResource,
                         withDismissAction = true,
-                        testTag = testTag
+                        testTag = testTag,
+                        isError = true
                     )
                 )
             }
@@ -370,7 +372,8 @@ class PostCaptureViewModel @Inject constructor(
                     cookie = cookie,
                     stringResource = stringResource,
                     withDismissAction = true,
-                    testTag = testTag
+                    testTag = testTag,
+                    isError = true
                 )
             )
         }
@@ -401,6 +404,7 @@ class PostCaptureViewModel @Inject constructor(
                             is MediaDescriptor.Content.Video ->
                                 R.string.snackbar_delete_video_failure
                         },
+                        isError = true,
                         withDismissAction = true,
                         testTag = when (mediaDescriptor) {
                             is MediaDescriptor.Content.Image ->
