@@ -75,6 +75,7 @@ class ProtoConversionTest {
                 ImageOutputFormat.JPEG -> ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG
                 ImageOutputFormat.JPEG_ULTRA_HDR
                 -> ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
+
                 else -> TODO(
                     "Test does not yet contain correct conversion for image output format " +
                         "type: ${imageOutputFormat.name}"
@@ -94,8 +95,10 @@ class ProtoConversionTest {
                 ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG,
                 ImageOutputFormatProto.UNRECOGNIZED
                 -> ImageOutputFormat.JPEG
+
                 ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
                 -> ImageOutputFormat.JPEG_ULTRA_HDR
+
                 else -> TODO(
                     "Test does not yet contain correct conversion for image output format " +
                         "proto type: ${imageOutputFormatProto.name}"

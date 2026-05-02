@@ -116,6 +116,7 @@ dependencies {
     implementation(libs.protobuf.kotlin.lite)
 
     implementation(project(":data:settings"))
+    implementation(project(":data:settings-datastore"))
     implementation(project(":core:model"))
 }
 

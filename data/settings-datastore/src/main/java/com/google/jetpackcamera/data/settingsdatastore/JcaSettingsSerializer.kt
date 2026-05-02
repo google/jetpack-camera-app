@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings
+package com.google.jetpackcamera.data.settingsdatastore
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
@@ -27,6 +27,7 @@ import com.google.jetpackcamera.model.proto.LensFacing
 import com.google.jetpackcamera.model.proto.StabilizationMode
 import com.google.jetpackcamera.model.proto.StreamConfig
 import com.google.jetpackcamera.model.proto.VideoQuality
+import com.google.jetpackcamera.settings.JcaSettings
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream

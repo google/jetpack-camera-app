@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.google.protobuf)
     alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
-    namespace = "com.google.jetpackcamera.data.settings"
+    namespace = "com.google.jetpackcamera.data.settingsdatastore"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -34,14 +33,15 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
-    flavorDimensions += "flavor"
-    productFlavors {
-        create("stable") {
-            dimension = "flavor"
-            isDefault = true
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -69,25 +69,52 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
 
     // Hilt
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
+    // proto datastore
+    implementation(libs.protobuf.kotlin.lite)
+    implementation(libs.androidx.datastore)
+
     // Access Model data
-    implementation(project(":core:model"))
     implementation(project(":core:common"))
+    implementation(project(":core:model"))
+    implementation(project(":data:settings"))
 
     // Testing
     testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.truth) // For unit tests
-    testImplementation(project(":core:common")) // Explicitly add for unit tests
-
-    androidTestImplementation(libs.androidx.junit)
+    testImplementation(libs.truth)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.truth) // For instrumented tests
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.21.12"
+    }
+
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") {
+                    option("lite")
+                }
+            }
+
+            task.builtins {
+                create("kotlin") {
+                    option("lite")
+                }
+            }
+        }
+    }
 }
 
 // Allow references to generated code
