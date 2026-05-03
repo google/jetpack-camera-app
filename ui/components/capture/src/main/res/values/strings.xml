@@ -42,6 +42,10 @@
 
 
     <!-- Notification Text -->
+    <string name="toast_hybrid_capture_restricted">Hybrid Capture option is restricted</string>
+    <string name="toast_image_capture_restricted">Image Capture option is restricted</string>
+    <string name="toast_video_capture_restricted">Image Capture option is restricted</string>
+
     <string name="toast_image_capture_success">Image Capture Success</string>
     <string name="toast_video_capture_success">Video Capture Success</string>
     <string name="toast_capture_failure">Image Capture Failure</string>

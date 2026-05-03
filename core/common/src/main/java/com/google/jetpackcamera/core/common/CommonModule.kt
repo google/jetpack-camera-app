@@ -74,3 +74,7 @@ annotation class IODispatcher
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DefaultCoroutineScope
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultAppConfig

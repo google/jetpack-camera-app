@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.ConstraintsRepository
+import com.google.jetpackcamera.settings.api.DeveloperAppConfig
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -61,6 +62,7 @@ import kotlinx.coroutines.flow.filterNotNull
  */
 fun captureUiState(
     cameraSystem: CameraSystem,
+    appConfig: DeveloperAppConfig,
     constraintsRepository: ConstraintsRepository,
     trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     externalCaptureMode: ExternalCaptureMode
@@ -76,6 +78,7 @@ fun captureUiState(
     ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
         val captureModeUiState = CaptureModeUiState.from(
             systemConstraints,
+            appConfig.captureMode.uiRestriction,
             cameraAppSettings,
             externalCaptureMode
         )
@@ -160,7 +163,8 @@ fun captureUiState(
                 systemConstraints,
                 cameraAppSettings,
                 cameraState,
-                externalCaptureMode
+                externalCaptureMode,
+                appConfig.captureMode.uiRestriction
             ),
             hdrUiState = hdrUiState,
             focusMeteringUiState = focusMeteringUiState,

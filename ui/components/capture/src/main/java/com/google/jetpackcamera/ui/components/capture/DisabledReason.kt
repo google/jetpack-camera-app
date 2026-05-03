@@ -27,6 +27,18 @@ enum class DisabledReason(
     // 'override' is required
     override val reasonTextResId: Int
 ) : DisableRationale {
+    IMAGE_CAPTURE_RESTRICTED(
+        testTag = IMAGE_CAPTURE_RESTRICTED_TAG,
+        R.string.toast_image_capture_restricted
+    ),
+    VIDEO_CAPTURE_RESTRICTED(
+        testTag = IMAGE_CAPTURE_RESTRICTED_TAG,
+        R.string.toast_image_capture_restricted
+    ),
+    HYBRID_CAPTURE_RESTRICTED(
+        testTag = IMAGE_CAPTURE_RESTRICTED_TAG,
+        R.string.toast_image_capture_restricted
+    ),
     VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(
         VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
         R.string.toast_video_capture_external_unsupported
