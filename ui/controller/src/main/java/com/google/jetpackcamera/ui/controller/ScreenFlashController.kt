@@ -15,13 +15,22 @@
  */
 package com.google.jetpackcamera.ui.controller
 
-import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
-import kotlinx.coroutines.flow.StateFlow
+
 
 /**
- * Controller for screen flash feature.
+ * Controller for the screen flash feature.
+ *
+ * The screen flash feature temporarily brightens the screen to act as a flash
+ * when capturing photos or videos (especially in low-light conditions using front-facing camera).
  */
 interface ScreenFlashController {
-    val screenFlashUiState: StateFlow<ScreenFlashUiState>
+    /**
+     * Sets the original screen brightness level to be restored after the screen flash effect completes.
+     *
+     * This brightness value is stored and subsequently used by the system's clear overlay actions
+     * to revert the screen back to its user-configured brightness state.
+     *
+     * @param brightness The original screen brightness level before the flash sequence was initiated.
+     */
     fun setClearUiScreenBrightness(brightness: Float)
 }

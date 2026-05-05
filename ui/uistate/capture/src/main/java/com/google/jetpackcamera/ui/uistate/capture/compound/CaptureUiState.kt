@@ -30,6 +30,7 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
+import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 
 /**
@@ -92,7 +93,8 @@ sealed interface CaptureUiState {
         val zoomUiState: ZoomUiState = ZoomUiState.Unavailable,
         val zoomControlUiState: ZoomControlUiState = ZoomControlUiState.Unavailable,
         val hdrUiState: HdrUiState = HdrUiState.Unavailable,
-        val focusMeteringUiState: FocusMeteringUiState = FocusMeteringUiState.Unspecified
+        val focusMeteringUiState: FocusMeteringUiState = FocusMeteringUiState.Unspecified,
+        val screenFlashUiState: ScreenFlashUiState = ScreenFlashUiState()
     ) : CaptureUiState
 
     companion object

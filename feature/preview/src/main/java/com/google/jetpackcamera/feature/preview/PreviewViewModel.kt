@@ -119,6 +119,7 @@ class PreviewViewModel @Inject constructor(
 
     val screenFlashController: ScreenFlashController = ScreenFlashControllerImpl(
         cameraSystem = cameraSystem,
+        trackedCaptureUiState = trackedCaptureUiState,
         coroutineContext = viewModelScope.coroutineContext
     )
 

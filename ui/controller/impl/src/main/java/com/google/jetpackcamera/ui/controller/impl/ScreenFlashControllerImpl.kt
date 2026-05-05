@@ -18,12 +18,13 @@ package com.google.jetpackcamera.ui.controller.impl
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
+import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
@@ -31,53 +32,56 @@ import kotlinx.coroutines.launch
  * Implementation of [ScreenFlashController] that handles screen flash actions.
  *
  * @param cameraSystem The [CameraSystem] for accessing camera events.
+ * @param trackedCaptureUiState The [MutableStateFlow] of [TrackedCaptureUiState] to update the flash state.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class ScreenFlashControllerImpl(
     private val cameraSystem: CameraSystem,
+    private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     coroutineContext: CoroutineContext
 ) : ScreenFlashController {
     private val job = Job(parent = coroutineContext[Job.Key])
     private val scope = CoroutineScope(coroutineContext + job)
 
-    private val _screenFlashUiState: MutableStateFlow<ScreenFlashUiState> =
-        MutableStateFlow(ScreenFlashUiState())
-    override val screenFlashUiState: StateFlow<ScreenFlashUiState> = _screenFlashUiState
-
     init {
         scope.launch {
             for (event in cameraSystem.getScreenFlashEvents()) {
-                _screenFlashUiState.emit(
-                    when (event.type) {
-                        CameraSystem.ScreenFlashEvent.Type.APPLY_UI ->
-                            screenFlashUiState.value.copy(
-                                enabled = true,
-                                onChangeComplete = event.onComplete
-                            )
+                trackedCaptureUiState.update { old ->
+                    val oldFlashState = old.screenFlashUiState
+                    old.copy(
+                        screenFlashUiState = when (event.type) {
+                            CameraSystem.ScreenFlashEvent.Type.APPLY_UI ->
+                                oldFlashState.copy(
+                                    enabled = true,
+                                    onChangeComplete = event.onComplete
+                                )
 
-                        CameraSystem.ScreenFlashEvent.Type.CLEAR_UI ->
-                            screenFlashUiState.value.copy(
-                                enabled = false,
-                                onChangeComplete = {
-                                    event.onComplete()
-                                    // reset ui state on CLEAR_UI event completion
-                                    scope.launch {
-                                        _screenFlashUiState.emit(
-                                            ScreenFlashUiState()
-                                        )
+                            CameraSystem.ScreenFlashEvent.Type.CLEAR_UI ->
+                                oldFlashState.copy(
+                                    enabled = false,
+                                    onChangeComplete = {
+                                        event.onComplete()
+                                        // reset ui state on CLEAR_UI event completion
+                                        scope.launch {
+                                            trackedCaptureUiState.update { o ->
+                                                o.copy(screenFlashUiState = ScreenFlashUiState())
+                                            }
+                                        }
                                     }
-                                }
-                            )
-                    }
-                )
+                                )
+                        }
+                    )
+                }
             }
         }
     }
 
     override fun setClearUiScreenBrightness(brightness: Float) {
-        scope.launch {
-            _screenFlashUiState.emit(
-                screenFlashUiState.value.copy(screenBrightnessToRestore = brightness)
+        trackedCaptureUiState.update { old ->
+            old.copy(
+                screenFlashUiState = old.screenFlashUiState.copy(
+                    screenBrightnessToRestore = brightness
+                )
             )
         }
     }

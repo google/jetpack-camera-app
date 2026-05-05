@@ -140,8 +140,7 @@ fun PreviewScreen(
     val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
     val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
 
-    val screenFlashUiState: ScreenFlashUiState
-        by viewModel.screenFlashController.screenFlashUiState.collectAsState()
+    val screenFlashUiState = (captureUiState as? CaptureUiState.Ready)?.screenFlashUiState ?: ScreenFlashUiState()
 
     val surfaceRequest: SurfaceRequest?
         by viewModel.surfaceRequest.collectAsState()
