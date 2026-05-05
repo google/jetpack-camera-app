@@ -13,20 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera
+package com.google.jetpackcamera.data.camera
 
-import javax.inject.Inject
-import javax.inject.Provider
-import javax.inject.Singleton
+import com.google.jetpackcamera.core.camera.CameraSystem
 
 /**
- * Implementation of [CameraSystemRepository] that lazily constructs [CameraXCameraSystem].
+ * Repository that holds an instance of [CameraSystem].
  */
-@Singleton
-class CameraXCameraSystemRepository @Inject constructor(
-    private val cameraXCameraSystemProvider: Provider<CameraXCameraSystem>
-) : CameraSystemRepository {
-    override val cameraSystem: CameraXCameraSystem by lazy {
-        cameraXCameraSystemProvider.get()
-    }
+interface CameraSystemRepository {
+    val cameraSystem: CameraSystem
 }

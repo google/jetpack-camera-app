@@ -36,7 +36,7 @@ rootProject.name = "Jetpack Camera"
 include(":app")
 include(":feature:preview")
 include(":core:camera")
-include(":core:camera:bindings")
+include(":data:camera")
 include(":core:camera:testing")
 include(":core:camera:low-light")
 include(":core:camera:low-light-playservices")

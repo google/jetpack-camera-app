@@ -22,7 +22,7 @@ plugins {
 }
 
 android {
-    namespace = "com.google.jetpackcamera.core.camera.bindings"
+    namespace = "com.google.jetpackcamera.data.camera"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -68,6 +68,11 @@ dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
     implementation(project(":core:camera"))
+    implementation(project(":core:camera:low-light"))
+    implementation(project(":core:camera:postprocess"))
+    implementation(project(":core:common"))
+    implementation(project(":core:model"))
+    implementation(project(":data:settings"))
 }
 
 // Allow references to generated code

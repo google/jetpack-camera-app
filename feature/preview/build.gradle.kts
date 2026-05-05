@@ -136,7 +136,7 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core:camera"))
-    implementation(project(":core:camera:bindings"))
+    implementation(project(":data:camera"))
     implementation(project(":core:common"))
     implementation(project(":data:media"))
     implementation(project(":data:settings"))
