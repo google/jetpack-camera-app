@@ -16,35 +16,19 @@
 package com.google.jetpackcamera.data.camera
 
 import com.google.jetpackcamera.core.camera.CameraXCameraSystem
-import com.google.jetpackcamera.core.common.DefaultCoroutineScope
-import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.launch
 
 /**
- * Implementation of [CameraSystemRepository] that lazily constructs [CameraXCameraSystem]
- * and handles writing camera constraints to the settings datastore.
+ * Implementation of [CameraSystemRepository] that lazily constructs [CameraXCameraSystem].
  */
 @Singleton
 class CameraXCameraSystemRepository @Inject constructor(
-    private val cameraXCameraSystemProvider: Provider<CameraXCameraSystem>,
-    private val constraintsRepository: SettableConstraintsRepository,
-    @DefaultCoroutineScope private val coroutineScope: CoroutineScope
+    private val cameraXCameraSystemProvider: Provider<CameraXCameraSystem>
 ) : CameraSystemRepository {
 
     override val cameraSystem: CameraXCameraSystem by lazy {
-        val system = cameraXCameraSystemProvider.get()
-
-        // Observe discovered hardware constraints and save them to settings datastore
-        coroutineScope.launch {
-            system.getSystemConstraints().filterNotNull().collect { constraints ->
-                constraintsRepository.updateSystemConstraints(constraints)
-            }
-        }
-        system
+        cameraXCameraSystemProvider.get()
     }
 }

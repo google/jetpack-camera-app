@@ -36,7 +36,7 @@ import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
-import com.google.jetpackcamera.settings.ConstraintsRepository
+import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
@@ -75,6 +75,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -92,7 +93,7 @@ class PreviewViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     @DefaultSaveMode private val defaultSaveMode: SaveMode,
     private val settingsRepository: SettingsRepository,
-    private val constraintsRepository: ConstraintsRepository,
+    private val constraintsRepository: SettableConstraintsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
     private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
@@ -223,6 +224,14 @@ class PreviewViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            launch {
+                cameraSystemRepository.cameraSystem.getSystemConstraints()
+                    .filterNotNull()
+                    .collect { constraints ->
+                        constraintsRepository.updateSystemConstraints(constraints)
+                    }
+            }
+
             launch {
                 var oldCameraAppSettings: CameraAppSettings? = null
                 settingsRepository.defaultCameraAppSettings

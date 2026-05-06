@@ -131,7 +131,7 @@ class CameraXCameraSystem(
     override fun getCurrentCameraState(): StateFlow<CameraState> = currentCameraState.asStateFlow()
 
     private val _systemConstraints = MutableStateFlow<CameraSystemConstraints?>(null)
-    fun getSystemConstraints(): StateFlow<CameraSystemConstraints?> =
+    override fun getSystemConstraints(): StateFlow<CameraSystemConstraints?> =
         _systemConstraints.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)

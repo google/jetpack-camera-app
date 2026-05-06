@@ -38,6 +38,7 @@ import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -162,6 +163,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     }
 
     override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
+
+    private val _systemConstraints = MutableStateFlow<CameraSystemConstraints?>(null)
+    override fun getSystemConstraints(): StateFlow<CameraSystemConstraints?> =
+        _systemConstraints.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
     override fun getSurfaceRequest(): StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
