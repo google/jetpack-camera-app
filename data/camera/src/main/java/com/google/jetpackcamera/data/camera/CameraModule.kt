@@ -16,6 +16,8 @@
 package com.google.jetpackcamera.data.camera
 
 import android.app.Application
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.google.jetpackcamera.core.camera.CameraXCameraSystem
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
@@ -52,7 +54,7 @@ interface CameraModule {
         @Provides
         @Singleton
         fun providesCameraXCameraSystem(
-            application: Application,
+            @ApplicationContext context: Context,
             @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
             @IODispatcher ioDispatcher: CoroutineDispatcher,
             @DefaultFilePathGenerator filePathGenerator: FilePathGenerator,
@@ -70,7 +72,7 @@ interface CameraModule {
                 >
         ): CameraXCameraSystem {
             return CameraXCameraSystem(
-                application,
+                context as Application,
                 defaultDispatcher,
                 ioDispatcher,
                 filePathGenerator,
