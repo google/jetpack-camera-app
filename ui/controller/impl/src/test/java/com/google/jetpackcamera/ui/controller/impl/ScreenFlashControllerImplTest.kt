@@ -65,7 +65,11 @@ class ScreenFlashControllerImplTest {
 
     @Before
     fun setup() = runTest(testDispatcher) {
-        screenFlash = ScreenFlashControllerImpl(cameraSystem, trackedCaptureUiState, testScope.coroutineContext)
+        screenFlash = ScreenFlashControllerImpl(
+            cameraSystem,
+            trackedCaptureUiState,
+            testScope.coroutineContext
+        )
     }
 
     @Test

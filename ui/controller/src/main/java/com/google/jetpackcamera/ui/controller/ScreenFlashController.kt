@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.ui.controller
 
-
-
 /**
  * Controller for the screen flash feature.
  *
