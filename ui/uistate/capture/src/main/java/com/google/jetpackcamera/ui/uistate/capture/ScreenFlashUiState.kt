@@ -35,9 +35,5 @@ data class ScreenFlashUiState(
     val onChangeComplete: () -> Unit = {},
     val screenBrightnessToRestore: Float? = null
 ) {
-    companion object {
-        fun from(trackedCaptureUiState: TrackedCaptureUiState): ScreenFlashUiState {
-            return trackedCaptureUiState.screenFlashUiState
-        }
-    }
+    companion object
 }
