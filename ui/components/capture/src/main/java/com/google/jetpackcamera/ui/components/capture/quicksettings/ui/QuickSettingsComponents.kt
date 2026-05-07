@@ -63,7 +63,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.model.DynamicRange
@@ -74,15 +73,14 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptureMode
-import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraConcurrentCameraMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
-import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 
@@ -93,33 +91,31 @@ fun CaptureModeRow(
     captureModeUiState: CaptureModeUiState
 ) {
     if (captureModeUiState is CaptureModeUiState.Available) {
+        val enum = when (captureModeUiState.selectedCaptureMode){
+            CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
+            CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
+            CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
+        }
+
         SettingRow(
             modifier = modifier,
-            title = "Capture Mode",
-            stateString = captureModeUiState.selectedCaptureMode.toString(),
-            settingsButtons = createCaptureModeButtons(captureModeUiState, onSetCaptureMode)
+            title = stringResource(id = R.string.quick_settings_title_capture_mode),
+            stateSubtitle = stringResource(enum.getTextResId()),
+            settingsButtons =captureModeUiState.availableCaptureModes
+                .map { selectableMode ->
+                    @Composable {
+                        CaptureModeToggleButton(
+                            modifier = Modifier
+                                .testTag("CaptureMode_${selectableMode.value.name}"),
+                            onClick = { onSetCaptureMode(selectableMode.value) },
+                            assignedCaptureMode = selectableMode.value,
+                            captureModeUiState = captureModeUiState,
+                            isHighlightEnabled = true
+                        )
+                    }
+                }.toTypedArray()
         )
     }
-}
-
-@Composable
-private fun createCaptureModeButtons(
-    captureModeUiState: CaptureModeUiState.Available,
-    onSetCaptureMode: (CaptureMode) -> Unit
-): Array<@Composable () -> Unit> {
-    return captureModeUiState.availableCaptureModes
-        .map { selectableMode ->
-            @Composable {
-                CaptureModeToggleButton(
-                    modifier = Modifier
-                        .testTag("CaptureMode_${selectableMode.value.name}"),
-                    onClick = { onSetCaptureMode(selectableMode.value) },
-                    assignedCaptureMode = selectableMode.value,
-                    captureModeUiState = captureModeUiState,
-                    isHighlightEnabled = true
-                )
-            }
-        }.toTypedArray()
 }
 
 @Composable
@@ -169,7 +165,7 @@ fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modi
 }
 
 @Composable
-fun QuickSetHdr(
+fun HdrRow(
     modifier: Modifier = Modifier,
     onClick: (DynamicRange, ImageOutputFormat) -> Unit,
     hdrUiState: HdrUiState
@@ -182,8 +178,8 @@ fun QuickSetHdr(
 
     SettingRow(
         modifier = modifier,
-        title = "HDR",
-        stateString = if (isHdrOn) {
+        title = stringResource(id = R.string.quick_settings_title_hdr),
+        stateSubtitle = if (isHdrOn) {
             stringResource(R.string.quick_settings_dynamic_range_hdr)
         } else {
             stringResource(R.string.quick_settings_dynamic_range_sdr)
@@ -223,7 +219,6 @@ fun AspectRatioRow(
                         AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
                         AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
                         AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-                        else -> CameraAspectRatio.ONE_ONE
                     }
                     QuickSettingToggleButton(
                         modifier = Modifier.testTag("AspectRatio_${selectableRatio.value.name}"),
@@ -234,10 +229,18 @@ fun AspectRatioRow(
                 }
             }.toTypedArray()
 
+        val stateSubtitle = when (aspectRatioUiState.selectedAspectRatio) {
+            AspectRatio.THREE_FOUR ->
+                stringResource(id = R.string.quick_settings_aspect_ratio_subtitle_three_four)
+            AspectRatio.NINE_SIXTEEN ->
+                stringResource(id = R.string.quick_settings_aspect_ratio_subtitle_nine_sixteen)
+            AspectRatio.ONE_ONE ->
+                stringResource(id = R.string.quick_settings_aspect_ratio_subtitle_one_one)
+        }
         SettingRow(
             modifier = modifier,
-            title = "Aspect Ratio",
-            stateString = aspectRatioUiState.selectedAspectRatio.toString(),
+            title = stringResource(id = R.string.quick_settings_title_aspect_ratio),
+            stateSubtitle = stateSubtitle,
             settingsButtons = settingsButtons
         )
     }
@@ -250,77 +253,41 @@ fun FlashRow(
     flashModeUiState: FlashModeUiState
 ) {
     if (flashModeUiState is FlashModeUiState.Available) {
+        val stateString = when (flashModeUiState.selectedFlashMode) {
+            FlashMode.OFF -> stringResource(id = R.string.quick_settings_flash_mode_subtitle_off)
+            FlashMode.AUTO -> stringResource(id = R.string.quick_settings_flash_mode_subtitle_auto)
+            FlashMode.ON -> stringResource(id = R.string.quick_settings_flash_mode_subtitle_on)
+            FlashMode.LOW_LIGHT_BOOST ->
+                stringResource(id = R.string.quick_settings_flash_mode_subtitle_low_light_boost)
+        }
         SettingRow(
             modifier = modifier,
-            title = "Capture Mode",
-            stateString = flashModeUiState.selectedFlashMode.toString(),
+            title = stringResource(id = R.string.quick_settings_title_flash_mode),
+            stateSubtitle = stateString,
             settingsButtons = flashModeUiState.availableFlashModes
                 .map { selectableMode ->
                     @Composable {
-                        QuickSetFlash(
-                            modifier = Modifier.testTag("FlashMode_${selectableMode.value.name}"),
-                            onClick = { onSetFlashMode(selectableMode.value) },
-                            assignedFlashMode = selectableMode.value,
-                            flashModeUiState = flashModeUiState
+                        QuickSettingToggleButton(
+                            modifier = modifier,
+                            enabled = selectableMode is SingleSelectableUiState.SelectableUi,
+                            enum = when (selectableMode.value) {
+                                FlashMode.OFF -> CameraFlashMode.OFF
+                                FlashMode.ON -> CameraFlashMode.ON
+                                FlashMode.AUTO -> CameraFlashMode.AUTO
+                                FlashMode.LOW_LIGHT_BOOST -> when (flashModeUiState.isLowLightBoostActive) {
+                                    true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
+                                    false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
+                                }
+                            },
+                            isSelected = flashModeUiState.selectedFlashMode == selectableMode.value,
+                            onClick = {
+                                onSetFlashMode(
+                                    selectableMode.value
+                                )
+                            }
                         )
                     }
                 }.toTypedArray()
-        )
-    }
-}
-
-@Composable
-fun QuickSetFlash(
-    modifier: Modifier = Modifier,
-    onClick: (FlashMode) -> Unit,
-    assignedFlashMode: FlashMode,
-    flashModeUiState: FlashModeUiState.Available
-) {
-    val enum = when (assignedFlashMode) {
-        FlashMode.OFF -> CameraFlashMode.OFF
-        FlashMode.ON -> CameraFlashMode.ON
-        FlashMode.AUTO -> CameraFlashMode.AUTO
-        FlashMode.LOW_LIGHT_BOOST -> when (flashModeUiState.isLowLightBoostActive) {
-            true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
-            false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
-        }
-    }
-    QuickSettingToggleButton(
-        modifier = modifier,
-        enum = enum,
-        isSelected = flashModeUiState.selectedFlashMode == assignedFlashMode,
-        onClick = {
-            onClick(
-                assignedFlashMode
-            )
-        }
-    )
-}
-
-@Composable
-fun QuickSetConcurrentCamera(
-    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit,
-    concurrentCameraUiState: ConcurrentCameraUiState,
-    modifier: Modifier = Modifier
-) {
-    if (concurrentCameraUiState is ConcurrentCameraUiState.Available) {
-        val enum: CameraConcurrentCameraMode =
-            when (concurrentCameraUiState.selectedConcurrentCameraMode) {
-                ConcurrentCameraMode.OFF -> CameraConcurrentCameraMode.OFF
-                ConcurrentCameraMode.DUAL -> CameraConcurrentCameraMode.DUAL
-            }
-        QuickSettingToggleButton(
-            modifier = modifier,
-            enum = enum,
-            onClick = {
-                when (concurrentCameraUiState.selectedConcurrentCameraMode) {
-                    ConcurrentCameraMode.OFF -> setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-                    ConcurrentCameraMode.DUAL -> setConcurrentCameraMode(ConcurrentCameraMode.OFF)
-                }
-            },
-            isSelected = concurrentCameraUiState.selectedConcurrentCameraMode ==
-                ConcurrentCameraMode.DUAL,
-            enabled = concurrentCameraUiState.isEnabled
         )
     }
 }
@@ -410,7 +377,7 @@ fun QuickSettingsBottomSheet(
 @Composable
 fun SettingRow(
     title: String,
-    stateString: String,
+    stateSubtitle: String,
     modifier: Modifier = Modifier,
     // Using vararg to accept multiple button components
     vararg settingsButtons: @Composable () -> Unit
@@ -429,7 +396,7 @@ fun SettingRow(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = stateString,
+                text = stateSubtitle,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -676,7 +643,7 @@ private fun PreviewSettingRowDark() {
         ) {
             SettingRow(
                 title = "Video Resolution",
-                stateString = "Standard Definition",
+                stateSubtitle = "Standard Definition",
                 settingsButtons = arrayOf(
                     {
                         // Off State (Highlighted per your screenshot)

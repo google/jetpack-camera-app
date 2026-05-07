@@ -144,4 +144,21 @@
     <string name="quick_settings_title_video_settings">Video Settings</string>
     <string name="quick_settings_title_photo_settings">Photo Settings</string>
     <string name="quick_settings_title_photo_and_video_settings">Photo and Video Settings</string>
+
+    <!-- QuickSettings Titles -->
+    <string name="quick_settings_title_capture_mode">Capture Mode</string>
+    <string name="quick_settings_title_hdr">HDR</string>
+    <string name="quick_settings_title_aspect_ratio">Aspect Ratio</string>
+    <string name="quick_settings_title_flash_mode">Flash Mode</string>
+
+    <!-- Aspect Ratio State Subtitles-->
+    <string name="quick_settings_aspect_ratio_subtitle_three_four">3:4</string>
+    <string name="quick_settings_aspect_ratio_subtitle_nine_sixteen">9:16</string>
+    <string name="quick_settings_aspect_ratio_subtitle_one_one">1:1</string>
+
+    <!-- Flash Mode State Subtitles -->
+    <string name="quick_settings_flash_mode_subtitle_off">Off</string>
+    <string name="quick_settings_flash_mode_subtitle_auto">Auto</string>
+    <string name="quick_settings_flash_mode_subtitle_on">On</string>
+    <string name="quick_settings_flash_mode_subtitle_low_light_boost">Low Light Boost</string>
 </resources>

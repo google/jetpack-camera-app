@@ -37,7 +37,7 @@ import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureModeRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetHdr
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -53,9 +53,9 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 @Composable
 fun QuickSettingsBottomSheet(
     quickSettingsUiState: QuickSettingsUiState,
+    quickSettingsController: QuickSettingsController,
     modifier: Modifier = Modifier,
-    onNavigateToSettings: () -> Unit,
-    quickSettingsController: QuickSettingsController
+    onNavigateToSettings: () -> Unit = {}
 ) {
     if (quickSettingsUiState is QuickSettingsUiState.Available &&
         quickSettingsUiState.quickSettingsIsOpen
@@ -131,7 +131,7 @@ fun HybridQuickSettings(
 
         // HDR settings
         if (quickSettingsUiState.hdrUiState is HdrUiState.Available) {
-            QuickSetHdr(
+            HdrRow(
                 onClick = { d: DynamicRange, i: ImageOutputFormat ->
                     quickSettingsController.setDynamicRange(d)
                     quickSettingsController.setImageFormat(i)
@@ -164,7 +164,7 @@ fun VideoQuickSettings(
 
         // HDR settings
         if (quickSettingsUiState.hdrUiState is HdrUiState.Available) {
-            QuickSetHdr(
+            HdrRow(
                 onClick = { d: DynamicRange, i: ImageOutputFormat ->
                     quickSettingsController.setDynamicRange(d)
                     quickSettingsController.setImageFormat(i)
