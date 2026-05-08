@@ -73,6 +73,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
@@ -158,7 +159,7 @@ fun ToggleQuickSettingsButton(
 @Composable
 fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
     TextButton(
-        modifier = modifier,
+        modifier = modifier.testTag(SETTINGS_BUTTON),
         onClick = onNavigateToSettings,
         content = { Text(text = stringResource(R.string.quick_settings_more_text)) }
     )

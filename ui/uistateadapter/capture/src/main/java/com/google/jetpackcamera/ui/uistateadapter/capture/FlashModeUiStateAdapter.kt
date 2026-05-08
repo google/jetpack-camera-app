@@ -59,7 +59,8 @@ private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
 fun FlashModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
-    //visibleFlashModes: Set<FlashMode>
+    // todo(kc): supply visible flash modes from developer options
+    // visibleFlashModes: Set<FlashMode> = ORDERED_UI_SUPPORTED_FLASH_MODES.toSet()
 ): FlashModeUiState {
     val selectedFlashMode = cameraAppSettings.flashMode
 
@@ -71,7 +72,6 @@ fun FlashModeUiState.Companion.from(
             }
         }
     }
-    println("low light boost supported by device?" + allDeviceSupportedFlashModes.contains(FlashMode.LOW_LIGHT_BOOST))
 
     // Modes supported by the CURRENT lens
     val currentLensSupportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)

@@ -38,6 +38,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRat
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureModeRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrRow
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -55,7 +56,8 @@ fun QuickSettingsBottomSheet(
     quickSettingsUiState: QuickSettingsUiState,
     quickSettingsController: QuickSettingsController,
     modifier: Modifier = Modifier,
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    showMoreSettingsButton: Boolean = true
 ) {
     if (quickSettingsUiState is QuickSettingsUiState.Available &&
         quickSettingsUiState.quickSettingsIsOpen
@@ -72,22 +74,30 @@ fun QuickSettingsBottomSheet(
                 ) {
                     CaptureMode.VIDEO_ONLY -> VideoQuickSettings(
                         quickSettingsUiState = quickSettingsUiState,
-                        quickSettingsController = quickSettingsController
+                        quickSettingsController = quickSettingsController,
+                        onNavigateToSettings = onNavigateToSettings,
+                        showMoreSettingsButton = showMoreSettingsButton
                     )
 
                     CaptureMode.IMAGE_ONLY -> ImageQuickSettings(
                         quickSettingsUiState = quickSettingsUiState,
-                        quickSettingsController = quickSettingsController
+                        quickSettingsController = quickSettingsController,
+                        onNavigateToSettings = onNavigateToSettings,
+                        showMoreSettingsButton = showMoreSettingsButton
                     )
 
                     CaptureMode.STANDARD -> HybridQuickSettings(
                         quickSettingsUiState = quickSettingsUiState,
-                        quickSettingsController = quickSettingsController
+                        quickSettingsController = quickSettingsController,
+                        onNavigateToSettings = onNavigateToSettings,
+                        showMoreSettingsButton = showMoreSettingsButton
                     )
                 }
             } ?: ImageQuickSettings(
                 quickSettingsUiState = quickSettingsUiState,
-                quickSettingsController = quickSettingsController
+                quickSettingsController = quickSettingsController,
+                onNavigateToSettings = onNavigateToSettings,
+                showMoreSettingsButton = showMoreSettingsButton
             )
         }
     }
@@ -96,7 +106,9 @@ fun QuickSettingsBottomSheet(
 @Composable
 fun HybridQuickSettings(
     quickSettingsUiState: QuickSettingsUiState.Available,
-    quickSettingsController: QuickSettingsController
+    quickSettingsController: QuickSettingsController,
+    onNavigateToSettings: () -> Unit,
+    showMoreSettingsButton: Boolean
 ) {
     Column {
         Text(
@@ -140,12 +152,17 @@ fun HybridQuickSettings(
             )
         }
     }
+    if (showMoreSettingsButton) {
+        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
+    }
 }
 
 @Composable
 fun VideoQuickSettings(
     quickSettingsUiState: QuickSettingsUiState.Available,
-    quickSettingsController: QuickSettingsController
+    quickSettingsController: QuickSettingsController,
+    onNavigateToSettings: () -> Unit,
+    showMoreSettingsButton: Boolean
 ) {
     Column {
         Text(
@@ -176,12 +193,17 @@ fun VideoQuickSettings(
         // TODO: Add Resolution setting
         // TODO: Add Stabilization setting
     }
+    if (showMoreSettingsButton) {
+        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
+    }
 }
 
 @Composable
 fun ImageQuickSettings(
     quickSettingsUiState: QuickSettingsUiState.Available,
-    quickSettingsController: QuickSettingsController
+    quickSettingsController: QuickSettingsController,
+    onNavigateToSettings: () -> Unit,
+    showMoreSettingsButton: Boolean
 ) {
     Column {
         Text(
@@ -207,6 +229,9 @@ fun ImageQuickSettings(
         }
 
         // TODO: Add pre-capture timer setting
+    }
+    if (showMoreSettingsButton) {
+        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
     }
 }
 

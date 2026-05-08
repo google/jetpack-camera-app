@@ -530,7 +530,8 @@ private fun ContentScreen(
                         quickSettingsController.toggleQuickSettings()
                         onNavigateToSettings()
                     },
-                    quickSettingsController = quickSettingsController
+                    quickSettingsController = quickSettingsController,
+                    showMoreSettingsButton = true
                 )
             }
         },
