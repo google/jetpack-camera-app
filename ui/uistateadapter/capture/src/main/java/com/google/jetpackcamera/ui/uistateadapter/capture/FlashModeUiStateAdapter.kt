@@ -58,7 +58,7 @@ private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
  */
 fun FlashModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
-    systemConstraints: CameraSystemConstraints,
+    systemConstraints: CameraSystemConstraints
     // todo(kc): supply visible flash modes from developer options
     // visibleFlashModes: Set<FlashMode> = ORDERED_UI_SUPPORTED_FLASH_MODES.toSet()
 ): FlashModeUiState {
@@ -68,7 +68,7 @@ fun FlashModeUiState.Companion.from(
     val allDeviceSupportedFlashModes = buildSet<FlashMode> {
         systemConstraints.perLensConstraints.let {
             it.keys.forEach { key ->
-                it[key]?.supportedFlashModes?.let {flashModes -> addAll(flashModes) }
+                it[key]?.supportedFlashModes?.let { flashModes -> addAll(flashModes) }
             }
         }
     }
@@ -80,14 +80,13 @@ fun FlashModeUiState.Companion.from(
     val displayableModes = mutableListOf<SingleSelectableUiState<FlashMode>>()
 
     for (mode in ORDERED_UI_SUPPORTED_FLASH_MODES) {
-
         // 1. Hide if not supported by the device at all.
         if (!allDeviceSupportedFlashModes.contains(mode)) {
             continue
         }
 
         // 2. Hide if not designated as visible by the developer.
-        //todo(kc): supply visible flash modes from developer options
+        // todo(kc): supply visible flash modes from developer options
         /*if (!visibleFlashModes.contains(mode)) {
             continue
         }*/
@@ -95,7 +94,8 @@ fun FlashModeUiState.Companion.from(
         // 3. Special handling for LOW_LIGHT_BOOST based on other settings.
         if (mode == FlashMode.LOW_LIGHT_BOOST) {
             if (cameraAppSettings.dynamicRange != DynamicRange.SDR ||
-                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
+            ) {
                 continue // Hide LLB if HDR or Dual Camera is active
             }
         }
@@ -104,16 +104,21 @@ fun FlashModeUiState.Companion.from(
         if (currentLensSupportedFlashModes.contains(mode)) {
             displayableModes.add(SingleSelectableUiState.SelectableUi(mode)) // Enabled
         } else {
-            //todo(kc): add actual disabledreason for flash mode
-            displayableModes.add(SingleSelectableUiState.Disabled(value = mode, disabledReason = DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS)) // Disabled
+            // todo(kc): add actual disabledreason for flash mode
+            displayableModes.add(
+                SingleSelectableUiState.Disabled(
+                    value = mode,
+                    disabledReason = DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
+                )
+            ) // Disabled
         }
     }
 
     // UiState should be Unavailable if no modes are displayable,
     // or if only OFF is displayable and it's selectable.
     val onlyOffSelectable = displayableModes.size == 1 &&
-            displayableModes[0].value == FlashMode.OFF &&
-            displayableModes[0] is SingleSelectableUiState.SelectableUi
+        displayableModes[0].value == FlashMode.OFF &&
+        displayableModes[0] is SingleSelectableUiState.SelectableUi
 
     return if (displayableModes.isEmpty() || onlyOffSelectable) {
         Unavailable
@@ -137,7 +142,7 @@ fun FlashModeUiState.Companion.from(
 fun FlashModeUiState.updateFrom(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
-    cameraState: CameraState,
+    cameraState: CameraState
 ): FlashModeUiState {
     return when (this) {
         is Unavailable -> {
