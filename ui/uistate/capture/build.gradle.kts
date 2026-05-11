@@ -71,7 +71,6 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:camera"))
     implementation(project(":ui:uistate"))
-    implementation(project(":ui:uistateadapter"))
 
     // Testing
     testImplementation(libs.junit)

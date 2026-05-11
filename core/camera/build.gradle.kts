@@ -17,8 +17,6 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -129,9 +127,6 @@ dependencies {
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.video)
 
-    // Hilt
-    implementation(libs.dagger.hilt.android)
-    kapt(libs.dagger.hilt.compiler)
 
     // Tracing
     implementation(libs.androidx.tracing)
@@ -140,7 +135,9 @@ dependencies {
     // Graphics libraries
     implementation(libs.androidx.graphics.core)
 
-    // Project dependencies
+
+    implementation("javax.inject:javax.inject:1")
+    implementation(libs.androidx.core.ktx)
     implementation(project(":data:settings"))
     implementation(project(":core:model"))
     implementation(project(":core:common"))
@@ -149,7 +146,4 @@ dependencies {
 
 }
 
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
-}
+

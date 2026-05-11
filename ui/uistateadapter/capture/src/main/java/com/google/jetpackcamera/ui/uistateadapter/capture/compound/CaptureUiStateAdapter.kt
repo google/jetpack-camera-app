@@ -29,6 +29,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
@@ -167,7 +168,8 @@ fun captureUiState(
             imageWellUiState = ImageWellUiState.from(
                 trackedUiState.recentCapturedMedia,
                 cameraState.videoRecordingState
-            )
+            ),
+            screenFlashUiState = ScreenFlashUiState.from(trackedUiState)
         )
     }
 }
