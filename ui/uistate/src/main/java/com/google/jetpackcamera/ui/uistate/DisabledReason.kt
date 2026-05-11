@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture
+package com.google.jetpackcamera.ui.uistate
 
-import com.google.jetpackcamera.ui.uistate.DisableRationale
+const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
+const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
+const val VIDEO_CAPTURE_SUCCESS_TAG = "VideoCaptureSuccessTag"
+const val VIDEO_CAPTURE_FAILURE_TAG = "VideoCaptureFailureTag"
+const val IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
+const val IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG =
+    "ImageCaptureUnsupportedConcurrentCameraTag"
+const val VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "VideoCaptureExternalUnsupportedTag"
+
+// HDR disabled rationale tags
+const val HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG = "HdrImageUnsupportedOnDeviceTag"
+const val HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG = "HdrImageUnsupportedOnLensTag"
+const val HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG = "HdrImageUnsupportedOnSingleStreamTag"
+const val HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG = "HdrImageUnsupportedOnMultiStreamTag"
+const val HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG = "HdrVideoUnsupportedOnDeviceTag"
+const val HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG = "HdrVideoUnsupportedOnDeviceTag"
+const val HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG = "HdrSimultaneousImageVideoUnsupportedTag"
 
 /**
  * Represents reasons why a UI component or functionality might be disabled, providing a test tag
  * and a string resource ID for user-facing explanation.
  */
 enum class DisabledReason(
-    // 'override' is required
     override val testTag: String,
-    // 'override' is required
     override val reasonTextResId: Int
 ) : DisableRationale {
     VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(

@@ -70,7 +70,6 @@ dependencies {
     implementation(libs.kotlinx.atomicfu)
 
     implementation(project(":data:media"))
-    implementation(project(":ui:components:capture"))
     implementation(project(":ui:controller"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
