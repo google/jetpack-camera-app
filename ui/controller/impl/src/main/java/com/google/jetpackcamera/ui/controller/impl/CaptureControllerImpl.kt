@@ -37,6 +37,7 @@ import com.google.jetpackcamera.ui.controller.impl.Utils.postCurrentMediaToMedia
 import com.google.jetpackcamera.ui.uistate.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.uistate.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.uistate.IMAGE_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistate.R
 import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.ui.uistate.VIDEO_CAPTURE_FAILURE_TAG
