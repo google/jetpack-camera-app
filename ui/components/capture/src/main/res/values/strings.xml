@@ -105,11 +105,6 @@
     <string name="quick_settings_flash_on_description">Flash on</string>
     <string name="quick_settings_flash_llb_description">Low Light Boost on</string>
 
-    <!-- Stream Config Text -->
-    <string name="quick_settings_stream_config_single">Single Stream</string>
-    <string name="quick_settings_stream_config_multi">Multi Stream</string>
-    <string name="quick_settings_stream_config_single_description">Single-stream capture mode on</string>
-    <string name="quick_settings_stream_config_multi_description">Multi-stream capture mode on</string>
 
 
     <!--- Low light boost Text -->
