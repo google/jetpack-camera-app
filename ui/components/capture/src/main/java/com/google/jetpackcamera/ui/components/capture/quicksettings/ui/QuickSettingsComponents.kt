@@ -70,26 +70,26 @@ import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.ui.components.capture.R
-import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_ASPECT_RATIO_ROW
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CAPTURE_MODE_ROW
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_ROW
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_ROW
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_9_16_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CAPTURE_MODE_ROW
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_ROW
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_ASPECT_RATIO_ROW
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_ROW
+import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
@@ -102,7 +102,6 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
-
 
 // ////////////////////////////////////////////////////
 //
@@ -151,7 +150,6 @@ fun ToggleQuickSettingsButton(
     }
 }
 
-
 /**
  * A button within the quick settings menu that will navigate to the default settings screen
  */
@@ -194,17 +192,15 @@ fun CaptureModeToggleButton(
                 captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
         },
         isSelected =
-            isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
+        isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
     )
 }
-
 
 // ////////////////////////////////////////////////////
 //
 // complete quick settings screen components
 //
 // ////////////////////////////////////////////////////
-
 
 /**
  * A modal bottom sheet composable used to display a collection of quick setting buttons.
@@ -239,6 +235,7 @@ fun QuickSettingsBottomSheet(
         content()
     }
 }
+
 @Composable
 fun CaptureModeRow(
     modifier: Modifier = Modifier,
@@ -246,7 +243,7 @@ fun CaptureModeRow(
     captureModeUiState: CaptureModeUiState
 ) {
     if (captureModeUiState is CaptureModeUiState.Available) {
-        val enum = when (captureModeUiState.selectedCaptureMode){
+        val enum = when (captureModeUiState.selectedCaptureMode) {
             CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
             CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
             CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
@@ -256,21 +253,25 @@ fun CaptureModeRow(
             modifier = modifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_ROW),
             title = stringResource(id = R.string.quick_settings_title_capture_mode),
             stateSubtitle = stringResource(enum.getTextResId()),
-            settingsButtons =captureModeUiState.availableCaptureModes
-                            .map { selectableMode ->
-                                @Composable {
-                                    val testTag = when (selectableMode.value) {
-                                        CaptureMode.STANDARD -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-                                        CaptureMode.IMAGE_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-                                        CaptureMode.VIDEO_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
-                                    }
-                                    CaptureModeToggleButton(
-                                        modifier = Modifier.testTag(testTag),
-                                        onClick = { onSetCaptureMode(selectableMode.value) },
-                                        assignedCaptureMode = selectableMode.value,
-                                        captureModeUiState = captureModeUiState,
-                                        isHighlightEnabled = true
-                                    )                    }
+            settingsButtons = captureModeUiState.availableCaptureModes
+                .map { selectableMode ->
+                    @Composable {
+                        val testTag = when (selectableMode.value) {
+                            CaptureMode.STANDARD ->
+                                BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
+                            CaptureMode.IMAGE_ONLY ->
+                                BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
+                            CaptureMode.VIDEO_ONLY ->
+                                BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
+                        }
+                        CaptureModeToggleButton(
+                            modifier = Modifier.testTag(testTag),
+                            onClick = { onSetCaptureMode(selectableMode.value) },
+                            assignedCaptureMode = selectableMode.value,
+                            captureModeUiState = captureModeUiState,
+                            isHighlightEnabled = true
+                        )
+                    }
                 }.toTypedArray()
         )
     }
@@ -351,7 +352,9 @@ fun AspectRatioRow(
         SettingRow(
             modifier = modifier.testTag(QUICK_SETTINGS_ASPECT_RATIO_ROW),
             title = stringResource(id = R.string.quick_settings_title_aspect_ratio),
-            stateSubtitle = stringResource(id = aspectRatioUiState.selectedAspectRatio.toSubtitleStringRes()),
+            stateSubtitle = stringResource(
+                id = aspectRatioUiState.selectedAspectRatio.toSubtitleStringRes()
+            ),
             settingsButtons = settingsButtons
         )
     }
@@ -367,7 +370,9 @@ fun FlashRow(
         SettingRow(
             modifier = modifier.testTag(QUICK_SETTINGS_FLASH_ROW),
             title = stringResource(id = R.string.quick_settings_title_flash_mode),
-            stateSubtitle = stringResource(id = flashModeUiState.selectedFlashMode.toSubtitleStringRes()),
+            stateSubtitle = stringResource(
+                id = flashModeUiState.selectedFlashMode.toSubtitleStringRes()
+            ),
             settingsButtons = flashModeUiState.availableFlashModes
                 .map { selectableMode ->
                     @Composable {
@@ -375,7 +380,8 @@ fun FlashRow(
                             FlashMode.OFF -> BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
                             FlashMode.ON -> BTN_QUICK_SETTINGS_FLASH_OPTION_ON
                             FlashMode.AUTO -> BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
-                            FlashMode.LOW_LIGHT_BOOST -> BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
+                            FlashMode.LOW_LIGHT_BOOST ->
+                                BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
                         }
                         QuickSettingToggleSelectorButton(
                             modifier = Modifier.testTag(testTag),
@@ -384,10 +390,11 @@ fun FlashRow(
                                 FlashMode.OFF -> CameraFlashMode.OFF
                                 FlashMode.ON -> CameraFlashMode.ON
                                 FlashMode.AUTO -> CameraFlashMode.AUTO
-                                FlashMode.LOW_LIGHT_BOOST -> when (flashModeUiState.isLowLightBoostActive) {
-                                    true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
-                                    false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
-                                }
+                                FlashMode.LOW_LIGHT_BOOST ->
+                                    when (flashModeUiState.isLowLightBoostActive) {
+                                        true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
+                                        false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
+                                    }
                             },
                             isSelected = flashModeUiState.selectedFlashMode == selectableMode.value,
                             onClick = {
@@ -401,8 +408,6 @@ fun FlashRow(
         )
     }
 }
-
-
 
 // ////////////////////////////////////////////////////
 //

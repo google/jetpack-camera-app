@@ -105,8 +105,6 @@ enum class CameraAspectRatio : QuickSettingsEnum {
     }
 }
 
-
-
 enum class CameraDynamicRange : QuickSettingsEnum {
     SDR {
 
@@ -151,4 +149,3 @@ enum class CameraCaptureMode : QuickSettingsEnum {
             R.string.quick_settings_description_capture_mode_image_only
     }
 }
-
