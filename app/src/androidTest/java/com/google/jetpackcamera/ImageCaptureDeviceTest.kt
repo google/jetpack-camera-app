@@ -33,7 +33,7 @@ import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.ui.uistate.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
 import com.google.jetpackcamera.utils.CacheParam
 import com.google.jetpackcamera.utils.FILE_PREFIX
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
