@@ -19,6 +19,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.proto.AspectRatio
+import com.google.jetpackcamera.model.proto.ConcurrentCameraModeProto
 import com.google.jetpackcamera.model.proto.DarkMode
 import com.google.jetpackcamera.model.proto.DynamicRange
 import com.google.jetpackcamera.model.proto.FlashMode
@@ -44,6 +45,7 @@ object JcaSettingsSerializer : Serializer<JcaSettings> {
         .setMaxVideoDurationMillis(UNLIMITED_VIDEO_DURATION)
         .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
         .setAudioEnabledStatus(true)
+        .setConcurrentCameraModeStatus(ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF)
         .build()
 
     override suspend fun readFrom(input: InputStream): JcaSettings {

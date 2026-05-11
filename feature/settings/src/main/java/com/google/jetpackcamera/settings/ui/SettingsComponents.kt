@@ -869,6 +869,13 @@ fun RecordingAudioSetting(
     )
 }
 
+/**
+ * A setting component that allows the user to enable or disable concurrent camera mode.
+ *
+ * @param modifier the [Modifier] to be applied to this setting.
+ * @param concurrentCameraUiState the current UI state of the concurrent camera setting.
+ * @param setConcurrentCameraMode callback to update the concurrent camera mode.
+ */
 @Composable
 fun ConcurrentCameraSetting(
     modifier: Modifier = Modifier,

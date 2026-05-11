@@ -219,12 +219,26 @@ sealed interface LowLightBoostPriorityUiState {
     data class Disabled(val disabledRationale: DisabledRationale) : LowLightBoostPriorityUiState
 }
 
+/**
+ * UI State for the Concurrent Camera setting.
+ */
 sealed interface ConcurrentCameraUiState {
+    /**
+     * State when concurrent camera is supported by the device.
+     *
+     * @property currentConcurrentCameraMode the currently selected concurrent camera mode.
+     * @property additionalContext additional context or information about the state.
+     */
     data class Enabled(
         val currentConcurrentCameraMode: ConcurrentCameraMode,
         val additionalContext: String = ""
     ) : ConcurrentCameraUiState
 
+    /**
+     * State when concurrent camera is unsupported or disabled due to constraints.
+     *
+     * @property disabledRationale rationale explaining why the setting is disabled.
+     */
     data class Disabled(val disabledRationale: DisabledRationale) : ConcurrentCameraUiState
 }
 

@@ -735,6 +735,13 @@ fun ComposeTestRule.unFocusQuickSetting() {
         }
 }
 
+/**
+ * Navigates to the Settings screen and sets the concurrent camera mode.
+ *
+ * Assumes the setting is enabled/supported by the device, skipping the test if not.
+ *
+ * @param concurrentMode the target [ConcurrentCameraMode] to set.
+ */
 fun ComposeTestRule.setConcurrentCameraModeInSettings(concurrentMode: ConcurrentCameraMode) {
     visitSettingsScreen {
         onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
@@ -769,21 +776,6 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
                 .performClick()
         }
         waitUntil(1000) { isHdrEnabled() == enabled }
-    }
-}
-
-fun ComposeTestRule.setConcurrentCameraMode(concurrentMode: ConcurrentCameraMode) {
-    visitQuickSettings {
-        searchForQuickSetting(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-        waitForNodeWithTag(tag = QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-        onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-            .assume(isEnabled()) { "Device does not support concurrent camera." }
-            .let {
-                if (getConcurrentState() != concurrentMode) {
-                    it.assertExists().performClick()
-                }
-            }
-        waitUntil(1_000) { getConcurrentState() == concurrentMode }
     }
 }
 

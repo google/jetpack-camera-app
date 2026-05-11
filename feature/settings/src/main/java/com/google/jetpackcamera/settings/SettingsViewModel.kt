@@ -696,6 +696,11 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Updates the concurrent camera mode setting in the repository.
+     *
+     * @param concurrentCameraMode the new concurrent camera mode to set.
+     */
     fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
         viewModelScope.launch {
             settingsRepository.updateConcurrentCameraMode(concurrentCameraMode)
