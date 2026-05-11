@@ -21,9 +21,9 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.data.media.FakeMediaRepository
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
 import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS

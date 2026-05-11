@@ -33,5 +33,6 @@ data class TrackedCaptureUiState(
     val zoomAnimationTarget: Float? = null,
     val debugHidingComponents: Boolean = false,
     val recentCapturedMedia: MediaDescriptor = MediaDescriptor.None,
-    val lastBlinkTimeStamp: Long = 0
+    val lastBlinkTimeStamp: Long = 0,
+    val screenFlashUiState: ScreenFlashUiState = ScreenFlashUiState()
 )
