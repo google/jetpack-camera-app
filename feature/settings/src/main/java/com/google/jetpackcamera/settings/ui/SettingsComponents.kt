@@ -60,6 +60,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
@@ -74,6 +75,7 @@ import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.AspectRatioUiState
 import com.google.jetpackcamera.settings.AudioUiState
+import com.google.jetpackcamera.settings.ConcurrentCameraUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
 import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
@@ -864,6 +866,49 @@ fun RecordingAudioSetting(
             is AudioUiState.Disabled, is AudioUiState.Enabled.Mute -> false
         },
         enabled = audioUiState is AudioUiState.Enabled
+    )
+}
+
+@Composable
+fun ConcurrentCameraSetting(
+    modifier: Modifier = Modifier,
+    concurrentCameraUiState: ConcurrentCameraUiState,
+    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit
+) {
+    SwitchSettingUI(
+        modifier = modifier.testTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG),
+        title = stringResource(id = R.string.concurrent_camera_title),
+        description = when (concurrentCameraUiState) {
+            is ConcurrentCameraUiState.Enabled -> {
+                when (concurrentCameraUiState.currentConcurrentCameraMode) {
+                    ConcurrentCameraMode.DUAL -> stringResource(
+                        R.string.concurrent_camera_description_on
+                    )
+                    ConcurrentCameraMode.OFF -> stringResource(
+                        R.string.concurrent_camera_description_off
+                    )
+                }
+            }
+
+            is ConcurrentCameraUiState.Disabled -> {
+                disabledRationaleString(
+                    disabledRationale = concurrentCameraUiState.disabledRationale
+                )
+            }
+        },
+        leadingIcon = null,
+        onSwitchChanged = { on ->
+            setConcurrentCameraMode(
+                if (on) ConcurrentCameraMode.DUAL else ConcurrentCameraMode.OFF
+            )
+        },
+        settingValue = when (concurrentCameraUiState) {
+            is ConcurrentCameraUiState.Enabled ->
+                concurrentCameraUiState.currentConcurrentCameraMode ==
+                    ConcurrentCameraMode.DUAL
+            is ConcurrentCameraUiState.Disabled -> false
+        },
+        enabled = concurrentCameraUiState is ConcurrentCameraUiState.Enabled
     )
 }
 

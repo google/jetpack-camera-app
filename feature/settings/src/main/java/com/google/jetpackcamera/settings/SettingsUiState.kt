@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
@@ -54,7 +55,8 @@ sealed interface SettingsUiState {
         val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
         val videoQualityUiState: VideoQualityUiState,
         val audioUiState: AudioUiState,
-        val lowLightBoostPriorityUiState: LowLightBoostPriorityUiState
+        val lowLightBoostPriorityUiState: LowLightBoostPriorityUiState,
+        val concurrentCameraUiState: ConcurrentCameraUiState
     ) : SettingsUiState
 }
 
@@ -217,6 +219,15 @@ sealed interface LowLightBoostPriorityUiState {
     data class Disabled(val disabledRationale: DisabledRationale) : LowLightBoostPriorityUiState
 }
 
+sealed interface ConcurrentCameraUiState {
+    data class Enabled(
+        val currentConcurrentCameraMode: ConcurrentCameraMode,
+        val additionalContext: String = ""
+    ) : ConcurrentCameraUiState
+
+    data class Disabled(val disabledRationale: DisabledRationale) : ConcurrentCameraUiState
+}
+
 // ////////////////////////////////////////////////////////////
 //
 // Settings that DON'T currently depend on constraints
@@ -307,5 +318,8 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     ),
     lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
         DEFAULT_CAMERA_APP_SETTINGS.lowLightBoostPriority
+    ),
+    concurrentCameraUiState = ConcurrentCameraUiState.Disabled(
+        DeviceUnsupportedRationale(R.string.concurrent_camera_rationale_prefix)
     )
 )

@@ -20,6 +20,7 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -50,6 +51,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
+import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
@@ -731,6 +733,25 @@ fun ComposeTestRule.unFocusQuickSetting() {
             onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isDisplayed()
             onNodeWithTag(QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON).isNotDisplayed()
         }
+}
+
+fun ComposeTestRule.setConcurrentCameraModeInSettings(concurrentMode: ConcurrentCameraMode) {
+    visitSettingsScreen {
+        onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
+            .assertExists()
+            .apply {
+                val isCurrentlyOn = fetchSemanticsNode().config.getOrNull(
+                    SemanticsProperties.ToggleableState
+                ) == ToggleableState.On
+                val shouldBeOn = (concurrentMode == ConcurrentCameraMode.DUAL)
+                if (isCurrentlyOn != shouldBeOn) {
+                    assume(
+                        isEnabled()
+                    ) { "Concurrent camera toggle is not supported by the device" }
+                    performClick()
+                }
+            }
+    }
 }
 
 // ////////////////////////////

@@ -19,6 +19,7 @@ import androidx.datastore.core.DataStore
 import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.DynamicRange.Companion.toProto
@@ -35,6 +36,7 @@ import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.VideoQuality.Companion.toProto
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.model.proto.ConcurrentCameraModeProto
 import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
@@ -84,6 +86,15 @@ class LocalSettingsRepository @Inject constructor(
                 maxVideoDurationMillis = it.maxVideoDurationMillis,
                 videoQuality = VideoQuality.fromProto(it.videoQuality),
                 audioEnabled = it.audioEnabledStatus,
+                concurrentCameraMode = when (it.concurrentCameraModeStatus) {
+                    ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF ->
+                        ConcurrentCameraMode.OFF
+
+                    ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL ->
+                        ConcurrentCameraMode.DUAL
+
+                    else -> ConcurrentCameraMode.OFF
+                },
                 captureMode = defaultCaptureModeOverride
             )
         }
@@ -189,6 +200,7 @@ class LocalSettingsRepository @Inject constructor(
                 .build()
         }
     }
+
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
@@ -217,6 +229,18 @@ class LocalSettingsRepository @Inject constructor(
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
                 .setAudioEnabledStatus(isAudioEnabled)
+                .build()
+        }
+    }
+
+    override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+        val newStatus = when (concurrentCameraMode) {
+            ConcurrentCameraMode.OFF -> ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF
+            ConcurrentCameraMode.DUAL -> ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL
+        }
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setConcurrentCameraModeStatus(newStatus)
                 .build()
         }
     }

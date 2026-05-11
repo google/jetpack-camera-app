@@ -23,6 +23,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -92,7 +93,18 @@ class SettingsViewModel @Inject constructor(
                 videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings),
                 lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
                     updatedSettings.lowLightBoostPriority
-                )
+                ),
+                concurrentCameraUiState = if (constraints.concurrentCamerasSupported) {
+                    ConcurrentCameraUiState.Enabled(
+                        updatedSettings.concurrentCameraMode
+                    )
+                } else {
+                    ConcurrentCameraUiState.Disabled(
+                        DeviceUnsupportedRationale(
+                            R.string.concurrent_camera_rationale_prefix
+                        )
+                    )
+                }
             )
         }.stateIn(
             scope = viewModelScope,
@@ -681,6 +693,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateAudioEnabled(isAudioEnabled)
             Log.d(TAG, "recording audio muted: $isAudioEnabled")
+        }
+    }
+
+    fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+        viewModelScope.launch {
+            settingsRepository.updateConcurrentCameraMode(concurrentCameraMode)
+            Log.d(TAG, "set concurrent camera mode: $concurrentCameraMode")
         }
     }
 }

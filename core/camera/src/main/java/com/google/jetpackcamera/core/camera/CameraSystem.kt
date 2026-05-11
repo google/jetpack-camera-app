@@ -187,6 +187,11 @@ interface CameraSystem {
                 CameraAppSettings::lowLightBoostPriority,
                 cameraSystem::setLowLightBoostPriority
             )
+            applyDiff(
+                new,
+                CameraAppSettings::concurrentCameraMode,
+                cameraSystem::setConcurrentCameraMode
+            )
         }
     }
 }

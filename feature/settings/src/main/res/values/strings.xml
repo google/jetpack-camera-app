@@ -64,6 +64,11 @@
     <string name="audio_description_on">Recordings will start with audio enabled</string>
     <string name="audio_description_off">Recordings will start muted</string>
 
+    <!-- Concurrent Camera setting strings -->
+    <string name="concurrent_camera_title">Enable Concurrent Camera</string>
+    <string name="concurrent_camera_description_on">Record from multiple cameras concurrently</string>
+    <string name="concurrent_camera_description_off">Record from a single camera</string>
+
     <!-- Stream Config mode setting strings -->
     <string name="stream_config_title">Set Stream Configuration</string>
 
@@ -178,6 +183,7 @@
     <string name="no_fixed_fps_rationale_prefix">Fixed frame rate</string>
 
     <string name="mute_audio_rationale_prefix">Mute</string>
+    <string name="concurrent_camera_rationale_prefix">Concurrent camera</string>
 
     <!-- Version info strings -->
     <string name="version_info_title">Version</string>
