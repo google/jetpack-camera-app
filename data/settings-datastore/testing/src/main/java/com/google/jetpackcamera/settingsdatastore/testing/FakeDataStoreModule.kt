@@ -18,7 +18,7 @@ package com.google.jetpackcamera.settingsdatastore.testing
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
-import com.google.jetpackcamera.data.settingsdatastore.test.FakeJcaSettingsSerializer
+import com.google.jetpackcamera.settings.JcaSettings
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 

@@ -18,9 +18,9 @@ package com.google.jetpackcamera.data.settingsdatastore
 import androidx.datastore.core.DataStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.data.settingsdatastore.test.FakeDataStoreModule
-import com.google.jetpackcamera.data.settingsdatastore.test.FakeJcaSettingsSerializer
 import com.google.jetpackcamera.settings.JcaSettings
+import com.google.jetpackcamera.settingsdatastore.testing.FakeDataStoreModule
+import com.google.jetpackcamera.settingsdatastore.testing.FakeJcaSettingsSerializer
 import java.io.File
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first

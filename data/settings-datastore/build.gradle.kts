@@ -93,6 +93,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(project(":data:settings-datastore:testing"))
 }
 
 protobuf {
