@@ -190,6 +190,7 @@ internal fun CaptureButton(
     onLockVideoRecording: (Boolean) -> Unit,
     onIncrementZoom: (Float) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
+    useLockSwitch: Boolean = true,
     captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE
 ) {
     val currentUiState = rememberUpdatedState(captureButtonUiState)
@@ -292,6 +293,7 @@ internal fun CaptureButton(
         onLockVideoRecording = onLockVideoRecording,
         onDragZoom = onIncrementZoom,
         captureButtonUiState = captureButtonUiState,
+        useLockSwitch = useLockSwitch,
         captureButtonSize = captureButtonSize
     )
 }

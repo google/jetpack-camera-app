@@ -19,6 +19,7 @@ import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
 import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
 import com.google.jetpackcamera.core.common.DefaultSaveMode
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.CaptureButtonConfig
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.SaveMode
 import dagger.Module
@@ -46,4 +47,7 @@ object AppModule {
     @Provides
     @DefaultFilePathGenerator
     fun providesFilePathGenerator(): FilePathGenerator = JcaFilePathGenerator()
+
+    @Provides
+    fun providesCaptureButtonConfig(): CaptureButtonConfig = CaptureButtonConfig(useLockUi = false)
 }

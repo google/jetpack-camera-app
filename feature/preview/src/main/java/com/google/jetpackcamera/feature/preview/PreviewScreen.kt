@@ -278,6 +278,7 @@ fun PreviewScreen(
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
+                useLockUi = viewModel.captureButtonConfig.useLockUi,
 
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
@@ -344,6 +345,7 @@ private fun ContentScreen(
     captureUiState: CaptureUiState.Ready,
     screenFlashUiState: ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
+    useLockUi: Boolean = true,
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
@@ -426,6 +428,7 @@ private fun ContentScreen(
             }
             CaptureButton(
                 captureButtonUiState = captureUiState.captureButtonUiState,
+                useLockSwitch = useLockUi,
                 isQuickSettingsOpen = (
                     captureUiState.quickSettingsUiState as?
                         QuickSettingsUiState.Available

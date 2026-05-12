@@ -23,6 +23,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
 import com.google.jetpackcamera.core.common.DefaultSaveMode
+import com.google.jetpackcamera.core.common.CaptureButtonConfig
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
@@ -95,7 +96,8 @@ class PreviewViewModel @Inject constructor(
     @DefaultSaveMode private val defaultSaveMode: SaveMode,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: SettableConstraintsRepository,
-    private val mediaRepository: MediaRepository
+    private val mediaRepository: MediaRepository,
+    val captureButtonConfig: CaptureButtonConfig
 ) : ViewModel() {
     private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState> =

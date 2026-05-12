@@ -594,6 +594,7 @@ fun CaptureButton(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
     isQuickSettingsOpen: Boolean,
+    useLockSwitch: Boolean = true,
     onIncrementZoom: (Float) -> Unit = {},
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
@@ -627,7 +628,8 @@ fun CaptureButton(
             onStopVideoRecording()
         },
         captureButtonUiState = captureButtonUiState,
-        onLockVideoRecording = onLockVideoRecording
+        onLockVideoRecording = onLockVideoRecording,
+        useLockSwitch = useLockSwitch
     )
 }
 

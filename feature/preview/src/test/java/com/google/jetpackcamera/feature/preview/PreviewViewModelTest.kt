@@ -20,6 +20,8 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.common.CaptureButtonConfig
+import com.google.jetpackcamera.core.common.RefCounted
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
@@ -67,7 +69,8 @@ class PreviewViewModelTest {
             settingsRepository = FakeSettingsRepository,
             mediaRepository = FakeMediaRepository(),
             savedStateHandle = SavedStateHandle(),
-            defaultSaveMode = SaveMode.Immediate
+            defaultSaveMode = SaveMode.Immediate,
+            captureButtonConfig = CaptureButtonConfig()
         )
         advanceUntilIdle()
     }
@@ -193,3 +196,5 @@ private fun assertIsReady(viewFinderUiState: CaptureUiState): CaptureUiState.Rea
             "PreviewUiState expected to be Ready, but was ${viewFinderUiState::class}"
         )
     }
+
+
