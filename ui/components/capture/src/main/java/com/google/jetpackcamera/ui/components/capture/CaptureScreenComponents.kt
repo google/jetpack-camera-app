@@ -595,6 +595,8 @@ fun CaptureButton(
     captureButtonUiState: CaptureButtonUiState,
     isQuickSettingsOpen: Boolean,
     useLockSwitch: Boolean = true,
+    enableDragZoom: Boolean = true,
+    enableVolumeAsAltCapture: Boolean = true,
     onIncrementZoom: (Float) -> Unit = {},
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
@@ -629,7 +631,9 @@ fun CaptureButton(
         },
         captureButtonUiState = captureButtonUiState,
         onLockVideoRecording = onLockVideoRecording,
-        useLockSwitch = useLockSwitch
+        useLockSwitch = useLockSwitch,
+        enableDragZoom = enableDragZoom,
+        enableVolumeAsAltCapture = enableVolumeAsAltCapture
     )
 }
 

@@ -26,6 +26,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -49,5 +50,9 @@ object AppModule {
     fun providesFilePathGenerator(): FilePathGenerator = JcaFilePathGenerator()
 
     @Provides
-    fun providesCaptureButtonConfig(): CaptureButtonConfig = CaptureButtonConfig(useLockUi = false)
+    fun providesCaptureButtonConfig(): CaptureButtonConfig = CaptureButtonConfig(
+        useLockUi = false,
+        enableDragZoom = false,
+        enableVolumeAsAltCapture = false
+    )
 }

@@ -191,6 +191,8 @@ internal fun CaptureButton(
     onIncrementZoom: (Float) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
     useLockSwitch: Boolean = true,
+    enableDragZoom: Boolean = true,
+    enableVolumeAsAltCapture: Boolean = true,
     captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE
 ) {
     val currentUiState = rememberUpdatedState(captureButtonUiState)
@@ -282,10 +284,12 @@ internal fun CaptureButton(
         }
     }
 
-    CaptureKeyHandler(
-        onPress = { captureSource -> onPress(captureSource) },
-        onRelease = { captureSource -> onKeyUp(captureSource) }
-    )
+    if (enableVolumeAsAltCapture) {
+        CaptureKeyHandler(
+            onPress = { captureSource -> onPress(captureSource) },
+            onRelease = { captureSource -> onKeyUp(captureSource) }
+        )
+    }
     CaptureButton(
         modifier = modifier,
         onPress = { onPress(CaptureSource.CAPTURE_BUTTON) },
@@ -294,6 +298,7 @@ internal fun CaptureButton(
         onDragZoom = onIncrementZoom,
         captureButtonUiState = captureButtonUiState,
         useLockSwitch = useLockSwitch,
+        enableDragZoom = enableDragZoom,
         captureButtonSize = captureButtonSize
     )
 }
@@ -338,6 +343,7 @@ private fun CaptureButton(
     onLockVideoRecording: (Boolean) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
     useLockSwitch: Boolean = true,
+    enableDragZoom: Boolean = true,
     captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE
 ) {
     // todo: explore MutableInteractionSource
@@ -434,24 +440,26 @@ private fun CaptureButton(
                             // update position of lock switch
                             setLockSwitchPosition(newPoint.x, deltaOffset.x)
 
-                            // update zoom
-                            val previousPoint = change.position - deltaOffset
-                            val positiveDistance =
-                                if (newPoint.y >= 0 && previousPoint.y >= 0) {
-                                    // 0 if both points are within bounds
-                                    0f
-                                } else if (newPoint.y < 0 && previousPoint.y < 0) {
-                                    deltaOffset.y
-                                } else if (newPoint.y <= 0) {
-                                    newPoint.y
-                                } else {
-                                    previousPoint.y
-                                }
+                            if (enableDragZoom) {
+                                // update zoom
+                                val previousPoint = change.position - deltaOffset
+                                val positiveDistance =
+                                    if (newPoint.y >= 0 && previousPoint.y >= 0) {
+                                        // 0 if both points are within bounds
+                                        0f
+                                    } else if (newPoint.y < 0 && previousPoint.y < 0) {
+                                        deltaOffset.y
+                                    } else if (newPoint.y <= 0) {
+                                        newPoint.y
+                                    } else {
+                                        previousPoint.y
+                                    }
 
-                            if (!positiveDistance.isNaN()) {
-                                // todo(kc): should check the tuning of this.
-                                val zoom = positiveDistance * -0.01f // Adjust sensitivity
-                                onDragZoom(zoom)
+                                if (!positiveDistance.isNaN()) {
+                                    // todo(kc): should check the tuning of this.
+                                    val zoom = positiveDistance * -0.01f // Adjust sensitivity
+                                    onDragZoom(zoom)
+                                }
                             }
                         }
                     }
