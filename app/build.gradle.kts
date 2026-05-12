@@ -133,6 +133,7 @@ dependencies {
     androidTestImplementation(libs.camera.lifecycle) // to reset CameraX between tests
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.testParameterInjector)
+    androidTestImplementation(project(":ui:uistate"))
     androidTestImplementation(project(":ui:components:capture"))
     androidTestUtil(libs.androidx.orchestrator)
 
@@ -168,6 +169,7 @@ dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     // capture components
+    implementation(project(":ui:uistate"))
     implementation(project(":ui:components:capture"))
 
     // Low Light implementations
