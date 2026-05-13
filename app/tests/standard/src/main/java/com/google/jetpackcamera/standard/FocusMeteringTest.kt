@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera
+package com.google.jetpackcamera.standard
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.ViewConfiguration

@@ -34,7 +34,6 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
     buildTypes {
@@ -77,25 +76,6 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-
-    @Suppress("UnstableApiUsage")
-    testOptions {
-        execution = "ANDROIDX_TEST_ORCHESTRATOR"
-
-        managedDevices {
-            localDevices {
-                create("pixel2Api28") {
-                    device = "Pixel 2"
-                    apiLevel = 28
-                }
-                create("pixel8Api34") {
-                    device = "Pixel 8"
-                    apiLevel = 34
-                    systemImageSource = "aosp_atd"
-                }
-            }
-        }
-    }
 }
 
 dependencies {
@@ -121,20 +101,9 @@ dependencies {
     // Compose - Integration with Activities
     implementation(libs.androidx.activity.compose)
 
-    // Compose - Testing
-    androidTestImplementation(libs.compose.junit)
-
     // Testing
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.rules)
-    androidTestImplementation(libs.androidx.uiautomator)
-    androidTestImplementation(libs.camera.lifecycle) // to reset CameraX between tests
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.testParameterInjector)
-    androidTestImplementation(project(":ui:components:capture"))
-    androidTestUtil(libs.androidx.orchestrator)
+
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

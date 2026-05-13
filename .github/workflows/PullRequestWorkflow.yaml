@@ -142,8 +142,8 @@ jobs:
         with:
           name: instrumentation-test-reports-${{ matrix.device.name }}
           path: |
-            */build/reports/androidTests/**/${{ matrix.device.name }}
-            */build/outputs/androidTest-results/**/${{ matrix.device.name }}
+            **/build/reports/androidTests/**/${{ matrix.device.name }}
+            **/build/outputs/androidTest-results/**/${{ matrix.device.name }}
 
   spotless:
     name: Spotless Check
