@@ -32,16 +32,13 @@ import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatur
 import com.google.jetpackcamera.core.camera.postprocess.PostProcessModule.Companion.provideImagePostProcessorMap
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
-import com.google.jetpackcamera.core.common.FakeFilePathGenerator
+import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.settings.ConstraintsRepository
-import com.google.jetpackcamera.settings.SettableConstraintsRepository
-import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.forCurrentLens
@@ -251,13 +248,11 @@ class CameraXCameraSystemTest {
         captureMode: CaptureMode? = null
     ) {
         // Arrange.
-        val constraintsRepository = SettableConstraintsRepositoryImpl()
         val cameraSystem = createAndInitCameraXCameraSystem(
-            appSettings = CameraAppSettings(stabilizationMode = StabilizationMode.OFF),
-            constraintsRepository = constraintsRepository
+            appSettings = CameraAppSettings(stabilizationMode = StabilizationMode.OFF)
         )
         val cameraConstraints =
-            constraintsRepository.systemConstraints.value?.forCurrentLens(
+            cameraSystem.getSystemConstraints().value?.forCurrentLens(
                 DEFAULT_CAMERA_APP_SETTINGS
             )
         assume().withMessage("Stabilisation $stabilizationMode not supported, skip the test.")
@@ -302,13 +297,13 @@ class CameraXCameraSystemTest {
     fun recordVideoWithFlashModeOn_shouldEnableTorch(): Unit = runBlocking {
         // Arrange.
         val lensFacing = LensFacing.BACK
-        val constraintsRepository = SettableConstraintsRepositoryImpl()
-        val cameraSystem = createAndInitCameraXCameraSystem(
-            constraintsRepository = constraintsRepository
-        )
-        assume().withMessage("No flash unit, skip the test.")
-            .that(constraintsRepository.hasFlashUnit(lensFacing)).isTrue()
+        val cameraSystem = createAndInitCameraXCameraSystem()
         cameraSystem.startCameraAndWaitUntilRunning()
+        val hasFlashUnit = cameraSystem.getSystemConstraints().value?.perLensConstraints?.get(
+            lensFacing
+        )?.supportedIlluminants?.contains(Illuminant.FLASH_UNIT) == true
+        assume().withMessage("No flash unit, skip the test.")
+            .that(hasFlashUnit).isTrue()
 
         // Arrange: Create a ReceiveChannel to observe the torch enabled state.
         val torchEnabled: ReceiveChannel<Boolean> = cameraSystem.getCurrentCameraState()
@@ -346,13 +341,11 @@ class CameraXCameraSystemTest {
 
     private suspend fun createAndInitCameraXCameraSystem(
         appSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-        constraintsRepository: SettableConstraintsRepository = SettableConstraintsRepositoryImpl(),
         fakeImagePostProcessor: FakeImagePostProcessor? = null
     ) = CameraXCameraSystem(
         application = application,
         defaultDispatcher = Dispatchers.Default,
         iODispatcher = Dispatchers.IO,
-        constraintsRepository = constraintsRepository,
         availabilityCheckers = emptyMap(),
         effectProviders = emptyMap(),
         imagePostProcessors = getFakePostProcessorMap(fakeImagePostProcessor),
@@ -427,10 +420,6 @@ class CameraXCameraSystemTest {
         assertWithMessage("Camera timed out while starting.").that(cameraStarted).isTrue()
         instrumentation.waitForIdleSync()
     }
-
-    private suspend fun ConstraintsRepository.hasFlashUnit(lensFacing: LensFacing): Boolean =
-        Illuminant.FLASH_UNIT in
-            systemConstraints.first()!!.perLensConstraints[lensFacing]!!.supportedIlluminants
 
     private fun deleteFiles(uris: Set<Uri>) {
         for (uri in uris) {

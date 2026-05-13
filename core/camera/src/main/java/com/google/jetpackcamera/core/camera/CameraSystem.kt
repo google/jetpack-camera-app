@@ -34,6 +34,7 @@ import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -90,6 +91,8 @@ interface CameraSystem {
     fun setTestPattern(newTestPattern: TestPattern)
 
     fun getCurrentCameraState(): StateFlow<CameraState>
+
+    fun getSystemConstraints(): StateFlow<CameraSystemConstraints?>
 
     fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 

@@ -37,9 +37,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
@@ -57,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -155,12 +153,12 @@ private fun ToggleVisibilityButton(
     ) {
         if (isHidingComponents) {
             Icon(
-                Icons.Default.VisibilityOff,
+                painter = painterResource(R.drawable.ic_visibility_off),
                 contentDescription = null,
                 modifier = Modifier.alpha(.5f)
             )
         } else {
-            Icon(Icons.Default.Visibility, contentDescription = null)
+            Icon(painter = painterResource(R.drawable.ic_visibility), contentDescription = null)
         }
     }
 }

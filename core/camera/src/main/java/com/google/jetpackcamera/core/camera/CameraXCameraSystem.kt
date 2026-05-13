@@ -74,14 +74,12 @@ import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.ZoomStrategy
-import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.io.FileNotFoundException
-import javax.inject.Inject
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -102,13 +100,10 @@ private const val TAG = "CameraXCameraSystem"
 /**
  * CameraX based implementation for [CameraSystem]
  */
-class CameraXCameraSystem
-@Inject
-constructor(
+class CameraXCameraSystem(
     private val application: Application,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     @param:IODispatcher private val iODispatcher: CoroutineDispatcher,
-    private val constraintsRepository: SettableConstraintsRepository,
     @DefaultFilePathGenerator private val filePathGenerator: FilePathGenerator,
     availabilityCheckers:
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>>,
@@ -134,6 +129,10 @@ constructor(
     // Could be improved by setting initial value only when camera is initialized
     private var currentCameraState = MutableStateFlow(CameraState())
     override fun getCurrentCameraState(): StateFlow<CameraState> = currentCameraState.asStateFlow()
+
+    private val _systemConstraints = MutableStateFlow<CameraSystemConstraints?>(null)
+    override fun getSystemConstraints(): StateFlow<CameraSystemConstraints?> =
+        _systemConstraints.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
@@ -289,7 +288,7 @@ constructor(
             }
         )
 
-        constraintsRepository.updateSystemConstraints(systemConstraints)
+        _systemConstraints.value = systemConstraints
 
         currentSettings.value =
             settingsWithVerifiedLens

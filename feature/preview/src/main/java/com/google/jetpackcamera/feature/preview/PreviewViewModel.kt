@@ -21,10 +21,10 @@ import androidx.camera.core.SurfaceRequest
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
 import com.google.jetpackcamera.core.common.DefaultAppConfig
 import com.google.jetpackcamera.core.common.DefaultSaveMode
+import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
@@ -38,17 +38,17 @@ import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
-import com.google.jetpackcamera.settings.ConstraintsRepository
+import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.api.DeveloperAppConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
 import com.google.jetpackcamera.ui.components.capture.LOW_LIGHT_BOOST_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.R
-import com.google.jetpackcamera.ui.components.capture.ScreenFlash
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
 import com.google.jetpackcamera.ui.controller.ImageWellController
+import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.ZoomController
 import com.google.jetpackcamera.ui.controller.debug.DebugController
@@ -57,6 +57,7 @@ import com.google.jetpackcamera.ui.controller.impl.CaptureControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.DebugControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.ImageWellControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.QuickSettingsControllerImpl
+import com.google.jetpackcamera.ui.controller.impl.ScreenFlashControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.SnackBarControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.ZoomControllerImpl
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
@@ -78,6 +79,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -91,12 +93,12 @@ private const val TAG = "PreviewViewModel"
  */
 @HiltViewModel
 class PreviewViewModel @Inject constructor(
-    private val cameraSystem: CameraSystem,
+    private val cameraSystemRepository: CameraSystemRepository,
     private val savedStateHandle: SavedStateHandle,
     @DefaultSaveMode private val defaultSaveMode: SaveMode,
     @DefaultAppConfig private val appConfig: DeveloperAppConfig,
     private val settingsRepository: SettingsRepository,
-    private val constraintsRepository: ConstraintsRepository,
+    private val constraintsRepository: SettableConstraintsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
     private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
@@ -107,7 +109,8 @@ class PreviewViewModel @Inject constructor(
     val snackBarUiState: StateFlow<SnackBarUiState.Enabled> =
         _snackBarUiState.asStateFlow()
 
-    val surfaceRequest: StateFlow<SurfaceRequest?> = cameraSystem.getSurfaceRequest()
+    val surfaceRequest: StateFlow<SurfaceRequest?> =
+        cameraSystemRepository.cameraSystem.getSurfaceRequest()
 
     private val _captureEvents = Channel<CaptureEvent>()
     val captureEvents: ReceiveChannel<CaptureEvent> = _captureEvents
@@ -122,12 +125,16 @@ class PreviewViewModel @Inject constructor(
 
     private var cameraPropertiesJSON = ""
 
-    val screenFlash = ScreenFlash(cameraSystem, viewModelScope)
+    val screenFlashController: ScreenFlashController = ScreenFlashControllerImpl(
+        cameraSystem = cameraSystemRepository.cameraSystem,
+        trackedCaptureUiState = trackedCaptureUiState,
+        coroutineContext = viewModelScope.coroutineContext
+    )
 
     // Eagerly initialize the CameraSystem and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
-        cameraSystem.initialize(
+        cameraSystemRepository.cameraSystem.initialize(
             cameraAppSettings =
             if (useDeveloperConfig) {
                 appConfig.toCameraAppSettings()
@@ -140,7 +147,7 @@ class PreviewViewModel @Inject constructor(
     }
 
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
-        cameraSystem,
+        cameraSystemRepository.cameraSystem,
         if (useDeveloperConfig) appConfig else DeveloperAppConfig.LibraryDefaults,
         constraintsRepository,
         trackedCaptureUiState,
@@ -152,7 +159,7 @@ class PreviewViewModel @Inject constructor(
             initialValue = CaptureUiState.NotReady
         )
     val debugUiState: StateFlow<DebugUiState> = debugUiState(
-        cameraSystem,
+        cameraSystemRepository.cameraSystem,
         constraintsRepository,
         debugSettings,
         cameraPropertiesJSON,
@@ -166,13 +173,13 @@ class PreviewViewModel @Inject constructor(
 
     val quickSettingsController: QuickSettingsController = QuickSettingsControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
-        cameraSystem = cameraSystem,
+        cameraSystem = cameraSystemRepository.cameraSystem,
         externalCaptureMode = externalCaptureMode,
         coroutineContext = viewModelScope.coroutineContext
     )
 
     val debugController: DebugController = DebugControllerImpl(
-        cameraSystem = cameraSystem,
+        cameraSystem = cameraSystemRepository.cameraSystem,
         trackedCaptureUiState = trackedCaptureUiState
     )
 
@@ -182,7 +189,7 @@ class PreviewViewModel @Inject constructor(
     )
 
     val zoomController: ZoomController = ZoomControllerImpl(
-        cameraSystem = cameraSystem,
+        cameraSystem = cameraSystemRepository.cameraSystem,
         trackedCaptureUiState = trackedCaptureUiState
     )
 
@@ -202,12 +209,12 @@ class PreviewViewModel @Inject constructor(
         initializationDeferred = initializationDeferred,
         captureUiState = captureUiState,
         coroutineContext = viewModelScope.coroutineContext,
-        cameraSystem = cameraSystem
+        cameraSystem = cameraSystemRepository.cameraSystem
     )
 
     val captureController: CaptureController = CaptureControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
-        cameraSystem = cameraSystem,
+        cameraSystem = cameraSystemRepository.cameraSystem,
         mediaRepository = mediaRepository,
         saveMode = saveMode,
         externalCaptureMode = externalCaptureMode,
@@ -235,18 +242,26 @@ class PreviewViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             launch {
+                cameraSystemRepository.cameraSystem.getSystemConstraints()
+                    .filterNotNull()
+                    .collect { constraints ->
+                        constraintsRepository.updateSystemConstraints(constraints)
+                    }
+            }
+
+            launch {
                 var oldCameraAppSettings: CameraAppSettings? = null
                 settingsRepository.defaultCameraAppSettings
                     .collect { new ->
                         oldCameraAppSettings?.apply {
-                            applyDiffs(new, cameraSystem)
+                            applyDiffs(new, cameraSystemRepository.cameraSystem)
                         }
                         oldCameraAppSettings = new
                     }
             }
 
             launch {
-                cameraSystem.getCurrentCameraState()
+                cameraSystemRepository.cameraSystem.getCurrentCameraState()
                     .map { it.lowLightBoostState }
                     .distinctUntilChanged()
                     .collect { state ->
