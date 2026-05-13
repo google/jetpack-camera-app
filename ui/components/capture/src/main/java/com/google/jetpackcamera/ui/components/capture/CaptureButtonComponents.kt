@@ -72,6 +72,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
+import com.google.jetpackcamera.core.common.CaptureButtonConfig
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import kotlinx.coroutines.Job
@@ -190,9 +191,7 @@ internal fun CaptureButton(
     onLockVideoRecording: (Boolean) -> Unit,
     onIncrementZoom: (Float) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
-    useLockSwitch: Boolean = true,
-    enableDragZoom: Boolean = true,
-    enableVolumeAsAltCapture: Boolean = true,
+    config: CaptureButtonConfig = CaptureButtonConfig(),
     captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE
 ) {
     val currentUiState = rememberUpdatedState(captureButtonUiState)
@@ -284,12 +283,10 @@ internal fun CaptureButton(
         }
     }
 
-    if (enableVolumeAsAltCapture) {
-        CaptureKeyHandler(
-            onPress = { captureSource -> onPress(captureSource) },
-            onRelease = { captureSource -> onKeyUp(captureSource) }
-        )
-    }
+    CaptureKeyHandler(
+        onPress = { captureSource -> onPress(captureSource) },
+        onRelease = { captureSource -> onKeyUp(captureSource) }
+    )
     CaptureButton(
         modifier = modifier,
         onPress = { onPress(CaptureSource.CAPTURE_BUTTON) },
@@ -297,8 +294,7 @@ internal fun CaptureButton(
         onLockVideoRecording = onLockVideoRecording,
         onDragZoom = onIncrementZoom,
         captureButtonUiState = captureButtonUiState,
-        useLockSwitch = useLockSwitch,
-        enableDragZoom = enableDragZoom,
+        config = config,
         captureButtonSize = captureButtonSize
     )
 }
@@ -342,8 +338,7 @@ private fun CaptureButton(
     onDragZoom: (Float) -> Unit,
     onLockVideoRecording: (Boolean) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
-    useLockSwitch: Boolean = true,
-    enableDragZoom: Boolean = true,
+    config: CaptureButtonConfig = CaptureButtonConfig(),
     captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE
 ) {
     // todo: explore MutableInteractionSource
@@ -378,7 +373,7 @@ private fun CaptureButton(
 
     fun setLockSwitchPosition(positionX: Float, offsetX: Float) {
         relativeCaptureButtonBounds?.let {
-            if (useLockSwitch) {
+            if (config.useLockUi) {
                 if (positionX > it.center.x) {
                     switchPosition = LOCK_SWITCH_POSITION_OFF
                 } else {
@@ -440,7 +435,7 @@ private fun CaptureButton(
                             // update position of lock switch
                             setLockSwitchPosition(newPoint.x, deltaOffset.x)
 
-                            if (enableDragZoom) {
+                            if (config.enableDragZoom) {
                                 // update zoom
                                 val previousPoint = change.position - deltaOffset
                                 val positiveDistance =
@@ -483,7 +478,7 @@ private fun CaptureButton(
         captureButtonSize = captureButtonSize,
         color = animatedColor
     ) {
-        if (useLockSwitch) {
+        if (config.useLockUi) {
             LockSwitchCaptureButtonNucleus(
                 captureButtonUiState = captureButtonUiState,
                 captureButtonSize = captureButtonSize,

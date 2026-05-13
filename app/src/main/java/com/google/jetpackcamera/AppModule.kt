@@ -51,7 +51,6 @@ object AppModule {
     @Provides
     fun providesCaptureButtonConfig(): CaptureButtonConfig = CaptureButtonConfig(
         useLockUi = false,
-        enableDragZoom = false,
-        enableVolumeAsAltCapture = false
+        enableDragZoom = true
     )
 }

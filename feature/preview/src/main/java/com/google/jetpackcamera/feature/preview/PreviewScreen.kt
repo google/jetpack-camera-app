@@ -64,6 +64,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.core.common.CaptureButtonConfig
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -278,9 +279,7 @@ fun PreviewScreen(
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
-                useLockUi = viewModel.captureButtonConfig.useLockUi,
-                enableDragZoom = viewModel.captureButtonConfig.enableDragZoom,
-                enableVolumeAsAltCapture = viewModel.captureButtonConfig.enableVolumeAsAltCapture,
+                captureButtonConfig = viewModel.captureButtonConfig,
 
                 onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
                     scope.launch {
@@ -347,9 +346,7 @@ private fun ContentScreen(
     captureUiState: CaptureUiState.Ready,
     screenFlashUiState: ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
-    useLockUi: Boolean = true,
-    enableDragZoom: Boolean = true,
-    enableVolumeAsAltCapture: Boolean = true,
+    captureButtonConfig: CaptureButtonConfig = CaptureButtonConfig(),
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
@@ -432,9 +429,7 @@ private fun ContentScreen(
             }
             CaptureButton(
                 captureButtonUiState = captureUiState.captureButtonUiState,
-                useLockSwitch = useLockUi,
-                enableDragZoom = enableDragZoom,
-                enableVolumeAsAltCapture = enableVolumeAsAltCapture,
+                config = captureButtonConfig,
                 isQuickSettingsOpen = (
                     captureUiState.quickSettingsUiState as?
                         QuickSettingsUiState.Available

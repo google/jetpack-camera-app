@@ -19,12 +19,11 @@ package com.google.jetpackcamera.core.common
  * Configuration for the capture button component.
  *
  * @property useLockUi Indicates whether the capture button should use the "lock switch UI"
- * (drag-to-lock) for video recording.
+ * (drag-to-lock) for video recording. Defaults to `false`.
  * @property enableDragZoom Indicates whether the capture button supports drag-to-zoom gesture.
- * @property enableVolumeAsAltCapture Indicates whether volume keys can be used as capture buttons.
+ * Defaults to `true`.
  */
 data class CaptureButtonConfig(
-    val useLockUi: Boolean,
-    val enableDragZoom: Boolean = true,
-    val enableVolumeAsAltCapture: Boolean = true
+    val useLockUi: Boolean = false,
+    val enableDragZoom: Boolean = true
 )

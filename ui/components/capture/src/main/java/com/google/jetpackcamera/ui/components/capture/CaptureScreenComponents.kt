@@ -93,6 +93,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.core.common.CaptureButtonConfig
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
@@ -594,9 +595,7 @@ fun CaptureButton(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
     isQuickSettingsOpen: Boolean,
-    useLockSwitch: Boolean = true,
-    enableDragZoom: Boolean = true,
-    enableVolumeAsAltCapture: Boolean = true,
+    config: CaptureButtonConfig = CaptureButtonConfig(),
     onIncrementZoom: (Float) -> Unit = {},
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
@@ -631,9 +630,7 @@ fun CaptureButton(
         },
         captureButtonUiState = captureButtonUiState,
         onLockVideoRecording = onLockVideoRecording,
-        useLockSwitch = useLockSwitch,
-        enableDragZoom = enableDragZoom,
-        enableVolumeAsAltCapture = enableVolumeAsAltCapture
+        config = config
     )
 }
 
