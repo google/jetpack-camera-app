@@ -75,6 +75,19 @@ fun captureUiState(
         cameraSystem.getCurrentCameraState(),
         trackedCaptureUiState
     ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
+        val videoRecordingState = cameraState.videoRecordingState
+        val roundedVideoRecordingState = when (videoRecordingState) {
+            is VideoRecordingState.Active -> {
+                val seconds = videoRecordingState.elapsedTimeNanos / 1_000_000_000L
+                val roundedNanos = seconds * 1_000_000_000L
+                when (videoRecordingState) {
+                    is VideoRecordingState.Active.Recording -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
+                    is VideoRecordingState.Active.Paused -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
+                }
+            }
+            else -> videoRecordingState
+        }
+
         val captureModeUiState = CaptureModeUiState.from(
             systemConstraints,
             cameraAppSettings,
@@ -108,7 +121,7 @@ fun captureUiState(
 
         CaptureUiState.Ready(
             externalCaptureMode = externalCaptureMode,
-            videoRecordingState = cameraState.videoRecordingState,
+            videoRecordingState = roundedVideoRecordingState,
             flipLensUiState = flipLensUiState,
             aspectRatioUiState = aspectRatioUiState,
             previewDisplayUiState = PreviewDisplayUiState(
@@ -140,10 +153,10 @@ fun captureUiState(
                 cameraAppSettings,
                 cameraState
             ),
-            elapsedTimeUiState = ElapsedTimeUiState.from(cameraState),
+            elapsedTimeUiState = ElapsedTimeUiState.from(cameraState.copy(videoRecordingState = roundedVideoRecordingState)),
             captureButtonUiState = CaptureButtonUiState.from(
                 cameraAppSettings,
-                cameraState,
+                cameraState.copy(videoRecordingState = roundedVideoRecordingState),
                 trackedUiState.isRecordingLocked
             ),
             zoomUiState = ZoomUiState.from(
@@ -167,7 +180,7 @@ fun captureUiState(
             focusMeteringUiState = focusMeteringUiState,
             imageWellUiState = ImageWellUiState.from(
                 trackedUiState.recentCapturedMedia,
-                cameraState.videoRecordingState
+                roundedVideoRecordingState
             ),
             screenFlashUiState = ScreenFlashUiState.from(trackedUiState)
         )
