@@ -148,7 +148,7 @@ class PreviewViewModel @Inject constructor(
 
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         cameraSystemRepository.cameraSystem,
-        if (useDeveloperConfig) appConfig else DeveloperAppConfig.LibraryDefaults,
+        appConfig,
         constraintsRepository,
         trackedCaptureUiState,
         externalCaptureMode

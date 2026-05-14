@@ -31,8 +31,10 @@ data class DeveloperAppConfig(
     val captureMode: SettingConfig<CaptureMode>,
     val aspectRatio: SettingConfig<AspectRatio>,
     val flashMode: SettingConfig<FlashMode>,
-    val audio: SettingConfig<Boolean>,
-    val hdrEnabled: SettingConfig<Boolean>
+    val imageOutputFormat: SettingConfig<ImageOutputFormat>,
+    val videoDynamicRange: SettingConfig<DynamicRange>
+    // val audio: SettingConfig<Boolean>,
+
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
@@ -49,19 +51,6 @@ data class DeveloperAppConfig(
         require(flashMode.containsIfOptionsEnabled(setOf(FlashMode.OFF)))
     }
 
-    companion object {
-        // Provides a foundation based on JCA's DEFAULT_CAMERA_APP_SETTINGS
-        val LibraryDefaults: DeveloperAppConfig = DeveloperAppConfig(
-            aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
-            flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
-            captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
-            audio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.audioEnabled),
-            hdrEnabled = SettingConfig(
-                DEFAULT_CAMERA_APP_SETTINGS.dynamicRange != DynamicRange.SDR
-            )
-        )
-    }
-
     /**
      * Converts this [DeveloperAppConfig] into a [CameraAppSettings] object.
      *
@@ -70,22 +59,14 @@ data class DeveloperAppConfig(
     fun toCameraAppSettings(
         defaultSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
     ): CameraAppSettings {
-        val imageOutputFormat = if (this.hdrEnabled.defaultValue) {
-            ImageOutputFormat.JPEG_ULTRA_HDR
-        } else {
-            ImageOutputFormat.JPEG
-        }
-
-        val dynamicRange =
-            if (this.hdrEnabled.defaultValue) DynamicRange.HLG10 else DynamicRange.SDR
-
         return defaultSettings.copy(
             aspectRatio = this.aspectRatio.defaultValue,
             flashMode = this.flashMode.defaultValue,
             captureMode = this.captureMode.defaultValue,
-            audioEnabled = this.audio.defaultValue,
-            imageFormat = imageOutputFormat,
-            dynamicRange = dynamicRange
+            imageFormat = this.imageOutputFormat.defaultValue,
+            dynamicRange = this.videoDynamicRange.defaultValue
+            // audioEnabled = this.audio.defaultValue,
+
         )
     }
 }
