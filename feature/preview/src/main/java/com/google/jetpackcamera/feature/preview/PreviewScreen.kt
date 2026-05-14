@@ -136,7 +136,8 @@ fun PreviewScreen(
 ) {
     Log.d(TAG, "PreviewScreen")
 
-    val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
+    val captureUiStateState = viewModel.captureUiState.collectAsState()
+    val captureUiState = captureUiStateState.value
     val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
     val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
 
@@ -191,6 +192,19 @@ fun PreviewScreen(
                     null
                 )
             }
+
+            val formattedTimeProvider = remember {
+                androidx.compose.runtime.derivedStateOf {
+                    val state = (captureUiStateState.value as? CaptureUiState.Ready)?.elapsedTimeUiState
+                    if (state is ElapsedTimeUiState.Enabled) {
+                        state.elapsedTimeNanos.nanoseconds
+                            .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) }
+                    } else {
+                        ""
+                    }
+                }
+            }
+            val formattedTimeProviderLambda = remember(formattedTimeProvider) { { formattedTimeProvider.value } }
 
             val context = LocalContext.current
             LaunchedEffect(Unit) {
@@ -275,6 +289,7 @@ fun PreviewScreen(
             ContentScreen(
                 modifier = modifier,
                 captureUiState = currentUiState,
+                formattedTimeProvider = formattedTimeProviderLambda,
                 screenFlashUiState = screenFlashUiState,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
@@ -342,6 +357,7 @@ fun PreviewScreen(
 @Composable
 private fun ContentScreen(
     captureUiState: CaptureUiState.Ready,
+    formattedTimeProvider: () -> String = { "" },
     screenFlashUiState: ScreenFlashUiState,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
@@ -473,15 +489,16 @@ private fun ContentScreen(
                 )
             }
         },
-        elapsedTimeDisplay = {
+        elapsedTimeDisplay = { modifier ->
             AnimatedVisibility(
                 visible = (captureUiState.videoRecordingState is VideoRecordingState.Active),
                 enter = fadeIn(),
                 exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
             ) {
+                val elapsedTimeModifier = remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
                 ElapsedTimeText(
-                    modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                    elapsedTimeUiState = captureUiState.elapsedTimeUiState
+                    modifier = elapsedTimeModifier,
+                    formattedTimeProvider = formattedTimeProvider
                 )
             }
         },

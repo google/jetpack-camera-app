@@ -131,13 +131,14 @@ private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
  * @param elapsedTimeUiState the [ElapsedTimeUiState] for this component.
  */
 @Composable
-fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
-    if (elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
+fun ElapsedTimeText(modifier: Modifier = Modifier, formattedTimeProvider: () -> String) {
+    val formattedTime = formattedTimeProvider()
+    if (formattedTime.isNotEmpty()) {
         Text(
             modifier = modifier,
-            text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
-                .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
-            textAlign = TextAlign.Center
+            text = formattedTime,
+            textAlign = TextAlign.Center,
+            style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum")
         )
     }
 }
