@@ -34,6 +34,7 @@ import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.StateFlow
 
@@ -91,6 +92,8 @@ interface CameraSystem {
 
     fun getCurrentCameraState(): StateFlow<CameraState>
 
+    fun getSystemConstraints(): StateFlow<CameraSystemConstraints?>
+
     fun getSurfaceRequest(): StateFlow<SurfaceRequest?>
 
     fun getScreenFlashEvents(): ReceiveChannel<ScreenFlashEvent>
@@ -138,6 +141,52 @@ interface CameraSystem {
         enum class Type {
             APPLY_UI,
             CLEAR_UI
+        }
+    }
+
+    companion object {
+        /**
+         * Applies an individual camera app setting with the given [settingExtractor] and
+         * [settingApplicator] if the new setting differs from the old setting.
+         */
+        private suspend inline fun <R> CameraAppSettings.applyDiff(
+            new: CameraAppSettings,
+            settingExtractor: CameraAppSettings.() -> R,
+            crossinline settingApplicator: suspend (R) -> Unit
+        ) {
+            val oldSetting = settingExtractor.invoke(this)
+            val newSetting = settingExtractor.invoke(new)
+            if (oldSetting != newSetting) {
+                settingApplicator(newSetting)
+            }
+        }
+
+        /**
+         * Checks whether each actionable individual setting has changed and applies them to
+         * [CameraSystem].
+         */
+        suspend fun CameraAppSettings.applyDiffs(
+            new: CameraAppSettings,
+            cameraSystem: CameraSystem
+        ) {
+            applyDiff(new, CameraAppSettings::cameraLensFacing, cameraSystem::setLensFacing)
+            applyDiff(new, CameraAppSettings::flashMode, cameraSystem::setFlashMode)
+            applyDiff(new, CameraAppSettings::streamConfig, cameraSystem::setStreamConfig)
+            applyDiff(new, CameraAppSettings::aspectRatio, cameraSystem::setAspectRatio)
+            applyDiff(new, CameraAppSettings::stabilizationMode, cameraSystem::setStabilizationMode)
+            applyDiff(new, CameraAppSettings::targetFrameRate, cameraSystem::setTargetFrameRate)
+            applyDiff(
+                new,
+                CameraAppSettings::maxVideoDurationMillis,
+                cameraSystem::setMaxVideoDuration
+            )
+            applyDiff(new, CameraAppSettings::videoQuality, cameraSystem::setVideoQuality)
+            applyDiff(new, CameraAppSettings::audioEnabled, cameraSystem::setAudioEnabled)
+            applyDiff(
+                new,
+                CameraAppSettings::lowLightBoostPriority,
+                cameraSystem::setLowLightBoostPriority
+            )
         }
     }
 }

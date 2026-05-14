@@ -17,10 +17,7 @@ package com.google.jetpackcamera.core.camera
 
 import android.app.Application
 import android.content.ContentResolver
-import android.graphics.SurfaceTexture
 import android.net.Uri
-import android.view.Surface
-import androidx.concurrent.futures.DirectExecutor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -34,16 +31,17 @@ import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.PostProcessModule.Companion.provideImagePostProcessorMap
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
-import com.google.jetpackcamera.core.common.FakeFilePathGenerator
+import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
+import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
-import com.google.jetpackcamera.settings.ConstraintsRepository
-import com.google.jetpackcamera.settings.SettableConstraintsRepository
-import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
+import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.util.AbstractMap
 import javax.inject.Provider
@@ -226,16 +224,86 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun setStabilizationMode_on_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.ON)
+    }
+
+    @Test
+    fun setStabilizationMode_optical_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.OPTICAL)
+    }
+
+    @Test
+    fun setStabilizationMode_highQuality_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.HIGH_QUALITY)
+    }
+
+    @Test
+    fun setStabilizationMode_off_imageOnly_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.OFF, CaptureMode.IMAGE_ONLY)
+    }
+
+    private suspend fun CoroutineScope.runSetStabilizationModeTest(
+        stabilizationMode: StabilizationMode,
+        captureMode: CaptureMode? = null
+    ) {
+        // Arrange.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = CameraAppSettings(stabilizationMode = StabilizationMode.OFF)
+        )
+        val cameraConstraints =
+            cameraSystem.getSystemConstraints().value?.forCurrentLens(
+                DEFAULT_CAMERA_APP_SETTINGS
+            )
+        assume().withMessage("Stabilisation $stabilizationMode not supported, skip the test.")
+            .that(
+                cameraConstraints != null &&
+                    cameraConstraints.supportedStabilizationModes.contains(
+                        stabilizationMode
+                    )
+            ).isTrue()
+        var initialStabilizationMode: StabilizationMode? = StabilizationMode.OFF
+        if (stabilizationMode == StabilizationMode.OFF) {
+            initialStabilizationMode = cameraConstraints?.supportedStabilizationModes
+                ?.firstOrNull { it != StabilizationMode.OFF }
+            assume().withMessage("No stabilisation other than OFF is supported, skip the test.")
+                .that(initialStabilizationMode != null).isTrue()
+            initialStabilizationMode?.let {
+                cameraSystem.setStabilizationMode(initialStabilizationMode)
+            }
+        }
+
+        cameraSystem.startCameraAndWaitUntilRunning()
+        val stabilizationCheck: ReceiveChannel<StabilizationMode> =
+            cameraSystem.getCurrentCameraState()
+                .map { it.stabilizationMode }
+                .produceIn(this)
+
+        // Ensure we start in a state with the initial stabilization mode
+        stabilizationCheck.awaitValue(initialStabilizationMode)
+
+        // Act.
+        cameraSystem.setStabilizationMode(stabilizationMode)
+        captureMode?.let { cameraSystem.setCaptureMode(it) }
+
+        // Assert.
+        stabilizationCheck.awaitValue(stabilizationMode)
+
+        // Clean-up.
+        stabilizationCheck.cancel()
+    }
+
+    @Test
     fun recordVideoWithFlashModeOn_shouldEnableTorch(): Unit = runBlocking {
         // Arrange.
         val lensFacing = LensFacing.BACK
-        val constraintsRepository = SettableConstraintsRepositoryImpl()
-        val cameraSystem = createAndInitCameraXCameraSystem(
-            constraintsRepository = constraintsRepository
-        )
-        assume().withMessage("No flash unit, skip the test.")
-            .that(constraintsRepository.hasFlashUnit(lensFacing)).isTrue()
+        val cameraSystem = createAndInitCameraXCameraSystem()
         cameraSystem.startCameraAndWaitUntilRunning()
+        val hasFlashUnit = cameraSystem.getSystemConstraints().value?.perLensConstraints?.get(
+            lensFacing
+        )?.supportedIlluminants?.contains(Illuminant.FLASH_UNIT) == true
+        assume().withMessage("No flash unit, skip the test.")
+            .that(hasFlashUnit).isTrue()
 
         // Arrange: Create a ReceiveChannel to observe the torch enabled state.
         val torchEnabled: ReceiveChannel<Boolean> = cameraSystem.getCurrentCameraState()
@@ -273,13 +341,11 @@ class CameraXCameraSystemTest {
 
     private suspend fun createAndInitCameraXCameraSystem(
         appSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-        constraintsRepository: SettableConstraintsRepository = SettableConstraintsRepositoryImpl(),
         fakeImagePostProcessor: FakeImagePostProcessor? = null
     ) = CameraXCameraSystem(
         application = application,
         defaultDispatcher = Dispatchers.Default,
         iODispatcher = Dispatchers.IO,
-        constraintsRepository = constraintsRepository,
         availabilityCheckers = emptyMap(),
         effectProviders = emptyMap(),
         imagePostProcessors = getFakePostProcessorMap(fakeImagePostProcessor),
@@ -335,14 +401,8 @@ class CameraXCameraSystemTest {
 
     private fun CameraXCameraSystem.providePreviewSurface() {
         cameraSystemScope.launch {
-            getSurfaceRequest().filterNotNull().first().let { surfaceRequest ->
-                val surfaceTexture = SurfaceTexture(0)
-                surfaceTexture.setDefaultBufferSize(640, 480)
-                val surface = Surface(surfaceTexture)
-                surfaceRequest.provideSurface(surface, DirectExecutor.INSTANCE) {
-                    surface.release()
-                    surfaceTexture.release()
-                }
+            getSurfaceRequest().filterNotNull().collect {
+                it.provideUpdatingSurface()
             }
         }
     }
@@ -360,10 +420,6 @@ class CameraXCameraSystemTest {
         assertWithMessage("Camera timed out while starting.").that(cameraStarted).isTrue()
         instrumentation.waitForIdleSync()
     }
-
-    private suspend fun ConstraintsRepository.hasFlashUnit(lensFacing: LensFacing): Boolean =
-        Illuminant.FLASH_UNIT in
-            systemConstraints.first()!!.perLensConstraints[lensFacing]!!.supportedIlluminants
 
     private fun deleteFiles(uris: Set<Uri>) {
         for (uri in uris) {

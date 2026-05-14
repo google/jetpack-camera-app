@@ -18,9 +18,27 @@ package com.google.jetpackcamera.ui.uistate.capture
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
+/**
+ * Defines the UI state for the capture mode setting.
+ *
+ * This sealed interface represents the possible states of the UI component that allows switching
+ * between different capture modes, such as single stream or multi-stream.
+ */
 sealed interface CaptureModeUiState {
+    /**
+     * The capture mode selection is unavailable.
+     * This may occur when the camera is busy or if the capture mode is fixed by an external
+     * constraint.
+     */
     data object Unavailable : CaptureModeUiState
 
+    /**
+     * The capture mode selection is available.
+     *
+     * @param selectedCaptureMode The currently active [CaptureMode].
+     * @param availableCaptureModes A list of all available capture modes, each represented by a
+     * [SingleSelectableUiState] to indicate its current selection and interaction status.
+     */
     data class Available(
         val selectedCaptureMode: CaptureMode,
         val availableCaptureModes: List<SingleSelectableUiState<CaptureMode>>
@@ -41,6 +59,13 @@ sealed interface CaptureModeUiState {
         }
     }
 
+    /**
+     * Checks if a specific [CaptureMode] is currently selectable in the UI.
+     *
+     * @param captureMode The capture mode to check.
+     * @return `true` if the UI is in the [Available] state and the specified mode is selectable,
+     * `false` otherwise.
+     */
     fun CaptureModeUiState.isCaptureModeSelectable(captureMode: CaptureMode): Boolean {
         return when (this) {
             is Available -> {
@@ -53,6 +78,16 @@ sealed interface CaptureModeUiState {
         }
     }
 
+    /**
+     * Finds the [SingleSelectableUiState] for a specific [CaptureMode].
+     *
+     * This is useful for getting the complete UI state for a mode, including whether it is
+     * selectable, disabled, or currently selected.
+     *
+     * @param targetCaptureMode The capture mode to find the UI state for.
+     * @return The corresponding [SingleSelectableUiState] if found within the available modes,
+     * or `null` otherwise.
+     */
     fun CaptureModeUiState.findSelectableStateFor(
         targetCaptureMode: CaptureMode
     ): SingleSelectableUiState<CaptureMode>? {

@@ -18,6 +18,12 @@ package com.google.jetpackcamera.ui.uistateadapter.postcapture
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
 
+/**
+ * Factory function to create a [ShareButtonUiState] from a [MediaDescriptor].
+ *
+ * If the given [mediaDescriptor] has content (i.e., is a [MediaDescriptor.Content]), this
+ * returns [ShareButtonUiState.Ready]. Otherwise, it returns [ShareButtonUiState.Unavailable].
+ */
 fun ShareButtonUiState.Companion.from(mediaDescriptor: MediaDescriptor): ShareButtonUiState =
     when (mediaDescriptor) {
         is MediaDescriptor.Content -> ShareButtonUiState.Ready

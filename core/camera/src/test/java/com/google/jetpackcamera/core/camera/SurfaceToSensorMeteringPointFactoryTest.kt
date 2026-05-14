@@ -18,13 +18,13 @@ package com.google.jetpackcamera.core.camera
 import android.graphics.Matrix
 import android.graphics.Rect
 import androidx.camera.core.MeteringPoint
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(AndroidJUnit4::class)
 class SurfaceToSensorMeteringPointFactoryTest {
 
     private val sensorRect = Rect(0, 0, 4000, 3000) // 4:3 aspect ratio

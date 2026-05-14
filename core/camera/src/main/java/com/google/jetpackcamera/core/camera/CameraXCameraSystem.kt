@@ -66,20 +66,20 @@ import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TARGET_FPS_15
+import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_60
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.ZoomStrategy
-import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
-import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
 import java.io.FileNotFoundException
-import javax.inject.Inject
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -96,24 +96,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraXCameraSystem"
-const val TARGET_FPS_AUTO = 0
-const val TARGET_FPS_15 = 15
-const val TARGET_FPS_30 = 30
-const val TARGET_FPS_60 = 60
-
-const val UNLIMITED_VIDEO_DURATION = 0L
 
 /**
  * CameraX based implementation for [CameraSystem]
  */
-@ViewModelScoped
-class CameraXCameraSystem
-@Inject
-constructor(
+class CameraXCameraSystem(
     private val application: Application,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     @param:IODispatcher private val iODispatcher: CoroutineDispatcher,
-    private val constraintsRepository: SettableConstraintsRepository,
     @DefaultFilePathGenerator private val filePathGenerator: FilePathGenerator,
     availabilityCheckers:
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>>,
@@ -139,6 +129,10 @@ constructor(
     // Could be improved by setting initial value only when camera is initialized
     private var currentCameraState = MutableStateFlow(CameraState())
     override fun getCurrentCameraState(): StateFlow<CameraState> = currentCameraState.asStateFlow()
+
+    private val _systemConstraints = MutableStateFlow<CameraSystemConstraints?>(null)
+    override fun getSystemConstraints(): StateFlow<CameraSystemConstraints?> =
+        _systemConstraints.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
@@ -180,6 +174,16 @@ constructor(
                 LensFacing.BACK
             ).filter {
                 cameraProvider.hasCamera(it.toCameraSelector())
+            }
+
+        // verify the initial camera exists
+        val settingsWithVerifiedLens =
+            if (cameraAppSettings.cameraLensFacing !in availableCameraLenses &&
+                availableCameraLenses.isNotEmpty()
+            ) {
+                cameraAppSettings.copy(cameraLensFacing = availableCameraLenses.first())
+            } else {
+                cameraAppSettings
             }
 
         // Build and update the system constraints
@@ -234,8 +238,8 @@ constructor(
                         val unsupportedStabilizationFpsMap = buildMap {
                             for (stabilizationMode in supportedStabilizationModes) {
                                 when (stabilizationMode) {
-                                    StabilizationMode.ON -> setOf(FPS_15, FPS_60)
-                                    StabilizationMode.HIGH_QUALITY -> setOf(FPS_60)
+                                    StabilizationMode.ON -> setOf(TARGET_FPS_15, TARGET_FPS_60)
+                                    StabilizationMode.HIGH_QUALITY -> setOf(TARGET_FPS_60)
                                     StabilizationMode.OPTICAL -> emptySet()
                                     else -> null
                                 }?.let { put(stabilizationMode, it) }
@@ -248,7 +252,7 @@ constructor(
                         val supportedIlluminants = generateSupportedIlluminants(
                             camInfo,
                             lensFacing,
-                            cameraAppSettings
+                            settingsWithVerifiedLens
                         )
                         val supportedFlashModes = generateSupportedFlashModes(supportedIlluminants)
 
@@ -284,12 +288,12 @@ constructor(
             }
         )
 
-        constraintsRepository.updateSystemConstraints(systemConstraints)
+        _systemConstraints.value = systemConstraints
 
         currentSettings.value =
-            cameraAppSettings
+            settingsWithVerifiedLens
                 .tryApplyDynamicRangeConstraints()
-                .tryApplyAspectRatioForExternalCapture(cameraAppSettings.captureMode)
+                .tryApplyAspectRatioForExternalCapture(settingsWithVerifiedLens.captureMode)
                 .tryApplyImageFormatConstraints()
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()

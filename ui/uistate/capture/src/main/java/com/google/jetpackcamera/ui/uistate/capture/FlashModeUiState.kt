@@ -18,9 +18,29 @@ package com.google.jetpackcamera.ui.uistate.capture
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
+/**
+ * Defines the UI state for the flash mode setting.
+ *
+ * This sealed interface represents the different states of the flash mode UI, such as being
+ * unavailable or available with a set of options.
+ */
 sealed interface FlashModeUiState {
+    /**
+     * The flash mode setting is unavailable.
+     * This may be because the current camera does not support flash or it is disabled by other
+     * settings.
+     */
     data object Unavailable : FlashModeUiState
 
+    /**
+     * The flash mode setting is available for user interaction.
+     *
+     * @param selectedFlashMode The currently selected [FlashMode].
+     * @param availableFlashModes A list of all supported flash modes, each represented by a
+     * [SingleSelectableUiState] to indicate its selection status.
+     * @param isLowLightBoostActive Indicates whether the low light boost feature is currently
+     * active, which may affect flash behavior.
+     */
     data class Available(
         val selectedFlashMode: FlashMode,
         val availableFlashModes: List<SingleSelectableUiState<FlashMode>>,

@@ -21,6 +21,21 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 
+/**
+ * Creates a [ZoomUiState] from various camera and application sources.
+ *
+ * This function is responsible for creating the UI state for zoom-related information, such as the
+ * zoom slider. It gathers the supported zoom range for the current lens and combines it with the
+ * camera's real-time zoom ratio and linear zoom value.
+ *
+ * @param systemConstraints The capabilities of the device's camera hardware, used to find the
+ *   supported zoom range for the current lens.
+ * @param lensFacing The currently active [LensFacing] to look up the correct constraints and state.
+ * @param cameraState The real-time state from the camera, providing the current zoom ratio and
+ *   linear zoom value.
+ * @return A [ZoomUiState.Enabled] object containing the zoom range, current zoom ratio, and current
+ *   linear zoom value for the UI.
+ */
 fun ZoomUiState.Companion.from(
     systemConstraints: CameraSystemConstraints,
     lensFacing: LensFacing,

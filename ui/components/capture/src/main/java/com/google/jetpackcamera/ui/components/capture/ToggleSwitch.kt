@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.res.Configuration
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -25,12 +26,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -47,16 +44,14 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.google.jetpackcamera.ui.components.capture.theme.PreviewPreviewTheme
 
 private const val DISABLED_ICON_ALPHA = 0.38f
 private const val TRACK_COLOR_ALPHA = .16f
@@ -71,8 +66,8 @@ private const val TRACK_COLOR_ALPHA = .16f
  * @param enabled Whether the switch is interactive.
  * @param trackColor The color of the track when unchecked.
  * @param thumbColor The color of the thumb and the checked track.
- * @param leftIcon The [ImageVector] (e.g., Google Symbol) for the 'off' state.
- * @param rightIcon The [ImageVector] (e.g., Google Symbol) for the 'on' state.
+ * @param leftIcon The drawable resource ID for the 'off' state.
+ * @param rightIcon The drawable resource ID for the 'on' state.
  * @param unselectedIconColor The tint color for the 'off' icon.
  * @param selectedIconColor The tint color for the 'on' icon.
  */
@@ -86,8 +81,8 @@ fun ToggleSwitch(
     trackColor: Color = Color.White.copy(alpha = TRACK_COLOR_ALPHA),
     thumbColor: Color = MaterialTheme.colorScheme.primaryFixedDim,
     disableColor: Color = MaterialTheme.colorScheme.onSurface,
-    leftIcon: ImageVector? = null,
-    rightIcon: ImageVector? = null,
+    @DrawableRes leftIcon: Int? = null,
+    @DrawableRes rightIcon: Int? = null,
     leftIconDescription: String = "leftIcon",
     rightIconDescription: String = "rightIcon",
     unselectedIconColor: Color = MaterialTheme.colorScheme.secondaryFixed,
@@ -135,8 +130,8 @@ fun ToggleSwitch(
     )
 
     // --- 4. Icon Painters ---
-    val offIconPainter = leftIcon?.let { rememberVectorPainter(image = leftIcon) }
-    val onIconPainter = rightIcon?.let { rememberVectorPainter(image = rightIcon) }
+    val offIconPainter = leftIcon?.let { painterResource(id = it) }
+    val onIconPainter = rightIcon?.let { painterResource(id = it) }
 
     // --- 5. Gesture Handlers ---
     val draggableState = rememberDraggableState { delta ->
@@ -385,69 +380,85 @@ private fun DrawScope.drawSwitchThumb(center: Offset, radius: Float, color: Colo
 @Preview(name = "Disabled On", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_On_Disabled() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleSwitch(
-            leftIcon = Icons.Outlined.CameraAlt,
-            rightIcon = Icons.Filled.Videocam,
-            checked = true,
-            onCheckedChange = {},
-            enabled = false
-        )
-    }
+    MaterialTheme(
+        colorScheme = darkColorScheme(),
+        content = {
+            ToggleSwitch(
+                leftIcon = R.drawable.ic_camera_alt_outline,
+                rightIcon = R.drawable.ic_videocam_filled,
+                checked = true,
+                onCheckedChange = {},
+                enabled = false
+            )
+        }
+    )
 }
 
 @Preview(name = "Disabled off ", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_Off_Disabled() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleSwitch(
-            leftIcon = Icons.Filled.CameraAlt,
-            rightIcon = Icons.Outlined.Videocam,
-            checked = false,
-            onCheckedChange = {},
-            enabled = false
-        )
-    }
+    MaterialTheme(
+        colorScheme = darkColorScheme(),
+        content = {
+            ToggleSwitch(
+                leftIcon = R.drawable.ic_camera_alt_filled,
+                rightIcon = R.drawable.ic_videocam_outline,
+                checked = false,
+                onCheckedChange = {},
+                enabled = false
+            )
+        }
+    )
 }
 
 @Preview(name = "on", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_On_Enabled() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleSwitch(
-            leftIcon = Icons.Outlined.CameraAlt,
-            rightIcon = Icons.Filled.Videocam,
-            checked = true,
-            onCheckedChange = {},
-            enabled = true
-        )
-    }
+    MaterialTheme(
+        colorScheme = darkColorScheme(),
+        content = {
+            ToggleSwitch(
+                leftIcon = R.drawable.ic_camera_alt_outline,
+                rightIcon = R.drawable.ic_videocam_filled,
+                checked = true,
+                onCheckedChange = {},
+                enabled = true
+            )
+        }
+    )
 }
 
 @Preview(name = "off", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_ToggleSwitch_Off_Enabled() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleSwitch(
-            leftIcon = Icons.Filled.CameraAlt,
-            rightIcon = Icons.Outlined.Videocam,
-            checked = false,
-            onCheckedChange = {},
-            enabled = true
-        )
-    }
+    MaterialTheme(
+        colorScheme = darkColorScheme(),
+        content = {
+            ToggleSwitch(
+                leftIcon = R.drawable.ic_camera_alt_filled,
+                rightIcon = R.drawable.ic_videocam_outline,
+                checked = false,
+                onCheckedChange = {},
+                enabled = true
+            )
+        }
+    )
 }
 
 @Preview(name = "switch off", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun Capture_Switch_Off_Enabled() {
-    PreviewPreviewTheme(dynamicColor = false) {
-        ToggleSwitch(
-            leftIcon = Icons.Filled.CameraAlt,
-            rightIcon = Icons.Outlined.Videocam,
-            checked = false,
-            onCheckedChange = {},
-            enabled = true
-        )
-    }
+    MaterialTheme(
+        colorScheme = darkColorScheme(),
+        content =
+        {
+            ToggleSwitch(
+                leftIcon = R.drawable.ic_camera_alt_filled,
+                rightIcon = R.drawable.ic_videocam_outline,
+                checked = false,
+                onCheckedChange = {},
+                enabled = true
+            )
+        }
+    )
 }

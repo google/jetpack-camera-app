@@ -45,9 +45,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -78,6 +75,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
@@ -168,8 +166,33 @@ private fun CaptureKeyHandler(
     }
 }
 
+/**
+ * A capture button that can be used for both image and video capture, supporting drag-to-lock for hands-free recording.
+ *
+ * This component handles user interactions such as tap for image capture, long-press for video recording,
+ * and a drag-to-lock gesture to enable continuous, "hands-free recording." When a video recording
+ * is initiated via a long press, the user can drag their finger towards the lock icon to lock the recording,
+ * allowing them to lift their finger and continue recording without interruption. Additionally, users can
+ * drag vertically *above* the capture button (where Y coordinates are negative relative to the button's top edge)
+ * to zoom in (dragging upwards) or zoom out (dragging downwards).
+ *
+ * The button supports three distinct capture modes: Hybrid, Image-only, and Video-only, each with its
+ * own UI and behavior:
+ * - **Hybrid Mode:** A single tap captures an image, and a long press initiates video recording.
+ * - **Image-only Mode:** Only single taps are active for image capture. Long press for video recording is disabled.
+ * - **Video-only Mode:** A single tap initiates video recording, and a long press also initiates video recording, with the drag-to-lock feature available.
+ *
+ * @param modifier the modifier for this component
+ * @param onImageCapture the callback for an image capture event
+ * @param onStartRecording the callback for a start recording event
+ * @param onStopRecording the callback for a stop recording event
+ * @param onLockVideoRecording The callback for a lock video recording event. The boolean parameter indicates if the recording should be locked.
+ * @param onIncrementZoom The callback for a zoom increment event, providing the zoom increment value.
+ * @param captureButtonUiState the [CaptureButtonUiState] for this component
+ * @param captureButtonSize the size of the capture button
+ */
 @Composable
-fun CaptureButton(
+internal fun CaptureButton(
     modifier: Modifier = Modifier,
     onImageCapture: () -> Unit,
     onStartRecording: () -> Unit,
@@ -194,7 +217,7 @@ fun CaptureButton(
         if (captureButtonUiState is CaptureButtonUiState.Available.Idle) {
             onLockVideoRecording(false)
         } else if (captureButtonUiState
-                is CaptureButtonUiState.Available.Recording.LockedRecording
+                is CaptureButtonUiState.Enabled.Recording.LockedRecording
         ) {
             longPressJob = null
             isLongPressing.value = false
@@ -368,18 +391,13 @@ private fun CaptureButton(
     )
 
     val isPressedInteraction by interactionSource.collectIsPressedAsState()
-
     val animatedColor by animateColorAsState(
         targetValue = if (isVisuallyDisabled) {
             LocalContentColor.current.copy(alpha = 0.38f)
         } else {
             LocalContentColor.current
         },
-        animationSpec = if (isVisuallyDisabled) {
-            tween(durationMillis = 1000)
-        } else {
-            tween(durationMillis = 300)
-        },
+        animationSpec = tween(durationMillis = if (isVisuallyDisabled) 1000 else 300),
         label = "Capture Button Color"
     )
 
@@ -516,7 +534,7 @@ private fun CaptureButton(
 }
 
 @Composable
-fun CaptureButtonRing(
+private fun CaptureButtonRing(
     modifier: Modifier = Modifier,
     captureButtonSize: Float,
     color: Color,
@@ -623,10 +641,10 @@ private fun LockSwitchCaptureButtonNucleus(
                         onToggleSwitchPosition()
                     },
                 tint = Color.White,
-                imageVector = if (shouldBeLocked()) {
-                    Icons.Default.Lock
+                painter = if (shouldBeLocked()) {
+                    painterResource(R.drawable.ic_lock)
                 } else {
-                    Icons.Default.LockOpen
+                    painterResource(R.drawable.ic_lock_open)
                 },
                 contentDescription = null
             )
@@ -845,6 +863,8 @@ private fun PreviewCaptureButton(
         }
     }
 }
+    }
+}
 
 @Preview
 @Composable
@@ -858,7 +878,7 @@ private fun IdleStandardCaptureButtonPreview() {
 @Composable
 private fun IdleImageCaptureButtonPreview() {
     PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Available.Idle(CaptureMode.IMAGE_ONLY)
+        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
     )
 }
 
@@ -866,7 +886,7 @@ private fun IdleImageCaptureButtonPreview() {
 @Composable
 private fun IdleVideoOnlyCaptureButtonPreview() {
     PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Available.Idle(CaptureMode.VIDEO_ONLY)
+        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
     )
 }
 
@@ -874,7 +894,7 @@ private fun IdleVideoOnlyCaptureButtonPreview() {
 @Composable
 private fun IdleStandardCaptureButtonDisabledPreview() {
     PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Available.Idle(
+        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
             CaptureMode.STANDARD,
             isEnabled = false
         )
@@ -885,7 +905,7 @@ private fun IdleStandardCaptureButtonDisabledPreview() {
 @Composable
 private fun IdleImageCaptureButtonDisabledPreview() {
     PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Available.Idle(
+        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
             CaptureMode.IMAGE_ONLY,
             isEnabled = false
         )
@@ -896,11 +916,68 @@ private fun IdleImageCaptureButtonDisabledPreview() {
 @Composable
 private fun IdleVideoOnlyCaptureButtonDisabledPreview() {
     PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Available.Idle(
+        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
             CaptureMode.VIDEO_ONLY,
             isEnabled = false
         )
     )
+}
+
+@Preview
+@Composable
+private fun IdleVideoOnlyCaptureButtonPreview() {
+    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.White) {
+        CaptureButtonNucleus(
+            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY),
+            isPressed = false,
+            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun IdleStandardCaptureButtonDisabledPreview() {
+    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.Gray) {
+        CaptureButtonNucleus(
+            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
+                CaptureMode.STANDARD,
+                isEnabled = false
+            ),
+            isPressed = false,
+            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun IdleImageCaptureButtonDisabledPreview() {
+    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.Gray) {
+        CaptureButtonNucleus(
+            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
+                CaptureMode.IMAGE_ONLY,
+                isEnabled = false
+            ),
+            isPressed = false,
+            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun IdleVideoOnlyCaptureButtonDisabledPreview() {
+    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.Gray) {
+        CaptureButtonNucleus(
+            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
+                CaptureMode.VIDEO_ONLY,
+                isEnabled = false
+            ),
+            isPressed = false,
+            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
+        )
+    }
 }
 
 @Preview

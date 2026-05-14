@@ -109,7 +109,6 @@ dependencies {
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons.extended)
 
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
@@ -131,7 +130,9 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.rules)
     androidTestImplementation(libs.androidx.uiautomator)
+    androidTestImplementation(libs.camera.lifecycle) // to reset CameraX between tests
     androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.testParameterInjector)
     androidTestImplementation(project(":ui:components:capture"))
     androidTestUtil(libs.androidx.orchestrator)
 

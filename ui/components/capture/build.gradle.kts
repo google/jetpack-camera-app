@@ -69,7 +69,6 @@ dependencies {
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons.extended)
 
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
@@ -102,11 +101,13 @@ dependencies {
 
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
+    implementation(project(":ui:controller"))
     implementation(project(":core:camera"))
     implementation(project(":core:common"))
     implementation(project(":data:media"))
     implementation(project(":core:model"))
     testImplementation(project(":core:common"))
+    testImplementation(project(":core:camera:testing"))
     testImplementation(project(":data:settings"))
 
 }

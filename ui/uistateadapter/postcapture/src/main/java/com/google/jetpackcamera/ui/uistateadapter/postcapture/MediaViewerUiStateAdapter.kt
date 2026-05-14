@@ -20,6 +20,18 @@ import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 
+/**
+ * Factory function to create a [MediaViewerUiState] from media data.
+ *
+ * This function determines the appropriate UI state based on the provided [media], [mediaDescriptor],
+ * and player information.
+ *
+ * @param mediaDescriptor The descriptor for the media, used to extract the video thumbnail.
+ * @param media The underlying media content, which can be an image, video, or represent an error or loading state.
+ * @param player The [Player] instance for video playback. Can be null if not available.
+ * @param playerState A boolean indicating if the player is ready to be used.
+ * @return A [MediaViewerUiState] representing the current state of the media viewer.
+ */
 fun MediaViewerUiState.Companion.from(
     mediaDescriptor: MediaDescriptor,
     media: Media,

@@ -38,5 +38,23 @@ enum class ExternalCaptureMode {
     /**
      * Under this mode, the app is launched by an external intent to capture multiple images.
      */
-    MultipleImageCapture
+    MultipleImageCapture;
+
+    companion object {
+        /**
+         * Converts an [ExternalCaptureMode] to a corresponding [CaptureMode].
+         *
+         * This function maps the external mode to a specific capture mode that the camera system
+         * should be configured with. A `null` return value means the capture mode is not restricted
+         * by the external context, allowing the user to freely toggle between photo and video.
+         *
+         * @return The corresponding [CaptureMode], or `null` if the mode is [Standard].
+         */
+        fun ExternalCaptureMode.toCaptureMode() = when (this) {
+            ImageCapture -> CaptureMode.IMAGE_ONLY
+            MultipleImageCapture -> CaptureMode.IMAGE_ONLY
+            VideoCapture -> CaptureMode.VIDEO_ONLY
+            Standard -> null
+        }
+    }
 }

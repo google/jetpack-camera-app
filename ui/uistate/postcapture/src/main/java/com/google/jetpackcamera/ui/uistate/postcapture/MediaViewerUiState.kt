@@ -20,29 +20,56 @@ import androidx.media3.common.Player
 
 /**
  * Defines the UI state for the content viewer within the PostCaptureScreen.
+ * This sealed interface represents the various states the media viewer can be in, such as loading,
+ * displaying an error, or showing content.
  */
 sealed interface MediaViewerUiState {
     /**
-     * Viewer is in a loading state.
+     * The viewer is in a loading state, typically shown when media is being prepared for display.
      */
     object Loading : MediaViewerUiState
 
+    /**
+     * An error has occurred, and the media cannot be displayed.
+     */
     object Error : MediaViewerUiState
 
     /**
-     * Viewer has content to display.
+     * The viewer has content to display, which can be either a video or an image.
      */
     sealed interface Content : MediaViewerUiState {
+        /**
+         * Represents the state of video content.
+         *
+         * @property thumbnail An optional thumbnail to display while the video is loading.
+         */
         sealed interface Video : Content {
             val thumbnail: Bitmap?
 
+            /**
+             * The video content is currently loading.
+             *
+             * @param thumbnail An optional thumbnail to display during loading.
+             */
             data class Loading(override val thumbnail: Bitmap?) : Video
+
+            /**
+             * The video is ready for playback.
+             *
+             * @param player The [Player] instance used for video playback.
+             * @param thumbnail An optional thumbnail that was displayed before playback started.
+             */
             data class Ready(
                 val player: Player,
                 override val thumbnail: Bitmap?
             ) : Video
         }
 
+        /**
+         * The viewer is displaying an image.
+         *
+         * @param imageBitmap The [Bitmap] of the image to display.
+         */
         data class Image(val imageBitmap: Bitmap) : Content
     }
 

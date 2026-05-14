@@ -51,6 +51,15 @@ import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import java.math.RoundingMode
 import java.text.DecimalFormat
 
+/**
+ * A composable that displays a row of zoom buttons.
+ *
+ * @param onChangeZoom the callback for when the zoom changes
+ * @param modifier the modifier for this component
+ * @param zoomControlUiState the [ZoomControlUiState] for this component
+ * @param buttonSize the size of the buttons
+ * @param spacing the spacing between the buttons
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ZoomButtonRow(

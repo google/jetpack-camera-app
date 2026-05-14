@@ -15,8 +15,22 @@
  */
 package com.google.jetpackcamera.ui.uistate.postcapture
 
+/**
+ * Defines the UI state for the delete button in the post-capture screen.
+ *
+ * This sealed interface represents the different states of the delete button, which can be either
+ * ready for interaction or unavailable.
+ */
 sealed interface DeleteButtonUiState {
+    /**
+     * The delete button is ready and can be interacted with.
+     */
     data object Ready : DeleteButtonUiState
+
+    /**
+     * The delete button is unavailable and should not be displayed or should be disabled.
+     * This might be the case if there is no media to delete.
+     */
     data object Unavailable : DeleteButtonUiState
 
     companion object
