@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 
 /**
  * Creates a [Flow] of [CaptureUiState] by combining the latest values from various sources.
@@ -64,7 +65,8 @@ fun captureUiState(
     cameraSystem: CameraSystem,
     constraintsRepository: ConstraintsRepository,
     trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    externalCaptureMode: ExternalCaptureMode
+    externalCaptureMode: ExternalCaptureMode,
+    timePrecision: java.util.concurrent.TimeUnit = java.util.concurrent.TimeUnit.SECONDS
 ): Flow<CaptureUiState> {
     var flashModeUiState: FlashModeUiState? = null
     var focusMeteringUiState: FocusMeteringUiState? = null
@@ -76,17 +78,7 @@ fun captureUiState(
         trackedCaptureUiState
     ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
         val videoRecordingState = cameraState.videoRecordingState
-        val roundedVideoRecordingState = when (videoRecordingState) {
-            is VideoRecordingState.Active -> {
-                val seconds = videoRecordingState.elapsedTimeNanos / 1_000_000_000L
-                val roundedNanos = seconds * 1_000_000_000L
-                when (videoRecordingState) {
-                    is VideoRecordingState.Active.Recording -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
-                    is VideoRecordingState.Active.Paused -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
-                }
-            }
-            else -> videoRecordingState
-        }
+        val roundedVideoRecordingState = roundVideoRecordingState(videoRecordingState, timePrecision)
 
         val captureModeUiState = CaptureModeUiState.from(
             systemConstraints,
@@ -184,5 +176,30 @@ fun captureUiState(
             ),
             screenFlashUiState = ScreenFlashUiState.from(trackedUiState)
         )
+    }
+}
+
+internal fun roundVideoRecordingState(
+    videoRecordingState: VideoRecordingState,
+    timePrecision: java.util.concurrent.TimeUnit
+): VideoRecordingState {
+    return when (videoRecordingState) {
+        is VideoRecordingState.Active -> {
+            val nanos = videoRecordingState.elapsedTimeNanos
+            val roundedNanos = when (timePrecision) {
+                java.util.concurrent.TimeUnit.NANOSECONDS -> nanos
+                java.util.concurrent.TimeUnit.MICROSECONDS -> (nanos / 1000L) * 1000L
+                java.util.concurrent.TimeUnit.MILLISECONDS -> (nanos / 1_000_000L) * 1_000_000L
+                java.util.concurrent.TimeUnit.SECONDS -> (nanos / 1_000_000_000L) * 1_000_000_000L
+                java.util.concurrent.TimeUnit.MINUTES -> (nanos / 60_000_000_000L) * 60_000_000_000L
+                java.util.concurrent.TimeUnit.HOURS -> (nanos / 3_600_000_000_000L) * 3_600_000_000_000L
+                else -> nanos
+            }
+            when (videoRecordingState) {
+                is VideoRecordingState.Active.Recording -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
+                is VideoRecordingState.Active.Paused -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
+            }
+        }
+        else -> videoRecordingState
     }
 }
