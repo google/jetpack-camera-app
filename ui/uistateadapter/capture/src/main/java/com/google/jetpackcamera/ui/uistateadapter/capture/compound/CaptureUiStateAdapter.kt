@@ -110,7 +110,7 @@ fun captureUiState(
             )
                 ?: FocusMeteringUiState.from(cameraState)
         }
-
+        val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
         CaptureUiState.Ready(
             externalCaptureMode = externalCaptureMode,
             videoRecordingState = roundedVideoRecordingState,
@@ -145,10 +145,10 @@ fun captureUiState(
                 cameraAppSettings,
                 cameraState
             ),
-            elapsedTimeUiState = ElapsedTimeUiState.from(cameraState.copy(videoRecordingState = roundedVideoRecordingState)),
+            elapsedTimeUiState = ElapsedTimeUiState.from(roundedCameraState),
             captureButtonUiState = CaptureButtonUiState.from(
                 cameraAppSettings,
-                cameraState.copy(videoRecordingState = roundedVideoRecordingState),
+                roundedCameraState,
                 trackedUiState.isRecordingLocked
             ),
             zoomUiState = ZoomUiState.from(
@@ -179,27 +179,20 @@ fun captureUiState(
     }
 }
 
+/**
+ * Rounds the elapsed time of a [VideoRecordingState] to the given [timePrecision] to reduce UI recomposition frequency.
+ */
 internal fun roundVideoRecordingState(
     videoRecordingState: VideoRecordingState,
     timePrecision: java.util.concurrent.TimeUnit
 ): VideoRecordingState {
+    if (videoRecordingState !is VideoRecordingState.Active) return videoRecordingState
+
+    val stepNanos = timePrecision.toNanos(1)
+    val roundedNanos = (videoRecordingState.elapsedTimeNanos / stepNanos) * stepNanos
+
     return when (videoRecordingState) {
-        is VideoRecordingState.Active -> {
-            val nanos = videoRecordingState.elapsedTimeNanos
-            val roundedNanos = when (timePrecision) {
-                java.util.concurrent.TimeUnit.NANOSECONDS -> nanos
-                java.util.concurrent.TimeUnit.MICROSECONDS -> (nanos / 1000L) * 1000L
-                java.util.concurrent.TimeUnit.MILLISECONDS -> (nanos / 1_000_000L) * 1_000_000L
-                java.util.concurrent.TimeUnit.SECONDS -> (nanos / 1_000_000_000L) * 1_000_000_000L
-                java.util.concurrent.TimeUnit.MINUTES -> (nanos / 60_000_000_000L) * 60_000_000_000L
-                java.util.concurrent.TimeUnit.HOURS -> (nanos / 3_600_000_000_000L) * 3_600_000_000_000L
-                else -> nanos
-            }
-            when (videoRecordingState) {
-                is VideoRecordingState.Active.Recording -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
-                is VideoRecordingState.Active.Paused -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
-            }
-        }
-        else -> videoRecordingState
+        is VideoRecordingState.Active.Recording -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
+        is VideoRecordingState.Active.Paused -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
     }
 }
