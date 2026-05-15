@@ -64,7 +64,12 @@ val isEmulatorWithFakeFrontCamera: Boolean
     get() = Build.HARDWARE == "ranchu" &&
         (Build.VERSION.SDK_INT == 28 || Build.VERSION.SDK_INT == 34)
 
-val compatMainActivityExtras: Bundle?
+/**
+ * Returns the compat extras for MainActivity.
+ *
+ * These extras are used to work around issues on specific devices or emulators.
+ */
+internal val compatMainActivityExtras: Bundle?
     get() {
         val extras = Bundle()
         if (isEmulatorWithFakeFrontCamera) {
@@ -76,13 +81,12 @@ val compatMainActivityExtras: Bundle?
 
         val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
         val args = TestStorage(resolver).getInputArgs()
-        Log.d("UiTestUtil", "TestStorage Args: $args")
         val disableAnimations = args["disable_animations"]?.toBoolean() ?: false
         if (disableAnimations) {
             extras.putBoolean("KEY_DISABLE_ANIMATIONS", true)
         }
 
-        return if (extras.size() == 0) null else extras
+        return extras.takeIf { !it.isEmpty() }
     }
 
 /**
@@ -91,7 +95,7 @@ val compatMainActivityExtras: Bundle?
  * @param extras The extras to merge with the compat extras.
  * @return The merged bundle, or null if there are no extras.
  */
-fun mergeWithCompatExtras(extras: Bundle?): Bundle? {
+internal fun mergeWithCompatExtras(extras: Bundle?): Bundle? {
     return compatMainActivityExtras?.apply { extras?.let { putAll(it) } } ?: extras
 }
 
