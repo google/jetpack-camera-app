@@ -40,6 +40,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
+import kotlin.time.Duration.Companion.nanoseconds
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
@@ -113,6 +115,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
+import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.flow.transformWhile
@@ -137,12 +140,11 @@ fun PreviewScreen(
     Log.d(TAG, "PreviewScreen")
 
     val captureUiStateState = viewModel.captureUiState.collectAsState()
-    val captureUiState = captureUiStateState.value
     val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
     val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
 
-    val screenFlashUiState =
-        (captureUiState as? CaptureUiState.Ready)?.screenFlashUiState ?: ScreenFlashUiState()
+    val captureUiStateProvider = remember { { captureUiStateState.value as CaptureUiState.Ready } }
+    val isReady by remember { derivedStateOf { captureUiStateState.value is CaptureUiState.Ready } }
 
     val surfaceRequest: SurfaceRequest?
         by viewModel.surfaceRequest.collectAsState()
@@ -168,7 +170,7 @@ fun PreviewScreen(
 
     if (Trace.isEnabled()) {
         LaunchedEffect(onFirstFrameCaptureCompleted) {
-            snapshotFlow { captureUiState }
+            snapshotFlow { captureUiStateState.value }
                 .transformWhile {
                     var continueCollecting = true
                     (it as? CaptureUiState.Ready)?.let { ready ->
@@ -184,27 +186,15 @@ fun PreviewScreen(
         }
     }
 
-    when (val currentUiState = captureUiState) {
-        is CaptureUiState.NotReady -> LoadingScreen()
-        is CaptureUiState.Ready -> {
-            var initialRecordingSettings by remember {
-                mutableStateOf<InitialRecordingSettings?>(
-                    null
-                )
-            }
-
-            val formattedTimeProvider = remember {
-                androidx.compose.runtime.derivedStateOf {
-                    val state = (captureUiStateState.value as? CaptureUiState.Ready)?.elapsedTimeUiState
-                    if (state is ElapsedTimeUiState.Enabled) {
-                        state.elapsedTimeNanos.nanoseconds
-                            .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) }
-                    } else {
-                        ""
-                    }
-                }
-            }
-            val formattedTimeProviderLambda = remember(formattedTimeProvider) { { formattedTimeProvider.value } }
+    if (!isReady) {
+        LoadingScreen()
+    } else {
+        val currentUiState = captureUiStateState.value as CaptureUiState.Ready
+        var initialRecordingSettings by remember {
+            mutableStateOf<InitialRecordingSettings?>(
+                null
+            )
+        }
 
             val context = LocalContext.current
             LaunchedEffect(Unit) {
@@ -288,9 +278,7 @@ fun PreviewScreen(
 
             ContentScreen(
                 modifier = modifier,
-                captureUiState = currentUiState,
-                formattedTimeProvider = formattedTimeProviderLambda,
-                screenFlashUiState = screenFlashUiState,
+                captureUiStateProvider = captureUiStateProvider,
                 surfaceRequest = surfaceRequest,
                 onNavigateToSettings = onNavigateToSettings,
 
@@ -350,15 +338,12 @@ fun PreviewScreen(
                 }
             }
         }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ContentScreen(
-    captureUiState: CaptureUiState.Ready,
-    formattedTimeProvider: () -> String = { "" },
-    screenFlashUiState: ScreenFlashUiState,
+    captureUiStateProvider: () -> CaptureUiState.Ready,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
@@ -379,18 +364,16 @@ private fun ContentScreen(
     screenFlashController: ScreenFlashController? = null
 ) {
     val onFlipCamera = {
-        if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
+        val readyState = captureUiStateProvider()
+        if (readyState.flipLensUiState is FlipLensUiState.Available) {
             quickSettingsController?.setLensFacing(
-                (
-                    captureUiState.flipLensUiState as FlipLensUiState.Available
-                    )
-                    .selectedLensFacing.flip()
+                (readyState.flipLensUiState as FlipLensUiState.Available).selectedLensFacing.flip()
             )
         }
     }
 
-    val isAudioEnabled = remember(captureUiState) {
-        captureUiState.audioUiState is AudioUiState.Enabled.On
+    val isAudioEnabled by remember {
+        derivedStateOf { captureUiStateProvider().audioUiState is AudioUiState.Enabled.On }
     }
     val onToggleAudio: () -> Unit = remember(isAudioEnabled) {
         {
@@ -400,52 +383,49 @@ private fun ContentScreen(
 
     LayoutWrapper(
         modifier = modifier,
-        hdrIndicator = { HdrIndicator(modifier = it, hdrUiState = captureUiState.hdrUiState) },
+        hdrIndicator = { HdrIndicator(modifier = it, hdrUiState = captureUiStateProvider().hdrUiState) },
         flashModeIndicator = {
             FlashModeIndicator(
                 modifier = it,
-                flashModeUiState = captureUiState.flashModeUiState
+                flashModeUiState = captureUiStateProvider().flashModeUiState
             )
         },
         videoQualityIndicator = {
             VideoQualityIcon(
-                captureUiState.videoQuality,
+                captureUiStateProvider().videoQuality,
                 Modifier.testTag(VIDEO_QUALITY_TAG)
             )
         },
         stabilizationIndicator = {
             StabilizationIcon(
                 modifier = it,
-                stabilizationUiState = captureUiState.stabilizationUiState
+                stabilizationUiState = captureUiStateProvider().stabilizationUiState
             )
         },
 
         viewfinder = {
             PreviewDisplay(
-                previewDisplayUiState = captureUiState.previewDisplayUiState,
+                previewDisplayUiState = captureUiStateProvider().previewDisplayUiState,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = cameraController?.let { it::tapToFocus } ?: { _, _ -> },
                 onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode,
-                focusMeteringUiState = captureUiState.focusMeteringUiState
+                focusMeteringUiState = captureUiStateProvider().focusMeteringUiState
             )
         },
         captureButton = {
+            val quickSettingsUiState = captureUiStateProvider().quickSettingsUiState
             fun runCaptureAction(action: () -> Unit) {
-                if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
-                        ?.quickSettingsIsOpen == true
-                ) {
+                if ((quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true) {
                     quickSettingsController?.toggleQuickSettings()
                 }
                 action()
             }
             CaptureButton(
-                captureButtonUiState = captureUiState.captureButtonUiState,
-                isQuickSettingsOpen = (
-                    captureUiState.quickSettingsUiState as?
-                        QuickSettingsUiState.Available
-                    )?.quickSettingsIsOpen ?: false,
+                captureButtonUiState = captureUiStateProvider().captureButtonUiState,
+                isQuickSettingsOpen = (quickSettingsUiState as? QuickSettingsUiState.Available)
+                    ?.quickSettingsIsOpen ?: false,
                 onCaptureImage = {
                     runCaptureAction {
                         captureController?.captureImage(it)
@@ -471,9 +451,9 @@ private fun ContentScreen(
             FlipCameraButton(
                 modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
                 onClick = onFlipCamera,
-                flipLensUiState = captureUiState.flipLensUiState,
+                flipLensUiState = captureUiStateProvider().flipLensUiState,
                 // enable only when phone has front and rear camera
-                enabledCondition = when (val flipLensUiState = captureUiState.flipLensUiState) {
+                enabledCondition = when (val flipLensUiState = captureUiStateProvider().flipLensUiState) {
                     is FlipLensUiState.Available -> flipLensUiState.availableLensFacings.size > 1
                     FlipLensUiState.Unavailable -> false
                 }
@@ -482,7 +462,7 @@ private fun ContentScreen(
         zoomLevelDisplay = {
             Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally) {
                 ZoomButtonRow(
-                    zoomControlUiState = captureUiState.zoomControlUiState,
+                    zoomControlUiState = captureUiStateProvider().zoomControlUiState,
                     onChangeZoom = { targetZoom ->
                         onAnimateZoom(targetZoom, LensToZoom.PRIMARY)
                     }
@@ -491,20 +471,28 @@ private fun ContentScreen(
         },
         elapsedTimeDisplay = { modifier ->
             AnimatedVisibility(
-                visible = (captureUiState.videoRecordingState is VideoRecordingState.Active),
+                visible = (captureUiStateProvider().videoRecordingState is VideoRecordingState.Active),
                 enter = fadeIn(),
                 exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
             ) {
                 val elapsedTimeModifier = remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
                 ElapsedTimeText(
                     modifier = elapsedTimeModifier,
-                    formattedTimeProvider = formattedTimeProvider
+                    formattedTimeProvider = {
+                        val state = captureUiStateProvider().elapsedTimeUiState
+                        if (state is ElapsedTimeUiState.Enabled) {
+                            state.elapsedTimeNanos.nanoseconds
+                                .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) }
+                        } else {
+                            ""
+                        }
+                    }
                 )
             }
         },
         quickSettingsButton = {
             AnimatedVisibility(
-                visible = (captureUiState.videoRecordingState !is VideoRecordingState.Active),
+                visible = (captureUiStateProvider().videoRecordingState !is VideoRecordingState.Active),
                 enter = fadeIn(),
                 exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
             ) {
@@ -512,7 +500,7 @@ private fun ContentScreen(
                     ToggleQuickSettingsButton(
                         modifier = it,
                         isOpen = (
-                            captureUiState.quickSettingsUiState
+                            captureUiStateProvider().quickSettingsUiState
                                 as? QuickSettingsUiState.Available
                             )?.quickSettingsIsOpen == true,
                         quickSettingsController = quickSettingsController
@@ -525,13 +513,13 @@ private fun ContentScreen(
             AmplitudeToggleButton(
                 modifier = it,
                 onToggleAudio = onToggleAudio,
-                audioUiState = captureUiState.audioUiState
+                audioUiState = captureUiStateProvider().audioUiState
             )
         },
         captureModeToggle = {
-            if (captureUiState.captureModeToggleUiState is CaptureModeToggleUiState.Available) {
+            if (captureUiStateProvider().captureModeToggleUiState is CaptureModeToggleUiState.Available) {
                 CaptureModeToggleButton(
-                    uiState = captureUiState.captureModeToggleUiState
+                    uiState = captureUiStateProvider().captureModeToggleUiState
                         as CaptureModeToggleUiState.Available,
 
                     quickSettingsController = quickSettingsController,
@@ -544,7 +532,7 @@ private fun ContentScreen(
             quickSettingsController?.let { quickSettingsController ->
                 QuickSettingsBottomSheet(
                     modifier = it,
-                    quickSettingsUiState = captureUiState.quickSettingsUiState,
+                    quickSettingsUiState = captureUiStateProvider().quickSettingsUiState,
                     onNavigateToSettings = {
                         quickSettingsController.toggleQuickSettings()
                         onNavigateToSettings()
@@ -579,7 +567,7 @@ private fun ContentScreen(
             // may need to be handled later. Compose smart recomposition should be able to optimize this
             // if the relevant states are no longer changing.
             ScreenFlashScreen(
-                screenFlashUiState = screenFlashUiState,
+                screenFlashUiState = captureUiStateProvider().screenFlashUiState,
                 onInitialBrightnessCalculated = {
                     screenFlashController?.setClearUiScreenBrightness(
                         it
@@ -605,12 +593,12 @@ private fun ContentScreen(
         pauseToggleButton = {
             PauseResumeToggleButton(
                 onSetPause = captureController?.let { it::setPaused } ?: { _ -> },
-                currentRecordingState = captureUiState.videoRecordingState
+                currentRecordingState = captureUiStateProvider().videoRecordingState
             )
         },
         imageWell = { modifier ->
-            if (captureUiState.externalCaptureMode == ExternalCaptureMode.Standard) {
-                (captureUiState.imageWellUiState as? ImageWellUiState.Content)?.let {
+            if (captureUiStateProvider().externalCaptureMode == ExternalCaptureMode.Standard) {
+                (captureUiStateProvider().imageWellUiState as? ImageWellUiState.Content)?.let {
                     ImageWell(
                         modifier = modifier,
                         imageWellUiState = it,
@@ -709,8 +697,7 @@ private fun LayoutWrapper(
 private fun ContentScreenPreview() {
     MaterialTheme {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_READY,
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = { FAKE_PREVIEW_UI_STATE_READY },
             surfaceRequest = null
         )
     }
@@ -721,8 +708,7 @@ private fun ContentScreenPreview() {
 private fun ContentScreen_Standard_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(),
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = { FAKE_PREVIEW_UI_STATE_READY.copy() },
             surfaceRequest = null
         )
     }
@@ -733,10 +719,11 @@ private fun ContentScreen_Standard_Idle() {
 private fun ContentScreen_ImageOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
-                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
-            ),
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = {
+                FAKE_PREVIEW_UI_STATE_READY.copy(
+                    captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
+                )
+            },
             surfaceRequest = null
         )
     }
@@ -747,10 +734,11 @@ private fun ContentScreen_ImageOnly_Idle() {
 private fun ContentScreen_VideoOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
-                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
-            ),
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = {
+                FAKE_PREVIEW_UI_STATE_READY.copy(
+                    captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
+                )
+            },
             surfaceRequest = null
         )
     }
@@ -761,8 +749,7 @@ private fun ContentScreen_VideoOnly_Idle() {
 private fun ContentScreen_Standard_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING,
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = { FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING },
             surfaceRequest = null
         )
     }
@@ -773,8 +760,7 @@ private fun ContentScreen_Standard_Recording() {
 private fun ContentScreen_Locked_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING,
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = { FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING },
             surfaceRequest = null
         )
     }
