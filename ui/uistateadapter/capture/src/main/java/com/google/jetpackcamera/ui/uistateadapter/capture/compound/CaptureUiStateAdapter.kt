@@ -58,6 +58,7 @@ import java.util.concurrent.TimeUnit
  * needs to be tracked across recompositions (e.g., whether quick settings is open).
  * @param externalCaptureMode The [ExternalCaptureMode] influencing UI behavior based on how the
  * camera is launched (e.g., from an external intent).
+ * @param timePrecision The precision to use for rounding the elapsed time of video recording.
  *
  * @return A [Flow] that emits a new [CaptureUiState] whenever any of its underlying
  * data sources change.
