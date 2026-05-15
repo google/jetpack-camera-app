@@ -67,7 +67,7 @@ fun captureUiState(
     constraintsRepository: ConstraintsRepository,
     trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     externalCaptureMode: ExternalCaptureMode,
-    timePrecision: java.util.concurrent.TimeUnit = java.util.concurrent.TimeUnit.SECONDS
+    timePrecision: TimeUnit = TimeUnit.SECONDS
 ): Flow<CaptureUiState> {
     var flashModeUiState: FlashModeUiState? = null
     var focusMeteringUiState: FocusMeteringUiState? = null
@@ -80,6 +80,7 @@ fun captureUiState(
     ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
         val videoRecordingState = cameraState.videoRecordingState
         val roundedVideoRecordingState = roundVideoRecordingState(videoRecordingState, timePrecision)
+        val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
 
         val captureModeUiState = CaptureModeUiState.from(
             systemConstraints,
@@ -111,7 +112,6 @@ fun captureUiState(
             )
                 ?: FocusMeteringUiState.from(cameraState)
         }
-        val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
         CaptureUiState.Ready(
             externalCaptureMode = externalCaptureMode,
             videoRecordingState = roundedVideoRecordingState,
