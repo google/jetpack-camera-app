@@ -185,6 +185,13 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     }
 }
 
+/**
+ * Runs a test scenario for [MainActivity] with optional extras, properly merging them with
+ * compatibility extras required for emulators.
+ *
+ * @param extras Optional bundle of extras to pass to the activity.
+ * @param block The test block to execute within the scenario.
+ */
 inline fun runMainActivityScenarioTest(
     extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
@@ -217,6 +224,15 @@ inline fun <reified T : Activity> runScenarioTest(
     }
 }
 
+/**
+ * Runs a test scenario for [MainActivity] expecting a result, properly merging optional extras
+ * with compatibility extras required for emulators.
+ *
+ * @param intent The intent to launch the activity with.
+ * @param extras Optional bundle of extras to merge with the intent.
+ * @param block The test block to execute within the scenario.
+ * @return The [Instrumentation.ActivityResult] containing result code and data.
+ */
 inline fun runMainActivityScenarioTestForResult(
     intent: Intent,
     extras: Bundle? = null,
