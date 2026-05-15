@@ -403,24 +403,26 @@ private fun ContentScreen(
     val currentScreenFlashUiState = rememberUpdatedState(screenFlashUiState)
 
     val hdrIndicator = remember {
-        @Composable { _: Modifier -> HdrIndicator(modifier = Modifier, hdrUiState = currentHdrUiState.value) }
+        @Composable { modifier: Modifier -> HdrIndicator(modifier = modifier, hdrUiState = currentHdrUiState.value) }
     }
     val flashModeIndicator = remember {
-        @Composable { _: Modifier -> FlashModeIndicator(modifier = Modifier, flashModeUiState = currentFlashModeUiState.value) }
+        @Composable { modifier: Modifier -> FlashModeIndicator(modifier = modifier, flashModeUiState = currentFlashModeUiState.value) }
     }
     val videoQualityIndicator = remember {
-        @Composable { _: Modifier -> VideoQualityIcon(currentVideoQuality.value, Modifier.testTag(VIDEO_QUALITY_TAG)) }
+        @Composable { modifier: Modifier -> VideoQualityIcon(currentVideoQuality.value, modifier.testTag(VIDEO_QUALITY_TAG)) }
     }
     val stabilizationIndicator = remember {
         @Composable { modifier: Modifier -> StabilizationIcon(modifier = modifier, stabilizationUiState = currentStabilizationUiState.value) }
     }
 
     val onTapToFocusLambda = cameraController?.let { it::tapToFocus } ?: remember { { _: Float, _: Float -> } }
-    val onScaleZoomLambda = remember(onScaleZoom) { { zoomRatio: Float -> onScaleZoom(zoomRatio, LensToZoom.PRIMARY) } }
+    val currentOnScaleZoom = rememberUpdatedState(onScaleZoom)
+    val onScaleZoomLambda = remember { { zoomRatio: Float -> currentOnScaleZoom.value(zoomRatio, LensToZoom.PRIMARY) } }
 
     val viewfinderLambda = remember(onFlipCamera, onTapToFocusLambda, onScaleZoomLambda, surfaceRequest, onRequestWindowColorMode) {
-        @Composable { _: Modifier ->
+        @Composable { modifier: Modifier ->
             PreviewDisplay(
+                modifier = modifier,
                 previewDisplayUiState = currentPreviewDisplayUiState.value,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocusLambda,
@@ -433,9 +435,9 @@ private fun ContentScreen(
     }
 
     val flipCameraButtonLambda = remember(onFlipCamera) {
-        @Composable { _: Modifier ->
+        @Composable { modifier: Modifier ->
             FlipCameraButton(
-                modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
+                modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
                 onClick = onFlipCamera,
                 flipLensUiState = currentFlipLensUiState.value,
                 enabledCondition = when (val flipLensUiState = currentFlipLensUiState.value) {
@@ -449,8 +451,8 @@ private fun ContentScreen(
     val onChangeZoomLambda = remember(onAnimateZoom) { { targetZoom: Float -> onAnimateZoom(targetZoom, LensToZoom.PRIMARY) } }
 
     val zoomLevelDisplayLambda = remember(onChangeZoomLambda) {
-        @Composable { _: Modifier ->
-            Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        @Composable { modifier: Modifier ->
+            Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
                 ZoomButtonRow(
                     zoomControlUiState = currentZoomControlUiState.value,
                     onChangeZoom = onChangeZoomLambda
@@ -460,14 +462,14 @@ private fun ContentScreen(
     }
 
     val elapsedTimeDisplayLambda = remember {
-        @Composable { _: Modifier ->
+        @Composable { modifier: Modifier ->
             AnimatedVisibility(
                 visible = (currentVideoRecordingState.value is VideoRecordingState.Active),
                 enter = fadeIn(),
                 exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
             ) {
                 ElapsedTimeText(
-                    modifier = Modifier.testTag(ELAPSED_TIME_TAG),
+                    modifier = modifier.testTag(ELAPSED_TIME_TAG),
                     elapsedTimeUiState = currentElapsedTimeUiState.value
                 )
             }
@@ -475,7 +477,7 @@ private fun ContentScreen(
     }
 
     val captureButtonLambda = remember(onIncrementZoom, quickSettingsController, captureController) {
-        @Composable { _: Modifier ->
+        @Composable { modifier: Modifier ->
             fun runCaptureAction(action: () -> Unit) {
                 if ((currentQuickSettingsUiState.value as? QuickSettingsUiState.Available)
                         ?.quickSettingsIsOpen == true
@@ -485,6 +487,7 @@ private fun ContentScreen(
                 action()
             }
             CaptureButton(
+                modifier = modifier,
                 captureButtonUiState = currentCaptureButtonUiState.value,
                 isQuickSettingsOpen = (
                     currentQuickSettingsUiState.value as?
@@ -514,7 +517,7 @@ private fun ContentScreen(
     }
 
     val quickSettingsButtonLambda = remember(quickSettingsController) {
-        @Composable { _: Modifier ->
+        @Composable { modifier: Modifier ->
             AnimatedVisibility(
                 visible = (currentVideoRecordingState.value !is VideoRecordingState.Active),
                 enter = fadeIn(),
@@ -522,7 +525,7 @@ private fun ContentScreen(
             ) {
                 quickSettingsController?.let { quickSettingsController ->
                     ToggleQuickSettingsButton(
-                        modifier = Modifier,
+                        modifier = modifier,
                         isOpen = (
                             currentQuickSettingsUiState.value
                                 as? QuickSettingsUiState.Available
@@ -600,8 +603,9 @@ private fun ContentScreen(
     }
 
     val screenFlashOverlayLambda = remember(screenFlashController) {
-        @Composable { _: Modifier ->
+        @Composable { modifier: Modifier ->
             ScreenFlashScreen(
+                modifier = modifier,
                 screenFlashUiState = currentScreenFlashUiState.value,
                 onInitialBrightnessCalculated = {
                     screenFlashController?.setClearUiScreenBrightness(
@@ -631,8 +635,9 @@ private fun ContentScreen(
     }
 
     val pauseToggleButtonLambda = remember(captureController) {
-        @Composable { _: Modifier ->
+        @Composable { modifier: Modifier ->
             PauseResumeToggleButton(
+                modifier = modifier,
                 onSetPause = captureController?.let { it::setPaused } ?: { _ -> },
                 currentRecordingState = currentVideoRecordingState.value
             )
