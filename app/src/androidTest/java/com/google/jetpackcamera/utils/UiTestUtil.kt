@@ -85,6 +85,16 @@ val compatMainActivityExtras: Bundle?
         return if (extras.size() == 0) null else extras
     }
 
+/**
+ * Merges the provided [extras] with the compat extras for MainActivity.
+ *
+ * @param extras The extras to merge with the compat extras.
+ * @return The merged bundle, or null if there are no extras.
+ */
+fun mergeWithCompatExtras(extras: Bundle?): Bundle? {
+    return compatMainActivityExtras?.apply { extras?.let { putAll(it) } } ?: extras
+}
+
 val debugExtra: Bundle = Bundle().apply { putBoolean("KEY_DEBUG_MODE", true) }
 val cacheExtra: Bundle = Bundle().apply { putBoolean("KEY_REVIEW_AFTER_CAPTURE", true) }
 
@@ -190,7 +200,7 @@ inline fun runMainActivityScenarioTest(
     extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
 ) {
-    val activityExtras = compatMainActivityExtras?.apply { extras?.let { putAll(it) } } ?: extras
+    val activityExtras = mergeWithCompatExtras(extras)
     runScenarioTest<MainActivity>(activityExtras, block)
 }
 
@@ -223,7 +233,7 @@ inline fun runMainActivityScenarioTestForResult(
     extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
 ): Instrumentation.ActivityResult {
-    val activityExtras = compatMainActivityExtras?.apply { extras?.let { putAll(it) } } ?: extras
+    val activityExtras = mergeWithCompatExtras(extras)
     return runScenarioTestForResult<MainActivity>(intent, activityExtras, block)
 }
 
