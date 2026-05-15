@@ -381,41 +381,98 @@ private fun ContentScreen(
         }
     }
 
-    LayoutWrapper(
-        modifier = modifier,
-        hdrIndicator = { HdrIndicator(modifier = it, hdrUiState = captureUiStateProvider().hdrUiState) },
-        flashModeIndicator = {
+    // Remember content slot lambdas to avoid unnecessary recompositions
+    val hdrIndicatorLambda = remember {
+        @Composable { modifier: Modifier -> HdrIndicator(modifier = modifier, hdrUiState = captureUiStateProvider().hdrUiState) }
+    }
+    val flashModeIndicatorLambda = remember {
+        @Composable { modifier: Modifier ->
             FlashModeIndicator(
-                modifier = it,
+                modifier = modifier,
                 flashModeUiState = captureUiStateProvider().flashModeUiState
             )
-        },
-        videoQualityIndicator = {
+        }
+    }
+    val videoQualityIndicatorLambda = remember {
+        @Composable { modifier: Modifier ->
             VideoQualityIcon(
                 captureUiStateProvider().videoQuality,
-                Modifier.testTag(VIDEO_QUALITY_TAG)
+                modifier.testTag(VIDEO_QUALITY_TAG)
             )
-        },
-        stabilizationIndicator = {
+        }
+    }
+    val stabilizationIndicatorLambda = remember {
+        @Composable { modifier: Modifier ->
             StabilizationIcon(
-                modifier = it,
+                modifier = modifier,
                 stabilizationUiState = captureUiStateProvider().stabilizationUiState
             )
-        },
+        }
+    }
 
-        viewfinder = {
+    val onTapToFocusLambda = cameraController?.let { it::tapToFocus } ?: remember { { _: Float, _: Float -> } }
+    val currentOnScaleZoom = rememberUpdatedState(onScaleZoom)
+    val onScaleZoomLambda = remember { { zoomRatio: Float -> currentOnScaleZoom.value(zoomRatio, LensToZoom.PRIMARY) } }
+
+    val viewfinderLambda = remember(onFlipCamera, onTapToFocusLambda, onScaleZoomLambda, surfaceRequest, onRequestWindowColorMode) {
+        @Composable { modifier: Modifier ->
             PreviewDisplay(
                 previewDisplayUiState = captureUiStateProvider().previewDisplayUiState,
                 onFlipCamera = onFlipCamera,
-                onTapToFocus = cameraController?.let { it::tapToFocus } ?: { _, _ -> },
-                onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
+                onTapToFocus = onTapToFocusLambda,
+                onScaleZoom = onScaleZoomLambda,
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode,
                 focusMeteringUiState = captureUiStateProvider().focusMeteringUiState
             )
-        },
-        captureButton = {
-            val quickSettingsUiState = captureUiStateProvider().quickSettingsUiState
+        }
+    }
+
+    val flipCameraButtonLambda = remember(onFlipCamera) {
+        @Composable { modifier: Modifier ->
+            FlipCameraButton(
+                modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
+                onClick = onFlipCamera,
+                flipLensUiState = captureUiStateProvider().flipLensUiState,
+                enabledCondition = when (val flipLensUiState = captureUiStateProvider().flipLensUiState) {
+                    is FlipLensUiState.Available -> flipLensUiState.availableLensFacings.size > 1
+                    FlipLensUiState.Unavailable -> false
+                }
+            )
+        }
+    }
+
+    val onChangeZoomLambda = remember(onAnimateZoom) { { targetZoom: Float -> onAnimateZoom(targetZoom, LensToZoom.PRIMARY) } }
+
+    val zoomLevelDisplayLambda = remember(onChangeZoomLambda) {
+        @Composable { modifier: Modifier ->
+            Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                ZoomButtonRow(
+                    zoomControlUiState = captureUiStateProvider().zoomControlUiState,
+                    onChangeZoom = onChangeZoomLambda
+                )
+            }
+        }
+    }
+
+    val elapsedTimeDisplayLambda = remember {
+        @Composable { modifier: Modifier ->
+            AnimatedVisibility(
+                visible = (captureUiStateProvider().videoRecordingState is VideoRecordingState.Active),
+                enter = fadeIn(),
+                exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
+            ) {
+                val elapsedTimeModifier = remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
+                ElapsedTimeText(
+                    modifier = elapsedTimeModifier,
+                    elapsedTimeUiState = captureUiStateProvider().elapsedTimeUiState
+                )
+            }
+        }
+    }
+
+    val captureButtonLambda = remember(onIncrementZoom, quickSettingsController, captureController) {
+        @Composable { modifier: Modifier ->
             fun runCaptureAction(action: () -> Unit) {
                 if ((quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true) {
                     quickSettingsController?.toggleQuickSettings()
@@ -447,50 +504,8 @@ private fun ContentScreen(
                 }
             )
         },
-        flipCameraButton = {
-            FlipCameraButton(
-                modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
-                onClick = onFlipCamera,
-                flipLensUiState = captureUiStateProvider().flipLensUiState,
-                // enable only when phone has front and rear camera
-                enabledCondition = when (val flipLensUiState = captureUiStateProvider().flipLensUiState) {
-                    is FlipLensUiState.Available -> flipLensUiState.availableLensFacings.size > 1
-                    FlipLensUiState.Unavailable -> false
-                }
-            )
-        },
-        zoomLevelDisplay = {
-            Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-                ZoomButtonRow(
-                    zoomControlUiState = captureUiStateProvider().zoomControlUiState,
-                    onChangeZoom = { targetZoom ->
-                        onAnimateZoom(targetZoom, LensToZoom.PRIMARY)
-                    }
-                )
-            }
-        },
-        elapsedTimeDisplay = { modifier ->
-            AnimatedVisibility(
-                visible = (captureUiStateProvider().videoRecordingState is VideoRecordingState.Active),
-                enter = fadeIn(),
-                exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
-            ) {
-                val elapsedTimeModifier = remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
-                ElapsedTimeText(
-                    modifier = elapsedTimeModifier,
-                    formattedTimeProvider = {
-                        val state = captureUiStateProvider().elapsedTimeUiState
-                        if (state is ElapsedTimeUiState.Enabled) {
-                            state.elapsedTimeNanos.nanoseconds
-                                .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) }
-                        } else {
-                            ""
-                        }
-                    }
-                )
-            }
-        },
-        quickSettingsButton = {
+    val quickSettingsButtonLambda = remember(quickSettingsController) {
+        @Composable { modifier: Modifier ->
             AnimatedVisibility(
                 visible = (captureUiStateProvider().videoRecordingState !is VideoRecordingState.Active),
                 enter = fadeIn(),
@@ -498,40 +513,44 @@ private fun ContentScreen(
             ) {
                 quickSettingsController?.let { quickSettingsController ->
                     ToggleQuickSettingsButton(
-                        modifier = it,
-                        isOpen = (
-                            captureUiStateProvider().quickSettingsUiState
-                                as? QuickSettingsUiState.Available
-                            )?.quickSettingsIsOpen == true,
+                        modifier = modifier,
+                        isOpen = (captureUiStateProvider().quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true,
                         quickSettingsController = quickSettingsController
-
                     )
                 }
             }
-        },
-        audioToggleButton = {
+        }
+    }
+
+    val audioToggleButtonLambda = remember(onToggleAudio) {
+        @Composable { modifier: Modifier ->
             AmplitudeToggleButton(
-                modifier = it,
+                modifier = modifier,
                 onToggleAudio = onToggleAudio,
                 audioUiState = captureUiStateProvider().audioUiState
             )
-        },
-        captureModeToggle = {
-            if (captureUiStateProvider().captureModeToggleUiState is CaptureModeToggleUiState.Available) {
-                CaptureModeToggleButton(
-                    uiState = captureUiStateProvider().captureModeToggleUiState
-                        as CaptureModeToggleUiState.Available,
+        }
+    }
 
+    val captureModeToggleLambda = remember(quickSettingsController, snackBarController) {
+        @Composable { modifier: Modifier ->
+            val captureModeToggleUiState = captureUiStateProvider().captureModeToggleUiState
+            if (captureModeToggleUiState is CaptureModeToggleUiState.Available) {
+                CaptureModeToggleButton(
+                    uiState = captureModeToggleUiState,
                     quickSettingsController = quickSettingsController,
                     snackBarController = snackBarController,
-                    modifier = it.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                    modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
                 )
             }
-        },
-        quickSettingsOverlay = {
+        }
+    }
+
+    val quickSettingsOverlayLambda = remember(quickSettingsController, onNavigateToSettings) {
+        @Composable { modifier: Modifier ->
             quickSettingsController?.let { quickSettingsController ->
                 QuickSettingsBottomSheet(
-                    modifier = it,
+                    modifier = modifier,
                     quickSettingsUiState = captureUiStateProvider().quickSettingsUiState,
                     onNavigateToSettings = {
                         quickSettingsController.toggleQuickSettings()
@@ -540,9 +559,13 @@ private fun ContentScreen(
                     quickSettingsController = quickSettingsController
                 )
             }
-        },
-        debugOverlay = { modifier, extraControls ->
-            (debugUiState as? DebugUiState.Enabled)?.let { debugUiState ->
+            Unit
+        }
+    }
+
+    val debugOverlayLambda = remember(debugController, onAbsoluteZoom, debugUiState) {
+        @Composable { modifier: Modifier, extraControls: Array<@Composable () -> Unit>? ->
+            if (debugUiState is DebugUiState.Enabled) {
                 debugController?.let { debugController ->
                     DebugOverlay(
                         modifier = modifier,
@@ -553,29 +576,33 @@ private fun ContentScreen(
                     )
                 }
             }
-        },
-        debugVisibilityWrapper = { content ->
-            val uiState = debugUiState
-            if (uiState !is DebugUiState.Enabled || !uiState.debugHidingComponents) {
+            Unit
+        }
+    }
+
+    val debugVisibilityWrapperLambda = remember(debugUiState) {
+        @Composable { content: @Composable () -> Unit ->
+            if (debugUiState !is DebugUiState.Enabled || !debugUiState.debugHidingComponents) {
                 content()
             }
-        },
-        screenFlashOverlay = {
-            // Screen flash overlay that stays on top of everything but invisible normally. This should
-            // not be enabled based on whether screen flash is enabled because a previous image capture
-            // may still be running after flash mode change and clear actions (e.g. brightness restore)
-            // may need to be handled later. Compose smart recomposition should be able to optimize this
-            // if the relevant states are no longer changing.
+            Unit
+        }
+    }
+
+    val screenFlashOverlayLambda = remember(screenFlashController) {
+        @Composable { modifier: Modifier ->
             ScreenFlashScreen(
                 screenFlashUiState = captureUiStateProvider().screenFlashUiState,
                 onInitialBrightnessCalculated = {
-                    screenFlashController?.setClearUiScreenBrightness(
-                        it
-                    )
+                    screenFlashController?.setClearUiScreenBrightness(it)
                 }
             )
-        },
-        snackBar = { modifier, snackbarHostState ->
+        }
+    }
+
+    val snackBarLambda = remember(snackBarController) {
+        @Composable { modifier: Modifier, snackbarHostState: SnackbarHostState ->
+            val snackBarUiState = snackBarUiState
             if (snackBarUiState is SnackBarUiState.Enabled) {
                 val snackBarData = snackBarUiState.snackBarQueue.peek()
                 if (snackBarData != null) {
@@ -589,27 +616,58 @@ private fun ContentScreen(
                     }
                 }
             }
-        },
-        pauseToggleButton = {
+        }
+    }
+
+    val pauseToggleButtonLambda = remember(captureController) {
+        @Composable { modifier: Modifier ->
             PauseResumeToggleButton(
+                modifier = modifier,
                 onSetPause = captureController?.let { it::setPaused } ?: { _ -> },
                 currentRecordingState = captureUiStateProvider().videoRecordingState
             )
-        },
-        imageWell = { modifier ->
-            if (captureUiStateProvider().externalCaptureMode == ExternalCaptureMode.Standard) {
-                (captureUiStateProvider().imageWellUiState as? ImageWellUiState.Content)?.let {
+        }
+    }
+
+    val imageWellLambda = remember(imageWellController, onNavigatePostCapture) {
+        @Composable { modifier: Modifier ->
+            val readyState = captureUiStateProvider()
+            if (readyState.externalCaptureMode == ExternalCaptureMode.Standard) {
+                (readyState.imageWellUiState as? ImageWellUiState.Content)?.let { contentState ->
                     ImageWell(
                         modifier = modifier,
-                        imageWellUiState = it,
+                        imageWellUiState = contentState,
                         onClick = {
-                            imageWellController?.imageWellToRepository(it.mediaDescriptor)
+                            imageWellController?.imageWellToRepository(contentState.mediaDescriptor)
                             onNavigatePostCapture()
                         }
                     )
                 }
             }
         }
+    }
+
+    LayoutWrapper(
+        modifier = modifier,
+        hdrIndicator = hdrIndicatorLambda,
+        flashModeIndicator = flashModeIndicatorLambda,
+        videoQualityIndicator = videoQualityIndicatorLambda,
+        stabilizationIndicator = stabilizationIndicatorLambda,
+        viewfinder = viewfinderLambda,
+        captureButton = captureButtonLambda,
+        flipCameraButton = flipCameraButtonLambda,
+        zoomLevelDisplay = zoomLevelDisplayLambda,
+        elapsedTimeDisplay = elapsedTimeDisplayLambda,
+        quickSettingsButton = quickSettingsButtonLambda,
+        audioToggleButton = audioToggleButtonLambda,
+        captureModeToggle = captureModeToggleLambda,
+        quickSettingsOverlay = quickSettingsOverlayLambda,
+        debugOverlay = debugOverlayLambda,
+        debugVisibilityWrapper = debugVisibilityWrapperLambda,
+        screenFlashOverlay = screenFlashOverlayLambda,
+        snackBar = snackBarLambda,
+        pauseToggleButton = pauseToggleButtonLambda,
+        imageWell = imageWellLambda
     )
 }
 
