@@ -76,7 +76,6 @@ val compatMainActivityExtras: Bundle?
 
         val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
         val args = TestStorage(resolver).getInputArgs()
-        Log.d("UiTestUtil", "TestStorage Args: $args")
         val disableAnimations = args["disable_animations"]?.toBoolean() ?: false
         if (disableAnimations) {
             extras.putBoolean("KEY_DISABLE_ANIMATIONS", true)

@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import java.util.concurrent.TimeUnit
 
 /**
  * Creates a [Flow] of [CaptureUiState] by combining the latest values from various sources.
@@ -184,7 +185,7 @@ fun captureUiState(
  */
 internal fun roundVideoRecordingState(
     videoRecordingState: VideoRecordingState,
-    timePrecision: java.util.concurrent.TimeUnit
+    timePrecision: TimeUnit
 ): VideoRecordingState {
     if (videoRecordingState !is VideoRecordingState.Active) return videoRecordingState
 
