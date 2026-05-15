@@ -143,7 +143,7 @@ fun PreviewScreen(
     val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
     val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
 
-    val captureUiStateProvider = remember { { captureUiStateState.value as CaptureUiState.Ready } }
+    val captureUiStateProvider = remember { { captureUiStateState.value as? CaptureUiState.Ready ?: CaptureUiState.Ready() } }
     val isReady by remember { derivedStateOf { captureUiStateState.value is CaptureUiState.Ready } }
 
     val surfaceRequest: SurfaceRequest?
