@@ -128,7 +128,7 @@ private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
  * A composable that displays the elapsed time of a video recording in a "MM:SS" format.
  * This text is only visible during an active recording.
  *
- * @param elapsedTimeUiState the [ElapsedTimeUiState] for this component.
+ * @param formattedTimeProvider a provider for the formatted time string.
  */
 @Composable
 fun ElapsedTimeText(modifier: Modifier = Modifier, formattedTimeProvider: () -> String) {
@@ -138,7 +138,7 @@ fun ElapsedTimeText(modifier: Modifier = Modifier, formattedTimeProvider: () -> 
             modifier = modifier,
             text = formattedTime,
             textAlign = TextAlign.Center,
-            style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum")
+            style = androidx.compose.material3.LocalTextStyle.current.copy(fontFeatureSettings = "tnum")
         )
     }
 }
