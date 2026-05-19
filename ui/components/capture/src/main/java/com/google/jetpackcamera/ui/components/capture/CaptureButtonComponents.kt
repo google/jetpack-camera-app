@@ -27,8 +27,6 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,7 +49,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -69,7 +66,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -77,10 +73,10 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.disabled
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -401,7 +397,8 @@ private fun CaptureButton(
                 if (currentUiState.value.let {
                         it is CaptureButtonUiState.Enabled.Idle &&
                             it.captureMode == CaptureMode.STANDARD
-                    }) {
+                    }
+                ) {
                     LocalContentColor.current.copy(alpha = 0.2f)
                 } else {
                     Color.Transparent
@@ -565,7 +562,9 @@ enum class ShutterBackgroundStyle {
     BLACK_60
 }
 
-val LocalShutterBackgroundStyle = androidx.compose.runtime.compositionLocalOf { ShutterBackgroundStyle.WHITE_20 }
+val LocalShutterBackgroundStyle = androidx.compose.runtime.compositionLocalOf {
+    ShutterBackgroundStyle.WHITE_20
+}
 
 @Composable
 internal fun CaptureButtonRing(
@@ -788,7 +787,8 @@ internal fun CaptureButtonNucleus(
 
     val sizeFinal = (captureButtonSize * 0.51f).dp
     val sizeInter = (captureButtonSize * 0.58f).dp
-    val cornerRadius = if (currentUiState.value is CaptureButtonUiState.Enabled.Recording.LockedRecording) {
+    val isLocked = currentUiState.value is CaptureButtonUiState.Enabled.Recording.LockedRecording
+    val cornerRadius = if (isLocked) {
         if (centerShapeSize <= sizeInter) {
             val fraction = (centerShapeSize - sizeFinal) / (sizeInter - sizeFinal)
             val coercedFraction = fraction.coerceIn(0f, 1f)
@@ -963,8 +963,6 @@ private fun IdleVideoOnlyCaptureButtonDisabledPreview() {
         )
     )
 }
-
-
 
 @Preview
 @Composable

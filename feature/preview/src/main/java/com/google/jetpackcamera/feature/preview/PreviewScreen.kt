@@ -404,8 +404,9 @@ private fun ContentScreen(
             )
         },
 
-        viewfinder = {
+        viewfinder = { modifier ->
             PreviewDisplay(
+                modifier = modifier,
                 previewDisplayUiState = captureUiState.previewDisplayUiState,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = cameraController?.let { it::tapToFocus } ?: { _, _ -> },
@@ -415,7 +416,7 @@ private fun ContentScreen(
                 focusMeteringUiState = captureUiState.focusMeteringUiState
             )
         },
-        captureButton = {
+        captureButton = { modifier ->
             fun runCaptureAction(action: () -> Unit) {
                 if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
                         ?.quickSettingsIsOpen == true
@@ -425,6 +426,7 @@ private fun ContentScreen(
                 action()
             }
             CaptureButton(
+                modifier = modifier,
                 captureButtonUiState = captureUiState.captureButtonUiState,
                 isQuickSettingsOpen = (
                     captureUiState.quickSettingsUiState as?
@@ -717,7 +719,7 @@ private fun ContentScreen_ImageOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
-                captureButtonUiState = CaptureButtonUiState.Available.Idle(CaptureMode.IMAGE_ONLY)
+                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
             ),
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
@@ -731,7 +733,7 @@ private fun ContentScreen_VideoOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
             captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
-                captureButtonUiState = CaptureButtonUiState.Available.Idle(CaptureMode.VIDEO_ONLY)
+                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
             ),
             screenFlashUiState = ScreenFlashUiState(),
             surfaceRequest = null
@@ -771,12 +773,12 @@ private val FAKE_PREVIEW_UI_STATE_READY = CaptureUiState.Ready(
 
 private val FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(
     videoRecordingState = VideoRecordingState.Active.Recording(0, 0.0, 0),
-    captureButtonUiState = CaptureButtonUiState.Available.Recording.PressedRecording,
+    captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording,
     audioUiState = AudioUiState.Enabled.On(1.0)
 )
 
 private val FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(
     videoRecordingState = VideoRecordingState.Active.Recording(0, 0.0, 0),
-    captureButtonUiState = CaptureButtonUiState.Available.Recording.LockedRecording,
+    captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording,
     audioUiState = AudioUiState.Enabled.On(1.0)
 )
