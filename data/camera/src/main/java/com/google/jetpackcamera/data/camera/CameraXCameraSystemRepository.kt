@@ -16,14 +16,14 @@
 package com.google.jetpackcamera.data.camera
 
 import com.google.jetpackcamera.core.camera.CameraXCameraSystem
+import dagger.hilt.android.scopes.ActivityRetainedScoped
 import javax.inject.Inject
 import javax.inject.Provider
-import javax.inject.Singleton
 
 /**
  * Implementation of [CameraSystemRepository] that lazily constructs [CameraXCameraSystem].
  */
-@Singleton
+@ActivityRetainedScoped
 class CameraXCameraSystemRepository @Inject constructor(
     private val cameraXCameraSystemProvider: Provider<CameraXCameraSystem>
 ) : CameraSystemRepository {
