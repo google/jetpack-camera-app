@@ -88,6 +88,7 @@ When reviewing a pull request, focus on the following key areas:
     *   **Apply Proper Semantics:** When building custom UI components from the ground up (e.g., a custom button made of an `Icon` and a `Text`), apply the correct semantics to ensure they are accessible.
         *   Use `semantics { role = Role.Button }` (or `Role.Checkbox`, etc.) to define the component's logical purpose for screen readers.
         *   For components made of multiple parts that should be read as a single, coherent unit, use `semantics { mergeDescendants = true }`. This prevents screen readers from announcing inner elements (like an icon and its text label) as separate, unrelated items.
+        *   **Explicit Focusability:** When building custom components that handle input manually via low-level gestures (e.g., using `pointerInput` or `detectTapGestures`) rather than `Modifier.clickable()`, they may not automatically become focusable. In such cases, explicitly add `Modifier.focusable()` to ensure they are reachable via keyboard navigation and analyzed by automated accessibility checks.
         *   **Content vs State Descriptions:**
             *   Use `contentDescription` to describe the **identity** or **action** of the component (e.g., "Capture Photo", "Start Video Recording").
             *   Use `stateDescription` to describe the **current state** of the component (e.g., "Locked", "Selected").
