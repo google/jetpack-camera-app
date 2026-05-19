@@ -28,6 +28,8 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_ENABLED_TAG
+import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_STREAM_CONFIG_TAG
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
@@ -123,6 +125,26 @@ sealed interface DisabledRationale {
             override val reasonTextResId: Int = R.string.rear_lens_unsupported
             override val testTag = LENS_UNSUPPORTED_TAG
         }
+    }
+
+    data class ConcurrentCameraEnabledRationale(
+        override val affectedSettingNameResId: Int,
+        override val testTag: String = CONCURRENT_CAMERA_ENABLED_TAG
+    ) : DisabledRationale {
+        override val reasonTextResId = R.string.concurrent_camera_enabled_unsupported
+    }
+
+    data class ConcurrentCameraDisabledRationale(
+        override val reasonTextResId: Int,
+        override val testTag: String
+    ) : DisabledRationale {
+        override val affectedSettingNameResId = R.string.concurrent_camera_rationale_prefix
+    }
+
+    data class ConcurrentCameraStreamConfigRationale(override val affectedSettingNameResId: Int) :
+        DisabledRationale {
+        override val reasonTextResId = R.string.concurrent_camera_stream_config_unsupported
+        override val testTag = CONCURRENT_CAMERA_STREAM_CONFIG_TAG
     }
 }
 
@@ -256,6 +278,7 @@ sealed interface AspectRatioUiState {
 sealed interface StreamConfigUiState {
     data class Enabled(val currentStreamConfig: StreamConfig, val additionalContext: String = "") :
         StreamConfigUiState
+    data class Disabled(val disabledRationale: DisabledRationale) : StreamConfigUiState
 }
 
 sealed interface DarkModeUiState {

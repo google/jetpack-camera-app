@@ -26,6 +26,7 @@ import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -33,6 +34,7 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
@@ -41,11 +43,10 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
-import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
-import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.getResString
 import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
@@ -179,7 +180,8 @@ class ConcurrentCameraTest {
                 .assert(
                     stateDescriptionMatches(
                         getResString(
-                            R.string.quick_settings_description_capture_mode_video_only
+                            CaptureR.string
+                                .quick_settings_description_capture_mode_video_only
                         )
                     )
                 )
@@ -213,15 +215,37 @@ class ConcurrentCameraTest {
 
             // Navigate to settings screen to check if concurrent camera is supported/enabled
             var isSupported = false
+            var isDeviceUnsupported = false
             composeTestRule.visitSettingsScreen {
                 onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
                     .assertExists()
                     .apply {
                         isSupported = isEnabled().matches(fetchSemanticsNode())
                     }
+
+                if (!isSupported) {
+                    val deviceUnsupportedMessage = getResString(SettingsR.string.device_unsupported)
+                    val concurrentPrefix =
+                        getResString(SettingsR.string.concurrent_camera_rationale_prefix)
+                    val expectedMessage = String.format(deviceUnsupportedMessage, concurrentPrefix)
+
+                    // Check if the "device unsupported" message is displayed
+                    isDeviceUnsupported = try {
+                        onNodeWithText(expectedMessage).assertIsDisplayed()
+                        true
+                    } catch (e: AssertionError) {
+                        false
+                    }
+                }
             }
 
-            assume().that(isSupported).isTrue()
+            if (!isSupported) {
+                // Skip the test if the device physically doesn't support concurrent camera
+                assume().that(isDeviceUnsupported).isFalse()
+                throw AssertionError(
+                    "Concurrent camera is disabled in settings, but the device supports it (disabled due to conflict)."
+                )
+            }
 
             block()
         }

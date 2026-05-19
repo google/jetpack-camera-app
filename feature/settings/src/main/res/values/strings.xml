@@ -185,6 +185,15 @@
     <string name="mute_audio_rationale_prefix">Mute</string>
     <string name="concurrent_camera_rationale_prefix">Concurrent camera</string>
 
+    <!-- Rationale texts -->
+    <string name="concurrent_camera_enabled_unsupported">%1$s is unsupported when Concurrent Camera is enabled</string>
+    <string name="stabilization_active_unsupported">%1$s is unsupported when Video Stabilization is enabled</string>
+    <string name="fixed_fps_active_unsupported">%1$s is unsupported when a fixed frame rate is selected</string>
+    <string name="flash_llb_active_unsupported">%1$s is unsupported when Low Light Boost is active</string>
+    <string name="hdr_active_unsupported">%1$s is unsupported when HDR is active</string>
+    <string name="capture_mode_unsupported">%1$s is unsupported by the current capture mode</string>
+    <string name="concurrent_camera_stream_config_unsupported">Only Multi Stream supports concurrent camera</string>
+
     <!-- Version info strings -->
     <string name="version_info_title">Version</string>
 </resources>

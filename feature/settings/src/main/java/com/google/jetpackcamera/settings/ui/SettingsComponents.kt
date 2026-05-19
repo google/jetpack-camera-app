@@ -313,6 +313,7 @@ fun AspectRatioSetting(
                 AspectRatio.THREE_FOUR -> stringResource(
                     id = R.string.aspect_ratio_description_3_4
                 )
+
                 AspectRatio.ONE_ONE -> stringResource(
                     id = R.string.aspect_ratio_description_1_1
                 )
@@ -355,44 +356,57 @@ fun StreamConfigSetting(
     setStreamConfig: (StreamConfig) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val enabled = streamConfigUiState is StreamConfigUiState.Enabled
     BasicPopupSetting(
         modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG),
         title = stringResource(R.string.stream_config_title),
         leadingIcon = null,
-        enabled = true,
-        description =
-        if (streamConfigUiState is StreamConfigUiState.Enabled) {
-            when (streamConfigUiState.currentStreamConfig) {
-                StreamConfig.MULTI_STREAM -> stringResource(
-                    id = R.string.stream_config_description_multi_stream
-                )
+        enabled = enabled,
+        description = when (streamConfigUiState) {
+            is StreamConfigUiState.Enabled -> {
+                when (streamConfigUiState.currentStreamConfig) {
+                    StreamConfig.MULTI_STREAM -> stringResource(
+                        id = R.string.stream_config_description_multi_stream
+                    )
 
-                StreamConfig.SINGLE_STREAM -> stringResource(
-                    id = R.string.stream_config_description_single_stream
+                    StreamConfig.SINGLE_STREAM -> stringResource(
+                        id = R.string.stream_config_description_single_stream
+                    )
+                }
+            }
+
+            is StreamConfigUiState.Disabled -> {
+                disabledRationaleString(
+                    disabledRationale = streamConfigUiState.disabledRationale
                 )
             }
-        } else {
-            TODO("stream config currently has no disabled criteria")
         },
         popupContents = {
-            Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(
-                        BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
-                    ),
-                    text = stringResource(id = R.string.stream_config_selector_multi_stream),
-                    selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
-                    enabled = true,
-                    onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
-                )
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG),
-                    text = stringResource(id = R.string.stream_config_description_single_stream),
-                    selected = streamConfigUiState.currentStreamConfig ==
-                        StreamConfig.SINGLE_STREAM,
-                    enabled = true,
-                    onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
-                )
+            if (streamConfigUiState is StreamConfigUiState.Enabled) {
+                Column(Modifier.selectableGroup()) {
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(
+                            BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
+                        ),
+                        text = stringResource(id = R.string.stream_config_selector_multi_stream),
+                        selected = streamConfigUiState.currentStreamConfig ==
+                            StreamConfig.MULTI_STREAM,
+                        enabled = true,
+                        onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
+                    )
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(
+                            BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
+                        ),
+                        text = stringResource(
+                            id = R.string.stream_config_description_single_stream
+                        ),
+                        selected = streamConfigUiState.currentStreamConfig ==
+                            StreamConfig.SINGLE_STREAM,
+                        enabled = true,
+                        onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
+                    )
+                }
             }
         }
     )
@@ -891,6 +905,7 @@ fun ConcurrentCameraSetting(
                     ConcurrentCameraMode.DUAL -> stringResource(
                         R.string.concurrent_camera_description_on
                     )
+
                     ConcurrentCameraMode.OFF -> stringResource(
                         R.string.concurrent_camera_description_off
                     )
@@ -913,6 +928,7 @@ fun ConcurrentCameraSetting(
             is ConcurrentCameraUiState.Enabled ->
                 concurrentCameraUiState.currentConcurrentCameraMode ==
                     ConcurrentCameraMode.DUAL
+
             is ConcurrentCameraUiState.Disabled -> false
         },
         enabled = concurrentCameraUiState is ConcurrentCameraUiState.Enabled
@@ -1145,6 +1161,20 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
         is DisabledRationale.PermissionRecordAudioNotGrantedRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.ConcurrentCameraDisabledRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.ConcurrentCameraEnabledRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.ConcurrentCameraStreamConfigRationale -> stringResource(
+            disabledRationale.reasonTextResId
         )
     }
 
