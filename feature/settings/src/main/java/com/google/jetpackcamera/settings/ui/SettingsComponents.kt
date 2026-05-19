@@ -891,7 +891,7 @@ fun RecordingAudioSetting(
  * @param setConcurrentCameraMode callback to update the concurrent camera mode.
  */
 @Composable
-fun ConcurrentCameraSetting(
+internal fun ConcurrentCameraSetting(
     modifier: Modifier = Modifier,
     concurrentCameraUiState: ConcurrentCameraUiState,
     setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit

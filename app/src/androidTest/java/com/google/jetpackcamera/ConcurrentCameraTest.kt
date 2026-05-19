@@ -17,11 +17,10 @@ package com.google.jetpackcamera
 
 import android.net.Uri
 import android.provider.MediaStore
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -31,7 +30,6 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
-import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.R as SettingsR
@@ -83,12 +81,7 @@ class ConcurrentCameraTest {
             visitSettingsScreen {
                 onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
                     .assertExists()
-                    .apply {
-                        val isCurrentlyOn = fetchSemanticsNode().config.getOrNull(
-                            SemanticsProperties.ToggleableState
-                        ) == ToggleableState.On
-                        assertThat(isCurrentlyOn).isTrue()
-                    }
+                    .assertIsOn()
             }
         }
     }
@@ -106,12 +99,7 @@ class ConcurrentCameraTest {
             visitSettingsScreen {
                 onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
                     .assertExists()
-                    .apply {
-                        val isCurrentlyOn = fetchSemanticsNode().config.getOrNull(
-                            SemanticsProperties.ToggleableState
-                        ) == ToggleableState.On
-                        assertThat(isCurrentlyOn).isFalse()
-                    }
+                    .assertIsOff()
             }
         }
     }
