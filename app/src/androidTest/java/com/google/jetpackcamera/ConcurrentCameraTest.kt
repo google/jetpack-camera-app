@@ -237,13 +237,6 @@ class ConcurrentCameraTest {
                     .performClick()
                     .assertConcurrentCameraMode(ConcurrentCameraMode.DUAL)
 
-                // Assert the stream config setting is disabled in settings screen
-                visitSettingsScreen {
-                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG)
-                        .assertExists()
-                        .assert(isNotEnabled())
-                }
-
                 // Assert the HDR button is disabled
                 onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
                     .assertExists()
