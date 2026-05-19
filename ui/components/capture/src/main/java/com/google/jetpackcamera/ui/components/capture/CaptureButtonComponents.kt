@@ -91,6 +91,18 @@ import kotlinx.coroutines.launch
 private const val TAG = "CaptureButton"
 private const val DEFAULT_CAPTURE_BUTTON_SIZE = 76f
 
+private const val IDLE_IMAGE_CAPTURE_SCALE = 0.86f
+private const val IDLE_VIDEO_CAPTURE_SCALE = 0.64f
+private const val PRESSED_IMAGE_CAPTURE_SCALE = 0.93f
+private const val LOCKED_RECORDING_NUCLEUS_SCALE = 0.51f
+private const val MORPH_INTERMEDIATE_SCALE = 0.58f
+private const val BORDER_WIDTH = 3f
+private const val ANIMATION_DURATION_SIZE = 250
+private const val ANIMATION_DURATION_COLOR = 150
+private const val ANIMATION_DURATION_NUCLEUS_RELEASE = 100
+
+private val LOCKED_CORNER_RADIUS = 8.dp
+
 // scales against the size of the capture button
 private const val LOCK_SWITCH_PRESSED_NUCLEUS_SCALE = .5f
 
@@ -571,7 +583,7 @@ internal fun CaptureButtonRing(
     modifier: Modifier = Modifier,
     captureButtonSize: Float,
     color: Color,
-    borderWidth: Float = 3f,
+    borderWidth: Float = BORDER_WIDTH,
     contents: (@Composable () -> Unit)? = null
 ) {
     val backgroundStyle = LocalShutterBackgroundStyle.current
@@ -581,7 +593,7 @@ internal fun CaptureButtonRing(
     }
     val backgroundColor by animateColorAsState(
         targetValue = targetBackgroundColor,
-        animationSpec = androidx.compose.animation.core.tween(durationMillis = 150),
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = ANIMATION_DURATION_COLOR),
         label = "backgroundColor"
     )
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -720,9 +732,9 @@ internal fun CaptureButtonNucleus(
     offsetX: Dp = 0.dp,
     recordingColor: Color = Color.Red,
     imageCaptureModeColor: Color = Color.White,
-    idleImageCaptureScale: Float = 0.86f,
-    idleVideoCaptureScale: Float = 0.64f,
-    pressedVideoCaptureScale: Float = 0.86f,
+    idleImageCaptureScale: Float = IDLE_IMAGE_CAPTURE_SCALE,
+    idleVideoCaptureScale: Float = IDLE_VIDEO_CAPTURE_SCALE,
+    pressedVideoCaptureScale: Float = IDLE_IMAGE_CAPTURE_SCALE,
     isVisuallyDisabled: Boolean = false
 ) {
     require(idleImageCaptureScale in 0f..1f) {
@@ -741,7 +753,7 @@ internal fun CaptureButtonNucleus(
     val standardShapeSize by animateDpAsState(
         targetValue = when (val uiState = currentUiState.value) {
             // inner circle becomes a square when locked
-            CaptureButtonUiState.Enabled.Recording.LockedRecording -> (captureButtonSize * 0.51f).dp
+            CaptureButtonUiState.Enabled.Recording.LockedRecording -> (captureButtonSize * LOCKED_RECORDING_NUCLEUS_SCALE).dp
 
             CaptureButtonUiState.Enabled.Recording.PressedRecording ->
                 (captureButtonSize * pressedVideoCaptureScale).dp
@@ -756,7 +768,7 @@ internal fun CaptureButtonNucleus(
                 CaptureMode.VIDEO_ONLY -> (captureButtonSize * idleVideoCaptureScale).dp
             }
         },
-        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
+        animationSpec = tween(durationMillis = ANIMATION_DURATION_SIZE, easing = FastOutSlowInEasing)
     )
 
     val pressTransition = updateTransition(
@@ -773,26 +785,26 @@ internal fun CaptureButtonNucleus(
             if (targetState) {
                 snap()
             } else {
-                tween(durationMillis = 100)
+                tween(durationMillis = ANIMATION_DURATION_NUCLEUS_RELEASE)
             }
         },
         label = "Nucleus Size"
     ) { isPressedImage ->
         if (isPressedImage) {
-            (captureButtonSize * 0.93f).dp
+            (captureButtonSize * PRESSED_IMAGE_CAPTURE_SCALE).dp
         } else {
             standardShapeSize
         }
     }
 
-    val sizeFinal = (captureButtonSize * 0.51f).dp
-    val sizeInter = (captureButtonSize * 0.58f).dp
+    val sizeFinal = (captureButtonSize * LOCKED_RECORDING_NUCLEUS_SCALE).dp
+    val sizeInter = (captureButtonSize * MORPH_INTERMEDIATE_SCALE).dp
     val isLocked = currentUiState.value is CaptureButtonUiState.Enabled.Recording.LockedRecording
     val cornerRadius = if (isLocked) {
         if (centerShapeSize <= sizeInter) {
             val fraction = (centerShapeSize - sizeFinal) / (sizeInter - sizeFinal)
             val coercedFraction = fraction.coerceIn(0f, 1f)
-            8.dp + (centerShapeSize / 2 - 8.dp) * coercedFraction
+            LOCKED_CORNER_RADIUS + (centerShapeSize / 2 - LOCKED_CORNER_RADIUS) * coercedFraction
         } else {
             centerShapeSize / 2
         }

@@ -25,6 +25,7 @@ When reviewing a pull request, focus on the following key areas:
     * **Remove Unused Imports:** Check for and remove any unused import statements to maintain code cleanliness.
     * Look for potential null-safety issues, improper error handling, or resource leaks.
     * **Promote Reusability (DRY Principle):** Identify duplicated or highly similar blocks of code. If a pattern of logic is repeated—even with minor variations—suggest extracting it into a reusable function, composable, or helper class.
+    * **Avoid Magic Numbers:** Avoid scattering literal dimension values or scales directly in the layout code. Instead, group them into a `private object Tokens` at the top of the file if file-scoped, or in a separate `Dimensions.kt` or `Tokens.kt` file if shared across features. Use semantic naming (e.g., `SmallPadding`) rather than value-based naming (e.g., `Dp16`).
 
 3.  **Performance and Efficiency**
     * Scan for inefficient operations, especially within Composable functions (e.g., expensive calculations, improper state management leading to excessive recompositions).
