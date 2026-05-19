@@ -51,6 +51,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -78,6 +79,8 @@ import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -215,7 +218,7 @@ internal fun CaptureButton(
     var currentPressInteraction by remember { mutableStateOf<PressInteraction.Press?>(null) }
 
     LaunchedEffect(captureButtonUiState) {
-        if (captureButtonUiState is CaptureButtonUiState.Available.Idle) {
+        if (captureButtonUiState is CaptureButtonUiState.Enabled.Idle) {
             onLockVideoRecording(false)
         } else if (captureButtonUiState
                 is CaptureButtonUiState.Enabled.Recording.LockedRecording
@@ -228,7 +231,7 @@ internal fun CaptureButton(
     fun onLongPress() {
         if (!isLongPressing.value) {
             when (val current = currentUiState.value) {
-                is CaptureButtonUiState.Available.Idle -> when (current.captureMode) {
+                is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
                     CaptureMode.STANDARD,
                     CaptureMode.VIDEO_ONLY -> {
                         isLongPressing.value = true
@@ -284,7 +287,7 @@ internal fun CaptureButton(
             if (isLongPressing.value) {
                 if (!isLocked &&
                     currentUiState.value is
-                        CaptureButtonUiState.Available.Recording.PressedRecording
+                        CaptureButtonUiState.Enabled.Recording.PressedRecording
                 ) {
                     onStopRecording()
                 }
@@ -292,7 +295,7 @@ internal fun CaptureButton(
             // on click
             else {
                 when (val current = currentUiState.value) {
-                    is CaptureButtonUiState.Available.Idle -> when (current.captureMode) {
+                    is CaptureButtonUiState.Enabled.Idle -> when (current.captureMode) {
                         CaptureMode.STANDARD,
                         CaptureMode.IMAGE_ONLY -> onImageCapture()
 
@@ -302,8 +305,8 @@ internal fun CaptureButton(
                         }
                     }
 
-                    CaptureButtonUiState.Available.Recording.LockedRecording -> onStopRecording()
-                    CaptureButtonUiState.Available.Recording.PressedRecording,
+                    CaptureButtonUiState.Enabled.Recording.LockedRecording -> onStopRecording()
+                    CaptureButtonUiState.Enabled.Recording.PressedRecording,
                     CaptureButtonUiState.Unavailable -> {
                     }
                 }
@@ -393,12 +396,24 @@ private fun CaptureButton(
 
     val isPressedInteraction by interactionSource.collectIsPressedAsState()
     val animatedColor by animateColorAsState(
-        targetValue = if (isVisuallyDisabled) {
-            LocalContentColor.current.copy(alpha = 0.38f)
-        } else {
-            LocalContentColor.current
+        targetValue = when {
+            isVisuallyDisabled -> {
+                if (currentUiState.value.let {
+                        it is CaptureButtonUiState.Enabled.Idle &&
+                            it.captureMode == CaptureMode.STANDARD
+                    }) {
+                    LocalContentColor.current.copy(alpha = 0.2f)
+                } else {
+                    Color.Transparent
+                }
+            }
+            currentUiState.value.let {
+                it is CaptureButtonUiState.Enabled.Idle &&
+                    it.captureMode == CaptureMode.STANDARD
+            } -> LocalContentColor.current
+            else -> Color.Transparent
         },
-        animationSpec = tween(durationMillis = if (isVisuallyDisabled) 1000 else 300),
+        animationSpec = tween(durationMillis = if (isVisuallyDisabled) 500 else 150),
         label = "Capture Button Color"
     )
 
@@ -464,7 +479,7 @@ private fun CaptureButton(
                     onDragCancel = {},
                     onDrag = { change, deltaOffset ->
                         if (currentUiState.value ==
-                            CaptureButtonUiState.Available.Recording.PressedRecording
+                            CaptureButtonUiState.Enabled.Recording.PressedRecording
                         ) {
                             val newPoint = change.position
 
@@ -504,7 +519,7 @@ private fun CaptureButton(
                     Rect(0f, 0f, it.width.toFloat(), it.height.toFloat())
             }
             .semantics {
-                role = androidx.compose.ui.semantics.Role.Button
+                role = Role.Button
                 if (!captureButtonUiState.isEnabled) {
                     disabled()
                 }
@@ -545,19 +560,36 @@ private fun CaptureButton(
     }
 }
 
+enum class ShutterBackgroundStyle {
+    WHITE_20,
+    BLACK_60
+}
+
+val LocalShutterBackgroundStyle = androidx.compose.runtime.compositionLocalOf { ShutterBackgroundStyle.WHITE_20 }
+
 @Composable
-private fun CaptureButtonRing(
+internal fun CaptureButtonRing(
     modifier: Modifier = Modifier,
     captureButtonSize: Float,
     color: Color,
     borderWidth: Float = 3f,
     contents: (@Composable () -> Unit)? = null
 ) {
+    val backgroundStyle = LocalShutterBackgroundStyle.current
+    val targetBackgroundColor = when (backgroundStyle) {
+        ShutterBackgroundStyle.WHITE_20 -> Color.White.copy(alpha = 0.2f)
+        ShutterBackgroundStyle.BLACK_60 -> Color.Black.copy(alpha = 0.6f)
+    }
+    val backgroundColor by animateColorAsState(
+        targetValue = targetBackgroundColor,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 150),
+        label = "backgroundColor"
+    )
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Box(
             modifier = Modifier
                 .size(captureButtonSize.dp)
-                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                .background(backgroundColor, CircleShape)
         )
         contents?.invoke()
         // todo(): use a canvas instead of a box.
@@ -606,7 +638,7 @@ private fun LockSwitchCaptureButtonNucleus(
             // grey cylinder offset to the left and fades in when pressed recording
             AnimatedVisibility(
                 visible = captureButtonUiState ==
-                    CaptureButtonUiState.Available.Recording.PressedRecording,
+                    CaptureButtonUiState.Enabled.Recording.PressedRecording,
                 enter = fadeIn(),
                 exit = ExitTransition.None
             ) {
@@ -639,7 +671,7 @@ private fun LockSwitchCaptureButtonNucleus(
         // locked icon, matches cylinder offset
         AnimatedVisibility(
             visible = captureButtonUiState ==
-                CaptureButtonUiState.Available.Recording.PressedRecording,
+                CaptureButtonUiState.Enabled.Recording.PressedRecording,
             enter = fadeIn(),
             exit = ExitTransition.None
         ) {
@@ -681,7 +713,7 @@ private enum class NucleusState {
  * @param pressedVideoCaptureScale the scale factor for the pressed size of the video-only nucleus. Must be between 0 and 1.
  */
 @Composable
-private fun CaptureButtonNucleus(
+internal fun CaptureButtonNucleus(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
     isPressed: Boolean,
@@ -689,9 +721,9 @@ private fun CaptureButtonNucleus(
     offsetX: Dp = 0.dp,
     recordingColor: Color = Color.Red,
     imageCaptureModeColor: Color = Color.White,
-    idleImageCaptureScale: Float = .74f,
-    idleVideoCaptureScale: Float = .26f,
-    pressedVideoCaptureScale: Float = .7f,
+    idleImageCaptureScale: Float = 0.86f,
+    idleVideoCaptureScale: Float = 0.64f,
+    pressedVideoCaptureScale: Float = 0.86f,
     isVisuallyDisabled: Boolean = false
 ) {
     require(idleImageCaptureScale in 0f..1f) {
@@ -709,14 +741,14 @@ private fun CaptureButtonNucleus(
     // smoothly animate between the size changes of the capture button center
     val standardShapeSize by animateDpAsState(
         targetValue = when (val uiState = currentUiState.value) {
-            // inner circle fills white ring when locked
-            CaptureButtonUiState.Available.Recording.LockedRecording -> captureButtonSize.dp
+            // inner circle becomes a square when locked
+            CaptureButtonUiState.Enabled.Recording.LockedRecording -> (captureButtonSize * 0.51f).dp
 
-            CaptureButtonUiState.Available.Recording.PressedRecording ->
+            CaptureButtonUiState.Enabled.Recording.PressedRecording ->
                 (captureButtonSize * pressedVideoCaptureScale).dp
 
             CaptureButtonUiState.Unavailable -> 0.dp
-            is CaptureButtonUiState.Available.Idle -> when (uiState.captureMode) {
+            is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
                 // no inner circle will be visible on STANDARD
                 CaptureMode.STANDARD -> 0.dp
                 // large white circle will be visible on IMAGE_ONLY
@@ -725,14 +757,14 @@ private fun CaptureButtonNucleus(
                 CaptureMode.VIDEO_ONLY -> (captureButtonSize * idleVideoCaptureScale).dp
             }
         },
-        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
     )
 
     val pressTransition = updateTransition(
         targetState = isPressed &&
             currentUiState.value.let {
-                it is CaptureButtonUiState.Available.Idle &&
-                    it.captureMode == CaptureMode.IMAGE_ONLY
+                it is CaptureButtonUiState.Enabled.Idle &&
+                    (it.captureMode == CaptureMode.IMAGE_ONLY || it.captureMode == CaptureMode.STANDARD)
             },
         label = "Press Size Transition"
     )
@@ -742,21 +774,35 @@ private fun CaptureButtonNucleus(
             if (targetState) {
                 snap()
             } else {
-                tween(durationMillis = 200)
+                tween(durationMillis = 100)
             }
         },
         label = "Nucleus Size"
     ) { isPressedImage ->
         if (isPressedImage) {
-            captureButtonSize.dp
+            (captureButtonSize * 0.93f).dp
         } else {
             standardShapeSize
         }
     }
 
+    val sizeFinal = (captureButtonSize * 0.51f).dp
+    val sizeInter = (captureButtonSize * 0.58f).dp
+    val cornerRadius = if (currentUiState.value is CaptureButtonUiState.Enabled.Recording.LockedRecording) {
+        if (centerShapeSize <= sizeInter) {
+            val fraction = (centerShapeSize - sizeFinal) / (sizeInter - sizeFinal)
+            val coercedFraction = fraction.coerceIn(0f, 1f)
+            8.dp + (centerShapeSize / 2 - 8.dp) * coercedFraction
+        } else {
+            centerShapeSize / 2
+        }
+    } else {
+        centerShapeSize / 2
+    }
+
     // used to fade between red/white in the center of the capture button
     val isPressableImageMode = currentUiState.value.let {
-        it is CaptureButtonUiState.Available.Idle &&
+        it is CaptureButtonUiState.Enabled.Idle &&
             (it.captureMode == CaptureMode.IMAGE_ONLY || it.captureMode == CaptureMode.STANDARD)
     }
     val nucleusState = when {
@@ -772,31 +818,31 @@ private fun CaptureButtonNucleus(
         transitionSpec = {
             when {
                 NucleusState.Disabled isTransitioningTo NucleusState.Idle -> tween(
-                    durationMillis = 300
+                    durationMillis = 150
                 )
                 NucleusState.Idle isTransitioningTo NucleusState.Disabled -> tween(
-                    durationMillis = 1000
+                    durationMillis = 500
                 )
                 NucleusState.Pressed isTransitioningTo NucleusState.Idle -> tween(
-                    durationMillis = 100
+                    durationMillis = 50
                 )
                 else -> snap()
             }
         }
     ) { state ->
         when (state) {
-            NucleusState.Disabled -> LocalContentColor.current.copy(alpha = 0.38f)
-            NucleusState.Pressed -> MaterialTheme.colorScheme.primaryFixedDim
+            NucleusState.Disabled -> Color.Black.copy(alpha = 0.6f)
+            NucleusState.Pressed -> imageCaptureModeColor
             NucleusState.Idle -> {
                 when (val uiState = currentUiState.value) {
-                    is CaptureButtonUiState.Available.Idle -> when (uiState.captureMode) {
+                    is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
                         CaptureMode.STANDARD -> imageCaptureModeColor
                         CaptureMode.IMAGE_ONLY -> imageCaptureModeColor
                         CaptureMode.VIDEO_ONLY ->
                             if (isPressed) recordingColor else imageCaptureModeColor
                     }
 
-                    is CaptureButtonUiState.Available.Recording -> recordingColor
+                    is CaptureButtonUiState.Enabled.Recording -> recordingColor
                     is CaptureButtonUiState.Unavailable -> Color.Transparent
                 }
             }
@@ -811,26 +857,9 @@ private fun CaptureButtonNucleus(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(centerShapeSize)
-                    .clip(CircleShape)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius))
                     .background(animatedColor)
             ) {}
-        }
-        // central "square" stop icon
-        AnimatedVisibility(
-            visible = currentUiState.value is
-                CaptureButtonUiState.Available.Recording.LockedRecording,
-            enter = scaleIn(initialScale = .5f) + fadeIn(),
-            exit = fadeOut()
-        ) {
-            val smallBoxSize = (captureButtonSize / 5f).dp
-            Canvas(modifier = Modifier) {
-                drawRoundRect(
-                    color = Color.White,
-                    topLeft = Offset(-smallBoxSize.toPx() / 2f, -smallBoxSize.toPx() / 2f),
-                    size = Size(smallBoxSize.toPx(), smallBoxSize.toPx()),
-                    cornerRadius = CornerRadius(smallBoxSize.toPx() * .15f)
-                )
-            }
         }
     }
 }
@@ -844,14 +873,16 @@ private fun CaptureButtonUnavailablePreview() {
 }
 
 @Composable
-private fun PreviewCaptureButton(
+internal fun PreviewCaptureButton(
     captureButtonUiState: CaptureButtonUiState,
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.Center,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
 ) {
     MaterialTheme(colorScheme = darkColorScheme()) {
-        CompositionLocalProvider(LocalContentColor provides Color.White) {
+        CompositionLocalProvider(
+            LocalContentColor provides Color.White
+        ) {
             Box(
                 modifier = modifier
                     .background(
@@ -875,14 +906,12 @@ private fun PreviewCaptureButton(
         }
     }
 }
-    }
-}
 
 @Preview
 @Composable
 private fun IdleStandardCaptureButtonPreview() {
     PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Available.Idle(CaptureMode.STANDARD)
+        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
     )
 }
 
@@ -935,62 +964,7 @@ private fun IdleVideoOnlyCaptureButtonDisabledPreview() {
     )
 }
 
-@Preview
-@Composable
-private fun IdleVideoOnlyCaptureButtonPreview() {
-    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.White) {
-        CaptureButtonNucleus(
-            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY),
-            isPressed = false,
-            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
-        )
-    }
-}
 
-@Preview
-@Composable
-private fun IdleStandardCaptureButtonDisabledPreview() {
-    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.Gray) {
-        CaptureButtonNucleus(
-            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
-                CaptureMode.STANDARD,
-                isEnabled = false
-            ),
-            isPressed = false,
-            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun IdleImageCaptureButtonDisabledPreview() {
-    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.Gray) {
-        CaptureButtonNucleus(
-            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
-                CaptureMode.IMAGE_ONLY,
-                isEnabled = false
-            ),
-            isPressed = false,
-            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun IdleVideoOnlyCaptureButtonDisabledPreview() {
-    CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.Gray) {
-        CaptureButtonNucleus(
-            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
-                CaptureMode.VIDEO_ONLY,
-                isEnabled = false
-            ),
-            isPressed = false,
-            captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
-        )
-    }
-}
 
 @Preview
 @Composable
@@ -1011,7 +985,7 @@ private fun PressedImageCaptureButtonPreview() {
                 color = Color.White
             ) {
                 CaptureButtonNucleus(
-                    captureButtonUiState = CaptureButtonUiState.Available.Idle(
+                    captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
                         CaptureMode.IMAGE_ONLY
                     ),
                     isPressed = true,
@@ -1027,7 +1001,7 @@ private fun PressedImageCaptureButtonPreview() {
 private fun LockSwitchUnlockedPressedRecordingPreview() {
     // box is here to account for the offset lock switch
     PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Available.Recording.PressedRecording,
+        captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording,
         modifier = Modifier.width(150.dp),
         contentAlignment = Alignment.CenterEnd
     )
@@ -1037,7 +1011,7 @@ private fun LockSwitchUnlockedPressedRecordingPreview() {
 @Composable
 private fun LockedRecordingPreview() {
     PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Available.Recording.LockedRecording
+        captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording
     )
 }
 
@@ -1058,7 +1032,7 @@ private fun LockSwitchLockedAtThresholdPressedRecordingPreview() {
         CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.White) {
             LockSwitchCaptureButtonNucleus(
                 captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
-                captureButtonUiState = CaptureButtonUiState.Available.Recording.PressedRecording,
+                captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording,
                 switchWidth = (DEFAULT_CAPTURE_BUTTON_SIZE * LOCK_SWITCH_WIDTH_SCALE).dp,
                 switchPosition = MINIMUM_LOCK_THRESHOLD,
                 onToggleSwitchPosition = {},
@@ -1086,7 +1060,7 @@ private fun LockSwitchLockedPressedRecordingPreview() {
         CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.White) {
             LockSwitchCaptureButtonNucleus(
                 captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
-                captureButtonUiState = CaptureButtonUiState.Available.Recording.PressedRecording,
+                captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording,
                 switchWidth = (DEFAULT_CAPTURE_BUTTON_SIZE * LOCK_SWITCH_WIDTH_SCALE).dp,
                 switchPosition = 1f,
                 onToggleSwitchPosition = {},
