@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.espresso.accessibility.AccessibilityChecks
@@ -126,5 +127,43 @@ class CaptureButtonTest {
         ).assertContentDescriptionEquals("Stop Video Recording")
         composeTestRule.onNodeWithTag("CaptureButtonLocked", useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+    }
+
+    @Test
+    fun captureButton_pressedRecording_exists() {
+        composeTestRule.setContent {
+            CaptureButton(
+                modifier = Modifier.testTag("CaptureButtonPressedRecording"),
+                onImageCapture = {},
+                onStartRecording = {},
+                onStopRecording = {},
+                onLockVideoRecording = {},
+                onIncrementZoom = {},
+                captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording
+            )
+        }
+        composeTestRule.onNodeWithTag("CaptureButtonPressedRecording").assertExists()
+        composeTestRule.onNodeWithTag(
+            "CaptureButtonPressedRecording"
+        ).assertContentDescriptionEquals("Recording Video")
+        composeTestRule.onNodeWithTag("CaptureButtonPressedRecording", useUnmergedTree = true)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+    }
+
+    @Test
+    fun captureButton_disabled_exists() {
+        composeTestRule.setContent {
+            CaptureButton(
+                modifier = Modifier.testTag("CaptureButtonDisabled"),
+                onImageCapture = {},
+                onStartRecording = {},
+                onStopRecording = {},
+                onLockVideoRecording = {},
+                onIncrementZoom = {},
+                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD, isEnabled = false)
+            )
+        }
+        composeTestRule.onNodeWithTag("CaptureButtonDisabled").assertExists()
+        composeTestRule.onNodeWithTag("CaptureButtonDisabled").assert(androidx.compose.ui.test.isNotEnabled())
     }
 }
