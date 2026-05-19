@@ -104,6 +104,8 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.espresso.accessibility)
+    androidTestImplementation(libs.compose.accessibility)
+    androidTestImplementation(libs.accessibility.test.framework)
 
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))

@@ -88,6 +88,8 @@ camera-video = { module = "androidx.camera:camera-video", version.ref = "android
 camera-compose = { module = "androidx.camera:camera-compose", version.ref = "androidxCamera" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-junit = { module = "androidx.compose.ui:ui-test-junit4" }
+compose-accessibility = { module = "androidx.compose.ui:ui-test-junit4-accessibility", version = "1.8.0-beta03" }
+accessibility-test-framework = { module = "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework", version = "4.1.1" }
 compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "composeMaterial" }
 compose-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 screenshot-validation-api = { module = "com.android.tools.screenshot:screenshot-validation-api", version.ref = "composeScreenshot" }

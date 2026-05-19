@@ -23,10 +23,17 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.isNotEnabled
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.tryPerformAccessibilityChecks
+import androidx.activity.ComponentActivity
 import androidx.test.espresso.accessibility.AccessibilityChecks
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult
+import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
+import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import org.junit.Before
@@ -37,11 +44,15 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CaptureButtonTest {
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     @Before
     fun setUp() {
-        AccessibilityChecks.enable()
+        composeTestRule.enableAccessibilityChecks(
+            AccessibilityValidator().setRunChecksFromRootView(true).also {
+                it.setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
+            }
+        )
     }
 
     @Test
@@ -64,6 +75,7 @@ class CaptureButtonTest {
         ).assertContentDescriptionEquals("Capture Photo")
         composeTestRule.onNodeWithTag("CaptureButtonTestTag", useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
     @Test
