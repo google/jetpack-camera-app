@@ -87,6 +87,10 @@ When reviewing a pull request, focus on the following key areas:
     *   **Apply Proper Semantics:** When building custom UI components from the ground up (e.g., a custom button made of an `Icon` and a `Text`), apply the correct semantics to ensure they are accessible.
         *   Use `semantics { role = Role.Button }` (or `Role.Checkbox`, etc.) to define the component's logical purpose for screen readers.
         *   For components made of multiple parts that should be read as a single, coherent unit, use `semantics { mergeDescendants = true }`. This prevents screen readers from announcing inner elements (like an icon and its text label) as separate, unrelated items.
+        *   **Content vs State Descriptions:**
+            *   Use `contentDescription` to describe the **identity** or **action** of the component (e.g., "Capture Photo", "Start Video Recording").
+            *   Use `stateDescription` to describe the **current state** of the component (e.g., "Locked", "Selected").
+            *   **Avoid Redundancy:** Do not include state information or control type in `contentDescription` (e.g., avoid "Locked Video Button" or "Shutter Button"). Let the system announce role and state automatically.
 
 ## Rules for Providing Feedback
 * **Be Constructive:** Frame feedback as suggestions, not commands. Explain the reasoning ("why") behind each comment.
