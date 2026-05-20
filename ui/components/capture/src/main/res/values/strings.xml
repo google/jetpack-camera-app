@@ -141,4 +141,11 @@
 
     <!-- ImageWell -->
     <string name="image_well_content_description">View recently saved media</string>
+
+    <!-- Capture Button -->
+    <string name="capture_button_capture_photo">Capture Photo</string>
+    <string name="capture_button_start_video_recording">Start Video Recording</string>
+    <string name="capture_button_recording_video">Recording Video</string>
+    <string name="capture_button_stop_video_recording">Stop Video Recording</string>
+    <string name="capture_button_unavailable">Capture Button Unavailable</string>
 </resources>

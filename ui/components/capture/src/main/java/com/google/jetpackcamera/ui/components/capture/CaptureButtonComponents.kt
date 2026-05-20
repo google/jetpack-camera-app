@@ -74,6 +74,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
@@ -523,6 +524,12 @@ private fun CaptureButton(
     } else {
         Modifier
     }
+    val capturePhotoDesc = stringResource(R.string.capture_button_capture_photo)
+    val startVideoDesc = stringResource(R.string.capture_button_start_video_recording)
+    val recordingVideoDesc = stringResource(R.string.capture_button_recording_video)
+    val stopVideoDesc = stringResource(R.string.capture_button_stop_video_recording)
+    val unavailableDesc = stringResource(R.string.capture_button_unavailable)
+
     CaptureButtonRing(
         modifier = modifier
             .onSizeChanged {
@@ -536,13 +543,13 @@ private fun CaptureButton(
                 }
                 contentDescription = when (val uiState = captureButtonUiState) {
                     is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
-                        CaptureMode.STANDARD -> "Capture Photo"
-                        CaptureMode.IMAGE_ONLY -> "Capture Photo"
-                        CaptureMode.VIDEO_ONLY -> "Start Video Recording"
+                        CaptureMode.STANDARD -> capturePhotoDesc
+                        CaptureMode.IMAGE_ONLY -> capturePhotoDesc
+                        CaptureMode.VIDEO_ONLY -> startVideoDesc
                     }
-                    CaptureButtonUiState.Enabled.Recording.PressedRecording -> "Recording Video"
-                    CaptureButtonUiState.Enabled.Recording.LockedRecording -> "Stop Video Recording"
-                    CaptureButtonUiState.Unavailable -> "Capture Button Unavailable"
+                    CaptureButtonUiState.Enabled.Recording.PressedRecording -> recordingVideoDesc
+                    CaptureButtonUiState.Enabled.Recording.LockedRecording -> stopVideoDesc
+                    CaptureButtonUiState.Unavailable -> unavailableDesc
                 }
             }
             .focusable()
