@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -23,15 +24,12 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.isNotEnabled
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
-import androidx.activity.ComponentActivity
-import androidx.test.espresso.accessibility.AccessibilityChecks
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.jetpackcamera.model.CaptureMode
@@ -176,11 +174,16 @@ class CaptureButtonTest {
                 onStopRecording = {},
                 onLockVideoRecording = {},
                 onIncrementZoom = {},
-                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD, isEnabled = false)
+                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
+                    CaptureMode.STANDARD,
+                    isEnabled = false
+                )
             )
         }
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
         composeTestRule.onNodeWithTag("CaptureButtonDisabled").assertExists()
-        composeTestRule.onNodeWithTag("CaptureButtonDisabled").assert(androidx.compose.ui.test.isNotEnabled())
+        composeTestRule.onNodeWithTag(
+            "CaptureButtonDisabled"
+        ).assert(androidx.compose.ui.test.isNotEnabled())
     }
 }

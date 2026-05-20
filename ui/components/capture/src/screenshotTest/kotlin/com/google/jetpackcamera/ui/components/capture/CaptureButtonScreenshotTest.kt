@@ -16,15 +16,21 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.android.tools.screenshot.PreviewTest
-import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 
 // --- Standard Mode ---
@@ -33,9 +39,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 @Preview
 @Composable
 fun IdleStandardCaptureButtonScreenshotPreview() {
-    PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
-    )
+    IdleStandardCaptureButtonPreview()
 }
 
 @PreviewTest
@@ -43,9 +47,7 @@ fun IdleStandardCaptureButtonScreenshotPreview() {
 @Composable
 fun IdleStandardCaptureButtonBlack60ScreenshotPreview() {
     CompositionLocalProvider(LocalShutterBackgroundStyle provides ShutterBackgroundStyle.BLACK_60) {
-        PreviewCaptureButton(
-            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
-        )
+        IdleStandardCaptureButtonPreview()
     }
 }
 
@@ -53,12 +55,7 @@ fun IdleStandardCaptureButtonBlack60ScreenshotPreview() {
 @Preview
 @Composable
 fun DisabledStandardCaptureButtonScreenshotPreview() {
-    PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
-            CaptureMode.STANDARD,
-            isEnabled = false
-        )
-    )
+    IdleStandardCaptureButtonDisabledPreview()
 }
 
 @PreviewTest
@@ -66,12 +63,7 @@ fun DisabledStandardCaptureButtonScreenshotPreview() {
 @Composable
 fun DisabledStandardCaptureButtonBlack60ScreenshotPreview() {
     CompositionLocalProvider(LocalShutterBackgroundStyle provides ShutterBackgroundStyle.BLACK_60) {
-        PreviewCaptureButton(
-            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
-                CaptureMode.STANDARD,
-                isEnabled = false
-            )
-        )
+        IdleStandardCaptureButtonDisabledPreview()
     }
 }
 
@@ -79,26 +71,26 @@ fun DisabledStandardCaptureButtonBlack60ScreenshotPreview() {
 @Preview
 @Composable
 fun PressedStandardCaptureButtonScreenshotPreview() {
-    androidx.compose.material3.MaterialTheme(colorScheme = androidx.compose.material3.darkColorScheme()) {
-        androidx.compose.foundation.layout.Box(
-            modifier = androidx.compose.ui.Modifier
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(
+            modifier = Modifier
                 .background(
-                    androidx.compose.ui.graphics.Brush.verticalGradient(
-                        colors = listOf(androidx.compose.ui.graphics.Color.Gray, androidx.compose.ui.graphics.Color.DarkGray)
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Gray, Color.DarkGray)
                     )
                 ),
-            contentAlignment = androidx.compose.ui.Alignment.Center
+            contentAlignment = Alignment.Center
         ) {
             CaptureButtonRing(
                 captureButtonSize = 76f,
-                color = androidx.compose.ui.graphics.Color.White
+                color = Color.White
             ) {
-                androidx.compose.foundation.layout.Box(
-                    contentAlignment = androidx.compose.ui.Alignment.Center,
-                    modifier = androidx.compose.ui.Modifier
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
                         .size((76f * 0.93f).dp)
                         .clip(CircleShape)
-                        .background(androidx.compose.ui.graphics.Color.White)
+                        .background(Color.White)
                 ) {}
             }
         }
@@ -110,26 +102,26 @@ fun PressedStandardCaptureButtonScreenshotPreview() {
 @Composable
 fun PressedStandardCaptureButtonBlack60ScreenshotPreview() {
     CompositionLocalProvider(LocalShutterBackgroundStyle provides ShutterBackgroundStyle.BLACK_60) {
-        androidx.compose.material3.MaterialTheme(colorScheme = androidx.compose.material3.darkColorScheme()) {
-            androidx.compose.foundation.layout.Box(
-                modifier = androidx.compose.ui.Modifier
+        MaterialTheme(colorScheme = darkColorScheme()) {
+            Box(
+                modifier = Modifier
                     .background(
-                        androidx.compose.ui.graphics.Brush.verticalGradient(
-                            colors = listOf(androidx.compose.ui.graphics.Color.Gray, androidx.compose.ui.graphics.Color.DarkGray)
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Gray, Color.DarkGray)
                         )
                     ),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+                contentAlignment = Alignment.Center
             ) {
                 CaptureButtonRing(
                     captureButtonSize = 76f,
-                    color = androidx.compose.ui.graphics.Color.White
+                    color = Color.White
                 ) {
-                    androidx.compose.foundation.layout.Box(
-                        contentAlignment = androidx.compose.ui.Alignment.Center,
-                        modifier = androidx.compose.ui.Modifier
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
                             .size((76f * 0.93f).dp)
                             .clip(CircleShape)
-                            .background(androidx.compose.ui.graphics.Color.White)
+                            .background(Color.White)
                     ) {}
                 }
             }
@@ -143,9 +135,7 @@ fun PressedStandardCaptureButtonBlack60ScreenshotPreview() {
 @Preview
 @Composable
 fun IdleImageCaptureButtonScreenshotPreview() {
-    PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
-    )
+    IdleImageCaptureButtonPreview()
 }
 
 @PreviewTest
@@ -153,9 +143,7 @@ fun IdleImageCaptureButtonScreenshotPreview() {
 @Composable
 fun IdleImageCaptureButtonBlack60ScreenshotPreview() {
     CompositionLocalProvider(LocalShutterBackgroundStyle provides ShutterBackgroundStyle.BLACK_60) {
-        PreviewCaptureButton(
-            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
-        )
+        IdleImageCaptureButtonPreview()
     }
 }
 
@@ -163,12 +151,7 @@ fun IdleImageCaptureButtonBlack60ScreenshotPreview() {
 @Preview
 @Composable
 fun DisabledImageCaptureButtonScreenshotPreview() {
-    PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
-            CaptureMode.IMAGE_ONLY,
-            isEnabled = false
-        )
-    )
+    IdleImageCaptureButtonDisabledPreview()
 }
 
 @PreviewTest
@@ -176,12 +159,7 @@ fun DisabledImageCaptureButtonScreenshotPreview() {
 @Composable
 fun DisabledImageCaptureButtonBlack60ScreenshotPreview() {
     CompositionLocalProvider(LocalShutterBackgroundStyle provides ShutterBackgroundStyle.BLACK_60) {
-        PreviewCaptureButton(
-            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
-                CaptureMode.IMAGE_ONLY,
-                isEnabled = false
-            )
-        )
+        IdleImageCaptureButtonDisabledPreview()
     }
 }
 
@@ -189,26 +167,26 @@ fun DisabledImageCaptureButtonBlack60ScreenshotPreview() {
 @Preview
 @Composable
 fun PressedImageCaptureButtonScreenshotPreview() {
-    androidx.compose.material3.MaterialTheme(colorScheme = androidx.compose.material3.darkColorScheme()) {
-        androidx.compose.foundation.layout.Box(
-            modifier = androidx.compose.ui.Modifier
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(
+            modifier = Modifier
                 .background(
-                    androidx.compose.ui.graphics.Brush.verticalGradient(
-                        colors = listOf(androidx.compose.ui.graphics.Color.Gray, androidx.compose.ui.graphics.Color.DarkGray)
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Gray, Color.DarkGray)
                     )
                 ),
-            contentAlignment = androidx.compose.ui.Alignment.Center
+            contentAlignment = Alignment.Center
         ) {
             CaptureButtonRing(
                 captureButtonSize = 76f,
-                color = androidx.compose.ui.graphics.Color.Transparent
+                color = Color.Transparent
             ) {
-                androidx.compose.foundation.layout.Box(
-                    contentAlignment = androidx.compose.ui.Alignment.Center,
-                    modifier = androidx.compose.ui.Modifier
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
                         .size((76f * 0.93f).dp)
                         .clip(CircleShape)
-                        .background(androidx.compose.ui.graphics.Color.White)
+                        .background(Color.White)
                 ) {}
             }
         }
@@ -220,26 +198,26 @@ fun PressedImageCaptureButtonScreenshotPreview() {
 @Composable
 fun PressedImageCaptureButtonBlack60ScreenshotPreview() {
     CompositionLocalProvider(LocalShutterBackgroundStyle provides ShutterBackgroundStyle.BLACK_60) {
-        androidx.compose.material3.MaterialTheme(colorScheme = androidx.compose.material3.darkColorScheme()) {
-            androidx.compose.foundation.layout.Box(
-                modifier = androidx.compose.ui.Modifier
+        MaterialTheme(colorScheme = darkColorScheme()) {
+            Box(
+                modifier = Modifier
                     .background(
-                        androidx.compose.ui.graphics.Brush.verticalGradient(
-                            colors = listOf(androidx.compose.ui.graphics.Color.Gray, androidx.compose.ui.graphics.Color.DarkGray)
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Gray, Color.DarkGray)
                         )
                     ),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+                contentAlignment = Alignment.Center
             ) {
                 CaptureButtonRing(
                     captureButtonSize = 76f,
-                    color = androidx.compose.ui.graphics.Color.Transparent
+                    color = Color.Transparent
                 ) {
-                    androidx.compose.foundation.layout.Box(
-                        contentAlignment = androidx.compose.ui.Alignment.Center,
-                        modifier = androidx.compose.ui.Modifier
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
                             .size((76f * 0.93f).dp)
                             .clip(CircleShape)
-                            .background(androidx.compose.ui.graphics.Color.White)
+                            .background(Color.White)
                     ) {}
                 }
             }
@@ -253,9 +231,7 @@ fun PressedImageCaptureButtonBlack60ScreenshotPreview() {
 @Preview
 @Composable
 fun IdleVideoOnlyCaptureButtonScreenshotPreview() {
-    PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
-    )
+    IdleVideoOnlyCaptureButtonPreview()
 }
 
 @PreviewTest
@@ -263,9 +239,7 @@ fun IdleVideoOnlyCaptureButtonScreenshotPreview() {
 @Composable
 fun IdleVideoOnlyCaptureButtonBlack60ScreenshotPreview() {
     CompositionLocalProvider(LocalShutterBackgroundStyle provides ShutterBackgroundStyle.BLACK_60) {
-        PreviewCaptureButton(
-            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
-        )
+        IdleVideoOnlyCaptureButtonPreview()
     }
 }
 
@@ -273,12 +247,7 @@ fun IdleVideoOnlyCaptureButtonBlack60ScreenshotPreview() {
 @Preview
 @Composable
 fun DisabledVideoOnlyCaptureButtonScreenshotPreview() {
-    PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
-            CaptureMode.VIDEO_ONLY,
-            isEnabled = false
-        )
-    )
+    IdleVideoOnlyCaptureButtonDisabledPreview()
 }
 
 @PreviewTest
@@ -286,12 +255,7 @@ fun DisabledVideoOnlyCaptureButtonScreenshotPreview() {
 @Composable
 fun DisabledVideoOnlyCaptureButtonBlack60ScreenshotPreview() {
     CompositionLocalProvider(LocalShutterBackgroundStyle provides ShutterBackgroundStyle.BLACK_60) {
-        PreviewCaptureButton(
-            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
-                CaptureMode.VIDEO_ONLY,
-                isEnabled = false
-            )
-        )
+        IdleVideoOnlyCaptureButtonDisabledPreview()
     }
 }
 
@@ -310,9 +274,7 @@ fun PressedRecordingScreenshotPreview() {
 @Preview
 @Composable
 fun LockedRecordingScreenshotPreview() {
-    PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording
-    )
+    LockedRecordingPreview()
 }
 
 @PreviewTest
