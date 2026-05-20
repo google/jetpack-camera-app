@@ -102,6 +102,11 @@ private const val BORDER_WIDTH = 3f
 private const val ANIMATION_DURATION_SIZE = 250
 private const val ANIMATION_DURATION_COLOR = 150
 private const val ANIMATION_DURATION_NUCLEUS_RELEASE = 100
+private const val ANIMATION_DURATION_DISABLED = 500
+private const val ANIMATION_DURATION_NUCLEUS_PRESSED = 50
+private const val ALPHA_DISABLED_NUCLEUS = 0.6f
+private const val ALPHA_WHITE_20 = 0.2f
+private const val ALPHA_BLACK_60 = 0.6f
 
 private val LOCKED_CORNER_RADIUS = 8.dp
 
@@ -425,7 +430,10 @@ private fun CaptureButton(
             } -> LocalContentColor.current
             else -> Color.Transparent
         },
-        animationSpec = tween(durationMillis = if (isVisuallyDisabled) 500 else 150),
+        animationSpec = tween(
+            durationMillis =
+            if (isVisuallyDisabled) ANIMATION_DURATION_DISABLED else ANIMATION_DURATION_COLOR
+        ),
         label = "Capture Button Color"
     )
 
@@ -610,8 +618,8 @@ internal fun CaptureButtonRing(
 ) {
     val backgroundStyle = LocalShutterBackgroundStyle.current
     val targetBackgroundColor = when (backgroundStyle) {
-        ShutterBackgroundStyle.WHITE_20 -> Color.White.copy(alpha = 0.2f)
-        ShutterBackgroundStyle.BLACK_60 -> Color.Black.copy(alpha = 0.6f)
+        ShutterBackgroundStyle.WHITE_20 -> Color.White.copy(alpha = ALPHA_WHITE_20)
+        ShutterBackgroundStyle.BLACK_60 -> Color.Black.copy(alpha = ALPHA_BLACK_60)
     }
     val backgroundColor by animateColorAsState(
         targetValue = targetBackgroundColor,
@@ -868,20 +876,20 @@ internal fun CaptureButtonNucleus(
         transitionSpec = {
             when {
                 NucleusState.Disabled isTransitioningTo NucleusState.Idle -> tween(
-                    durationMillis = 150
+                    durationMillis = ANIMATION_DURATION_COLOR
                 )
                 NucleusState.Idle isTransitioningTo NucleusState.Disabled -> tween(
-                    durationMillis = 500
+                    durationMillis = ANIMATION_DURATION_DISABLED
                 )
                 NucleusState.Pressed isTransitioningTo NucleusState.Idle -> tween(
-                    durationMillis = 50
+                    durationMillis = ANIMATION_DURATION_NUCLEUS_PRESSED
                 )
                 else -> snap()
             }
         }
     ) { state ->
         when (state) {
-            NucleusState.Disabled -> Color.Black.copy(alpha = 0.6f)
+            NucleusState.Disabled -> Color.Black.copy(alpha = ALPHA_DISABLED_NUCLEUS)
             NucleusState.Pressed -> imageCaptureModeColor
             NucleusState.Idle -> {
                 when (val uiState = currentUiState.value) {
@@ -912,14 +920,6 @@ internal fun CaptureButtonNucleus(
             ) {}
         }
     }
-}
-
-@Preview
-@Composable
-internal fun CaptureButtonUnavailablePreview() {
-    PreviewCaptureButton(
-        captureButtonUiState = CaptureButtonUiState.Unavailable
-    )
 }
 
 @Composable
@@ -955,6 +955,14 @@ internal fun PreviewCaptureButton(
             }
         }
     }
+}
+
+@Preview
+@Composable
+internal fun CaptureButtonUnavailablePreview() {
+    PreviewCaptureButton(
+        captureButtonUiState = CaptureButtonUiState.Unavailable
+    )
 }
 
 @Preview
