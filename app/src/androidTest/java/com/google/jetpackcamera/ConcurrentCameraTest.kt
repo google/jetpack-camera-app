@@ -33,7 +33,13 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.R as SettingsR
+import com.google.jetpackcamera.settings.ui.BTN_DIALOG_FLASH_OPTION_LLB_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FPS_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
+import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
@@ -175,6 +181,47 @@ class ConcurrentCameraTest {
                 )
         }
     }
+
+    @Test
+    fun concurrentCameraMode_whenEnabled_disablesOtherSettingsInSettingsScreen() =
+        runConcurrentCameraScenarioTest {
+            with(composeTestRule) {
+                // Enable concurrent camera in settings
+                setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
+
+                // Visit settings screen
+                visitSettingsScreen {
+                    // 1. Assert Stream Config is disabled
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+
+                    // 2. Assert Video Stabilization is disabled
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+
+                    // 3. Assert Flash Low Light Boost option is disabled in dialog
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_FLASH_TAG)
+                        .assertExists()
+                        .assert(isEnabled())
+                        .performClick()
+
+                    onNodeWithTag(BTN_DIALOG_FLASH_OPTION_LLB_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+
+                    onNodeWithTag(CLOSE_BUTTON)
+                        .assertExists()
+                        .performClick()
+
+                    // 4. Assert FPS setting is disabled
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_FPS_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+                }
+            }
+        }
 
     @Test
     fun concurrentCameraMode_canRecordVideo() = runConcurrentCameraScenarioTest(

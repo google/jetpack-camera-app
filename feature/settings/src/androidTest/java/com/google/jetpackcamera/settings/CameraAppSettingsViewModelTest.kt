@@ -543,7 +543,7 @@ internal class CameraAppSettingsViewModelTest {
      * Concurrent Camera is enabled, locking the user to auto FPS.
      */
     @Test
-    fun fpsOptions_whenConcurrentCameraIsEnabled_areDisabled() = runTest(StandardTestDispatcher()) {
+    fun fps_whenConcurrentCameraIsEnabled_isDisabled() = runTest(StandardTestDispatcher()) {
         // Set ConcurrentCameraMode to DUAL first
         testDataStore.updateData {
             it.toBuilder()
@@ -569,30 +569,10 @@ internal class CameraAppSettingsViewModelTest {
         val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
         val enabledState = assertIsEnabled(uiState)
 
-        val fpsState = enabledState.fpsUiState as FpsUiState.Enabled
-        // 15, 30, 60 should be disabled
-        assertThat(
-            fpsState.fpsFifteenState
-        ).isInstanceOf(SingleSelectableState.Disabled::class.java)
-        assertThat(
-            (fpsState.fpsFifteenState as SingleSelectableState.Disabled).disabledRationale
-        ).isInstanceOf(
-            DisabledRationale.ConcurrentCameraEnabledRationale::class.java
-        )
-
-        assertThat(fpsState.fpsThirtyState).isInstanceOf(SingleSelectableState.Disabled::class.java)
-        assertThat(
-            (fpsState.fpsThirtyState as SingleSelectableState.Disabled).disabledRationale
-        ).isInstanceOf(
-            DisabledRationale.ConcurrentCameraEnabledRationale::class.java
-        )
-
-        assertThat(fpsState.fpsSixtyState).isInstanceOf(SingleSelectableState.Disabled::class.java)
-        assertThat(
-            (fpsState.fpsSixtyState as SingleSelectableState.Disabled).disabledRationale
-        ).isInstanceOf(
-            DisabledRationale.ConcurrentCameraEnabledRationale::class.java
-        )
+        assertThat(enabledState.fpsUiState).isInstanceOf(FpsUiState.Disabled::class.java)
+        val disabledState = enabledState.fpsUiState as FpsUiState.Disabled
+        assertThat(disabledState.disabledRationale)
+            .isInstanceOf(DisabledRationale.ConcurrentCameraEnabledRationale::class.java)
     }
 }
 

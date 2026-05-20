@@ -550,6 +550,14 @@ class SettingsViewModel @Inject constructor(
             )
         }
 
+        if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+            return FpsUiState.Disabled(
+                DisabledRationale.ConcurrentCameraEnabledRationale(
+                    R.string.fps_rationale_prefix
+                )
+            )
+        }
+
         val currentLensConstraints = checkNotNull(
             systemConstraints.forCurrentLens(cameraAppSettings)
         ) {
@@ -559,22 +567,12 @@ class SettingsViewModel @Inject constructor(
         with(currentLensConstraints) {
             // provide selectable states for each of the fps options
             fpsOptions.forEach { fpsOption ->
-                val isConcurrentDual =
-                    cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
-                val fpsUiState = if (isConcurrentDual) {
-                    SingleSelectableState.Disabled(
-                        DisabledRationale.ConcurrentCameraEnabledRationale(
-                            R.string.fps_rationale_prefix
-                        )
-                    )
-                } else {
-                    isFpsOptionEnabled(
-                        fpsOption = fpsOption,
-                        defaultLensFacing = cameraAppSettings.cameraLensFacing,
-                        deviceSupportedFrameRates = deviceSupportedFrameRates,
-                        stabilizationMode = cameraAppSettings.stabilizationMode
-                    )
-                }
+                val fpsUiState = isFpsOptionEnabled(
+                    fpsOption = fpsOption,
+                    defaultLensFacing = cameraAppSettings.cameraLensFacing,
+                    deviceSupportedFrameRates = deviceSupportedFrameRates,
+                    stabilizationMode = cameraAppSettings.stabilizationMode
+                )
                 if (fpsUiState is SingleSelectableState.Disabled) {
                     Log.d(
                         TAG,
