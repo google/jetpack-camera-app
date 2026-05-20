@@ -52,6 +52,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -385,8 +386,9 @@ private fun CaptureButton(
     captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
 ) {
-    var isCaptureButtonPressed by remember {
-        mutableStateOf(false)
+    val initialPressed = LocalInitialPressedState.current
+    var isCaptureButtonPressed by remember(initialPressed) {
+        mutableStateOf(initialPressed)
     }
 
     var switchPosition by remember {
@@ -570,14 +572,26 @@ private fun CaptureButton(
     }
 }
 
+/**
+ * Enum representing the background style of the shutter button.
+ */
 enum class ShutterBackgroundStyle {
     WHITE_20,
     BLACK_60
 }
 
-val LocalShutterBackgroundStyle = androidx.compose.runtime.compositionLocalOf {
+/**
+ * CompositionLocal to provide the [ShutterBackgroundStyle] to the capture button.
+ */
+val LocalShutterBackgroundStyle = compositionLocalOf {
     ShutterBackgroundStyle.WHITE_20
 }
+
+/**
+ * CompositionLocal to provide the initial pressed state of the capture button.
+ * This is primarily used for previews and screenshot tests to force the pressed state.
+ */
+internal val LocalInitialPressedState = compositionLocalOf { false }
 
 @Composable
 internal fun CaptureButtonRing(
@@ -905,7 +919,7 @@ internal fun CaptureButtonUnavailablePreview() {
 internal fun PreviewCaptureButton(
     captureButtonUiState: CaptureButtonUiState,
     modifier: Modifier = Modifier,
-    contentAlignment: Alignment = Alignment.Center,
+    contentAlignment: Alignment = Alignment.CenterEnd,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
 ) {
     MaterialTheme(colorScheme = darkColorScheme()) {
@@ -996,30 +1010,10 @@ internal fun IdleVideoOnlyCaptureButtonDisabledPreview() {
 @Preview
 @Composable
 internal fun PressedImageCaptureButtonPreview() {
-    // Manually constructed preview to verify visual state without relying on interaction source
-    MaterialTheme(colorScheme = darkColorScheme()) {
-        Box(
-            modifier = Modifier
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color.Gray, Color.DarkGray)
-                    )
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            CaptureButtonRing(
-                captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
-                color = Color.Transparent
-            ) {
-                CaptureButtonNucleus(
-                    captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
-                        CaptureMode.IMAGE_ONLY
-                    ),
-                    isPressed = true,
-                    captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE
-                )
-            }
-        }
+    CompositionLocalProvider(LocalInitialPressedState provides true) {
+        PreviewCaptureButton(
+            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
+        )
     }
 }
 
