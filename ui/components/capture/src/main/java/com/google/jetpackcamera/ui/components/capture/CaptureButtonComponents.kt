@@ -1003,7 +1003,7 @@ private fun PressedImageCaptureButtonPreview() {
         ) {
             CaptureButtonRing(
                 captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
-                color = Color.White
+                color = Color.Transparent
             ) {
                 CaptureButtonNucleus(
                     captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
@@ -1050,7 +1050,7 @@ private fun LockSwitchLockedAtThresholdPressedRecordingPreview() {
             ),
         contentAlignment = Alignment.CenterEnd
     ) {
-        CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.White) {
+        CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.Transparent) {
             LockSwitchCaptureButtonNucleus(
                 captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
                 captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording,
@@ -1078,7 +1078,7 @@ private fun LockSwitchLockedPressedRecordingPreview() {
             ),
         contentAlignment = Alignment.CenterEnd
     ) {
-        CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.White) {
+        CaptureButtonRing(captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE, color = Color.Transparent) {
             LockSwitchCaptureButtonNucleus(
                 captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
                 captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording,
