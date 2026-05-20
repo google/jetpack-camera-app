@@ -29,6 +29,8 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.requiredSizeIn
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -644,7 +646,7 @@ private fun LockSwitchCaptureButtonNucleus(
         Box(
             contentAlignment = Alignment.CenterStart,
             modifier = Modifier
-                .width(switchWidth)
+                .width(switchWidth + 4.dp)
                 .height(switchHeight)
                 .offset(x = -(switchWidth - pressedNucleusSize) / 2)
         ) {
@@ -688,23 +690,30 @@ private fun LockSwitchCaptureButtonNucleus(
             enter = fadeIn(),
             exit = ExitTransition.None
         ) {
-            Icon(
+            Box(
                 modifier = Modifier
-                    .size(switchHeight * .75f)
                     .align(Alignment.CenterStart)
                     .padding(start = 8.dp)
                     .offset(x = -(switchWidth - pressedNucleusSize))
-                    .clickable(indication = null, interactionSource = null) {
-                        onToggleSwitchPosition()
+                    .size(32.dp)
+                    .semantics { contentDescription = "Lock Video Recording" }
+                    .pointerInput(Unit) {
+                        detectTapGestures {
+                            onToggleSwitchPosition()
+                        }
+                    }
+            ) {
+                Icon(
+                    modifier = Modifier.size(switchHeight * .75f).align(Alignment.Center),
+                    tint = Color.White,
+                    painter = if (shouldBeLocked()) {
+                        painterResource(R.drawable.ic_lock)
+                    } else {
+                        painterResource(R.drawable.ic_lock_open)
                     },
-                tint = Color.White,
-                painter = if (shouldBeLocked()) {
-                    painterResource(R.drawable.ic_lock)
-                } else {
-                    painterResource(R.drawable.ic_lock_open)
-                },
-                contentDescription = null
-            )
+                    contentDescription = null
+                )
+            }
         }
     }
 }

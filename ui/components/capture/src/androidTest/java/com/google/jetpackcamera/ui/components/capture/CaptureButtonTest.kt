@@ -91,6 +91,7 @@ class CaptureButtonTest {
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
             )
         }
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
         composeTestRule.onNodeWithTag("CaptureButtonImageOnly").assertExists()
         composeTestRule.onNodeWithTag(
             "CaptureButtonImageOnly"
@@ -112,6 +113,7 @@ class CaptureButtonTest {
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
             )
         }
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
         composeTestRule.onNodeWithTag("CaptureButtonVideoOnly").assertExists()
         composeTestRule.onNodeWithTag(
             "CaptureButtonVideoOnly"
@@ -133,6 +135,7 @@ class CaptureButtonTest {
                 captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording
             )
         }
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
         composeTestRule.onNodeWithTag("CaptureButtonLocked").assertExists()
         composeTestRule.onNodeWithTag(
             "CaptureButtonLocked"
@@ -154,6 +157,7 @@ class CaptureButtonTest {
                 captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording
             )
         }
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
         composeTestRule.onNodeWithTag("CaptureButtonPressedRecording").assertExists()
         composeTestRule.onNodeWithTag(
             "CaptureButtonPressedRecording"
@@ -175,6 +179,7 @@ class CaptureButtonTest {
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD, isEnabled = false)
             )
         }
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
         composeTestRule.onNodeWithTag("CaptureButtonDisabled").assertExists()
         composeTestRule.onNodeWithTag("CaptureButtonDisabled").assert(androidx.compose.ui.test.isNotEnabled())
     }
