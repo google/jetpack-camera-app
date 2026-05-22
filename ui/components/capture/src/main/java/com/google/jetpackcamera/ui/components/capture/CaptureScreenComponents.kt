@@ -62,6 +62,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -131,8 +132,11 @@ private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
  * @param formattedTimeProvider a provider for the formatted time string.
  */
 @Composable
-fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
-    val formattedTime = when (elapsedTimeUiState) {
+fun ElapsedTimeText(
+    modifier: Modifier = Modifier,
+    formattedTimeProvider: () -> ElapsedTimeUiState
+) {
+    val formattedTime = when (val elapsedTimeUiState = formattedTimeProvider()) {
         is ElapsedTimeUiState.Enabled -> {
             elapsedTimeUiState.elapsedTimeNanos.nanoseconds
                 .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) }
@@ -144,7 +148,7 @@ fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTi
             modifier = modifier,
             text = formattedTime,
             textAlign = TextAlign.Center,
-            style = androidx.compose.material3.LocalTextStyle.current.copy(
+            style = LocalTextStyle.current.copy(
                 fontFeatureSettings = "tnum"
             )
         )

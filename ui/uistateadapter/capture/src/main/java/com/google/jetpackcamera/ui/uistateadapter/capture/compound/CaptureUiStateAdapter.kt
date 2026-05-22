@@ -190,6 +190,7 @@ internal fun roundVideoRecordingState(
     timePrecision: TimeUnit
 ): VideoRecordingState {
     if (videoRecordingState !is VideoRecordingState.Active) return videoRecordingState
+    if (timePrecision == TimeUnit.NANOSECONDS) return videoRecordingState
 
     val stepNanos = timePrecision.toNanos(1)
     val roundedNanos = (videoRecordingState.elapsedTimeNanos / stepNanos) * stepNanos

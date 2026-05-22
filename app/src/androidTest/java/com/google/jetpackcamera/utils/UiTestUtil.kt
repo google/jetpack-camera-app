@@ -79,12 +79,7 @@ internal val compatMainActivityExtras: Bundle?
             extras.putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
         }
 
-        val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
-        val args = TestStorage(resolver).getInputArgs()
-        val disableAnimations = args["disable_animations"]?.toBoolean() ?: false
-        if (disableAnimations) {
-            extras.putBoolean("KEY_DISABLE_ANIMATIONS", true)
-        }
+
 
         return extras.takeIf { !it.isEmpty() }
     }
