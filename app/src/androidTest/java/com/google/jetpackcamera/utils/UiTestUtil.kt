@@ -32,6 +32,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import androidx.test.services.storage.TestStorage
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
@@ -64,15 +65,23 @@ val isEmulatorWithFakeFrontCamera: Boolean
         (Build.VERSION.SDK_INT == 28 || Build.VERSION.SDK_INT == 34)
 
 val compatMainActivityExtras: Bundle?
-    get() = if (isEmulatorWithFakeFrontCamera) {
-        // The GMD API 28 and 34 emulators' PackageInfo reports it has front and back cameras, but
-        // GMD is only configured for a back camera. This causes CameraX to take a long time
-        // to initialize. Set the device to use single lens mode to work around this issue.
-        Bundle().apply {
-            putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
+    get() {
+        val extras = Bundle()
+        if (isEmulatorWithFakeFrontCamera) {
+            // The GMD API 28 and 34 emulators' PackageInfo reports it has front and back cameras, but
+            // GMD is only configured for a back camera. This causes CameraX to take a long time
+            // to initialize. Set the device to use single lens mode to work around this issue.
+            extras.putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
         }
-    } else {
-        null
+
+        val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
+        val args = TestStorage(resolver).getInputArgs()
+        val disableAnimations = args["disable_animations"]?.toBoolean() ?: false
+        if (disableAnimations) {
+            extras.putBoolean("KEY_DISABLE_ANIMATIONS", true)
+        }
+
+        return if (extras.size() == 0) null else extras
     }
 
 val debugExtra: Bundle = Bundle().apply { putBoolean("KEY_DEBUG_MODE", true) }
@@ -176,10 +185,20 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     }
 }
 
+/**
+ * Runs a test scenario for [MainActivity] with optional extras, properly merging them with
+ * compatibility extras required for emulators.
+ *
+ * @param extras Optional bundle of extras to pass to the activity.
+ * @param block The test block to execute within the scenario.
+ */
 inline fun runMainActivityScenarioTest(
     extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
-) = runScenarioTest<MainActivity>(extras ?: compatMainActivityExtras, block)
+) {
+    val activityExtras = compatMainActivityExtras?.apply { extras?.let { putAll(it) } } ?: extras
+    runScenarioTest<MainActivity>(activityExtras, block)
+}
 
 inline fun <reified T : Activity> runScenarioTest(
     activityExtras: Bundle? = null,
@@ -205,6 +224,15 @@ inline fun <reified T : Activity> runScenarioTest(
     }
 }
 
+/**
+ * Runs a test scenario for [MainActivity] expecting a result, properly merging optional extras
+ * with compatibility extras required for emulators.
+ *
+ * @param intent The intent to launch the activity with.
+ * @param extras Optional bundle of extras to merge with the intent.
+ * @param block The test block to execute within the scenario.
+ * @return The [Instrumentation.ActivityResult] containing result code and data.
+ */
 inline fun runMainActivityScenarioTestForResult(
     intent: Intent,
     extras: Bundle? = null,
