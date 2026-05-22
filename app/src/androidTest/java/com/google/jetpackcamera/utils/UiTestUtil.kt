@@ -90,7 +90,7 @@ internal val compatMainActivityExtras: Bundle?
  * @param extras The extras to merge with the compat extras.
  * @return The merged bundle, or null if there are no extras.
  */
-internal fun mergeWithCompatExtras(extras: Bundle?): Bundle? {
+fun mergeWithCompatExtras(extras: Bundle?): Bundle? {
     return compatMainActivityExtras?.apply { extras?.let { putAll(it) } } ?: extras
 }
 
