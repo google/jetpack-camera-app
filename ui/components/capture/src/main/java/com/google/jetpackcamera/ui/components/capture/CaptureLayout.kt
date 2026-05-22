@@ -95,7 +95,6 @@ fun PreviewLayout(
         buttonHeight > 0 &&
         viewfinderBottom > 0
 
-
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
