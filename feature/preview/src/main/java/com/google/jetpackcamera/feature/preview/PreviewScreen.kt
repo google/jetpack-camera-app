@@ -59,7 +59,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
-import kotlin.time.Duration.Companion.nanoseconds
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
@@ -112,10 +111,8 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
-import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
-import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.flow.transformWhile
@@ -196,148 +193,148 @@ fun PreviewScreen(
             )
         }
 
-            val context = LocalContext.current
-            LaunchedEffect(Unit) {
-                debouncedOrientationFlow(context).collect(
-                    viewModel.cameraController::setDisplayRotation
-                )
-            }
-            val scope = rememberCoroutineScope()
-            val zoomStateManager = remember {
-                // the initialZoomLevel must be fetched from the settings, not the cameraState.
-                // since we want to reset the ZoomState on flip, the zoomstate of the cameraState
-                // may not yet be congruent with the settings
+        val context = LocalContext.current
+        LaunchedEffect(Unit) {
+            debouncedOrientationFlow(context).collect(
+                viewModel.cameraController::setDisplayRotation
+            )
+        }
+        val scope = rememberCoroutineScope()
+        val zoomStateManager = remember {
+            // the initialZoomLevel must be fetched from the settings, not the cameraState.
+            // since we want to reset the ZoomState on flip, the zoomstate of the cameraState
+            // may not yet be congruent with the settings
 
-                ZoomStateManager(
-                    initialZoomLevel = (
-                        currentUiState.zoomControlUiState as?
-                            ZoomControlUiState.Enabled
-                        )
-                        ?.initialZoomRatio
-                        ?: 1f,
-                    zoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
-                        ?.primaryZoomRange
-                        ?: Range(1f, 1f),
-                    zoomController = viewModel.zoomController
-                )
-            }
+            ZoomStateManager(
+                initialZoomLevel = (
+                    currentUiState.zoomControlUiState as?
+                        ZoomControlUiState.Enabled
+                    )
+                    ?.initialZoomRatio
+                    ?: 1f,
+                zoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
+                    ?.primaryZoomRange
+                    ?: Range(1f, 1f),
+                zoomController = viewModel.zoomController
+            )
+        }
 
-            LaunchedEffect(
-                (currentUiState.flipLensUiState as? FlipLensUiState.Available)
-                    ?.selectedLensFacing
-            ) {
-                zoomStateManager.onChangeLens(
-                    newInitialZoomLevel = (
-                        currentUiState.zoomControlUiState as?
-                            ZoomControlUiState.Enabled
-                        )
-                        ?.initialZoomRatio
-                        ?: 1f,
-                    newZoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
-                        ?.primaryZoomRange
-                        ?: Range(1f, 1f)
-                )
-            }
-            // todo(kc) handle reset certain values after video recording is complete
-            LaunchedEffect(currentUiState.videoRecordingState) {
-                with(currentUiState.videoRecordingState) {
-                    when (this) {
-                        is VideoRecordingState.Starting -> {
-                            initialRecordingSettings = this.initialRecordingSettings
-                        }
+        LaunchedEffect(
+            (currentUiState.flipLensUiState as? FlipLensUiState.Available)
+                ?.selectedLensFacing
+        ) {
+            zoomStateManager.onChangeLens(
+                newInitialZoomLevel = (
+                    currentUiState.zoomControlUiState as?
+                        ZoomControlUiState.Enabled
+                    )
+                    ?.initialZoomRatio
+                    ?: 1f,
+                newZoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
+                    ?.primaryZoomRange
+                    ?: Range(1f, 1f)
+            )
+        }
+        // todo(kc) handle reset certain values after video recording is complete
+        LaunchedEffect(currentUiState.videoRecordingState) {
+            with(currentUiState.videoRecordingState) {
+                when (this) {
+                    is VideoRecordingState.Starting -> {
+                        initialRecordingSettings = this.initialRecordingSettings
+                    }
 
-                        is VideoRecordingState.Inactive -> {
-                            initialRecordingSettings?.let {
-                                val oldPrimaryLensFacing = it.lensFacing
-                                val oldZoomRatios = it.zoomRatios
-                                val oldAudioEnabled = it.isAudioEnabled
-                                Log.d(TAG, "reset pre recording settings")
-                                viewModel.captureController.setAudioEnabled(oldAudioEnabled)
-                                viewModel.quickSettingsController.setLensFacing(
-                                    oldPrimaryLensFacing
+                    is VideoRecordingState.Inactive -> {
+                        initialRecordingSettings?.let {
+                            val oldPrimaryLensFacing = it.lensFacing
+                            val oldZoomRatios = it.zoomRatios
+                            val oldAudioEnabled = it.isAudioEnabled
+                            Log.d(TAG, "reset pre recording settings")
+                            viewModel.captureController.setAudioEnabled(oldAudioEnabled)
+                            viewModel.quickSettingsController.setLensFacing(
+                                oldPrimaryLensFacing
+                            )
+                            zoomStateManager.apply {
+                                absoluteZoom(
+                                    targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing] ?: 1f,
+                                    lensToZoom = LensToZoom.PRIMARY
                                 )
-                                zoomStateManager.apply {
-                                    absoluteZoom(
-                                        targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing] ?: 1f,
-                                        lensToZoom = LensToZoom.PRIMARY
-                                    )
-                                    absoluteZoom(
-                                        targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing.flip()]
-                                            ?: 1f,
-                                        lensToZoom = LensToZoom.SECONDARY
-                                    )
-                                }
+                                absoluteZoom(
+                                    targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing.flip()]
+                                        ?: 1f,
+                                    lensToZoom = LensToZoom.SECONDARY
+                                )
                             }
-                            initialRecordingSettings = null
                         }
+                        initialRecordingSettings = null
+                    }
 
-                        is VideoRecordingState.Active -> {}
-                    }
-                }
-            }
-
-            ContentScreen(
-                modifier = modifier,
-                captureUiStateProvider = captureUiStateProvider,
-                surfaceRequest = surfaceRequest,
-                onNavigateToSettings = onNavigateToSettings,
-
-                onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
-                    scope.launch {
-                        zoomStateManager.absoluteZoom(
-                            zoomRatio,
-                            lensToZoom
-                        )
-                    }
-                },
-                onScaleZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
-                    scope.launch {
-                        zoomStateManager.scaleZoom(
-                            zoomRatio,
-                            lensToZoom
-                        )
-                    }
-                },
-                onAnimateZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
-                    scope.launch {
-                        zoomStateManager.animatedZoom(
-                            targetZoomLevel = zoomRatio,
-                            lensToZoom = lensToZoom
-                        )
-                    }
-                },
-                onIncrementZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
-                    scope.launch {
-                        zoomStateManager.incrementZoom(
-                            zoomRatio,
-                            lensToZoom
-                        )
-                    }
-                },
-                onRequestWindowColorMode = onRequestWindowColorMode,
-                onNavigatePostCapture = onNavigateToPostCapture,
-                debugUiState = debugUiState,
-                snackBarUiState = snackBarUiState,
-                debugController = viewModel.debugController,
-                snackBarController = viewModel.snackBarController,
-                quickSettingsController = viewModel.quickSettingsController,
-                captureController = viewModel.captureController,
-                imageWellController = viewModel.imageWellController,
-                cameraController = viewModel.cameraController,
-                screenFlashController = viewModel.screenFlashController
-            )
-            val readStoragePermission: PermissionState = rememberPermissionState(
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-
-            LaunchedEffect(readStoragePermission.status) {
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P ||
-                    readStoragePermission.status.isGranted
-                ) {
-                    viewModel.imageWellController.updateLastCapturedMedia()
+                    is VideoRecordingState.Active -> {}
                 }
             }
         }
+
+        ContentScreen(
+            modifier = modifier,
+            captureUiStateProvider = captureUiStateProvider,
+            surfaceRequest = surfaceRequest,
+            onNavigateToSettings = onNavigateToSettings,
+
+            onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                scope.launch {
+                    zoomStateManager.absoluteZoom(
+                        zoomRatio,
+                        lensToZoom
+                    )
+                }
+            },
+            onScaleZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                scope.launch {
+                    zoomStateManager.scaleZoom(
+                        zoomRatio,
+                        lensToZoom
+                    )
+                }
+            },
+            onAnimateZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                scope.launch {
+                    zoomStateManager.animatedZoom(
+                        targetZoomLevel = zoomRatio,
+                        lensToZoom = lensToZoom
+                    )
+                }
+            },
+            onIncrementZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
+                scope.launch {
+                    zoomStateManager.incrementZoom(
+                        zoomRatio,
+                        lensToZoom
+                    )
+                }
+            },
+            onRequestWindowColorMode = onRequestWindowColorMode,
+            onNavigatePostCapture = onNavigateToPostCapture,
+            debugUiState = debugUiState,
+            snackBarUiState = snackBarUiState,
+            debugController = viewModel.debugController,
+            snackBarController = viewModel.snackBarController,
+            quickSettingsController = viewModel.quickSettingsController,
+            captureController = viewModel.captureController,
+            imageWellController = viewModel.imageWellController,
+            cameraController = viewModel.cameraController,
+            screenFlashController = viewModel.screenFlashController
+        )
+        val readStoragePermission: PermissionState = rememberPermissionState(
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+
+        LaunchedEffect(readStoragePermission.status) {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P ||
+                readStoragePermission.status.isGranted
+            ) {
+                viewModel.imageWellController.updateLastCapturedMedia()
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -368,7 +365,8 @@ private fun ContentScreen(
             val readyState = captureUiStateProvider()
             if (readyState?.flipLensUiState is FlipLensUiState.Available) {
                 quickSettingsController?.setLensFacing(
-                    (readyState.flipLensUiState as FlipLensUiState.Available).selectedLensFacing.flip()
+                    (readyState.flipLensUiState as FlipLensUiState.Available)
+                        .selectedLensFacing.flip()
                 )
             }
         }
@@ -426,11 +424,20 @@ private fun ContentScreen(
         }
     }
 
-    val onTapToFocusLambda = cameraController?.let { it::tapToFocus } ?: remember { { _: Float, _: Float -> } }
+    val onTapToFocusLambda = cameraController?.let { it::tapToFocus }
+        ?: remember { { _: Float, _: Float -> } }
     val currentOnScaleZoom = rememberUpdatedState(onScaleZoom)
-    val onScaleZoomLambda = remember { { zoomRatio: Float -> currentOnScaleZoom.value(zoomRatio, LensToZoom.PRIMARY) } }
+    val onScaleZoomLambda = remember {
+        { zoomRatio: Float -> currentOnScaleZoom.value(zoomRatio, LensToZoom.PRIMARY) }
+    }
 
-    val viewfinderLambda = remember(onFlipCamera, onTapToFocusLambda, onScaleZoomLambda, surfaceRequest, onRequestWindowColorMode) {
+    val viewfinderLambda = remember(
+        onFlipCamera,
+        onTapToFocusLambda,
+        onScaleZoomLambda,
+        surfaceRequest,
+        onRequestWindowColorMode
+    ) {
         @Composable { modifier: Modifier ->
             val readyState = captureUiStateProvider()
             if (readyState != null) {
@@ -447,20 +454,28 @@ private fun ContentScreen(
         }
     }
 
-    val captureButtonLambda = remember(onIncrementZoom, quickSettingsController, captureController) {
+    val captureButtonLambda = remember(
+        onIncrementZoom,
+        quickSettingsController,
+        captureController
+    ) {
         @Composable { modifier: Modifier ->
             val readyState = captureUiStateProvider()
             if (readyState != null) {
                 val quickSettingsUiState = readyState.quickSettingsUiState
                 fun runCaptureAction(action: () -> Unit) {
-                    if ((quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true) {
+                    if ((quickSettingsUiState as? QuickSettingsUiState.Available)
+                            ?.quickSettingsIsOpen == true
+                    ) {
                         quickSettingsController?.toggleQuickSettings()
                     }
                     action()
                 }
                 CaptureButton(
                     captureButtonUiState = readyState.captureButtonUiState,
-                    isQuickSettingsOpen = (quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen ?: false,
+                    isQuickSettingsOpen =
+                    (quickSettingsUiState as? QuickSettingsUiState.Available)
+                        ?.quickSettingsIsOpen ?: false,
                     onCaptureImage = {
                         runCaptureAction {
                             captureController?.captureImage(it)
@@ -491,8 +506,10 @@ private fun ContentScreen(
                     modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
                     onClick = onFlipCamera,
                     flipLensUiState = readyState.flipLensUiState,
-                    enabledCondition = when (val flipLensUiState = readyState.flipLensUiState) {
-                        is FlipLensUiState.Available -> flipLensUiState.availableLensFacings.size > 1
+                    enabledCondition =
+                    when (val flipLensUiState = readyState.flipLensUiState) {
+                        is FlipLensUiState.Available ->
+                            flipLensUiState.availableLensFacings.size > 1
                         FlipLensUiState.Unavailable -> false
                     }
                 )
@@ -507,7 +524,9 @@ private fun ContentScreen(
                 Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
                     ZoomButtonRow(
                         zoomControlUiState = readyState.zoomControlUiState,
-                        onChangeZoom = { targetZoom -> onAnimateZoom(targetZoom, LensToZoom.PRIMARY) }
+                        onChangeZoom = { targetZoom ->
+                            onAnimateZoom(targetZoom, LensToZoom.PRIMARY)
+                        }
                     )
                 }
             }
@@ -523,7 +542,9 @@ private fun ContentScreen(
                     enter = fadeIn(),
                     exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
                 ) {
-                    val elapsedTimeModifier = remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
+                    val elapsedTimeModifier = remember(modifier) {
+                        modifier.testTag(ELAPSED_TIME_TAG)
+                    }
                     ElapsedTimeText(
                         modifier = elapsedTimeModifier,
                         elapsedTimeUiState = readyState.elapsedTimeUiState
@@ -545,7 +566,11 @@ private fun ContentScreen(
                     quickSettingsController?.let { quickSettingsController ->
                         ToggleQuickSettingsButton(
                             modifier = modifier,
-                            isOpen = (readyState.quickSettingsUiState as? QuickSettingsUiState.Available)?.quickSettingsIsOpen == true,
+                            isOpen = (
+                                readyState.quickSettingsUiState
+                                    as? QuickSettingsUiState.Available
+                                )
+                                ?.quickSettingsIsOpen == true,
                             quickSettingsController = quickSettingsController
                         )
                     }
@@ -680,16 +705,19 @@ private fun ContentScreen(
             val readyState = captureUiStateProvider()
             if (readyState != null) {
                 if (readyState.externalCaptureMode == ExternalCaptureMode.Standard) {
-                    (readyState.imageWellUiState as? ImageWellUiState.Content)?.let { contentState ->
-                        ImageWell(
-                            modifier = modifier,
-                            imageWellUiState = contentState,
-                            onClick = {
-                                imageWellController?.imageWellToRepository(contentState.mediaDescriptor)
-                                onNavigatePostCapture()
-                            }
-                        )
-                    }
+                    (readyState.imageWellUiState as? ImageWellUiState.Content)
+                        ?.let { contentState ->
+                            ImageWell(
+                                modifier = modifier,
+                                imageWellUiState = contentState,
+                                onClick = {
+                                    imageWellController?.imageWellToRepository(
+                                        contentState.mediaDescriptor
+                                    )
+                                    onNavigatePostCapture()
+                                }
+                            )
+                        }
                 }
             }
         }

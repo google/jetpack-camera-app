@@ -144,7 +144,9 @@ fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTi
             modifier = modifier,
             text = formattedTime,
             textAlign = TextAlign.Center,
-            style = androidx.compose.material3.LocalTextStyle.current.copy(fontFeatureSettings = "tnum")
+            style = androidx.compose.material3.LocalTextStyle.current.copy(
+                fontFeatureSettings = "tnum"
+            )
         )
     }
 }
