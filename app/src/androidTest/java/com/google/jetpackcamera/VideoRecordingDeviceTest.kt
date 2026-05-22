@@ -79,6 +79,7 @@ internal class VideoRecordingDeviceTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
+
         verifyVideoCaptureSuccess()
         deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, timeStamp)
     }

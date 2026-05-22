@@ -94,10 +94,7 @@ fun PreviewLayout(
     val isOverlapping = (viewfinderBottom - buttonTop) >= buttonHeight / 2 &&
         buttonHeight > 0 &&
         viewfinderBottom > 0
-    android.util.Log.d(
-        "PreviewLayout",
-        "buttonTop: $buttonTop, buttonBottom: $buttonBottom, viewfinderBottom: $viewfinderBottom, isOverlapping: $isOverlapping"
-    )
+
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

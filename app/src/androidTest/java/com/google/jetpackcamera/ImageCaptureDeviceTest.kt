@@ -92,6 +92,7 @@ internal class ImageCaptureDeviceTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
             .assertExists()
             .performClick()
+
         verifyImageCaptureSuccess()
     }
 
