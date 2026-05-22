@@ -20,7 +20,6 @@ import android.os.Build
 import android.util.Log
 import android.util.Range
 import androidx.camera.core.SurfaceRequest
-import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -110,6 +109,7 @@ import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
+import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
@@ -561,7 +561,8 @@ private fun ContentScreen(
                 ElapsedTimeText(
                     modifier = elapsedTimeModifier,
                     formattedTimeProvider = {
-                        captureUiStateProvider()?.elapsedTimeUiState ?: ElapsedTimeUiState.Unavailable
+                        captureUiStateProvider()?.elapsedTimeUiState
+                            ?: ElapsedTimeUiState.Unavailable
                     }
                 )
             }

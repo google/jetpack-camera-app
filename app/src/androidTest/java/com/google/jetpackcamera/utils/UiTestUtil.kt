@@ -32,7 +32,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import androidx.test.services.storage.TestStorage
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
@@ -78,8 +77,6 @@ internal val compatMainActivityExtras: Bundle?
             // to initialize. Set the device to use single lens mode to work around this issue.
             extras.putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
         }
-
-
 
         return extras.takeIf { !it.isEmpty() }
     }
