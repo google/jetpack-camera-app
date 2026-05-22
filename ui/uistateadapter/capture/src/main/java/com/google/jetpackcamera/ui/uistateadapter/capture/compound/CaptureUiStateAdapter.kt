@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -39,12 +40,11 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiStat
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
-import com.google.jetpackcamera.core.camera.VideoRecordingState
-import java.util.concurrent.TimeUnit
 
 /**
  * Creates a [Flow] of [CaptureUiState] by combining the latest values from various sources.
@@ -80,7 +80,8 @@ fun captureUiState(
         trackedCaptureUiState
     ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
         val videoRecordingState = cameraState.videoRecordingState
-        val roundedVideoRecordingState = roundVideoRecordingState(videoRecordingState, timePrecision)
+        val roundedVideoRecordingState =
+            roundVideoRecordingState(videoRecordingState, timePrecision)
         val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
 
         val captureModeUiState = CaptureModeUiState.from(
@@ -194,7 +195,11 @@ internal fun roundVideoRecordingState(
     val roundedNanos = (videoRecordingState.elapsedTimeNanos / stepNanos) * stepNanos
 
     return when (videoRecordingState) {
-        is VideoRecordingState.Active.Recording -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
-        is VideoRecordingState.Active.Paused -> videoRecordingState.copy(elapsedTimeNanos = roundedNanos)
+        is VideoRecordingState.Active.Recording -> videoRecordingState.copy(
+            elapsedTimeNanos = roundedNanos
+        )
+        is VideoRecordingState.Active.Paused -> videoRecordingState.copy(
+            elapsedTimeNanos = roundedNanos
+        )
     }
 }
