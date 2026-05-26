@@ -104,11 +104,10 @@ fun FlashModeUiState.Companion.from(
         if (currentLensSupportedFlashModes.contains(mode)) {
             displayableModes.add(SingleSelectableUiState.SelectableUi(mode)) // Enabled
         } else {
-            // todo(kc): add actual disabledreason for flash mode
             displayableModes.add(
                 SingleSelectableUiState.Disabled(
                     value = mode,
-                    disabledReason = DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
+                    disabledReason = DisabledReason.FLASH_UNSUPPORTED_ON_LENS
                 )
             ) // Disabled
         }

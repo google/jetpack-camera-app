@@ -44,6 +44,7 @@ const val HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG = "HdrImageUnsupportedOnMult
 const val HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG = "HdrVideoUnsupportedOnDeviceTag"
 const val HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG = "HdrVideoUnsupportedOnDeviceTag"
 const val HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG = "HdrSimultaneousImageVideoUnsupportedTag"
+const val FLASH_UNSUPPORTED_ON_LENS_TAG = "FlashUnsupportedOnLensTag"
 const val ZOOM_BUTTON_ROW_TAG = "ZoomButtonRowTag"
 const val ZOOM_BUTTON_MIN_TAG = "ZoomButtonMinTag"
 const val ZOOM_BUTTON_1_TAG = "ZoomButton1Tag"
