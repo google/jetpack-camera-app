@@ -137,7 +137,7 @@
     <string name="quick_settings_description_capture_mode_image_only">Image only capture</string>
 
     <!-- More Settings Text -->
-    <string name="quick_settings_more_text">More</string>
+    <string name="quick_settings_more_text">More Settings</string>
     <string name="quick_settings_more_description">Settings icon</string>
 
     <!-- ImageWell -->

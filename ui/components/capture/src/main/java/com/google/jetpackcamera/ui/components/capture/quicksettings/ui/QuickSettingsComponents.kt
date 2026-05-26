@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -153,14 +154,20 @@ fun ToggleQuickSettingsButton(
 /**
  * A button within the quick settings menu that will navigate to the default settings screen
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
-    TextButton(
-        modifier = modifier.testTag(SETTINGS_BUTTON),
-        onClick = onNavigateToSettings,
-        content = { Text(text = stringResource(R.string.quick_settings_more_text)) }
-    )
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.End
+    ) {
+        Button(
+            modifier = Modifier.testTag(SETTINGS_BUTTON),
+            onClick = onNavigateToSettings,
+            content = { Text(text = stringResource(R.string.quick_settings_more_text)) }
+        )
+    }
 }
 
 @Composable
