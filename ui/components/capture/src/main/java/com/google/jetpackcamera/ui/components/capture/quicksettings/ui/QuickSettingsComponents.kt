@@ -30,9 +30,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,7 +43,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
@@ -155,7 +154,7 @@ fun ToggleQuickSettingsButton(
  * A button within the quick settings menu that will navigate to the default settings screen
  */
 @Composable
-fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
+internal fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -171,7 +170,7 @@ fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modi
 }
 
 @Composable
-fun CaptureModeToggleButton(
+private fun CaptureModeToggleButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     captureModeUiState: CaptureModeUiState.Available,
@@ -244,7 +243,7 @@ fun QuickSettingsBottomSheet(
 }
 
 @Composable
-fun CaptureModeRow(
+internal fun CaptureModeRow(
     modifier: Modifier = Modifier,
     onSetCaptureMode: (CaptureMode) -> Unit,
     captureModeUiState: CaptureModeUiState
@@ -285,7 +284,7 @@ fun CaptureModeRow(
 }
 
 @Composable
-fun HdrRow(
+internal fun HdrRow(
     modifier: Modifier = Modifier,
     onClick: (DynamicRange, ImageOutputFormat) -> Unit,
     hdrUiState: HdrUiState
@@ -328,7 +327,7 @@ fun HdrRow(
 }
 
 @Composable
-fun AspectRatioRow(
+internal fun AspectRatioRow(
     modifier: Modifier = Modifier,
     onSetAspectRatio: (AspectRatio) -> Unit,
     aspectRatioUiState: AspectRatioUiState
@@ -368,7 +367,7 @@ fun AspectRatioRow(
 }
 
 @Composable
-fun FlashRow(
+internal fun FlashRow(
     modifier: Modifier = Modifier,
     onSetFlashMode: (FlashMode) -> Unit,
     flashModeUiState: FlashModeUiState
@@ -423,7 +422,7 @@ fun FlashRow(
 // ////////////////////////////////////////////////////
 
 @Composable
-fun SettingRow(
+private fun SettingRow(
     title: String,
     stateSubtitle: String,
     modifier: Modifier = Modifier,

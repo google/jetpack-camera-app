@@ -104,7 +104,7 @@ fun QuickSettingsBottomSheet(
 }
 
 @Composable
-fun HybridQuickSettings(
+private fun HybridQuickSettings(
     quickSettingsUiState: QuickSettingsUiState.Available,
     quickSettingsController: QuickSettingsController,
     onNavigateToSettings: () -> Unit,
@@ -158,7 +158,7 @@ fun HybridQuickSettings(
 }
 
 @Composable
-fun VideoQuickSettings(
+private fun VideoQuickSettings(
     quickSettingsUiState: QuickSettingsUiState.Available,
     quickSettingsController: QuickSettingsController,
     onNavigateToSettings: () -> Unit,
@@ -199,7 +199,7 @@ fun VideoQuickSettings(
 }
 
 @Composable
-fun ImageQuickSettings(
+private fun ImageQuickSettings(
     quickSettingsUiState: QuickSettingsUiState.Available,
     quickSettingsController: QuickSettingsController,
     onNavigateToSettings: () -> Unit,
