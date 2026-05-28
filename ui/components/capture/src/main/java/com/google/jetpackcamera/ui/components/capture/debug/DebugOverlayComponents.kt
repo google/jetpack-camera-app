@@ -53,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.debugTestTag
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -83,7 +84,7 @@ private const val TAG = "DebugOverlayComponents"
 
 @Composable
 fun DebugDialogContainerToggle(toggleIsOpen: () -> Unit, modifier: Modifier = Modifier) {
-    Button(modifier = modifier.testTag(DEBUG_OVERLAY_BUTTON), onClick = { toggleIsOpen() }) {
+    Button(modifier = modifier.debugTestTag(DEBUG_OVERLAY_BUTTON), onClick = { toggleIsOpen() }) {
         Text(text = stringResource(R.string.debug_overlay_toggle_btn_text))
     }
 }
@@ -125,7 +126,7 @@ private fun DebugTextBar(modifier: Modifier = Modifier, title: String, value: St
         Text(
             modifier = modifier
                 .background(Color.Black.copy(alpha = .4f))
-                .testTag(tag),
+                .debugTestTag(tag),
             text = value
         )
     }
@@ -321,7 +322,7 @@ private fun DebugDialogOptionsMenuDialog(
                 abs(size.height).toString() + "x" + abs(size.width).toString()
             }
             Text(
-                modifier = Modifier.testTag(
+                modifier = Modifier.debugTestTag(
                     DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
                 ),
                 text = videoResText
@@ -330,7 +331,7 @@ private fun DebugDialogOptionsMenuDialog(
 
         // show camera properties json button
         Button(
-            modifier = Modifier.testTag(
+            modifier = Modifier.debugTestTag(
                 DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
             ),
             onClick = {
@@ -342,7 +343,7 @@ private fun DebugDialogOptionsMenuDialog(
 
         // set zoom ratio
         Button(
-            modifier = Modifier.testTag(
+            modifier = Modifier.debugTestTag(
                 DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
             ),
             onClick = {
@@ -375,7 +376,7 @@ private fun CameraPropertiesJSONDialog(cameraPropertiesJSON: String, onClose: ()
             .noIndicationClickable(onClick = onClose)
     ) {
         Text(
-            modifier = Modifier.testTag(DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG),
+            modifier = Modifier.debugTestTag(DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG),
             text = cameraPropertiesJSON,
             fontSize = 10.sp
         )
@@ -395,13 +396,13 @@ private fun SetZoomRatioDialog(onChangeZoomRatio: (Float) -> Unit, onClose: () -
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text = "Enter and confirm zoom ratio")
             TextField(
-                modifier = Modifier.testTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD),
+                modifier = Modifier.debugTestTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD),
                 value = zoomRatioText.value,
                 onValueChange = { zoomRatioText.value = it },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
             Button(
-                modifier = Modifier.testTag(
+                modifier = Modifier.debugTestTag(
                     DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
                 ),
                 onClick = {

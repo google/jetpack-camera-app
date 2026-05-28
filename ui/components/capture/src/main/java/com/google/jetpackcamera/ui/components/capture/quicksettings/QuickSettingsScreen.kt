@@ -20,7 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.debugTestTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -98,7 +98,7 @@ fun QuickSettingsBottomSheet(
                         // todo(kc): change flash to expanded setting?
                         add {
                             QuickSetFlash(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_FLASH_BUTTON),
+                                modifier = Modifier.debugTestTag(QUICK_SETTINGS_FLASH_BUTTON),
                                 onClick = { f: FlashMode -> quickSettingsController.setFlash(f) },
                                 flashModeUiState = quickSettingsUiState.flashModeUiState
                             )
@@ -112,7 +112,7 @@ fun QuickSettingsBottomSheet(
                                     }
                             ToggleFocusedQuickSetCaptureMode(
                                 modifier = Modifier
-                                    .testTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
+                                    .debugTestTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
                                     .semantics { description?.let { stateDescription = it } },
                                 setCaptureMode = {
                                     quickSettingsController.setFocusedSetting(
@@ -125,7 +125,7 @@ fun QuickSettingsBottomSheet(
 
                         add {
                             QuickFlipCamera(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
+                                modifier = Modifier.debugTestTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON),
                                 setLensFacing = { l: LensFacing ->
                                     quickSettingsController.setLensFacing(l)
                                 },
@@ -135,7 +135,7 @@ fun QuickSettingsBottomSheet(
 
                         add {
                             ToggleFocusedQuickSetRatio(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_BUTTON),
+                                modifier = Modifier.debugTestTag(QUICK_SETTINGS_RATIO_BUTTON),
                                 setRatio = {
                                     quickSettingsController.setFocusedSetting(
                                         FocusedQuickSetting.ASPECT_RATIO
@@ -148,7 +148,7 @@ fun QuickSettingsBottomSheet(
 
                         add {
                             QuickSetStreamConfig(
-                                modifier = Modifier.testTag(
+                                modifier = Modifier.debugTestTag(
                                     QUICK_SETTINGS_STREAM_CONFIG_BUTTON
                                 ),
                                 setStreamConfig = { c: StreamConfig ->
@@ -160,7 +160,7 @@ fun QuickSettingsBottomSheet(
 
                         add {
                             QuickSetHdr(
-                                modifier = Modifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
+                                modifier = Modifier.debugTestTag(QUICK_SETTINGS_HDR_BUTTON),
                                 onClick = { d: DynamicRange, i: ImageOutputFormat ->
                                     quickSettingsController.setDynamicRange(d)
                                     quickSettingsController.setImageFormat(i)
@@ -172,7 +172,7 @@ fun QuickSettingsBottomSheet(
                         add {
                             QuickSetConcurrentCamera(
                                 modifier =
-                                Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
+                                Modifier.debugTestTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
                                 setConcurrentCameraMode = { c: ConcurrentCameraMode ->
                                     quickSettingsController.setConcurrentCameraMode(c)
                                 },
@@ -184,7 +184,7 @@ fun QuickSettingsBottomSheet(
                         add {
                             QuickNavSettings(
                                 modifier = Modifier
-                                    .testTag(SETTINGS_BUTTON),
+                                    .debugTestTag(SETTINGS_BUTTON),
                                 onNavigateToSettings = onNavigateToSettings
                             )
                         }

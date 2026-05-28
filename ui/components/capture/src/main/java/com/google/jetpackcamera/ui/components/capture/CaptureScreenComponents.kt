@@ -85,6 +85,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.debugTestTag
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -290,7 +291,7 @@ fun CaptureModeToggleButton(
             ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
     ToggleSwitch(
-        modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
+        modifier = modifier.debugTestTag(CAPTURE_MODE_TOGGLE_BUTTON),
         checked = toggleState,
         onCheckedChange = { isChecked ->
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
@@ -357,7 +358,7 @@ fun TestableSnackbar(
         // box seems to need to have some size to be detected by UiAutomator
         modifier = modifier
             .size(20.dp)
-            .testTag(snackbarToShow.testTag)
+            .debugTestTag(snackbarToShow.testTag)
     ) {
         val context = LocalContext.current
         LaunchedEffect(snackbarToShow) {
@@ -479,7 +480,7 @@ fun PreviewDisplay(
     surfaceRequest?.let {
         BoxWithConstraints(
             modifier
-                .testTag(PREVIEW_DISPLAY)
+                .debugTestTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black),
             contentAlignment = Alignment.TopCenter
@@ -604,7 +605,7 @@ fun CaptureButton(
     val context = LocalContext.current
 
     CaptureButton(
-        modifier = modifier.testTag(CAPTURE_BUTTON),
+        modifier = modifier.debugTestTag(CAPTURE_BUTTON),
         onIncrementZoom = onIncrementZoom,
         onImageCapture = {
             if (captureButtonUiState is CaptureButtonUiState.Enabled &&
@@ -896,7 +897,7 @@ private fun FocusMeteringIndicator(
         ) {
             Box(
                 Modifier
-                    .testTag(FOCUS_METERING_INDICATOR_TAG)
+                    .debugTestTag(FOCUS_METERING_INDICATOR_TAG)
                     .alpha(
                         if (focusMeteringUiState.status == FocusMeteringUiState.Status.SUCCESS) {
                             1f

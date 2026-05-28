@@ -33,7 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.debugTestTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -82,7 +82,7 @@ fun ImageFromBitmap(modifier: Modifier, bitmap: Bitmap) {
     Image(
         bitmap = bitmap.asImageBitmap(),
         contentDescription = stringResource(R.string.post_capture_image_description),
-        modifier = modifier.testTag(VIEWER_POST_CAPTURE_IMAGE)
+        modifier = modifier.debugTestTag(VIEWER_POST_CAPTURE_IMAGE)
     )
 }
 
@@ -92,7 +92,7 @@ fun VideoPlayer(modifier: Modifier, player: Player?) {
     val presentationState = rememberPresentationState(player)
     ContentFrame(
         modifier = modifier
-            .testTag(VIEWER_POST_CAPTURE_VIDEO)
+            .debugTestTag(VIEWER_POST_CAPTURE_VIDEO)
             .resizeWithContentScale(
                 ContentScale.Fit,
                 presentationState.videoSizeDp
@@ -111,7 +111,7 @@ fun VideoPlayer(modifier: Modifier, player: Player?) {
 fun ExitPostCaptureButton(onExitPostCapture: () -> Unit, modifier: Modifier = Modifier) {
     PostCaptureIconButton(
         modifier = modifier
-            .testTag(BUTTON_POST_CAPTURE_EXIT),
+            .debugTestTag(BUTTON_POST_CAPTURE_EXIT),
         onClick = onExitPostCapture
     ) {
         Icon(
@@ -134,7 +134,7 @@ fun ShareCurrentMediaButton(
     PostCaptureIconButton(
         onClick = onClick,
         modifier = modifier
-            .testTag(BUTTON_POST_CAPTURE_SHARE),
+            .debugTestTag(BUTTON_POST_CAPTURE_SHARE),
         enabled = enabled
 
     ) {
@@ -158,7 +158,7 @@ fun ShareCurrentMediaButton(
 fun SaveCurrentMediaButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     PostCaptureIconButton(
         modifier = modifier
-            .testTag(BUTTON_POST_CAPTURE_SAVE),
+            .debugTestTag(BUTTON_POST_CAPTURE_SAVE),
         onClick = onClick
     ) {
         Icon(
@@ -177,7 +177,7 @@ fun DeleteCurrentMediaButton(
     enabled: Boolean = true
 ) {
     PostCaptureIconButton(
-        modifier = modifier.testTag(BUTTON_POST_CAPTURE_DELETE),
+        modifier = modifier.debugTestTag(BUTTON_POST_CAPTURE_DELETE),
         onClick = onClick,
         enabled = enabled
     ) {
