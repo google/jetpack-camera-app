@@ -15,9 +15,6 @@
  */
 package com.google.jetpackcamera.model
 
-import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.TestPattern
-
 /**
  * Data class for defining settings used in debug flows within the app.
  *
@@ -48,7 +45,8 @@ data class DebugSettings(
                 if (kv.size == 2) {
                     when (kv[0]) {
                         "debug" -> isDebugModeEnabled = kv[1].toBoolean()
-                        "lens" -> singleLensMode = if (kv[1].isEmpty()) null else LensFacing.valueOf(kv[1])
+                        "lens" -> singleLensMode = enumValues<LensFacing>()
+                            .firstOrNull { it.name == kv[1] }
                         "pattern" -> {
                             testPattern = when (kv[1]) {
                                 "Off" -> TestPattern.Off
@@ -57,14 +55,35 @@ data class DebugSettings(
                                 "PN9" -> TestPattern.PN9
                                 "Custom1" -> TestPattern.Custom1
                                 else -> {
-                                    if (kv[1].startsWith("SolidColor")) {
-                                        val channels = kv[1].removePrefix("SolidColor(").removeSuffix(")").split(",")
-                                        TestPattern.SolidColor(
-                                            red = channels[0].toUInt(),
-                                            greenEven = channels[1].toUInt(),
-                                            greenOdd = channels[2].toUInt(),
-                                            blue = channels[3].toUInt()
-                                        )
+                                    if (kv[1].startsWith("SolidColor(") &&
+                                        kv[1].endsWith(")")
+                                    ) {
+                                        val channels = kv[1]
+                                            .removePrefix("SolidColor(")
+                                            .removeSuffix(")")
+                                            .split(",")
+                                        if (channels.size == 4) {
+                                            val red = channels[0].toUIntOrNull()
+                                            val greenEven = channels[1].toUIntOrNull()
+                                            val greenOdd = channels[2].toUIntOrNull()
+                                            val blue = channels[3].toUIntOrNull()
+                                            if (red != null &&
+                                                greenEven != null &&
+                                                greenOdd != null &&
+                                                blue != null
+                                            ) {
+                                                TestPattern.SolidColor(
+                                                    red,
+                                                    greenEven,
+                                                    greenOdd,
+                                                    blue
+                                                )
+                                            } else {
+                                                TestPattern.Off
+                                            }
+                                        } else {
+                                            TestPattern.Off
+                                        }
                                     } else {
                                         TestPattern.Off
                                     }
@@ -83,7 +102,8 @@ data class DebugSettings(
         fun DebugSettings.encodeAsString(): String {
             val lensStr = singleLensMode?.name ?: ""
             val patternStr = when (val pattern = testPattern) {
-                is TestPattern.SolidColor -> "SolidColor(${pattern.red},${pattern.greenEven},${pattern.greenOdd},${pattern.blue})"
+                is TestPattern.SolidColor ->
+                    "SolidColor(${pattern.red},${pattern.greenEven},${pattern.greenOdd},${pattern.blue})"
                 else -> pattern.toString()
             }
             return "debug:$isDebugModeEnabled;lens:$lensStr;pattern:$patternStr"

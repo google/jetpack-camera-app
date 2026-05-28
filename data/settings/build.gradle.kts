@@ -75,10 +75,6 @@ dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
-    // preferences datastore
-    implementation(libs.androidx.datastore)
-    implementation(libs.androidx.datastore.preferences)
-
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)

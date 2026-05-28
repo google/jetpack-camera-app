@@ -33,5 +33,5 @@ enum class StabilizationMode {
     HIGH_QUALITY,
 
     /** Optical Stabilization (OIS) */
-    OPTICAL;
+    OPTICAL
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,21 @@
 package com.google.jetpackcamera.settings
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStoreFile
+import android.content.SharedPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 
-// with hilt will ensure datastore instance access is unique per file
 @Module
 @InstallIn(SingletonComponent::class)
-object DataStoreModule {
-    private const val FILE_LOCATION = "jca_settings"
+object SharedPreferencesModule {
+    private const val SHARED_PREFS_NAME = "jca_settings"
 
     @Provides
     @Singleton
-    fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
-        PreferenceDataStoreFactory.create(
-            scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-            produceFile = {
-                context.preferencesDataStoreFile(FILE_LOCATION)
-            }
-        )
+    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences =
+        context.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE)
 }

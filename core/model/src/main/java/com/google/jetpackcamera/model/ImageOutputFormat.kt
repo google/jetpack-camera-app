@@ -19,5 +19,5 @@ val DEFAULT_HDR_IMAGE_OUTPUT = ImageOutputFormat.JPEG_ULTRA_HDR
 
 enum class ImageOutputFormat {
     JPEG,
-    JPEG_ULTRA_HDR;
+    JPEG_ULTRA_HDR
 }

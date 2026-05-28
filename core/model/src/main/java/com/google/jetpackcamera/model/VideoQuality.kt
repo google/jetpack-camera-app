@@ -20,5 +20,5 @@ enum class VideoQuality {
     SD,
     HD,
     FHD,
-    UHD;
+    UHD
 }

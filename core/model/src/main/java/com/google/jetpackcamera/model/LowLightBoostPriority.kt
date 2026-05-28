@@ -17,5 +17,5 @@ package com.google.jetpackcamera.model
 
 enum class LowLightBoostPriority {
     PRIORITIZE_AE_MODE,
-    PRIORITIZE_GOOGLE_PLAY_SERVICES;
+    PRIORITIZE_GOOGLE_PLAY_SERVICES
 }
