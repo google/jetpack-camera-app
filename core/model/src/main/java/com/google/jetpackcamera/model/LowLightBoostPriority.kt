@@ -15,36 +15,7 @@
  */
 package com.google.jetpackcamera.model
 
-import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoostPriorityProto
-
 enum class LowLightBoostPriority {
     PRIORITIZE_AE_MODE,
     PRIORITIZE_GOOGLE_PLAY_SERVICES;
-
-    companion object {
-        /**
-         * Returns the [LowLightBoostPriority] enum equivalent of a provided [LowLightBoostPriorityProto].
-         *
-         * @param lowLightBoostPriorityProto The proto to convert from.
-         * @return The converted [LowLightBoostPriority].
-         */
-        fun fromProto(
-            lowLightBoostPriorityProto: LowLightBoostPriorityProto
-        ): LowLightBoostPriority {
-            return when (lowLightBoostPriorityProto) {
-                LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_AE_MODE -> PRIORITIZE_AE_MODE
-                LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES ->
-                    PRIORITIZE_GOOGLE_PLAY_SERVICES
-                LowLightBoostPriorityProto.UNRECOGNIZED -> PRIORITIZE_AE_MODE // Default to AE mode
-            }
-        }
-
-        fun LowLightBoostPriority.toProto(): LowLightBoostPriorityProto {
-            return when (this) {
-                PRIORITIZE_AE_MODE -> LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_AE_MODE
-                PRIORITIZE_GOOGLE_PLAY_SERVICES ->
-                    LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES
-            }
-        }
-    }
 }

@@ -16,10 +16,10 @@
 package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.settings.testing.FakeDataStoreModule
-import com.google.jetpackcamera.settings.testing.FakeJcaSettingsSerializer
 import java.io.File
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -43,16 +43,14 @@ class DataStoreModuleTest {
     }
 
     @Test
-    fun dataStoreModule_read_can_handle_corrupted_file() = runTest {
-        // should handle exception and replace file information
-        val dataStore: DataStore<JcaSettings> = FakeDataStoreModule.provideDataStore(
+    fun dataStoreModule_can_provide_datastore() = runTest {
+        val dataStore: DataStore<Preferences> = FakeDataStoreModule.provideDataStore(
             scope = this.backgroundScope,
-            serializer = FakeJcaSettingsSerializer(failReadWithCorruptionException = true),
             file = testFile
         )
         val datastoreValue = dataStore.data.first()
         advanceUntilIdle()
 
-        assertThat(datastoreValue).isEqualTo(JcaSettings.getDefaultInstance())
+        assertThat(datastoreValue.asMap()).isEmpty()
     }
 }

@@ -16,9 +16,8 @@
 package com.google.jetpackcamera.settings.testing
 
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.DataStoreFactory
-import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
-import com.google.jetpackcamera.settings.JcaSettings
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 
@@ -27,12 +26,9 @@ object FakeDataStoreModule {
 
     fun provideDataStore(
         scope: CoroutineScope,
-        serializer: FakeJcaSettingsSerializer,
         file: File
-    ): DataStore<JcaSettings> = DataStoreFactory.create(
-        corruptionHandler = ReplaceFileCorruptionHandler { JcaSettings.getDefaultInstance() },
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
         scope = scope,
-        serializer = serializer,
         produceFile = { file }
     )
 }

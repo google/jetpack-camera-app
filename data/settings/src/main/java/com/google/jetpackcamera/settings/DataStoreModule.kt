@@ -17,9 +17,9 @@ package com.google.jetpackcamera.settings
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.DataStoreFactory
-import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
-import androidx.datastore.dataStoreFile
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,18 +34,15 @@ import kotlinx.coroutines.SupervisorJob
 @Module
 @InstallIn(SingletonComponent::class)
 object DataStoreModule {
-    private const val FILE_LOCATION = "app_settings.pb"
+    private const val FILE_LOCATION = "jca_settings"
 
     @Provides
     @Singleton
-    fun provideDataStore(@ApplicationContext context: Context): DataStore<JcaSettings> =
-        DataStoreFactory.create(
-            corruptionHandler = ReplaceFileCorruptionHandler { JcaSettings.getDefaultInstance() },
-            // TODO(b/286245619, kimblebee@): Inject coroutine scope once module providing default IO dispatcher scope is implemented
+    fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create(
             scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-            serializer = JcaSettingsSerializer,
             produceFile = {
-                context.dataStoreFile(FILE_LOCATION)
+                context.preferencesDataStoreFile(FILE_LOCATION)
             }
         )
 }

@@ -18,7 +18,6 @@ package com.google.jetpackcamera.feature.preview.navigation
 import android.os.Bundle
 import androidx.navigation.NavType
 import com.google.jetpackcamera.model.DebugSettings
-import com.google.jetpackcamera.model.DebugSettings.Companion.encodeAsByteArray
 import com.google.jetpackcamera.model.DebugSettings.Companion.encodeAsString
 
 /**
@@ -31,15 +30,15 @@ internal object DebugSettingsNavType : NavType<DebugSettings>(isNullableAllowed 
      * Puts the [DebugSettings] value into the Bundle by converting to Proto and serializing.
      */
     override fun put(bundle: Bundle, key: String, value: DebugSettings) {
-        bundle.putByteArray(key, value.encodeAsByteArray())
+        bundle.putString(key, value.encodeAsString())
     }
 
     /**
      * Gets the [DebugSettings] value from the Bundle by deserializing the Proto.
      */
     override fun get(bundle: Bundle, key: String): DebugSettings? {
-        return bundle.getByteArray(key)?.let { bytes ->
-            DebugSettings.parseFromByteArray(bytes)
+        return bundle.getString(key)?.let { str ->
+            DebugSettings.parseFromString(str)
         }
     }
 
