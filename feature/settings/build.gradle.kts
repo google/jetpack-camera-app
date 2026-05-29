@@ -98,6 +98,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(project(":data:settings-datastore"))
 
     implementation(libs.androidx.core.ktx)
 
