@@ -18,9 +18,28 @@ package com.google.jetpackcamera.ui.uistate.capture
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
+/**
+ * Defines the UI state for the aspect ratio setting.
+ *
+ * This sealed interface represents the different states the aspect ratio selection UI can be in,
+ * such as being unavailable or available with a list of choices.
+ */
 sealed interface AspectRatioUiState {
+    /**
+     * The aspect ratio setting is unavailable.
+     *
+     * This state is used when the camera system does not support changing the aspect ratio or
+     * when it is otherwise disabled.
+     */
     data object Unavailable : AspectRatioUiState
 
+    /**
+     * The aspect ratio setting is available.
+     *
+     * @param selectedAspectRatio The currently selected [AspectRatio].
+     * @param availableAspectRatios A list of all selectable aspect ratios, each represented by a
+     * [SingleSelectableUiState] to indicate its selection status.
+     */
     data class Available(
         val selectedAspectRatio: AspectRatio,
         val availableAspectRatios: List<SingleSelectableUiState<AspectRatio>>

@@ -31,8 +31,8 @@ androidxLifecycle = "2.9.2"
 androidxMedia3 = "1.9.0-alpha01"
 androidxNavigationCompose = "2.9.2"
 androidxProfileinstaller = "1.4.1"
-androidxTestCore = "1.5.0"
-androidxTestEspresso = "3.6.1"
+androidxTestCore = "1.7.0"
+androidxTestEspresso = "3.7.0"
 androidxTestJunit = "1.2.1"
 androidxTestMonitor = "1.7.2"
 androidxTestRules = "1.6.1"
@@ -47,6 +47,7 @@ junit = "4.13.2"
 protobuf = "4.31.1"
 robolectric = "4.15.1"
 truth = "1.4.4"
+testParameterInjector = "1.21"
 playServices = "18.9.0"
 playServicesCoroutines = "1.10.2"
 playServicesTasks = "18.4.0"
@@ -86,7 +87,6 @@ camera-compose = { module = "androidx.camera:camera-compose", version.ref = "and
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-junit = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "composeMaterial" }
-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 compose-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
@@ -103,7 +103,7 @@ play-services-base = { module = "com.google.android.gms:play-services-base", ver
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutines" }
 play-services-camera-low-light-boost = { module = "com.google.android.gms:play-services-camera-low-light-boost", version.ref = "cameraLowLightBoost" }
 play-services-tasks = { module = "com.google.android.gms:play-services-tasks", version.ref = "playServicesTasks" }
-
+testParameterInjector = { group = "com.google.testparameterinjector", name = "test-parameter-injector", version.ref = "testParameterInjector" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 

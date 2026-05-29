@@ -75,6 +75,9 @@ dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
     // Access Model data
     implementation(project(":core:model"))
     implementation(project(":core:common"))

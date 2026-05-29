@@ -48,7 +48,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":ui:uistate:capture"))
+    implementation(project(":ui:uistate"))
     implementation(libs.androidx.media3.exoplayer)
 
 

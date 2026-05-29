@@ -17,7 +17,7 @@ package com.google.jetpackcamera.data.settingsdatastore.test
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
-import com.google.jetpackcamera.data.settings_datastore.UNLIMITED_VIDEO_DURATION
+import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.proto.AspectRatio
 import com.google.jetpackcamera.model.proto.DarkMode
 import com.google.jetpackcamera.model.proto.DynamicRange

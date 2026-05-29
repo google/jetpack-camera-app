@@ -18,9 +18,26 @@ package com.google.jetpackcamera.ui.uistate.capture
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 
+/**
+ * Defines the UI state for stream configuration, which includes settings for resolution and aspect
+ * ratio.
+ *
+ * This sealed interface represents the different states of the stream configuration UI.
+ */
 sealed interface StreamConfigUiState {
+    /**
+     * Stream configuration is unavailable.
+     */
     data object Unavailable : StreamConfigUiState
 
+    /**
+     * Stream configuration is available.
+     *
+     * @param selectedStreamConfig The currently selected stream configuration.
+     * @param availableStreamConfigs A list of all available stream configurations, each represented
+     * by a [SingleSelectableUiState] to indicate its current selection and interaction status.
+     * @param isActive Indicates whether the stream configuration UI is currently active (e.g., visible).
+     */
     data class Available(
         val selectedStreamConfig: StreamConfig,
         val availableStreamConfigs: List<SingleSelectableUiState<StreamConfig>>,

@@ -20,25 +20,45 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 
+/**
+ * Creates a [CaptureButtonUiState] based on the current camera settings and state.
+ *
+ * This function determines the UI state for the capture button based on the capture mode, video
+ * recording status, and whether the recording has been locked.
+ *
+ * @param cameraAppSettings The current application settings, used to determine the capture mode.
+ * @param cameraState The current state of the camera, used to check video recording status.
+ * @param lockedState A boolean indicating whether the video recording is currently in a locked state.
+ *
+ * @return A [CaptureButtonUiState] representing the current state of the capture button.
+ *         - [CaptureButtonUiState.Enabled.Idle] if not recording.
+ *         - [CaptureButtonUiState.Enabled.Recording.PressedRecording] if recording is active but not locked.
+ *         - [CaptureButtonUiState.Enabled.Recording.LockedRecording] if recording is active and locked.
+ */
 fun CaptureButtonUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
     lockedState: Boolean
-): CaptureButtonUiState = when (cameraState.videoRecordingState) {
-    // if not currently recording, check capturemode to determine idle capture button UI
-    is VideoRecordingState.Inactive ->
-        CaptureButtonUiState
-            .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
+): CaptureButtonUiState = if (cameraState.isCameraRunning) {
+    when (cameraState.videoRecordingState) {
+        // if not currently recording, check capturemode to determine idle capture button UI
+        is VideoRecordingState.Inactive ->
+            CaptureButtonUiState
+                .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
 
-    // display different capture button UI depending on if recording is pressed or locked
-    is VideoRecordingState.Active.Recording, is VideoRecordingState.Active.Paused ->
-        if (lockedState) {
-            CaptureButtonUiState.Enabled.Recording.LockedRecording
-        } else {
-            CaptureButtonUiState.Enabled.Recording.PressedRecording
-        }
+        // display different capture button UI depending on if recording is pressed or locked
+        is VideoRecordingState.Active.Recording, is VideoRecordingState.Active.Paused ->
+            if (lockedState) {
+                CaptureButtonUiState.Enabled.Recording.LockedRecording
+            } else {
+                CaptureButtonUiState.Enabled.Recording.PressedRecording
+            }
 
-    is VideoRecordingState.Starting ->
-        CaptureButtonUiState
-            .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
+        is VideoRecordingState.Starting ->
+            CaptureButtonUiState
+                .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
+    }
+} else {
+    CaptureButtonUiState
+        .Enabled.Idle(captureMode = cameraAppSettings.captureMode, isEnabled = false)
 }

@@ -17,6 +17,10 @@ package com.google.jetpackcamera.ui.components.capture
 
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 
+/**
+ * Represents reasons why a UI component or functionality might be disabled, providing a test tag
+ * and a string resource ID for user-facing explanation.
+ */
 enum class DisabledReason(
     // 'override' is required
     override val testTag: String,

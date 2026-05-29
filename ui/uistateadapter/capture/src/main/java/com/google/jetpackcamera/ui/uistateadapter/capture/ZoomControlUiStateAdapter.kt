@@ -21,6 +21,29 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 
+/**
+ * Creates a [ZoomControlUiState] from various camera and application sources.
+ *
+ * This function is responsible for creating the UI state for the zoom controls (e.g., the 0.5x, 1x,
+ * 2x buttons). It determines the available zoom levels based on the hardware's supported zoom
+ * range for the currently active lens.
+ *
+ * If the camera lens does not support zooming (i.e., the zoom range is a single value), this
+ * function will return [ZoomControlUiState.Disabled]. Otherwise, it calculates a list of discrete
+ * zoom levels to display to the user (e.g., 0.5x, 1x, 2x, 5x) based on the supported range.
+ *
+ * @param animateZoomState An optional target zoom ratio for an ongoing animation. If non-null, the
+ *   UI can use this to show an animation progressing towards the target.
+ * @param systemConstraints The capabilities of the device's camera hardware, used to find the
+ *   supported zoom range for the current lens.
+ * @param cameraAppSettings The current application settings, providing the selected lens facing
+ *   and default zoom ratios.
+ * @param cameraState The real-time state from the camera, providing the current actual zoom ratio.
+ * @return A [ZoomControlUiState] which is either:
+ * - [ZoomControlUiState.Enabled] containing the calculated zoom levels, current zoom ratio, and
+ *   other parameters for the UI.
+ * - [ZoomControlUiState.Disabled] if the current lens does not support zooming.
+ */
 fun ZoomControlUiState.Companion.from(
     animateZoomState: Float?,
     systemConstraints: CameraSystemConstraints,

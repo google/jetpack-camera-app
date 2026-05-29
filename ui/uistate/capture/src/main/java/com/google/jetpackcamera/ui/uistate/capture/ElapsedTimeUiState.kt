@@ -15,8 +15,24 @@
  */
 package com.google.jetpackcamera.ui.uistate.capture
 
+/**
+ * Defines the UI state for the elapsed time display, typically used during video recording.
+ *
+ * This sealed interface represents the different states of the timer, which can be either
+ * unavailable (not shown) or enabled, displaying the current duration of the recording.
+ */
 sealed interface ElapsedTimeUiState {
+    /**
+     * The elapsed time display is unavailable.
+     * This state is used when video recording is not in progress.
+     */
     data object Unavailable : ElapsedTimeUiState
+
+    /**
+     * The elapsed time display is enabled and showing the current recording time.
+     *
+     * @param elapsedTimeNanos The elapsed time in nanoseconds.
+     */
     data class Enabled(val elapsedTimeNanos: Long) : ElapsedTimeUiState
 
     companion object

@@ -19,6 +19,7 @@ When reviewing a pull request, focus on the following key areas:
 
 2.  **Code Quality and Best Practices**
     * Check for adherence to official Kotlin style guides and Android best practices.
+    * **Proper Visibility Modifiers:** Ensure all new functions, properties, and classes use the most restrictive visibility modifier possible (e.g., `private`, `internal`) while still allowing necessary access. Avoid `public` visibility unless explicitly required for external API exposure.
     * **Simplify Complex Logic:** Look for needlessly complex code. If a multi-line block of logic can be condensed into a more concise and readable idiomatic expression (e.g., using Kotlin standard library functions), suggest the simplification.
     * **Decompose Large Components:** Identify large, monolithic functions or composables. Suggest breaking them down into smaller sub-functions or sub-composables to improve readability, testability, and reusability.
     * **Remove Unused Imports:** Check for and remove any unused import statements to maintain code cleanliness.
@@ -67,6 +68,12 @@ When reviewing a pull request, focus on the following key areas:
     *   **Scrutinize Debug Logs:** Question the use of `Log.d`, `Log.v`, and especially `println()`. These are often remnants of debugging and should be removed before merging unless they provide essential, long-term value. Calls to `println()` should always be replaced with a proper `Log` method.
     *   **KDoc for Complexity:** For new or significantly modified functions that are complex, have non-obvious logic, or a large number of parameters, suggest adding KDoc comments. Good documentation should explain the function's purpose, its parameters, and what it returns.
     *   **Keep KDoc Synchronized:** If a PR modifies a function with existing KDocs, verify that the comments are still accurate. Outdated documentation can be more misleading than no documentation at all.
+
+11. **KDoc Documentation Standards**
+    *   **Document all non-private members:** All non-private classes, functions, and composables must have KDoc documentation.
+    *   **Describe behavior, not signatures:** Documentation should provide more value than the function signature alone. Avoid redundant comments that just re-state parameter names and types.
+    *   **Explain features and states:** The documentation should clearly describe the component's features, its primary purpose, and any key visual or behavioral states it may have (e.g., "This button is greyed out when disabled," or "The icon changes based on the recording state.").
+    *   **Be Precise and Efficient:** Avoid unnecessarily embellished or "flourishing" language. KDocs should be clear, to the point, and as concise as possible while still conveying the necessary information.
 
 ***
 
