@@ -152,6 +152,15 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     }
 
     private val _currentCameraState = MutableStateFlow(CameraState())
+
+    /**
+     * Test-only method to manipulate the current camera state.
+     * Use this to simulate changes in the camera's lifecycle or state (e.g., recording vs not recording)
+     * during tests, triggering downstream observers.
+     */
+    fun setCurrentCameraState(cameraState: CameraState) {
+        _currentCameraState.value = cameraState
+    }
     override fun changeZoomRatio(newZoomState: CameraZoomRatio) {
         zoomChanges.update { newZoomState }
     }
@@ -165,6 +174,15 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
     private val _systemConstraints = MutableStateFlow<CameraSystemConstraints?>(null)
+
+    /**
+     * Test-only method to manipulate the camera system constraints.
+     * Use this to simulate different device capabilities (e.g., available lenses, flash support)
+     * during tests, ensuring the UI adapts correctly.
+     */
+    fun setSystemConstraints(systemConstraints: CameraSystemConstraints?) {
+        _systemConstraints.value = systemConstraints
+    }
     override fun getSystemConstraints(): StateFlow<CameraSystemConstraints?> =
         _systemConstraints.asStateFlow()
 

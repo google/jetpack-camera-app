@@ -18,8 +18,12 @@ package com.google.jetpackcamera.settings
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
+<<<<<<<< HEAD:data/settings/src/main/java/com/google/jetpackcamera/settings/ConstraintsModule.kt
 import dagger.hilt.android.components.ActivityRetainedComponent
 import dagger.hilt.android.scopes.ActivityRetainedScoped
+========
+import dagger.hilt.components.SingletonComponent
+>>>>>>>> main:data/settings/src/main/java/com/google/jetpackcamera/settings/SettingsModule.kt
 
 /**
  * Dagger [Module] for constraints data layer.
@@ -29,6 +33,7 @@ import dagger.hilt.android.scopes.ActivityRetainedScoped
 interface ConstraintsModule {
 
     @Binds
+<<<<<<<< HEAD:data/settings/src/main/java/com/google/jetpackcamera/settings/ConstraintsModule.kt
     @ActivityRetainedScoped
     fun bindsSettableConstraintsRepository(
         settableConstraintsRepository: SettableConstraintsRepositoryImpl
@@ -44,4 +49,9 @@ interface ConstraintsModule {
     fun bindsConstraintsRepository(
         constraintsRepository: SettableConstraintsRepository
     ): ConstraintsRepository
+========
+    fun bindsSettingsRepository(
+        localSettingsRepository: LocalSettingsRepository
+    ): SettingsRepository
+>>>>>>>> main:data/settings/src/main/java/com/google/jetpackcamera/settings/SettingsModule.kt
 }
