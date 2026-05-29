@@ -23,6 +23,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -68,6 +69,14 @@ class FakeQuickSettingsControllerTest {
         val controller = FakeQuickSettingsController(setAspectRatioAction = { calledValue = it })
         controller.setAspectRatio(AspectRatio.THREE_FOUR)
         assertThat(calledValue).isEqualTo(AspectRatio.THREE_FOUR)
+    }
+
+    @Test
+    fun setStreamConfig_invokesAction() {
+        var calledValue: StreamConfig? = null
+        val controller = FakeQuickSettingsController(setStreamConfigAction = { calledValue = it })
+        controller.setStreamConfig(StreamConfig.SINGLE_STREAM)
+        assertThat(calledValue).isEqualTo(StreamConfig.SINGLE_STREAM)
     }
 
     @Test

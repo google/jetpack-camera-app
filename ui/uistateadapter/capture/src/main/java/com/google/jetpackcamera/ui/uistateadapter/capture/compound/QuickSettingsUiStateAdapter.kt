@@ -24,6 +24,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
+import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
@@ -58,6 +59,7 @@ fun QuickSettingsUiState.Companion.from(
     focusedQuickSetting: FocusedQuickSetting,
     externalCaptureMode: ExternalCaptureMode
 ): QuickSettingsUiState {
+    val streamConfigUiState = StreamConfigUiState.from(cameraAppSettings)
     return QuickSettingsUiState.Available(
         aspectRatioUiState = aspectRatioUiState,
         captureModeUiState = captureModeUiState,
@@ -65,11 +67,13 @@ fun QuickSettingsUiState.Companion.from(
             cameraAppSettings,
             systemConstraints,
             externalCaptureMode,
-            captureModeUiState
+            captureModeUiState,
+            streamConfigUiState
         ),
         flashModeUiState = flashModeUiState,
         flipLensUiState = flipLensUiState,
         hdrUiState = hdrUiState,
+        streamConfigUiState = streamConfigUiState,
         quickSettingsIsOpen = quickSettingsIsOpen,
         focusedQuickSetting = focusedQuickSetting
     )

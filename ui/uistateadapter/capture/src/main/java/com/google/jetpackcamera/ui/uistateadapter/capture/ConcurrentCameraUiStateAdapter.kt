@@ -25,6 +25,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
+import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 
 /**
  * Creates a [ConcurrentCameraUiState] based on the current camera and system state.
@@ -43,6 +44,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
  * @param systemConstraints The capabilities and limitations of the device's camera hardware.
  * @param externalCaptureMode The mode indicating if the camera was launched by an external intent.
  * @param captureModeUiState The current state of the capture mode selection UI.
+ * @param streamConfigUiState The current state of the stream configuration UI.
  * @return A [ConcurrentCameraUiState.Available] object containing the currently selected
  * concurrent camera mode and a boolean indicating if the feature is currently enabled and
  * can be interacted with.
@@ -51,7 +53,8 @@ fun ConcurrentCameraUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
     externalCaptureMode: ExternalCaptureMode,
-    captureModeUiState: CaptureModeUiState
+    captureModeUiState: CaptureModeUiState,
+    streamConfigUiState: StreamConfigUiState
 ): ConcurrentCameraUiState {
     return ConcurrentCameraUiState.Available(
         selectedConcurrentCameraMode = cameraAppSettings.concurrentCameraMode,
@@ -68,8 +71,9 @@ fun ConcurrentCameraUiState.Companion.from(
                     DEFAULT_HDR_DYNAMIC_RANGE &&
                     cameraAppSettings.imageFormat !=
                     DEFAULT_HDR_IMAGE_OUTPUT
-                ) && (
-                cameraAppSettings.streamConfig != StreamConfig.SINGLE_STREAM
+                ) && !(
+                streamConfigUiState is StreamConfigUiState.Available &&
+                    streamConfigUiState.selectedStreamConfig == StreamConfig.SINGLE_STREAM
                 ) && (
                 cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
                 )

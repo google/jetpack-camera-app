@@ -22,6 +22,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 
@@ -33,6 +34,7 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
  * @param setLensFacingAction The action to perform when [setLensFacing] is called.
  * @param setFlashAction The action to perform when [setFlash] is called.
  * @param setAspectRatioAction The action to perform when [setAspectRatio] is called.
+ * @param setStreamConfigAction The action to perform when [setStreamConfig] is called.
  * @param setDynamicRangeAction The action to perform when [setDynamicRange] is called.
  * @param setImageFormatAction The action to perform when [setImageFormat] is called.
  * @param setConcurrentCameraModeAction The action to perform when [setConcurrentCameraMode] is called.
@@ -44,6 +46,7 @@ class FakeQuickSettingsController(
     var setLensFacingAction: (LensFacing) -> Unit = {},
     var setFlashAction: (FlashMode) -> Unit = {},
     var setAspectRatioAction: (AspectRatio) -> Unit = {},
+    var setStreamConfigAction: (StreamConfig) -> Unit = {},
     var setDynamicRangeAction: (DynamicRange) -> Unit = {},
     var setImageFormatAction: (ImageOutputFormat) -> Unit = {},
     var setConcurrentCameraModeAction: (ConcurrentCameraMode) -> Unit = {},
@@ -67,6 +70,10 @@ class FakeQuickSettingsController(
 
     override fun setAspectRatio(aspectRatio: AspectRatio) {
         setAspectRatioAction(aspectRatio)
+    }
+
+    override fun setStreamConfig(streamConfig: StreamConfig) {
+        setStreamConfigAction(streamConfig)
     }
 
     override fun setDynamicRange(dynamicRange: DynamicRange) {
