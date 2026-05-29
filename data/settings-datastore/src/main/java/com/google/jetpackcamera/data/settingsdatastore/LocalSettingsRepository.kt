@@ -46,7 +46,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 /**
- * Implementation of [com.google.jetpackcamera.settings.SettingsRepository] with locally stored settings.
+ * Implementation of [SettingsRepository] with locally stored settings.
  */
 class LocalSettingsRepository @Inject constructor(
     private val jcaSettings: DataStore<JcaSettings>,
