@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,18 @@ package com.google.jetpackcamera.settings
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import dagger.hilt.android.components.ActivityRetainedComponent
+import dagger.hilt.android.scopes.ActivityRetainedScoped
 
 /**
  * Dagger [Module] for constraints data layer.
  */
 @Module
-@InstallIn(SingletonComponent::class)
+@InstallIn(ActivityRetainedComponent::class)
 interface ConstraintsModule {
+
     @Binds
-    @Singleton
+    @ActivityRetainedScoped
     fun bindsSettableConstraintsRepository(
         settableConstraintsRepository: SettableConstraintsRepositoryImpl
     ): SettableConstraintsRepository
@@ -36,7 +37,7 @@ interface ConstraintsModule {
     /**
      * ConstraintsRepository without setter.
      *
-     * This is the same instance as the singleton SettableConstraintsRepository, but does not
+     * This is the same instance as the activity-retained SettableConstraintsRepository, but does not
      * have the ability to update the constraints.
      */
     @Binds

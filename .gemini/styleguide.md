@@ -16,6 +16,8 @@ When reviewing a pull request, focus on the following key areas:
     * Does the new code align with the existing MVVM architecture?
     * Are ViewModels, Repositories, and UI components used correctly?
     * Does it introduce any anti-patterns or deviate from established conventions in the codebase?
+    * **Hilt Scoping Hygiene:** Verify Hilt dependency scopes are appropriate for their lifecycle (e.g., `SingletonComponent` vs `ActivityRetainedComponent`). Avoid over-scoping (such as using `Singleton` when the component state should be isolated per activity/test session to prevent state leaks between tests).
+    * **Git Merge & Diff Hygiene:** During merges from `main`, verify that recent `main` changes (such as scoping fixes or newly added configuration files like module `AndroidManifest.xml`s) are not accidentally reverted or lost in conflicts. Ensure the PR diff against `main` is minimal and contains zero unrelated "merge noise" or unintended file reversions.
 
 2.  **Code Quality and Best Practices**
     * Check for adherence to official Kotlin style guides and Android best practices.
