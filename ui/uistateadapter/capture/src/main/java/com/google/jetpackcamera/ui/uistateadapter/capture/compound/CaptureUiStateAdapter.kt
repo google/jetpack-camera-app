@@ -137,7 +137,7 @@ fun captureUiState(
                 trackedUiState.focusedQuickSetting,
                 externalCaptureMode
             ),
-            sessionFirstFrameTimestamp = cameraState.sessionFirstFrameTimestamp,
+            sessionFirstFrameTimestamp = roundedCameraState.sessionFirstFrameTimestamp,
             stabilizationUiState = StabilizationUiState.from(
                 cameraAppSettings,
                 roundedCameraState
