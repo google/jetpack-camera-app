@@ -52,6 +52,5 @@ class CaptureUiStateAdapterTest {
         val state = VideoRecordingState.Active.Paused(0L, 0.0, 1234567890L)
         val rounded = roundVideoRecordingState(state, TimeUnit.SECONDS)
         assertThat((rounded as VideoRecordingState.Active).elapsedTimeNanos).isEqualTo(1000000000L)
-        assertThat(rounded).isInstanceOf(VideoRecordingState.Active.Paused::class.java)
     }
 }

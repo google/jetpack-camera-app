@@ -64,16 +64,15 @@ val isEmulatorWithFakeFrontCamera: Boolean
         (Build.VERSION.SDK_INT == 28 || Build.VERSION.SDK_INT == 34)
 
 val compatMainActivityExtras: Bundle?
-    get() {
-        val extras = Bundle()
-        if (isEmulatorWithFakeFrontCamera) {
-            // The GMD API 28 and 34 emulators' PackageInfo reports it has front and back cameras, but
-            // GMD is only configured for a back camera. This causes CameraX to take a long time
-            // to initialize. Set the device to use single lens mode to work around this issue.
-            extras.putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
+    get() = if (isEmulatorWithFakeFrontCamera) {
+        // The GMD API 28 and 34 emulators' PackageInfo reports it has front and back cameras, but
+        // GMD is only configured for a back camera. This causes CameraX to take a long time
+        // to initialize. Set the device to use single lens mode to work around this issue.
+        Bundle().apply {
+            putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
         }
-
-        return if (extras.size() == 0) null else extras
+    } else {
+        null
     }
 
 val debugExtra: Bundle = Bundle().apply { putBoolean("KEY_DEBUG_MODE", true) }
@@ -177,20 +176,10 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
     }
 }
 
-/**
- * Runs a test scenario for [MainActivity] with optional extras, properly merging them with
- * compatibility extras required for emulators.
- *
- * @param extras Optional bundle of extras to pass to the activity.
- * @param block The test block to execute within the scenario.
- */
 inline fun runMainActivityScenarioTest(
     extras: Bundle? = null,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
-) {
-    val activityExtras = compatMainActivityExtras?.apply { extras?.let { putAll(it) } } ?: extras
-    runScenarioTest<MainActivity>(activityExtras, block)
-}
+) = runScenarioTest<MainActivity>(extras ?: compatMainActivityExtras, block)
 
 inline fun <reified T : Activity> runScenarioTest(
     activityExtras: Bundle? = null,
@@ -216,15 +205,6 @@ inline fun <reified T : Activity> runScenarioTest(
     }
 }
 
-/**
- * Runs a test scenario for [MainActivity] expecting a result, properly merging optional extras
- * with compatibility extras required for emulators.
- *
- * @param intent The intent to launch the activity with.
- * @param extras Optional bundle of extras to merge with the intent.
- * @param block The test block to execute within the scenario.
- * @return The [Instrumentation.ActivityResult] containing result code and data.
- */
 inline fun runMainActivityScenarioTestForResult(
     intent: Intent,
     extras: Bundle? = null,

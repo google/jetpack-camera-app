@@ -44,7 +44,7 @@ import com.google.jetpackcamera.utils.longClickForVideoRecording
 import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.pressAndDragToLockVideoRecording
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
-import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
+import com.google.jetpackcamera.utils.runScenarioTestForResult
 import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
@@ -111,9 +111,9 @@ internal class VideoRecordingDeviceTest {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(MOVIES_DIR_PATH, timeStamp, "mp4")
         val result =
-            runMainActivityScenarioTestForResult(
+            runScenarioTestForResult<MainActivity>(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE),
-                extras = cacheParam.extras
+                activityExtras = cacheParam.extras
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitForCaptureButton()
@@ -129,9 +129,9 @@ internal class VideoRecordingDeviceTest {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(MOVIES_DIR_PATH, timeStamp, "mp4")
         val result =
-            runMainActivityScenarioTestForResult(
+            runScenarioTestForResult<MainActivity>(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE),
-                extras = cacheParam.extras
+                activityExtras = cacheParam.extras
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitForCaptureButton()
@@ -151,9 +151,9 @@ internal class VideoRecordingDeviceTest {
     fun video_capture_external_illegal_uri() {
         val uri = Uri.parse("asdfasdf")
         val result =
-            runMainActivityScenarioTestForResult(
+            runScenarioTestForResult<MainActivity>(
                 getSingleImageCaptureIntent(uri, MediaStore.ACTION_VIDEO_CAPTURE),
-                extras = cacheParam.extras
+                activityExtras = cacheParam.extras
             ) {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitForCaptureButton()
