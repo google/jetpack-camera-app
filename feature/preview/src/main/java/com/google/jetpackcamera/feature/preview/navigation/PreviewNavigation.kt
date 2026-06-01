@@ -84,7 +84,6 @@ fun NavController.navigateToPreview(
         )
     }
 
-
     if (queryParams.isNotEmpty()) {
         route += "?" + queryParams.joinToString("&")
     }
@@ -170,5 +169,3 @@ internal fun SavedStateHandle.getExternalCaptureMode(
 
 internal fun SavedStateHandle.getCaptureUris(defaultIfMissing: List<Uri> = emptyList()): List<Uri> =
     get<Array<String>?>(ARG_CAPTURE_URIS)?.map { it.toUri() } ?: defaultIfMissing
-
-

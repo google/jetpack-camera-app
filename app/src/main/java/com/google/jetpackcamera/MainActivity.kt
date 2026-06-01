@@ -64,7 +64,6 @@ import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
-import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
@@ -168,8 +167,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-
 
     private val externalCaptureMode: ExternalCaptureMode
         get() = intent?.action?.let { action ->

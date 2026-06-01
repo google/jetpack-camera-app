@@ -54,7 +54,6 @@ import com.google.jetpackcamera.ui.controller.impl.ScreenFlashControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.SnackBarControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.ZoomControllerImpl
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
-
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
@@ -110,8 +109,6 @@ class PreviewViewModel @Inject constructor(
     private val externalUris: List<Uri> = savedStateHandle.getCaptureUris()
     private lateinit var externalUriProgress: IntProgress
 
-
-
     private var cameraPropertiesJSON = ""
 
     val screenFlashController: ScreenFlashController = ScreenFlashControllerImpl(
@@ -141,15 +138,12 @@ class PreviewViewModel @Inject constructor(
             initialValue = CaptureUiState.NotReady
         )
 
-
     val quickSettingsController: QuickSettingsController = QuickSettingsControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
         cameraSystem = cameraSystemRepository.cameraSystem,
         externalCaptureMode = externalCaptureMode,
         coroutineContext = viewModelScope.coroutineContext
     )
-
-
 
     val snackBarController: SnackBarController = SnackBarControllerImpl(
         snackBarUiState = _snackBarUiState,
