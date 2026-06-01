@@ -31,28 +31,28 @@ import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ActivityRetainedComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.scopes.ActivityRetainedScoped
 import javax.inject.Provider
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
  * Dagger [Module] for camera data layer.
  */
 @Module
-@InstallIn(SingletonComponent::class)
+@InstallIn(ActivityRetainedComponent::class)
 interface CameraModule {
 
     @Binds
-    @Singleton
+    @ActivityRetainedScoped
     fun bindsCameraSystemRepository(
         repository: CameraXCameraSystemRepository
     ): CameraSystemRepository
 
     companion object {
         @Provides
-        @Singleton
+        @ActivityRetainedScoped
         fun providesCameraXCameraSystem(
             @ApplicationContext context: Context,
             @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
