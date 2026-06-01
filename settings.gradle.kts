@@ -65,4 +65,5 @@ include(":ui:controller")
 include(":ui:controller:impl")
 include(":ui:controller:testing")
 include(":ui:debug")
+include(":ui:debug:testing")
 

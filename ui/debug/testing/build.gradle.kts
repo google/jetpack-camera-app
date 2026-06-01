@@ -17,12 +17,10 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.compose.compiler)
 }
 
 android {
-    namespace = "com.google.jetpackcamera.ui.debug"
+    namespace = "com.google.jetpackcamera.ui.debug.testing"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -48,44 +46,13 @@ android {
     kotlin {
         jvmToolchain(17)
     }
-    buildFeatures {
-        buildConfig = true
-        compose = true
-    }
 }
 
 dependencies {
-    // Compose
-    val composeBom = platform(libs.compose.bom)
-    implementation(composeBom)
-
-    // Compose - Material Design 3
-    implementation(libs.compose.material3)
-
-    // Compose - Android Studio Preview support
-    implementation(libs.compose.ui.tooling.preview)
-    debugImplementation(libs.compose.ui.tooling)
-
-    // CameraX
-    implementation(libs.camera.core)
+    implementation(project(":ui:debug"))
+    implementation(project(":core:model"))
 
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.androidx.junit)
-
-    implementation(libs.androidx.activity.compose)
-
-    implementation(project(":core:camera"))
-    implementation(project(":core:model"))
-    implementation(project(":core:common"))
-    implementation(project(":data:settings"))
-    implementation(project(":ui:uistate:capture"))
-    implementation(project(":ui:controller"))
-}
-
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
 }
