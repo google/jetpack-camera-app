@@ -51,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.debugTestTag
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -394,7 +395,7 @@ private fun ContentScreen(
         videoQualityIndicator = {
             VideoQualityIcon(
                 captureUiState.videoQuality,
-                Modifier.testTag(VIDEO_QUALITY_TAG)
+                Modifier.debugTestTag(VIDEO_QUALITY_TAG)
             )
         },
         stabilizationIndicator = {
@@ -453,7 +454,7 @@ private fun ContentScreen(
         },
         flipCameraButton = {
             FlipCameraButton(
-                modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
+                modifier = Modifier.debugTestTag(FLIP_CAMERA_BUTTON),
                 onClick = onFlipCamera,
                 flipLensUiState = captureUiState.flipLensUiState,
                 // enable only when phone has front and rear camera
@@ -480,7 +481,7 @@ private fun ContentScreen(
                 exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
             ) {
                 ElapsedTimeText(
-                    modifier = Modifier.testTag(ELAPSED_TIME_TAG),
+                    modifier = Modifier.debugTestTag(ELAPSED_TIME_TAG),
                     elapsedTimeUiState = captureUiState.elapsedTimeUiState
                 )
             }
@@ -519,7 +520,7 @@ private fun ContentScreen(
 
                     quickSettingsController = quickSettingsController,
                     snackBarController = snackBarController,
-                    modifier = it.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                    modifier = it.debugTestTag(CAPTURE_MODE_TOGGLE_BUTTON)
                 )
             }
         },
@@ -576,7 +577,7 @@ private fun ContentScreen(
                 if (snackBarData != null) {
                     snackBarController?.let { snackBarController ->
                         TestableSnackbar(
-                            modifier = modifier.testTag(snackBarData.testTag),
+                            modifier = modifier.debugTestTag(snackBarData.testTag),
                             snackbarToShow = snackBarData,
                             snackbarHostState = snackbarHostState,
                             snackBarController = snackBarController

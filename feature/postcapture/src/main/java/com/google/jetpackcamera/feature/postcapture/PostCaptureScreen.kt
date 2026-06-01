@@ -23,6 +23,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.debugTestTag
 import androidx.compose.ui.platform.testTag
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
@@ -142,7 +143,7 @@ fun PostCaptureComponent(
                         if (snackBarData != null) {
                             snackBarController?.let {
                                 TestableSnackbar(
-                                    modifier = modifier.testTag(snackBarData.testTag),
+                                    modifier = modifier.debugTestTag(snackBarData.testTag),
                                     snackbarToShow = snackBarData,
                                     snackbarHostState = snackbarHostState,
                                     snackBarController = snackBarController

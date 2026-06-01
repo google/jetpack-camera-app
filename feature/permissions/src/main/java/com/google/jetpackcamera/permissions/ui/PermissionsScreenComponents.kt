@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.debugTestTag
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -128,7 +129,7 @@ fun PermissionTemplate(
             modifier = Modifier
                 .height(IntrinsicSize.Min)
                 .align(Alignment.CenterHorizontally)
-                .testTag(testTag),
+                .debugTestTag(testTag),
             painter = painter,
             accessibilityText = iconAccessibilityText
         )
@@ -144,7 +145,7 @@ fun PermissionTemplate(
             // permission button section
             PermissionButtonSection(
                 modifier = Modifier
-                    .testTag(REQUEST_PERMISSION_BUTTON)
+                    .debugTestTag(REQUEST_PERMISSION_BUTTON)
                     .fillMaxWidth()
                     .align(Alignment.CenterHorizontally)
                     .height(IntrinsicSize.Min),

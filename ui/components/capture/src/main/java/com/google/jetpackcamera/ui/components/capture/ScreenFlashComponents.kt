@@ -31,7 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.debugTestTag
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 
 private const val TAG = "ScreenFlashComponents"
@@ -87,7 +87,7 @@ private fun ScreenFlashOverlay(
         modifier = modifier
             .run {
                 if (screenFlashUiState.enabled) {
-                    this.testTag(SCREEN_FLASH_OVERLAY)
+                    this.debugTestTag(SCREEN_FLASH_OVERLAY)
                 } else {
                     this
                 }

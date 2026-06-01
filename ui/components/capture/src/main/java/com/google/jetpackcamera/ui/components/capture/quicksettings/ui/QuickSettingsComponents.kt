@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.debugTestTag
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -146,7 +147,7 @@ fun FocusedQuickSetCaptureMode(
                 {
                     QuickSetCaptureMode(
                         modifier = Modifier
-                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
+                            .debugTestTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
                         onClick = { onSetCaptureMode(CaptureMode.STANDARD) },
                         assignedCaptureMode = CaptureMode.STANDARD,
                         captureModeUiState = captureModeUiState,
@@ -156,7 +157,7 @@ fun FocusedQuickSetCaptureMode(
                 {
                     QuickSetCaptureMode(
                         modifier = Modifier
-                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
+                            .debugTestTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
                         onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
                         assignedCaptureMode = CaptureMode.IMAGE_ONLY,
                         captureModeUiState = captureModeUiState,
@@ -166,7 +167,7 @@ fun FocusedQuickSetCaptureMode(
                 {
                     QuickSetCaptureMode(
                         modifier = Modifier
-                            .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
+                            .debugTestTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
                         onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
                         assignedCaptureMode = CaptureMode.VIDEO_ONLY,
                         captureModeUiState = captureModeUiState,
@@ -233,7 +234,7 @@ fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modi
         text = stringResource(R.string.quick_settings_more_text),
         accessibilityText = stringResource(R.string.quick_settings_more_description),
         painter = painterResource(R.drawable.ic_more_horiz),
-        modifier = modifier.testTag(SETTINGS_BUTTON)
+        modifier = modifier.debugTestTag(SETTINGS_BUTTON)
     )
 }
 
@@ -478,9 +479,8 @@ fun ToggleQuickSettingsButton(
     IconButton(
         modifier = modifier
             .size(buttonSize)
-            .testTag(QUICK_SETTINGS_DROP_DOWN)
+            .debugTestTag(QUICK_SETTINGS_DROP_DOWN)
             .semantics {
-                testTag = QUICK_SETTINGS_DROP_DOWN
                 contentDescription = if (isOpen) {
                     openDescription
                 } else {
@@ -578,7 +578,7 @@ fun focusedRatioButtons(
     },
     {
         QuickSetRatio(
-            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
+            modifier = Modifier.debugTestTag(QUICK_SETTINGS_RATIO_3_4_BUTTON),
             onClick = { onSetAspectRatio(AspectRatio.THREE_FOUR) },
             assignedRatio = AspectRatio.THREE_FOUR,
             aspectRatioUiState = aspectRatioUiState,
@@ -587,7 +587,7 @@ fun focusedRatioButtons(
     },
     {
         QuickSetRatio(
-            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
+            modifier = Modifier.debugTestTag(QUICK_SETTINGS_RATIO_9_16_BUTTON),
             onClick = { onSetAspectRatio(AspectRatio.NINE_SIXTEEN) },
             assignedRatio = AspectRatio.NINE_SIXTEEN,
             aspectRatioUiState = aspectRatioUiState,
@@ -596,7 +596,7 @@ fun focusedRatioButtons(
     },
     {
         QuickSetRatio(
-            modifier = Modifier.testTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
+            modifier = Modifier.debugTestTag(QUICK_SETTINGS_RATIO_1_1_BUTTON),
             onClick = { onSetAspectRatio(AspectRatio.ONE_ONE) },
             assignedRatio = AspectRatio.ONE_ONE,
             aspectRatioUiState = aspectRatioUiState,
@@ -618,7 +618,7 @@ fun focusedCaptureModeButtons(
     {
         QuickSetCaptureMode(
             modifier = Modifier
-                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
+                .debugTestTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD),
             onClick = { onSetCaptureMode(CaptureMode.STANDARD) },
             assignedCaptureMode = CaptureMode.STANDARD,
             captureModeUiState = captureModeUiState,
@@ -628,7 +628,7 @@ fun focusedCaptureModeButtons(
     {
         QuickSetCaptureMode(
             modifier = Modifier
-                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
+                .debugTestTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY),
             onClick = { onSetCaptureMode(CaptureMode.IMAGE_ONLY) },
             assignedCaptureMode = CaptureMode.IMAGE_ONLY,
             captureModeUiState = captureModeUiState,
@@ -638,7 +638,7 @@ fun focusedCaptureModeButtons(
     {
         QuickSetCaptureMode(
             modifier = Modifier
-                .testTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
+                .debugTestTag(BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY),
             onClick = { onSetCaptureMode(CaptureMode.VIDEO_ONLY) },
             assignedCaptureMode = CaptureMode.VIDEO_ONLY,
             captureModeUiState = captureModeUiState,
@@ -650,7 +650,7 @@ fun focusedCaptureModeButtons(
 @Composable
 private fun CloseExpandedSettingsButton(onUnFocus: () -> Unit, modifier: Modifier = Modifier) {
     FilledIconButton(
-        modifier = modifier.testTag(QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON),
+        modifier = modifier.debugTestTag(QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON),
         onClick = onUnFocus
     ) {
         Icon(
@@ -678,7 +678,7 @@ private fun QuickSettingsBottomSheetRow(
     // It handles the "overflow to the right" behavior by default.
     LazyRow(
         modifier = modifier
-            .testTag(QUICK_SETTINGS_SCROLL_CONTAINER)
+            .debugTestTag(QUICK_SETTINGS_SCROLL_CONTAINER)
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         contentPadding = PaddingValues(horizontal = 16.dp)
