@@ -16,10 +16,7 @@
 package com.google.jetpackcamera.settings
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.core.DataStoreFactory
-import androidx.datastore.dataStoreFile
-import androidx.test.core.app.ApplicationProvider
+import android.content.SharedPreferences
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -27,12 +24,8 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
-import java.io.File
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -47,23 +40,20 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 internal class CameraAppSettingsViewModelTest {
     private val testContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
-    private lateinit var testDataStore: DataStore<JcaSettings>
-    private lateinit var datastoreScope: CoroutineScope
+    private lateinit var sharedPreferences: SharedPreferences
     private lateinit var settingsViewModel: SettingsViewModel
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
-        datastoreScope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
+        sharedPreferences = testContext.getSharedPreferences(
+            "test_jca_settings",
+            Context.MODE_PRIVATE
+        )
+        sharedPreferences.edit().clear().commit()
 
-        testDataStore = DataStoreFactory.create(
-            serializer = JcaSettingsSerializer,
-            scope = datastoreScope
-        ) {
-            testContext.dataStoreFile("test_jca_settings.pb")
-        }
         val settingsRepository = LocalSettingsRepository(
-            jcaSettings = testDataStore,
+            sharedPreferences = sharedPreferences,
             defaultCaptureModeOverride = CaptureMode.STANDARD
         )
         val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
@@ -78,12 +68,7 @@ internal class CameraAppSettingsViewModelTest {
 
     @After
     fun tearDown() {
-        File(
-            ApplicationProvider.getApplicationContext<Context>().filesDir,
-            "datastore"
-        ).deleteRecursively()
-
-        datastoreScope.cancel()
+        sharedPreferences.edit().clear().commit()
     }
 
     @Test
