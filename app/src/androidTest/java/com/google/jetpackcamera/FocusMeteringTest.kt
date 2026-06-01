@@ -28,7 +28,6 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FOCUS_METERING_INDICATOR_TAG
 import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
-import com.google.jetpackcamera.ui.debug.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.utils.FOCUS_METERING_INDICATOR_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra
@@ -55,17 +54,12 @@ class FocusMeteringTest {
         runMainActivityScenarioTest(debugExtra) {
             composeTestRule.waitForCaptureButton()
 
-            // Hide all components so we don't accidentally tap on them
-            composeTestRule.onNodeWithTag(BTN_DEBUG_HIDE_COMPONENTS_TAG).performClick()
-
-            composeTestRule.waitForNodeWithTagToDisappear(CAPTURE_BUTTON)
-
             // Define the four quadrants of the screen
             val quadrants = listOf(
                 Pair(0.25f, 0.25f), // Top-left
                 Pair(0.75f, 0.25f), // Top-right
-                Pair(0.25f, 0.75f), // Bottom-left
-                Pair(0.75f, 0.75f) // Bottom-right
+                Pair(0.25f, 0.55f), // Bottom-left
+                Pair(0.75f, 0.55f) // Bottom-right
             )
 
             quadrants.forEach { (x, y) ->

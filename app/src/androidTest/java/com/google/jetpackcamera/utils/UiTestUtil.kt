@@ -63,19 +63,8 @@ val isEmulatorWithFakeFrontCamera: Boolean
     get() = Build.HARDWARE == "ranchu" &&
         (Build.VERSION.SDK_INT == 28 || Build.VERSION.SDK_INT == 34)
 
-val compatMainActivityExtras: Bundle?
-    get() = if (isEmulatorWithFakeFrontCamera) {
-        // The GMD API 28 and 34 emulators' PackageInfo reports it has front and back cameras, but
-        // GMD is only configured for a back camera. This causes CameraX to take a long time
-        // to initialize. Set the device to use single lens mode to work around this issue.
-        Bundle().apply {
-            putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
-        }
-    } else {
-        null
-    }
-
-val debugExtra: Bundle = Bundle().apply { putBoolean("KEY_DEBUG_MODE", true) }
+val compatMainActivityExtras: Bundle? = null
+val debugExtra: Bundle = Bundle()
 val cacheExtra: Bundle = Bundle().apply { putBoolean("KEY_REVIEW_AFTER_CAPTURE", true) }
 
 const val DEFAULT_TIMEOUT_MILLIS = 5_000L
