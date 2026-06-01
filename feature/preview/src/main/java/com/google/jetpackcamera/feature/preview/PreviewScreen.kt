@@ -101,9 +101,7 @@ import com.google.jetpackcamera.ui.controller.ImageWellController
 import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
-import com.google.jetpackcamera.ui.debug.DebugController
-import com.google.jetpackcamera.ui.debug.DebugOverlay
-import com.google.jetpackcamera.ui.debug.DebugUiState
+
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -137,7 +135,7 @@ fun PreviewScreen(
     Log.d(TAG, "PreviewScreen")
 
     val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
-    val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
+
     val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
 
     val screenFlashUiState =
@@ -312,10 +310,7 @@ fun PreviewScreen(
                     }
                 },
                 onRequestWindowColorMode = onRequestWindowColorMode,
-                onNavigatePostCapture = onNavigateToPostCapture,
-                debugUiState = debugUiState,
                 snackBarUiState = snackBarUiState,
-                debugController = viewModel.debugController,
                 snackBarController = viewModel.snackBarController,
                 quickSettingsController = viewModel.quickSettingsController,
                 captureController = viewModel.captureController,
@@ -352,9 +347,7 @@ private fun ContentScreen(
     onAnimateZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onRequestWindowColorMode: (Int) -> Unit = {},
     onNavigatePostCapture: () -> Unit = {},
-    debugUiState: DebugUiState = DebugUiState.Disabled,
     snackBarUiState: SnackBarUiState = SnackBarUiState.Disabled,
-    debugController: DebugController? = null,
     quickSettingsController: QuickSettingsController? = null,
     snackBarController: SnackBarController? = null,
     captureController: CaptureController? = null,
@@ -536,25 +529,8 @@ private fun ContentScreen(
                 )
             }
         },
-        debugOverlay = { modifier, extraControls ->
-            (debugUiState as? DebugUiState.Enabled)?.let { debugUiState ->
-                debugController?.let { debugController ->
-                    DebugOverlay(
-                        modifier = modifier,
-                        debugUiState = debugUiState,
-                        onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) },
-                        extraControls = extraControls.orEmpty(),
-                        debugController = debugController
-                    )
-                }
-            }
-        },
-        debugVisibilityWrapper = { content ->
-            val uiState = debugUiState
-            if (uiState !is DebugUiState.Enabled || !uiState.debugHidingComponents) {
-                content()
-            }
-        },
+        debugOverlay = { _, _ -> },
+        debugVisibilityWrapper = { content -> content() },
         screenFlashOverlay = {
             // Screen flash overlay that stays on top of everything but invisible normally. This should
             // not be enabled based on whether screen flash is enabled because a previous image capture

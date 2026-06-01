@@ -36,7 +36,6 @@ import com.google.jetpackcamera.feature.preview.navigation.navigateToPreview
 import com.google.jetpackcamera.feature.preview.navigation.popUpToPreview
 import com.google.jetpackcamera.feature.preview.navigation.previewScreen
 import com.google.jetpackcamera.model.CaptureEvent
-import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.permissions.navigation.PermissionsRoute
 import com.google.jetpackcamera.permissions.navigation.navigateToPermissions
@@ -52,7 +51,6 @@ fun JcaApp(
     externalCaptureMode: ExternalCaptureMode,
     shouldReviewAfterCapture: Boolean,
     captureUris: List<Uri>,
-    debugSettings: DebugSettings,
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
     openAppSettings: () -> Unit,
@@ -64,7 +62,6 @@ fun JcaApp(
         externalCaptureMode = externalCaptureMode,
         shouldReviewAfterCapture = shouldReviewAfterCapture,
         captureUris = captureUris,
-        debugSettings = debugSettings,
         onOpenAppSettings = openAppSettings,
         onRequestWindowColorMode = onRequestWindowColorMode,
         onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
@@ -79,7 +76,6 @@ private fun JetpackCameraNavHost(
     externalCaptureMode: ExternalCaptureMode,
     shouldReviewAfterCapture: Boolean,
     captureUris: List<Uri>,
-    debugSettings: DebugSettings,
     onOpenAppSettings: () -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
@@ -114,7 +110,6 @@ private fun JetpackCameraNavHost(
             externalCaptureMode = externalCaptureMode,
             shouldCacheReview = shouldReviewAfterCapture,
             captureUris = captureUris,
-            debugSettings = debugSettings,
             onRequestWindowColorMode = onRequestWindowColorMode,
             onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
             onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },

@@ -62,7 +62,6 @@ import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.core.common.traceFirstFrameMainActivity
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DarkMode
-import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensFacing
@@ -146,7 +145,6 @@ class MainActivity : ComponentActivity() {
                                 externalCaptureMode = externalCaptureMode,
                                 shouldReviewAfterCapture = shouldReviewAfterCapture,
                                 captureUris = captureUris,
-                                debugSettings = debugSettings,
                                 openAppSettings = ::openAppSettings,
                                 onRequestWindowColorMode = { colorMode ->
                                     // Window color mode APIs require API level 26+
@@ -171,24 +169,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private val debugSettings: DebugSettings
-        get() = DebugSettings(
-            isDebugModeEnabled = intent?.getBooleanExtra(KEY_DEBUG_MODE, false) ?: false,
-            singleLensMode = intent?.getStringExtra(KEY_DEBUG_SINGLE_LENS_MODE)
-                ?.let {
-                    when (it.lowercase()) {
-                        "back" -> LensFacing.BACK
-                        "front" -> LensFacing.FRONT
-                        else -> {
-                            Log.e(
-                                TAG,
-                                "Invalid debug single lens mode argument: \"$it\". Valid values are \"FRONT\" or \"BACK\""
-                            )
-                            null
-                        }
-                    }
-                }
-        )
+
 
     private val externalCaptureMode: ExternalCaptureMode
         get() = intent?.action?.let { action ->
@@ -307,9 +288,6 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private const val KEY_REVIEW_AFTER_CAPTURE = "KEY_REVIEW_AFTER_CAPTURE"
-
-        private const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
-        const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
     }
 }
 

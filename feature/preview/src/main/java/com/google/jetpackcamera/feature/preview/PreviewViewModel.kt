@@ -26,11 +26,9 @@ import com.google.jetpackcamera.core.common.DefaultSaveMode
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
-import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
 import com.google.jetpackcamera.feature.preview.navigation.getExternalCaptureMode
 import com.google.jetpackcamera.feature.preview.navigation.getRequestedSaveMode
 import com.google.jetpackcamera.model.CaptureEvent
-import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.LowLightBoostState
@@ -56,10 +54,7 @@ import com.google.jetpackcamera.ui.controller.impl.ScreenFlashControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.SnackBarControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.ZoomControllerImpl
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
-import com.google.jetpackcamera.ui.debug.DebugController
-import com.google.jetpackcamera.ui.debug.DebugControllerImpl
-import com.google.jetpackcamera.ui.debug.DebugUiState
-import com.google.jetpackcamera.ui.debug.debugUiState
+
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
@@ -115,7 +110,7 @@ class PreviewViewModel @Inject constructor(
     private val externalUris: List<Uri> = savedStateHandle.getCaptureUris()
     private lateinit var externalUriProgress: IntProgress
 
-    private val debugSettings: DebugSettings = savedStateHandle.getDebugSettings()
+
 
     private var cameraPropertiesJSON = ""
 
@@ -131,7 +126,6 @@ class PreviewViewModel @Inject constructor(
         cameraSystemRepository.cameraSystem.initialize(
             cameraAppSettings = settingsRepository.defaultCameraAppSettings.first()
                 .applyExternalCaptureMode(externalCaptureMode)
-                .copy(debugSettings = debugSettings)
         ) { cameraPropertiesJSON = it }
     }
 
@@ -146,18 +140,7 @@ class PreviewViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = CaptureUiState.NotReady
         )
-    val debugUiState: StateFlow<DebugUiState> = debugUiState(
-        cameraSystemRepository.cameraSystem,
-        constraintsRepository,
-        debugSettings,
-        cameraPropertiesJSON,
-        trackedCaptureUiState
-    )
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = DebugUiState.Disabled
-        )
+
 
     val quickSettingsController: QuickSettingsController = QuickSettingsControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
@@ -166,10 +149,7 @@ class PreviewViewModel @Inject constructor(
         coroutineContext = viewModelScope.coroutineContext
     )
 
-    val debugController: DebugController = DebugControllerImpl(
-        cameraSystem = cameraSystemRepository.cameraSystem,
-        trackedCaptureUiState = trackedCaptureUiState
-    )
+
 
     val snackBarController: SnackBarController = SnackBarControllerImpl(
         snackBarUiState = _snackBarUiState,

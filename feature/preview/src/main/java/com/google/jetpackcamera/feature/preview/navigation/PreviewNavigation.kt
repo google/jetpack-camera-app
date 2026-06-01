@@ -33,11 +33,9 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_CAPTURE_URIS
-import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_DEBUG_SETTINGS
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_EXTERNAL_CAPTURE_MODE
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_REVIEW_AFTER_CAPTURE
 import com.google.jetpackcamera.model.CaptureEvent
-import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.SaveMode
 
@@ -46,7 +44,6 @@ object PreviewRoute {
 
     internal const val ARG_REVIEW_AFTER_CAPTURE: String = "reviewAfterCapture"
     internal const val ARG_CAPTURE_URIS: String = "captureUris"
-    internal const val ARG_DEBUG_SETTINGS: String = "debugSettings"
 }
 
 private const val BASE_ROUTE_DEF: String = "preview"
@@ -54,13 +51,11 @@ private const val FULL_ROUTE_DEF: String =
     BASE_ROUTE_DEF +
         "?${ARG_EXTERNAL_CAPTURE_MODE}={$ARG_EXTERNAL_CAPTURE_MODE}" +
         "&${ARG_REVIEW_AFTER_CAPTURE}={$ARG_REVIEW_AFTER_CAPTURE}" +
-        "&${ARG_CAPTURE_URIS}={$ARG_CAPTURE_URIS}" +
-        "&${ARG_DEBUG_SETTINGS}={$ARG_DEBUG_SETTINGS}"
+        "&${ARG_CAPTURE_URIS}={$ARG_CAPTURE_URIS}"
 
 fun NavController.navigateToPreview(
     externalCaptureMode: ExternalCaptureMode? = null,
     captureUris: List<Uri>? = null,
-    debugSettings: DebugSettings? = null,
     saveMode: Boolean? = null,
     builder: (NavOptionsBuilder.() -> Unit) = {}
 ) {
@@ -88,12 +83,7 @@ fun NavController.navigateToPreview(
                 NavType.StringListType.serializeAsValue(it.map(Uri::toString))}"
         )
     }
-    debugSettings?.let {
-        queryParams.add(
-            "${ARG_DEBUG_SETTINGS}=${
-                DebugSettingsNavType.serializeAsValue(it)}"
-        )
-    }
+
 
     if (queryParams.isNotEmpty()) {
         route += "?" + queryParams.joinToString("&")
@@ -107,7 +97,6 @@ fun NavGraphBuilder.previewScreen(
     externalCaptureMode: ExternalCaptureMode,
     shouldCacheReview: Boolean,
     captureUris: List<Uri>,
-    debugSettings: DebugSettings,
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -129,10 +118,6 @@ fun NavGraphBuilder.previewScreen(
             navArgument(name = ARG_CAPTURE_URIS) {
                 type = NavType.StringListType
                 defaultValue = captureUris.map { it.toString() }
-            },
-            navArgument(name = ARG_DEBUG_SETTINGS) {
-                type = DebugSettingsNavType
-                defaultValue = debugSettings
             }
         ),
         enterTransition = { fadeIn() }
@@ -186,7 +171,4 @@ internal fun SavedStateHandle.getExternalCaptureMode(
 internal fun SavedStateHandle.getCaptureUris(defaultIfMissing: List<Uri> = emptyList()): List<Uri> =
     get<Array<String>?>(ARG_CAPTURE_URIS)?.map { it.toUri() } ?: defaultIfMissing
 
-internal fun SavedStateHandle.getDebugSettings(
-    defaultIfMissing: DebugSettings = DebugSettings()
-): DebugSettings = get<ByteArray>(ARG_DEBUG_SETTINGS)?.let(DebugSettings::parseFromByteArray)
-    ?: defaultIfMissing
+
