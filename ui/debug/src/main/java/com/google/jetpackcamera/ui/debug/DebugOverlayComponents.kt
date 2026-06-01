@@ -99,7 +99,7 @@ private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float
     DebugTextBar(
         modifier = modifier,
         title = "Zoom Ratio: ",
-        value = stringResource(id = R.string.zoom_ratio_text, primaryZoomRatio ?: 1f),
+        value = stringResource(id = R.string.debug_zoom_ratio_text, primaryZoomRatio ?: 1f),
         tag = ZOOM_RATIO_TAG
     )
 }

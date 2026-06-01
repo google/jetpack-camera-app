@@ -21,5 +21,5 @@
     <string name="debug_overlay_toggle_btn_text">Debug</string>
     <string name="debug_hide_components_desc">Hiding components</string>
     <string name="debug_show_components_desc">Displaying components</string>
-    <string name="zoom_ratio_text">%1$.2fx</string>
+    <string name="debug_zoom_ratio_text">%1$.2fx</string>
 </resources>
