@@ -69,8 +69,7 @@ android {
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
 
-    // proto datastore
-    implementation(libs.androidx.datastore)
+
 
     // Testing
     testImplementation(libs.junit)
