@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.components.capture.debug
+package com.google.jetpackcamera.ui.debug
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
@@ -63,20 +63,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.TestPattern
-import com.google.jetpackcamera.ui.components.capture.BTN_DEBUG_HIDE_COMPONENTS_TAG
-import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_BUTTON
-import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG
-import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
-import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
-import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
-import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
-import com.google.jetpackcamera.ui.components.capture.DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG
-import com.google.jetpackcamera.ui.components.capture.LOGICAL_CAMERA_ID_TAG
-import com.google.jetpackcamera.ui.components.capture.PHYSICAL_CAMERA_ID_TAG
-import com.google.jetpackcamera.ui.components.capture.R
-import com.google.jetpackcamera.ui.components.capture.ZOOM_RATIO_TAG
-import com.google.jetpackcamera.ui.controller.debug.DebugController
-import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import kotlin.math.abs
 
 private const val TAG = "DebugOverlayComponents"

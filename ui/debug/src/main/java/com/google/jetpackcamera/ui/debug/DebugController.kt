@@ -13,28 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.controller.debug
+package com.google.jetpackcamera.ui.debug
 
 import com.google.jetpackcamera.model.TestPattern
 
 /**
- * Interface for controlling debug features.
+ * Interface contract for managing interactions with debug settings.
  */
 interface DebugController {
-    /**
-     * Toggles the visibility of debug UI components.
-     */
     fun toggleDebugHidingComponents()
 
-    /**
-     * Toggles the debug overlay.
-     */
     fun toggleDebugOverlay()
 
-    /**
-     * Sets the test pattern for the camera.
-     *
-     * @param testPattern The test pattern to set.
-     */
     fun setTestPattern(testPattern: TestPattern)
 }
