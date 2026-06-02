@@ -111,7 +111,7 @@ class CameraXCameraSystem(
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostEffectProvider>>,
     val imagePostProcessors:
     Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>>,
-    singleStreamEffectProviders: @JvmSuppressWildcards Set<SingleStreamEffectProvider>
+    private val singleStreamEffectProvider: SingleStreamEffectProvider?
 ) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -141,8 +141,6 @@ class CameraXCameraSystem(
 
     private val lowLightBoostAvailabilityChecker: LowLightBoostAvailabilityChecker?
     private val lowLightBoostEffectProvider: LowLightBoostEffectProvider?
-    private val singleStreamEffectProvider: SingleStreamEffectProvider? =
-        singleStreamEffectProviders.firstOrNull()
 
     init {
         val entry = availabilityCheckers.entries.firstOrNull()

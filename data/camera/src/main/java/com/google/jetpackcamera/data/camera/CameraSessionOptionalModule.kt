@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera.effects
+package com.google.jetpackcamera.data.camera
 
 import com.google.jetpackcamera.core.camera.SingleStreamEffectProvider
-import dagger.Binds
+import dagger.BindsOptionalOf
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
 @Module
 @InstallIn(SingletonComponent::class)
-interface EffectsModule {
-    @Binds
-    fun bindSingleStreamEffectProvider(
-        impl: SingleStreamEffectProviderImpl
-    ): SingleStreamEffectProvider
+interface CameraSessionOptionalModule {
+    @BindsOptionalOf
+    fun bindOptionalSingleStreamEffectProvider(): SingleStreamEffectProvider
 }

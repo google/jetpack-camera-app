@@ -71,7 +71,7 @@ interface CameraModule {
                 ImagePostProcessorFeatureKey,
                 @JvmSuppressWildcards Provider<ImagePostProcessor>
                 >,
-            singleStreamEffectProviders: @JvmSuppressWildcards Set<SingleStreamEffectProvider>
+            singleStreamEffectProvider: java.util.Optional<SingleStreamEffectProvider>
         ): CameraXCameraSystem {
             return CameraXCameraSystem(
                 context as Application,
@@ -81,7 +81,7 @@ interface CameraModule {
                 availabilityCheckers,
                 effectProviders,
                 imagePostProcessors,
-                singleStreamEffectProviders
+                singleStreamEffectProvider.orElse(null)
             )
         }
     }
