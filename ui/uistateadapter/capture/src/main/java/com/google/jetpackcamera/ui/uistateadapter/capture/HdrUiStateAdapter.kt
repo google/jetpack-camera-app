@@ -15,9 +15,11 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.ExternalCaptureMode.Companion.toCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -58,45 +60,41 @@ fun HdrUiState.Companion.from(
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
     )
-    return when (externalCaptureMode) {
-        ExternalCaptureMode.ImageCapture,
-        ExternalCaptureMode.MultipleImageCapture -> if (
-            cameraConstraints
+    
+    // Determine active capture mode, respecting external override
+    val activeCaptureMode = externalCaptureMode.toCaptureMode() ?: cameraAppSettings.captureMode
+
+    return when (activeCaptureMode) {
+        CaptureMode.IMAGE_ONLY -> {
+            val supportsHdrImage = cameraConstraints
                 ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
-                ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false &&
-            cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
-        ) {
-            HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
-        } else {
-            HdrUiState.Unavailable
+                ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
+            val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
+            
+            if (supportsHdrImage && !isFlashHdrConflict) {
+                HdrUiState.Available(
+                    selectedImageFormat = cameraAppSettings.imageFormat,
+                    selectedDynamicRange = DynamicRange.SDR // Force SDR in UI state for video
+                )
+            } else {
+                HdrUiState.Unavailable
+            }
         }
-
-        ExternalCaptureMode.VideoCapture -> if (
-            cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true &&
-            cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL &&
-            cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
-        ) {
-            HdrUiState.Available(
-                cameraAppSettings.imageFormat,
-                cameraAppSettings.dynamicRange
-            )
-        } else {
-            HdrUiState.Unavailable
+        CaptureMode.VIDEO_ONLY -> {
+            val supportsHdrVideo = cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
+            val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
+            val isConcurrentConflict = cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
+            
+            if (supportsHdrVideo && !isFlashHdrConflict && !isConcurrentConflict) {
+                HdrUiState.Available(
+                    selectedImageFormat = ImageOutputFormat.JPEG, // Force SDR in UI state for image
+                    selectedDynamicRange = cameraAppSettings.dynamicRange
+                )
+            } else {
+                HdrUiState.Unavailable
+            }
         }
-
-        ExternalCaptureMode.Standard -> if ((
-                cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
-                    true ||
-                    cameraConstraints?.supportedImageFormatsMap?.get(
-                        cameraAppSettings.streamConfig
-                    )
-                        ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-                ) &&
-            cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL &&
-            cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
-        ) {
-            HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
-        } else {
+        CaptureMode.STANDARD -> {
             HdrUiState.Unavailable
         }
     }

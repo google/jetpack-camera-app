@@ -159,11 +159,26 @@ fun QuickSettingsBottomSheet(
                         }
 
                         add {
+                            val captureMode = (quickSettingsUiState.captureModeUiState as? CaptureModeUiState.Available)?.selectedCaptureMode
                             QuickSetHdr(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
                                 onClick = { d: DynamicRange, i: ImageOutputFormat ->
-                                    quickSettingsController.setDynamicRange(d)
-                                    quickSettingsController.setImageFormat(i)
+                                    when (captureMode) {
+                                        CaptureMode.IMAGE_ONLY -> {
+                                            quickSettingsController.setImageFormat(i)
+                                        }
+                                        CaptureMode.VIDEO_ONLY -> {
+                                            quickSettingsController.setDynamicRange(d)
+                                        }
+                                        CaptureMode.STANDARD -> {
+                                            quickSettingsController.setDynamicRange(d)
+                                            quickSettingsController.setImageFormat(i)
+                                        }
+                                        null -> {
+                                            quickSettingsController.setDynamicRange(d)
+                                            quickSettingsController.setImageFormat(i)
+                                        }
+                                    }
                                 },
                                 hdrUiState = quickSettingsUiState.hdrUiState
                             )

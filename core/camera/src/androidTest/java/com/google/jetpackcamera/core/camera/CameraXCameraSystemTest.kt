@@ -34,8 +34,10 @@ import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
@@ -453,6 +455,191 @@ class CameraXCameraSystemTest {
                 )
             )
         )
+    }
+
+    @Test
+    fun switchCaptureMode_toStandard_disablesHdr_back(): Unit = runBlocking {
+        runSwitchCaptureMode_toStandard_disablesHdr_test(LensFacing.BACK)
+    }
+
+    @Test
+    fun switchCaptureMode_toStandard_disablesHdr_front(): Unit = runBlocking {
+        runSwitchCaptureMode_toStandard_disablesHdr_test(LensFacing.FRONT)
+    }
+
+    @Test
+    fun switchCaptureMode_preservesVideoHdr_back(): Unit = runBlocking {
+        runSwitchCaptureMode_preservesVideoHdr_test(LensFacing.BACK)
+    }
+
+    @Test
+    fun switchCaptureMode_preservesVideoHdr_front(): Unit = runBlocking {
+        runSwitchCaptureMode_preservesVideoHdr_test(LensFacing.FRONT)
+    }
+
+    @Test
+    fun switchCaptureMode_preservesImageHdr_back(): Unit = runBlocking {
+        runSwitchCaptureMode_preservesImageHdr_test(LensFacing.BACK)
+    }
+
+    @Test
+    fun switchCaptureMode_preservesImageHdr_front(): Unit = runBlocking {
+        runSwitchCaptureMode_preservesImageHdr_test(LensFacing.FRONT)
+    }
+
+    private suspend fun CoroutineScope.runSwitchCaptureMode_toStandard_disablesHdr_test(
+        lensFacing: LensFacing
+    ) {
+        // Arrange. Initialize with default settings to query constraints safely.
+        val cameraSystem = createAndInitCameraXCameraSystem()
+        val systemConstraints = cameraSystem.getSystemConstraints().value
+        val cameraConstraints = systemConstraints?.perLensConstraints?.get(lensFacing)
+
+        // This instrumented test runs on real hardware/emulator. Since we cannot mock the
+        // device's actual HDR capabilities, we use assume() to gracefully skip the test
+        // if the specified lens is not available or does not support HDR video (HLG10).
+        assume().withMessage("HDR video not supported on $lensFacing, skip the test.")
+            .that(
+                cameraConstraints != null &&
+                    cameraConstraints.supportedDynamicRanges.contains(DynamicRange.HLG10)
+            ).isTrue()
+
+        // Configure the camera to use the target lens and enable HDR video
+        cameraSystem.setLensFacing(lensFacing)
+        cameraSystem.setCaptureMode(CaptureMode.VIDEO_ONLY)
+        cameraSystem.setDynamicRange(DynamicRange.HLG10)
+
+        cameraSystem.startCameraAndWaitUntilRunning()
+        
+        val dynamicRangeCheck = cameraSystem.getCurrentSettings()
+            .filterNotNull()
+            .map { it.dynamicRange }
+            .produceIn(this)
+
+        // Ensure we start in HLG10
+        dynamicRangeCheck.awaitValue(DynamicRange.HLG10)
+
+        // Act. Switch to STANDARD mode
+        cameraSystem.setCaptureMode(CaptureMode.STANDARD)
+
+        // Assert. Dynamic range should fallback to SDR because STANDARD doesn't support HDR
+        dynamicRangeCheck.awaitValue(DynamicRange.SDR)
+
+        // Clean-up.
+        dynamicRangeCheck.cancel()
+    }
+
+    private suspend fun CoroutineScope.runSwitchCaptureMode_preservesVideoHdr_test(
+        lensFacing: LensFacing
+    ) {
+        // Arrange. Initialize with default settings to query constraints safely.
+        val cameraSystem = createAndInitCameraXCameraSystem()
+        val systemConstraints = cameraSystem.getSystemConstraints().value
+        val cameraConstraints = systemConstraints?.perLensConstraints?.get(lensFacing)
+
+        // This instrumented test runs on real hardware/emulator. Since we cannot mock the
+        // device's actual HDR capabilities, we use assume() to gracefully skip the test
+        // if the specified lens is not available or does not support HDR video (HLG10).
+        assume().withMessage("HDR video not supported on $lensFacing, skip the test.")
+            .that(
+                cameraConstraints != null &&
+                    cameraConstraints.supportedDynamicRanges.contains(DynamicRange.HLG10)
+            ).isTrue()
+
+        // Configure the camera to use the target lens and enable HDR video
+        cameraSystem.setLensFacing(lensFacing)
+        cameraSystem.setCaptureMode(CaptureMode.VIDEO_ONLY)
+        cameraSystem.setDynamicRange(DynamicRange.HLG10)
+        cameraSystem.setImageFormat(ImageOutputFormat.JPEG)
+
+        cameraSystem.startCameraAndWaitUntilRunning()
+        
+        val settingsCheck = cameraSystem.getCurrentSettings()
+            .filterNotNull()
+            .produceIn(this)
+
+        // Ensure we start in VIDEO_ONLY with HLG10
+        var settings = settingsCheck.receive()
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        assertThat(settings.dynamicRange).isEqualTo(DynamicRange.HLG10)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
+
+        // Act. Switch to IMAGE_ONLY
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+
+        // Assert. Image format should be JPEG (SDR), but dynamicRange should still be HLG10 in settings
+        settings = settingsCheck.receive()
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        assertThat(settings.dynamicRange).isEqualTo(DynamicRange.HLG10) // Preserved!
+
+        // Act. Switch back to VIDEO_ONLY
+        cameraSystem.setCaptureMode(CaptureMode.VIDEO_ONLY)
+
+        // Assert. Should be back to VIDEO_ONLY with HLG10
+        settings = settingsCheck.receive()
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        assertThat(settings.dynamicRange).isEqualTo(DynamicRange.HLG10)
+
+        // Clean-up.
+        settingsCheck.cancel()
+    }
+
+    private suspend fun CoroutineScope.runSwitchCaptureMode_preservesImageHdr_test(
+        lensFacing: LensFacing
+    ) {
+        // Arrange. Initialize with default settings to query constraints safely.
+        val cameraSystem = createAndInitCameraXCameraSystem()
+        val systemConstraints = cameraSystem.getSystemConstraints().value
+        val cameraConstraints = systemConstraints?.perLensConstraints?.get(lensFacing)
+
+        // This instrumented test runs on real hardware/emulator. Since we cannot mock the
+        // device's actual Ultra HDR capabilities, we use assume() to gracefully skip the test
+        // if the specified lens is not available or does not support Ultra HDR.
+        assume().withMessage("Ultra HDR not supported on $lensFacing, skip the test.")
+            .that(
+                cameraConstraints != null &&
+                    cameraConstraints.supportedImageFormatsMap[DEFAULT_CAMERA_APP_SETTINGS.streamConfig]
+                        ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+            ).isTrue()
+
+        // Configure the camera to use the target lens and enable Ultra HDR
+        cameraSystem.setLensFacing(lensFacing)
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+        cameraSystem.setDynamicRange(DynamicRange.SDR)
+
+        cameraSystem.startCameraAndWaitUntilRunning()
+        
+        val settingsCheck = cameraSystem.getCurrentSettings()
+            .filterNotNull()
+            .produceIn(this)
+
+        // Ensure we start in IMAGE_ONLY with ULTRA_HDR
+        var settings = settingsCheck.receive()
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+        assertThat(settings.dynamicRange).isEqualTo(DynamicRange.SDR)
+
+        // Act. Switch to VIDEO_ONLY
+        cameraSystem.setCaptureMode(CaptureMode.VIDEO_ONLY)
+
+        // Assert. Dynamic range should be SDR, but imageFormat should still be ULTRA_HDR in settings
+        settings = settingsCheck.receive()
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        assertThat(settings.dynamicRange).isEqualTo(DynamicRange.SDR)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR) // Preserved!
+
+        // Act. Switch back to IMAGE_ONLY
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+
+        // Assert. Should be back to IMAGE_ONLY with ULTRA_HDR
+        settings = settingsCheck.receive()
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+        // Clean-up.
+        settingsCheck.cancel()
     }
 }
 
