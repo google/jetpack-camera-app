@@ -66,7 +66,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.net.toFile
 import androidx.lifecycle.asFlow
-import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -216,7 +215,7 @@ internal suspend fun runSingleCameraSession(
                 if (cameraEffect == null &&
                     sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM
                 ) {
-                    cameraEffect = SingleSurfaceForcingEffect(this@sessionScope)
+                    cameraEffect = singleStreamEffectProvider?.create(this@sessionScope)
                 }
                 val useCaseGroup = createUseCaseGroup(
                     cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),
