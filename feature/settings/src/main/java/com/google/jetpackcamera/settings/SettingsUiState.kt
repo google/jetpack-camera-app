@@ -27,11 +27,13 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_ENABLED_TAG
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
+import com.google.jetpackcamera.settings.ui.ULTRA_HDR_ENABLED_TAG
 import com.google.jetpackcamera.settings.ui.VIDEO_QUALITY_UNSUPPORTED_TAG
 internal const val FIVE_SECONDS_DURATION = 5_000L
 internal const val TEN_SECONDS_DURATION = 10_000L
@@ -107,6 +109,18 @@ sealed interface DisabledRationale {
     ) : DisabledRationale {
         override val reasonTextResId = R.string.video_quality_unsupported
         override val testTag = VIDEO_QUALITY_UNSUPPORTED_TAG
+    }
+
+    data class ConcurrentCameraEnabledRationale(override val affectedSettingNameResId: Int) :
+        DisabledRationale {
+        override val reasonTextResId: Int = R.string.concurrent_camera_enabled
+        override val testTag = CONCURRENT_CAMERA_ENABLED_TAG
+    }
+
+    data class UltraHdrEnabledRationale(override val affectedSettingNameResId: Int) :
+        DisabledRationale {
+        override val reasonTextResId: Int = R.string.ultra_hdr_enabled
+        override val testTag = ULTRA_HDR_ENABLED_TAG
     }
 
     sealed interface LensUnsupportedRationale : DisabledRationale {
@@ -231,6 +245,8 @@ sealed interface AspectRatioUiState {
 sealed interface StreamConfigUiState {
     data class Enabled(val currentStreamConfig: StreamConfig, val additionalContext: String = "") :
         StreamConfigUiState
+
+    data class Disabled(val disabledRationale: DisabledRationale) : StreamConfigUiState
 }
 
 sealed interface DarkModeUiState {

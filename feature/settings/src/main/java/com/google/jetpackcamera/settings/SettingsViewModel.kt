@@ -23,9 +23,11 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
@@ -76,7 +78,7 @@ class SettingsViewModel @Inject constructor(
             updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
-                streamConfigUiState = StreamConfigUiState.Enabled(updatedSettings.streamConfig),
+                streamConfigUiState = getStreamConfigUiState(updatedSettings),
                 maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
                     updatedSettings.maxVideoDurationMillis
                 ),
@@ -191,6 +193,28 @@ class SettingsViewModel @Inject constructor(
             autoSelectableState = autoSelectableState,
             lowLightSelectableState = llbSelectableState
         )
+    }
+
+    private fun getStreamConfigUiState(
+        cameraAppSettings: CameraAppSettings
+    ): StreamConfigUiState {
+        if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+            return StreamConfigUiState.Disabled(
+                DisabledRationale.ConcurrentCameraEnabledRationale(
+                    R.string.stream_config_rationale_prefix
+                )
+            )
+        }
+
+        if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
+            return StreamConfigUiState.Disabled(
+                DisabledRationale.UltraHdrEnabledRationale(
+                    R.string.stream_config_rationale_prefix
+                )
+            )
+        }
+
+        return StreamConfigUiState.Enabled(cameraAppSettings.streamConfig)
     }
 
     private fun getAudioUiState(isAudioEnabled: Boolean, permissionGranted: Boolean): AudioUiState =
