@@ -510,7 +510,7 @@ class CameraXCameraSystemTest {
         cameraSystem.setDynamicRange(DynamicRange.HLG10)
 
         cameraSystem.startCameraAndWaitUntilRunning()
-        
+
         val dynamicRangeCheck = cameraSystem.getCurrentSettings()
             .filterNotNull()
             .map { it.dynamicRange }
@@ -553,7 +553,7 @@ class CameraXCameraSystemTest {
         cameraSystem.setImageFormat(ImageOutputFormat.JPEG)
 
         cameraSystem.startCameraAndWaitUntilRunning()
-        
+
         val settingsCheck = cameraSystem.getCurrentSettings()
             .filterNotNull()
             .produceIn(this)
@@ -599,8 +599,9 @@ class CameraXCameraSystemTest {
         assume().withMessage("Ultra HDR not supported on $lensFacing, skip the test.")
             .that(
                 cameraConstraints != null &&
-                    cameraConstraints.supportedImageFormatsMap[DEFAULT_CAMERA_APP_SETTINGS.streamConfig]
-                        ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+                    cameraConstraints.supportedImageFormatsMap[
+                        DEFAULT_CAMERA_APP_SETTINGS.streamConfig
+                    ]?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
             ).isTrue()
 
         // Configure the camera to use the target lens and enable Ultra HDR
@@ -610,7 +611,7 @@ class CameraXCameraSystemTest {
         cameraSystem.setDynamicRange(DynamicRange.SDR)
 
         cameraSystem.startCameraAndWaitUntilRunning()
-        
+
         val settingsCheck = cameraSystem.getCurrentSettings()
             .filterNotNull()
             .produceIn(this)

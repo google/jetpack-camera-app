@@ -60,9 +60,10 @@ fun HdrUiState.Companion.from(
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
     )
-    
+
     // Determine active capture mode, respecting external override
-    val activeCaptureMode = externalCaptureMode.toCaptureMode() ?: cameraAppSettings.captureMode
+    val activeCaptureMode =
+        externalCaptureMode.toCaptureMode() ?: cameraAppSettings.captureMode
 
     return when (activeCaptureMode) {
         CaptureMode.IMAGE_ONLY -> {
@@ -70,7 +71,7 @@ fun HdrUiState.Companion.from(
                 ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
                 ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
             val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
-            
+
             if (supportsHdrImage && !isFlashHdrConflict) {
                 HdrUiState.Available(
                     selectedImageFormat = cameraAppSettings.imageFormat,
@@ -81,10 +82,12 @@ fun HdrUiState.Companion.from(
             }
         }
         CaptureMode.VIDEO_ONLY -> {
-            val supportsHdrVideo = cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
+            val supportsHdrVideo =
+                cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
             val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
-            val isConcurrentConflict = cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
-            
+            val isConcurrentConflict =
+                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
+
             if (supportsHdrVideo && !isFlashHdrConflict && !isConcurrentConflict) {
                 HdrUiState.Available(
                     selectedImageFormat = ImageOutputFormat.JPEG, // Force SDR in UI state for image
