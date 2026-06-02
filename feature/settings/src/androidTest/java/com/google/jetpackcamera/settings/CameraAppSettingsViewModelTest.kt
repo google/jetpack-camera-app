@@ -27,7 +27,6 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
-import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,6 +41,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
+import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -186,9 +187,9 @@ internal class CameraAppSettingsViewModelTest {
 
         val newDarkMode =
             (
-                assertIsEnabled(settingsViewModel.settingsUiState.value)
-                    .darkModeUiState as DarkModeUiState.Enabled
-                )
+                    assertIsEnabled(settingsViewModel.settingsUiState.value)
+                        .darkModeUiState as DarkModeUiState.Enabled
+                    )
                 .currentDarkMode
 
         assertThat(initialDarkMode).isEqualTo(DarkMode.DARK)
@@ -200,7 +201,9 @@ internal class CameraAppSettingsViewModelTest {
         // Set image format to Ultra HDR in datastore
         testDataStore.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setImageFormatStatus(com.google.jetpackcamera.model.proto.ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR)
+                .setImageFormatStatus(
+                    ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
+                )
                 .build()
         }
         advanceUntilIdle()
@@ -211,8 +214,10 @@ internal class CameraAppSettingsViewModelTest {
 
         val streamConfigUiState = assertIsEnabled(uiState).streamConfigUiState
         assertThat(streamConfigUiState).isInstanceOf(StreamConfigUiState.Disabled::class.java)
-        val disabledRationale = (streamConfigUiState as StreamConfigUiState.Disabled).disabledRationale
-        assertThat(disabledRationale).isInstanceOf(DisabledRationale.UltraHdrEnabledRationale::class.java)
+        val disabledRationale =
+            (streamConfigUiState as StreamConfigUiState.Disabled).disabledRationale
+        assertThat(disabledRationale)
+            .isInstanceOf(DisabledRationale.UltraHdrEnabledRationale::class.java)
     }
 }
 

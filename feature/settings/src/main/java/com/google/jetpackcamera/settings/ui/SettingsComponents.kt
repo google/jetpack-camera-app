@@ -384,13 +384,18 @@ fun StreamConfigSetting(
                             BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
                         ),
                         text = stringResource(id = R.string.stream_config_selector_multi_stream),
-                        selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
+                        selected = streamConfigUiState.currentStreamConfig ==
+                            StreamConfig.MULTI_STREAM,
                         enabled = true,
                         onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
                     )
                     SingleChoiceSelector(
-                        modifier = Modifier.testTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG),
-                        text = stringResource(id = R.string.stream_config_description_single_stream),
+                        modifier = Modifier.testTag(
+                            BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
+                        ),
+                        text = stringResource(
+                            id = R.string.stream_config_description_single_stream
+                        ),
                         selected = streamConfigUiState.currentStreamConfig ==
                             StreamConfig.SINGLE_STREAM,
                         enabled = true,

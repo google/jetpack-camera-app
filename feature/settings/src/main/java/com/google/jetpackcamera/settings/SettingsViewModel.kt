@@ -195,9 +195,7 @@ class SettingsViewModel @Inject constructor(
         )
     }
 
-    private fun getStreamConfigUiState(
-        cameraAppSettings: CameraAppSettings
-    ): StreamConfigUiState {
+    private fun getStreamConfigUiState(cameraAppSettings: CameraAppSettings): StreamConfigUiState {
         if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
             return StreamConfigUiState.Disabled(
                 DisabledRationale.ConcurrentCameraEnabledRationale(
