@@ -166,17 +166,9 @@ fun QuickSettingsBottomSheet(
                                 modifier = Modifier.testTag(QUICK_SETTINGS_HDR_BUTTON),
                                 onClick = { d: DynamicRange, i: ImageOutputFormat ->
                                     when (captureMode) {
-                                        CaptureMode.IMAGE_ONLY -> {
-                                            quickSettingsController.setImageFormat(i)
-                                        }
-                                        CaptureMode.VIDEO_ONLY -> {
-                                            quickSettingsController.setDynamicRange(d)
-                                        }
-                                        CaptureMode.STANDARD -> {
-                                            quickSettingsController.setDynamicRange(d)
-                                            quickSettingsController.setImageFormat(i)
-                                        }
-                                        null -> {
+                                        CaptureMode.IMAGE_ONLY -> quickSettingsController.setImageFormat(i)
+                                        CaptureMode.VIDEO_ONLY -> quickSettingsController.setDynamicRange(d)
+                                        else -> {
                                             quickSettingsController.setDynamicRange(d)
                                             quickSettingsController.setImageFormat(i)
                                         }

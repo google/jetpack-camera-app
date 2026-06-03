@@ -1017,6 +1017,7 @@ class CameraXCameraSystem(
             old?.copy(captureMode = captureMode)
                 ?.tryApplyDynamicRangeConstraints()
                 ?.tryApplyImageFormatConstraints()
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 
