@@ -30,6 +30,7 @@ When reviewing a pull request, focus on the following key areas:
     * Scan for inefficient operations, especially within Composable functions (e.g., expensive calculations, improper state management leading to excessive recompositions).
     * Analyze camera configurations and use cases for potential performance bottlenecks.
     * Ensure coroutines and asynchronous operations are used efficiently.
+    * **State Conflation in Adapters:** High-frequency stream data (e.g., nanosecond timestamps) should be rounded or conflated at the `UiStateAdapter` level before reaching the UI state, to avoid unnecessary recompositions. [Introduced in PR #514]
 
 4.  **Jetpack Compose & CameraX Usage**
     * Verify that Compose and CameraX APIs are used correctly and effectively.
