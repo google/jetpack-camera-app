@@ -1105,6 +1105,16 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )
+
+        is DisabledRationale.ConcurrentCameraUnsupportedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.UltraHdrUnsupportedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
     }
 
 @Preview(name = "Light Mode")

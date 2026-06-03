@@ -111,13 +111,13 @@ sealed interface DisabledRationale {
         override val testTag = VIDEO_QUALITY_UNSUPPORTED_TAG
     }
 
-    data class ConcurrentCameraEnabledRationale(override val affectedSettingNameResId: Int) :
+    data class ConcurrentCameraUnsupportedRationale(override val affectedSettingNameResId: Int) :
         DisabledRationale {
         override val reasonTextResId: Int = R.string.concurrent_camera_enabled
         override val testTag = CONCURRENT_CAMERA_ENABLED_TAG
     }
 
-    data class UltraHdrEnabledRationale(override val affectedSettingNameResId: Int) :
+    data class UltraHdrUnsupportedRationale(override val affectedSettingNameResId: Int) :
         DisabledRationale {
         override val reasonTextResId: Int = R.string.ultra_hdr_enabled
         override val testTag = ULTRA_HDR_ENABLED_TAG

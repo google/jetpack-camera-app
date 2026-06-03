@@ -26,7 +26,9 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -41,8 +43,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -187,9 +187,9 @@ internal class CameraAppSettingsViewModelTest {
 
         val newDarkMode =
             (
-                    assertIsEnabled(settingsViewModel.settingsUiState.value)
-                        .darkModeUiState as DarkModeUiState.Enabled
-                    )
+                assertIsEnabled(settingsViewModel.settingsUiState.value)
+                    .darkModeUiState as DarkModeUiState.Enabled
+                )
                 .currentDarkMode
 
         assertThat(initialDarkMode).isEqualTo(DarkMode.DARK)
@@ -217,7 +217,7 @@ internal class CameraAppSettingsViewModelTest {
         val disabledRationale =
             (streamConfigUiState as StreamConfigUiState.Disabled).disabledRationale
         assertThat(disabledRationale)
-            .isInstanceOf(DisabledRationale.UltraHdrEnabledRationale::class.java)
+            .isInstanceOf(DisabledRationale.UltraHdrUnsupportedRationale::class.java)
     }
 }
 

@@ -40,7 +40,6 @@ const val PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG = "PermissionRecordAudioNotGra
 const val CONCURRENT_CAMERA_ENABLED_TAG = "ConcurrentCameraEnabledTag"
 const val ULTRA_HDR_ENABLED_TAG = "UltraHdrEnabledTag"
 
-
 // Settings w/ no dialog
 const val BTN_SWITCH_SETTING_LENS_FACING_TAG = "btn_switch_setting_lens_facing_tag"
 const val BTN_SWITCH_SETTING_ENABLE_AUDIO_TAG = "btn_switch_setting_enable_audio_tag"

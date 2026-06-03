@@ -198,7 +198,7 @@ class SettingsViewModel @Inject constructor(
     private fun getStreamConfigUiState(cameraAppSettings: CameraAppSettings): StreamConfigUiState {
         if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
             return StreamConfigUiState.Disabled(
-                DisabledRationale.ConcurrentCameraEnabledRationale(
+                DisabledRationale.ConcurrentCameraUnsupportedRationale(
                     R.string.stream_config_rationale_prefix
                 )
             )
@@ -206,7 +206,7 @@ class SettingsViewModel @Inject constructor(
 
         if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
             return StreamConfigUiState.Disabled(
-                DisabledRationale.UltraHdrEnabledRationale(
+                DisabledRationale.UltraHdrUnsupportedRationale(
                     R.string.stream_config_rationale_prefix
                 )
             )
