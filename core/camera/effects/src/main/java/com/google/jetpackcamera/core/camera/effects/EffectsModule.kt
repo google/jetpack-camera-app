@@ -21,9 +21,15 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
+/**
+ * Hilt module to bind [SingleStreamEffectProvider] in the [SingletonComponent].
+ */
 @Module
 @InstallIn(SingletonComponent::class)
-interface EffectsModule {
+internal interface EffectsModule {
+    /**
+     * Binds [SingleStreamEffectProviderImpl] to [SingleStreamEffectProvider].
+     */
     @Binds
     fun bindSingleStreamEffectProvider(
         impl: SingleStreamEffectProviderImpl

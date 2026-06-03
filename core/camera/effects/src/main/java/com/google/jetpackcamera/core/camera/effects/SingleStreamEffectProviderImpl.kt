@@ -20,7 +20,10 @@ import com.google.jetpackcamera.core.camera.SingleStreamEffectProvider
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 
-class SingleStreamEffectProviderImpl @Inject constructor() : SingleStreamEffectProvider {
+/**
+ * Implementation of [SingleStreamEffectProvider] that provides [SingleSurfaceForcingEffect].
+ */
+internal class SingleStreamEffectProviderImpl @Inject constructor() : SingleStreamEffectProvider {
     override fun create(coroutineScope: CoroutineScope): CameraEffect {
         return SingleSurfaceForcingEffect(coroutineScope)
     }
