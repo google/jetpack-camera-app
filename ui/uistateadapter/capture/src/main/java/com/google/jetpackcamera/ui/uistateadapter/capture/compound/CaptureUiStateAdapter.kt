@@ -183,7 +183,7 @@ fun captureUiState(
 }
 
 /**
- * Rounds the elapsed time of a [VideoRecordingState] to the given [timePrecision] to reduce UI recomposition frequency.
+ * Rounds down the elapsed time of a [VideoRecordingState] to the given [timePrecision] to reduce UI recomposition frequency.
  */
 internal fun roundVideoRecordingState(
     videoRecordingState: VideoRecordingState,
