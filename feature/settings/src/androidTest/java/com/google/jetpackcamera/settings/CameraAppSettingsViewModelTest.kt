@@ -30,6 +30,7 @@ import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -237,6 +238,22 @@ internal class CameraAppSettingsViewModelTest {
         assertThat(newDarkMode).isEqualTo(DarkMode.SYSTEM)
     }
 
+    private fun createViewModelWithConstraints(
+        systemConstraints: CameraSystemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+        defaultCaptureMode: CaptureMode = CaptureMode.VIDEO_ONLY
+    ): SettingsViewModel {
+        val settingsRepository = LocalSettingsRepository(
+            jcaSettings = testDataStore,
+            defaultCaptureModeOverride = defaultCaptureMode
+        )
+        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
+            updateSystemConstraints(systemConstraints)
+        }
+        return SettingsViewModel(settingsRepository, constraintsRepository).apply {
+            setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
+        }
+    }
+
     /**
      * Verifies that the Concurrent Camera setting is enabled by default
      * on devices that physically support concurrent cameras, with no other
@@ -244,17 +261,10 @@ internal class CameraAppSettingsViewModelTest {
      */
     @Test
     fun concurrentCamera_whenSupported_isEnabled() = runTest(StandardTestDispatcher()) {
-        val settingsRepository = LocalSettingsRepository(
-            jcaSettings = testDataStore,
-            defaultCaptureModeOverride = CaptureMode.STANDARD
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true),
+            defaultCaptureMode = CaptureMode.STANDARD
         )
-        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-            updateSystemConstraints(
-                TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
-            )
-        }
-        val customViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
-        customViewModel.setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
         advanceUntilIdle()
 
         val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
@@ -283,17 +293,9 @@ internal class CameraAppSettingsViewModelTest {
                     .build()
             }
 
-            val settingsRepository = LocalSettingsRepository(
-                jcaSettings = testDataStore,
-                defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY
+            val customViewModel = createViewModelWithConstraints(
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
             )
-            val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-                updateSystemConstraints(
-                    TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
-                )
-            }
-            val customViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
-            customViewModel.setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
             advanceUntilIdle()
 
             val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
@@ -305,8 +307,10 @@ internal class CameraAppSettingsViewModelTest {
             val disabledState =
                 enabledState.concurrentCameraUiState as ConcurrentCameraUiState.Disabled
             assertThat(disabledState.disabledRationale).isInstanceOf(
-                DisabledRationale.ConcurrentCameraStreamConfigRationale::class.java
+                DisabledRationale.ConcurrentCameraDisabledRationale::class.java
             )
+            assertThat(disabledState.disabledRationale.reasonTextResId)
+                .isEqualTo(R.string.concurrent_camera_stream_config_unsupported)
         }
 
     /**
@@ -321,15 +325,9 @@ internal class CameraAppSettingsViewModelTest {
             it.toBuilder().setFlashModeStatus(FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST).build()
         }
 
-        val settingsRepository = LocalSettingsRepository(
-            jcaSettings = testDataStore,
-            defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = LLB_SUPPORTED_CONSTRAINTS
         )
-        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-            updateSystemConstraints(LLB_SUPPORTED_CONSTRAINTS)
-        }
-        val customViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
-        customViewModel.setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
         advanceUntilIdle()
 
         val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
@@ -359,15 +357,9 @@ internal class CameraAppSettingsViewModelTest {
                     .build()
             }
 
-            val settingsRepository = LocalSettingsRepository(
-                jcaSettings = testDataStore,
-                defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY
+            val customViewModel = createViewModelWithConstraints(
+                systemConstraints = STABILIZATION_SUPPORTED_CONSTRAINTS
             )
-            val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-                updateSystemConstraints(STABILIZATION_SUPPORTED_CONSTRAINTS)
-            }
-            val customViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
-            customViewModel.setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
             advanceUntilIdle()
 
             val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
@@ -396,17 +388,9 @@ internal class CameraAppSettingsViewModelTest {
         // Set targetFrameRate to fixed 30 FPS first
         testDataStore.updateData { it.toBuilder().setTargetFrameRate(30).build() }
 
-        val settingsRepository = LocalSettingsRepository(
-            jcaSettings = testDataStore,
-            defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
         )
-        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-            updateSystemConstraints(
-                TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
-            )
-        }
-        val customViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
-        customViewModel.setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
         advanceUntilIdle()
 
         val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
@@ -439,17 +423,9 @@ internal class CameraAppSettingsViewModelTest {
                     .build()
             }
 
-            val settingsRepository = LocalSettingsRepository(
-                jcaSettings = testDataStore,
-                defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY
+            val customViewModel = createViewModelWithConstraints(
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
             )
-            val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-                updateSystemConstraints(
-                    TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
-                )
-            }
-            val customViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
-            customViewModel.setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
             advanceUntilIdle()
 
             val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
@@ -460,7 +436,7 @@ internal class CameraAppSettingsViewModelTest {
             ).isInstanceOf(StreamConfigUiState.Disabled::class.java)
             val disabledState = enabledState.streamConfigUiState as StreamConfigUiState.Disabled
             assertThat(disabledState.disabledRationale)
-                .isInstanceOf(DisabledRationale.ConcurrentCameraUnsupportedRationale::class.java)
+                .isInstanceOf(DisabledRationale.ConcurrentCameraActiveRationale::class.java)
         }
 
     /**
@@ -479,15 +455,9 @@ internal class CameraAppSettingsViewModelTest {
                 .build()
         }
 
-        val settingsRepository = LocalSettingsRepository(
-            jcaSettings = testDataStore,
-            defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = LLB_SUPPORTED_CONSTRAINTS
         )
-        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-            updateSystemConstraints(LLB_SUPPORTED_CONSTRAINTS)
-        }
-        val customViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
-        customViewModel.setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
         advanceUntilIdle()
 
         val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
@@ -499,7 +469,7 @@ internal class CameraAppSettingsViewModelTest {
 
         val disabledState = flashState.lowLightSelectableState as SingleSelectableState.Disabled
         assertThat(disabledState.disabledRationale)
-            .isInstanceOf(DisabledRationale.ConcurrentCameraUnsupportedRationale::class.java)
+            .isInstanceOf(DisabledRationale.ConcurrentCameraActiveRationale::class.java)
     }
 
     /**
@@ -518,15 +488,9 @@ internal class CameraAppSettingsViewModelTest {
                     .build()
             }
 
-            val settingsRepository = LocalSettingsRepository(
-                jcaSettings = testDataStore,
-                defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY
+            val customViewModel = createViewModelWithConstraints(
+                systemConstraints = STABILIZATION_SUPPORTED_CONSTRAINTS
             )
-            val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-                updateSystemConstraints(STABILIZATION_SUPPORTED_CONSTRAINTS)
-            }
-            val customViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
-            customViewModel.setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
             advanceUntilIdle()
 
             val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
@@ -536,7 +500,7 @@ internal class CameraAppSettingsViewModelTest {
                 .isInstanceOf(StabilizationUiState.Disabled::class.java)
             val disabledState = enabledState.stabilizationUiState as StabilizationUiState.Disabled
             assertThat(disabledState.disabledRationale)
-                .isInstanceOf(DisabledRationale.ConcurrentCameraUnsupportedRationale::class.java)
+                .isInstanceOf(DisabledRationale.ConcurrentCameraActiveRationale::class.java)
         }
 
     /**
@@ -554,17 +518,9 @@ internal class CameraAppSettingsViewModelTest {
                 .build()
         }
 
-        val settingsRepository = LocalSettingsRepository(
-            jcaSettings = testDataStore,
-            defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
         )
-        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-            updateSystemConstraints(
-                TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
-            )
-        }
-        val customViewModel = SettingsViewModel(settingsRepository, constraintsRepository)
-        customViewModel.setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
         advanceUntilIdle()
 
         val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
@@ -573,7 +529,7 @@ internal class CameraAppSettingsViewModelTest {
         assertThat(enabledState.fpsUiState).isInstanceOf(FpsUiState.Disabled::class.java)
         val disabledState = enabledState.fpsUiState as FpsUiState.Disabled
         assertThat(disabledState.disabledRationale)
-            .isInstanceOf(DisabledRationale.ConcurrentCameraUnsupportedRationale::class.java)
+            .isInstanceOf(DisabledRationale.ConcurrentCameraActiveRationale::class.java)
     }
 
     @Test

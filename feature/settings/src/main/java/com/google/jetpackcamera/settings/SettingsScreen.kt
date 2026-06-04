@@ -170,7 +170,7 @@ private fun SettingsScreen(
 }
 
 @Composable
-fun SettingsList(
+internal fun SettingsList(
     uiState: SettingsUiState.Enabled,
     versionInfo: VersionInfoHolder,
     setDefaultLensFacing: (LensFacing) -> Unit = {},

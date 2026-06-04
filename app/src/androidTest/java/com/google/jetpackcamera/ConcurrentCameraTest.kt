@@ -47,7 +47,6 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
-import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
@@ -77,33 +76,27 @@ class ConcurrentCameraTest {
     @Test
     fun concurrentCameraMode_canBeEnabled() = runConcurrentCameraScenarioTest {
         with(composeTestRule) {
-            // Enable concurrent camera in settings
-            setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
-
-            // Assert that the flip camera button is visible on preview
-            onNodeWithTag(FLIP_CAMERA_BUTTON)
-                .assertIsDisplayed()
-
-            // Double check by visiting settings again to verify it is persisted as ON
+            // Visit settings, enable it, and assert it is ON in settings
             visitSettingsScreen {
+                setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
                 onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
                     .assertExists()
                     .assertIsOn()
             }
+
+            // Assert that the flip camera button is visible on preview
+            onNodeWithTag(FLIP_CAMERA_BUTTON)
+                .assertIsDisplayed()
         }
     }
 
     @Test
     fun concurrentCameraMode_whenEnabled_canBeDisabled() = runConcurrentCameraScenarioTest {
         with(composeTestRule) {
-            // Enable concurrent camera in settings
-            setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
-
-            // Disable it
-            setConcurrentCameraModeInSettings(ConcurrentCameraMode.OFF)
-
-            // Verify switch is OFF in settings screen
+            // Visit settings, toggle it on, then off, and assert off.
             visitSettingsScreen {
+                setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
+                setConcurrentCameraModeInSettings(ConcurrentCameraMode.OFF)
                 onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
                     .assertExists()
                     .assertIsOff()
@@ -148,13 +141,11 @@ class ConcurrentCameraTest {
     }
 
     @Test
-    fun concurrentCameraMode_whenEnabled_disablesOtherSettings() = runConcurrentCameraScenarioTest {
+    fun concurrentCameraMode_whenEnabled_disablesOtherQuickSettings() = runConcurrentCameraScenarioTest {
         with(composeTestRule) {
-            // Enable concurrent camera in settings
-            setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
-
-            // Assert the stream config setting is disabled in settings screen
+            // Visit settings, toggle concurrent camera, and assert stream config is disabled
             visitSettingsScreen {
+                setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
                 onNodeWithTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG)
                     .assertExists()
                     .assert(isNotEnabled())
@@ -190,11 +181,10 @@ class ConcurrentCameraTest {
     fun concurrentCameraMode_whenEnabled_disablesOtherSettingsInSettingsScreen() =
         runConcurrentCameraScenarioTest {
             with(composeTestRule) {
-                // Enable concurrent camera in settings
-                setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
-
-                // Visit settings screen
+                // Visit settings, enable concurrent camera, and assert other settings are disabled
                 visitSettingsScreen {
+                    setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
+
                     // 1. Assert Stream Config is disabled
                     onNodeWithTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG)
                         .assertExists()

@@ -114,11 +114,12 @@ sealed interface DisabledRationale {
         override val testTag = VIDEO_QUALITY_UNSUPPORTED_TAG
     }
 
-    data class ConcurrentCameraUnsupportedRationale(override val affectedSettingNameResId: Int) :
+    data class ConcurrentCameraActiveRationale(override val affectedSettingNameResId: Int) :
         DisabledRationale {
         override val reasonTextResId: Int = R.string.concurrent_camera_enabled
         override val testTag = CONCURRENT_CAMERA_ENABLED_TAG
     }
+
 
     data class UltraHdrUnsupportedRationale(override val affectedSettingNameResId: Int) :
         DisabledRationale {
@@ -147,11 +148,7 @@ sealed interface DisabledRationale {
         override val affectedSettingNameResId = R.string.concurrent_camera_rationale_prefix
     }
 
-    data class ConcurrentCameraStreamConfigRationale(override val affectedSettingNameResId: Int) :
-        DisabledRationale {
-        override val reasonTextResId = R.string.concurrent_camera_stream_config_unsupported
-        override val testTag = CONCURRENT_CAMERA_STREAM_CONFIG_TAG
-    }
+
 }
 
 fun getLensUnsupportedRationale(

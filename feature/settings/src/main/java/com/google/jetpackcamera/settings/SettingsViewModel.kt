@@ -45,6 +45,7 @@ import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.settings.model.forDevice
+import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_STREAM_CONFIG_TAG
 import com.google.jetpackcamera.settings.ui.FIXED_FPS_ACTIVE_TAG
 import com.google.jetpackcamera.settings.ui.FLASH_LLB_ACTIVE_TAG
 import com.google.jetpackcamera.settings.ui.HDR_ACTIVE_TAG
@@ -190,7 +191,7 @@ class SettingsViewModel @Inject constructor(
                 )
             } else if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
                 SingleSelectableState.Disabled(
-                    DisabledRationale.ConcurrentCameraUnsupportedRationale(
+                    DisabledRationale.ConcurrentCameraActiveRationale(
                         R.string.flash_llb_rationale_prefix
                     )
                 )
@@ -209,7 +210,7 @@ class SettingsViewModel @Inject constructor(
     private fun getStreamConfigUiState(cameraAppSettings: CameraAppSettings): StreamConfigUiState {
         if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
             return StreamConfigUiState.Disabled(
-                DisabledRationale.ConcurrentCameraUnsupportedRationale(
+                DisabledRationale.ConcurrentCameraActiveRationale(
                     R.string.stream_config_rationale_prefix
                 )
             )
@@ -265,7 +266,7 @@ class SettingsViewModel @Inject constructor(
     ): StabilizationUiState {
         if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
             return StabilizationUiState.Disabled(
-                DisabledRationale.ConcurrentCameraUnsupportedRationale(
+                DisabledRationale.ConcurrentCameraActiveRationale(
                     R.string.stabilization_rationale_prefix
                 )
             )
@@ -572,7 +573,7 @@ class SettingsViewModel @Inject constructor(
 
         if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
             return FpsUiState.Disabled(
-                DisabledRationale.ConcurrentCameraUnsupportedRationale(
+                DisabledRationale.ConcurrentCameraActiveRationale(
                     R.string.fps_rationale_prefix
                 )
             )
@@ -740,7 +741,6 @@ class SettingsViewModel @Inject constructor(
     internal fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
         viewModelScope.launch {
             settingsRepository.updateConcurrentCameraMode(concurrentCameraMode)
-            Log.d(TAG, "set concurrent camera mode: $concurrentCameraMode")
         }
     }
 
@@ -764,8 +764,9 @@ class SettingsViewModel @Inject constructor(
             )
         } else if (settings.streamConfig == StreamConfig.SINGLE_STREAM) {
             ConcurrentCameraUiState.Disabled(
-                DisabledRationale.ConcurrentCameraStreamConfigRationale(
-                    R.string.concurrent_camera_rationale_prefix
+                DisabledRationale.ConcurrentCameraDisabledRationale(
+                    R.string.concurrent_camera_stream_config_unsupported,
+                    CONCURRENT_CAMERA_STREAM_CONFIG_TAG
                 )
             )
         } else if (settings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
