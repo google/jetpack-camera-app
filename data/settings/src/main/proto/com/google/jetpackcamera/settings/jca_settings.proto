@@ -46,7 +46,7 @@ message JcaSettings {
   VideoQuality video_quality = 12;
   bool audio_enabled_status = 13;
   LowLightBoostPriority low_light_boost_priority = 14;
-  com.google.jetpackcamera.model.proto.ConcurrentCameraModeProto concurrent_camera_mode_status = 15;
+  ConcurrentCameraMode concurrent_camera_mode_status = 15;
 
   // Non-camera app settings
   DarkMode dark_mode_status = 9;

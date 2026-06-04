@@ -36,7 +36,7 @@ import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.VideoQuality.Companion.toProto
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.model.proto.ConcurrentCameraModeProto
+import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
 import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto

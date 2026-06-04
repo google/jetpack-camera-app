@@ -19,7 +19,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.proto.AspectRatio
-import com.google.jetpackcamera.model.proto.ConcurrentCameraModeProto
+import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
 import com.google.jetpackcamera.model.proto.DarkMode
 import com.google.jetpackcamera.model.proto.DynamicRange
 import com.google.jetpackcamera.model.proto.FlashMode
