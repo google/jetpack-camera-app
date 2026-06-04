@@ -32,20 +32,17 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetHdr
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetStreamConfig
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetCaptureMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleFocusedQuickSetRatio
@@ -59,7 +56,6 @@ import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
-import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
@@ -141,18 +137,6 @@ fun QuickSettingsBottomSheet(
                                 },
                                 isHighlightEnabled = false,
                                 aspectRatioUiState = quickSettingsUiState.aspectRatioUiState
-                            )
-                        }
-
-                        add {
-                            QuickSetStreamConfig(
-                                modifier = Modifier.testTag(
-                                    QUICK_SETTINGS_STREAM_CONFIG_BUTTON
-                                ),
-                                setStreamConfig = { c: StreamConfig ->
-                                    quickSettingsController.setStreamConfig(c)
-                                },
-                                streamConfigUiState = quickSettingsUiState.streamConfigUiState
                             )
                         }
 
@@ -244,14 +228,6 @@ fun ExpandedQuickSettingsUiPreview() {
                     )
                 ),
                 hdrUiState = HdrUiState.Unavailable,
-                streamConfigUiState = StreamConfigUiState.Available(
-                    selectedStreamConfig = StreamConfig.MULTI_STREAM,
-                    availableStreamConfigs = listOf(
-                        SingleSelectableUiState.SelectableUi(StreamConfig.SINGLE_STREAM),
-                        SingleSelectableUiState.SelectableUi(StreamConfig.MULTI_STREAM)
-                    ),
-                    isActive = false
-                ),
                 quickSettingsIsOpen = true
             ),
             onNavigateToSettings = {},
@@ -306,14 +282,6 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                     selectedDynamicRange = DynamicRange.HLG10,
                     selectedImageFormat = ImageOutputFormat.JPEG_ULTRA_HDR
                 ),
-                streamConfigUiState = StreamConfigUiState.Available(
-                    selectedStreamConfig = StreamConfig.MULTI_STREAM,
-                    availableStreamConfigs = listOf(
-                        SingleSelectableUiState.SelectableUi(StreamConfig.SINGLE_STREAM),
-                        SingleSelectableUiState.SelectableUi(StreamConfig.MULTI_STREAM)
-                    ),
-                    isActive = false
-                ),
                 quickSettingsIsOpen = true
             ),
             onNavigateToSettings = { },
@@ -335,8 +303,6 @@ class NoOpQuickSettingsController : QuickSettingsController {
     override fun setFlash(flashMode: FlashMode) {}
 
     override fun setAspectRatio(aspectRatio: AspectRatio) {}
-
-    override fun setStreamConfig(streamConfig: StreamConfig) {}
 
     override fun setDynamicRange(dynamicRange: DynamicRange) {}
 

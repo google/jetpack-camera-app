@@ -29,11 +29,15 @@ import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+<<<<<<< HEAD
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.proto.ConcurrentCameraModeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
+=======
+import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
+>>>>>>> main
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -573,6 +577,30 @@ internal class CameraAppSettingsViewModelTest {
         val disabledState = enabledState.fpsUiState as FpsUiState.Disabled
         assertThat(disabledState.disabledRationale)
             .isInstanceOf(DisabledRationale.ConcurrentCameraEnabledRationale::class.java)
+    }
+
+    @Test
+    fun streamConfigDisabled_whenUltraHdrEnabled() = runTest(StandardTestDispatcher()) {
+        // Set image format to Ultra HDR in datastore
+        testDataStore.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setImageFormatStatus(
+                    ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
+                )
+                .build()
+        }
+        advanceUntilIdle()
+
+        val uiState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val streamConfigUiState = assertIsEnabled(uiState).streamConfigUiState
+        assertThat(streamConfigUiState).isInstanceOf(StreamConfigUiState.Disabled::class.java)
+        val disabledRationale =
+            (streamConfigUiState as StreamConfigUiState.Disabled).disabledRationale
+        assertThat(disabledRationale)
+            .isInstanceOf(DisabledRationale.UltraHdrUnsupportedRationale::class.java)
     }
 }
 

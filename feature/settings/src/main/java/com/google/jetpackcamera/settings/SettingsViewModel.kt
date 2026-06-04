@@ -82,7 +82,7 @@ class SettingsViewModel @Inject constructor(
             updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
-                streamConfigUiState = getStreamConfigUiState(constraints, updatedSettings),
+                streamConfigUiState = getStreamConfigUiState(updatedSettings),
                 maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
                     updatedSettings.maxVideoDurationMillis
                 ),
@@ -204,6 +204,26 @@ class SettingsViewModel @Inject constructor(
             autoSelectableState = autoSelectableState,
             lowLightSelectableState = llbSelectableState
         )
+    }
+
+    private fun getStreamConfigUiState(cameraAppSettings: CameraAppSettings): StreamConfigUiState {
+        if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+            return StreamConfigUiState.Disabled(
+                DisabledRationale.ConcurrentCameraUnsupportedRationale(
+                    R.string.stream_config_rationale_prefix
+                )
+            )
+        }
+
+        if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
+            return StreamConfigUiState.Disabled(
+                DisabledRationale.UltraHdrUnsupportedRationale(
+                    R.string.stream_config_rationale_prefix
+                )
+            )
+        }
+
+        return StreamConfigUiState.Enabled(cameraAppSettings.streamConfig)
     }
 
     private fun getAudioUiState(isAudioEnabled: Boolean, permissionGranted: Boolean): AudioUiState =
@@ -779,18 +799,4 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun getStreamConfigUiState(
-        constraints: CameraSystemConstraints,
-        settings: CameraAppSettings
-    ): StreamConfigUiState {
-        return if (settings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
-            StreamConfigUiState.Disabled(
-                DisabledRationale.ConcurrentCameraEnabledRationale(
-                    R.string.stream_config_title
-                )
-            )
-        } else {
-            StreamConfigUiState.Enabled(settings.streamConfig)
-        }
-    }
 }

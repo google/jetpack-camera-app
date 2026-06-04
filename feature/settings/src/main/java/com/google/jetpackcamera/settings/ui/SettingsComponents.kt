@@ -376,9 +376,7 @@ fun StreamConfigSetting(
             }
 
             is StreamConfigUiState.Disabled -> {
-                disabledRationaleString(
-                    disabledRationale = streamConfigUiState.disabledRationale
-                )
+                disabledRationaleString(disabledRationale = streamConfigUiState.disabledRationale)
             }
         },
         popupContents = {
@@ -1168,6 +1166,11 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
             stringResource(disabledRationale.affectedSettingNameResId)
         )
 
+        is DisabledRationale.ConcurrentCameraUnsupportedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
         is DisabledRationale.ConcurrentCameraEnabledRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
@@ -1175,6 +1178,11 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
 
         is DisabledRationale.ConcurrentCameraStreamConfigRationale -> stringResource(
             disabledRationale.reasonTextResId
+        )
+
+        is DisabledRationale.UltraHdrUnsupportedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
         )
     }
 

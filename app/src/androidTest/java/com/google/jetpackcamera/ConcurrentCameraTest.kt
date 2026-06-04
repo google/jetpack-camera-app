@@ -48,6 +48,7 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_B
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
+import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
@@ -157,7 +158,7 @@ class ConcurrentCameraTest {
                 .assertExists()
                 .performClick()
 
-            // Assert the stream config button is disabled
+            // Assert the stream config setting is disabled
             onNodeWithTag(QUICK_SETTINGS_STREAM_CONFIG_BUTTON)
                 .assertExists()
                 .assert(isNotEnabled())
