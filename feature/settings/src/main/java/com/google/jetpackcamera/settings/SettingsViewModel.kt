@@ -755,9 +755,11 @@ class SettingsViewModel @Inject constructor(
                     FLASH_LLB_ACTIVE_TAG
                 )
             )
-        } else if (settings.stabilizationMode == StabilizationMode.ON ||
-            settings.stabilizationMode == StabilizationMode.HIGH_QUALITY ||
-            settings.stabilizationMode == StabilizationMode.OPTICAL
+        } else if (settings.stabilizationMode in setOf(
+                StabilizationMode.ON,
+                StabilizationMode.HIGH_QUALITY,
+                StabilizationMode.OPTICAL
+            )
         ) {
             ConcurrentCameraUiState.Disabled(
                 DisabledRationale.ConcurrentCameraDisabledRationale(

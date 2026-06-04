@@ -24,8 +24,8 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -265,12 +265,9 @@ class ConcurrentCameraTest {
                     val expectedMessage = String.format(deviceUnsupportedMessage, concurrentPrefix)
 
                     // Check if the "device unsupported" message is displayed
-                    isDeviceUnsupported = try {
-                        onNodeWithText(expectedMessage).assertIsDisplayed()
-                        true
-                    } catch (e: AssertionError) {
-                        false
-                    }
+                    isDeviceUnsupported = onAllNodesWithText(expectedMessage)
+                        .fetchSemanticsNodes()
+                        .isNotEmpty()
                 }
             }
 
