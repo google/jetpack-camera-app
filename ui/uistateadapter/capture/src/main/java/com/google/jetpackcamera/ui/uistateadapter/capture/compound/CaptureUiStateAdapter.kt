@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 
 import com.google.jetpackcamera.core.camera.CameraSystem
-import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -40,7 +39,6 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiStat
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -58,7 +56,6 @@ import kotlinx.coroutines.flow.filterNotNull
  * needs to be tracked across recompositions (e.g., whether quick settings is open).
  * @param externalCaptureMode The [ExternalCaptureMode] influencing UI behavior based on how the
  * camera is launched (e.g., from an external intent).
- * @param timePrecision The precision to use for rounding the elapsed time of video recording.
  *
  * @return A [Flow] that emits a new [CaptureUiState] whenever any of its underlying
  * data sources change.
@@ -67,8 +64,7 @@ fun captureUiState(
     cameraSystem: CameraSystem,
     constraintsRepository: ConstraintsRepository,
     trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    externalCaptureMode: ExternalCaptureMode,
-    timePrecision: TimeUnit = TimeUnit.SECONDS
+    externalCaptureMode: ExternalCaptureMode
 ): Flow<CaptureUiState> {
     var flashModeUiState: FlashModeUiState? = null
     var focusMeteringUiState: FocusMeteringUiState? = null
@@ -79,11 +75,6 @@ fun captureUiState(
         cameraSystem.getCurrentCameraState(),
         trackedCaptureUiState
     ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
-        val videoRecordingState = cameraState.videoRecordingState
-        val roundedVideoRecordingState =
-            roundVideoRecordingState(videoRecordingState, timePrecision)
-        val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
-
         val captureModeUiState = CaptureModeUiState.from(
             systemConstraints,
             cameraAppSettings,
@@ -114,9 +105,10 @@ fun captureUiState(
             )
                 ?: FocusMeteringUiState.from(cameraState)
         }
+
         CaptureUiState.Ready(
             externalCaptureMode = externalCaptureMode,
-            videoRecordingState = roundedVideoRecordingState,
+            videoRecordingState = cameraState.videoRecordingState,
             flipLensUiState = flipLensUiState,
             aspectRatioUiState = aspectRatioUiState,
             previewDisplayUiState = PreviewDisplayUiState(
@@ -148,10 +140,10 @@ fun captureUiState(
                 cameraAppSettings,
                 cameraState
             ),
-            elapsedTimeUiState = ElapsedTimeUiState.from(roundedCameraState),
+            elapsedTimeUiState = ElapsedTimeUiState.from(cameraState),
             captureButtonUiState = CaptureButtonUiState.from(
                 cameraAppSettings,
-                roundedCameraState,
+                cameraState,
                 trackedUiState.isRecordingLocked
             ),
             zoomUiState = ZoomUiState.from(
@@ -175,32 +167,9 @@ fun captureUiState(
             focusMeteringUiState = focusMeteringUiState,
             imageWellUiState = ImageWellUiState.from(
                 trackedUiState.recentCapturedMedia,
-                roundedVideoRecordingState
+                cameraState.videoRecordingState
             ),
             screenFlashUiState = ScreenFlashUiState.from(trackedUiState)
-        )
-    }
-}
-
-/**
- * Rounds the elapsed time of a [VideoRecordingState] to the given [timePrecision] to reduce UI recomposition frequency.
- */
-internal fun roundVideoRecordingState(
-    videoRecordingState: VideoRecordingState,
-    timePrecision: TimeUnit
-): VideoRecordingState {
-    if (videoRecordingState !is VideoRecordingState.Active) return videoRecordingState
-    if (timePrecision == TimeUnit.NANOSECONDS) return videoRecordingState
-
-    val stepNanos = timePrecision.toNanos(1)
-    val roundedNanos = (videoRecordingState.elapsedTimeNanos / stepNanos) * stepNanos
-
-    return when (videoRecordingState) {
-        is VideoRecordingState.Active.Recording -> videoRecordingState.copy(
-            elapsedTimeNanos = roundedNanos
-        )
-        is VideoRecordingState.Active.Paused -> videoRecordingState.copy(
-            elapsedTimeNanos = roundedNanos
         )
     }
 }
