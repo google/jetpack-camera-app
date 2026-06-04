@@ -30,7 +30,7 @@ private const val TARGETS =
  *
  * Used as a workaround to force the above 3 use cases to use a single camera stream.
  */
-class SingleSurfaceForcingEffect(coroutineScope: CoroutineScope) : CameraEffect(
+internal class SingleSurfaceForcingEffect(coroutineScope: CoroutineScope) : CameraEffect(
     TARGETS,
     Runnable::run,
     CopyingSurfaceProcessor(coroutineScope),
