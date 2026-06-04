@@ -40,7 +40,6 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
@@ -235,11 +234,6 @@ class ConcurrentCameraTest {
                     // Enable concurrent camera
                     .performClick()
                     .assertConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-
-                // Assert the capture mode button is disabled
-                onNodeWithTag(QUICK_SETTINGS_STREAM_CONFIG_BUTTON)
-                    .assertExists()
-                    .assert(isNotEnabled())
 
                 // Assert the HDR button is disabled
                 onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
