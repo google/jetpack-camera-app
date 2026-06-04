@@ -85,8 +85,6 @@ class FakeQuickSettingsControllerTest {
         assertThat(calledValue).isEqualTo(ImageOutputFormat.JPEG)
     }
 
-
-
     @Test
     fun setCaptureMode_invokesAction() {
         var calledValue: CaptureMode? = null

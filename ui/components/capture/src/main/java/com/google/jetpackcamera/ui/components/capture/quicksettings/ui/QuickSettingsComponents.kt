@@ -400,8 +400,6 @@ fun QuickFlipCamera(
     }
 }
 
-
-
 /**
  * Button to toggle quick settings
  */

@@ -799,5 +799,4 @@ class SettingsViewModel @Inject constructor(
             ConcurrentCameraUiState.Enabled(settings.concurrentCameraMode)
         }
     }
-
 }

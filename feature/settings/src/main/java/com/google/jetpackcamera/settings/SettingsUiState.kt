@@ -29,7 +29,6 @@ import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRati
 import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_ENABLED_TAG
-import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_STREAM_CONFIG_TAG
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
@@ -120,7 +119,6 @@ sealed interface DisabledRationale {
         override val testTag = CONCURRENT_CAMERA_ENABLED_TAG
     }
 
-
     data class UltraHdrUnsupportedRationale(override val affectedSettingNameResId: Int) :
         DisabledRationale {
         override val reasonTextResId: Int = R.string.ultra_hdr_enabled
@@ -147,8 +145,6 @@ sealed interface DisabledRationale {
     ) : DisabledRationale {
         override val affectedSettingNameResId = R.string.concurrent_camera_rationale_prefix
     }
-
-
 }
 
 fun getLensUnsupportedRationale(

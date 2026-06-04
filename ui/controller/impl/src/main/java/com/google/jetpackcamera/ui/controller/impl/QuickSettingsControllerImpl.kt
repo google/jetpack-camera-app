@@ -103,8 +103,6 @@ class QuickSettingsControllerImpl(
         }
     }
 
-
-
     override fun setCaptureMode(captureMode: CaptureMode) {
         scope.launch {
             cameraSystem.setCaptureMode(captureMode)

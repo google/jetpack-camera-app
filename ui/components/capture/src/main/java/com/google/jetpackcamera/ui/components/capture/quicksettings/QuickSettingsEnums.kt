@@ -149,4 +149,3 @@ enum class CameraCaptureMode : QuickSettingsEnum {
             R.string.quick_settings_description_capture_mode_image_only
     }
 }
-

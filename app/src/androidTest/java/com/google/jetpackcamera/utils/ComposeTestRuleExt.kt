@@ -49,6 +49,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
@@ -67,11 +68,10 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTO
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
+import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import org.junit.AssumptionViolatedException
-import com.google.jetpackcamera.settings.R as SettingsR
-import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 
 /**
  * Allows use of testRule.onNodeWithText that uses an integer string resource

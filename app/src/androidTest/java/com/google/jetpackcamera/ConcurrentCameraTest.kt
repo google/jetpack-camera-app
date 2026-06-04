@@ -141,41 +141,42 @@ class ConcurrentCameraTest {
     }
 
     @Test
-    fun concurrentCameraMode_whenEnabled_disablesOtherQuickSettings() = runConcurrentCameraScenarioTest {
-        with(composeTestRule) {
-            // Visit settings, toggle concurrent camera, and assert stream config is disabled
-            visitSettingsScreen {
-                setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
-                onNodeWithTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG)
+    fun concurrentCameraMode_whenEnabled_disablesOtherQuickSettings() =
+        runConcurrentCameraScenarioTest {
+            with(composeTestRule) {
+                // Visit settings, toggle concurrent camera, and assert stream config is disabled
+                visitSettingsScreen {
+                    setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+                }
+
+                // Open Quick Settings bottom sheet
+                onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
+                    .assertExists()
+                    .performClick()
+
+                // Assert the HDR button is disabled
+                searchForQuickSetting(QUICK_SETTINGS_HDR_BUTTON)
+                onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
                     .assertExists()
                     .assert(isNotEnabled())
-            }
 
-            // Open Quick Settings bottom sheet
-            onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
-
-            // Assert the HDR button is disabled
-            searchForQuickSetting(QUICK_SETTINGS_HDR_BUTTON)
-            onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
-                .assertExists()
-                .assert(isNotEnabled())
-
-            // Assert the capture mode toggle button is disabled and set to video-only
-            onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
-                .assertExists()
-                .assert(isNotEnabled())
-                .assert(
-                    stateDescriptionMatches(
-                        getResString(
-                            CaptureR.string
-                                .quick_settings_description_capture_mode_video_only
+                // Assert the capture mode toggle button is disabled and set to video-only
+                onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
+                    .assertExists()
+                    .assert(isNotEnabled())
+                    .assert(
+                        stateDescriptionMatches(
+                            getResString(
+                                CaptureR.string
+                                    .quick_settings_description_capture_mode_video_only
+                            )
                         )
                     )
-                )
+            }
         }
-    }
 
     @Test
     fun concurrentCameraMode_whenEnabled_disablesOtherSettingsInSettingsScreen() =

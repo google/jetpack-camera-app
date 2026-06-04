@@ -74,8 +74,6 @@ interface QuickSettingsController {
      */
     fun setImageFormat(imageOutputFormat: ImageOutputFormat)
 
-
-
     /**
      * Sets the capture mode (e.g., single image, single video, or hybrid).
      *

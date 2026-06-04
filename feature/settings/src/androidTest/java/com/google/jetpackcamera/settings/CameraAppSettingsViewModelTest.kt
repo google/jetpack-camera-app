@@ -30,8 +30,14 @@ import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
+import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
+import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
+import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
+import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,12 +52,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
-import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
-import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
-import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
-import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 
 private val STABILIZATION_SUPPORTED_CONSTRAINTS = TYPICAL_SYSTEM_CONSTRAINTS.copy(
     concurrentCamerasSupported = true,
@@ -294,7 +294,9 @@ internal class CameraAppSettingsViewModelTest {
             }
 
             val customViewModel = createViewModelWithConstraints(
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                    concurrentCamerasSupported = true
+                )
             )
             advanceUntilIdle()
 
@@ -424,7 +426,9 @@ internal class CameraAppSettingsViewModelTest {
             }
 
             val customViewModel = createViewModelWithConstraints(
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                    concurrentCamerasSupported = true
+                )
             )
             advanceUntilIdle()
 

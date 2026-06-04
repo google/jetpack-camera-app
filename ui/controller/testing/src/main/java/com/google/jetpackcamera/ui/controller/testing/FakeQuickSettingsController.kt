@@ -75,8 +75,6 @@ class FakeQuickSettingsController(
         setImageFormatAction(imageOutputFormat)
     }
 
-
-
     override fun setCaptureMode(captureMode: CaptureMode) {
         setCaptureModeAction(captureMode)
     }
