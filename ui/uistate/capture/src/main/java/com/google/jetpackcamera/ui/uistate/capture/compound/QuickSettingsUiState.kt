@@ -21,7 +21,6 @@ import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
-import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 
 /**
  * Defines the UI state for the quick settings panel.
@@ -44,7 +43,6 @@ sealed interface QuickSettingsUiState {
      * @param flashModeUiState The UI state for the flash mode setting.
      * @param flipLensUiState The UI state for the flip lens (front/back camera) button.
      * @param hdrUiState The UI state for the HDR (High Dynamic Range) setting.
-     * @param streamConfigUiState The UI state for stream configuration.
      * @param quickSettingsIsOpen Indicates whether the quick settings panel is currently open.
      * @param focusedQuickSetting The specific quick setting that is currently focused by the user,
      * allowing for more detailed interaction (e.g., showing a sub-menu).
@@ -56,7 +54,6 @@ sealed interface QuickSettingsUiState {
         val flashModeUiState: FlashModeUiState,
         val flipLensUiState: FlipLensUiState,
         val hdrUiState: HdrUiState,
-        val streamConfigUiState: StreamConfigUiState,
         val quickSettingsIsOpen: Boolean = false,
         val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE
     ) : QuickSettingsUiState

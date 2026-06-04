@@ -33,7 +33,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
+internal class ShaderCopy(private val dynamicRange: DynamicRange) : RenderCallbacks {
 
     // Called on worker thread only
     private var externalTextureId: Int = -1

@@ -22,7 +22,6 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 
 /**
@@ -61,13 +60,6 @@ interface QuickSettingsController {
      * @param aspectRatio The aspect ratio to set.
      */
     fun setAspectRatio(aspectRatio: AspectRatio)
-
-    /**
-     * Sets the stream configuration (e.g., single stream for performance, multi-stream for flexibility).
-     *
-     * @param streamConfig The stream configuration to set.
-     */
-    fun setStreamConfig(streamConfig: StreamConfig)
 
     /**
      * Sets the dynamic range (e.g., SDR, HDR).

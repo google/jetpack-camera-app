@@ -105,22 +105,6 @@ enum class CameraAspectRatio : QuickSettingsEnum {
     }
 }
 
-enum class CameraStreamConfig : QuickSettingsEnum {
-    MULTI_STREAM {
-        override fun getDrawableResId() = R.drawable.multi_stream_icon
-
-        override fun getTextResId() = R.string.quick_settings_stream_config_multi
-        override fun getDescriptionResId() = R.string.quick_settings_stream_config_multi_description
-    },
-    SINGLE_STREAM {
-        override fun getDrawableResId() = R.drawable.single_stream_capture_icon
-
-        override fun getTextResId() = R.string.quick_settings_stream_config_single
-        override fun getDescriptionResId() =
-            R.string.quick_settings_stream_config_single_description
-    }
-}
-
 enum class CameraDynamicRange : QuickSettingsEnum {
     SDR {
 

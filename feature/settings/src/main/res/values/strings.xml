@@ -159,6 +159,9 @@
     <string name="video_quality_unsupported">%1$s is unsupported by the current video quality</string>
     <string name="permission_record_audio_unsupported">%1$s requires permission to record audio</string>
 
+    <string name="concurrent_camera_enabled">%1$s is unsupported when Concurrent Camera is active</string>
+    <string name="ultra_hdr_enabled">%1$s is unsupported when Ultra HDR is enabled</string>
+
 
     <!-- Rationale prefixes -->
     <string name="stabilization_rationale_prefix">Stabilization</string>
@@ -178,6 +181,7 @@
     <string name="no_fixed_fps_rationale_prefix">Fixed frame rate</string>
 
     <string name="mute_audio_rationale_prefix">Mute</string>
+    <string name="stream_config_rationale_prefix">Stream configuration</string>
 
     <!-- Version info strings -->
     <string name="version_info_title">Version</string>
