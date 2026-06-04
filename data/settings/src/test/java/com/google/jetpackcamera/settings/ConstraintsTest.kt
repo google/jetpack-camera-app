@@ -144,7 +144,8 @@ class ConstraintsTest {
             supportedFlashModes = emptySet(),
             supportedZoomRange = null,
             unsupportedStabilizationFpsMap = emptyMap(),
-            supportedTestPatterns = emptySet()
+            supportedTestPatterns = emptySet(),
+            supportedStreamConfigs = emptySet()
         )
     }
 }
