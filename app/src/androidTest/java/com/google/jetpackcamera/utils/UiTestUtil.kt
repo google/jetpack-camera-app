@@ -69,16 +69,15 @@ val isEmulatorWithFakeFrontCamera: Boolean
  * These extras are used to work around issues on specific devices or emulators.
  */
 internal val compatMainActivityExtras: Bundle?
-    get() {
-        val extras = Bundle()
-        if (isEmulatorWithFakeFrontCamera) {
-            // The GMD API 28 and 34 emulators' PackageInfo reports it has front and back cameras, but
-            // GMD is only configured for a back camera. This causes CameraX to take a long time
-            // to initialize. Set the device to use single lens mode to work around this issue.
-            extras.putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
+    get() = if (isEmulatorWithFakeFrontCamera) {
+        // The GMD API 28 and 34 emulators' PackageInfo reports it has front and back cameras, but
+        // GMD is only configured for a back camera. This causes CameraX to take a long time
+        // to initialize. Set the device to use single lens mode to work around this issue.
+        Bundle().apply {
+            putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
         }
-
-        return extras.takeIf { !it.isEmpty() }
+    } else {
+        null
     }
 
 /**
