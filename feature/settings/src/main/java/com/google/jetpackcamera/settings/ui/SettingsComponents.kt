@@ -1171,11 +1171,6 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
             stringResource(disabledRationale.affectedSettingNameResId)
         )
 
-        is DisabledRationale.ConcurrentCameraEnabledRationale -> stringResource(
-            disabledRationale.reasonTextResId,
-            stringResource(disabledRationale.affectedSettingNameResId)
-        )
-
         is DisabledRationale.ConcurrentCameraStreamConfigRationale -> stringResource(
             disabledRationale.reasonTextResId
         )

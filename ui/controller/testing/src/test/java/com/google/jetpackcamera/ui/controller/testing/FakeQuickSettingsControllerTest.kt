@@ -18,7 +18,6 @@ package com.google.jetpackcamera.ui.controller.testing
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -86,15 +85,7 @@ class FakeQuickSettingsControllerTest {
         assertThat(calledValue).isEqualTo(ImageOutputFormat.JPEG)
     }
 
-    @Test
-    fun setConcurrentCameraMode_invokesAction() {
-        var calledValue: ConcurrentCameraMode? = null
-        val controller = FakeQuickSettingsController(
-            setConcurrentCameraModeAction = { calledValue = it }
-        )
-        controller.setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-        assertThat(calledValue).isEqualTo(ConcurrentCameraMode.DUAL)
-    }
+
 
     @Test
     fun setCaptureMode_invokesAction() {

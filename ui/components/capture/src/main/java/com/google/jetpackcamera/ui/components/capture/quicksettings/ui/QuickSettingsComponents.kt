@@ -68,7 +68,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.model.DynamicRange
@@ -89,7 +88,6 @@ import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptureMode
-import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraConcurrentCameraMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraLensFace
@@ -99,7 +97,6 @@ import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
-import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
@@ -403,33 +400,7 @@ fun QuickFlipCamera(
     }
 }
 
-@Composable
-fun QuickSetConcurrentCamera(
-    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit,
-    concurrentCameraUiState: ConcurrentCameraUiState,
-    modifier: Modifier = Modifier
-) {
-    if (concurrentCameraUiState is ConcurrentCameraUiState.Available) {
-        val enum: CameraConcurrentCameraMode =
-            when (concurrentCameraUiState.selectedConcurrentCameraMode) {
-                ConcurrentCameraMode.OFF -> CameraConcurrentCameraMode.OFF
-                ConcurrentCameraMode.DUAL -> CameraConcurrentCameraMode.DUAL
-            }
-        QuickSettingToggleButton(
-            modifier = modifier,
-            enum = enum,
-            onClick = {
-                when (concurrentCameraUiState.selectedConcurrentCameraMode) {
-                    ConcurrentCameraMode.OFF -> setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-                    ConcurrentCameraMode.DUAL -> setConcurrentCameraMode(ConcurrentCameraMode.OFF)
-                }
-            },
-            isHighLighted = concurrentCameraUiState.selectedConcurrentCameraMode ==
-                ConcurrentCameraMode.DUAL,
-            enabled = concurrentCameraUiState.isEnabled
-        )
-    }
-}
+
 
 /**
  * Button to toggle quick settings

@@ -46,7 +46,6 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
@@ -56,6 +55,7 @@ import com.google.jetpackcamera.utils.getResString
 import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.searchForQuickSetting
 import com.google.jetpackcamera.utils.setConcurrentCameraModeInSettings
 import com.google.jetpackcamera.utils.stateDescriptionMatches
 import com.google.jetpackcamera.utils.visitSettingsScreen
@@ -153,17 +153,20 @@ class ConcurrentCameraTest {
             // Enable concurrent camera in settings
             setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
 
+            // Assert the stream config setting is disabled in settings screen
+            visitSettingsScreen {
+                onNodeWithTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG)
+                    .assertExists()
+                    .assert(isNotEnabled())
+            }
+
             // Open Quick Settings bottom sheet
             onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
                 .assertExists()
                 .performClick()
 
-            // Assert the stream config setting is disabled
-            onNodeWithTag(QUICK_SETTINGS_STREAM_CONFIG_BUTTON)
-                .assertExists()
-                .assert(isNotEnabled())
-
             // Assert the HDR button is disabled
+            searchForQuickSetting(QUICK_SETTINGS_HDR_BUTTON)
             onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
                 .assertExists()
                 .assert(isNotEnabled())

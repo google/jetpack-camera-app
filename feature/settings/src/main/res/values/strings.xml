@@ -189,7 +189,6 @@
     <string name="concurrent_camera_rationale_prefix">Concurrent camera</string>
 
     <!-- Rationale texts -->
-    <string name="concurrent_camera_enabled_unsupported">%1$s is unsupported when Concurrent Camera is enabled</string>
     <string name="stabilization_active_unsupported">%1$s is unsupported when Video Stabilization is enabled</string>
     <string name="fixed_fps_active_unsupported">%1$s is unsupported when a fixed frame rate is selected</string>
     <string name="flash_llb_active_unsupported">%1$s is unsupported when Low Light Boost is active</string>

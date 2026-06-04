@@ -17,7 +17,6 @@ package com.google.jetpackcamera.ui.controller.testing
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -46,7 +45,6 @@ class FakeQuickSettingsController(
     var setAspectRatioAction: (AspectRatio) -> Unit = {},
     var setDynamicRangeAction: (DynamicRange) -> Unit = {},
     var setImageFormatAction: (ImageOutputFormat) -> Unit = {},
-    var setConcurrentCameraModeAction: (ConcurrentCameraMode) -> Unit = {},
     var setCaptureModeAction: (CaptureMode) -> Unit = {}
 ) : QuickSettingsController {
     override fun toggleQuickSettings() {
@@ -77,9 +75,7 @@ class FakeQuickSettingsController(
         setImageFormatAction(imageOutputFormat)
     }
 
-    override fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        setConcurrentCameraModeAction(concurrentCameraMode)
-    }
+
 
     override fun setCaptureMode(captureMode: CaptureMode) {
         setCaptureModeAction(captureMode)

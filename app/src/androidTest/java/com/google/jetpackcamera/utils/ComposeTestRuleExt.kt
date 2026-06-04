@@ -49,7 +49,6 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
@@ -64,15 +63,15 @@ import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
-import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import org.junit.AssumptionViolatedException
+import com.google.jetpackcamera.settings.R as SettingsR
+import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 
 /**
  * Allows use of testRule.onNodeWithText that uses an integer string resource
@@ -459,32 +458,6 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
         }
         throw AssertionError("Unable to determine flash mode from quick settings")
     }
-}
-
-fun ComposeTestRule.getConcurrentState(): ConcurrentCameraMode = visitQuickSettings {
-    onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-        .assertExists()
-        .fetchSemanticsNode(
-            "Concurrent camera button is not visible when expected."
-        ).let { node ->
-            node.config[SemanticsProperties.ContentDescription].forEach { description ->
-                when (description) {
-                    getResString(
-                        CaptureR.string.quick_settings_description_concurrent_camera_off
-                    ) -> {
-                        return@let ConcurrentCameraMode.OFF
-                    }
-
-                    getResString(
-                        CaptureR.string.quick_settings_description_concurrent_camera_dual
-                    ) ->
-                        return@let ConcurrentCameraMode.DUAL
-                }
-            }
-            throw AssertionError(
-                "Unable to determine concurrent camera mode from quick settings"
-            )
-        }
 }
 
 fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {

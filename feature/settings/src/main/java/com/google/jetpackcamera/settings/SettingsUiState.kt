@@ -140,13 +140,6 @@ sealed interface DisabledRationale {
         }
     }
 
-    data class ConcurrentCameraEnabledRationale(
-        override val affectedSettingNameResId: Int,
-        override val testTag: String = CONCURRENT_CAMERA_ENABLED_TAG
-    ) : DisabledRationale {
-        override val reasonTextResId = R.string.concurrent_camera_enabled_unsupported
-    }
-
     data class ConcurrentCameraDisabledRationale(
         override val reasonTextResId: Int,
         override val testTag: String

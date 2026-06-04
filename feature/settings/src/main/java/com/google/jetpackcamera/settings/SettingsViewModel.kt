@@ -190,7 +190,7 @@ class SettingsViewModel @Inject constructor(
                 )
             } else if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
                 SingleSelectableState.Disabled(
-                    DisabledRationale.ConcurrentCameraEnabledRationale(
+                    DisabledRationale.ConcurrentCameraUnsupportedRationale(
                         R.string.flash_llb_rationale_prefix
                     )
                 )
@@ -265,7 +265,7 @@ class SettingsViewModel @Inject constructor(
     ): StabilizationUiState {
         if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
             return StabilizationUiState.Disabled(
-                DisabledRationale.ConcurrentCameraEnabledRationale(
+                DisabledRationale.ConcurrentCameraUnsupportedRationale(
                     R.string.stabilization_rationale_prefix
                 )
             )
@@ -572,7 +572,7 @@ class SettingsViewModel @Inject constructor(
 
         if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
             return FpsUiState.Disabled(
-                DisabledRationale.ConcurrentCameraEnabledRationale(
+                DisabledRationale.ConcurrentCameraUnsupportedRationale(
                     R.string.fps_rationale_prefix
                 )
             )
