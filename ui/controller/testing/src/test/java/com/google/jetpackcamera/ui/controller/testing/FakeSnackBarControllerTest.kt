@@ -25,7 +25,6 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class FakeSnackBarControllerTest {
     private val testDisableRationale = object : DisableRationale {
-        override val testTag: String = "test-tag"
         override val reasonTextResId: Int = 123
     }
 
