@@ -40,7 +40,6 @@ class FakeSnackBarControllerTest {
         assertThat(calledValue).isNotNull()
         assertThat(calledValue?.cookie).isEqualTo("DisabledHdrToggle-1")
         assertThat(calledValue?.stringResource).isEqualTo(testDisableRationale.reasonTextResId)
-        assertThat(calledValue?.testTag).isEqualTo(testDisableRationale.testTag)
     }
 
     @Test

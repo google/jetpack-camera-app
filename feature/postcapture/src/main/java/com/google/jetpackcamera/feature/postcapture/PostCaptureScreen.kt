@@ -34,6 +34,7 @@ import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.ShareCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.utils.MediaSharing
+import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
@@ -142,7 +143,7 @@ fun PostCaptureComponent(
                         if (snackBarData != null) {
                             snackBarController?.let {
                                 TestableSnackbar(
-                                    modifier = modifier.testTag(snackBarData.testTag),
+                                    modifier = modifier.testTag(SNACKBAR_NODE_TAG),
                                     snackbarToShow = snackBarData,
                                     snackbarHostState = snackbarHostState,
                                     snackBarController = snackBarController

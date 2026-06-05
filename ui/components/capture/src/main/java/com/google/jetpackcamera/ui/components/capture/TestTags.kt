@@ -18,11 +18,7 @@ package com.google.jetpackcamera.ui.components.capture
 const val CAPTURE_BUTTON = "CaptureButton"
 const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
-const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
-const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
-const val VIDEO_CAPTURE_SUCCESS_TAG = "VideoCaptureSuccessTag"
-const val VIDEO_CAPTURE_FAILURE_TAG = "VideoCaptureFailureTag"
-const val LOW_LIGHT_BOOST_FAILURE_TAG = "LowLightBoostFailureTag"
+const val SNACKBAR_NODE_TAG = "SnackbarNodeTag"
 
 const val IMAGE_WELL_TAG = "ImageWellTag"
 

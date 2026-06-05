@@ -32,15 +32,16 @@ import com.google.jetpackcamera.feature.preview.navigation.getRequestedSaveMode
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
+import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
-import com.google.jetpackcamera.ui.components.capture.LOW_LIGHT_BOOST_FAILURE_TAG
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
@@ -63,6 +64,7 @@ import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateAdapterR
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.debugUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -223,7 +225,6 @@ class PreviewViewModel @Inject constructor(
         },
         captureEvents = _captureEvents,
         imageWellController = imageWellController,
-        snackBarController = snackBarController,
         coroutineContext = viewModelScope.coroutineContext
     )
 
@@ -260,13 +261,61 @@ class PreviewViewModel @Inject constructor(
                                 SnackbarData(
                                     cookie = "LowLightBoost-$cookieInt",
                                     stringResource = R.string.low_light_boost_error_toast_message,
-                                    withDismissAction = true,
-                                    testTag = LOW_LIGHT_BOOST_FAILURE_TAG
+                                    withDismissAction = true
                                 )
                             )
                         }
                     }
             }
+
+            launch {
+                for (event in captureController.captureEvents) {
+                    showSnackbarForCaptureEvent(event)
+                    _captureEvents.send(event)
+                }
+            }
+        }
+    }
+
+    private fun showSnackbarForCaptureEvent(event: CaptureEvent) {
+        val stringRes = when (event) {
+            is ImageCaptureEvent.ImageCaptureExternalUnsupported ->
+                StateAdapterR.string.toast_image_capture_external_unsupported
+
+            is VideoCaptureEvent.VideoCaptureExternalUnsupported ->
+                StateAdapterR.string.toast_video_capture_external_unsupported
+
+            is ImageCaptureEvent.SingleImageSaved,
+            is ImageCaptureEvent.SequentialImageSaved ->
+                StateAdapterR.string.toast_image_capture_success
+
+            is ImageCaptureEvent.SingleImageCaptureError,
+            is ImageCaptureEvent.SequentialImageCaptureError ->
+                StateAdapterR.string.toast_capture_failure
+
+            is VideoCaptureEvent.VideoSaved ->
+                StateAdapterR.string.toast_video_capture_success
+
+            is VideoCaptureEvent.VideoCaptureError ->
+                StateAdapterR.string.toast_video_capture_failure
+
+            else -> null
+        }
+
+        stringRes?.let { res ->
+            val cookieInt = snackBarController.incrementAndGetSnackBarCount()
+            val prefix = when (event) {
+                is ImageCaptureEvent -> "Image"
+                is VideoCaptureEvent -> "Video"
+                else -> "Capture"
+            }
+            snackBarController.addSnackBarData(
+                SnackbarData(
+                    cookie = "$prefix-$cookieInt",
+                    stringResource = res,
+                    withDismissAction = true
+                )
+            )
         }
     }
 }

@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistate
+package com.google.jetpackcamera.ui.uistateadapter.capture
 
-const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
-const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
-const val VIDEO_CAPTURE_SUCCESS_TAG = "VideoCaptureSuccessTag"
-const val VIDEO_CAPTURE_FAILURE_TAG = "VideoCaptureFailureTag"
+import com.google.jetpackcamera.ui.uistate.DisableRationale
+
 const val IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
 const val IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG =
     "ImageCaptureUnsupportedConcurrentCameraTag"
