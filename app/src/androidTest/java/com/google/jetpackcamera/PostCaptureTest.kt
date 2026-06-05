@@ -23,17 +23,15 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.feature.postcapture.R as PostCaptureR
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_DELETE
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_EXIT
 import com.google.jetpackcamera.feature.postcapture.ui.BUTTON_POST_CAPTURE_SAVE
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
 import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
 import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_VIDEO
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_WELL_TAG
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_WELL_LOAD_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.JCA_MEDIA_DIR_PATH
@@ -50,6 +48,7 @@ import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.wait
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithText
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -166,8 +165,8 @@ class PostCaptureTest {
             composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
 
             // Wait for image save success message
-            composeTestRule.waitForNodeWithTag(
-                SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS,
+            composeTestRule.waitForNodeWithText(
+                PostCaptureR.string.snackbar_save_image_success,
                 SAVE_MEDIA_TIMEOUT_MILLIS
             )
             assertThat(newImageMediaExists()).isTrue()
@@ -194,8 +193,8 @@ class PostCaptureTest {
             composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
 
             // Wait for video save success message
-            composeTestRule.waitForNodeWithTag(
-                SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS,
+            composeTestRule.waitForNodeWithText(
+                PostCaptureR.string.snackbar_save_video_success,
                 SAVE_MEDIA_TIMEOUT_MILLIS
             )
 
@@ -210,7 +209,10 @@ class PostCaptureTest {
         composeTestRule.waitForCaptureButton()
         assertThat(newImageMediaExists()).isFalse()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
-        composeTestRule.waitForNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG, IMAGE_CAPTURE_TIMEOUT_MILLIS)
+        composeTestRule.waitForNodeWithText(
+            StateR.string.toast_image_capture_success,
+            IMAGE_CAPTURE_TIMEOUT_MILLIS
+        )
         assertThat(newImageMediaExists()).isTrue()
         // enter postcapture via imagewell and delete recent capture
         enterImageWellAndDelete(VIEWER_POST_CAPTURE_IMAGE)
@@ -227,7 +229,10 @@ class PostCaptureTest {
         assertThat(newVideoMediaExists()).isFalse()
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
-        composeTestRule.waitForNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG, VIDEO_CAPTURE_TIMEOUT_MILLIS)
+        composeTestRule.waitForNodeWithText(
+            StateR.string.toast_video_capture_success,
+            VIDEO_CAPTURE_TIMEOUT_MILLIS
+        )
         assertThat(newVideoMediaExists()).isTrue()
         // enter postcapture via imagewell and delete recent capture
         enterImageWellAndDelete(VIEWER_POST_CAPTURE_VIDEO)
@@ -242,14 +247,17 @@ class PostCaptureTest {
         composeTestRule.waitForCaptureButton()
         assertThat(newImageMediaExists()).isFalse()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
-        composeTestRule.waitForNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG, IMAGE_CAPTURE_TIMEOUT_MILLIS)
+        composeTestRule.waitForNodeWithText(
+            StateR.string.toast_image_capture_success,
+            IMAGE_CAPTURE_TIMEOUT_MILLIS
+        )
         assertThat(newImageMediaExists()).isTrue()
         // enter postcapture via imagewell and save recent capture
         val newTimestamp = System.currentTimeMillis()
 
         enterImageWellAndSave(VIEWER_POST_CAPTURE_IMAGE)
-        composeTestRule.waitForNodeWithTag(
-            SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS,
+        composeTestRule.waitForNodeWithText(
+            PostCaptureR.string.snackbar_save_image_success,
             SAVE_MEDIA_TIMEOUT_MILLIS
         )
         composeTestRule.waitUntil(timeoutMillis = SAVE_MEDIA_TIMEOUT_MILLIS) {
@@ -264,13 +272,16 @@ class PostCaptureTest {
         assertThat(newVideoMediaExists()).isFalse()
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
-        composeTestRule.waitForNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG, VIDEO_CAPTURE_TIMEOUT_MILLIS)
+        composeTestRule.waitForNodeWithText(
+            StateR.string.toast_video_capture_success,
+            VIDEO_CAPTURE_TIMEOUT_MILLIS
+        )
         assertThat(newVideoMediaExists()).isTrue()
         // enter postcapture via imagewell and save recent capture
         val newTimestamp = System.currentTimeMillis()
         enterImageWellAndSave(VIEWER_POST_CAPTURE_VIDEO)
-        composeTestRule.waitForNodeWithTag(
-            SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS,
+        composeTestRule.waitForNodeWithText(
+            PostCaptureR.string.snackbar_save_video_success,
             SAVE_MEDIA_TIMEOUT_MILLIS
         )
         composeTestRule.waitUntil(timeoutMillis = VIDEO_CAPTURE_TIMEOUT_MILLIS) {

@@ -69,7 +69,6 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
 import org.junit.AssumptionViolatedException
 
 /**
@@ -176,7 +175,9 @@ private fun ComposeTestRule.idleForVideoDuration(
     durationMillis: Long = VIDEO_DURATION_MILLIS,
     earlyExitPredicate: () -> Boolean = {
         // If the video capture fails, there is no point to continue the recording, so stop idling
-        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).isDisplayed()
+        onNodeWithText(
+            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+        ).isDisplayed()
     }
 ) {
     // TODO: replace with a check for the timestamp UI of the video duration
@@ -246,7 +247,9 @@ fun ComposeTestRule.pressAndDragToLockVideoRecording(
     durationMillis: Long = VIDEO_DURATION_MILLIS,
     checkWhileWaiting: () -> Unit = {
         // If the video capture fails, there is no point to continue waiting. Assert.
-        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).assertIsNotDisplayed()
+        onNodeWithText(
+            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+        ).assertIsNotDisplayed()
     }
 ) {
     onNodeWithTag(CAPTURE_BUTTON)
@@ -271,7 +274,9 @@ fun ComposeTestRule.longClickForVideoRecordingCheckingElapsedTime(
     durationMillis: Long = VIDEO_DURATION_MILLIS,
     checkWhileWaiting: () -> Unit = {
         // If the video capture fails, there is no point to continue waiting. Assert.
-        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).assertIsNotDisplayed()
+        onNodeWithText(
+            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+        ).assertIsNotDisplayed()
     }
 ) {
     onNodeWithTag(CAPTURE_BUTTON)

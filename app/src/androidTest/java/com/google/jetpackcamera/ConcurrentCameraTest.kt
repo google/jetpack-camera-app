@@ -40,8 +40,8 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
-import com.google.jetpackcamera.ui.components.capture.R
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.components.capture.R as CaptureR
+import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.assume
@@ -51,7 +51,7 @@ import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenari
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.stateDescriptionMatches
 import com.google.jetpackcamera.utils.waitForCaptureButton
-import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithText
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -247,7 +247,7 @@ class ConcurrentCameraTest {
                     .assert(
                         stateDescriptionMatches(
                             getResString(
-                                R.string.quick_settings_description_capture_mode_video_only
+                                CaptureR.string.quick_settings_description_capture_mode_video_only
                             )
                         )
                     )
@@ -274,7 +274,10 @@ class ConcurrentCameraTest {
 
             longClickForVideoRecordingCheckingElapsedTime()
 
-            waitForNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG, VIDEO_CAPTURE_TIMEOUT_MILLIS)
+            waitForNodeWithText(
+                StateR.string.toast_video_capture_success,
+                VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
         }
     }
 
@@ -327,10 +330,10 @@ class ConcurrentCameraTest {
             .firstNotNullOfOrNull { description ->
                 when (description) {
                     getResString(
-                        R.string.quick_settings_description_concurrent_camera_off
+                        CaptureR.string.quick_settings_description_concurrent_camera_off
                     ) -> ConcurrentCameraMode.OFF
                     getResString(
-                        R.string.quick_settings_description_concurrent_camera_dual
+                        CaptureR.string.quick_settings_description_concurrent_camera_dual
                     ) -> ConcurrentCameraMode.DUAL
                     else -> null
                 }

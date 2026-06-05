@@ -31,9 +31,8 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.SCREEN_FLASH_OVERLAY
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
@@ -46,6 +45,7 @@ import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.setFlashMode
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithText
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -131,7 +131,10 @@ internal class FlashDeviceTest {
             .assertExists()
             .performClick()
 
-        composeTestRule.waitForNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG, IMAGE_CAPTURE_TIMEOUT_MILLIS)
+        composeTestRule.waitForNodeWithText(
+            StateR.string.toast_image_capture_success,
+            IMAGE_CAPTURE_TIMEOUT_MILLIS
+        )
     }
 
     @Test
@@ -163,8 +166,8 @@ internal class FlashDeviceTest {
                 SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS
             )
 
-            composeTestRule.waitForNodeWithTag(
-                IMAGE_CAPTURE_SUCCESS_TAG,
+            composeTestRule.waitForNodeWithText(
+                StateR.string.toast_image_capture_success,
                 IMAGE_CAPTURE_TIMEOUT_MILLIS
             )
         }
@@ -195,8 +198,8 @@ internal class FlashDeviceTest {
             composeTestRule.setFlashMode(FlashMode.ON)
 
             composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
-            composeTestRule.waitForNodeWithTag(
-                VIDEO_CAPTURE_SUCCESS_TAG,
+            composeTestRule.waitForNodeWithText(
+                StateR.string.toast_video_capture_success,
                 VIDEO_CAPTURE_TIMEOUT_MILLIS
             )
         }

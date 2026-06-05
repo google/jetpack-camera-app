@@ -19,6 +19,8 @@ import android.app.Activity
 import android.net.Uri
 import android.provider.MediaStore
 import android.view.KeyEvent
+import androidx.annotation.StringRes
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
@@ -31,9 +33,7 @@ import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth
 import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.uistate.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
+import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.CacheParam
 import com.google.jetpackcamera.utils.FILE_PREFIX
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
@@ -46,16 +46,17 @@ import com.google.jetpackcamera.utils.VIDEO_PREFIX
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesFileExist
 import com.google.jetpackcamera.utils.doesMediaExist
-import com.google.jetpackcamera.utils.ensureTagNotAppears
 import com.google.jetpackcamera.utils.expectedNumFiles
 import com.google.jetpackcamera.utils.getMultipleImageCaptureIntent
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.longClickForVideoRecording
+import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithText
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import org.junit.Rule
@@ -168,8 +169,8 @@ internal class ImageCaptureDeviceTest {
                     .assertExists()
                     .performClick()
 
-                composeTestRule.waitForNodeWithTag(
-                    IMAGE_CAPTURE_FAILURE_TAG,
+                composeTestRule.waitForNodeWithText(
+                    StateR.string.toast_capture_failure,
                     IMAGE_CAPTURE_TIMEOUT_MILLIS
                 )
                 uiDevice.pressBack()
@@ -193,8 +194,8 @@ internal class ImageCaptureDeviceTest {
 
                 composeTestRule.longClickForVideoRecording()
 
-                composeTestRule.ensureTagNotAppears(
-                    VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
+                ensureTextNotAppears(
+                    StateR.string.toast_video_capture_external_unsupported,
                     VIDEO_CAPTURE_TIMEOUT_MILLIS
                 )
 
@@ -225,7 +226,7 @@ internal class ImageCaptureDeviceTest {
                 repeat(2) {
                     clickCaptureAndWaitUntilMessageDisappears(
                         IMAGE_CAPTURE_TIMEOUT_MILLIS,
-                        IMAGE_CAPTURE_SUCCESS_TAG
+                        StateR.string.toast_image_capture_success
                     )
                 }
                 clickCapture()
@@ -253,7 +254,7 @@ internal class ImageCaptureDeviceTest {
                 repeat(2) {
                     clickCaptureAndWaitUntilMessageDisappears(
                         IMAGE_CAPTURE_TIMEOUT_MILLIS,
-                        IMAGE_CAPTURE_SUCCESS_TAG
+                        StateR.string.toast_image_capture_success
                     )
                 }
                 uiDevice.pressBack()
@@ -298,7 +299,7 @@ internal class ImageCaptureDeviceTest {
                 composeTestRule.waitForCaptureButton()
                 clickCaptureAndWaitUntilMessageDisappears(
                     IMAGE_CAPTURE_TIMEOUT_MILLIS,
-                    IMAGE_CAPTURE_FAILURE_TAG
+                    StateR.string.toast_capture_failure
                 )
                 clickCapture()
             }
@@ -309,10 +310,13 @@ internal class ImageCaptureDeviceTest {
         deleteFilesInDirAfterTimestamp(PICTURES_DIR_PATH, instrumentation, timeStamp)
     }
 
-    private fun clickCaptureAndWaitUntilMessageDisappears(msgTimeOut: Long, msgTag: String) {
+    private fun clickCaptureAndWaitUntilMessageDisappears(
+        msgTimeOut: Long,
+        @StringRes msgResId: Int
+    ) {
         clickCapture()
         composeTestRule.waitUntil(timeoutMillis = msgTimeOut) {
-            composeTestRule.onNodeWithTag(testTag = msgTag, useUnmergedTree = true).isDisplayed()
+            composeTestRule.onNodeWithText(msgResId).isDisplayed()
         }
         val dismissButtonMatcher =
             hasContentDescription(value = "dismiss", substring = true, ignoreCase = true)
@@ -322,8 +326,20 @@ internal class ImageCaptureDeviceTest {
         composeTestRule.onNode(dismissButtonMatcher, useUnmergedTree = true)
             .performClick()
         composeTestRule.waitUntil(timeoutMillis = MESSAGE_DISAPPEAR_TIMEOUT_MILLIS) {
-            val node = composeTestRule.onNodeWithTag(testTag = msgTag, useUnmergedTree = true)
-            node.isNotDisplayed()
+            composeTestRule.onNodeWithText(msgResId).isNotDisplayed()
+        }
+    }
+
+    private fun ensureTextNotAppears(@StringRes textResId: Int, timeoutMillis: Long) {
+        try {
+            composeTestRule.waitUntil(timeoutMillis = timeoutMillis) {
+                composeTestRule.onNodeWithText(textResId).isDisplayed()
+            }
+            throw AssertionError(
+                "${com.google.jetpackcamera.utils.getResString(textResId)} should not be present"
+            )
+        } catch (e: ComposeTimeoutException) {
+            /* Do nothing. we want to time out here. */
         }
     }
 
@@ -336,8 +352,8 @@ internal class ImageCaptureDeviceTest {
     private fun verifyImageCaptureSuccess() {
         when (cacheParam) {
             CacheParam.NO_CACHE -> {
-                composeTestRule.waitForNodeWithTag(
-                    IMAGE_CAPTURE_SUCCESS_TAG,
+                composeTestRule.waitForNodeWithText(
+                    StateR.string.toast_image_capture_success,
                     IMAGE_CAPTURE_TIMEOUT_MILLIS
                 )
             }

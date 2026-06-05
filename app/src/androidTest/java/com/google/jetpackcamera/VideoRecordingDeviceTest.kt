@@ -27,8 +27,7 @@ import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth
 import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_VIDEO
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.CacheParam
 import com.google.jetpackcamera.utils.IMAGE_PREFIX
 import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
@@ -48,6 +47,7 @@ import com.google.jetpackcamera.utils.runScenarioTestForResult
 import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithText
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import org.junit.Rule
@@ -158,8 +158,8 @@ internal class VideoRecordingDeviceTest {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitForCaptureButton()
                 composeTestRule.longClickForVideoRecording()
-                composeTestRule.waitForNodeWithTag(
-                    VIDEO_CAPTURE_FAILURE_TAG,
+                composeTestRule.waitForNodeWithText(
+                    StateR.string.toast_video_capture_failure,
                     VIDEO_CAPTURE_TIMEOUT_MILLIS
                 )
                 uiDevice.pressBack()
@@ -171,8 +171,8 @@ internal class VideoRecordingDeviceTest {
     private fun verifyVideoCaptureSuccess() {
         when (cacheParam) {
             CacheParam.NO_CACHE -> {
-                composeTestRule.waitForNodeWithTag(
-                    VIDEO_CAPTURE_SUCCESS_TAG,
+                composeTestRule.waitForNodeWithText(
+                    StateR.string.toast_video_capture_success,
                     VIDEO_CAPTURE_TIMEOUT_MILLIS
                 )
             }
