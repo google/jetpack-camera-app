@@ -112,7 +112,8 @@ dependencies {
     kapt(libs.dagger.hilt.compiler)
 
     implementation(project(":data:settings"))
-    androidTestImplementation(project(":data:settings-datastore"))
+    implementation(project(":core:settings"))
+    androidTestImplementation(project(":core:settings:datastore-prefs"))
     implementation(project(":core:model"))
 }
 

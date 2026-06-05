@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
-    namespace = "com.google.jetpackcamera.ui.controller.impl"
+    namespace = "com.google.jetpackcamera.core.settings.datastoreprefs"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -31,15 +30,7 @@ android {
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-
-    flavorDimensions += "flavor"
-    productFlavors {
-        create("stable") {
-            dimension = "flavor"
-            isDefault = true
-        }
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     compileOptions {
@@ -49,45 +40,49 @@ android {
     kotlin {
         jvmToolchain(17)
     }
-    buildFeatures {
-        buildConfig = true
-        compose = true
-    }
 
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
+    @Suppress("UnstableApiUsage")
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("pixel2Api28") {
+                    device = "Pixel 2"
+                    apiLevel = 28
+                }
+                create("pixel8Api34") {
+                    device = "Pixel 8"
+                    apiLevel = 34
+                    systemImageSource = "aosp_atd"
+                }
+            }
+        }
     }
 }
 
 dependencies {
-    implementation(libs.camera.compose)
-    implementation(libs.androidx.tracing)
+    implementation(libs.kotlinx.coroutines.core)
 
-    // CameraX
-    implementation(libs.camera.core)
-    implementation(libs.camera.compose)
+    // Hilt
+    implementation(libs.dagger.hilt.android)
+    kapt(libs.dagger.hilt.compiler)
 
-    implementation(libs.kotlinx.atomicfu)
-
-    implementation(project(":data:media"))
-    implementation(project(":ui:components:capture"))
-    implementation(project(":ui:controller"))
-    implementation(project(":ui:uistate"))
-    implementation(project(":ui:uistate:capture"))
-    implementation(project(":core:model"))
-    implementation(project(":core:common"))
-    implementation(project(":core:camera"))
+    // Preferences DataStore (Zero Protobuf)
+    implementation(libs.androidx.datastore.preferences)
 
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.androidx.test.core)
-    testImplementation(project(":core:common"))
-    testImplementation(project(":core:camera:testing"))
-    testImplementation(project(":data:settings"))
-    testImplementation(project(":core:settings"))
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(project(":core:settings:datastore-prefs:testing"))
+
+    // Access Model and Settings Interface
+    implementation(project(":core:model"))
+    implementation(project(":core:common"))
+    implementation(project(":core:settings"))
+    implementation(project(":data:settings"))
 }
 
 // Allow references to generated code

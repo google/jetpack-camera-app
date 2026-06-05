@@ -87,6 +87,7 @@ dependencies {
     // Access Model data
     implementation(project(":core:model"))
     implementation(project(":core:common"))
+    implementation(project(":core:settings"))
 }
 
 // Allow references to generated code

@@ -151,7 +151,8 @@ dependencies {
 
     // Access settings & model data
     implementation(project(":data:settings"))
-    implementation(project(":data:settings-datastore"))
+    implementation(project(":core:settings:datastore-prefs"))
+    implementation(project(":core:settings"))
     implementation(project(":core:model"))
 
     // Camera Preview

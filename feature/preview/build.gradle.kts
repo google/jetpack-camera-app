@@ -139,6 +139,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":data:media"))
     implementation(project(":data:settings"))
+    implementation(project(":core:settings"))
     implementation(project(":core:model"))
     testImplementation(project(":core:camera:testing"))
     testImplementation(project(":data:settings:testing"))

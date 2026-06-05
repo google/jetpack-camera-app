@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,25 @@
  */
 package com.google.jetpackcamera.settings
 
-import android.content.Context
-import android.content.SharedPreferences
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.settings.datastoreprefs.LocalSettingsDataSource
+import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import java.io.File
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -34,28 +41,39 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 internal class CameraAppSettingsViewModelTest {
-    private val testContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
-    private lateinit var sharedPreferences: SharedPreferences
+    @get:Rule
+    val tempFolder = TemporaryFolder()
+
+    private lateinit var testFile: File
+    private lateinit var testDataStore: DataStore<Preferences>
+    private lateinit var datastoreScope: CoroutineScope
     private lateinit var settingsViewModel: SettingsViewModel
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
-        sharedPreferences = testContext.getSharedPreferences(
-            "test_jca_settings",
-            Context.MODE_PRIVATE
-        )
-        sharedPreferences.edit().clear().commit()
+        testFile = tempFolder.newFile("test_settings.preferences_pb")
+        datastoreScope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
 
-        val settingsRepository = LocalSettingsRepository(
-            sharedPreferences = sharedPreferences,
+        testDataStore = FakeDataStoreModule.providePreferenceDataStore(
+            scope = datastoreScope,
+            file = testFile
+        )
+
+        val settingsDataSource = LocalSettingsDataSource(
+            dataStore = testDataStore,
             defaultCaptureModeOverride = CaptureMode.STANDARD
+        )
+        val settingsRepository = LocalSettingsRepository(
+            settingsDataSource = settingsDataSource
         )
         val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
             updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
@@ -69,7 +87,7 @@ internal class CameraAppSettingsViewModelTest {
 
     @After
     fun tearDown() {
-        sharedPreferences.edit().clear().commit()
+        datastoreScope.cancel()
     }
 
     @Test
@@ -184,12 +202,8 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun streamConfigDisabled_whenUltraHdrEnabled() = runTest(StandardTestDispatcher()) {
         // Set image format to Ultra HDR in datastore
-        testDataStore.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setImageFormatStatus(
-                    ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
-                )
-                .build()
+        testDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("image_format")] = ImageOutputFormat.JPEG_ULTRA_HDR.name
         }
         advanceUntilIdle()
 

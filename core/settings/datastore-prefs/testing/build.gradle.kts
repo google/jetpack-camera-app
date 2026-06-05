@@ -20,7 +20,7 @@ plugins {
 }
 
 android {
-    namespace = "com.google.jetpackcamera.settings.testing"
+    namespace = "com.google.jetpackcamera.core.settings.datastoreprefs.testing"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -29,14 +29,6 @@ android {
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    flavorDimensions += "flavor"
-    productFlavors {
-        create("stable") {
-            dimension = "flavor"
-            isDefault = true
-        }
     }
 
     compileOptions {
@@ -49,9 +41,11 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:settings:datastore-prefs"))
     implementation(project(":data:settings"))
     implementation(project(":core:settings"))
     implementation(project(":core:model"))
-    
+
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.androidx.datastore.preferences)
 }
