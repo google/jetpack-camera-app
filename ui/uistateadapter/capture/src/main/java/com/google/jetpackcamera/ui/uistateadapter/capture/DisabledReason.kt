@@ -17,66 +17,41 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 
-const val IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
-const val IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG =
-    "ImageCaptureUnsupportedConcurrentCameraTag"
-const val VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "VideoCaptureExternalUnsupportedTag"
-
-// HDR disabled rationale tags
-const val HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG = "HdrImageUnsupportedOnDeviceTag"
-const val HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG = "HdrImageUnsupportedOnLensTag"
-const val HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG = "HdrImageUnsupportedOnSingleStreamTag"
-const val HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG = "HdrImageUnsupportedOnMultiStreamTag"
-const val HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG = "HdrVideoUnsupportedOnDeviceTag"
-const val HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG = "HdrVideoUnsupportedOnLensTag"
-const val HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG = "HdrSimultaneousImageVideoUnsupportedTag"
-
 /**
- * Represents reasons why a UI component or functionality might be disabled, providing a test tag
- * and a string resource ID for user-facing explanation.
+ * Represents reasons why a UI component or functionality might be disabled, providing
+ * a string resource ID for user-facing explanation.
  */
 enum class DisabledReason(
-    override val testTag: String,
     override val reasonTextResId: Int
 ) : DisableRationale {
     VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(
-        VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
         R.string.toast_video_capture_external_unsupported
     ),
     IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED(
-        IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG,
         R.string.toast_image_capture_external_unsupported
     ),
     IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA(
-        IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG,
         R.string.toast_image_capture_unsupported_concurrent_camera
     ),
     HDR_VIDEO_UNSUPPORTED_ON_DEVICE(
-        HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG,
         R.string.toast_hdr_video_unsupported_on_device
     ),
     HDR_VIDEO_UNSUPPORTED_ON_LENS(
-        HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG,
         R.string.toast_hdr_video_unsupported_on_lens
     ),
     HDR_IMAGE_UNSUPPORTED_ON_DEVICE(
-        HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG,
         R.string.toast_hdr_photo_unsupported_on_device
     ),
     HDR_IMAGE_UNSUPPORTED_ON_LENS(
-        HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG,
         R.string.toast_hdr_photo_unsupported_on_lens
     ),
     HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM(
-        HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG,
         R.string.toast_hdr_photo_unsupported_on_lens_single_stream
     ),
     HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM(
-        HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG,
         R.string.toast_hdr_photo_unsupported_on_lens_multi_stream
     ),
     HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED(
-        HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG,
         R.string.toast_hdr_simultaneous_image_video_unsupported
     )
 }
