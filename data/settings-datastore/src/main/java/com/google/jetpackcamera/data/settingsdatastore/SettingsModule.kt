@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings
+package com.google.jetpackcamera.data.settingsdatastore
 
+import com.google.jetpackcamera.settings.SettingsRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
-/**
- * Dagger [Module] for settings data layer.
- */
 @Module
 @InstallIn(SingletonComponent::class)
-interface SettingsModule {
+abstract class SettingsModule {
 
     @Binds
-    fun bindsSettingsRepository(
+    abstract fun bindSettingsRepository(
         localSettingsRepository: LocalSettingsRepository
     ): SettingsRepository
 }

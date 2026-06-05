@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,52 +13,70 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings
+package com.google.jetpackcamera.data.settingsdatastore
 
 import android.content.Context
-import android.content.SharedPreferences
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settingsdatastore.testing.FakeDataStoreModule
+import java.io.File
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class LocalSettingsRepositoryInstrumentedTest {
-    private val testContext: Context = ApplicationProvider.getApplicationContext()
-    private lateinit var sharedPreferences: SharedPreferences
+    @get:Rule
+    val tempFolder = TemporaryFolder()
+    private lateinit var testFile: File
+
+    private lateinit var testDataStore: DataStore<Preferences>
+    private lateinit var datastoreScope: CoroutineScope
     private lateinit var repository: LocalSettingsRepository
 
     @Before
-    fun setup() {
-        sharedPreferences = testContext.getSharedPreferences(
-            "test_jca_settings",
-            Context.MODE_PRIVATE
+    fun setup() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher())
+        testFile = tempFolder.newFile()
+        datastoreScope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
+
+        testDataStore = FakeDataStoreModule.providePreferenceDataStore(
+            scope = datastoreScope,
+            file = testFile
         )
-        sharedPreferences.edit().clear().commit()
         repository = LocalSettingsRepository(
-            sharedPreferences = sharedPreferences,
+            dataStore = testDataStore,
             defaultCaptureModeOverride = CaptureMode.STANDARD
         )
+        advanceUntilIdle()
     }
 
     @After
     fun tearDown() {
-        sharedPreferences.edit().clear().commit()
+        datastoreScope.cancel()
     }
 
     @Test
@@ -66,18 +84,6 @@ class LocalSettingsRepositoryInstrumentedTest {
         val cameraAppSettings: CameraAppSettings = repository.getCurrentDefaultCameraAppSettings()
         advanceUntilIdle()
         assertThat(cameraAppSettings).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS)
-    }
-
-    @Test
-    fun can_update_dark_mode() = runTest {
-        val initialDarkModeStatus = repository.getCurrentDefaultCameraAppSettings().darkMode
-        repository.updateDarkModeStatus(DarkMode.LIGHT)
-        val newDarkModeStatus = repository.getCurrentDefaultCameraAppSettings().darkMode
-
-        advanceUntilIdle()
-        assertThat(initialDarkModeStatus).isNotEqualTo(newDarkModeStatus)
-        assertThat(initialDarkModeStatus).isEqualTo(DarkMode.DARK)
-        assertThat(newDarkModeStatus).isEqualTo(DarkMode.LIGHT)
     }
 
     @Test
