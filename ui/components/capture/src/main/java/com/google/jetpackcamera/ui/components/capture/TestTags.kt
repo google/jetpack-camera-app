@@ -77,7 +77,6 @@ const val QUICK_SETTINGS_BOTTOM_SHEET = "QuickSettingsBottomSheet"
 const val QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON = "QuickSettingsCloseExpandedButton"
 const val QUICK_SETTINGS_SCROLL_CONTAINER = "QuickSettingsScrollContainer"
 
-const val QUICK_SETTINGS_STREAM_CONFIG_BUTTON = "QuickSettingsStreamConfigButton"
 const val QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON = "QuickSettingsConcurrentCameraModeButton"
 const val QUICK_SETTINGS_HDR_BUTTON = "QuickSettingsHdrButton"
 const val QUICK_SETTINGS_FLASH_BUTTON = "QuickSettingsFlashButton"
