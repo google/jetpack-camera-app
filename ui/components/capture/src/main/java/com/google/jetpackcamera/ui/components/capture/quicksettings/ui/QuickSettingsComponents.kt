@@ -75,7 +75,6 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
@@ -94,7 +93,6 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraConcur
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraLensFace
-import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraStreamConfig
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
@@ -105,7 +103,6 @@ import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
-import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import kotlin.math.min
 
 @Composable
@@ -402,32 +399,6 @@ fun QuickFlipCamera(
             modifier = modifier,
             enum = enum,
             onClick = { setLensFacing(flipLensUiState.selectedLensFacing.flip()) }
-        )
-    }
-}
-
-@Composable
-fun QuickSetStreamConfig(
-    setStreamConfig: (StreamConfig) -> Unit,
-    streamConfigUiState: StreamConfigUiState,
-    modifier: Modifier = Modifier
-) {
-    if (streamConfigUiState is StreamConfigUiState.Available) {
-        val enum: CameraStreamConfig =
-            when (streamConfigUiState.selectedStreamConfig) {
-                StreamConfig.MULTI_STREAM -> CameraStreamConfig.MULTI_STREAM
-                StreamConfig.SINGLE_STREAM -> CameraStreamConfig.SINGLE_STREAM
-            }
-        QuickSettingToggleButton(
-            modifier = modifier,
-            enum = enum,
-            onClick = {
-                when (streamConfigUiState.selectedStreamConfig) {
-                    StreamConfig.MULTI_STREAM -> setStreamConfig(StreamConfig.SINGLE_STREAM)
-                    StreamConfig.SINGLE_STREAM -> setStreamConfig(StreamConfig.MULTI_STREAM)
-                }
-            },
-            enabled = streamConfigUiState.isActive
         )
     }
 }
