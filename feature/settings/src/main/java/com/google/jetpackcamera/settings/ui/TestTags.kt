@@ -37,6 +37,8 @@ const val LENS_UNSUPPORTED_TAG = "LensUnsupportedTag"
 const val FPS_UNSUPPORTED_TAG = "FpsUnsupportedTag"
 const val VIDEO_QUALITY_UNSUPPORTED_TAG = "VideoQualityUnsupportedTag"
 const val PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG = "PermissionRecordAudioNotGrantedTag"
+const val CONCURRENT_CAMERA_ENABLED_TAG = "ConcurrentCameraEnabledTag"
+const val ULTRA_HDR_ENABLED_TAG = "UltraHdrEnabledTag"
 
 // Settings w/ no dialog
 const val BTN_SWITCH_SETTING_LENS_FACING_TAG = "btn_switch_setting_lens_facing_tag"

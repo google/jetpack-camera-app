@@ -357,40 +357,51 @@ fun StreamConfigSetting(
         modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG),
         title = stringResource(R.string.stream_config_title),
         leadingIcon = null,
-        enabled = true,
+        enabled = streamConfigUiState is StreamConfigUiState.Enabled,
         description =
-        if (streamConfigUiState is StreamConfigUiState.Enabled) {
-            when (streamConfigUiState.currentStreamConfig) {
-                StreamConfig.MULTI_STREAM -> stringResource(
-                    id = R.string.stream_config_description_multi_stream
-                )
+        when (streamConfigUiState) {
+            is StreamConfigUiState.Enabled -> {
+                when (streamConfigUiState.currentStreamConfig) {
+                    StreamConfig.MULTI_STREAM -> stringResource(
+                        id = R.string.stream_config_description_multi_stream
+                    )
 
-                StreamConfig.SINGLE_STREAM -> stringResource(
-                    id = R.string.stream_config_description_single_stream
-                )
+                    StreamConfig.SINGLE_STREAM -> stringResource(
+                        id = R.string.stream_config_description_single_stream
+                    )
+                }
             }
-        } else {
-            TODO("stream config currently has no disabled criteria")
+
+            is StreamConfigUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = streamConfigUiState.disabledRationale)
+            }
         },
         popupContents = {
-            Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(
-                        BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
-                    ),
-                    text = stringResource(id = R.string.stream_config_selector_multi_stream),
-                    selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
-                    enabled = true,
-                    onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
-                )
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG),
-                    text = stringResource(id = R.string.stream_config_description_single_stream),
-                    selected = streamConfigUiState.currentStreamConfig ==
-                        StreamConfig.SINGLE_STREAM,
-                    enabled = true,
-                    onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
-                )
+            if (streamConfigUiState is StreamConfigUiState.Enabled) {
+                Column(Modifier.selectableGroup()) {
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(
+                            BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
+                        ),
+                        text = stringResource(id = R.string.stream_config_selector_multi_stream),
+                        selected = streamConfigUiState.currentStreamConfig ==
+                            StreamConfig.MULTI_STREAM,
+                        enabled = true,
+                        onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
+                    )
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(
+                            BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
+                        ),
+                        text = stringResource(
+                            id = R.string.stream_config_description_single_stream
+                        ),
+                        selected = streamConfigUiState.currentStreamConfig ==
+                            StreamConfig.SINGLE_STREAM,
+                        enabled = true,
+                        onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
+                    )
+                }
             }
         }
     )
@@ -1091,6 +1102,16 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
         )
 
         is DisabledRationale.PermissionRecordAudioNotGrantedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.ConcurrentCameraUnsupportedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.UltraHdrUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )
