@@ -26,6 +26,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -193,6 +194,30 @@ internal class CameraAppSettingsViewModelTest {
 
         assertThat(initialDarkMode).isEqualTo(DarkMode.DARK)
         assertThat(newDarkMode).isEqualTo(DarkMode.SYSTEM)
+    }
+
+    @Test
+    fun streamConfigDisabled_whenUltraHdrEnabled() = runTest(StandardTestDispatcher()) {
+        // Set image format to Ultra HDR in datastore
+        testDataStore.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setImageFormatStatus(
+                    ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
+                )
+                .build()
+        }
+        advanceUntilIdle()
+
+        val uiState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val streamConfigUiState = assertIsEnabled(uiState).streamConfigUiState
+        assertThat(streamConfigUiState).isInstanceOf(StreamConfigUiState.Disabled::class.java)
+        val disabledRationale =
+            (streamConfigUiState as StreamConfigUiState.Disabled).disabledRationale
+        assertThat(disabledRationale)
+            .isInstanceOf(DisabledRationale.UltraHdrUnsupportedRationale::class.java)
     }
 }
 

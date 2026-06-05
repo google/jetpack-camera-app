@@ -24,7 +24,6 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
@@ -84,12 +83,6 @@ class QuickSettingsControllerImpl(
     override fun setAspectRatio(aspectRatio: AspectRatio) {
         scope.launch {
             cameraSystem.setAspectRatio(aspectRatio)
-        }
-    }
-
-    override fun setStreamConfig(streamConfig: StreamConfig) {
-        scope.launch {
-            cameraSystem.setStreamConfig(streamConfig)
         }
     }
 
