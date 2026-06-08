@@ -15,6 +15,10 @@
  */
 package com.google.jetpackcamera.model
 
+/**
+ * WARNING: The string representation of this enum is serialized and persisted in Preferences DataStore.
+ * Renaming constants will break compatibility with existing saved settings.
+ */
 enum class AspectRatio(val numerator: Int, val denominator: Int) {
     THREE_FOUR(3, 4),
     NINE_SIXTEEN(9, 16),

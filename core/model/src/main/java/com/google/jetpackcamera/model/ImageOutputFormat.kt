@@ -17,6 +17,10 @@ package com.google.jetpackcamera.model
 
 val DEFAULT_HDR_IMAGE_OUTPUT = ImageOutputFormat.JPEG_ULTRA_HDR
 
+/**
+ * WARNING: The string representation of this enum is serialized and persisted in Preferences DataStore.
+ * Renaming constants will break compatibility with existing saved settings.
+ */
 enum class ImageOutputFormat {
     JPEG,
     JPEG_ULTRA_HDR

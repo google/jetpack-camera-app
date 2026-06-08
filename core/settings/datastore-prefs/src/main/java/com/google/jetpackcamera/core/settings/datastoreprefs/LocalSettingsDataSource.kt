@@ -48,19 +48,27 @@ class LocalSettingsDataSource @Inject constructor(
 
     override val defaultCameraAppSettings: Flow<CameraAppSettings> = dataStore.data.map { prefs ->
         CameraAppSettings(
-            cameraLensFacing = prefs[PreferenceKeys.KEY_LENS_FACING].toEnumOrDefault(LensFacing.BACK),
+            cameraLensFacing = prefs[PreferenceKeys.KEY_LENS_FACING]
+                .toEnumOrDefault(LensFacing.BACK),
             darkMode = prefs[PreferenceKeys.KEY_DARK_MODE].toEnumOrDefault(DarkMode.DARK),
             flashMode = prefs[PreferenceKeys.KEY_FLASH_MODE].toEnumOrDefault(FlashMode.OFF),
-            aspectRatio = prefs[PreferenceKeys.KEY_ASPECT_RATIO].toEnumOrDefault(AspectRatio.NINE_SIXTEEN),
-            stabilizationMode = prefs[PreferenceKeys.KEY_STABILIZATION_MODE].toEnumOrDefault(StabilizationMode.AUTO),
+            aspectRatio = prefs[PreferenceKeys.KEY_ASPECT_RATIO]
+                .toEnumOrDefault(AspectRatio.NINE_SIXTEEN),
+            stabilizationMode = prefs[PreferenceKeys.KEY_STABILIZATION_MODE]
+                .toEnumOrDefault(StabilizationMode.AUTO),
             targetFrameRate = prefs[PreferenceKeys.KEY_TARGET_FRAME_RATE] ?: 0,
-            streamConfig = prefs[PreferenceKeys.KEY_STREAM_CONFIG].toEnumOrDefault(StreamConfig.MULTI_STREAM),
+            streamConfig = prefs[PreferenceKeys.KEY_STREAM_CONFIG]
+                .toEnumOrDefault(StreamConfig.MULTI_STREAM),
             lowLightBoostPriority = prefs[PreferenceKeys.KEY_LOW_LIGHT_BOOST_PRIORITY]
                 .toEnumOrDefault(LowLightBoostPriority.PRIORITIZE_AE_MODE),
-            dynamicRange = prefs[PreferenceKeys.KEY_DYNAMIC_RANGE].toEnumOrDefault(DynamicRange.SDR),
-            imageFormat = prefs[PreferenceKeys.KEY_IMAGE_FORMAT].toEnumOrDefault(ImageOutputFormat.JPEG),
-            maxVideoDurationMillis = prefs[PreferenceKeys.KEY_MAX_VIDEO_DURATION] ?: UNLIMITED_VIDEO_DURATION,
-            videoQuality = prefs[PreferenceKeys.KEY_VIDEO_QUALITY].toEnumOrDefault(VideoQuality.UNSPECIFIED),
+            dynamicRange = prefs[PreferenceKeys.KEY_DYNAMIC_RANGE]
+                .toEnumOrDefault(DynamicRange.SDR),
+            imageFormat = prefs[PreferenceKeys.KEY_IMAGE_FORMAT]
+                .toEnumOrDefault(ImageOutputFormat.JPEG),
+            maxVideoDurationMillis = prefs[PreferenceKeys.KEY_MAX_VIDEO_DURATION]
+                ?: UNLIMITED_VIDEO_DURATION,
+            videoQuality = prefs[PreferenceKeys.KEY_VIDEO_QUALITY]
+                .toEnumOrDefault(VideoQuality.UNSPECIFIED),
             audioEnabled = prefs[PreferenceKeys.KEY_AUDIO_ENABLED] ?: true,
             captureMode = defaultCaptureModeOverride
         )
@@ -150,7 +158,11 @@ class LocalSettingsDataSource @Inject constructor(
     companion object {
         private inline fun <reified T : Enum<T>> String?.toEnumOrDefault(default: T): T {
             if (this == null) return default
-            return enumValues<T>().firstOrNull { it.name == this } ?: default
+            return try {
+                enumValueOf<T>(this)
+            } catch (e: IllegalArgumentException) {
+                default
+            }
         }
     }
 }

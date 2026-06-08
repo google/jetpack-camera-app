@@ -19,14 +19,21 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -127,5 +134,116 @@ class LocalSettingsDataSourceInstrumentedTest {
         val newImageFormat = dataSource.getCurrentDefaultCameraAppSettings().imageFormat
         assertThat(initialImageFormat).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(newImageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
+
+    @Test
+    fun can_update_dark_mode() = runTest {
+        val initialDarkMode = dataSource.getCurrentDefaultCameraAppSettings().darkMode
+        dataSource.updateDarkModeStatus(DarkMode.LIGHT)
+        advanceUntilIdle()
+
+        val newDarkMode = dataSource.getCurrentDefaultCameraAppSettings().darkMode
+        assertThat(initialDarkMode).isEqualTo(DarkMode.DARK)
+        assertThat(newDarkMode).isEqualTo(DarkMode.LIGHT)
+    }
+
+    @Test
+    fun can_update_target_frame_rate() = runTest {
+        val initialFrameRate = dataSource.getCurrentDefaultCameraAppSettings().targetFrameRate
+        dataSource.updateTargetFrameRate(30)
+        advanceUntilIdle()
+
+        val newFrameRate = dataSource.getCurrentDefaultCameraAppSettings().targetFrameRate
+        assertThat(initialFrameRate).isEqualTo(0)
+        assertThat(newFrameRate).isEqualTo(30)
+    }
+
+    @Test
+    fun can_update_aspect_ratio() = runTest {
+        val initialAspectRatio = dataSource.getCurrentDefaultCameraAppSettings().aspectRatio
+        dataSource.updateAspectRatio(AspectRatio.THREE_FOUR)
+        advanceUntilIdle()
+
+        val newAspectRatio = dataSource.getCurrentDefaultCameraAppSettings().aspectRatio
+        assertThat(initialAspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        assertThat(newAspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+    }
+
+    @Test
+    fun can_update_stream_config() = runTest {
+        val initialStreamConfig = dataSource.getCurrentDefaultCameraAppSettings().streamConfig
+        dataSource.updateStreamConfig(StreamConfig.SINGLE_STREAM)
+        advanceUntilIdle()
+
+        val newStreamConfig = dataSource.getCurrentDefaultCameraAppSettings().streamConfig
+        assertThat(initialStreamConfig).isEqualTo(StreamConfig.MULTI_STREAM)
+        assertThat(newStreamConfig).isEqualTo(StreamConfig.SINGLE_STREAM)
+    }
+
+    @Test
+    fun can_update_stabilization_mode() = runTest {
+        val initialStabilizationMode =
+            dataSource.getCurrentDefaultCameraAppSettings().stabilizationMode
+        dataSource.updateStabilizationMode(StabilizationMode.HIGH_QUALITY)
+        advanceUntilIdle()
+
+        val newStabilizationMode =
+            dataSource.getCurrentDefaultCameraAppSettings().stabilizationMode
+        assertThat(initialStabilizationMode).isEqualTo(StabilizationMode.AUTO)
+        assertThat(newStabilizationMode).isEqualTo(StabilizationMode.HIGH_QUALITY)
+    }
+
+    @Test
+    fun can_update_max_video_duration() = runTest {
+        val initialDuration =
+            dataSource.getCurrentDefaultCameraAppSettings().maxVideoDurationMillis
+        dataSource.updateMaxVideoDuration(60000L)
+        advanceUntilIdle()
+
+        val newDuration =
+            dataSource.getCurrentDefaultCameraAppSettings().maxVideoDurationMillis
+        assertThat(initialDuration).isEqualTo(UNLIMITED_VIDEO_DURATION)
+        assertThat(newDuration).isEqualTo(60000L)
+    }
+
+    @Test
+    fun can_update_video_quality() = runTest {
+        val initialVideoQuality =
+            dataSource.getCurrentDefaultCameraAppSettings().videoQuality
+        dataSource.updateVideoQuality(VideoQuality.HD)
+        advanceUntilIdle()
+
+        val newVideoQuality =
+            dataSource.getCurrentDefaultCameraAppSettings().videoQuality
+        assertThat(initialVideoQuality).isEqualTo(VideoQuality.UNSPECIFIED)
+        assertThat(newVideoQuality).isEqualTo(VideoQuality.HD)
+    }
+
+    @Test
+    fun can_update_low_light_boost_priority() = runTest {
+        val initialLowLightBoostPriority =
+            dataSource.getCurrentDefaultCameraAppSettings().lowLightBoostPriority
+        dataSource.updateLowLightBoostPriority(
+            LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
+        )
+        advanceUntilIdle()
+
+        val newLowLightBoostPriority =
+            dataSource.getCurrentDefaultCameraAppSettings().lowLightBoostPriority
+        assertThat(initialLowLightBoostPriority)
+            .isEqualTo(LowLightBoostPriority.PRIORITIZE_AE_MODE)
+        assertThat(newLowLightBoostPriority)
+            .isEqualTo(LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES)
+    }
+
+    @Test
+    fun can_update_audio_enabled() = runTest {
+        val initialAudioEnabled = dataSource.getCurrentDefaultCameraAppSettings().audioEnabled
+        dataSource.updateAudioEnabled(false)
+        advanceUntilIdle()
+
+        val newAudioEnabled = dataSource.getCurrentDefaultCameraAppSettings().audioEnabled
+        assertThat(initialAudioEnabled).isTrue()
+        assertThat(newAudioEnabled).isFalse()
     }
 }

@@ -16,6 +16,10 @@
 package com.google.jetpackcamera.model
 val DEFAULT_HDR_DYNAMIC_RANGE = DynamicRange.HLG10
 
+/**
+ * WARNING: The string representation of this enum is serialized and persisted in Preferences DataStore.
+ * Renaming constants will break compatibility with existing saved settings.
+ */
 enum class DynamicRange {
     SDR,
     HLG10

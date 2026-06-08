@@ -15,6 +15,10 @@
  */
 package com.google.jetpackcamera.model
 
+/**
+ * WARNING: The string representation of this enum is serialized and persisted in Preferences DataStore.
+ * Renaming constants will break compatibility with existing saved settings.
+ */
 enum class LowLightBoostPriority {
     PRIORITIZE_AE_MODE,
     PRIORITIZE_GOOGLE_PLAY_SERVICES

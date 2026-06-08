@@ -23,11 +23,9 @@ import kotlinx.coroutines.CoroutineScope
 
 object FakeDataStoreModule {
 
-    fun providePreferenceDataStore(
-        scope: CoroutineScope,
-        file: File
-    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
-        scope = scope,
-        produceFile = { file }
-    )
+    fun providePreferenceDataStore(scope: CoroutineScope, file: File): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create(
+            scope = scope,
+            produceFile = { file }
+        )
 }
