@@ -31,6 +31,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
+import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
@@ -339,6 +340,7 @@ class ConcurrentCameraTest {
         )
     }
 
+    @CanIgnoreReturnValue
     private fun SemanticsNodeInteraction.assertConcurrentCameraMode(
         mode: ConcurrentCameraMode
     ): SemanticsNodeInteraction {

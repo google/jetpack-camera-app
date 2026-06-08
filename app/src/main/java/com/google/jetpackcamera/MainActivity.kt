@@ -41,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -68,6 +69,7 @@ import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.JcaApp
+import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlin.collections.emptyList
@@ -113,57 +115,62 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        setContent {
-            when (uiState) {
-                Loading -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(50.dp))
-                        Text(text = stringResource(R.string.jca_loading), color = Color.White)
-                    }
-                }
+        val disableAnimations = intent?.getBooleanExtra(KEY_DISABLE_ANIMATIONS, false) ?: false
+        Log.d(TAG, "LocalDisableAnimations: $disableAnimations")
 
-                is Success -> {
-                    // TODO(kimblebee@): add app setting to enable/disable dynamic color
-                    JetpackCameraTheme(
-                        darkTheme = isInDarkMode(uiState = uiState),
-                        dynamicColor = false
-                    ) {
-                        Surface(
+        setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides disableAnimations) {
+                when (uiState) {
+                    Loading -> {
+                        Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .semantics {
-                                    testTagsAsResourceId = true
-                                },
-                            color = MaterialTheme.colorScheme.background
+                                .background(Color.Black),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            JcaApp(
-                                externalCaptureMode = externalCaptureMode,
-                                shouldReviewAfterCapture = shouldReviewAfterCapture,
-                                captureUris = captureUris,
-                                debugSettings = debugSettings,
-                                openAppSettings = ::openAppSettings,
-                                onRequestWindowColorMode = { colorMode ->
-                                    // Window color mode APIs require API level 26+
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        Log.d(
-                                            TAG,
-                                            "Setting window color mode to:" +
-                                                " ${colorMode.toColorModeString()}"
-                                        )
-                                        window?.colorMode = colorMode
-                                    }
-                                },
-                                onFirstFrameCaptureCompleted = {
-                                    firstFrameComplete?.complete(Unit)
-                                },
-                                onCaptureEvent = captureEventCallback
-                            )
+                            CircularProgressIndicator(modifier = Modifier.size(50.dp))
+                            Text(text = stringResource(R.string.jca_loading), color = Color.White)
+                        }
+                    }
+
+                    is Success -> {
+                        // TODO(kimblebee@): add app setting to enable/disable dynamic color
+                        JetpackCameraTheme(
+                            darkTheme = isInDarkMode(uiState = uiState),
+                            dynamicColor = false
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .semantics {
+                                        testTagsAsResourceId = true
+                                    },
+                                color = MaterialTheme.colorScheme.background
+                            ) {
+                                JcaApp(
+                                    externalCaptureMode = externalCaptureMode,
+                                    shouldReviewAfterCapture = shouldReviewAfterCapture,
+                                    captureUris = captureUris,
+                                    debugSettings = debugSettings,
+                                    openAppSettings = ::openAppSettings,
+                                    onRequestWindowColorMode = { colorMode ->
+                                        // Window color mode APIs require API level 26+
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            Log.d(
+                                                TAG,
+                                                "Setting window color mode to:" +
+                                                    " ${colorMode.toColorModeString()}"
+                                            )
+                                            window?.colorMode = colorMode
+                                        }
+                                    },
+                                    onFirstFrameCaptureCompleted = {
+                                        firstFrameComplete?.complete(Unit)
+                                    },
+                                    onCaptureEvent = captureEventCallback
+                                )
+                            }
                         }
                     }
                 }
@@ -310,6 +317,7 @@ class MainActivity : ComponentActivity() {
 
         private const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
         const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
+        const val KEY_DISABLE_ANIMATIONS = "KEY_DISABLE_ANIMATIONS"
     }
 }
 

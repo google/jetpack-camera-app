@@ -20,6 +20,7 @@ import android.util.Log
 import android.view.Window
 import android.view.WindowManager
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
+import kotlinx.coroutines.delay
 
 private const val TAG = "ScreenFlashComponents"
 
@@ -77,12 +79,27 @@ private fun ScreenFlashOverlay(
     modifier: Modifier = Modifier
 ) {
     // Update overlay transparency gradually
+    val disableAnimations = LocalDisableAnimations.current
+    val targetAlpha = if (screenFlashUiState.enabled) 1f else 0f
     val alpha by animateFloatAsState(
-        targetValue = if (screenFlashUiState.enabled) 1f else 0f,
+        targetValue = targetAlpha,
         label = "screenFlashAlphaAnimation",
-        animationSpec = tween(),
-        finishedListener = { screenFlashUiState.onChangeComplete() }
+        animationSpec = if (disableAnimations) snap() else tween(),
+        finishedListener = if (disableAnimations) {
+            null
+        } else {
+            { _ ->
+                screenFlashUiState.onChangeComplete()
+            }
+        }
     )
+
+    if (disableAnimations) {
+        LaunchedEffect(targetAlpha) {
+            delay(50) // small delay to avoid infinite recomposition
+            screenFlashUiState.onChangeComplete()
+        }
+    }
     Box(
         modifier = modifier
             .run {

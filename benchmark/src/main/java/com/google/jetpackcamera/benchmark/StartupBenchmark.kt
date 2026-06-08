@@ -79,7 +79,7 @@ class StartupBenchmark {
             startupMode = startupMode,
             setupBlock = setupBlock
         ) {
-            pressHome()
+            val unused = pressHome()
             startActivityAndWait()
         }
     }
