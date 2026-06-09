@@ -562,36 +562,21 @@ private fun LockSwitchCaptureButtonNucleus(
             // grey cylinder offset to the left and fades in when pressed recording
             val isVisible =
                 captureButtonUiState == CaptureButtonUiState.Enabled.Recording.PressedRecording
-            if (disableAnimations) {
-                if (isVisible) {
-                    Canvas(
-                        modifier = Modifier
-                            .size(switchWidth, switchHeight)
-                            .alpha(LOCK_SWITCH_ALPHA)
-                    ) {
-                        drawRoundRect(
-                            color = Color.Black,
-                            cornerRadius = CornerRadius((switchWidth / 2).toPx())
-                        )
-                    }
-                }
-            } else {
-                AnimatedVisibility(
-                    visible = isVisible,
-                    enter = fadeIn(),
-                    exit = ExitTransition.None
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = if (disableAnimations) EnterTransition.None else fadeIn(),
+                exit = ExitTransition.None
+            ) {
+                // grey cylinder
+                Canvas(
+                    modifier = Modifier
+                        .size(switchWidth, switchHeight)
+                        .alpha(LOCK_SWITCH_ALPHA)
                 ) {
-                    // grey cylinder
-                    Canvas(
-                        modifier = Modifier
-                            .size(switchWidth, switchHeight)
-                            .alpha(LOCK_SWITCH_ALPHA)
-                    ) {
-                        drawRoundRect(
-                            color = Color.Black,
-                            cornerRadius = CornerRadius((switchWidth / 2).toPx())
-                        )
-                    }
+                    drawRoundRect(
+                        color = Color.Black,
+                        cornerRadius = CornerRadius((switchWidth / 2).toPx())
+                    )
                 }
             }
         }
@@ -737,33 +722,23 @@ private fun CaptureButtonNucleus(
         // central "square" stop icon
         val isVisible = currentUiState.value is
             CaptureButtonUiState.Enabled.Recording.LockedRecording
-        if (disableAnimations) {
-            if (isVisible) {
-                val smallBoxSize = (captureButtonSize / 5f).dp
-                Canvas(modifier = Modifier) {
-                    drawRoundRect(
-                        color = Color.White,
-                        topLeft = Offset(-smallBoxSize.toPx() / 2f, -smallBoxSize.toPx() / 2f),
-                        size = Size(smallBoxSize.toPx(), smallBoxSize.toPx()),
-                        cornerRadius = CornerRadius(smallBoxSize.toPx() * .15f)
-                    )
-                }
-            }
-        } else {
-            AnimatedVisibility(
-                visible = isVisible,
-                enter = scaleIn(initialScale = .5f) + fadeIn(),
-                exit = fadeOut()
-            ) {
-                val smallBoxSize = (captureButtonSize / 5f).dp
-                Canvas(modifier = Modifier) {
-                    drawRoundRect(
-                        color = Color.White,
-                        topLeft = Offset(-smallBoxSize.toPx() / 2f, -smallBoxSize.toPx() / 2f),
-                        size = Size(smallBoxSize.toPx(), smallBoxSize.toPx()),
-                        cornerRadius = CornerRadius(smallBoxSize.toPx() * .15f)
-                    )
-                }
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = if (disableAnimations) {
+                EnterTransition.None
+            } else {
+                scaleIn(initialScale = .5f) + fadeIn()
+            },
+            exit = if (disableAnimations) ExitTransition.None else fadeOut()
+        ) {
+            val smallBoxSize = (captureButtonSize / 5f).dp
+            Canvas(modifier = Modifier) {
+                drawRoundRect(
+                    color = Color.White,
+                    topLeft = Offset(-smallBoxSize.toPx() / 2f, -smallBoxSize.toPx() / 2f),
+                    size = Size(smallBoxSize.toPx(), smallBoxSize.toPx()),
+                    cornerRadius = CornerRadius(smallBoxSize.toPx() * .15f)
+                )
             }
         }
     }
