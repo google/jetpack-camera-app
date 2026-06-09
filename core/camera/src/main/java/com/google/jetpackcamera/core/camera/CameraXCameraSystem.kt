@@ -850,6 +850,7 @@ class CameraXCameraSystem(
             ConcurrentCameraMode.OFF -> this
             else ->
                 if (systemConstraints.concurrentCamerasSupported &&
+                    captureMode == CaptureMode.VIDEO_ONLY &&
                     dynamicRange == DynamicRange.SDR &&
                     streamConfig == StreamConfig.MULTI_STREAM &&
                     flashMode != FlashMode.LOW_LIGHT_BOOST
