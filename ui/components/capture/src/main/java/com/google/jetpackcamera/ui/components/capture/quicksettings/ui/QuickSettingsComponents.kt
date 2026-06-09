@@ -762,8 +762,11 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = Modifier) {
-    when (flashModeUiState) {
+fun FlashModeIndicator(
+    modifier: Modifier = Modifier,
+    flashModeUiStateProvider: () -> FlashModeUiState
+) {
+    when (val flashModeUiState = flashModeUiStateProvider()) {
         is FlashModeUiState.Unavailable ->
             TopBarQuickSettingIcon(
                 modifier = modifier,
