@@ -91,7 +91,7 @@ class ImageCaptureLatencyBenchmark {
             iterations = DEFAULT_TEST_ITERATIONS,
             setupBlock = {
                 allowCamera()
-                val unused = pressHome()
+                pressHome()
                 if (intent == null) startActivityAndWait() else startActivityAndWait(intent)
                 toggleQuickSettings(device)
                 setQuickFrontFacingCamera(shouldFaceFront = shouldFaceFront, device = device)
@@ -106,7 +106,7 @@ class ImageCaptureLatencyBenchmark {
             clickCaptureButton(device)
 
             // ensure trace is closed
-            val unused = findObjectByRes(
+            findObjectByRes(
                 device = device,
                 testTag = IMAGE_CAPTURE_SUCCESS_TAG,
                 timeout = timeout,

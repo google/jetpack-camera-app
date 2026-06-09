@@ -100,14 +100,14 @@ class FirstFrameBenchmark {
             startupMode = startupMode,
             setupBlock = setupBlock
         ) {
-            val unusedHome = pressHome()
+            pressHome()
             if (intent == null) startActivityAndWait() else startActivityAndWait(intent)
             device.waitForIdle()
 
             clickCaptureButton(device)
 
             // ensure trace is closed
-            val unusedObject = findObjectByRes(
+            findObjectByRes(
                 device = device,
                 testTag = IMAGE_CAPTURE_SUCCESS_TAG,
                 timeout = timeout,

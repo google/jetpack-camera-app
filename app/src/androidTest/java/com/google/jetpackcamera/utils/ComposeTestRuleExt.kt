@@ -690,7 +690,7 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
                 // It's visible, so perform the swipe down
                 bottomSheetNode.performTouchInput {
                     down(center)
-                    val unused = swipeDown()
+                    swipeDown()
                     up()
                 }
 

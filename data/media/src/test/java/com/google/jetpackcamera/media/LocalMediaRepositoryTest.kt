@@ -209,7 +209,7 @@ class LocalMediaRepositoryTest {
         assertThat(cursor.count).isEqualTo(1)
 
         // 3. When
-        val unused = repository.deleteMedia(mediaToDelete)
+        repository.deleteMedia(mediaToDelete)
 
         // 4. Then
         // Query using the correct, inserted URI
@@ -239,7 +239,7 @@ class LocalMediaRepositoryTest {
         )
 
         // 3. Act: Call deleteMedia
-        val unused = repository.deleteMedia(mediaToDelete)
+        repository.deleteMedia(mediaToDelete)
 
         // 4. Assert: Verify the file is physically gone
         assertThat(tempFile.exists()).isFalse()
@@ -261,7 +261,7 @@ class LocalMediaRepositoryTest {
         assertThat(repository.currentMedia.value).isEqualTo(mediaToDelete)
 
         // When
-        val unused = repository.deleteMedia(mediaToDelete)
+        repository.deleteMedia(mediaToDelete)
 
         // Then
         assertThat(repository.currentMedia.value).isEqualTo(MediaDescriptor.None)
@@ -405,7 +405,7 @@ class LocalMediaRepositoryTest {
         )
 
         // When & Then (The test passes if no exception is thrown)
-        val unused = repository.deleteMedia(mediaToDelete)
+        repository.deleteMedia(mediaToDelete)
     }
 
     @Test
