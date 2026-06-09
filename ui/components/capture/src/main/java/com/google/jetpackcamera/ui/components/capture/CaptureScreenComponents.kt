@@ -153,8 +153,7 @@ fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTi
  * A toggle button that allows the user to pause and resume video recording.
  *
  * The button's icon changes to reflect the current recording state: a pause icon is shown when
- * recording is active, and a play icon is shown when the recording is paused. This component is
- * only
+ * recording is active, and a play icon is shown when the recording is paused. This component is only
  * visible when a video recording is in progress.
  *
  * @param modifier the modifier for this component.
@@ -204,8 +203,7 @@ fun PauseResumeToggleButton(
  *
  * @param modifier the modifier for this component.
  * @param buttonSize the size of the button.
- * @param audioUiState the [AudioUiState] that determines the button's appearance and enabled
- * status.
+ * @param audioUiState the [AudioUiState] that determines the button's appearance and enabled status.
  * @param onToggleAudio the callback invoked when the button is tapped.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -586,13 +584,11 @@ fun PreviewDisplay(
 /**
  * A wrapper composable for the primary capture button.
  *
- * This component serves as the main user interaction point for capturing photos and recording
- * videos.
+ * This component serves as the main user interaction point for capturing photos and recording videos.
  * It adapts its behavior based on the current [CaptureMode]:
  * - In **Hybrid mode**, a tap takes a picture, and a long press starts a video recording.
  * - In **Image-only mode**, it only responds to taps for image capture.
- * - In **Video-only mode**, a tap starts a video recording that can be locked for hands-free
- * operation.
+ * - In **Video-only mode**, a tap starts a video recording that can be locked for hands-free operation.
  *
  * It also handles gestures for zooming and locking the video recording.
  *
@@ -915,7 +911,9 @@ private fun FocusMeteringIndicator(
             enter = if (disableAnimations) {
                 EnterTransition.None
             } else {
-                fadeIn() + scaleIn(initialScale = 1.5f)
+                fadeIn() + scaleIn(
+                    initialScale = 1.5f
+                )
             },
             exit = if (disableAnimations) {
                 ExitTransition.None

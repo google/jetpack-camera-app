@@ -157,37 +157,27 @@ private fun CaptureKeyHandler(
 }
 
 /**
- * capture button that can be used for both image and video capture, supporting drag-to-lock for
- * hands-free recording.
+ * A capture button that can be used for both image and video capture, supporting drag-to-lock for hands-free recording.
  *
- * his component handles user interactions such as tap for image capture, long-press for video
- * recording,
+ * This component handles user interactions such as tap for image capture, long-press for video recording,
  * and a drag-to-lock gesture to enable continuous, "hands-free recording." When a video recording
- * s initiated via a long press, the user can drag their finger towards the lock icon to lock the
- * recording,
- * llowing them to lift their finger and continue recording without interruption. Additionally,
- * users can
- * rag vertically *above* the capture button (where Y coordinates are negative relative to the
- * button's top edge)
+ * is initiated via a long press, the user can drag their finger towards the lock icon to lock the recording,
+ * allowing them to lift their finger and continue recording without interruption. Additionally, users can
+ * drag vertically *above* the capture button (where Y coordinates are negative relative to the button's top edge)
  * to zoom in (dragging upwards) or zoom out (dragging downwards).
  *
- * he button supports three distinct capture modes: Hybrid, Image-only, and Video-only, each with
- * its
+ * The button supports three distinct capture modes: Hybrid, Image-only, and Video-only, each with its
  * own UI and behavior:
  * - **Hybrid Mode:** A single tap captures an image, and a long press initiates video recording.
- * **Image-only Mode:** Only single taps are active for image capture. Long press for video
- * recording is disabled.
- * **Video-only Mode:** A single tap initiates video recording, and a long press also initiates
- * video recording, with the drag-to-lock feature available.
+ * - **Image-only Mode:** Only single taps are active for image capture. Long press for video recording is disabled.
+ * - **Video-only Mode:** A single tap initiates video recording, and a long press also initiates video recording, with the drag-to-lock feature available.
  *
  * @param modifier the modifier for this component
  * @param onImageCapture the callback for an image capture event
  * @param onStartRecording the callback for a start recording event
  * @param onStopRecording the callback for a stop recording event
- * param onLockVideoRecording The callback for a lock video recording event. The boolean parameter
- * indicates if the recording should be locked.
- * param onIncrementZoom The callback for a zoom increment event, providing the zoom increment
- * value.
+ * @param onLockVideoRecording The callback for a lock video recording event. The boolean parameter indicates if the recording should be locked.
+ * @param onIncrementZoom The callback for a zoom increment event, providing the zoom increment value.
  * @param captureButtonUiState the [CaptureButtonUiState] for this component
  * @param captureButtonSize the size of the capture button
  */
@@ -377,7 +367,9 @@ private fun CaptureButton(
         animationSpec = if (disableAnimations) {
             snap()
         } else {
-            tween(durationMillis = if (isVisuallyDisabled) 1000 else 300)
+            tween(
+                durationMillis = if (isVisuallyDisabled) 1000 else 300
+            )
         },
         label = "Capture Button Color"
     )
@@ -644,18 +636,14 @@ private fun LockSwitchCaptureButtonNucleus(
 }
 
 /**
- * he animated center of the capture button. It serves as a visual indicator of the current capture
- * and recording states.
+ * The animated center of the capture button. It serves as a visual indicator of the current capture and recording states.
  *
  * @param captureButtonSize diameter of the capture button ring that this is scaled to
  * @param isPressed true if the capture button is physically pressed on
  * @param offsetX the offset of this component. 0 by default
- * param idleImageCaptureScale the scale factor for the idle size of the image-only nucleus. Must
- * be between 0 and 1.
- * param idleVideoCaptureScale the scale factor for the idle size of the video-only nucleus. Must
- * be between 0 and 1.
- * param pressedVideoCaptureScale the scale factor for the pressed size of the video-only nucleus.
- * Must be between 0 and 1.
+ * @param idleImageCaptureScale the scale factor for the idle size of the image-only nucleus. Must be between 0 and 1.
+ * @param idleVideoCaptureScale the scale factor for the idle size of the video-only nucleus. Must be between 0 and 1.
+ * @param pressedVideoCaptureScale the scale factor for the pressed size of the video-only nucleus. Must be between 0 and 1.
  */
 @Composable
 private fun CaptureButtonNucleus(
