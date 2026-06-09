@@ -163,7 +163,7 @@ fun ElapsedTimeText(
  * @param modifier the modifier for this component.
  * @param onSetPause the callback invoked when the button is tapped.
  * @param size the size of the button.
- * @param currentRecordingState the current recording state.
+ * @param currentRecordingStateProvider the provider for the current recording state.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

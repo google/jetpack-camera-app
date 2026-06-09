@@ -254,18 +254,22 @@ private fun ContentScreen(
     screenFlashController: ScreenFlashController? = null,
     zoomController: ZoomController? = null
 ) {
-    val flipLensState = remember { derivedStateOf { captureUiStateProvider().flipLensUiState } }
+    val currentCaptureUiStateProvider by rememberUpdatedState(captureUiStateProvider)
+    val flipLensState =
+        remember { derivedStateOf { currentCaptureUiStateProvider().flipLensUiState } }
     val zoomControlState = remember {
-        derivedStateOf { captureUiStateProvider().zoomControlUiState }
+        derivedStateOf { currentCaptureUiStateProvider().zoomControlUiState }
     }
-    val zoomUiState = remember { derivedStateOf { captureUiStateProvider().zoomUiState } }
+    val zoomUiState = remember { derivedStateOf { currentCaptureUiStateProvider().zoomUiState } }
     val videoRecordingState = remember {
         derivedStateOf {
-            captureUiStateProvider().videoRecordingState
+            currentCaptureUiStateProvider().videoRecordingState
         }
     }
     val isVideoRecordingActive = remember {
-        derivedStateOf { captureUiStateProvider().videoRecordingState is VideoRecordingState.Active }
+        derivedStateOf {
+            currentCaptureUiStateProvider().videoRecordingState is VideoRecordingState.Active
+        }
     }
 
     val scope = rememberCoroutineScope()
@@ -335,7 +339,7 @@ private fun ContentScreen(
         }
     }
 
-    val audioState = remember { derivedStateOf { captureUiStateProvider().audioUiState } }
+    val audioState = remember { derivedStateOf { currentCaptureUiStateProvider().audioUiState } }
     val isAudioEnabled by remember {
         derivedStateOf { audioState.value is AudioUiState.Enabled.On }
     }
@@ -346,13 +350,14 @@ private fun ContentScreen(
     }
 
     // Slot lambdas are wrapped in remember blocks to isolate recompositions.
-    val hdrState = remember { derivedStateOf { captureUiStateProvider().hdrUiState } }
+    val hdrState = remember { derivedStateOf { currentCaptureUiStateProvider().hdrUiState } }
     val hdrIndicatorLambda = remember(hdrState) {
         @Composable { modifier: Modifier ->
             HdrIndicator(modifier = modifier, hdrUiState = hdrState.value)
         }
     }
-    val flashModeState = remember { derivedStateOf { captureUiStateProvider().flashModeUiState } }
+    val flashModeState =
+        remember { derivedStateOf { currentCaptureUiStateProvider().flashModeUiState } }
     val flashModeIndicatorLambda = remember {
         @Composable { modifier: Modifier ->
             FlashModeIndicator(
@@ -361,7 +366,8 @@ private fun ContentScreen(
             )
         }
     }
-    val videoQualityState = remember { derivedStateOf { captureUiStateProvider().videoQuality } }
+    val videoQualityState =
+        remember { derivedStateOf { currentCaptureUiStateProvider().videoQuality } }
     val videoQualityIndicatorLambda = remember(videoQualityState) {
         @Composable { modifier: Modifier ->
             VideoQualityIcon(
@@ -372,7 +378,7 @@ private fun ContentScreen(
     }
     val stabilizationState = remember {
         derivedStateOf {
-            captureUiStateProvider().stabilizationUiState
+            currentCaptureUiStateProvider().stabilizationUiState
         }
     }
     val stabilizationIndicatorLambda = remember(stabilizationState) {
@@ -394,12 +400,12 @@ private fun ContentScreen(
 
     val previewDisplayState = remember {
         derivedStateOf {
-            captureUiStateProvider().previewDisplayUiState
+            currentCaptureUiStateProvider().previewDisplayUiState
         }
     }
     val focusMeteringState = remember {
         derivedStateOf {
-            captureUiStateProvider().focusMeteringUiState
+            currentCaptureUiStateProvider().focusMeteringUiState
         }
     }
     val viewfinderLambda = remember(
@@ -425,10 +431,10 @@ private fun ContentScreen(
     }
 
     val captureButtonState = remember {
-        derivedStateOf { captureUiStateProvider().captureButtonUiState }
+        derivedStateOf { currentCaptureUiStateProvider().captureButtonUiState }
     }
     val quickSettingsState = remember {
-        derivedStateOf { captureUiStateProvider().quickSettingsUiState }
+        derivedStateOf { currentCaptureUiStateProvider().quickSettingsUiState }
     }
     val captureButtonLambda = remember(
         captureButtonState,
@@ -524,14 +530,16 @@ private fun ContentScreen(
                 val elapsedTimeModifier = remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
                 ElapsedTimeText(
                     modifier = elapsedTimeModifier,
-                    elapsedTimeUiStateProvider = { captureUiStateProvider().elapsedTimeUiState }
+                    elapsedTimeUiStateProvider = {
+                        currentCaptureUiStateProvider().elapsedTimeUiState
+                    }
                 )
             }
         }
     }
 
     val captureModeToggleState = remember {
-        derivedStateOf { captureUiStateProvider().captureModeToggleUiState }
+        derivedStateOf { currentCaptureUiStateProvider().captureModeToggleUiState }
     }
     val captureModeToggleLambda = remember(
         captureModeToggleState,
@@ -626,7 +634,7 @@ private fun ContentScreen(
 
     val screenFlashState = remember {
         derivedStateOf {
-            captureUiStateProvider().screenFlashUiState
+            currentCaptureUiStateProvider().screenFlashUiState
         }
     }
     val screenFlashOverlayLambda = remember(screenFlashState, screenFlashController) {
@@ -672,10 +680,11 @@ private fun ContentScreen(
 
     val externalCaptureModeState = remember {
         derivedStateOf {
-            captureUiStateProvider().externalCaptureMode
+            currentCaptureUiStateProvider().externalCaptureMode
         }
     }
-    val imageWellState = remember { derivedStateOf { captureUiStateProvider().imageWellUiState } }
+    val imageWellState =
+        remember { derivedStateOf { currentCaptureUiStateProvider().imageWellUiState } }
     val imageWellLambda = remember(
         externalCaptureModeState,
         imageWellState,

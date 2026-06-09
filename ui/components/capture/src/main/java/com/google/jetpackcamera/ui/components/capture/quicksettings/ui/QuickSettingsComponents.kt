@@ -761,6 +761,12 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * A composable that displays an icon indicating the current flash mode.
+ *
+ * @param modifier the modifier for this component.
+ * @param flashModeUiStateProvider the provider for [FlashModeUiState] for this component.
+ */
 @Composable
 fun FlashModeIndicator(
     modifier: Modifier = Modifier,
