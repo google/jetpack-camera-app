@@ -34,7 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.yield
 
 private const val TAG = "ScreenFlashComponents"
 
@@ -96,7 +96,7 @@ private fun ScreenFlashOverlay(
 
     if (disableAnimations) {
         LaunchedEffect(targetAlpha) {
-            delay(50) // small delay to avoid infinite recomposition
+            yield() // yield to avoid infinite recomposition
             screenFlashUiState.onChangeComplete()
         }
     }
