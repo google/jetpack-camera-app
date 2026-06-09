@@ -260,7 +260,12 @@ private fun ContentScreen(
     }
     val zoomUiState = remember { derivedStateOf { captureUiStateProvider().zoomUiState } }
     val videoRecordingState = remember {
-        derivedStateOf { captureUiStateProvider().videoRecordingState }
+        derivedStateOf {
+            captureUiStateProvider().videoRecordingState
+        }
+    }
+    val isVideoRecordingActive = remember {
+        derivedStateOf { captureUiStateProvider().videoRecordingState is VideoRecordingState.Active }
     }
 
     val scope = rememberCoroutineScope()
@@ -547,12 +552,12 @@ private fun ContentScreen(
     }
 
     val quickSettingsButtonLambda = remember(
-        videoRecordingState,
+        isVideoRecordingActive,
         quickSettingsState,
         quickSettingsController
     ) {
         @Composable { modifier: Modifier ->
-            val isQuickSettingsVisible = videoRecordingState.value !is VideoRecordingState.Active
+            val isQuickSettingsVisible = !isVideoRecordingActive.value
             AnimatedVisibility(
                 visible = isQuickSettingsVisible,
                 enter = fadeIn(),
@@ -660,7 +665,7 @@ private fun ContentScreen(
             PauseResumeToggleButton(
                 modifier = modifier,
                 onSetPause = captureController?.let { it::setPaused } ?: { _ -> },
-                currentRecordingState = videoRecordingState.value
+                currentRecordingStateProvider = { videoRecordingState.value }
             )
         }
     }

@@ -171,8 +171,9 @@ fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
     onSetPause: (Boolean) -> Unit,
     size: Dp = ButtonDefaults.MediumContainerHeight,
-    currentRecordingState: VideoRecordingState
+    currentRecordingStateProvider: () -> VideoRecordingState
 ) {
+    val currentRecordingState = currentRecordingStateProvider()
     if (currentRecordingState is VideoRecordingState.Active) {
         FilledIconToggleButton(
             checked = currentRecordingState is VideoRecordingState.Active.Recording,
