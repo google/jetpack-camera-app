@@ -48,7 +48,7 @@ When reviewing a pull request, focus on the following key areas:
     * **Test Stability & Timeouts:**
         *   **Explicit Timeouts:** Avoid using `waitUntil` (or similar synchronization) without explicitly defining a `timeoutMillis`. Default timeouts are often too short for slower emulators (like API 28) or low-end devices, leading to flakiness.
         *   **Helper Functions for Waits:** If a wait condition is repeated (e.g., waiting for a specific UI element), extract it into a helper function (e.g., `waitForNodeWithTag`). This consolidates the logic and allows the timeout duration to be tuned centrally for that specific scenario.
-        *   **Animation Bypassing for Tests:** Any new animation added to the UI **must** respect `LocalDisableAnimations` and snap to its end state or use a fixed state when animations are disabled, to prevent Espresso timeouts on slow emulators. [Introduced in PR #519]
+        *   **Animation Bypassing for Tests:** Any new animation added to the UI **must** respect `LocalDisableAnimations` and snap to its end state or use a fixed state when animations are disabled, to prevent Espresso timeouts on slow emulators.
 
 6.  **Documentation Sync**
     * **Check for necessary updates:** Analyze if the PR's changes (e.g., adding a new feature, changing build logic, deprecating functionality) require updates to `README.md` or other documentation files.
