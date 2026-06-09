@@ -132,7 +132,7 @@ private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
  * A composable that displays the elapsed time of a video recording in a "MM:SS" format.
  * This text is only visible during an active recording.
  *
- * @param elapsedTimeUiState the [ElapsedTimeUiState] for this component.
+ * @param elapsedTimeUiStateProvider the provider for [ElapsedTimeUiState] for this component.
  */
 @Composable
 fun ElapsedTimeText(

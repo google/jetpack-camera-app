@@ -264,13 +264,17 @@ private fun ContentScreen(
     }
 
     val scope = rememberCoroutineScope()
-    val zoomStateManager = remember {
+    val zoomStateManager = remember(zoomController) {
+        val safeZoomController = zoomController ?: object : ZoomController {
+            override fun setZoomRatio(zoomRatio: com.google.jetpackcamera.model.CameraZoomRatio) {}
+            override fun setZoomAnimationState(targetValue: Float?) {}
+        }
         ZoomStateManager(
             initialZoomLevel =
             (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
             zoomRange = (zoomUiState.value as? ZoomUiState.Enabled)
                 ?.primaryZoomRange ?: Range(1f, 1f),
-            zoomController = zoomController!!
+            zoomController = safeZoomController
         )
     }
 
@@ -504,10 +508,9 @@ private fun ContentScreen(
         }
     }
 
-    val elapsedTimeDisplayLambda = remember {
+    val elapsedTimeDisplayLambda = remember(videoRecordingState) {
         @Composable { modifier: Modifier ->
-            val readyState = captureUiStateProvider()
-            val isVisible = readyState.videoRecordingState is VideoRecordingState.Active
+            val isVisible = videoRecordingState.value is VideoRecordingState.Active
             AnimatedVisibility(
                 visible = isVisible,
                 enter = fadeIn(),
@@ -516,7 +519,7 @@ private fun ContentScreen(
                 val elapsedTimeModifier = remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
                 ElapsedTimeText(
                     modifier = elapsedTimeModifier,
-                    elapsedTimeUiStateProvider = { readyState.elapsedTimeUiState }
+                    elapsedTimeUiStateProvider = { captureUiStateProvider().elapsedTimeUiState }
                 )
             }
         }
