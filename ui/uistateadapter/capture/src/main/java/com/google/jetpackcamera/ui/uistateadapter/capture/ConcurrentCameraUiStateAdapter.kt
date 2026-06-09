@@ -61,8 +61,8 @@ fun ConcurrentCameraUiState.Companion.from(
                     captureModeUiState as?
                         CaptureModeUiState.Available
                     )
-                    ?.selectedCaptureMode !=
-                    CaptureMode.IMAGE_ONLY
+                    ?.selectedCaptureMode ==
+                    CaptureMode.VIDEO_ONLY
                 ) && (
                 cameraAppSettings.dynamicRange !=
                     DEFAULT_HDR_DYNAMIC_RANGE &&

@@ -468,6 +468,16 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun switchCaptureMode_toStandard_disablesImageHdr_back(): Unit = runBlocking {
+        runSwitchCaptureMode_toStandard_disablesImageHdr_test(LensFacing.BACK)
+    }
+
+    @Test
+    fun switchCaptureMode_toStandard_disablesImageHdr_front(): Unit = runBlocking {
+        runSwitchCaptureMode_toStandard_disablesImageHdr_test(LensFacing.FRONT)
+    }
+
+    @Test
     fun switchCaptureMode_preservesVideoHdr_back(): Unit = runBlocking {
         runSwitchCaptureMode_preservesVideoHdr_test(LensFacing.BACK)
     }
@@ -527,6 +537,42 @@ class CameraXCameraSystemTest {
 
         // Clean-up.
         dynamicRangeCheck.cancel()
+    }
+
+    private suspend fun CoroutineScope.runSwitchCaptureMode_toStandard_disablesImageHdr_test(
+        lensFacing: LensFacing
+    ) {
+        val cameraSystem = createAndInitCameraXCameraSystem()
+        val systemConstraints = cameraSystem.getSystemConstraints().value
+        val cameraConstraints = systemConstraints?.perLensConstraints?.get(lensFacing)
+
+        // Skip test if Ultra HDR is not supported on the target lens
+        assume().withMessage("Ultra HDR not supported on $lensFacing, skip the test.")
+            .that(
+                cameraConstraints != null &&
+                    cameraConstraints.supportedImageFormatsMap[
+                        DEFAULT_CAMERA_APP_SETTINGS.streamConfig
+                    ]?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+            ).isTrue()
+
+        cameraSystem.setLensFacing(lensFacing)
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        val imageFormatCheck = cameraSystem.getCurrentSettings()
+            .filterNotNull()
+            .map { it.imageFormat }
+            .produceIn(this)
+
+        imageFormatCheck.awaitValue(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+        cameraSystem.setCaptureMode(CaptureMode.STANDARD)
+
+        imageFormatCheck.awaitValue(ImageOutputFormat.JPEG)
+
+        imageFormatCheck.cancel()
     }
 
     private suspend fun CoroutineScope.runSwitchCaptureMode_preservesVideoHdr_test(
