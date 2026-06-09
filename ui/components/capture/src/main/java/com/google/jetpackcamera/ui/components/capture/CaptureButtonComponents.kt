@@ -598,7 +598,7 @@ private fun LockSwitchCaptureButtonNucleus(
         AnimatedVisibility(
             visible = captureButtonUiState ==
                 CaptureButtonUiState.Enabled.Recording.PressedRecording,
-            enter = if (disableAnimations) fadeIn(animationSpec = snap()) else fadeIn(),
+            enter = if (disableAnimations) EnterTransition.None else fadeIn(),
             exit = ExitTransition.None
         ) {
             Icon(
