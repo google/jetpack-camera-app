@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -92,5 +93,9 @@ class LocalSettingsRepository @Inject constructor(
 
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
         settingsDataSource.updateAudioEnabled(isAudioEnabled)
+    }
+
+    override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+        settingsDataSource.updateConcurrentCameraMode(concurrentCameraMode)
     }
 }

@@ -15,18 +15,25 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.Manifest
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
 import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
+import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -45,6 +52,39 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
+
+private val STABILIZATION_SUPPORTED_CONSTRAINTS = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+    concurrentCamerasSupported = true,
+    perLensConstraints = buildMap {
+        for (lensFacing in listOf(LensFacing.FRONT, LensFacing.BACK)) {
+            put(
+                lensFacing,
+                TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[lensFacing]!!.copy(
+                    supportedStabilizationModes = setOf(StabilizationMode.OFF, StabilizationMode.ON)
+                )
+            )
+        }
+    }
+)
+
+private val LLB_SUPPORTED_CONSTRAINTS = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+    concurrentCamerasSupported = true,
+    perLensConstraints = buildMap {
+        for (lensFacing in listOf(LensFacing.FRONT, LensFacing.BACK)) {
+            put(
+                lensFacing,
+                TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[lensFacing]!!.copy(
+                    supportedFlashModes = setOf(
+                        FlashMode.OFF,
+                        FlashMode.ON,
+                        FlashMode.AUTO,
+                        FlashMode.LOW_LIGHT_BOOST
+                    )
+                )
+            )
+        }
+    }
+)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -93,7 +133,7 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun getSettingsUiState() = runTest(StandardTestDispatcher()) {
         settingsViewModel.setGrantedPermissions(
-            mutableSetOf(android.Manifest.permission.RECORD_AUDIO)
+            mutableSetOf(Manifest.permission.RECORD_AUDIO)
         )
         val uiState = settingsViewModel.settingsUiState.first {
             it is SettingsUiState.Enabled
@@ -109,7 +149,7 @@ internal class CameraAppSettingsViewModelTest {
         // permission must be granted or the setting will be disabled
         // Wait for first Enabled state
         settingsViewModel.setGrantedPermissions(
-            mutableSetOf(android.Manifest.permission.RECORD_AUDIO)
+            mutableSetOf(Manifest.permission.RECORD_AUDIO)
         )
         val initialState = settingsViewModel.settingsUiState.first {
             it is SettingsUiState.Enabled
@@ -197,6 +237,298 @@ internal class CameraAppSettingsViewModelTest {
 
         assertThat(initialDarkMode).isEqualTo(DarkMode.DARK)
         assertThat(newDarkMode).isEqualTo(DarkMode.SYSTEM)
+    }
+
+    private fun createViewModelWithConstraints(
+        systemConstraints: CameraSystemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+        defaultCaptureMode: CaptureMode = CaptureMode.VIDEO_ONLY
+    ): SettingsViewModel {
+        val settingsDataSource = PrefsDataStoreSettingsDataSource(
+            dataStore = testDataStore,
+            defaultCaptureModeOverride = defaultCaptureMode
+        )
+        val settingsRepository = LocalSettingsRepository(
+            settingsDataSource = settingsDataSource
+        )
+        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
+            updateSystemConstraints(systemConstraints)
+        }
+        return SettingsViewModel(settingsRepository, constraintsRepository).apply {
+            setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
+        }
+    }
+
+    /**
+     * Verifies that the Concurrent Camera setting is enabled by default
+     * on devices that physically support concurrent cameras, with no other
+     * conflicting settings active.
+     */
+    @Test
+    fun concurrentCamera_whenSupported_isEnabled() = runTest(StandardTestDispatcher()) {
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true),
+            defaultCaptureMode = CaptureMode.STANDARD
+        )
+        advanceUntilIdle()
+
+        val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+        val enabledState = assertIsEnabled(uiState)
+
+        assertThat(enabledState.concurrentCameraUiState)
+            .isInstanceOf(ConcurrentCameraUiState.Enabled::class.java)
+        val concurrentCameraState =
+            enabledState.concurrentCameraUiState as ConcurrentCameraUiState.Enabled
+        assertThat(concurrentCameraState.currentConcurrentCameraMode)
+            .isEqualTo(ConcurrentCameraMode.OFF)
+    }
+
+    /**
+     * Verifies that the Concurrent Camera setting is disabled if Stream
+     * Configuration is set to SINGLE_STREAM, since concurrent camera
+     * strictly requires MULTI_STREAM.
+     */
+    @Test
+    fun concurrentCamera_whenStreamConfigIsSingleStream_isDisabled() =
+        runTest(StandardTestDispatcher()) {
+            // Set StreamConfig to SINGLE_STREAM first
+            testDataStore.edit { prefs ->
+                prefs[stringPreferencesKey("stream_config")] = StreamConfig.SINGLE_STREAM.name
+            }
+
+            val customViewModel = createViewModelWithConstraints(
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                    concurrentCamerasSupported = true
+                )
+            )
+            advanceUntilIdle()
+
+            val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            val enabledState = assertIsEnabled(uiState)
+
+            assertThat(enabledState.concurrentCameraUiState).isInstanceOf(
+                ConcurrentCameraUiState.Disabled::class.java
+            )
+            val disabledState =
+                enabledState.concurrentCameraUiState as ConcurrentCameraUiState.Disabled
+            assertThat(disabledState.disabledRationale).isInstanceOf(
+                DisabledRationale.ConcurrentCameraDisabledRationale::class.java
+            )
+            assertThat(disabledState.disabledRationale.reasonTextResId)
+                .isEqualTo(R.string.concurrent_camera_stream_config_unsupported)
+        }
+
+    /**
+     * Verifies that the Concurrent Camera setting is disabled if Flash
+     * Mode is set to LOW_LIGHT_BOOST (LLB), as LLB is incompatible with
+     * concurrent camera mode.
+     */
+    @Test
+    fun concurrentCamera_whenFlashLlbIsActive_isDisabled() = runTest(StandardTestDispatcher()) {
+        // Set FlashMode to LOW_LIGHT_BOOST first
+        testDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("flash_mode")] = FlashMode.LOW_LIGHT_BOOST.name
+        }
+
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = LLB_SUPPORTED_CONSTRAINTS
+        )
+        advanceUntilIdle()
+
+        val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+        val enabledState = assertIsEnabled(uiState)
+
+        assertThat(enabledState.concurrentCameraUiState)
+            .isInstanceOf(ConcurrentCameraUiState.Disabled::class.java)
+        val disabledState = enabledState.concurrentCameraUiState as ConcurrentCameraUiState.Disabled
+        assertThat(disabledState.disabledRationale)
+            .isInstanceOf(DisabledRationale.ConcurrentCameraDisabledRationale::class.java)
+        assertThat(
+            disabledState.disabledRationale.reasonTextResId
+        ).isEqualTo(R.string.flash_llb_active_unsupported)
+    }
+
+    /**
+     * Verifies that the Concurrent Camera setting is disabled if Video
+     * Stabilization is explicitly enabled, as concurrent camera does
+     * not support stabilized video streams.
+     */
+    @Test
+    fun concurrentCamera_whenStabilizationIsActive_isDisabled() =
+        runTest(StandardTestDispatcher()) {
+            // Set StabilizationMode to ON first
+            testDataStore.edit { prefs ->
+                prefs[stringPreferencesKey("stabilization_mode")] = StabilizationMode.ON.name
+            }
+
+            val customViewModel = createViewModelWithConstraints(
+                systemConstraints = STABILIZATION_SUPPORTED_CONSTRAINTS
+            )
+            advanceUntilIdle()
+
+            val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            val enabledState = assertIsEnabled(uiState)
+
+            assertThat(
+                enabledState.concurrentCameraUiState
+            ).isInstanceOf(ConcurrentCameraUiState.Disabled::class.java)
+            val disabledState =
+                enabledState.concurrentCameraUiState as ConcurrentCameraUiState.Disabled
+            assertThat(
+                disabledState.disabledRationale
+            ).isInstanceOf(DisabledRationale.ConcurrentCameraDisabledRationale::class.java)
+            assertThat(
+                disabledState.disabledRationale.reasonTextResId
+            ).isEqualTo(R.string.stabilization_active_unsupported)
+        }
+
+    /**
+     * Verifies that the Concurrent Camera setting is disabled if a fixed
+     * frame rate is active (e.g. 30 FPS), as concurrent camera requires
+     * auto frame rate resolution.
+     */
+    @Test
+    fun concurrentCamera_whenFixedFpsIsActive_isDisabled() = runTest(StandardTestDispatcher()) {
+        // Set targetFrameRate to fixed 30 FPS first
+        testDataStore.edit { prefs ->
+            prefs[intPreferencesKey("target_frame_rate")] = 30
+        }
+
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
+        )
+        advanceUntilIdle()
+
+        val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+        val enabledState = assertIsEnabled(uiState)
+
+        assertThat(
+            enabledState.concurrentCameraUiState
+        ).isInstanceOf(ConcurrentCameraUiState.Disabled::class.java)
+        val disabledState = enabledState.concurrentCameraUiState as ConcurrentCameraUiState.Disabled
+        assertThat(
+            disabledState.disabledRationale
+        ).isInstanceOf(DisabledRationale.ConcurrentCameraDisabledRationale::class.java)
+        assertThat(
+            disabledState.disabledRationale.reasonTextResId
+        ).isEqualTo(R.string.fixed_fps_active_unsupported)
+    }
+
+    /**
+     * Verifies that Stream Configuration is disabled if Concurrent Camera is enabled.
+     */
+    @Test
+    fun streamConfig_whenConcurrentCameraIsEnabled_isDisabled() =
+        runTest(StandardTestDispatcher()) {
+            // Set ConcurrentCameraMode to DUAL first
+            testDataStore.edit { prefs ->
+                prefs[
+                    stringPreferencesKey(
+                        "concurrent_camera_mode"
+                    )
+                ] = ConcurrentCameraMode.DUAL.name
+            }
+
+            val customViewModel = createViewModelWithConstraints(
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                    concurrentCamerasSupported = true
+                )
+            )
+            advanceUntilIdle()
+
+            val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            val enabledState = assertIsEnabled(uiState)
+
+            assertThat(
+                enabledState.streamConfigUiState
+            ).isInstanceOf(StreamConfigUiState.Disabled::class.java)
+            val disabledState = enabledState.streamConfigUiState as StreamConfigUiState.Disabled
+            assertThat(disabledState.disabledRationale)
+                .isInstanceOf(DisabledRationale.ConcurrentCameraActiveRationale::class.java)
+        }
+
+    /**
+     * Verifies that the Low Light Boost (LLB) option in Flash Mode is
+     * disabled if Concurrent Camera is enabled, as they are mutually
+     * incompatible.
+     */
+    @Test
+    fun flashLlb_whenConcurrentCameraIsEnabled_isDisabled() = runTest(StandardTestDispatcher()) {
+        // Set ConcurrentCameraMode to DUAL first
+        testDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("concurrent_camera_mode")] = ConcurrentCameraMode.DUAL.name
+        }
+
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = LLB_SUPPORTED_CONSTRAINTS
+        )
+        advanceUntilIdle()
+
+        val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+        val enabledState = assertIsEnabled(uiState)
+
+        val flashState = enabledState.flashUiState as FlashUiState.Enabled
+        assertThat(flashState.lowLightSelectableState)
+            .isInstanceOf(SingleSelectableState.Disabled::class.java)
+
+        val disabledState = flashState.lowLightSelectableState as SingleSelectableState.Disabled
+        assertThat(disabledState.disabledRationale)
+            .isInstanceOf(DisabledRationale.ConcurrentCameraActiveRationale::class.java)
+    }
+
+    /**
+     * Verifies that the Video Stabilization setting is completely disabled
+     * (locked to OFF) if Concurrent Camera is enabled.
+     */
+    @Test
+    fun stabilization_whenConcurrentCameraIsEnabled_isDisabled() =
+        runTest(StandardTestDispatcher()) {
+            // Set ConcurrentCameraMode to DUAL first
+            testDataStore.edit { prefs ->
+                prefs[
+                    stringPreferencesKey(
+                        "concurrent_camera_mode"
+                    )
+                ] = ConcurrentCameraMode.DUAL.name
+            }
+
+            val customViewModel = createViewModelWithConstraints(
+                systemConstraints = STABILIZATION_SUPPORTED_CONSTRAINTS
+            )
+            advanceUntilIdle()
+
+            val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            val enabledState = assertIsEnabled(uiState)
+
+            assertThat(enabledState.stabilizationUiState)
+                .isInstanceOf(StabilizationUiState.Disabled::class.java)
+            val disabledState = enabledState.stabilizationUiState as StabilizationUiState.Disabled
+            assertThat(disabledState.disabledRationale)
+                .isInstanceOf(DisabledRationale.ConcurrentCameraActiveRationale::class.java)
+        }
+
+    /**
+     * Verifies that fixed FPS options (15, 30, 60) are disabled if
+     * Concurrent Camera is enabled, locking the user to auto FPS.
+     */
+    @Test
+    fun fps_whenConcurrentCameraIsEnabled_isDisabled() = runTest(StandardTestDispatcher()) {
+        // Set ConcurrentCameraMode to DUAL first
+        testDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("concurrent_camera_mode")] = ConcurrentCameraMode.DUAL.name
+        }
+
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
+        )
+        advanceUntilIdle()
+
+        val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+        val enabledState = assertIsEnabled(uiState)
+
+        assertThat(enabledState.fpsUiState).isInstanceOf(FpsUiState.Disabled::class.java)
+        val disabledState = enabledState.fpsUiState as FpsUiState.Disabled
+        assertThat(disabledState.disabledRationale)
+            .isInstanceOf(DisabledRationale.ConcurrentCameraActiveRationale::class.java)
     }
 
     @Test

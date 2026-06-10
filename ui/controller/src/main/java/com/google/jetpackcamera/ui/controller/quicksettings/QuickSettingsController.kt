@@ -17,7 +17,6 @@ package com.google.jetpackcamera.ui.controller.quicksettings
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -74,13 +73,6 @@ interface QuickSettingsController {
      * @param imageOutputFormat The image format to set.
      */
     fun setImageFormat(imageOutputFormat: ImageOutputFormat)
-
-    /**
-     * Sets the concurrent camera mode.
-     *
-     * @param concurrentCameraMode The concurrent camera mode to set.
-     */
-    fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
 
     /**
      * Sets the capture mode (e.g., single image, single video, or hybrid).

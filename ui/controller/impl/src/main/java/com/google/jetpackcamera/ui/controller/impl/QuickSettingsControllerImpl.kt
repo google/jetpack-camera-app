@@ -18,7 +18,6 @@ package com.google.jetpackcamera.ui.controller.impl
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
@@ -101,12 +100,6 @@ class QuickSettingsControllerImpl(
             scope.launch {
                 cameraSystem.setImageFormat(imageOutputFormat)
             }
-        }
-    }
-
-    override fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        scope.launch {
-            cameraSystem.setConcurrentCameraMode(concurrentCameraMode)
         }
     }
 

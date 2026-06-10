@@ -21,6 +21,7 @@ import androidx.datastore.preferences.core.edit
 import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -70,6 +71,8 @@ class PrefsDataStoreSettingsDataSource(
             videoQuality = prefs[PreferenceKeys.KEY_VIDEO_QUALITY]
                 .toEnumOrDefault(VideoQuality.UNSPECIFIED),
             audioEnabled = prefs[PreferenceKeys.KEY_AUDIO_ENABLED] ?: true,
+            concurrentCameraMode = prefs[PreferenceKeys.KEY_CONCURRENT_CAMERA_MODE]
+                .toEnumOrDefault(ConcurrentCameraMode.OFF),
             captureMode = defaultCaptureModeOverride
         )
     }
@@ -152,6 +155,12 @@ class PrefsDataStoreSettingsDataSource(
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
         dataStore.edit { prefs ->
             prefs[PreferenceKeys.KEY_AUDIO_ENABLED] = isAudioEnabled
+        }
+    }
+
+    override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+        dataStore.edit { prefs ->
+            prefs[PreferenceKeys.KEY_CONCURRENT_CAMERA_MODE] = concurrentCameraMode.name
         }
     }
 

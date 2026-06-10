@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
@@ -56,7 +57,8 @@ sealed interface SettingsUiState {
         val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
         val videoQualityUiState: VideoQualityUiState,
         val audioUiState: AudioUiState,
-        val lowLightBoostPriorityUiState: LowLightBoostPriorityUiState
+        val lowLightBoostPriorityUiState: LowLightBoostPriorityUiState,
+        val concurrentCameraUiState: ConcurrentCameraUiState
     ) : SettingsUiState
 }
 
@@ -111,7 +113,7 @@ sealed interface DisabledRationale {
         override val testTag = VIDEO_QUALITY_UNSUPPORTED_TAG
     }
 
-    data class ConcurrentCameraUnsupportedRationale(override val affectedSettingNameResId: Int) :
+    data class ConcurrentCameraActiveRationale(override val affectedSettingNameResId: Int) :
         DisabledRationale {
         override val reasonTextResId: Int = R.string.concurrent_camera_enabled
         override val testTag = CONCURRENT_CAMERA_ENABLED_TAG
@@ -135,6 +137,13 @@ sealed interface DisabledRationale {
             override val reasonTextResId: Int = R.string.rear_lens_unsupported
             override val testTag = LENS_UNSUPPORTED_TAG
         }
+    }
+
+    data class ConcurrentCameraDisabledRationale(
+        override val reasonTextResId: Int,
+        override val testTag: String
+    ) : DisabledRationale {
+        override val affectedSettingNameResId = R.string.concurrent_camera_rationale_prefix
     }
 }
 
@@ -231,6 +240,29 @@ sealed interface LowLightBoostPriorityUiState {
     data class Disabled(val disabledRationale: DisabledRationale) : LowLightBoostPriorityUiState
 }
 
+/**
+ * UI State for the Concurrent Camera setting.
+ */
+sealed interface ConcurrentCameraUiState {
+    /**
+     * State when concurrent camera is supported by the device.
+     *
+     * @property currentConcurrentCameraMode the currently selected concurrent camera mode.
+     * @property additionalContext additional context or information about the state.
+     */
+    data class Enabled(
+        val currentConcurrentCameraMode: ConcurrentCameraMode,
+        val additionalContext: String = ""
+    ) : ConcurrentCameraUiState
+
+    /**
+     * State when concurrent camera is unsupported or disabled due to constraints.
+     *
+     * @property disabledRationale rationale explaining why the setting is disabled.
+     */
+    data class Disabled(val disabledRationale: DisabledRationale) : ConcurrentCameraUiState
+}
+
 // ////////////////////////////////////////////////////////////
 //
 // Settings that DON'T currently depend on constraints
@@ -245,7 +277,6 @@ sealed interface AspectRatioUiState {
 sealed interface StreamConfigUiState {
     data class Enabled(val currentStreamConfig: StreamConfig, val additionalContext: String = "") :
         StreamConfigUiState
-
     data class Disabled(val disabledRationale: DisabledRationale) : StreamConfigUiState
 }
 
@@ -323,5 +354,8 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     ),
     lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
         DEFAULT_CAMERA_APP_SETTINGS.lowLightBoostPriority
+    ),
+    concurrentCameraUiState = ConcurrentCameraUiState.Disabled(
+        DeviceUnsupportedRationale(R.string.concurrent_camera_rationale_prefix)
     )
 )

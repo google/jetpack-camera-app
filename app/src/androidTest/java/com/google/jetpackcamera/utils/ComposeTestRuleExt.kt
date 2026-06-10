@@ -20,6 +20,7 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -51,6 +52,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
+import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
@@ -63,7 +65,6 @@ import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
@@ -469,32 +470,6 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
     }
 }
 
-fun ComposeTestRule.getConcurrentState(): ConcurrentCameraMode = visitQuickSettings {
-    onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-        .assertExists()
-        .fetchSemanticsNode(
-            "Concurrent camera button is not visible when expected."
-        ).let { node ->
-            node.config[SemanticsProperties.ContentDescription].forEach { description ->
-                when (description) {
-                    getResString(
-                        CaptureR.string.quick_settings_description_concurrent_camera_off
-                    ) -> {
-                        return@let ConcurrentCameraMode.OFF
-                    }
-
-                    getResString(
-                        CaptureR.string.quick_settings_description_concurrent_camera_dual
-                    ) ->
-                        return@let ConcurrentCameraMode.DUAL
-                }
-            }
-            throw AssertionError(
-                "Unable to determine concurrent camera mode from quick settings"
-            )
-        }
-}
-
 fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
     waitUntil(timeoutMillis = 1000) {
         onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
@@ -743,6 +718,32 @@ fun ComposeTestRule.unFocusQuickSetting() {
         }
 }
 
+/**
+ * Navigates to the Settings screen and sets the concurrent camera mode.
+ *
+ * Assumes the setting is enabled/supported by the device, skipping the test if not.
+ *
+ * @param concurrentMode the target [ConcurrentCameraMode] to set.
+ */
+fun ComposeTestRule.setConcurrentCameraModeInSettings(concurrentMode: ConcurrentCameraMode) {
+    visitSettingsScreen {
+        onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
+            .assertExists()
+            .apply {
+                val isCurrentlyOn = fetchSemanticsNode().config.getOrNull(
+                    SemanticsProperties.ToggleableState
+                ) == ToggleableState.On
+                val shouldBeOn = (concurrentMode == ConcurrentCameraMode.DUAL)
+                if (isCurrentlyOn != shouldBeOn) {
+                    assume(
+                        isEnabled()
+                    ) { "Concurrent camera toggle is not supported by the device" }
+                    performClick()
+                }
+            }
+    }
+}
+
 // ////////////////////////////
 //
 // Apply Quick Settings
@@ -758,21 +759,6 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
                 .performClick()
         }
         waitUntil(1000) { isHdrEnabled() == enabled }
-    }
-}
-
-fun ComposeTestRule.setConcurrentCameraMode(concurrentMode: ConcurrentCameraMode) {
-    visitQuickSettings {
-        searchForQuickSetting(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-        waitForNodeWithTag(tag = QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-        onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-            .assume(isEnabled()) { "Device does not support concurrent camera." }
-            .let {
-                if (getConcurrentState() != concurrentMode) {
-                    it.assertExists().performClick()
-                }
-            }
-        waitUntil(1_000) { getConcurrentState() == concurrentMode }
     }
 }
 
