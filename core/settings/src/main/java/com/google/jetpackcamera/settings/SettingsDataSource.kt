@@ -29,37 +29,82 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Data source for settings.
+ * Data source interface for fetching and updating persistent camera application settings.
  */
 interface SettingsDataSource {
 
+    /**
+     * A [Flow] emitting the current default [CameraAppSettings].
+     */
     val defaultCameraAppSettings: Flow<CameraAppSettings>
 
+    /**
+     * Retrieves the current default [CameraAppSettings] as a single snapshot.
+     */
     suspend fun getCurrentDefaultCameraAppSettings(): CameraAppSettings
 
+    /**
+     * Updates the default camera lens facing selection.
+     */
     suspend fun updateDefaultLensFacing(lensFacing: LensFacing)
 
+    /**
+     * Updates the user-preferred dark mode setting.
+     */
     suspend fun updateDarkModeStatus(darkMode: DarkMode)
 
+    /**
+     * Updates the default flash mode selection.
+     */
     suspend fun updateFlashModeStatus(flashMode: FlashMode)
 
+    /**
+     * Updates the default capture aspect ratio.
+     */
     suspend fun updateAspectRatio(aspectRatio: AspectRatio)
 
+    /**
+     * Updates the default stream configuration mode.
+     */
     suspend fun updateStreamConfig(streamConfig: StreamConfig)
 
+    /**
+     * Updates the low light boost execution priority setting.
+     */
     suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority)
 
+    /**
+     * Updates the default video stabilization mode.
+     */
     suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode)
 
+    /**
+     * Updates the default capture dynamic range format.
+     */
     suspend fun updateDynamicRange(dynamicRange: DynamicRange)
 
+    /**
+     * Updates the target frames-per-second setting for video recording.
+     */
     suspend fun updateTargetFrameRate(targetFrameRate: Int)
 
+    /**
+     * Updates the default image capture output format.
+     */
     suspend fun updateImageFormat(imageFormat: ImageOutputFormat)
 
+    /**
+     * Updates the maximum video duration limit in milliseconds.
+     */
     suspend fun updateMaxVideoDuration(durationMillis: Long)
 
+    /**
+     * Updates the default video recording output quality setting.
+     */
     suspend fun updateVideoQuality(videoQuality: VideoQuality)
 
+    /**
+     * Updates whether audio recording is enabled by default during video capture.
+     */
     suspend fun updateAudioEnabled(isAudioEnabled: Boolean)
 }

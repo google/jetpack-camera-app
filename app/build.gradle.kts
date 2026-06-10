@@ -155,6 +155,7 @@ dependencies {
     implementation(project(":core:settings:datastore-prefs"))
     implementation(project(":core:settings"))
     implementation(project(":core:model"))
+    implementation(libs.androidx.datastore.preferences)
 
     // Camera Preview
     implementation(project(":feature:preview"))

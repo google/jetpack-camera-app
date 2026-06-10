@@ -53,14 +53,14 @@ import org.junit.runner.RunWith
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
-class LocalSettingsDataSourceInstrumentedTest {
+class PrefsDataStoreSettingsDataSourceInstrumentedTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
     private lateinit var testFile: File
 
     private lateinit var testDataStore: DataStore<Preferences>
     private lateinit var datastoreScope: CoroutineScope
-    private lateinit var dataSource: LocalSettingsDataSource
+    private lateinit var dataSource: PrefsDataStoreSettingsDataSource
 
     @Before
     fun setup() = runTest {
@@ -72,7 +72,7 @@ class LocalSettingsDataSourceInstrumentedTest {
             scope = datastoreScope,
             file = testFile
         )
-        dataSource = LocalSettingsDataSource(
+        dataSource = PrefsDataStoreSettingsDataSource(
             dataStore = testDataStore,
             defaultCaptureModeOverride = CaptureMode.STANDARD
         )

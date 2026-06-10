@@ -16,8 +16,6 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -62,9 +60,7 @@ android {
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
 
-    // Hilt
-    implementation(libs.dagger.hilt.android)
-    kapt(libs.dagger.hilt.compiler)
+
 
     // Preferences DataStore (Zero Protobuf)
     implementation(libs.androidx.datastore.preferences)
@@ -82,10 +78,6 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:common"))
     implementation(project(":core:settings"))
-    implementation(project(":data:settings"))
 }
 
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
-}
+

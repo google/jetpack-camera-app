@@ -29,11 +29,11 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.SettingsDataSource
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -41,7 +41,7 @@ import kotlinx.coroutines.flow.map
 /**
  * Implementation of [SettingsDataSource] with locally stored Preferences DataStore.
  */
-class LocalSettingsDataSource @Inject constructor(
+class PrefsDataStoreSettingsDataSource(
     private val dataStore: DataStore<Preferences>,
     @DefaultCaptureModeOverride private val defaultCaptureModeOverride: CaptureMode
 ) : SettingsDataSource {
@@ -56,7 +56,7 @@ class LocalSettingsDataSource @Inject constructor(
                 .toEnumOrDefault(AspectRatio.NINE_SIXTEEN),
             stabilizationMode = prefs[PreferenceKeys.KEY_STABILIZATION_MODE]
                 .toEnumOrDefault(StabilizationMode.AUTO),
-            targetFrameRate = prefs[PreferenceKeys.KEY_TARGET_FRAME_RATE] ?: 0,
+            targetFrameRate = prefs[PreferenceKeys.KEY_TARGET_FRAME_RATE] ?: TARGET_FPS_AUTO,
             streamConfig = prefs[PreferenceKeys.KEY_STREAM_CONFIG]
                 .toEnumOrDefault(StreamConfig.MULTI_STREAM),
             lowLightBoostPriority = prefs[PreferenceKeys.KEY_LOW_LIGHT_BOOST_PRIORITY]
