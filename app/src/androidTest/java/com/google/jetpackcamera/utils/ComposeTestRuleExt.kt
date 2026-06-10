@@ -252,21 +252,29 @@ fun ComposeTestRule.pressAndDragToLockVideoRecording(
         ).assertIsNotDisplayed()
     }
 ) {
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            down(center)
-        }
+    onNodeWithTag(CAPTURE_BUTTON).assertExists().performTouchInput {
+        down(center)
+        advanceEventTime(viewConfiguration.longPressTimeoutMillis + 100)
+        moveBy(delta = Offset(1f, 0f))
+    }
+
+    // Wait for recording to start (timer displayed)
     waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
         checkWhileWaiting()
         onNodeWithTag(ELAPSED_TIME_TAG).isDisplayed()
     }
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            moveBy(delta = Offset(-400f, 0f))
-            up()
+
+    onNodeWithTag(CAPTURE_BUTTON).performTouchInput {
+        val steps = 10
+        val deltaX = -400f / steps
+        for (i in 1..steps) {
+            moveBy(delta = Offset(deltaX, 0f))
         }
+    }
+
+    onNodeWithTag(CAPTURE_BUTTON).performTouchInput { up() }
+
+    // Wait for the recording to reach desired duration
     waitUntilVideoRecordingDurationAtLeast(durationMillis, checkWhileWaiting)
 }
 
@@ -279,35 +287,34 @@ fun ComposeTestRule.longClickForVideoRecordingCheckingElapsedTime(
         ).assertIsNotDisplayed()
     }
 ) {
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            down(center)
-        }
+    onNodeWithTag(CAPTURE_BUTTON).assertExists().performTouchInput {
+        down(center)
+
+        advanceEventTime(viewConfiguration.longPressTimeoutMillis + 100)
+        moveBy(delta = Offset(1f, 0f))
+    }
+
+    // Wait for recording to start (timer displayed)
     waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
         checkWhileWaiting()
-        onNodeWithTag(ELAPSED_TIME_TAG).isDisplayed()
+        onAllNodesWithTag(ELAPSED_TIME_TAG).fetchSemanticsNodes().isNotEmpty()
     }
+
+    // Wait for the desired duration outside performTouchInput
     waitUntilVideoRecordingDurationAtLeast(durationMillis, checkWhileWaiting)
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            up()
-        }
+
+    // Complete the gesture (release touch)
+    onNodeWithTag(CAPTURE_BUTTON).performTouchInput { up() }
 }
 
 fun ComposeTestRule.longClickForVideoRecording(durationMillis: Long = VIDEO_DURATION_MILLIS) {
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            down(center)
-        }
-    idleForVideoDuration(durationMillis)
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            up()
-        }
+    onNodeWithTag(CAPTURE_BUTTON).assertExists().performTouchInput {
+        down(center)
+        advanceEventTime(viewConfiguration.longPressTimeoutMillis + 100)
+        moveBy(delta = Offset(1f, 0f))
+        advanceEventTime(durationMillis)
+        up()
+    }
 }
 
 fun ComposeTestRule.tapStartLockedVideoRecording() {
