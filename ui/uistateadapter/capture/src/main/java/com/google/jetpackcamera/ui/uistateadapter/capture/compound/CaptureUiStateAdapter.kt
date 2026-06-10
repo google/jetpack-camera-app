@@ -129,13 +129,10 @@ fun captureUiState(
                 captureModeUiState,
                 flashModeUiState,
                 flipLensUiState,
-                cameraAppSettings,
-                systemConstraints,
                 aspectRatioUiState,
                 hdrUiState,
                 trackedUiState.isQuickSettingsOpen,
-                trackedUiState.focusedQuickSetting,
-                externalCaptureMode
+                trackedUiState.focusedQuickSetting
             ),
             sessionFirstFrameTimestamp = roundedCameraState.sessionFirstFrameTimestamp,
             stabilizationUiState = StabilizationUiState.from(

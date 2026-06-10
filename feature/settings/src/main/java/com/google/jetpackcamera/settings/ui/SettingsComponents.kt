@@ -60,6 +60,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
@@ -74,6 +75,7 @@ import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.AspectRatioUiState
 import com.google.jetpackcamera.settings.AudioUiState
+import com.google.jetpackcamera.settings.ConcurrentCameraUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
 import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
@@ -311,6 +313,7 @@ fun AspectRatioSetting(
                 AspectRatio.THREE_FOUR -> stringResource(
                     id = R.string.aspect_ratio_description_3_4
                 )
+
                 AspectRatio.ONE_ONE -> stringResource(
                     id = R.string.aspect_ratio_description_1_1
                 )
@@ -353,13 +356,13 @@ fun StreamConfigSetting(
     setStreamConfig: (StreamConfig) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val enabled = streamConfigUiState is StreamConfigUiState.Enabled
     BasicPopupSetting(
         modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG),
         title = stringResource(R.string.stream_config_title),
         leadingIcon = null,
-        enabled = streamConfigUiState is StreamConfigUiState.Enabled,
-        description =
-        when (streamConfigUiState) {
+        enabled = enabled,
+        description = when (streamConfigUiState) {
             is StreamConfigUiState.Enabled -> {
                 when (streamConfigUiState.currentStreamConfig) {
                     StreamConfig.MULTI_STREAM -> stringResource(
@@ -878,6 +881,58 @@ fun RecordingAudioSetting(
     )
 }
 
+/**
+ * A setting component that allows the user to enable or disable concurrent camera mode.
+ *
+ * @param modifier the [Modifier] to be applied to this setting.
+ * @param concurrentCameraUiState the current UI state of the concurrent camera setting.
+ * @param setConcurrentCameraMode callback to update the concurrent camera mode.
+ */
+@Composable
+internal fun ConcurrentCameraSetting(
+    modifier: Modifier = Modifier,
+    concurrentCameraUiState: ConcurrentCameraUiState,
+    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit
+) {
+    SwitchSettingUI(
+        modifier = modifier.testTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG),
+        title = stringResource(id = R.string.concurrent_camera_title),
+        description = when (concurrentCameraUiState) {
+            is ConcurrentCameraUiState.Enabled -> {
+                when (concurrentCameraUiState.currentConcurrentCameraMode) {
+                    ConcurrentCameraMode.DUAL -> stringResource(
+                        R.string.concurrent_camera_description_on
+                    )
+
+                    ConcurrentCameraMode.OFF -> stringResource(
+                        R.string.concurrent_camera_description_off
+                    )
+                }
+            }
+
+            is ConcurrentCameraUiState.Disabled -> {
+                disabledRationaleString(
+                    disabledRationale = concurrentCameraUiState.disabledRationale
+                )
+            }
+        },
+        leadingIcon = null,
+        onSwitchChanged = { on ->
+            setConcurrentCameraMode(
+                if (on) ConcurrentCameraMode.DUAL else ConcurrentCameraMode.OFF
+            )
+        },
+        settingValue = when (concurrentCameraUiState) {
+            is ConcurrentCameraUiState.Enabled ->
+                concurrentCameraUiState.currentConcurrentCameraMode ==
+                    ConcurrentCameraMode.DUAL
+
+            is ConcurrentCameraUiState.Disabled -> false
+        },
+        enabled = concurrentCameraUiState is ConcurrentCameraUiState.Enabled
+    )
+}
+
 @Composable
 fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: String = "") {
     SettingUI(
@@ -1106,7 +1161,12 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
             stringResource(disabledRationale.affectedSettingNameResId)
         )
 
-        is DisabledRationale.ConcurrentCameraUnsupportedRationale -> stringResource(
+        is DisabledRationale.ConcurrentCameraDisabledRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.ConcurrentCameraActiveRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )
