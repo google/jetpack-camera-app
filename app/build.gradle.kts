@@ -134,6 +134,7 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.testParameterInjector)
     androidTestImplementation(project(":ui:components:capture"))
+    androidTestImplementation(project(":ui:debug"))
     androidTestUtil(libs.androidx.orchestrator)
 
     implementation(libs.androidx.core.ktx)
@@ -169,6 +170,7 @@ dependencies {
 
     // capture components
     implementation(project(":ui:components:capture"))
+    implementation(project(":ui:debug"))
 
     // Low Light implementations
     implementation(project(":core:camera:low-light-playservices"))

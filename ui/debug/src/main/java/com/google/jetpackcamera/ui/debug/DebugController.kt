@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.controller.debug
+package com.google.jetpackcamera.ui.debug
 
 import com.google.jetpackcamera.model.TestPattern
 
 /**
- * Interface for controlling debug features.
+ * Interface contract for managing interactions with debug settings.
  */
 interface DebugController {
     /**

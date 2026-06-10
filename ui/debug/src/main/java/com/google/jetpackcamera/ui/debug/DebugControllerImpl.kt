@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.controller.impl
+package com.google.jetpackcamera.ui.debug
 
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.TestPattern
-import com.google.jetpackcamera.ui.controller.debug.DebugController
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
