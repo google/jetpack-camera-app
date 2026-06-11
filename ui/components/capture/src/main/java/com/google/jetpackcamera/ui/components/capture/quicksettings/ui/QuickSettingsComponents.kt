@@ -291,7 +291,8 @@ internal fun HdrRow(
     onClick: (DynamicRange, ImageOutputFormat) -> Unit,
     hdrUiState: HdrUiState
 ) {
-    val isHdrOn = hdrUiState is HdrUiState.Available &&
+    val isSupported = hdrUiState is HdrUiState.Available && hdrUiState.isSupported
+    val isHdrOn = isSupported &&
         (
             hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
                 hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
@@ -312,7 +313,7 @@ internal fun HdrRow(
                     enum = CameraDynamicRange.HDR,
                     onClick = { onClick(DEFAULT_HDR_DYNAMIC_RANGE, DEFAULT_HDR_IMAGE_OUTPUT) },
                     isSelected = isHdrOn,
-                    enabled = hdrUiState is HdrUiState.Available
+                    enabled = isSupported
                 )
             },
             {
@@ -321,7 +322,7 @@ internal fun HdrRow(
                     enum = CameraDynamicRange.SDR,
                     onClick = { onClick(DynamicRange.SDR, ImageOutputFormat.JPEG) },
                     isSelected = !isHdrOn,
-                    enabled = hdrUiState is HdrUiState.Available
+                    enabled = isSupported
                 )
             }
         )
@@ -557,6 +558,7 @@ private fun QuickSettingToggleSelectorButton(
 fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
     val enum =
         if (hdrUiState is HdrUiState.Available &&
+            hdrUiState.isSupported &&
             (
                 hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
                     hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
