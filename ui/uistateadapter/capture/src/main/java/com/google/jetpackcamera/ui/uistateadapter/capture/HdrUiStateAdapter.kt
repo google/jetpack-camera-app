@@ -67,56 +67,46 @@ fun HdrUiState.Companion.from(
 
     return when (activeCaptureMode) {
         CaptureMode.IMAGE_ONLY -> {
-            val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
+            val deviceSupportsHdrImage = systemConstraints.perLensConstraints.values.any { constraints ->
+                constraints.supportedImageFormatsMap[cameraAppSettings.streamConfig]
+                    ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
+            }
 
-            if (isFlashHdrConflict) {
-                HdrUiState.Unavailable
+            if (deviceSupportsHdrImage) {
+                val supportsHdrImage = cameraConstraints
+                    ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
+                    ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
+                val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
+
+                HdrUiState.Available(
+                    selectedImageFormat = cameraAppSettings.imageFormat,
+                    selectedDynamicRange = DynamicRange.SDR, // Force SDR in UI state for video
+                    isSupported = supportsHdrImage && !isFlashHdrConflict
+                )
             } else {
-                val deviceSupportsHdrImage = systemConstraints.perLensConstraints.values.any { constraints ->
-                    constraints.supportedImageFormatsMap[cameraAppSettings.streamConfig]
-                        ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-                }
-
-                if (deviceSupportsHdrImage) {
-                    val supportsHdrImage = cameraConstraints
-                        ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
-                        ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-
-                    HdrUiState.Available(
-                        selectedImageFormat = cameraAppSettings.imageFormat,
-                        selectedDynamicRange = DynamicRange.SDR, // Force SDR in UI state for video
-                        isSupported = supportsHdrImage
-                    )
-                } else {
-                    HdrUiState.Unavailable
-                }
+                HdrUiState.Unavailable
             }
         }
 
         CaptureMode.VIDEO_ONLY -> {
-            val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
-            val isConcurrentConflict =
-                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
+            val deviceSupportsHdrVideo = systemConstraints.perLensConstraints.values.any { constraints ->
+                constraints.supportedDynamicRanges.contains(DynamicRange.HLG10)
+            }
 
-            if (isFlashHdrConflict || isConcurrentConflict) {
-                HdrUiState.Unavailable
+            if (deviceSupportsHdrVideo) {
+                val supportsHdrVideo =
+                    cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
+                val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
+                val isConcurrentConflict =
+                    cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
+
+                HdrUiState.Available(
+                    selectedImageFormat = ImageOutputFormat.JPEG, // Force SDR in UI state for image
+                    selectedDynamicRange = cameraAppSettings.dynamicRange,
+                    isSupported = supportsHdrVideo && !isFlashHdrConflict && !isConcurrentConflict
+                )
             } else {
-                val deviceSupportsHdrVideo = systemConstraints.perLensConstraints.values.any { constraints ->
-                    constraints.supportedDynamicRanges.contains(DynamicRange.HLG10)
-                }
-
-                if (deviceSupportsHdrVideo) {
-                    val supportsHdrVideo =
-                        cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
-
-                    HdrUiState.Available(
-                        selectedImageFormat = ImageOutputFormat.JPEG, // Force SDR in UI state for image
-                        selectedDynamicRange = cameraAppSettings.dynamicRange,
-                        isSupported = supportsHdrVideo
-                    )
-                } else {
-                    HdrUiState.Unavailable
-                }
+                HdrUiState.Unavailable
             }
         }
 

@@ -22,7 +22,6 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 
-
 /**
  * Interface for controlling quick settings.
  */

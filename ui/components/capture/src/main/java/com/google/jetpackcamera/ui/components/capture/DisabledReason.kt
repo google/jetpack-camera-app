@@ -70,5 +70,9 @@ enum class DisabledReason(
     FLASH_UNSUPPORTED_ON_LENS(
         FLASH_UNSUPPORTED_ON_LENS_TAG,
         R.string.toast_flash_unsupported_on_lens
+    ),
+    LLB_DISABLED_BY_HDR(
+        LLB_DISABLED_BY_HDR_TAG,
+        R.string.toast_llb_disabled_by_hdr
     )
 }

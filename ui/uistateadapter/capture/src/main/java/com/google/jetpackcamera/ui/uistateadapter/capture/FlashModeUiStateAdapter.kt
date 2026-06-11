@@ -19,6 +19,8 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -58,7 +60,8 @@ private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
  */
 fun FlashModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
-    systemConstraints: CameraSystemConstraints
+    systemConstraints: CameraSystemConstraints,
+    hdrUiState: HdrUiState = HdrUiState.Unavailable
     // todo(kc): supply visible flash modes from developer options
     // visibleFlashModes: Set<FlashMode> = ORDERED_UI_SUPPORTED_FLASH_MODES.toSet()
 ): FlashModeUiState {
@@ -77,6 +80,12 @@ fun FlashModeUiState.Companion.from(
     val currentLensSupportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)
         ?.supportedFlashModes ?: setOf(FlashMode.OFF)
 
+    val isHdrOn = hdrUiState is HdrUiState.Available &&
+        (
+            hdrUiState.selectedDynamicRange == DynamicRange.HLG10 ||
+                hdrUiState.selectedImageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            )
+
     val displayableModes = mutableListOf<SingleSelectableUiState<FlashMode>>()
 
     for (mode in ORDERED_UI_SUPPORTED_FLASH_MODES) {
@@ -93,21 +102,26 @@ fun FlashModeUiState.Companion.from(
 
         // 3. Special handling for LOW_LIGHT_BOOST based on other settings.
         if (mode == FlashMode.LOW_LIGHT_BOOST) {
-            if (cameraAppSettings.dynamicRange != DynamicRange.SDR ||
-                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
-            ) {
-                continue // Hide LLB if HDR or Dual Camera is active
+            if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+                continue // Hide LLB if Dual Camera is active
             }
         }
 
-        // 4. Determine if Enabled or Disabled based on current lens support.
-        if (currentLensSupportedFlashModes.contains(mode)) {
+        // 4. Determine if Enabled or Disabled
+        val isLlbHdrConflict = mode == FlashMode.LOW_LIGHT_BOOST && isHdrOn
+
+        if (currentLensSupportedFlashModes.contains(mode) && !isLlbHdrConflict) {
             displayableModes.add(SingleSelectableUiState.SelectableUi(mode)) // Enabled
         } else {
+            val reason = if (!currentLensSupportedFlashModes.contains(mode)) {
+                DisabledReason.FLASH_UNSUPPORTED_ON_LENS
+            } else {
+                DisabledReason.LLB_DISABLED_BY_HDR
+            }
             displayableModes.add(
                 SingleSelectableUiState.Disabled(
                     value = mode,
-                    disabledReason = DisabledReason.FLASH_UNSUPPORTED_ON_LENS
+                    disabledReason = reason
                 )
             ) // Disabled
         }
@@ -141,17 +155,18 @@ fun FlashModeUiState.Companion.from(
 fun FlashModeUiState.updateFrom(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
-    cameraState: CameraState
+    cameraState: CameraState,
+    hdrUiState: HdrUiState = HdrUiState.Unavailable
 ): FlashModeUiState {
     return when (this) {
         is Unavailable -> {
             // When previous state was "Unavailable", we'll try to create a new FlashModeUiState
-            FlashModeUiState.from(cameraAppSettings, systemConstraints)
+            FlashModeUiState.from(cameraAppSettings, systemConstraints, hdrUiState)
         }
 
         is Available -> {
             // Regenerate the potential new state based on the latest settings
-            val newUiState = FlashModeUiState.from(cameraAppSettings, systemConstraints)
+            val newUiState = FlashModeUiState.from(cameraAppSettings, systemConstraints, hdrUiState)
 
             if (newUiState is Unavailable) {
                 newUiState // Switch to Unavailable

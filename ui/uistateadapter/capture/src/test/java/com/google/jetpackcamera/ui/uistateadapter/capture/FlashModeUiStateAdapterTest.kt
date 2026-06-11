@@ -22,7 +22,12 @@ import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.ui.components.capture.DisabledReason
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -258,5 +263,61 @@ class FlashModeUiStateAdapterTest {
         assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
         val availableUiState = updatedUiState as FlashModeUiState.Available
         assertThat(availableUiState.isLowLightBoostActive).isEqualTo(false)
+    }
+
+    @Test
+    fun from_hdrImageOn_lowLightBoostDisabled() {
+        // Given a system supporting LLB, but HDR image is ON
+        val appSettings = defaultCameraAppSettings.copy(flashMode = FlashMode.OFF)
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+        val hdrUiState = HdrUiState.Available(
+            selectedImageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
+            selectedDynamicRange = DynamicRange.SDR
+        )
+
+        // When
+        val flashModeUiState = FlashModeUiState.from(appSettings, systemConstraints, hdrUiState)
+
+        // Then LLB is disabled because of HDR
+        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = flashModeUiState as FlashModeUiState.Available
+        val llbState = availableUiState.availableFlashModes.find { it.value == FlashMode.LOW_LIGHT_BOOST }
+        assertThat(llbState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
+        val disabledLlb = llbState as SingleSelectableUiState.Disabled
+        assertThat(disabledLlb.disabledReason).isEqualTo(DisabledReason.LLB_DISABLED_BY_HDR)
+    }
+
+    @Test
+    fun from_hdrVideoOn_lowLightBoostDisabled() {
+        // Given a system supporting LLB, but HDR video is ON
+        val appSettings = defaultCameraAppSettings.copy(flashMode = FlashMode.OFF)
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+        val hdrUiState = HdrUiState.Available(
+            selectedImageFormat = ImageOutputFormat.JPEG,
+            selectedDynamicRange = DynamicRange.HLG10
+        )
+
+        // When
+        val flashModeUiState = FlashModeUiState.from(appSettings, systemConstraints, hdrUiState)
+
+        // Then LLB is disabled because of HDR
+        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = flashModeUiState as FlashModeUiState.Available
+        val llbState = availableUiState.availableFlashModes.find { it.value == FlashMode.LOW_LIGHT_BOOST }
+        assertThat(llbState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
+        val disabledLlb = llbState as SingleSelectableUiState.Disabled
+        assertThat(disabledLlb.disabledReason).isEqualTo(DisabledReason.LLB_DISABLED_BY_HDR)
     }
 }
