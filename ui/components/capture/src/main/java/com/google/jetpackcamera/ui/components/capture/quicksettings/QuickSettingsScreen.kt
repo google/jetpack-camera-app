@@ -27,13 +27,11 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
@@ -42,7 +40,6 @@ import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickFlipCamera
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetConcurrentCamera
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetFlash
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSetHdr
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
@@ -54,7 +51,6 @@ import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsControl
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
@@ -165,18 +161,6 @@ fun QuickSettingsBottomSheet(
                         }
 
                         add {
-                            QuickSetConcurrentCamera(
-                                modifier =
-                                Modifier.testTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON),
-                                setConcurrentCameraMode = { c: ConcurrentCameraMode ->
-                                    quickSettingsController.setConcurrentCameraMode(c)
-                                },
-                                concurrentCameraUiState = quickSettingsUiState
-                                    .concurrentCameraUiState
-                            )
-                        }
-
-                        add {
                             QuickNavSettings(
                                 modifier = Modifier
                                     .testTag(SETTINGS_BUTTON),
@@ -232,10 +216,7 @@ fun ExpandedQuickSettingsUiPreview() {
                         SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
                     )
                 ),
-                concurrentCameraUiState = ConcurrentCameraUiState.Available(
-                    selectedConcurrentCameraMode = ConcurrentCameraMode.OFF,
-                    isEnabled = false
-                ),
+
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
                     availableFlashModes = listOf(
@@ -283,10 +264,7 @@ fun ExpandedQuickSettingsUiPreview_WithHdr() {
                         SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
                     )
                 ),
-                concurrentCameraUiState = ConcurrentCameraUiState.Available(
-                    selectedConcurrentCameraMode = ConcurrentCameraMode.OFF,
-                    isEnabled = false
-                ),
+
                 flashModeUiState = FlashModeUiState.Available(
                     selectedFlashMode = FlashMode.OFF,
                     availableFlashModes = listOf(
@@ -332,8 +310,6 @@ class NoOpQuickSettingsController : QuickSettingsController {
     override fun setDynamicRange(dynamicRange: DynamicRange) {}
 
     override fun setImageFormat(imageOutputFormat: ImageOutputFormat) {}
-
-    override fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {}
 
     override fun setCaptureMode(captureMode: CaptureMode) {}
 }

@@ -15,18 +15,13 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 
-import com.google.jetpackcamera.model.ExternalCaptureMode
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
-import com.google.jetpackcamera.ui.uistateadapter.capture.from
 
 /**
  * Creates a [QuickSettingsUiState] from various UI states and settings.
@@ -50,23 +45,14 @@ fun QuickSettingsUiState.Companion.from(
     captureModeUiState: CaptureModeUiState,
     flashModeUiState: FlashModeUiState,
     flipLensUiState: FlipLensUiState,
-    cameraAppSettings: CameraAppSettings,
-    systemConstraints: CameraSystemConstraints,
     aspectRatioUiState: AspectRatioUiState,
     hdrUiState: HdrUiState,
     quickSettingsIsOpen: Boolean,
-    focusedQuickSetting: FocusedQuickSetting,
-    externalCaptureMode: ExternalCaptureMode
+    focusedQuickSetting: FocusedQuickSetting
 ): QuickSettingsUiState {
     return QuickSettingsUiState.Available(
         aspectRatioUiState = aspectRatioUiState,
         captureModeUiState = captureModeUiState,
-        concurrentCameraUiState = ConcurrentCameraUiState.from(
-            cameraAppSettings,
-            systemConstraints,
-            externalCaptureMode,
-            captureModeUiState
-        ),
         flashModeUiState = flashModeUiState,
         flipLensUiState = flipLensUiState,
         hdrUiState = hdrUiState,

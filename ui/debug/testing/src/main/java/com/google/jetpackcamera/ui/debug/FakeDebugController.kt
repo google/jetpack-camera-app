@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.controller.testing
+package com.google.jetpackcamera.ui.debug
 
 import com.google.jetpackcamera.model.TestPattern
-import com.google.jetpackcamera.ui.controller.debug.DebugController
 
 /**
  * A fake implementation of [DebugController] that allows for configuring actions for its methods.

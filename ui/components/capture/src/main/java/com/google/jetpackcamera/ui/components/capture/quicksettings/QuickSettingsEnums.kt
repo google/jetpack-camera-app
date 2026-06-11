@@ -149,19 +149,3 @@ enum class CameraCaptureMode : QuickSettingsEnum {
             R.string.quick_settings_description_capture_mode_image_only
     }
 }
-enum class CameraConcurrentCameraMode : QuickSettingsEnum {
-    OFF {
-        override fun getDrawableResId() = R.drawable.picture_in_picture_off_icon
-
-        override fun getTextResId() = R.string.quick_settings_text_concurrent_camera_off
-        override fun getDescriptionResId() =
-            R.string.quick_settings_description_concurrent_camera_off
-    },
-    DUAL {
-
-        override fun getDrawableResId() = R.drawable.ic_picture_in_picture
-        override fun getTextResId() = R.string.quick_settings_text_concurrent_camera_dual
-        override fun getDescriptionResId() =
-            R.string.quick_settings_description_concurrent_camera_dual
-    }
-}
