@@ -17,8 +17,9 @@ package com.google.jetpackcamera.data.camera
 
 import android.app.Application
 import android.content.Context
+import com.google.jetpackcamera.core.camera.CameraEffectProvider
 import com.google.jetpackcamera.core.camera.CameraXCameraSystem
-import com.google.jetpackcamera.core.camera.SingleStreamEffectProvider
+import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
@@ -71,7 +72,10 @@ interface CameraModule {
                 ImagePostProcessorFeatureKey,
                 @JvmSuppressWildcards Provider<ImagePostProcessor>
                 >,
-            singleStreamEffectProvider: java.util.Optional<SingleStreamEffectProvider>
+            cameraEffectProviders: Map<
+                CameraEffectFeatureKey,
+                @JvmSuppressWildcards Provider<CameraEffectProvider>
+                >
         ): CameraXCameraSystem {
             return CameraXCameraSystem(
                 context as Application,
@@ -81,7 +85,7 @@ interface CameraModule {
                 availabilityCheckers,
                 effectProviders,
                 imagePostProcessors,
-                singleStreamEffectProvider.orElse(null)
+                cameraEffectProviders
             )
         }
     }

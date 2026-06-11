@@ -13,18 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera.effects
-
-import androidx.camera.core.CameraEffect
-import com.google.jetpackcamera.core.camera.SingleStreamEffectProvider
-import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
+package com.google.jetpackcamera.model
 
 /**
- * Implementation of [SingleStreamEffectProvider] that provides [SingleSurfaceForcingEffect].
+ * Represents the camera effects that can be selected in settings.
  */
-internal class SingleStreamEffectProviderImpl @Inject constructor() : SingleStreamEffectProvider {
-    override fun create(coroutineScope: CoroutineScope): CameraEffect {
-        return SingleSurfaceForcingEffect(coroutineScope)
-    }
+enum class CameraEffect {
+    NONE,
+    SINGLE_STREAM
 }

@@ -44,9 +44,9 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
+import com.google.jetpackcamera.settings.ui.CameraEffectSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
@@ -57,7 +57,6 @@ import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.StabilizationSetting
-import com.google.jetpackcamera.settings.ui.StreamConfigSetting
 import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 import com.google.jetpackcamera.settings.ui.VersionInfo
 import com.google.jetpackcamera.settings.ui.VideoQualitySetting
@@ -84,7 +83,7 @@ fun SettingsScreen(
         setFlashMode = viewModel::setFlashMode,
         setTargetFrameRate = viewModel::setTargetFrameRate,
         setAspectRatio = viewModel::setAspectRatio,
-        setCaptureMode = viewModel::setStreamConfig,
+        setCameraEffect = viewModel::setCameraEffect,
         setAudio = viewModel::setVideoAudio,
         setStabilizationMode = viewModel::setStabilizationMode,
         setMaxVideoDuration = viewModel::setMaxVideoDuration,
@@ -114,7 +113,7 @@ private fun SettingsScreen(
     setFlashMode: (FlashMode) -> Unit = {},
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
-    setCaptureMode: (StreamConfig) -> Unit = {},
+    setCameraEffect: (String) -> Unit = {},
     setStabilizationMode: (StabilizationMode) -> Unit = {},
     setAudio: (Boolean) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
@@ -151,7 +150,7 @@ private fun SettingsScreen(
                     setFlashMode = setFlashMode,
                     setTargetFrameRate = setTargetFrameRate,
                     setAspectRatio = setAspectRatio,
-                    setCaptureMode = setCaptureMode,
+                    setCameraEffect = setCameraEffect,
                     setStabilizationMode = setStabilizationMode,
                     setAudio = setAudio,
                     setMaxVideoDuration = setMaxVideoDuration,
@@ -172,7 +171,7 @@ fun SettingsList(
     setFlashMode: (FlashMode) -> Unit = {},
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
-    setCaptureMode: (StreamConfig) -> Unit = {},
+    setCameraEffect: (String) -> Unit = {},
     setLowLightBoostPriority: (LowLightBoostPriority) -> Unit = {},
     setAudio: (Boolean) -> Unit = {},
     setStabilizationMode: (StabilizationMode) -> Unit = {},
@@ -202,9 +201,9 @@ fun SettingsList(
         setAspectRatio = setAspectRatio
     )
 
-    StreamConfigSetting(
-        streamConfigUiState = uiState.streamConfigUiState,
-        setStreamConfig = setCaptureMode
+    CameraEffectSetting(
+        cameraEffectUiState = uiState.cameraEffectUiState,
+        setCameraEffect = setCameraEffect
     )
 
     LowLightBoostPrioritySetting(

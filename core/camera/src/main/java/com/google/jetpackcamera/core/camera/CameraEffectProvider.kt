@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.google.jetpackcamera.core.camera
 
-syntax = "proto3";
+import androidx.camera.core.CameraEffect
+import kotlinx.coroutines.CoroutineScope
 
-option java_package = "com.google.jetpackcamera.model.proto";
-option java_multiple_files = true;
-
-enum StreamConfig {
-  STREAM_CONFIG_UNDEFINED = 0;
-  STREAM_CONFIG_MULTI_STREAM = 1;
-  STREAM_CONFIG_SINGLE_STREAM = 2;
+/**
+ * Provider for a camera effect.
+ */
+interface CameraEffectProvider {
+    /**
+     * Creates a new [CameraEffect] instance.
+     *
+     * @param coroutineScope The [CoroutineScope] in which the effect should run.
+     */
+    fun create(coroutineScope: CoroutineScope): CameraEffect
 }

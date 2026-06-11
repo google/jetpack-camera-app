@@ -31,7 +31,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_60
@@ -78,7 +77,7 @@ class SettingsViewModel @Inject constructor(
             updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
-                streamConfigUiState = getStreamConfigUiState(updatedSettings),
+                cameraEffectUiState = getCameraEffectUiState(updatedSettings, constraints),
                 maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
                     updatedSettings.maxVideoDurationMillis
                 ),
@@ -195,9 +194,16 @@ class SettingsViewModel @Inject constructor(
         )
     }
 
-    private fun getStreamConfigUiState(cameraAppSettings: CameraAppSettings): StreamConfigUiState {
+    private fun getCameraEffectUiState(
+        cameraAppSettings: CameraAppSettings,
+        constraints: CameraSystemConstraints
+    ): CameraEffectUiState {
+        val supportedEffects = constraints
+            .perLensConstraints[cameraAppSettings.cameraLensFacing]
+            ?.supportedEffects ?: emptySet()
+
         if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
-            return StreamConfigUiState.Disabled(
+            return CameraEffectUiState.Disabled(
                 DisabledRationale.ConcurrentCameraUnsupportedRationale(
                     R.string.stream_config_rationale_prefix
                 )
@@ -205,14 +211,17 @@ class SettingsViewModel @Inject constructor(
         }
 
         if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
-            return StreamConfigUiState.Disabled(
+            return CameraEffectUiState.Disabled(
                 DisabledRationale.UltraHdrUnsupportedRationale(
                     R.string.stream_config_rationale_prefix
                 )
             )
         }
 
-        return StreamConfigUiState.Enabled(cameraAppSettings.streamConfig)
+        return CameraEffectUiState.Enabled(
+            currentCameraEffect = cameraAppSettings.selectedCameraEffect,
+            supportedEffects = supportedEffects
+        )
     }
 
     private fun getAudioUiState(isAudioEnabled: Boolean, permissionGranted: Boolean): AudioUiState =
@@ -664,10 +673,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setStreamConfig(streamConfig: StreamConfig) {
+    fun setCameraEffect(cameraEffect: String) {
         viewModelScope.launch {
-            settingsRepository.updateStreamConfig(streamConfig)
-            Log.d(TAG, "set default capture mode: $streamConfig")
+            settingsRepository.updateSelectedCameraEffect(cameraEffect)
+            Log.d(TAG, "set camera effect: $cameraEffect")
         }
     }
 

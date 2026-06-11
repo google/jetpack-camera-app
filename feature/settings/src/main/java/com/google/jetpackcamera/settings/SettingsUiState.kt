@@ -21,7 +21,6 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
@@ -47,7 +46,7 @@ sealed interface SettingsUiState {
     data object Disabled : SettingsUiState
     data class Enabled(
         val aspectRatioUiState: AspectRatioUiState,
-        val streamConfigUiState: StreamConfigUiState,
+        val cameraEffectUiState: CameraEffectUiState,
         val darkModeUiState: DarkModeUiState,
         val flashUiState: FlashUiState,
         val fpsUiState: FpsUiState,
@@ -242,11 +241,14 @@ sealed interface AspectRatioUiState {
         AspectRatioUiState
 }
 
-sealed interface StreamConfigUiState {
-    data class Enabled(val currentStreamConfig: StreamConfig, val additionalContext: String = "") :
-        StreamConfigUiState
+sealed interface CameraEffectUiState {
+    data class Enabled(
+        val currentCameraEffect: String,
+        val supportedEffects: Set<String>,
+        val additionalContext: String = ""
+    ) : CameraEffectUiState
 
-    data class Disabled(val disabledRationale: DisabledRationale) : StreamConfigUiState
+    data class Disabled(val disabledRationale: DisabledRationale) : CameraEffectUiState
 }
 
 sealed interface DarkModeUiState {
@@ -287,7 +289,10 @@ sealed interface VideoQualityUiState {
  */
 val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
-    streamConfigUiState = StreamConfigUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.streamConfig),
+    cameraEffectUiState = CameraEffectUiState.Enabled(
+        currentCameraEffect = DEFAULT_CAMERA_APP_SETTINGS.selectedCameraEffect,
+        supportedEffects = emptySet()
+    ),
     darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode),
     audioUiState = if (DEFAULT_CAMERA_APP_SETTINGS.audioEnabled) {
         AudioUiState.Enabled.On()

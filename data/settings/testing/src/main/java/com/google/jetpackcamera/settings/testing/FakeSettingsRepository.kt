@@ -23,7 +23,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -52,9 +51,9 @@ object FakeSettingsRepository : SettingsRepository {
         currentCameraSettings = currentCameraSettings.copy(flashMode = flashMode)
     }
 
-    override suspend fun updateStreamConfig(streamConfig: StreamConfig) {
+    override suspend fun updateSelectedCameraEffect(selectedCameraEffect: String) {
         currentCameraSettings =
-            currentCameraSettings.copy(streamConfig = streamConfig)
+            currentCameraSettings.copy(selectedCameraEffect = selectedCameraEffect)
     }
 
     override suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {

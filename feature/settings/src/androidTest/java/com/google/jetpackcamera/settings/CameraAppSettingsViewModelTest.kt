@@ -197,7 +197,7 @@ internal class CameraAppSettingsViewModelTest {
     }
 
     @Test
-    fun streamConfigDisabled_whenUltraHdrEnabled() = runTest(StandardTestDispatcher()) {
+    fun cameraEffectDisabled_whenUltraHdrEnabled() = runTest(StandardTestDispatcher()) {
         // Set image format to Ultra HDR in datastore
         testDataStore.updateData { currentSettings ->
             currentSettings.toBuilder()
@@ -212,10 +212,10 @@ internal class CameraAppSettingsViewModelTest {
             it is SettingsUiState.Enabled
         }
 
-        val streamConfigUiState = assertIsEnabled(uiState).streamConfigUiState
-        assertThat(streamConfigUiState).isInstanceOf(StreamConfigUiState.Disabled::class.java)
+        val cameraEffectUiState = assertIsEnabled(uiState).cameraEffectUiState
+        assertThat(cameraEffectUiState).isInstanceOf(CameraEffectUiState.Disabled::class.java)
         val disabledRationale =
-            (streamConfigUiState as StreamConfigUiState.Disabled).disabledRationale
+            (cameraEffectUiState as CameraEffectUiState.Disabled).disabledRationale
         assertThat(disabledRationale)
             .isInstanceOf(DisabledRationale.UltraHdrUnsupportedRationale::class.java)
     }

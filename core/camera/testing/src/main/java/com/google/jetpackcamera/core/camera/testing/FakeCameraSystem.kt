@@ -34,7 +34,6 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -230,9 +229,9 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         TODO("Not yet implemented")
     }
 
-    override suspend fun setStreamConfig(streamConfig: StreamConfig) {
+    override suspend fun setCameraEffect(cameraEffect: String) {
         currentSettings.update { old ->
-            old.copy(streamConfig = streamConfig)
+            old.copy(selectedCameraEffect = cameraEffect)
         }
     }
 

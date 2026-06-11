@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.data.camera
+package com.google.jetpackcamera.core.camera.effects
 
-import com.google.jetpackcamera.core.camera.SingleStreamEffectProvider
-import dagger.BindsOptionalOf
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+/**
+ * A key used to identify a specific implementation of a camera effect.
+ */
+interface CameraEffectFeatureKey {
+    val id: String
+}
 
-@Module
-@InstallIn(SingletonComponent::class)
-interface CameraSessionOptionalModule {
-    @BindsOptionalOf
-    fun bindOptionalSingleStreamEffectProvider(): SingleStreamEffectProvider
+/**
+ * Key for the single stream effect.
+ */
+object SingleStreamEffectKey : CameraEffectFeatureKey {
+    override val id: String = "single_stream"
 }

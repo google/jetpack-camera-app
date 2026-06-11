@@ -15,23 +15,31 @@
  */
 package com.google.jetpackcamera.core.camera.effects
 
-import com.google.jetpackcamera.core.camera.SingleStreamEffectProvider
-import dagger.Binds
+import com.google.jetpackcamera.core.camera.CameraEffectProvider
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.IntoSet
+import java.util.AbstractMap
+import javax.inject.Provider
 
 /**
  * Hilt module to bind [SingleStreamEffectProvider] in the [SingletonComponent].
  */
 @Module
 @InstallIn(SingletonComponent::class)
-internal interface EffectsModule {
-    /**
-     * Binds [SingleStreamEffectProviderImpl] to [SingleStreamEffectProvider].
-     */
-    @Binds
-    fun bindSingleStreamEffectProvider(
-        impl: SingleStreamEffectProviderImpl
-    ): SingleStreamEffectProvider
+internal object EffectsModule {
+    @Provides
+    @IntoSet
+    fun provideSingleStreamEffectProviderEntry(
+        impl: Provider<SingleStreamEffectProvider>
+    ): Map.Entry<
+        CameraEffectFeatureKey,
+        @JvmSuppressWildcards Provider<CameraEffectProvider>
+        > =
+        AbstractMap.SimpleImmutableEntry(
+            SingleStreamEffectKey,
+            Provider { impl.get() }
+        )
 }

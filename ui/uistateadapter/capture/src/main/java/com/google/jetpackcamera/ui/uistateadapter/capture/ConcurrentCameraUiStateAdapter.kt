@@ -20,7 +20,6 @@ import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -69,7 +68,8 @@ fun ConcurrentCameraUiState.Companion.from(
                     cameraAppSettings.imageFormat !=
                     DEFAULT_HDR_IMAGE_OUTPUT
                 ) && (
-                cameraAppSettings.streamConfig != StreamConfig.SINGLE_STREAM
+                cameraAppSettings.selectedCameraEffect.isEmpty() ||
+                    cameraAppSettings.selectedCameraEffect == "none"
                 ) && (
                 cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
                 )

@@ -22,7 +22,6 @@ import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TestPattern
@@ -73,7 +72,7 @@ fun CameraSystemConstraints.getSupportedMimeTypes(): Map<LensFacing, Set<String>
         val mimeTypes = mutableSetOf<String>()
         result.put(lensFacing, mimeTypes)
         val constraints = perLensConstraints[lensFacing] ?: continue
-        constraints.supportedImageFormatsMap[StreamConfig.SINGLE_STREAM]?.let {
+        constraints.supportedImageFormatsMap[true]?.let {
             if (it.contains(
                     ImageOutputFormat.JPEG
                 )
@@ -110,7 +109,8 @@ data class CameraConstraints(
     val supportedFixedFrameRates: Set<Int>,
     val supportedDynamicRanges: Set<DynamicRange>,
     val supportedVideoQualitiesMap: Map<DynamicRange, List<VideoQuality>>,
-    val supportedImageFormatsMap: Map<StreamConfig, Set<ImageOutputFormat>>,
+    val supportedImageFormatsMap: Map<Boolean, Set<ImageOutputFormat>>,
+    val supportedEffects: Set<String> = emptySet(),
     val supportedIlluminants: Set<Illuminant>,
     val supportedFlashModes: Set<FlashMode>,
     val supportedZoomRange: Range<Float>?,
@@ -137,9 +137,10 @@ val TYPICAL_SYSTEM_CONSTRAINTS =
                         supportedStabilizationModes = setOf(StabilizationMode.OFF),
                         supportedDynamicRanges = setOf(DynamicRange.SDR),
                         supportedImageFormatsMap = mapOf(
-                            Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
-                            Pair(StreamConfig.MULTI_STREAM, setOf(ImageOutputFormat.JPEG))
+                            Pair(true, setOf(ImageOutputFormat.JPEG)),
+                            Pair(false, setOf(ImageOutputFormat.JPEG))
                         ),
+                        supportedEffects = emptySet(),
                         supportedVideoQualitiesMap = emptyMap(),
                         supportedIlluminants = setOf(Illuminant.FLASH_UNIT),
                         supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO),

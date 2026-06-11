@@ -31,14 +31,12 @@ import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.fromProto
 import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.toProto
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.VideoQuality.Companion.toProto
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
-import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
@@ -73,11 +71,7 @@ class LocalSettingsRepository @Inject constructor(
                 aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
                 stabilizationMode = StabilizationMode.fromProto(it.stabilizationMode),
                 targetFrameRate = it.targetFrameRate,
-                streamConfig = when (it.streamConfigStatus) {
-                    StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
-                    StreamConfigProto.STREAM_CONFIG_MULTI_STREAM -> StreamConfig.MULTI_STREAM
-                    else -> StreamConfig.MULTI_STREAM
-                },
+                selectedCameraEffect = it.selectedCameraEffect,
                 lowLightBoostPriority = fromProto(it.lowLightBoostPriority),
                 dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
                 imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
@@ -147,14 +141,10 @@ class LocalSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateStreamConfig(streamConfig: StreamConfig) {
-        val newStatus = when (streamConfig) {
-            StreamConfig.MULTI_STREAM -> StreamConfigProto.STREAM_CONFIG_MULTI_STREAM
-            StreamConfig.SINGLE_STREAM -> StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM
-        }
+    override suspend fun updateSelectedCameraEffect(selectedCameraEffect: String) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setStreamConfigStatus(newStatus)
+                .setSelectedCameraEffect(selectedCameraEffect)
                 .build()
         }
     }
