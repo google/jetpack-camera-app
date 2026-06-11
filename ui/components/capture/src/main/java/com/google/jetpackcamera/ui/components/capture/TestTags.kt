@@ -53,20 +53,8 @@ const val ZOOM_BUTTON_5_TAG = "ZoomButton5Tag"
 
 // debug component tags
 
-const val ZOOM_RATIO_TAG = "ZoomRatioTag"
-const val LOGICAL_CAMERA_ID_TAG = "LogicalCameraIdTag"
-const val PHYSICAL_CAMERA_ID_TAG = "PhysicalCameraIdTag"
 const val ELAPSED_TIME_TAG = "ElapsedTimeTag"
 const val VIDEO_QUALITY_TAG = "VideoQualityTag"
-const val DEBUG_OVERLAY_BUTTON = "DebugOverlayButton"
-
-const val BTN_DEBUG_HIDE_COMPONENTS_TAG = "btn_debug_hide_components"
-const val DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON = "DebugOverlayShowCameraPropertiesButton"
-const val DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON = "DebugOverlaySetZoomRatioButton"
-const val DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG = "DebugOverlayCameraPropertiesTag"
-const val DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD = "DebugOverlaySetZoomRatioTextField"
-const val DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON = "DebugOverlaySetZoomRatioSetButton"
-const val DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG = "DebugOverlayVideoResolutionTag"
 
 // quick settings tags
 // todo(kc): rename quick_settings_drop_down to something more appropriate?
@@ -78,8 +66,6 @@ const val QUICK_SETTINGS_BOTTOM_SHEET = "QuickSettingsBottomSheet"
 const val QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON = "QuickSettingsCloseExpandedButton"
 const val QUICK_SETTINGS_SCROLL_CONTAINER = "QuickSettingsScrollContainer"
 
-const val QUICK_SETTINGS_STREAM_CONFIG_BUTTON = "QuickSettingsStreamConfigButton"
-const val QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON = "QuickSettingsConcurrentCameraModeButton"
 const val QUICK_SETTINGS_HDR_BUTTON = "QuickSettingsHdrButton"
 const val QUICK_SETTINGS_FLASH_BUTTON = "QuickSettingsFlashButton"
 const val QUICK_SETTINGS_FLIP_CAMERA_BUTTON = "QuickSettingsFlipCameraButton"

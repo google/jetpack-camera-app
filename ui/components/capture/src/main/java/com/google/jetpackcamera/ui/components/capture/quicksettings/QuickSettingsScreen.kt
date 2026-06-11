@@ -27,24 +27,25 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.StreamConfig
+
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureModeRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
+
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
+
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
 /**
@@ -182,9 +183,8 @@ private fun VideoQuickSettings(
         // HDR settings
         if (quickSettingsUiState.hdrUiState is HdrUiState.Available) {
             HdrRow(
-                onClick = { d: DynamicRange, i: ImageOutputFormat ->
+                onClick = { d: DynamicRange, _ ->
                     quickSettingsController.setDynamicRange(d)
-                    quickSettingsController.setImageFormat(i)
                 },
                 hdrUiState = quickSettingsUiState.hdrUiState
             )
@@ -228,6 +228,16 @@ private fun ImageQuickSettings(
             )
         }
 
+        // HDR settings
+        if (quickSettingsUiState.hdrUiState is HdrUiState.Available) {
+            HdrRow(
+                onClick = { _, i: ImageOutputFormat ->
+                    quickSettingsController.setImageFormat(i)
+                },
+                hdrUiState = quickSettingsUiState.hdrUiState
+            )
+        }
+
         // TODO: Add pre-capture timer setting
     }
     if (showMoreSettingsButton) {
@@ -247,13 +257,9 @@ class NoOpQuickSettingsController : QuickSettingsController {
 
     override fun setAspectRatio(aspectRatio: AspectRatio) {}
 
-    override fun setStreamConfig(streamConfig: StreamConfig) {}
-
     override fun setDynamicRange(dynamicRange: DynamicRange) {}
 
     override fun setImageFormat(imageOutputFormat: ImageOutputFormat) {}
-
-    override fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {}
 
     override fun setCaptureMode(captureMode: CaptureMode) {}
 }
