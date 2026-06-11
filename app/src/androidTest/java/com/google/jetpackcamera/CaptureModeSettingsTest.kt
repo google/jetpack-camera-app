@@ -18,7 +18,6 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.provider.MediaStore
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -38,7 +37,6 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
 import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
@@ -52,9 +50,8 @@ import com.google.jetpackcamera.utils.isCaptureModeToggleEnabled
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
-import com.google.jetpackcamera.utils.searchForQuickSetting
 import com.google.jetpackcamera.utils.setCaptureMode
-import com.google.jetpackcamera.utils.setConcurrentCameraMode
+import com.google.jetpackcamera.utils.setConcurrentCameraModeInSettings
 import com.google.jetpackcamera.utils.setHdrEnabled
 import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
 import com.google.jetpackcamera.utils.unFocusQuickSetting
@@ -143,11 +140,11 @@ internal class CaptureModeSettingsTest {
     fun concurrent_only_supports_video_capture_mode() {
         runMainActivityScenarioTest {
             composeTestRule.waitForCaptureButton()
-            composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
-                // verify concurrent is supported. if not supported, skip test
-                waitForNodeWithTag(tag = QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
 
+            // Enable concurrent camera in settings
+            composeTestRule.setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
+
+            composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
                 // capture mode should now be video only
                 checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
 
@@ -162,43 +159,12 @@ internal class CaptureModeSettingsTest {
                 composeTestRule.getCaptureModeToggleState()
             ).isEqualTo(CaptureMode.VIDEO_ONLY)
 
-            composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
-                // set concurrent camera mode back to off
-                setConcurrentCameraMode(ConcurrentCameraMode.OFF)
+            // set concurrent camera mode back to off in settings
+            composeTestRule.setConcurrentCameraModeInSettings(ConcurrentCameraMode.OFF)
 
+            composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
                 // capture mode should reset to standard
                 checkCaptureModeSettingState(CaptureMode.STANDARD)
-            }
-        }
-    }
-
-    @Test
-    fun image_only_disables_concurrent_camera() {
-        runMainActivityScenarioTest {
-            composeTestRule.waitForCaptureButton()
-            composeTestRule.visitQuickSettings {
-                // verify concurrent is supported. if not supported, skip test
-                setConcurrentCameraMode(ConcurrentCameraMode.OFF)
-
-                // capture mode should now be image only
-                setCaptureMode(CaptureMode.IMAGE_ONLY)
-                checkCaptureModeSettingState(CaptureMode.IMAGE_ONLY)
-
-                searchForQuickSetting(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                // should not be able to enable concurrent
-                onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                    .assertExists()
-                    .assertIsNotEnabled()
-
-                // reset capture mode to standard
-                setCaptureMode(CaptureMode.STANDARD)
-                checkCaptureModeSettingState(CaptureMode.STANDARD)
-
-                // concurrent should be enabled again
-                searchForQuickSetting(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                onNodeWithTag(
-                    QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
-                ).assertExists().assertIsEnabled()
             }
         }
     }
