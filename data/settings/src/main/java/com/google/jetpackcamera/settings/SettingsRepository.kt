@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -62,4 +63,6 @@ interface SettingsRepository {
     suspend fun updateVideoQuality(videoQuality: VideoQuality)
 
     suspend fun updateAudioEnabled(isAudioEnabled: Boolean)
+
+    suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
 }

@@ -17,26 +17,32 @@ package com.google.jetpackcamera
 
 import android.net.Uri
 import android.provider.MediaStore
-import androidx.compose.ui.semantics.SemanticsNode
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.settings.R as SettingsR
+import com.google.jetpackcamera.settings.ui.BTN_DIALOG_FLASH_OPTION_LLB_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FPS_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG
+import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
+import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
@@ -44,15 +50,16 @@ import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
-import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.getResString
 import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.searchForQuickSetting
+import com.google.jetpackcamera.utils.setConcurrentCameraModeInSettings
 import com.google.jetpackcamera.utils.stateDescriptionMatches
+import com.google.jetpackcamera.utils.visitSettingsScreen
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithText
-import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -68,179 +75,95 @@ class ConcurrentCameraTest {
 
     @Test
     fun concurrentCameraMode_canBeEnabled() = runConcurrentCameraScenarioTest {
-        val concurrentCameraModes = mutableListOf<ConcurrentCameraMode>()
         with(composeTestRule) {
-            onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                .assertExists().apply {
-                    // Check the original mode
-                    fetchSemanticsNode().let { node ->
-                        concurrentCameraModes.add(node.fetchConcurrentCameraMode())
-                    }
-                }
-                // Enable concurrent camera
-                .performClick().apply {
-                    // Check the mode has changed
-                    fetchSemanticsNode().let { node ->
-                        concurrentCameraModes.add(node.fetchConcurrentCameraMode())
-                    }
-                }
+            // Visit settings, enable it, and assert it is ON in settings
+            visitSettingsScreen {
+                setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
+                onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
+                    .assertExists()
+                    .assertIsOn()
+            }
 
-            // Exit quick settings
-            onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
-
-            // Assert that the flip camera button is visible
+            // Assert that the flip camera button is visible on preview
             onNodeWithTag(FLIP_CAMERA_BUTTON)
                 .assertIsDisplayed()
         }
-
-        assertThat(concurrentCameraModes).containsExactly(
-            ConcurrentCameraMode.OFF,
-            ConcurrentCameraMode.DUAL
-        ).inOrder()
     }
 
     @Test
     fun concurrentCameraMode_whenEnabled_canBeDisabled() = runConcurrentCameraScenarioTest {
-        val concurrentCameraModes = mutableListOf<ConcurrentCameraMode>()
         with(composeTestRule) {
-            onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                .assertExists().apply {
-                    // Check the original mode
-                    fetchSemanticsNode().let { node ->
-                        concurrentCameraModes.add(node.fetchConcurrentCameraMode())
-                    }
-                }
-                // Enable concurrent camera
-                .performClick().apply {
-                    // Check the mode has changed
-                    fetchSemanticsNode().let { node ->
-                        concurrentCameraModes.add(node.fetchConcurrentCameraMode())
-                    }
-                }
-
-            // Exit quick settings
-            onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
-
-            // Assert that the flip camera button is visible
-            onNodeWithTag(FLIP_CAMERA_BUTTON)
-                .assertIsDisplayed()
-
-            // Enter quick settings
-            onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
-
-            onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                .assertExists()
-                // Disable concurrent camera
-                .performClick().apply {
-                    // Check the mode is back to OFF
-                    fetchSemanticsNode().let { node ->
-                        concurrentCameraModes.add(node.fetchConcurrentCameraMode())
-                    }
-                }
-
-            // Exit quick settings
-            onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
-
-            // Assert that the flip camera button is visible
-            onNodeWithTag(FLIP_CAMERA_BUTTON)
-                .assertIsDisplayed()
+            // Visit settings, toggle it on, then off, and assert off.
+            visitSettingsScreen {
+                setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
+                setConcurrentCameraModeInSettings(ConcurrentCameraMode.OFF)
+                onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
+                    .assertExists()
+                    .assertIsOff()
+            }
         }
-
-        assertThat(concurrentCameraModes).containsExactly(
-            ConcurrentCameraMode.OFF,
-            ConcurrentCameraMode.DUAL,
-            ConcurrentCameraMode.OFF
-        ).inOrder()
     }
 
     @Test
     fun concurrentCameraMode_whenEnabled_canFlipCamera() = runConcurrentCameraScenarioTest {
         with(composeTestRule) {
-            // Check device has multiple cameras
-            onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON)
-                .assertExists()
-                .assume(isEnabled()) {
-                    "Device does not have multiple cameras."
-                }
+            // Enable concurrent camera in settings
+            setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
 
-            onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                .assertExists()
-                .assertConcurrentCameraMode(ConcurrentCameraMode.OFF)
-                // Enable concurrent camera
-                .performClick()
-                .assertConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-
-            onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON)
-                .assertExists()
-                .performClick()
-
-            // Exit quick settings
-            onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
-
-            // Assert that the flip camera button is visible
+            // Flip camera from preview screen directly (it should be available)
             onNodeWithTag(FLIP_CAMERA_BUTTON)
-                .assertIsDisplayed()
+                .assertExists()
+                .performClick()
         }
     }
 
     @Test
     fun concurrentCameraMode_whenEnabled_canSwitchAspectRatio() = runConcurrentCameraScenarioTest {
         with(composeTestRule) {
-            onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                .assertExists()
-                .assertConcurrentCameraMode(ConcurrentCameraMode.OFF)
-                // Enable concurrent camera
-                .performClick()
-                .assertConcurrentCameraMode(ConcurrentCameraMode.DUAL)
+            // Enable concurrent camera in settings
+            setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
 
-            // Click the ratio button
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON)
-                .assertExists()
-                .performClick()
-
-            // Click the 1:1 ratio button
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON)
-                .assertExists()
-                .performClick()
-
-            // Exit quick settings
+            // Enter quick settings
             onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
                 .assertExists()
                 .performClick()
 
-            // Assert that the flip camera button is visible
-            onNodeWithTag(FLIP_CAMERA_BUTTON)
-                .assertIsDisplayed()
+            // Click the ratio button inside Quick Settings
+            onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON)
+                .assertExists()
+                .performClick()
+
+            // Click the 1:1 ratio button
+            onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON)
+                .assertExists()
+                .performClick()
         }
     }
 
     @Test
-    fun concurrentCameraMode_whenEnabled_disablesOtherSettings() = runConcurrentCameraScenarioTest {
-        runBlocking {
+    fun concurrentCameraMode_whenEnabled_disablesOtherQuickSettings() =
+        runConcurrentCameraScenarioTest {
             with(composeTestRule) {
-                onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
+                // Visit settings, toggle concurrent camera, and assert stream config is disabled
+                visitSettingsScreen {
+                    setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+                }
+
+                // Open Quick Settings bottom sheet
+                onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
                     .assertExists()
-                    .assertConcurrentCameraMode(ConcurrentCameraMode.OFF)
-                    // Enable concurrent camera
                     .performClick()
-                    .assertConcurrentCameraMode(ConcurrentCameraMode.DUAL)
 
                 // Assert the HDR button is disabled
+                searchForQuickSetting(QUICK_SETTINGS_HDR_BUTTON)
                 onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
                     .assertExists()
                     .assert(isNotEnabled())
 
-                // Assert the capture mode is disabled and set to video-only
+                // Assert the capture mode toggle button is disabled and set to video-only
                 onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
                     .assertExists()
                     .assert(isNotEnabled())
@@ -253,24 +176,54 @@ class ConcurrentCameraTest {
                     )
             }
         }
-    }
+
+    @Test
+    fun concurrentCameraMode_whenEnabled_disablesOtherSettingsInSettingsScreen() =
+        runConcurrentCameraScenarioTest {
+            with(composeTestRule) {
+                // Visit settings, enable concurrent camera, and assert other settings are disabled
+                visitSettingsScreen {
+                    setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
+
+                    // 1. Assert Stream Config is disabled
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+
+                    // 2. Assert Video Stabilization is disabled
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+
+                    // 3. Assert Flash Low Light Boost option is disabled in dialog
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_FLASH_TAG)
+                        .assertExists()
+                        .assert(isEnabled())
+                        .performClick()
+
+                    onNodeWithTag(BTN_DIALOG_FLASH_OPTION_LLB_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+
+                    onNodeWithTag(CLOSE_BUTTON)
+                        .assertExists()
+                        .performClick()
+
+                    // 4. Assert FPS setting is disabled
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_FPS_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+                }
+            }
+        }
 
     @Test
     fun concurrentCameraMode_canRecordVideo() = runConcurrentCameraScenarioTest(
         mediaUriForSavedFiles = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
     ) {
         with(composeTestRule) {
-            onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                .assertExists()
-                .assertConcurrentCameraMode(ConcurrentCameraMode.OFF)
-                // Enable concurrent camera
-                .performClick()
-                .assertConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-
-            // Exit quick settings
-            onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
+            // Enable concurrent camera in settings
+            setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
 
             longClickForVideoRecordingCheckingElapsedTime()
 
@@ -283,7 +236,6 @@ class ConcurrentCameraTest {
 
     // Ensures the app has launched and checks that the device supports concurrent camera before
     // running the test.
-    // This test will start with quick settings visible
     private inline fun runConcurrentCameraScenarioTest(
         mediaUriForSavedFiles: Uri? = null,
         expectedMediaFiles: Int = 1,
@@ -293,24 +245,37 @@ class ConcurrentCameraTest {
             // Wait for the capture button to be displayed
             composeTestRule.waitForCaptureButton()
 
-            // ///////////////////////////////////////////////////
-            // Check that the device supports concurrent camera //
-            // ///////////////////////////////////////////////////
-            // Navigate to quick settings
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
+            // Navigate to settings screen to check if concurrent camera is supported/enabled
+            var isSupported = false
+            var isDeviceUnsupported = false
+            composeTestRule.visitSettingsScreen {
+                onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
+                    .assertExists()
+                    .apply {
+                        isSupported = isEnabled().matches(fetchSemanticsNode())
+                    }
 
-            // Check that the concurrent camera button is enabled
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-                .assertExists()
-                .assume(isEnabled()) {
-                    "Device does not support concurrent camera."
+                if (!isSupported) {
+                    val deviceUnsupportedMessage = getResString(SettingsR.string.device_unsupported)
+                    val concurrentPrefix =
+                        getResString(SettingsR.string.concurrent_camera_rationale_prefix)
+                    val expectedMessage = String.format(deviceUnsupportedMessage, concurrentPrefix)
+
+                    // Check if the "device unsupported" message is displayed
+                    isDeviceUnsupported = onAllNodesWithText(expectedMessage)
+                        .fetchSemanticsNodes()
+                        .isNotEmpty()
                 }
+            }
 
-            // ///////////////////////////////////////////////////
-            //               Run the actual test                //
-            // ///////////////////////////////////////////////////
+            if (!isSupported) {
+                // Skip the test if the device physically doesn't support concurrent camera
+                assume().that(isDeviceUnsupported).isFalse()
+                throw AssertionError(
+                    "Concurrent camera is disabled in settings, but the device supports it (disabled due to conflict)."
+                )
+            }
+
             block()
         }
 
@@ -323,30 +288,5 @@ class ConcurrentCameraTest {
         } else {
             runMainActivityScenarioTest(block = wrappedBlock)
         }
-    }
-
-    private fun SemanticsNode.fetchConcurrentCameraMode(): ConcurrentCameraMode {
-        return config[SemanticsProperties.ContentDescription]
-            .firstNotNullOfOrNull { description ->
-                when (description) {
-                    getResString(
-                        CaptureR.string.quick_settings_description_concurrent_camera_off
-                    ) -> ConcurrentCameraMode.OFF
-                    getResString(
-                        CaptureR.string.quick_settings_description_concurrent_camera_dual
-                    ) -> ConcurrentCameraMode.DUAL
-                    else -> null
-                }
-            } ?: throw AssertionError(
-            "Unable to determine concurrent camera mode from quick settings"
-        )
-    }
-
-    private fun SemanticsNodeInteraction.assertConcurrentCameraMode(
-        mode: ConcurrentCameraMode
-    ): SemanticsNodeInteraction {
-        assertThat(fetchSemanticsNode().fetchConcurrentCameraMode())
-            .isEqualTo(mode)
-        return this
     }
 }
