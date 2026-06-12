@@ -289,7 +289,7 @@ class LocalMediaRepository
                         val nameColumn =
                             cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
                         val name = cursor.getString(nameColumn)
-                        return@withContext name?.startsWith("JCA") == true
+                        return@withContext name?.startsWith(filePathGenerator.prefix) == true
                     }
                 }
         } catch (e: Exception) {
@@ -603,7 +603,8 @@ class LocalMediaRepository
 
     /**
      * This function queries the MediaStore for media files that have a display name starting with
-     * "JCA". It returns the URI and date added for the most recently added file.
+     * the prefix from [filePathGenerator]. It returns the URI and date added for the most recently
+     * added file.
      *
      * @param contentResolver The [ContentResolver] to query the MediaStore.
      * @param collectionUri The [Uri] of the media collection to query (e.g., [MediaStore.Images.Media.EXTERNAL_CONTENT_URI] or [MediaStore.Video.Media.EXTERNAL_CONTENT_URI]).
@@ -618,9 +619,9 @@ class LocalMediaRepository
             MediaStore.MediaColumns.DATE_ADDED
         )
 
-        // Filter by filenames starting with "JCA"
+        // Filter by filenames starting with the prefix from filePathGenerator
         val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?"
-        val selectionArgs = arrayOf("JCA%")
+        val selectionArgs = arrayOf("${filePathGenerator.prefix}%")
 
         // Sort the results so that the most recently added media appears first.
         val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} DESC"

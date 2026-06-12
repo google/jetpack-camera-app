@@ -21,6 +21,11 @@ package com.google.jetpackcamera.core.common
 interface FilePathGenerator {
 
     /**
+     * The prefix used for generated filenames.
+     */
+    val prefix: String
+
+    /**
      * Provides the relative output path for an image file, used for MediaStore.
      *
      * (i.e [android.os.Environment.DIRECTORY_DCIM], [android.os.Environment.DIRECTORY_PICTURES])
