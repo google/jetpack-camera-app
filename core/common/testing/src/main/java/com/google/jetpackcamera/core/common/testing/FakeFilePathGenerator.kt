@@ -28,6 +28,8 @@ class FakeFilePathGenerator : FilePathGenerator {
 
     override val prefix: String = "JCA"
 
+    override val baseRelativePath: String = RELATIVE_OUTPUT_PATH
+
     override val relativeImageOutputPath: String = RELATIVE_OUTPUT_PATH
 
     override val relativeVideoOutputPath: String = RELATIVE_OUTPUT_PATH

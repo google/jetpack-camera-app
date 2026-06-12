@@ -26,6 +26,12 @@ interface FilePathGenerator {
     val prefix: String
 
     /**
+     * The base relative path where media is stored (e.g., "DCIM/Camera").
+     * Used for filtering in the MediaStore on API 29+.
+     */
+    val baseRelativePath: String
+
+    /**
      * Provides the relative output path for an image file, used for MediaStore.
      *
      * (i.e [android.os.Environment.DIRECTORY_DCIM], [android.os.Environment.DIRECTORY_PICTURES])

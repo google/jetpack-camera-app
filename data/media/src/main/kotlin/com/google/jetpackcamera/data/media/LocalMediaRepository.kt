@@ -281,11 +281,29 @@ class LocalMediaRepository
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             val ownerColumn =
                                 cursor.getColumnIndex(MediaStore.MediaColumns.OWNER_PACKAGE_NAME)
+                            val pathColumn =
+                                cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH)
+
+                            // 1. Check Owner Package
                             if (ownerColumn != -1 && !cursor.isNull(ownerColumn)) {
                                 val owner = cursor.getString(ownerColumn)
-                                return@withContext owner == context.packageName
+                                if (owner != context.packageName) return@withContext false
                             }
+
+                            // 2. Check Relative Path (Ensure it's in the camera directory)
+                            if (pathColumn != -1 && !cursor.isNull(pathColumn)) {
+                                val path = cursor.getString(pathColumn)
+                                if (path != null &&
+                                    !path.startsWith(filePathGenerator.baseRelativePath)
+                                ) {
+                                    return@withContext false
+                                }
+                            }
+
+                            if (ownerColumn != -1 || pathColumn != -1) return@withContext true
                         }
+
+                        // 3. Fallback to Display Name Prefix (API 28 or missing modern columns)
                         val nameColumn =
                             cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
                         val name = cursor.getString(nameColumn)
@@ -602,8 +620,8 @@ class LocalMediaRepository
         }
 
     /**
-     * This function queries the MediaStore for media files that have a display name starting with
-     * the prefix from [filePathGenerator]. It returns the URI and date added for the most recently
+     * This function queries the MediaStore for media files that belong to this app and are stored in
+     * the standard camera directory. It returns the URI and date added for the most recently
      * added file.
      *
      * @param contentResolver The [ContentResolver] to query the MediaStore.
@@ -614,14 +632,31 @@ class LocalMediaRepository
         contentResolver: ContentResolver,
         collectionUri: Uri
     ): Pair<Uri, Long>? {
-        val projection = arrayOf(
+        val projection = mutableListOf(
             MediaStore.MediaColumns._ID,
-            MediaStore.MediaColumns.DATE_ADDED
+            MediaStore.MediaColumns.DATE_ADDED,
+            MediaStore.MediaColumns.DISPLAY_NAME
         )
 
-        // Filter by filenames starting with the prefix from filePathGenerator
-        val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?"
-        val selectionArgs = arrayOf("${filePathGenerator.prefix}%")
+        val selection: String
+        val selectionArgs: Array<String>
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            projection.add(MediaStore.MediaColumns.RELATIVE_PATH)
+            projection.add(MediaStore.MediaColumns.OWNER_PACKAGE_NAME)
+
+            // Primary Filter: Relative Path + App Ownership
+            selection = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ? AND " +
+                "${MediaStore.MediaColumns.OWNER_PACKAGE_NAME} = ?"
+            selectionArgs = arrayOf(
+                "${filePathGenerator.baseRelativePath}%",
+                context.packageName
+            )
+        } else {
+            // Legacy Filter: Filename Prefix
+            selection = "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?"
+            selectionArgs = arrayOf("${filePathGenerator.prefix}%")
+        }
 
         // Sort the results so that the most recently added media appears first.
         val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} DESC"
@@ -629,7 +664,7 @@ class LocalMediaRepository
         // Perform the query on the MediaStore.
         contentResolver.query(
             collectionUri,
-            projection,
+            projection.toTypedArray(),
             selection,
             selectionArgs,
             sortOrder
