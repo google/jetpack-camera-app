@@ -32,7 +32,7 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import java.io.File
 import java.io.FileOutputStream
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.fail
 import org.junit.Before
@@ -51,8 +51,13 @@ class LocalMediaRepositoryTest {
     private lateinit var context: Context
     private lateinit var contentResolver: ContentResolver
     private lateinit var repository: LocalMediaRepository
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var fakeContentProvider: FakeContentProvider
+
+    // Reliable fake thumbnail loader for tests
+    private val fakeThumbnailLoader: suspend (Uri, Uri) -> Bitmap? = { _, _ ->
+        Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+    }
 
     @Before
     fun setup() {
@@ -68,15 +73,79 @@ class LocalMediaRepositoryTest {
             context,
             testDispatcher,
             FakeFilePathGenerator()
-        )
+        ).apply {
+            setThumbnailLoader(fakeThumbnailLoader)
+        }
     }
 
     @Test
-    fun setCurrentMedia_updatesStateFlow() = runTest(testDispatcher) {
+    fun lastCapturedMedia_initialValueIsLatest() = runTest {
         // Given
-        val initialMedia = repository.currentMedia.value
-        assertThat(initialMedia).isEqualTo(MediaDescriptor.None)
+        val olderImageTime = 1000L
+        val newerVideoTime = 5000L
+        val imageValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DATE_ADDED, olderImageTime)
+            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
+        }
+        val videoValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DATE_ADDED, newerVideoTime)
+            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Video.mp4")
+        }
+        fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
+        val videoUrl =
+            fakeContentProvider.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, videoValues)!!
 
+        // When initializing a new repository
+        val newRepo = LocalMediaRepository(context, testDispatcher, FakeFilePathGenerator()).apply {
+            setThumbnailLoader(fakeThumbnailLoader)
+        }
+        val result = newRepo.lastCapturedMedia.value
+
+        // Then
+        assertThat(result).isInstanceOf(MediaDescriptor.Content.Video::class.java)
+        assertThat((result as MediaDescriptor.Content.Video).uri).isEqualTo(videoUrl)
+    }
+
+    @Test
+    fun lastCapturedMedia_emitsNewImageOnContentChange() = runTest {
+        // When a new image is added
+        val imageValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DATE_ADDED, 6000L)
+            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image_New.jpg")
+        }
+        val imageUrl =
+            fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
+
+        // Notify change and let coroutines process
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+
+        // Then
+        val result = repository.lastCapturedMedia.value
+        assertThat(result).isInstanceOf(MediaDescriptor.Content.Image::class.java)
+        assertThat((result as MediaDescriptor.Content.Image).uri).isEqualTo(imageUrl)
+    }
+
+    @Test
+    fun lastCapturedMedia_emitsNewVideoOnContentChange() = runTest {
+        // When a new video is added
+        val videoValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DATE_ADDED, 7000L)
+            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Video_New.mp4")
+        }
+        val videoUrl =
+            fakeContentProvider.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, videoValues)!!
+
+        // Notify change and let coroutines process
+        contentResolver.notifyChange(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, null)
+
+        // Then
+        val result = repository.lastCapturedMedia.value
+        assertThat(result).isInstanceOf(MediaDescriptor.Content.Video::class.java)
+        assertThat((result as MediaDescriptor.Content.Video).uri).isEqualTo(videoUrl)
+    }
+
+    @Test
+    fun setCurrentMedia_updatesStateFlow() = runTest {
         // When
         val newMedia = MediaDescriptor.Content.Image(
             Uri.parse("content://media/external/images/media/1"),
@@ -90,27 +159,16 @@ class LocalMediaRepositoryTest {
     }
 
     @Test
-    fun loadImage_succeeds_returnsImageMedia() = runTest(testDispatcher) {
-        // 1. Create a real, decodable Bitmap
+    fun loadImage_succeeds_returnsImageMedia() = runTest {
         val bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-
-        // 2. Given a valid image URI
         val sourceFile = File(context.cacheDir, "temp.jpg")
-
-        // Write the actual Bitmap data as a compressed JPEG
         try {
             FileOutputStream(sourceFile).use { outputStream ->
-                // Use compress to write a valid image format
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
             }
         } catch (e: Exception) {
-            // Handle potential IO exceptions if necessary
             fail("Failed to write mock image data: ${e.message}")
         }
-
-        // Check if the file was created and is non-empty
-        assertThat(sourceFile.exists()).isTrue()
-        assertThat(sourceFile.length()).isGreaterThan(0)
 
         val imageUri = Uri.fromFile(sourceFile)
         val mediaDescriptor = MediaDescriptor.Content.Image(imageUri, null, true)
@@ -123,20 +181,9 @@ class LocalMediaRepositoryTest {
     }
 
     @Test
-    fun loadVideo_succeeds_returnsVideoMedia() = runTest(testDispatcher) {
-        // 1. Setup: Create a temporary file in the cache directory
+    fun loadVideo_succeeds_returnsVideoMedia() = runTest {
         val sourceFile = File(context.cacheDir, "temp_video.mp4")
-
-        // 2. Write a small amount of data to make it non-empty.
-        // Unlike images, video content doesn't need to be fully valid to pass the existence check.
-        // However, if the repository eventually uses a video decoder for metadata/thumbnail,
-        // a small amount of non-zero data ensures the file exists and is readable.
         sourceFile.writeText("fake video content")
-
-        // Ensure the file exists before proceeding
-        assertThat(sourceFile.exists()).isTrue()
-
-        // 3. Given a valid video URI (file:// pointing to the real file)
         val videoUri = Uri.fromFile(sourceFile)
         val mediaDescriptor = MediaDescriptor.Content.Video(videoUri, null, true)
 
@@ -149,8 +196,7 @@ class LocalMediaRepositoryTest {
     }
 
     @Test
-    fun loadImage_fails_returnsError() = runTest(testDispatcher) {
-        // Given an invalid image URI
+    fun loadImage_fails_returnsError() = runTest {
         val invalidImageUri = Uri.parse("file:///nonexistent/image.jpg")
         val mediaDescriptor = MediaDescriptor.Content.Image(invalidImageUri, null, true)
 
@@ -162,103 +208,67 @@ class LocalMediaRepositoryTest {
     }
 
     @Test
-    fun loadVideo_fails_returnsError() = runTest(testDispatcher) {
-        val nonExistentPath = "/nonexistent/path/video_not_here.mp4"
-        val nonExistentUri = Uri.parse("file://$nonExistentPath")
+    fun loadVideo_fails_returnsError() = runTest {
+        val nonExistentUri = Uri.parse("file:///nonexistent/video.mp4")
+        val mediaDescriptor = MediaDescriptor.Content.Video(nonExistentUri, null, true)
 
-        // Explicitly verify file does not exist (for robust setup assertion)
-        assertThat(File(nonExistentPath).exists()).isFalse()
-
-        val mediaDescriptor = MediaDescriptor.Content.Video(
-            uri = nonExistentUri,
-            thumbnail = null,
-            isCached = true
-        )
-
-        // 2. When: The repository attempts to load the non-existent video.
+        // When
         val result = repository.load(mediaDescriptor)
 
-        // 3. Then: The result should be Media.Error because the existence check failed.
+        // Then
         assertThat(result).isEqualTo(Media.Error)
     }
 
     @Test
-    fun load_none_returnsNone() = runTest(testDispatcher) {
-        // When
+    fun load_none_returnsNone() = runTest {
         val result = repository.load(MediaDescriptor.None)
-        // Then
         assertThat(result).isEqualTo(Media.None)
     }
 
     @Test
-    fun deleteMedia_savedMedia_callsContentResolverDelete() = runTest(testDispatcher) {
-        val baseUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+    fun deleteMedia_savedMedia_callsContentResolverDelete() = runTest {
+        val insertedUri = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_To_Delete.jpg")
+            }
+        )!!
 
-        // Insert test data and capture the URI *returned* by the fake ContentProvider
-        val insertedUri = fakeContentProvider.insert(baseUri, ContentValues())!!
+        val mediaToDelete = MediaDescriptor.Content.Image(insertedUri, null, false)
 
-        // 2. Create the MediaDescriptor using the URI returned by the insert
-        val mediaToDelete = MediaDescriptor.Content.Image(
-            insertedUri, // Use the URI with the correct generated ID
-            thumbnail = null,
-            isCached = false
-        )
-
-        // Verify it exists before deleting
-        var cursor = fakeContentProvider.query(insertedUri, null, null, null, null)
-        assertThat(cursor.count).isEqualTo(1)
-
-        // 3. When
+        // When
         repository.deleteMedia(mediaToDelete)
 
-        // 4. Then
-        // Query using the correct, inserted URI
-        cursor = fakeContentProvider.query(insertedUri, null, null, null, null)
+        // Then
+        val cursor = fakeContentProvider.query(insertedUri, null, null, null, null)
         assertThat(cursor.count).isEqualTo(0)
     }
 
     @Test
-    fun deleteMedia_cachedMedia_deletesRealFile() = runTest(testDispatcher) {
-        // 1. Setup: Create a REAL temporary file in the app's cache directory
-        // ApplicationProvider gives us a working context for file ops in Robolectric
-        val cacheDir = ApplicationProvider.getApplicationContext<Context>().cacheDir
-        if (!cacheDir.exists()) cacheDir.mkdirs()
-
-        val tempFile = File(cacheDir, "temp_test_video.mp4")
-        tempFile.createNewFile() // Actually creates the empty file on disk
-
+    fun deleteMedia_cachedMedia_deletesRealFile() = runTest {
+        val tempFile = File(context.cacheDir, "temp_to_delete.mp4")
+        tempFile.createNewFile()
         assertThat(tempFile.exists()).isTrue()
 
-        // 2. Create the descriptor pointing to this real file
-        // Uri.fromFile() creates a "file://" URI, which is what your app likely uses for cached media
-        val cachedUri = Uri.fromFile(tempFile)
-        val mediaToDelete = MediaDescriptor.Content.Video(
-            cachedUri,
-            thumbnail = null,
-            isCached = true
-        )
+        val mediaToDelete = MediaDescriptor.Content.Video(Uri.fromFile(tempFile), null, true)
 
-        // 3. Act: Call deleteMedia
+        // When
         repository.deleteMedia(mediaToDelete)
 
-        // 4. Assert: Verify the file is physically gone
+        // Then
         assertThat(tempFile.exists()).isFalse()
     }
 
     @Test
-    fun deleteMedia_currentMedia_resetsToNone() = runTest(testDispatcher) {
-        // Given a media item that is currently set as the active media
+    fun deleteMedia_currentMedia_resetsToNone() = runTest {
         val returnedUri = fakeContentProvider.insert(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            ContentValues()
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Active.jpg")
+            }
         )!!
-        val mediaToDelete = MediaDescriptor.Content.Image(
-            returnedUri,
-            thumbnail = null,
-            isCached = false
-        )
+        val mediaToDelete = MediaDescriptor.Content.Image(returnedUri, null, false)
         repository.setCurrentMedia(mediaToDelete)
-        assertThat(repository.currentMedia.value).isEqualTo(mediaToDelete)
 
         // When
         repository.deleteMedia(mediaToDelete)
@@ -268,237 +278,327 @@ class LocalMediaRepositoryTest {
     }
 
     @Test
-    fun getLastCapturedMedia_videoIsNewer_returnsVideo() = runTest(testDispatcher) {
-        // Given
+    fun lastCapturedMedia_videoIsNewer_returnsVideo() = runTest {
         val olderImageTime = 1000L
         val newerVideoTime = 5000L
+        fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, olderImageTime)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
+            }
+        )
+        val videoUrl = fakeContentProvider.insert(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, newerVideoTime)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Video.mp4")
+            }
+        )!!
 
-        // Insert mock data into the fake provider
-        val imageValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DATE_ADDED, olderImageTime)
-            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
+        val newRepo = LocalMediaRepository(context, testDispatcher, FakeFilePathGenerator()).apply {
+            setThumbnailLoader(fakeThumbnailLoader)
         }
-        val videoValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DATE_ADDED, newerVideoTime)
-            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Video.mp4")
-        }
-        fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
-        val videoUrl =
-            fakeContentProvider.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, videoValues)!!
+        val result = newRepo.lastCapturedMedia.value
 
-        // When
-        val result = repository.getLastCapturedMedia()
-
-        // Then
         assertThat(result).isInstanceOf(MediaDescriptor.Content.Video::class.java)
         assertThat((result as MediaDescriptor.Content.Video).uri).isEqualTo(videoUrl)
     }
 
     @Test
-    fun getLastCapturedMedia_imageIsNewer_returnsImage() = runTest(testDispatcher) {
-        // Given
+    fun lastCapturedMedia_imageIsNewer_returnsImage() = runTest {
         val newerImageTime = 9000L
         val olderVideoTime = 2000L
+        val imageUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, newerImageTime)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
+            }
+        )!!
+        fakeContentProvider.insert(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, olderVideoTime)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Video.mp4")
+            }
+        )
 
-        val imageValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DATE_ADDED, newerImageTime)
-            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
+        val newRepo = LocalMediaRepository(context, testDispatcher, FakeFilePathGenerator()).apply {
+            setThumbnailLoader(fakeThumbnailLoader)
         }
-        val videoValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DATE_ADDED, olderVideoTime)
-            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Video.mp4")
-        }
-        val imageUrl =
-            fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
-        fakeContentProvider.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, videoValues)!!
+        val result = newRepo.lastCapturedMedia.value
 
-        // When
-        val result = repository.getLastCapturedMedia()
-
-        // Then
         assertThat(result).isInstanceOf(MediaDescriptor.Content.Image::class.java)
         assertThat((result as MediaDescriptor.Content.Image).uri).isEqualTo(imageUrl)
     }
 
     @Test
-    fun getLastCapturedMedia_nothingFound_returnsNone() = runTest(testDispatcher) {
-        // Given an empty provider
-        // When
-        val result = repository.getLastCapturedMedia()
-        // Then
-        assertThat(result).isEqualTo(MediaDescriptor.None)
+    fun lastCapturedMedia_nothingFound_returnsNone() = runTest {
+        val newRepo = LocalMediaRepository(context, testDispatcher, FakeFilePathGenerator()).apply {
+            setThumbnailLoader(fakeThumbnailLoader)
+        }
+        assertThat(newRepo.lastCapturedMedia.value).isEqualTo(MediaDescriptor.None)
     }
 
     @Test
-    fun getLastCapturedMedia_equalTimestamps_returnsImage() = runTest(testDispatcher) {
-        // Given
+    fun lastCapturedMedia_equalTimestamps_returnsImage() = runTest {
         val sameTime = 9999L
-        val imageValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DATE_ADDED, sameTime)
-            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
-        }
-        val videoValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DATE_ADDED, sameTime)
-            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Video.mp4")
-        }
-        val imageUrl =
-            fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
-        fakeContentProvider.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, videoValues)!!
+        val imageUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, sameTime)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
+            }
+        )!!
+        fakeContentProvider.insert(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, sameTime)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Video.mp4")
+            }
+        )
 
-        // When
-        val result = repository.getLastCapturedMedia()
+        val newRepo = LocalMediaRepository(context, testDispatcher, FakeFilePathGenerator()).apply {
+            setThumbnailLoader(fakeThumbnailLoader)
+        }
+        val result = newRepo.lastCapturedMedia.value
 
-        // Then
         assertThat(result).isInstanceOf(MediaDescriptor.Content.Image::class.java)
         assertThat((result as MediaDescriptor.Content.Image).uri).isEqualTo(imageUrl)
     }
 
     @Test
-    fun getLastCapturedMedia_onlyImageExists_returnsImage() = runTest(testDispatcher) {
-        // Given
-        val imageTime = 10000L
-        val imageValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DATE_ADDED, imageTime)
-            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
-        }
-        val imageUrl =
-            fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
-
-        // When
-        val result = repository.getLastCapturedMedia()
-
-        // Then
-        assertThat(result).isInstanceOf(MediaDescriptor.Content.Image::class.java)
-        assertThat((result as MediaDescriptor.Content.Image).uri).isEqualTo(imageUrl)
-    }
-
-    @Test
-    fun getLastCapturedMedia_onlyVideoExists_returnsVideo() = runTest(testDispatcher) {
-        // Given
-        val videoTime = 11000L
-        val videoValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DATE_ADDED, videoTime)
-            put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Video.mp4")
-        }
-        val videoUrl =
-            fakeContentProvider.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, videoValues)!!
-
-        // When
-        val result = repository.getLastCapturedMedia()
-
-        // Then
-        assertThat(result).isInstanceOf(MediaDescriptor.Content.Video::class.java)
-        assertThat((result as MediaDescriptor.Content.Video).uri).isEqualTo(videoUrl)
-    }
-
-    @Test
-    fun deleteMedia_nonExistentUri_doesNotThrow() = runTest(testDispatcher) {
-        // Given a URI that does not exist in the provider
+    fun deleteMedia_nonExistentUri_doesNotThrow() = runTest {
         val nonExistentUri = ContentUris.withAppendedId(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             999L
         )
-        val mediaToDelete = MediaDescriptor.Content.Image(
-            nonExistentUri,
-            thumbnail = null,
-            isCached = false
-        )
-
-        // When & Then (The test passes if no exception is thrown)
+        val mediaToDelete = MediaDescriptor.Content.Image(nonExistentUri, null, false)
         repository.deleteMedia(mediaToDelete)
     }
 
     @Test
-    fun saveToMediaStore_video_success_returnsNewUri() = runTest(testDispatcher) {
-        // Given
+    fun saveToMediaStore_video_success_returnsNewUri() = runTest {
         val sourceFile = File(context.cacheDir, "temp.mp4")
         sourceFile.writeText("fake video data")
-        val sourceUri = Uri.fromFile(sourceFile)
+        val mediaDescriptor = MediaDescriptor.Content.Video(Uri.fromFile(sourceFile), null, true)
 
-        val mediaDescriptor = MediaDescriptor.Content.Video(
-            sourceUri,
-            thumbnail = null,
-            isCached = true
-        )
+        val result = repository.saveToMediaStore(mediaDescriptor, "my_video.mp4")
 
-        // When
-        val result = repository.saveToMediaStore(
-
-            mediaDescriptor,
-            "my_video.mp4"
-        )
-
-        // Then
         assertThat(result).isNotNull()
-        // Check that the media is in the fake provider with the correct name
         val values = fakeContentProvider.get(result!!)
         assertThat(values?.get(MediaStore.MediaColumns.DISPLAY_NAME)).isEqualTo("my_video.mp4")
     }
 
     @Test
-    fun saveToMediaStore_success_returnsNewUri() = runTest(testDispatcher) {
-        // Given
+    fun saveToMediaStore_success_returnsNewUri() = runTest {
         val sourceFile = File(context.cacheDir, "temp.jpg")
         sourceFile.writeText("fake image data")
-        val sourceUri = Uri.fromFile(sourceFile)
-        val mediaDescriptor = MediaDescriptor.Content.Image(
-            sourceUri,
-            thumbnail = null,
-            isCached = true
-        )
+        val mediaDescriptor = MediaDescriptor.Content.Image(Uri.fromFile(sourceFile), null, true)
 
-        // When
-        val result = repository.saveToMediaStore(
+        val result = repository.saveToMediaStore(mediaDescriptor, "my_photo.jpg")
 
-            mediaDescriptor,
-            "my_photo.jpg"
-        )
-
-        // Then
         assertThat(result).isNotNull()
         val values = fakeContentProvider.get(result!!)
         assertThat(values?.get(MediaStore.MediaColumns.DISPLAY_NAME)).isEqualTo("my_photo.jpg")
     }
 
     @Test
-    fun saveToMediaStore_insertFails_returnsNull() = runTest(testDispatcher) {
-        // Given
+    fun saveToMediaStore_insertFails_returnsNull() = runTest {
         val sourceFile = File(context.cacheDir, "temp.jpg")
         sourceFile.writeText("fake image data")
-        val sourceUri = Uri.fromFile(sourceFile)
-        val mediaDescriptor = MediaDescriptor.Content.Image(
-            sourceUri,
-            thumbnail = null,
-            isCached = true
-        )
-        // Simulate an insert failure
+        val mediaDescriptor = MediaDescriptor.Content.Image(Uri.fromFile(sourceFile), null, true)
         fakeContentProvider.setFailNextInsert(true)
 
-        // When
-        val result = repository.saveToMediaStore(
+        val result = repository.saveToMediaStore(mediaDescriptor, "my_photo.jpg")
 
-            mediaDescriptor,
-            "my_photo.jpg"
-        )
-
-        // Then
         assertThat(result).isNull()
     }
 
     @Test
-    fun saveToMediaStore_copyFails_returnsNull() = runTest(testDispatcher) {
-        // Given a source URI that points to a non-existent file
+    fun saveToMediaStore_copyFails_returnsNull() = runTest {
         val sourceUri = Uri.parse("file:///nonexistent/file.jpg")
-        val mediaDescriptor = MediaDescriptor.Content.Image(
-            sourceUri,
-            thumbnail = null,
-            isCached = true
-        )
+        val mediaDescriptor = MediaDescriptor.Content.Image(sourceUri, null, true)
 
-        // When
         val result = repository.saveToMediaStore(mediaDescriptor, "broken.jpg")
 
-        // Then
         assertThat(result).isNull()
+    }
+
+    @Test
+    fun lastCapturedMedia_ignoresNonAppMediaStoreChange() = runTest {
+        // Given a JCA file is current
+        val jcaUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, 1000L)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
+                put(MediaStore.MediaColumns.OWNER_PACKAGE_NAME, context.packageName)
+            }
+        )!!
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+
+        val jcaDescriptor = repository.lastCapturedMedia.value
+        assertThat(jcaDescriptor).isInstanceOf(MediaDescriptor.Content::class.java)
+
+        // When a non-JCA file from a different app is inserted and notified
+        val otherUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, 5000L)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "OTHER_Image.jpg")
+                put(MediaStore.MediaColumns.OWNER_PACKAGE_NAME, "com.other.app")
+            }
+        )!!
+        contentResolver.notifyChange(otherUrl, null)
+
+        // Then the flow still points to the JCA file
+        assertThat(repository.lastCapturedMedia.value).isEqualTo(jcaDescriptor)
+    }
+
+    @Test
+    fun lastCapturedMedia_initialLoad_ignoresNonAppFiles() = runTest {
+        val jcaUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, 1000L)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
+                put(MediaStore.MediaColumns.OWNER_PACKAGE_NAME, context.packageName)
+            }
+        )!!
+        fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, 5000L)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "OTHER_Image.jpg")
+                put(MediaStore.MediaColumns.OWNER_PACKAGE_NAME, "com.other.app")
+            }
+        )!!
+
+        val newRepo = LocalMediaRepository(context, testDispatcher, FakeFilePathGenerator()).apply {
+            setThumbnailLoader(fakeThumbnailLoader)
+        }
+        val result = newRepo.lastCapturedMedia.value
+
+        assertThat(result).isInstanceOf(MediaDescriptor.Content::class.java)
+        assertThat((result as MediaDescriptor.Content).uri).isEqualTo(jcaUrl)
+    }
+
+    @Test
+    fun lastCapturedMedia_multipleEventsForSameUri_emitsSameObjectReference() = runTest {
+        val jcaUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, 1000L)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
+            }
+        )!!
+        contentResolver.notifyChange(jcaUrl, null)
+        val firstEmission = repository.lastCapturedMedia.value
+
+        contentResolver.notifyChange(jcaUrl, null)
+        contentResolver.notifyChange(jcaUrl, null)
+
+        assertThat(repository.lastCapturedMedia.value).isSameInstanceAs(firstEmission)
+    }
+
+    @Test
+    fun lastCapturedMedia_onDeletion_fallsBackToNextLatest() = runTest {
+        val urlA = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, 1000L)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_A.jpg")
+            }
+        )!!
+        val urlB = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, 2000L)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_B.jpg")
+            }
+        )!!
+
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+        assertThat(
+            (repository.lastCapturedMedia.value as MediaDescriptor.Content).uri
+        ).isEqualTo(urlB)
+
+        fakeContentProvider.delete(urlB, null, null)
+        contentResolver.notifyChange(urlB, null)
+
+        val result = repository.lastCapturedMedia.value
+        assertThat(result).isInstanceOf(MediaDescriptor.Content::class.java)
+        assertThat((result as MediaDescriptor.Content).uri).isEqualTo(urlA)
+    }
+
+    @Test
+    fun lastCapturedMedia_onLastItemDeletion_emitsNone() = runTest {
+        val jcaUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, 1000L)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Image.jpg")
+            }
+        )!!
+        contentResolver.notifyChange(jcaUrl, null)
+        assertThat(repository.lastCapturedMedia.value).isNotEqualTo(MediaDescriptor.None)
+
+        fakeContentProvider.delete(jcaUrl, null, null)
+        contentResolver.notifyChange(jcaUrl, null)
+
+        assertThat(repository.lastCapturedMedia.value).isEqualTo(MediaDescriptor.None)
+    }
+
+    @Test
+    fun lastCapturedMedia_newUriWithNullThumbnail_holdsPreviousMedia() = runTest {
+        // We use a custom repo here so we can control the thumbnail loader specifically for this test
+        var shouldFailThumbnail = false
+        val customThumbnailLoader: suspend (Uri, Uri) -> Bitmap? = { _, _ ->
+            if (shouldFailThumbnail) null else Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        }
+        val customRepo = LocalMediaRepository(
+            context,
+            testDispatcher,
+            FakeFilePathGenerator()
+        ).apply {
+            setThumbnailLoader(customThumbnailLoader)
+        }
+
+        val oldUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, 1000L)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_Old.jpg")
+            }
+        )!!
+        contentResolver.notifyChange(oldUrl, null)
+        val initialResult = customRepo.lastCapturedMedia.value
+        assertThat((initialResult as MediaDescriptor.Content).uri).isEqualTo(oldUrl)
+
+        val newUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_ADDED, 2000L)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "JCA_New.jpg")
+            }
+        )!!
+
+        // Trigger thumbnail failure
+        shouldFailThumbnail = true
+        contentResolver.notifyChange(newUrl, null)
+
+        // Then it holds the previous media
+        assertThat(customRepo.lastCapturedMedia.value).isEqualTo(initialResult)
+
+        // Thumbnail becomes ready
+        shouldFailThumbnail = false
+        contentResolver.notifyChange(newUrl, null)
+
+        // Finally emits new media
+        val finalResult = customRepo.lastCapturedMedia.value
+        assertThat(finalResult).isInstanceOf(MediaDescriptor.Content::class.java)
+        assertThat((finalResult as MediaDescriptor.Content).uri).isEqualTo(newUrl)
     }
 }

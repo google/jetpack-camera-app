@@ -152,6 +152,7 @@ dependencies {
 
     // Access settings & model data
     implementation(project(":data:settings"))
+    implementation(project(":data:media"))
     implementation(project(":core:model"))
 
     // Camera Preview

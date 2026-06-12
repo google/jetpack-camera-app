@@ -45,12 +45,26 @@ import java.io.OutputStream
  */
 class FakeContentProvider : ContentProvider() {
 
-    private val mediaStore: MutableMap<Uri, ContentValues> = mutableMapOf()
+    private val mediaStore: MutableMap<String, ContentValues> = mutableMapOf()
+    private val thumbnailFailures = mutableSetOf<String>()
     private var nextId = 1L
     private var failNextInsert = false
 
     fun setFailNextInsert(fail: Boolean) {
         failNextInsert = fail
+    }
+
+    /**
+     * Toggles whether thumbnail generation (via openFile) should fail for a specific URI.
+     */
+    fun setThumbnailFail(uri: Uri, fail: Boolean) {
+        if (fail) {
+            thumbnailFailures.add(
+                uri.toString()
+            )
+        } else {
+            thumbnailFailures.remove(uri.toString())
+        }
     }
 
     override fun onCreate(): Boolean {
@@ -66,43 +80,74 @@ class FakeContentProvider : ContentProvider() {
     ): Cursor {
         val resolvedProjection = projection ?: arrayOf()
         val cursor = MatrixCursor(resolvedProjection)
+        val uriString = uri.toString()
 
-        // Case 1: Direct URI lookup (e.g., content://media/external/images/media/123)
-        if (mediaStore.containsKey(uri)) {
-            mediaStore[uri]?.let { values ->
+        // Case 1: Direct URI lookup
+        if (mediaStore.containsKey(uriString)) {
+            mediaStore[uriString]?.let { values ->
                 cursor.addRow(createRow(resolvedProjection, values, uri))
             }
             return cursor
         }
 
-        // Case 2: Collection URI lookup (e.g., content://media/external/images/media)
-        val isImageQuery = uri == MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        val isVideoQuery = uri == MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        // Case 2: Collection URI lookup
+        val segments = uri.pathSegments
+        val isImageCollection = segments.contains("images") && segments.last() == "media"
+        val isVideoCollection = segments.contains("video") && segments.last() == "media"
 
-        if (isImageQuery || isVideoQuery) {
-            val relevantMediaStore = mediaStore.entries.filter {
-                val keyString = it.key.toString()
-                if (isImageQuery) {
-                    keyString.contains("images")
+        if (isImageCollection || isVideoCollection) {
+            var filteredMedia = mediaStore.entries.filter {
+                val keyUri = Uri.parse(it.key)
+                if (isImageCollection) {
+                    keyUri.pathSegments.contains("images")
                 } else {
-                    keyString.contains("video")
+                    keyUri.pathSegments.contains("video")
                 }
             }
 
-            val sortedMedia = relevantMediaStore
-                .sortedByDescending { it.value.getAsLong(MediaStore.MediaColumns.DATE_ADDED) }
-
-            for ((itemUri, values) in sortedMedia) {
-                cursor.addRow(createRow(resolvedProjection, values, itemUri))
+            // Simple support for DISPLAY_NAME LIKE ?
+            if (selection != null && selection.contains(
+                    MediaStore.MediaColumns.DISPLAY_NAME
+                ) && selectionArgs != null
+            ) {
+                val pattern = selectionArgs[0].replace("%", ".*").replace("_", ".")
+                val regex = Regex(pattern)
+                filteredMedia = filteredMedia.filter {
+                    val name = it.value.getAsString(MediaStore.MediaColumns.DISPLAY_NAME) ?: ""
+                    regex.matches(name)
+                }
             }
+
+            val sortedMedia = filteredMedia
+                .sortedByDescending {
+                    it.value.getAsLong(MediaStore.MediaColumns.DATE_ADDED) ?: 0L
+                }
+
+            for ((itemUriString, values) in sortedMedia) {
+                cursor.addRow(createRow(resolvedProjection, values, Uri.parse(itemUriString)))
+            }
+            return cursor
         }
+
+        // If it's a specific URI that wasn't found in Case 1, return empty cursor
         return cursor
     }
 
     private fun createRow(projection: Array<String>, values: ContentValues, uri: Uri): Array<Any?> {
+        val packageName = context?.packageName
         return projection.map { proj ->
             when (proj) {
                 MediaStore.MediaColumns._ID -> uri.lastPathSegment?.toLong()
+                MediaStore.MediaColumns.OWNER_PACKAGE_NAME -> {
+                    values.getAsString(
+                        proj
+                    ) ?: if (values.containsKey(MediaStore.MediaColumns.DISPLAY_NAME)) {
+                        val name = values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME)
+                        if (name?.startsWith("JCA") == true) packageName else "com.other.app"
+                    } else {
+                        packageName
+                    }
+                }
                 else -> values.get(proj)
             }
         }.toTypedArray()
@@ -119,13 +164,35 @@ class FakeContentProvider : ContentProvider() {
         }
         if (values == null) return null
         val newUri = Uri.withAppendedPath(uri, nextId.toString())
-        mediaStore[newUri] = values
+        mediaStore[newUri.toString()] = values
+
+        // Proactively create the file and write a dummy bitmap so loadThumbnail succeeds
+        context?.let { ctx ->
+            val file = File(ctx.cacheDir, newUri.lastPathSegment ?: "tempfile")
+            if (!file.exists() || file.length() == 0L) {
+                file.createNewFile()
+                val bitmap = android.graphics.Bitmap.createBitmap(
+                    1,
+                    1,
+                    android.graphics.Bitmap.Config.ARGB_8888
+                )
+                file.outputStream().use { out ->
+                    bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                }
+            }
+        }
+
         nextId++
         return newUri
     }
 
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<String>?): Int {
-        return if (mediaStore.remove(uri) != null) 1 else 0
+        val uriString = uri.toString()
+        context?.let { ctx ->
+            val file = File(ctx.cacheDir, uri.lastPathSegment ?: "tempfile")
+            if (file.exists()) file.delete()
+        }
+        return if (mediaStore.remove(uriString) != null) 1 else 0
     }
 
     override fun update(
@@ -134,24 +201,49 @@ class FakeContentProvider : ContentProvider() {
         selection: String?,
         selectionArgs: Array<String>?
     ): Int {
-        if (mediaStore.containsKey(uri) && values != null) {
-            mediaStore[uri]?.putAll(values)
+        val uriString = uri.toString()
+        if (mediaStore.containsKey(uriString) && values != null) {
+            mediaStore[uriString]?.putAll(values)
             return 1
         }
         return 0
     }
 
     fun get(uri: Uri): ContentValues? {
-        return mediaStore[uri]
+        return mediaStore[uri.toString()]
+    }
+
+    override fun openTypedAssetFile(
+        uri: Uri,
+        mimeTypeFilter: String,
+        opts: android.os.Bundle?,
+        signal: android.os.CancellationSignal?
+    ): android.content.res.AssetFileDescriptor? {
+        val pfd = openFile(uri, "r")
+        val file = File(context?.cacheDir, uri.lastPathSegment ?: "tempfile")
+        return pfd?.let { android.content.res.AssetFileDescriptor(it, 0, file.length()) }
     }
 
     override fun openFile(uri: Uri, mode: String): android.os.ParcelFileDescriptor? {
         val context = context ?: return null
         val file = File(context.cacheDir, uri.lastPathSegment ?: "tempfile")
         try {
+            if (thumbnailFailures.contains(uri.toString())) return null
+
             if (!file.exists()) {
                 file.createNewFile()
+                if (mode == "r") {
+                    val bitmap = android.graphics.Bitmap.createBitmap(
+                        1,
+                        1,
+                        android.graphics.Bitmap.Config.ARGB_8888
+                    )
+                    file.outputStream().use { out ->
+                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                    }
+                }
             }
+
             val accessMode = android.os.ParcelFileDescriptor.parseMode(mode)
             return android.os.ParcelFileDescriptor.open(file, accessMode)
         } catch (e: FileNotFoundException) {
