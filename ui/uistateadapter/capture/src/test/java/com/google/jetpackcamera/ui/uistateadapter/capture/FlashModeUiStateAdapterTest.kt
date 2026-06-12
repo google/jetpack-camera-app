@@ -17,13 +17,13 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
-import com.google.jetpackcamera.model.DynamicRange
-import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.ui.components.capture.DisabledReason
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
@@ -287,7 +287,9 @@ class FlashModeUiStateAdapterTest {
         // Then LLB is disabled because of HDR
         assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
         val availableUiState = flashModeUiState as FlashModeUiState.Available
-        val llbState = availableUiState.availableFlashModes.find { it.value == FlashMode.LOW_LIGHT_BOOST }
+        val llbState = availableUiState.availableFlashModes.find {
+            it.value == FlashMode.LOW_LIGHT_BOOST
+        }
         assertThat(llbState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
         val disabledLlb = llbState as SingleSelectableUiState.Disabled
         assertThat(disabledLlb.disabledReason).isEqualTo(DisabledReason.LLB_DISABLED_BY_HDR)
@@ -315,7 +317,8 @@ class FlashModeUiStateAdapterTest {
         // Then LLB is disabled because of HDR
         assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
         val availableUiState = flashModeUiState as FlashModeUiState.Available
-        val llbState = availableUiState.availableFlashModes.find { it.value == FlashMode.LOW_LIGHT_BOOST }
+        val llbState =
+            availableUiState.availableFlashModes.find { it.value == FlashMode.LOW_LIGHT_BOOST }
         assertThat(llbState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
         val disabledLlb = llbState as SingleSelectableUiState.Disabled
         assertThat(disabledLlb.disabledReason).isEqualTo(DisabledReason.LLB_DISABLED_BY_HDR)

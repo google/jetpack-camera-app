@@ -67,10 +67,11 @@ fun HdrUiState.Companion.from(
 
     return when (activeCaptureMode) {
         CaptureMode.IMAGE_ONLY -> {
-            val deviceSupportsHdrImage = systemConstraints.perLensConstraints.values.any { constraints ->
-                constraints.supportedImageFormatsMap[cameraAppSettings.streamConfig]
-                    ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-            }
+            val deviceSupportsHdrImage =
+                systemConstraints.perLensConstraints.values.any { constraints ->
+                    constraints.supportedImageFormatsMap[cameraAppSettings.streamConfig]
+                        ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
+                }
 
             if (deviceSupportsHdrImage) {
                 val supportsHdrImage = cameraConstraints
@@ -89,9 +90,10 @@ fun HdrUiState.Companion.from(
         }
 
         CaptureMode.VIDEO_ONLY -> {
-            val deviceSupportsHdrVideo = systemConstraints.perLensConstraints.values.any { constraints ->
-                constraints.supportedDynamicRanges.contains(DynamicRange.HLG10)
-            }
+            val deviceSupportsHdrVideo =
+                systemConstraints.perLensConstraints.values.any { constraints ->
+                    constraints.supportedDynamicRanges.contains(DynamicRange.HLG10)
+                }
 
             if (deviceSupportsHdrVideo) {
                 val supportsHdrVideo =

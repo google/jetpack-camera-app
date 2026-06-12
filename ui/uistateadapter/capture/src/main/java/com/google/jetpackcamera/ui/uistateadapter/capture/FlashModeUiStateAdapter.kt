@@ -20,7 +20,6 @@ import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
-import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -30,6 +29,7 @@ import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState.Available
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState.Unavailable
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 // Assuming Utils.getSelectableListFromValues is no longer needed with the new logic
 // import com.google.jetpackcamera.ui.uistateadapter.Utils
 

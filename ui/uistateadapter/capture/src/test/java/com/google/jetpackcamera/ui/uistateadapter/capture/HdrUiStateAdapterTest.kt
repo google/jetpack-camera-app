@@ -263,7 +263,7 @@ internal class HdrUiStateAdapterTest {
     }
 
     @Test
-    fun from_imageOnlyMode_hdrNotSupportedOnCurrentLens_butSupportedOnOtherLens_returnsAvailableWithIsSupportedFalse() {
+    fun from_imageOnlyMode_hdrUnsupportedOnCurrentLensOnly_returnsDisabled() {
         // Given in IMAGE_ONLY capture mode
         // Current lens (BACK) does NOT support HDR, but FRONT lens DOES support HDR
         val appSettings = defaultCameraAppSettings.copy(
@@ -300,7 +300,7 @@ internal class HdrUiStateAdapterTest {
     }
 
     @Test
-    fun from_videoOnlyMode_hdrNotSupportedOnCurrentLens_butSupportedOnOtherLens_returnsAvailableWithIsSupportedFalse() {
+    fun from_videoOnlyMode_hdrUnsupportedOnCurrentLensOnly_returnsDisabled() {
         // Given in VIDEO_ONLY capture mode
         // Current lens (BACK) does NOT support HDR, but FRONT lens DOES support HDR
         val appSettings = defaultCameraAppSettings.copy(
