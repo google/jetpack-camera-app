@@ -135,7 +135,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                     is Success -> {
-                        // TODO(kimblebee@): add app setting to enable/disable dynamic color
                         JetpackCameraTheme(
                             darkTheme = isInDarkMode(uiState = uiState),
                             dynamicColor = false
