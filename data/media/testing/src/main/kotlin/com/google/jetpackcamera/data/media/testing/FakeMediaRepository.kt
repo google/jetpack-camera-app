@@ -21,15 +21,9 @@ import androidx.core.net.toUri
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
 class FakeMediaRepository : MediaRepository {
@@ -38,18 +32,6 @@ class FakeMediaRepository : MediaRepository {
 
     private val _lastCapturedMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
     override val lastCapturedMedia: StateFlow<MediaDescriptor> = _lastCapturedMedia.asStateFlow()
-        .filter {
-            when (it) {
-                is MediaDescriptor.None -> true
-                is MediaDescriptor.Content -> it.thumbnail != null
-            }
-        }
-        .distinctUntilChanged()
-        .stateIn(
-            scope = CoroutineScope(Dispatchers.Main),
-            started = SharingStarted.Eagerly,
-            initialValue = MediaDescriptor.None
-        )
 
     var loadHandler: (MediaDescriptor) -> Media = { mediaDescriptor ->
         when (mediaDescriptor) {

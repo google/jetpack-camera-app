@@ -51,6 +51,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 private const val TAG = "LocalMediaRepository"
@@ -65,6 +67,10 @@ class LocalMediaRepository
 ) : MediaRepository {
     private val repositoryScope = CoroutineScope(iODispatcher + SupervisorJob())
     private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
+
+    private val cacheMutex = Mutex()
+    private var cachedUri: Uri? = null
+    private var cachedMediaDescriptor: MediaDescriptor? = null
 
     private var thumbnailLoader: suspend (Uri, Uri) -> Bitmap? = { uri, collectionUri ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -104,29 +110,32 @@ class LocalMediaRepository
     override val lastCapturedMedia: StateFlow<MediaDescriptor> =
         mediaStoreChangesFlow(context.contentResolver)
             .mapLatest { changedUri ->
-                val targetUri = when {
-                    changedUri == null || isCollectionUri(changedUri) -> findLatestAppSpecificUri()
-                    isAppSpecificUri(changedUri) -> changedUri
-                    else -> null
-                }
+                cacheMutex.withLock {
+                    val targetUri = when {
+                        changedUri == null || isCollectionUri(changedUri) ->
+                            findLatestAppSpecificUri()
+                        isAppSpecificUri(changedUri) -> changedUri
+                        else -> null
+                    }
 
-                if (targetUri != null) {
-                    getCapturedMedia(targetUri)
-                } else {
-                    val currentCachedUri = cachedUri
-                    if (currentCachedUri != null && !exists(currentCachedUri)) {
-                        // The current media was deleted. Find the next most recent one.
-                        val fallbackUri = findLatestAppSpecificUri()
-                        if (fallbackUri != null) {
-                            getCapturedMedia(fallbackUri)
-                        } else {
-                            cachedUri = null
-                            cachedMediaDescriptor = null
-                            MediaDescriptor.None
-                        }
+                    if (targetUri != null) {
+                        getCapturedMediaInternal(targetUri)
                     } else {
-                        // Something else changed, but our current media is still valid.
-                        cachedMediaDescriptor ?: MediaDescriptor.None
+                        val currentCachedUri = cachedUri
+                        if (currentCachedUri != null && !exists(currentCachedUri)) {
+                            // The current media was deleted. Find the next most recent one.
+                            val fallbackUri = findLatestAppSpecificUri()
+                            if (fallbackUri != null) {
+                                getCapturedMediaInternal(fallbackUri)
+                            } else {
+                                cachedUri = null
+                                cachedMediaDescriptor = null
+                                MediaDescriptor.None
+                            }
+                        } else {
+                            // Something else changed, but our current media is still valid.
+                            cachedMediaDescriptor ?: MediaDescriptor.None
+                        }
                     }
                 }
             }
@@ -211,16 +220,20 @@ class LocalMediaRepository
         return@withContext false
     }
 
-    private var cachedUri: Uri? = null
-    private var cachedMediaDescriptor: MediaDescriptor? = null
-
     /**
      * Returns the [MediaDescriptor] for the given [Uri] from the MediaStore.
      *
      * @param uri The [Uri] of the media to retrieve.
      * @return The [MediaDescriptor] of the media, or [MediaDescriptor.None] if no media is found.
      */
-    private suspend fun getCapturedMedia(uri: Uri): MediaDescriptor {
+    private suspend fun getCapturedMedia(uri: Uri): MediaDescriptor = cacheMutex.withLock {
+        getCapturedMediaInternal(uri)
+    }
+
+    /**
+     * Internal implementation of getCapturedMedia that assumes the [cacheMutex] is already held.
+     */
+    private suspend fun getCapturedMediaInternal(uri: Uri): MediaDescriptor {
         val cachedDesc = cachedMediaDescriptor
         if (uri == cachedUri &&
             cachedDesc is MediaDescriptor.Content &&
@@ -270,7 +283,7 @@ class LocalMediaRepository
                                 cursor.getColumnIndex(MediaStore.MediaColumns.OWNER_PACKAGE_NAME)
                             if (ownerColumn != -1 && !cursor.isNull(ownerColumn)) {
                                 val owner = cursor.getString(ownerColumn)
-                                if (owner == context.packageName) return@withContext true
+                                return@withContext owner == context.packageName
                             }
                         }
                         val nameColumn =
