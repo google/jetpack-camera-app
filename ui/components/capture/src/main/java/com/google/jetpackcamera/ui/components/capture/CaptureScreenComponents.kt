@@ -26,6 +26,8 @@ import androidx.camera.viewfinder.compose.CoordinateTransformer
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
@@ -35,6 +37,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -214,13 +217,14 @@ fun AmplitudeToggleButton(
     val currentUiState = rememberUpdatedState(audioUiState)
 
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
+    val disableAnimations = LocalDisableAnimations.current
     val animatedAudioAlpha by animateFloatAsState(
-        targetValue = EaseOutExpo.transform(
-            (currentUiState.value.amplitude.toFloat()).coerceIn(
-                0f,
-                1f
-            )
-        ),
+        targetValue = if (disableAnimations) {
+            1f
+        } else {
+            EaseOutExpo.transform((currentUiState.value.amplitude.toFloat()).coerceIn(0f, 1f))
+        },
+        animationSpec = if (disableAnimations) snap() else tween(),
         label = "AudioAnimation"
     )
     Box(contentAlignment = Alignment.Center) {
@@ -499,12 +503,17 @@ fun PreviewDisplay(
             val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
             var imageVisible by remember { mutableStateOf(true) }
 
+            val disableAnimations = LocalDisableAnimations.current
             val imageAlpha: Float by animateFloatAsState(
                 targetValue = if (imageVisible) 1f else 0f,
-                animationSpec = tween(
-                    durationMillis = (BLINK_TIME / 2).toInt(),
-                    easing = LinearEasing
-                ),
+                animationSpec = if (disableAnimations) {
+                    snap()
+                } else {
+                    tween(
+                        durationMillis = (BLINK_TIME / 2).toInt(),
+                        easing = LinearEasing
+                    )
+                },
                 label = ""
             )
 
@@ -799,19 +808,24 @@ fun FlipCameraButton(
         var rotation by remember { mutableFloatStateOf(0f) }
         val animatedRotation = remember { Animatable(0f) }
         var initialLaunch by remember { mutableStateOf(false) }
+        val disableAnimations = LocalDisableAnimations.current
 
         // spin animate whenever lensfacing changes
         LaunchedEffect(flipLensUiState.selectedLensFacing) {
             if (initialLaunch) {
                 // full 360
                 rotation -= 180f
-                animatedRotation.animateTo(
-                    targetValue = rotation,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessVeryLow
+                if (disableAnimations) {
+                    animatedRotation.snapTo(rotation)
+                } else {
+                    animatedRotation.animateTo(
+                        targetValue = rotation,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessVeryLow
+                        )
                     )
-                )
+                }
             }
             // dont rotate on the initial launch
             else {
@@ -847,16 +861,22 @@ private fun FocusMeteringIndicator(
     coordinateTransformer: CoordinateTransformer
 ) {
     if (focusMeteringUiState is FocusMeteringUiState.Specified) {
-        val transition = rememberInfiniteTransition(label = "FocusPulse")
-        val alpha by transition.animateFloat(
-            initialValue = 1f,
-            targetValue = 0.5f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(500),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "FocusPulseAlpha"
-        )
+        val disableAnimations = LocalDisableAnimations.current
+        val alpha = if (disableAnimations) {
+            1f
+        } else {
+            val transition = rememberInfiniteTransition(label = "FocusPulse")
+            val a by transition.animateFloat(
+                initialValue = 1f,
+                targetValue = 0.5f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(500),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "FocusPulseAlpha"
+            )
+            a
+        }
 
         // The indicator for SUCCESS/FAILURE is shown for a short duration
         var showResultIndicator by remember { mutableStateOf(false) }
@@ -885,17 +905,27 @@ private fun FocusMeteringIndicator(
                 }
             }
         val showFocusMeteringIndicator = status == FocusMeteringUiState.Status.RUNNING
+        val isVisible = showFocusMeteringIndicator || showResultIndicator
         AnimatedVisibility(
-            visible = showFocusMeteringIndicator || showResultIndicator,
-            enter = fadeIn() + scaleIn(initialScale = 1.5f),
-            exit = fadeOut() + when (focusMeteringUiState.status) {
-                FocusMeteringUiState.Status.SUCCESS -> scaleOut(targetScale = 0.5f)
-                FocusMeteringUiState.Status.FAILURE -> scaleOut(targetScale = 1.5f)
-                else -> fadeOut()
+            visible = isVisible,
+            enter = if (disableAnimations) {
+                EnterTransition.None
+            } else {
+                fadeIn() + scaleIn(
+                    initialScale = 1.5f
+                )
+            },
+            exit = if (disableAnimations) {
+                ExitTransition.None
+            } else {
+                fadeOut() + when (focusMeteringUiState.status) {
+                    FocusMeteringUiState.Status.SUCCESS -> scaleOut(targetScale = 0.5f)
+                    FocusMeteringUiState.Status.FAILURE -> scaleOut(targetScale = 1.5f)
+                    else -> fadeOut()
+                }
             },
             modifier = Modifier
                 .offset { tapCoords.round() }
-                // Offset the indicator to be centered on the tap coordinates
                 .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
         ) {
             Box(
