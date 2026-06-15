@@ -25,6 +25,7 @@ import "com/google/jetpackcamera/model/proto/lens_facing.proto";
 import "com/google/jetpackcamera/model/proto/stabilization_mode.proto";
 import "com/google/jetpackcamera/model/proto/video_quality.proto";
 import "com/google/jetpackcamera/model/proto/low_light_boost_priority.proto";
+import "com/google/jetpackcamera/model/proto/concurrent_camera_mode.proto";
 
 
 option java_package = "com.google.jetpackcamera.settings";
@@ -36,7 +37,7 @@ message JcaSettings {
   FlashMode flash_mode_status = 2;
   int32 target_frame_rate = 3;
   AspectRatio aspect_ratio_status = 4;
-  string selected_camera_effect = 15;
+  string selected_camera_effect = 16;
   StabilizationMode stabilization_mode = 6;
   DynamicRange dynamic_range_status = 8;
   ImageOutputFormat image_format_status = 10;
@@ -44,6 +45,7 @@ message JcaSettings {
   VideoQuality video_quality = 12;
   bool audio_enabled_status = 13;
   LowLightBoostPriority low_light_boost_priority = 14;
+  ConcurrentCameraMode concurrent_camera_mode_status = 15;
 
   // Non-camera app settings
   DarkMode dark_mode_status = 9;

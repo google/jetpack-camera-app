@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings.testing
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -96,5 +97,10 @@ object FakeSettingsRepository : SettingsRepository {
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
         currentCameraSettings =
             currentCameraSettings.copy(audioEnabled = isAudioEnabled)
+    }
+
+    override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+        currentCameraSettings =
+            currentCameraSettings.copy(concurrentCameraMode = concurrentCameraMode)
     }
 }

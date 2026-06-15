@@ -151,7 +151,7 @@ dependencies {
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:uistateadapter"))
     implementation(project(":ui:uistateadapter:capture"))
-
+    implementation(project(":ui:debug"))
 }
 
 // Allow references to generated code
