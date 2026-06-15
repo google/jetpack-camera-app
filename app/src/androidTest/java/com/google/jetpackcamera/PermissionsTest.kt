@@ -48,6 +48,7 @@ import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
 import com.google.jetpackcamera.utils.waitForNodeWithTagToDisappear
 import com.google.jetpackcamera.utils.waitForNodeWithText
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -260,7 +261,7 @@ class PermissionsTest {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                 .assertExists()
                 .performClick()
-            composeTestRule.waitForNodeWithText(
+            composeTestRule.waitForSnackbarWithText(
                 StateR.string.toast_image_capture_success,
                 timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS
             )
@@ -298,7 +299,7 @@ class PermissionsTest {
             // check for image capture failure
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
 
-            composeTestRule.waitForNodeWithText(
+            composeTestRule.waitForSnackbarWithText(
                 StateR.string.toast_capture_failure,
                 timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS
             )

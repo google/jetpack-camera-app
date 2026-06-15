@@ -48,7 +48,7 @@ import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.wait
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
-import com.google.jetpackcamera.utils.waitForNodeWithText
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -165,7 +165,7 @@ class PostCaptureTest {
             composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
 
             // Wait for image save success message
-            composeTestRule.waitForNodeWithText(
+            composeTestRule.waitForSnackbarWithText(
                 PostCaptureR.string.snackbar_save_image_success,
                 SAVE_MEDIA_TIMEOUT_MILLIS
             )
@@ -193,7 +193,7 @@ class PostCaptureTest {
             composeTestRule.onNodeWithTag(BUTTON_POST_CAPTURE_SAVE).performClick()
 
             // Wait for video save success message
-            composeTestRule.waitForNodeWithText(
+            composeTestRule.waitForSnackbarWithText(
                 PostCaptureR.string.snackbar_save_video_success,
                 SAVE_MEDIA_TIMEOUT_MILLIS
             )
@@ -209,7 +209,7 @@ class PostCaptureTest {
         composeTestRule.waitForCaptureButton()
         assertThat(newImageMediaExists()).isFalse()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
-        composeTestRule.waitForNodeWithText(
+        composeTestRule.waitForSnackbarWithText(
             StateR.string.toast_image_capture_success,
             IMAGE_CAPTURE_TIMEOUT_MILLIS
         )
@@ -229,7 +229,7 @@ class PostCaptureTest {
         assertThat(newVideoMediaExists()).isFalse()
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
-        composeTestRule.waitForNodeWithText(
+        composeTestRule.waitForSnackbarWithText(
             StateR.string.toast_video_capture_success,
             VIDEO_CAPTURE_TIMEOUT_MILLIS
         )
@@ -247,7 +247,7 @@ class PostCaptureTest {
         composeTestRule.waitForCaptureButton()
         assertThat(newImageMediaExists()).isFalse()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
-        composeTestRule.waitForNodeWithText(
+        composeTestRule.waitForSnackbarWithText(
             StateR.string.toast_image_capture_success,
             IMAGE_CAPTURE_TIMEOUT_MILLIS
         )
@@ -256,7 +256,7 @@ class PostCaptureTest {
         val newTimestamp = System.currentTimeMillis()
 
         enterImageWellAndSave(VIEWER_POST_CAPTURE_IMAGE)
-        composeTestRule.waitForNodeWithText(
+        composeTestRule.waitForSnackbarWithText(
             PostCaptureR.string.snackbar_save_image_success,
             SAVE_MEDIA_TIMEOUT_MILLIS
         )
@@ -272,7 +272,7 @@ class PostCaptureTest {
         assertThat(newVideoMediaExists()).isFalse()
         composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
 
-        composeTestRule.waitForNodeWithText(
+        composeTestRule.waitForSnackbarWithText(
             StateR.string.toast_video_capture_success,
             VIDEO_CAPTURE_TIMEOUT_MILLIS
         )
@@ -280,7 +280,7 @@ class PostCaptureTest {
         // enter postcapture via imagewell and save recent capture
         val newTimestamp = System.currentTimeMillis()
         enterImageWellAndSave(VIEWER_POST_CAPTURE_VIDEO)
-        composeTestRule.waitForNodeWithText(
+        composeTestRule.waitForSnackbarWithText(
             PostCaptureR.string.snackbar_save_video_success,
             SAVE_MEDIA_TIMEOUT_MILLIS
         )

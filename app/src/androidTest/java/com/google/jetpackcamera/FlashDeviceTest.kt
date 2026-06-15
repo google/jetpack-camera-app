@@ -45,7 +45,7 @@ import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.setFlashMode
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
-import com.google.jetpackcamera.utils.waitForNodeWithText
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -131,7 +131,7 @@ internal class FlashDeviceTest {
             .assertExists()
             .performClick()
 
-        composeTestRule.waitForNodeWithText(
+        composeTestRule.waitForSnackbarWithText(
             StateR.string.toast_image_capture_success,
             IMAGE_CAPTURE_TIMEOUT_MILLIS
         )
@@ -166,7 +166,7 @@ internal class FlashDeviceTest {
                 SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS
             )
 
-            composeTestRule.waitForNodeWithText(
+            composeTestRule.waitForSnackbarWithText(
                 StateR.string.toast_image_capture_success,
                 IMAGE_CAPTURE_TIMEOUT_MILLIS
             )
@@ -198,7 +198,7 @@ internal class FlashDeviceTest {
             composeTestRule.setFlashMode(FlashMode.ON)
 
             composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
-            composeTestRule.waitForNodeWithText(
+            composeTestRule.waitForSnackbarWithText(
                 StateR.string.toast_video_capture_success,
                 VIDEO_CAPTURE_TIMEOUT_MILLIS
             )

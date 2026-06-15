@@ -59,7 +59,7 @@ import com.google.jetpackcamera.utils.setConcurrentCameraModeInSettings
 import com.google.jetpackcamera.utils.stateDescriptionMatches
 import com.google.jetpackcamera.utils.visitSettingsScreen
 import com.google.jetpackcamera.utils.waitForCaptureButton
-import com.google.jetpackcamera.utils.waitForNodeWithText
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -227,7 +227,7 @@ class ConcurrentCameraTest {
 
             longClickForVideoRecordingCheckingElapsedTime()
 
-            waitForNodeWithText(
+            waitForSnackbarWithText(
                 StateR.string.toast_video_capture_success,
                 VIDEO_CAPTURE_TIMEOUT_MILLIS
             )

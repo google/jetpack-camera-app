@@ -56,7 +56,7 @@ import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenari
 import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
-import com.google.jetpackcamera.utils.waitForNodeWithText
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import org.junit.Rule
@@ -169,7 +169,7 @@ internal class ImageCaptureDeviceTest {
                     .assertExists()
                     .performClick()
 
-                composeTestRule.waitForNodeWithText(
+                composeTestRule.waitForSnackbarWithText(
                     StateR.string.toast_capture_failure,
                     IMAGE_CAPTURE_TIMEOUT_MILLIS
                 )
@@ -352,7 +352,7 @@ internal class ImageCaptureDeviceTest {
     private fun verifyImageCaptureSuccess() {
         when (cacheParam) {
             CacheParam.NO_CACHE -> {
-                composeTestRule.waitForNodeWithText(
+                composeTestRule.waitForSnackbarWithText(
                     StateR.string.toast_image_capture_success,
                     IMAGE_CAPTURE_TIMEOUT_MILLIS
                 )

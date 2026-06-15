@@ -47,7 +47,7 @@ import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
 import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
-import com.google.jetpackcamera.utils.waitForNodeWithText
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import org.junit.Rule
@@ -158,7 +158,7 @@ internal class VideoRecordingDeviceTest {
                 // Wait for the capture button to be displayed
                 composeTestRule.waitForCaptureButton()
                 composeTestRule.longClickForVideoRecording()
-                composeTestRule.waitForNodeWithText(
+                composeTestRule.waitForSnackbarWithText(
                     StateR.string.toast_video_capture_failure,
                     VIDEO_CAPTURE_TIMEOUT_MILLIS
                 )
@@ -171,7 +171,7 @@ internal class VideoRecordingDeviceTest {
     private fun verifyVideoCaptureSuccess() {
         when (cacheParam) {
             CacheParam.NO_CACHE -> {
-                composeTestRule.waitForNodeWithText(
+                composeTestRule.waitForSnackbarWithText(
                     StateR.string.toast_video_capture_success,
                     VIDEO_CAPTURE_TIMEOUT_MILLIS
                 )
