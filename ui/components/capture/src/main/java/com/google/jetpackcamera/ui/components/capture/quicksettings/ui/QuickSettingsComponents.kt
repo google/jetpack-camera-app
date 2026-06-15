@@ -242,6 +242,13 @@ fun QuickSettingsBottomSheet(
     }
 }
 
+/**
+ * A row component in the quick settings menu that allows the user to select the capture mode.
+ *
+ * @param modifier The [Modifier] to be applied to this row.
+ * @param onSetCaptureMode Callback invoked when a new capture mode is selected.
+ * @param captureModeUiState The current [CaptureModeUiState] representing available and selected modes.
+ */
 @Composable
 internal fun CaptureModeRow(
     modifier: Modifier = Modifier,
@@ -283,6 +290,13 @@ internal fun CaptureModeRow(
     }
 }
 
+/**
+ * A row component in the quick settings menu that allows the user to toggle HDR (High Dynamic Range) settings.
+ *
+ * @param modifier The [Modifier] to be applied to this row.
+ * @param onClick Callback invoked when HDR is toggled, providing the selected [DynamicRange] and [ImageOutputFormat].
+ * @param hdrUiState The current [HdrUiState] representing HDR availability and selection.
+ */
 @Composable
 internal fun HdrRow(
     modifier: Modifier = Modifier,
@@ -327,6 +341,13 @@ internal fun HdrRow(
     )
 }
 
+/**
+ * A row component in the quick settings menu that allows the user to select the aspect ratio.
+ *
+ * @param modifier The [Modifier] to be applied to this row.
+ * @param onSetAspectRatio Callback invoked when a new aspect ratio is selected.
+ * @param aspectRatioUiState The current [AspectRatioUiState] representing available and selected aspect ratios.
+ */
 @Composable
 internal fun AspectRatioRow(
     modifier: Modifier = Modifier,
@@ -367,6 +388,13 @@ internal fun AspectRatioRow(
     }
 }
 
+/**
+ * A row component in the quick settings menu that allows the user to select the flash mode.
+ *
+ * @param modifier The [Modifier] to be applied to this row.
+ * @param onSetFlashMode Callback invoked when a new flash mode is selected.
+ * @param flashModeUiState The current [FlashModeUiState] representing available and selected flash modes.
+ */
 @Composable
 internal fun FlashRow(
     modifier: Modifier = Modifier,
@@ -433,12 +461,15 @@ private fun SettingRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp, horizontal = 16.dp)
-            .semantics(mergeDescendants = true) {},
+            .padding(vertical = 12.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .semantics(mergeDescendants = true) {}
+        ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,

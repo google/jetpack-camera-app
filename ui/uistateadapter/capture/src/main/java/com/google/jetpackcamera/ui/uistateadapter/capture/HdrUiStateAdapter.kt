@@ -39,7 +39,7 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  * The logic is tailored to the [ExternalCaptureMode]:
  * - **ImageCapture / MultipleImageCapture**: Checks for `JPEG_ULTRA_HDR` support.
  * - **VideoCapture**: Checks for `HLG10` dynamic range support.
- * - **Standard**: Checks for support for either `HLG10` or `JPEG_ULTRA_HDR`.
+ * - **Standard**: Currently not supported (returns [HdrUiState.Unavailable]).
  *
  * In all cases, HDR is disabled if `LOW_LIGHT_BOOST` flash mode is active. For video and standard
  * modes, it is also disabled if concurrent camera mode is active.

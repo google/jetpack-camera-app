@@ -68,13 +68,9 @@ fun FlashModeUiState.Companion.from(
     val selectedFlashMode = cameraAppSettings.flashMode
 
     // All modes potentially supported by the device
-    val allDeviceSupportedFlashModes = buildSet<FlashMode> {
-        systemConstraints.perLensConstraints.let {
-            it.keys.forEach { key ->
-                it[key]?.supportedFlashModes?.let { flashModes -> addAll(flashModes) }
-            }
-        }
-    }
+    val allDeviceSupportedFlashModes = systemConstraints.perLensConstraints.values
+        .flatMap { it.supportedFlashModes }
+        .toSet()
 
     // Modes supported by the CURRENT lens
     val currentLensSupportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)
@@ -129,9 +125,9 @@ fun FlashModeUiState.Companion.from(
 
     // UiState should be Unavailable if no modes are displayable,
     // or if only OFF is displayable and it's selectable.
-    val onlyOffSelectable = displayableModes.size == 1 &&
-        displayableModes[0].value == FlashMode.OFF &&
-        displayableModes[0] is SingleSelectableUiState.SelectableUi
+    val onlyOffSelectable = displayableModes.singleOrNull()?.let {
+        it.value == FlashMode.OFF && it is SingleSelectableUiState.SelectableUi
+    } ?: false
 
     return if (displayableModes.isEmpty() || onlyOffSelectable) {
         Unavailable
@@ -168,33 +164,32 @@ fun FlashModeUiState.updateFrom(
             // Regenerate the potential new state based on the latest settings
             val newUiState = FlashModeUiState.from(cameraAppSettings, systemConstraints, hdrUiState)
 
-            if (newUiState is Unavailable) {
-                newUiState // Switch to Unavailable
-            } else {
-                newUiState as Available // Cast to Available
-
-                // Check if the list of modes or their enabled/disabled states have changed.
-                // Data class list comparison works well here.
-                if (this.availableFlashModes != newUiState.availableFlashModes) {
-                    newUiState
-                } else if (this.selectedFlashMode != cameraAppSettings.flashMode) {
-                    // Only the selection changed
-                    copy(selectedFlashMode = cameraAppSettings.flashMode)
-                } else {
-                    // Check for Low Light Boost state changes if it's the selected mode
-                    if (cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
-                        val strength = when (val llbState = cameraState.lowLightBoostState) {
-                            is LowLightBoostState.Active -> llbState.strength
-                            else -> LowLightBoostState.MINIMUM_STRENGTH
-                        }
-                        val newIsLowLightBoostActive = strength > 0.5
-                        if (this.isLowLightBoostActive != newIsLowLightBoostActive) {
-                            copy(isLowLightBoostActive = newIsLowLightBoostActive)
+            when (newUiState) {
+                is Unavailable -> newUiState
+                is Available -> {
+                    // Check if the list of modes or their enabled/disabled states have changed.
+                    // Data class list comparison works well here.
+                    if (this.availableFlashModes != newUiState.availableFlashModes) {
+                        newUiState
+                    } else if (this.selectedFlashMode != cameraAppSettings.flashMode) {
+                        // Only the selection changed
+                        copy(selectedFlashMode = cameraAppSettings.flashMode)
+                    } else {
+                        // Check for Low Light Boost state changes if it's the selected mode
+                        if (cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
+                            val strength = when (val llbState = cameraState.lowLightBoostState) {
+                                is LowLightBoostState.Active -> llbState.strength
+                                else -> LowLightBoostState.MINIMUM_STRENGTH
+                            }
+                            val newIsLowLightBoostActive = strength > 0.5
+                            if (this.isLowLightBoostActive != newIsLowLightBoostActive) {
+                                copy(isLowLightBoostActive = newIsLowLightBoostActive)
+                            } else {
+                                this // Nothing changed
+                            }
                         } else {
                             this // Nothing changed
                         }
-                    } else {
-                        this // Nothing changed
                     }
                 }
             }

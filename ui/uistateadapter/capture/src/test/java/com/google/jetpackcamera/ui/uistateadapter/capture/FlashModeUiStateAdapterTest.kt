@@ -20,6 +20,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
@@ -322,5 +323,39 @@ class FlashModeUiStateAdapterTest {
         assertThat(llbState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
         val disabledLlb = llbState as SingleSelectableUiState.Disabled
         assertThat(disabledLlb.disabledReason).isEqualTo(DisabledReason.LLB_DISABLED_BY_HDR)
+    }
+
+    @Test
+    fun from_flashUnsupportedOnCurrentLens_flashModeDisabled() {
+        // Given a device that supports FLASH_ON on some lens, but NOT on the lens
+        val appSettings = defaultCameraAppSettings.copy(
+            cameraLensFacing = LensFacing.BACK,
+            flashMode = FlashMode.OFF
+        )
+        val systemConstraints = CameraSystemConstraints(
+            availableLenses = listOf(LensFacing.BACK, LensFacing.FRONT),
+            perLensConstraints = mapOf(
+                LensFacing.BACK to emptyCameraConstraints.copy(
+                    // Current lens doesn't support ON
+                    supportedFlashModes = setOf(FlashMode.OFF)
+                ),
+                LensFacing.FRONT to emptyCameraConstraints.copy(
+                    // Other lens supports ON
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON)
+                )
+            )
+        )
+
+        // When
+        val flashModeUiState = FlashModeUiState.from(appSettings, systemConstraints)
+
+        // Then FLASH_ON is disabled because it is unsupported on the current lens
+        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = flashModeUiState as FlashModeUiState.Available
+        val flashOnState = availableUiState.availableFlashModes.find { it.value == FlashMode.ON }
+        assertThat(flashOnState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
+        val disabledFlashOn = flashOnState as SingleSelectableUiState.Disabled
+        assertThat(disabledFlashOn.disabledReason)
+            .isEqualTo(DisabledReason.FLASH_UNSUPPORTED_ON_LENS)
     }
 }
