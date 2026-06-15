@@ -25,7 +25,6 @@ import com.google.jetpackcamera.model.proto.FlashMode
 import com.google.jetpackcamera.model.proto.ImageOutputFormat
 import com.google.jetpackcamera.model.proto.LensFacing
 import com.google.jetpackcamera.model.proto.StabilizationMode
-import com.google.jetpackcamera.model.proto.StreamConfig
 import com.google.jetpackcamera.model.proto.VideoQuality
 import com.google.jetpackcamera.settings.JcaSettings
 import com.google.protobuf.InvalidProtocolBufferException
@@ -41,7 +40,7 @@ class FakeJcaSettingsSerializer(var failReadWithCorruptionException: Boolean = f
         .setDefaultLensFacing(LensFacing.LENS_FACING_BACK)
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
         .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
-        .setStreamConfigStatus(StreamConfig.STREAM_CONFIG_MULTI_STREAM)
+        .setSelectedCameraEffect("")
         .setStabilizationMode(StabilizationMode.STABILIZATION_MODE_AUTO)
         .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_SDR)
         .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
