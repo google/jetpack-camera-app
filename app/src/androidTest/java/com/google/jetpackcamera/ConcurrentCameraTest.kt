@@ -47,7 +47,7 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
+import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.getResString
@@ -59,7 +59,7 @@ import com.google.jetpackcamera.utils.setConcurrentCameraModeInSettings
 import com.google.jetpackcamera.utils.stateDescriptionMatches
 import com.google.jetpackcamera.utils.visitSettingsScreen
 import com.google.jetpackcamera.utils.waitForCaptureButton
-import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -170,8 +170,7 @@ class ConcurrentCameraTest {
                     .assert(
                         stateDescriptionMatches(
                             getResString(
-                                CaptureR.string
-                                    .quick_settings_description_capture_mode_video_only
+                                CaptureR.string.quick_settings_description_capture_mode_video_only
                             )
                         )
                     )
@@ -228,7 +227,10 @@ class ConcurrentCameraTest {
 
             longClickForVideoRecordingCheckingElapsedTime()
 
-            waitForNodeWithTag(VIDEO_CAPTURE_SUCCESS_TAG, VIDEO_CAPTURE_TIMEOUT_MILLIS)
+            waitForSnackbarWithText(
+                StateR.string.toast_video_capture_success,
+                VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
         }
     }
 
