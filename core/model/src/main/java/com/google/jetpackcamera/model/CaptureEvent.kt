@@ -120,6 +120,8 @@ sealed interface ImageCaptureEvent : CaptureEvent {
         override val exception: Exception,
         override val progress: IntProgress
     ) : ImageCaptureError, ProgressCaptureEvent
+
+    data object ImageCaptureExternalUnsupported : ImageCaptureEvent
 }
 
 /**
@@ -140,4 +142,5 @@ sealed interface VideoCaptureEvent : CaptureEvent {
      * @param error The [Throwable] that describes the cause of the failure.
      */
     data class VideoCaptureError(val error: Throwable?) : VideoCaptureEvent
+    data object VideoCaptureExternalUnsupported : VideoCaptureEvent
 }
