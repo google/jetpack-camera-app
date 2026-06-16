@@ -84,6 +84,7 @@ import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.PreviewLayout
 import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
 import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
 import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
@@ -656,7 +657,7 @@ private fun ContentScreen(
                 if (snackBarData != null) {
                     snackBarController?.let { snackBarController ->
                         TestableSnackbar(
-                            modifier = modifier.testTag(snackBarData.testTag),
+                            modifier = modifier.testTag(SNACKBAR_NODE_TAG),
                             snackbarToShow = snackBarData,
                             snackbarHostState = snackbarHostState,
                             snackBarController = snackBarController

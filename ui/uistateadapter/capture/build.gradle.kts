@@ -74,7 +74,6 @@ dependencies {
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistateadapter"))
     implementation(project(":ui:uistate:capture"))
-    implementation(project(":ui:components:capture"))
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)

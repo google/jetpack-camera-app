@@ -370,7 +370,6 @@ fun TestableSnackbar(
         // box seems to need to have some size to be detected by UiAutomator
         modifier = modifier
             .size(20.dp)
-            .testTag(snackbarToShow.testTag)
     ) {
         val context = LocalContext.current
         LaunchedEffect(snackbarToShow) {
