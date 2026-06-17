@@ -28,10 +28,12 @@ import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -71,7 +73,7 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
 import org.junit.AssumptionViolatedException
 
 /**
@@ -174,11 +176,24 @@ fun ComposeTestRule.waitForNodeWithText(
     }
 }
 
+fun ComposeTestRule.waitForSnackbarWithText(
+    @StringRes textResId: Int,
+    timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
+) {
+    val expectedText = getResString(textResId)
+    waitUntil(timeoutMillis = timeoutMillis) {
+        onAllNodes(hasTestTag(SNACKBAR_NODE_TAG) and hasText(expectedText))
+            .fetchSemanticsNodes().isNotEmpty()
+    }
+}
+
 private fun ComposeTestRule.idleForVideoDuration(
     durationMillis: Long = VIDEO_DURATION_MILLIS,
     earlyExitPredicate: () -> Boolean = {
         // If the video capture fails, there is no point to continue the recording, so stop idling
-        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).isDisplayed()
+        onNodeWithText(
+            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+        ).isDisplayed()
     }
 ) {
     // TODO: replace with a check for the timestamp UI of the video duration
@@ -248,7 +263,9 @@ fun ComposeTestRule.pressAndDragToLockVideoRecording(
     durationMillis: Long = VIDEO_DURATION_MILLIS,
     checkWhileWaiting: () -> Unit = {
         // If the video capture fails, there is no point to continue waiting. Assert.
-        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).assertIsNotDisplayed()
+        onNodeWithText(
+            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+        ).assertIsNotDisplayed()
     }
 ) {
     onNodeWithTag(CAPTURE_BUTTON).assertExists().performTouchInput {
@@ -281,9 +298,9 @@ fun ComposeTestRule.longClickForVideoRecordingCheckingElapsedTime(
     durationMillis: Long = VIDEO_DURATION_MILLIS,
     checkWhileWaiting: () -> Unit = {
         // If the video capture fails, there is no point to continue waiting. Assert.
-        if (onAllNodesWithTag(VIDEO_CAPTURE_FAILURE_TAG).fetchSemanticsNodes().isNotEmpty()) {
-            throw AssertionError("Video capture failed!")
-        }
+        onNodeWithText(
+            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+        ).assertIsNotDisplayed()
     }
 ) {
     onNodeWithTag(CAPTURE_BUTTON).assertExists().performTouchInput {
