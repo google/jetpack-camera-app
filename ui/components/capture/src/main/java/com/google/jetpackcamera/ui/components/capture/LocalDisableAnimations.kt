@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.postcapture.ui
+package com.google.jetpackcamera.ui.components.capture
 
-const val BUTTON_POST_CAPTURE_EXIT = "btn_post_capture_exit"
-const val BUTTON_POST_CAPTURE_SAVE = "btn_post_capture_save"
+import androidx.compose.runtime.staticCompositionLocalOf
 
-const val BUTTON_POST_CAPTURE_SHARE = "btn_post_capture_share"
-
-const val BUTTON_POST_CAPTURE_DELETE = "btn_post_capture_delete"
-const val VIEWER_POST_CAPTURE_VIDEO = "viewer_post_capture_video"
-const val VIEWER_POST_CAPTURE_IMAGE = "viewer_post_capture_image"
+/**
+ * CompositionLocal to disable animations in tests.
+ */
+val LocalDisableAnimations = staticCompositionLocalOf { false }

@@ -18,10 +18,12 @@ package com.google.jetpackcamera.ui.components.capture
 import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -356,13 +358,21 @@ private fun CaptureButton(
         captureButtonUiState = captureButtonUiState
     )
 
+    val disableAnimations = LocalDisableAnimations.current
+
     val animatedColor by animateColorAsState(
         targetValue = if (isVisuallyDisabled) {
             LocalContentColor.current.copy(alpha = 0.38f)
         } else {
             LocalContentColor.current
         },
-        animationSpec = tween(durationMillis = if (isVisuallyDisabled) 1000 else 300),
+        animationSpec = if (disableAnimations) {
+            snap()
+        } else {
+            tween(
+                durationMillis = if (isVisuallyDisabled) 1000 else 300
+            )
+        },
         label = "Capture Button Color"
     )
 
@@ -536,6 +546,7 @@ private fun LockSwitchCaptureButtonNucleus(
 ) {
     val pressedNucleusSize = (captureButtonSize * LOCK_SWITCH_PRESSED_NUCLEUS_SCALE).dp
     val switchHeight = (pressedNucleusSize * LOCK_SWITCH_HEIGHT_SCALE)
+    val disableAnimations = LocalDisableAnimations.current
 
     Box(
         modifier = modifier
@@ -551,10 +562,11 @@ private fun LockSwitchCaptureButtonNucleus(
                 .offset(x = -(switchWidth - pressedNucleusSize) / 2)
         ) {
             // grey cylinder offset to the left and fades in when pressed recording
+            val isVisible =
+                captureButtonUiState == CaptureButtonUiState.Enabled.Recording.PressedRecording
             AnimatedVisibility(
-                visible = captureButtonUiState ==
-                    CaptureButtonUiState.Enabled.Recording.PressedRecording,
-                enter = fadeIn(),
+                visible = isVisible,
+                enter = if (disableAnimations) EnterTransition.None else fadeIn(),
                 exit = ExitTransition.None
             ) {
                 // grey cylinder
@@ -586,7 +598,7 @@ private fun LockSwitchCaptureButtonNucleus(
         AnimatedVisibility(
             visible = captureButtonUiState ==
                 CaptureButtonUiState.Enabled.Recording.PressedRecording,
-            enter = fadeIn(),
+            enter = if (disableAnimations) EnterTransition.None else fadeIn(),
             exit = ExitTransition.None
         ) {
             Icon(
@@ -644,6 +656,7 @@ private fun CaptureButtonNucleus(
     }
 
     val currentUiState = rememberUpdatedState(captureButtonUiState)
+    val disableAnimations = LocalDisableAnimations.current
 
     // smoothly animate between the size changes of the capture button center
     val centerShapeSize by animateDpAsState(
@@ -664,7 +677,11 @@ private fun CaptureButtonNucleus(
                 CaptureMode.VIDEO_ONLY -> (captureButtonSize * idleVideoCaptureScale).dp
             }
         },
-        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+        animationSpec = if (disableAnimations) {
+            snap()
+        } else {
+            tween(durationMillis = 500, easing = FastOutSlowInEasing)
+        }
     )
 
     // used to fade between red/white in the center of the capture button
@@ -679,7 +696,7 @@ private fun CaptureButtonNucleus(
             is CaptureButtonUiState.Enabled.Recording -> recordingColor
             is CaptureButtonUiState.Unavailable -> Color.Transparent
         },
-        animationSpec = tween(durationMillis = 500)
+        animationSpec = if (disableAnimations) snap() else tween(durationMillis = 500)
     )
 
     // this box contains and centers everything
@@ -705,11 +722,16 @@ private fun CaptureButtonNucleus(
             ) {}
         }
         // central "square" stop icon
+        val isVisible = currentUiState.value is
+            CaptureButtonUiState.Enabled.Recording.LockedRecording
         AnimatedVisibility(
-            visible = currentUiState.value is
-                CaptureButtonUiState.Enabled.Recording.LockedRecording,
-            enter = scaleIn(initialScale = .5f) + fadeIn(),
-            exit = fadeOut()
+            visible = isVisible,
+            enter = if (disableAnimations) {
+                EnterTransition.None
+            } else {
+                scaleIn(initialScale = .5f) + fadeIn()
+            },
+            exit = if (disableAnimations) ExitTransition.None else fadeOut()
         ) {
             val smallBoxSize = (captureButtonSize / 5f).dp
             Canvas(modifier = Modifier) {
