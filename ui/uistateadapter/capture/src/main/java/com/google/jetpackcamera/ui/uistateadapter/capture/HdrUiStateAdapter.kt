@@ -52,7 +52,7 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  * @return [HdrUiState.Available] if the feature is supported and not blocked by other settings,
  * otherwise returns [HdrUiState.Unavailable].
  */
-fun HdrUiState.Companion.from(
+internal fun HdrUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
     externalCaptureMode: ExternalCaptureMode
