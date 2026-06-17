@@ -28,7 +28,6 @@ const val AMPLITUDE_NONE_TAG = "AmplitudeNoneTag"
 const val AMPLITUDE_HOT_TAG = "AmplitudeHotTag"
 const val FOCUS_METERING_INDICATOR_TAG = "FocusMeteringIndicatorTag"
 
-
 const val ZOOM_BUTTON_ROW_TAG = "ZoomButtonRowTag"
 const val ZOOM_BUTTON_MIN_TAG = "ZoomButtonMinTag"
 const val ZOOM_BUTTON_1_TAG = "ZoomButton1Tag"
