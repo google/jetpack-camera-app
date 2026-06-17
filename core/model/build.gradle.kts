@@ -17,7 +17,6 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.google.protobuf)
 }
 
 android {
@@ -70,35 +69,11 @@ android {
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
 
-    // proto datastore
-    implementation(libs.androidx.datastore)
-    implementation(libs.protobuf.kotlin.lite)
+
 
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.21.12"
-    }
-
-    generateProtoTasks {
-        all().forEach { task ->
-            task.builtins {
-                create("java") {
-                    option("lite")
-                }
-            }
-
-            task.builtins {
-                create("kotlin") {
-                    option("lite")
-                }
-            }
-        }
-    }
 }
 
 // Allow references to generated code
