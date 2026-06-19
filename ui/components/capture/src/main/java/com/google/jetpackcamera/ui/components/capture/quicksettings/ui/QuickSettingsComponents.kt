@@ -79,12 +79,12 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_ASPECT_RATIO_ROW
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CAPTURE_MODE_ROW
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_ROW
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_ROW
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_9_16_BUTTON
@@ -263,7 +263,7 @@ internal fun CaptureModeRow(
         }
 
         SettingRow(
-            modifier = modifier.testTag(QUICK_SETTINGS_CAPTURE_MODE_ROW),
+            modifier = modifier.testTag(ROW_QUICK_SETTINGS_CAPTURE_MODE),
             title = stringResource(id = R.string.quick_settings_title_capture_mode),
             stateSubtitle = stringResource(enum.getTextResId()),
             settingsButtons = captureModeUiState.availableCaptureModes
@@ -311,7 +311,7 @@ internal fun HdrRow(
             )
 
     SettingRow(
-        modifier = modifier.testTag(QUICK_SETTINGS_HDR_ROW),
+        modifier = modifier.testTag(ROW_QUICK_SETTINGS_HDR),
         title = stringResource(id = R.string.quick_settings_title_hdr),
         stateSubtitle = if (isHdrOn) {
             stringResource(R.string.quick_settings_dynamic_range_hdr)
@@ -378,7 +378,7 @@ internal fun AspectRatioRow(
             }.toTypedArray()
 
         SettingRow(
-            modifier = modifier.testTag(QUICK_SETTINGS_ASPECT_RATIO_ROW),
+            modifier = modifier.testTag(ROW_QUICK_SETTINGS_ASPECT_RATIO),
             title = stringResource(id = R.string.quick_settings_title_aspect_ratio),
             stateSubtitle = stringResource(
                 id = aspectRatioUiState.selectedAspectRatio.toSubtitleStringRes()
@@ -403,7 +403,7 @@ internal fun FlashRow(
 ) {
     if (flashModeUiState is FlashModeUiState.Available) {
         SettingRow(
-            modifier = modifier.testTag(QUICK_SETTINGS_FLASH_ROW),
+            modifier = modifier.testTag(ROW_QUICK_SETTINGS_FLASH),
             title = stringResource(id = R.string.quick_settings_title_flash_mode),
             stateSubtitle = stringResource(
                 id = flashModeUiState.selectedFlashMode.toSubtitleStringRes()
