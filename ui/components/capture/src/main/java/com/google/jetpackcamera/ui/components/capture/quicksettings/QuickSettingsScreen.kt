@@ -66,37 +66,41 @@ fun QuickSettingsBottomSheet(
             onDismiss = quickSettingsController::toggleQuickSettings,
             sheetState = sheetState
         ) {
-            (quickSettingsUiState.captureModeUiState as? CaptureModeUiState.Available)?.let {
-                when (
-                    it.selectedCaptureMode
-                ) {
-                    CaptureMode.VIDEO_ONLY -> VideoQuickSettings(
-                        quickSettingsUiState = quickSettingsUiState,
-                        quickSettingsController = quickSettingsController,
-                        onNavigateToSettings = onNavigateToSettings,
-                        showMoreSettingsButton = showMoreSettingsButton
-                    )
+            when (val captureModeUiState = quickSettingsUiState.captureModeUiState) {
+                is CaptureModeUiState.Available -> {
+                    when (captureModeUiState.selectedCaptureMode) {
+                        CaptureMode.VIDEO_ONLY -> VideoQuickSettings(
+                            quickSettingsUiState = quickSettingsUiState,
+                            quickSettingsController = quickSettingsController,
+                            onNavigateToSettings = onNavigateToSettings,
+                            showMoreSettingsButton = showMoreSettingsButton
+                        )
 
-                    CaptureMode.IMAGE_ONLY -> ImageQuickSettings(
-                        quickSettingsUiState = quickSettingsUiState,
-                        quickSettingsController = quickSettingsController,
-                        onNavigateToSettings = onNavigateToSettings,
-                        showMoreSettingsButton = showMoreSettingsButton
-                    )
+                        CaptureMode.IMAGE_ONLY -> ImageQuickSettings(
+                            quickSettingsUiState = quickSettingsUiState,
+                            quickSettingsController = quickSettingsController,
+                            onNavigateToSettings = onNavigateToSettings,
+                            showMoreSettingsButton = showMoreSettingsButton
+                        )
 
-                    CaptureMode.STANDARD -> HybridQuickSettings(
+                        CaptureMode.STANDARD -> HybridQuickSettings(
+                            quickSettingsUiState = quickSettingsUiState,
+                            quickSettingsController = quickSettingsController,
+                            onNavigateToSettings = onNavigateToSettings,
+                            showMoreSettingsButton = showMoreSettingsButton
+                        )
+                    }
+                }
+
+                is CaptureModeUiState.Unavailable -> {
+                    ImageQuickSettings(
                         quickSettingsUiState = quickSettingsUiState,
                         quickSettingsController = quickSettingsController,
                         onNavigateToSettings = onNavigateToSettings,
                         showMoreSettingsButton = showMoreSettingsButton
                     )
                 }
-            } ?: ImageQuickSettings(
-                quickSettingsUiState = quickSettingsUiState,
-                quickSettingsController = quickSettingsController,
-                onNavigateToSettings = onNavigateToSettings,
-                showMoreSettingsButton = showMoreSettingsButton
-            )
+            }
         }
     }
 }

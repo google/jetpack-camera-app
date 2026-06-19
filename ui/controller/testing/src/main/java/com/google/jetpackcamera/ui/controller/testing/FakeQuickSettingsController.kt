@@ -27,7 +27,6 @@ import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsControl
  * A fake implementation of [QuickSettingsController] that allows for configuring actions for its methods.
  *
  * @param toggleQuickSettingsAction The action to perform when [toggleQuickSettings] is called.
- * @param setFocusedSettingAction The action to perform when [setFocusedSetting] is called.
  * @param setLensFacingAction The action to perform when [setLensFacing] is called.
  * @param setFlashAction The action to perform when [setFlash] is called.
  * @param setAspectRatioAction The action to perform when [setAspectRatio] is called.
