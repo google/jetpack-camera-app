@@ -80,6 +80,7 @@ dependencies {
     implementation(project(":core:camera"))
     implementation(project(":core:model"))
     implementation(project(":core:common"))
+    implementation(project(":core:settings"))
     implementation(project(":data:settings"))
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:controller"))
