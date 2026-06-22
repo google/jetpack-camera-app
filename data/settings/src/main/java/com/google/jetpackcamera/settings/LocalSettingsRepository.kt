@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,233 +15,87 @@
  */
 package com.google.jetpackcamera.settings
 
-import androidx.datastore.core.DataStore
-import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
 import com.google.jetpackcamera.model.AspectRatio
-import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
-import com.google.jetpackcamera.model.DynamicRange.Companion.toProto
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
-import com.google.jetpackcamera.model.ImageOutputFormat.Companion.toProto
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.LensFacing.Companion.toProto
 import com.google.jetpackcamera.model.LowLightBoostPriority
-import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.fromProto
-import com.google.jetpackcamera.model.LowLightBoostPriority.Companion.toProto
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
-import com.google.jetpackcamera.model.VideoQuality.Companion.toProto
-import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
-import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
-import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
-import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
-import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import javax.inject.Inject
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.Flow
 
 /**
- * Implementation of [SettingsRepository] with locally stored settings.
+ * Implementation of [SettingsRepository] delegating to [SettingsDataSource].
  */
 class LocalSettingsRepository @Inject constructor(
-    private val jcaSettings: DataStore<JcaSettings>,
-    @DefaultCaptureModeOverride private val defaultCaptureModeOverride: CaptureMode
-) :
-    SettingsRepository {
+    private val settingsDataSource: SettingsDataSource
+) : SettingsRepository {
 
-    override val defaultCameraAppSettings = jcaSettings.data
-        .map {
-            CameraAppSettings(
-                cameraLensFacing = LensFacing.fromProto(it.defaultLensFacing),
-                darkMode = when (it.darkModeStatus) {
-                    DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
-                    DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
-                    DarkModeProto.DARK_MODE_SYSTEM -> DarkMode.SYSTEM
-                    else -> DarkMode.DARK
-                },
-                flashMode = when (it.flashModeStatus) {
-                    FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
-                    FlashModeProto.FLASH_MODE_ON -> FlashMode.ON
-                    FlashModeProto.FLASH_MODE_OFF -> FlashMode.OFF
-                    FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST -> FlashMode.LOW_LIGHT_BOOST
-                    else -> FlashMode.OFF
-                },
-                aspectRatio = AspectRatio.fromProto(it.aspectRatioStatus),
-                stabilizationMode = StabilizationMode.fromProto(it.stabilizationMode),
-                targetFrameRate = it.targetFrameRate,
-                streamConfig = when (it.streamConfigStatus) {
-                    StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
-                    StreamConfigProto.STREAM_CONFIG_MULTI_STREAM -> StreamConfig.MULTI_STREAM
-                    else -> StreamConfig.MULTI_STREAM
-                },
-                lowLightBoostPriority = fromProto(it.lowLightBoostPriority),
-                dynamicRange = DynamicRange.fromProto(it.dynamicRangeStatus),
-                imageFormat = ImageOutputFormat.fromProto(it.imageFormatStatus),
-                maxVideoDurationMillis = it.maxVideoDurationMillis,
-                videoQuality = VideoQuality.fromProto(it.videoQuality),
-                audioEnabled = it.audioEnabledStatus,
-                concurrentCameraMode = when (it.concurrentCameraModeStatus) {
-                    ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF ->
-                        ConcurrentCameraMode.OFF
-
-                    ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL ->
-                        ConcurrentCameraMode.DUAL
-
-                    else -> ConcurrentCameraMode.OFF
-                },
-                captureMode = defaultCaptureModeOverride
-            )
-        }
+    override val defaultCameraAppSettings: Flow<CameraAppSettings> =
+        settingsDataSource.defaultCameraAppSettings
 
     override suspend fun getCurrentDefaultCameraAppSettings(): CameraAppSettings =
-        defaultCameraAppSettings.first()
+        settingsDataSource.getCurrentDefaultCameraAppSettings()
 
     override suspend fun updateDefaultLensFacing(lensFacing: LensFacing) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setDefaultLensFacing(lensFacing.toProto())
-                .build()
-        }
+        settingsDataSource.updateDefaultLensFacing(lensFacing)
     }
 
     override suspend fun updateDarkModeStatus(darkMode: DarkMode) {
-        val newStatus = when (darkMode) {
-            DarkMode.DARK -> DarkModeProto.DARK_MODE_DARK
-            DarkMode.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
-            DarkMode.SYSTEM -> DarkModeProto.DARK_MODE_SYSTEM
-        }
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setDarkModeStatus(newStatus)
-                .build()
-        }
+        settingsDataSource.updateDarkModeStatus(darkMode)
     }
 
     override suspend fun updateFlashModeStatus(flashMode: FlashMode) {
-        val newStatus = when (flashMode) {
-            FlashMode.AUTO -> FlashModeProto.FLASH_MODE_AUTO
-            FlashMode.ON -> FlashModeProto.FLASH_MODE_ON
-            FlashMode.OFF -> FlashModeProto.FLASH_MODE_OFF
-            FlashMode.LOW_LIGHT_BOOST -> FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST
-        }
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setFlashModeStatus(newStatus)
-                .build()
-        }
-    }
-
-    override suspend fun updateTargetFrameRate(targetFrameRate: Int) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setTargetFrameRate(targetFrameRate)
-                .build()
-        }
+        settingsDataSource.updateFlashModeStatus(flashMode)
     }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
-        val newStatus = when (aspectRatio) {
-            AspectRatio.NINE_SIXTEEN -> AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN
-            AspectRatio.THREE_FOUR -> AspectRatioProto.ASPECT_RATIO_THREE_FOUR
-            AspectRatio.ONE_ONE -> AspectRatioProto.ASPECT_RATIO_ONE_ONE
-        }
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setAspectRatioStatus(newStatus)
-                .build()
-        }
+        settingsDataSource.updateAspectRatio(aspectRatio)
     }
 
     override suspend fun updateStreamConfig(streamConfig: StreamConfig) {
-        val newStatus = when (streamConfig) {
-            StreamConfig.MULTI_STREAM -> StreamConfigProto.STREAM_CONFIG_MULTI_STREAM
-            StreamConfig.SINGLE_STREAM -> StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM
-        }
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setStreamConfigStatus(newStatus)
-                .build()
-        }
-    }
-
-    override suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode) {
-        val newStatus = when (stabilizationMode) {
-            StabilizationMode.OFF -> StabilizationModeProto.STABILIZATION_MODE_OFF
-            StabilizationMode.AUTO -> StabilizationModeProto.STABILIZATION_MODE_AUTO
-            StabilizationMode.ON -> StabilizationModeProto.STABILIZATION_MODE_ON
-            StabilizationMode.HIGH_QUALITY -> StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY
-            StabilizationMode.OPTICAL -> StabilizationModeProto.STABILIZATION_MODE_OPTICAL
-        }
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setStabilizationMode(newStatus)
-                .build()
-        }
-    }
-
-    override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setDynamicRangeStatus(dynamicRange.toProto())
-                .build()
-        }
-    }
-
-    override suspend fun updateImageFormat(imageFormat: ImageOutputFormat) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setImageFormatStatus(imageFormat.toProto())
-                .build()
-        }
-    }
-
-    override suspend fun updateMaxVideoDuration(durationMillis: Long) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setMaxVideoDurationMillis(durationMillis)
-                .build()
-        }
-    }
-
-    override suspend fun updateVideoQuality(videoQuality: VideoQuality) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setVideoQuality(videoQuality.toProto())
-                .build()
-        }
+        settingsDataSource.updateStreamConfig(streamConfig)
     }
 
     override suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setLowLightBoostPriority(lowLightBoostPriority.toProto())
-                .build()
-        }
+        settingsDataSource.updateLowLightBoostPriority(lowLightBoostPriority)
+    }
+
+    override suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode) {
+        settingsDataSource.updateStabilizationMode(stabilizationMode)
+    }
+
+    override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
+        settingsDataSource.updateDynamicRange(dynamicRange)
+    }
+
+    override suspend fun updateTargetFrameRate(targetFrameRate: Int) {
+        settingsDataSource.updateTargetFrameRate(targetFrameRate)
+    }
+
+    override suspend fun updateImageFormat(imageFormat: ImageOutputFormat) {
+        settingsDataSource.updateImageFormat(imageFormat)
+    }
+
+    override suspend fun updateMaxVideoDuration(durationMillis: Long) {
+        settingsDataSource.updateMaxVideoDuration(durationMillis)
+    }
+
+    override suspend fun updateVideoQuality(videoQuality: VideoQuality) {
+        settingsDataSource.updateVideoQuality(videoQuality)
     }
 
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setAudioEnabledStatus(isAudioEnabled)
-                .build()
-        }
+        settingsDataSource.updateAudioEnabled(isAudioEnabled)
     }
 
     override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        val newStatus = when (concurrentCameraMode) {
-            ConcurrentCameraMode.OFF -> ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF
-            ConcurrentCameraMode.DUAL -> ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL
-        }
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setConcurrentCameraModeStatus(newStatus)
-                .build()
-        }
+        settingsDataSource.updateConcurrentCameraMode(concurrentCameraMode)
     }
 }

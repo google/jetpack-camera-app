@@ -15,8 +15,10 @@
  */
 package com.google.jetpackcamera.model
 
-import com.google.jetpackcamera.model.proto.LensFacing as LensFacingProto
-
+/**
+ * WARNING: The string representation of this enum is serialized and persisted in Preferences DataStore.
+ * Renaming constants will break compatibility with existing saved settings.
+ */
 enum class LensFacing {
     BACK,
     FRONT;
@@ -25,27 +27,6 @@ enum class LensFacing {
         return when (this) {
             FRONT -> BACK
             BACK -> FRONT
-        }
-    }
-
-    companion object {
-
-        /** returns the LensFacing enum equivalent of a provided LensFacingProto */
-        fun fromProto(lensFacingProto: LensFacingProto): LensFacing {
-            return when (lensFacingProto) {
-                LensFacingProto.LENS_FACING_BACK -> BACK
-
-                // Treat unrecognized as front as a fallback
-                LensFacingProto.LENS_FACING_FRONT,
-                LensFacingProto.UNRECOGNIZED -> FRONT
-            }
-        }
-
-        fun LensFacing.toProto(): LensFacingProto {
-            return when (this) {
-                BACK -> LensFacingProto.LENS_FACING_BACK
-                FRONT -> LensFacingProto.LENS_FACING_FRONT
-            }
         }
     }
 }
