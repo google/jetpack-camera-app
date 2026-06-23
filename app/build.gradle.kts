@@ -178,7 +178,7 @@ dependencies {
     implementation(project(":ui:debug"))
 
     implementation(project(":core:camera:low-light-playservices"))
-    implementation(project(":core:camera:effects"))
+    implementation(project(":core:camera:effects:single-stream"))
 }
 
 // Allow references to generated code

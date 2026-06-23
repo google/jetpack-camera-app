@@ -163,12 +163,16 @@ private fun getAvailableCaptureModes(
             true
         }
 
-    val isSingleStreamLayout = cameraAppSettings.selectedCameraEffect.isNotEmpty() &&
-        cameraAppSettings.selectedCameraEffect != "none"
+    val activeEffectTargets = cameraConstraints?.effectTargetsMap?.get(
+        cameraAppSettings.selectedCameraEffect
+    ) ?: emptySet()
+    val affectsImageCapture = activeEffectTargets.contains(
+        com.google.jetpackcamera.model.CameraEffectTarget.IMAGE_CAPTURE
+    )
     val currentHdrImageFormatSupported =
         if (isHdrOn) {
             cameraConstraints?.supportedImageFormatsMap?.get(
-                isSingleStreamLayout
+                affectsImageCapture
             )?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
         } else {
             true
@@ -199,7 +203,7 @@ private fun getAvailableCaptureModes(
                     currentHdrImageFormatSupported,
                     systemConstraints = systemConstraints,
                     cameraAppSettings.cameraLensFacing,
-                    isSingleStreamLayout,
+                    affectsImageCapture,
                     cameraAppSettings.concurrentCameraMode,
                     externalCaptureMode = externalCaptureMode
                 )
@@ -222,7 +226,7 @@ private fun getAvailableCaptureModes(
                     currentHdrImageFormatSupported,
                     systemConstraints,
                     cameraAppSettings.cameraLensFacing,
-                    isSingleStreamLayout,
+                    affectsImageCapture,
                     cameraAppSettings.concurrentCameraMode,
                     externalCaptureMode = externalCaptureMode
                 )
@@ -256,7 +260,7 @@ private fun getCaptureModeDisabledReason(
     hdrImageFormatSupported: Boolean,
     systemConstraints: CameraSystemConstraints,
     currentLensFacing: LensFacing,
-    isSingleStreamLayout: Boolean,
+    affectsImageCapture: Boolean,
     concurrentCameraMode: ConcurrentCameraMode,
     externalCaptureMode: ExternalCaptureMode
 ): DisabledReason {
@@ -277,9 +281,9 @@ private fun getCaptureModeDisabledReason(
                 if (systemConstraints
                         .perLensConstraints[currentLensFacing]
                         ?.supportedImageFormatsMap
-                        ?.anySupportsUltraHdr { it != isSingleStreamLayout } == true
+                        ?.anySupportsUltraHdr { it != affectsImageCapture } == true
                 ) {
-                    return if (isSingleStreamLayout) {
+                    return if (affectsImageCapture) {
                         DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
                     } else {
                         DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM

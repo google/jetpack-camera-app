@@ -58,13 +58,17 @@ fun HdrUiState.Companion.from(
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
     )
-    val isSingleStreamLayout = cameraAppSettings.selectedCameraEffect.isNotEmpty() &&
-        cameraAppSettings.selectedCameraEffect != "none"
+    val activeEffectTargets = cameraConstraints?.effectTargetsMap?.get(
+        cameraAppSettings.selectedCameraEffect
+    ) ?: emptySet()
+    val affectsImageCapture = activeEffectTargets.contains(
+        com.google.jetpackcamera.model.CameraEffectTarget.IMAGE_CAPTURE
+    )
     return when (externalCaptureMode) {
         ExternalCaptureMode.ImageCapture,
         ExternalCaptureMode.MultipleImageCapture -> if (
             cameraConstraints
-                ?.supportedImageFormatsMap?.get(isSingleStreamLayout)
+                ?.supportedImageFormatsMap?.get(affectsImageCapture)
                 ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false &&
             cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
         ) {
@@ -90,7 +94,7 @@ fun HdrUiState.Companion.from(
                 cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
                     true ||
                     cameraConstraints?.supportedImageFormatsMap?.get(
-                        isSingleStreamLayout
+                        affectsImageCapture
                     )
                         ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
                 ) &&

@@ -278,6 +278,9 @@ class CameraXCameraSystem(
                                     Pair(false, supportedImageFormats)
                                 ),
                                 supportedEffects = cameraEffectProviders.keys.map { it.id }.toSet(),
+                                effectTargetsMap = cameraEffectProviders.map { (key, provider) ->
+                                    key.id to provider.get().targets
+                                }.toMap(),
                                 supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,

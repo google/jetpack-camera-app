@@ -24,6 +24,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.CameraEffectTarget
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 
@@ -111,6 +112,7 @@ data class CameraConstraints(
     val supportedVideoQualitiesMap: Map<DynamicRange, List<VideoQuality>>,
     val supportedImageFormatsMap: Map<Boolean, Set<ImageOutputFormat>>,
     val supportedEffects: Set<String> = emptySet(),
+    val effectTargetsMap: Map<String, Set<CameraEffectTarget>> = emptyMap(),
     val supportedIlluminants: Set<Illuminant>,
     val supportedFlashModes: Set<FlashMode>,
     val supportedZoomRange: Range<Float>?,

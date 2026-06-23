@@ -13,25 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera
-
-import androidx.camera.core.CameraEffect
-import com.google.jetpackcamera.model.CameraEffectTarget
-import kotlinx.coroutines.CoroutineScope
+package com.google.jetpackcamera.model
 
 /**
- * Provider for a camera effect.
+ * Defines which outputs (targets) a camera effect should be applied to.
  */
-interface CameraEffectProvider {
-    /**
-     * The outputs (targets) this camera effect will be applied to.
-     */
-    val targets: Set<CameraEffectTarget>
-
-    /**
-     * Creates a new [CameraEffect] instance.
-     *
-     * @param coroutineScope The [CoroutineScope] in which the effect should run.
-     */
-    fun create(coroutineScope: CoroutineScope): CameraEffect
+enum class CameraEffectTarget {
+    PREVIEW,
+    VIDEO_CAPTURE,
+    IMAGE_CAPTURE
 }

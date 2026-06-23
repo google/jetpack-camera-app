@@ -210,9 +210,8 @@ class SettingsViewModel @Inject constructor(
         cameraAppSettings: CameraAppSettings,
         constraints: CameraSystemConstraints
     ): CameraEffectUiState {
-        val supportedEffects = constraints
-            .perLensConstraints[cameraAppSettings.cameraLensFacing]
-            ?.supportedEffects ?: emptySet()
+        val perLensConstraints = constraints.perLensConstraints[cameraAppSettings.cameraLensFacing]
+        var supportedEffects = perLensConstraints?.supportedEffects ?: emptySet()
 
         if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
             return CameraEffectUiState.Disabled(
@@ -223,11 +222,19 @@ class SettingsViewModel @Inject constructor(
         }
 
         if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
-            return CameraEffectUiState.Disabled(
-                DisabledRationale.UltraHdrUnsupportedRationale(
-                    R.string.stream_config_rationale_prefix
+            val effectTargetsMap = perLensConstraints?.effectTargetsMap ?: emptyMap()
+            supportedEffects = supportedEffects.filter { effectId ->
+                val targets = effectTargetsMap[effectId] ?: emptySet()
+                !targets.contains(com.google.jetpackcamera.model.CameraEffectTarget.IMAGE_CAPTURE)
+            }.toSet()
+
+            if (supportedEffects.isEmpty()) {
+                return CameraEffectUiState.Disabled(
+                    DisabledRationale.UltraHdrUnsupportedRationale(
+                        R.string.stream_config_rationale_prefix
+                    )
                 )
-            )
+            }
         }
 
         return CameraEffectUiState.Enabled(
@@ -760,6 +767,9 @@ class SettingsViewModel @Inject constructor(
         val isHdrOn = settings.dynamicRange == DynamicRange.HLG10 ||
             settings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
 
+        val supportedEffects = constraints.forCurrentLens(settings)?.supportedEffects ?: emptySet()
+        val isEffectActive = supportedEffects.contains(settings.selectedCameraEffect)
+
         return if (!constraints.concurrentCamerasSupported) {
             ConcurrentCameraUiState.Disabled(
                 DeviceUnsupportedRationale(R.string.concurrent_camera_rationale_prefix)
@@ -771,9 +781,7 @@ class SettingsViewModel @Inject constructor(
                     HDR_ACTIVE_TAG
                 )
             )
-        } else if (settings.selectedCameraEffect.isNotEmpty() &&
-            settings.selectedCameraEffect != "none"
-        ) {
+        } else if (isEffectActive) {
             ConcurrentCameraUiState.Disabled(
                 DisabledRationale.ConcurrentCameraDisabledRationale(
                     R.string.concurrent_camera_stream_config_unsupported,
