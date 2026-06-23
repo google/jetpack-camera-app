@@ -15,8 +15,10 @@
  */
 package com.google.jetpackcamera.model
 
-import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
-
+/**
+ * WARNING: The string representation of this enum is serialized and persisted in Preferences DataStore.
+ * Renaming constants will break compatibility with existing saved settings.
+ */
 enum class AspectRatio(val numerator: Int, val denominator: Int) {
     THREE_FOUR(3, 4),
     NINE_SIXTEEN(9, 16),
@@ -31,21 +33,4 @@ enum class AspectRatio(val numerator: Int, val denominator: Int) {
      * Returns the landscape aspect ratio as a [Float].
      */
     fun toLandscapeFloat(): Float = denominator.toFloat() / numerator
-
-    companion object {
-
-        /** returns the AspectRatio enum equivalent of a provided AspectRatioProto */
-        fun fromProto(aspectRatioProto: AspectRatioProto): AspectRatio {
-            return when (aspectRatioProto) {
-                AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> NINE_SIXTEEN
-                AspectRatioProto.ASPECT_RATIO_ONE_ONE -> ONE_ONE
-
-                // defaults to 3:4 aspect ratio
-                AspectRatioProto.ASPECT_RATIO_THREE_FOUR,
-                AspectRatioProto.ASPECT_RATIO_UNDEFINED,
-                AspectRatioProto.UNRECOGNIZED
-                -> THREE_FOUR
-            }
-        }
-    }
 }

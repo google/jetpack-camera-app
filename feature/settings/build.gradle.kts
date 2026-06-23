@@ -111,11 +111,11 @@ dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
-    // Proto Datastore
-    implementation(libs.androidx.datastore)
-    implementation(libs.protobuf.kotlin.lite)
-
     implementation(project(":data:settings"))
+    implementation(project(":core:settings"))
+    androidTestImplementation(project(":core:settings:datastore-prefs"))
+    androidTestImplementation(project(":core:settings:datastore-prefs:testing"))
+    androidTestImplementation(libs.androidx.datastore.preferences)
     implementation(project(":core:model"))
 }
 

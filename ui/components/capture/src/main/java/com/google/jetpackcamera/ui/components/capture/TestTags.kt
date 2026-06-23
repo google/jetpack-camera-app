@@ -18,15 +18,7 @@ package com.google.jetpackcamera.ui.components.capture
 const val CAPTURE_BUTTON = "CaptureButton"
 const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
-const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
-const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
-const val IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
-const val IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG =
-    "ImageCaptureUnsupportedConcurrentCameraTag"
-const val VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "VideoCaptureExternalUnsupportedTag"
-const val VIDEO_CAPTURE_SUCCESS_TAG = "VideoCaptureSuccessTag"
-const val VIDEO_CAPTURE_FAILURE_TAG = "VideoCaptureFailureTag"
-const val LOW_LIGHT_BOOST_FAILURE_TAG = "LowLightBoostFailureTag"
+const val SNACKBAR_NODE_TAG = "SnackbarNodeTag"
 
 const val IMAGE_WELL_TAG = "ImageWellTag"
 
@@ -36,14 +28,6 @@ const val AMPLITUDE_NONE_TAG = "AmplitudeNoneTag"
 const val AMPLITUDE_HOT_TAG = "AmplitudeHotTag"
 const val FOCUS_METERING_INDICATOR_TAG = "FocusMeteringIndicatorTag"
 
-// HDR disabled rationale tags
-const val HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG = "HdrImageUnsupportedOnDeviceTag"
-const val HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG = "HdrImageUnsupportedOnLensTag"
-const val HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG = "HdrImageUnsupportedOnSingleStreamTag"
-const val HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG = "HdrImageUnsupportedOnMultiStreamTag"
-const val HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG = "HdrVideoUnsupportedOnDeviceTag"
-const val HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG = "HdrVideoUnsupportedOnDeviceTag"
-const val HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG = "HdrSimultaneousImageVideoUnsupportedTag"
 const val ZOOM_BUTTON_ROW_TAG = "ZoomButtonRowTag"
 const val ZOOM_BUTTON_MIN_TAG = "ZoomButtonMinTag"
 const val ZOOM_BUTTON_1_TAG = "ZoomButton1Tag"

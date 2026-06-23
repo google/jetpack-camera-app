@@ -135,6 +135,7 @@ dependencies {
     implementation("javax.inject:javax.inject:1")
     implementation(libs.androidx.core.ktx)
     implementation(project(":data:settings"))
+    implementation(project(":core:settings"))
     implementation(project(":core:model"))
     implementation(project(":core:common"))
     implementation(project(":core:camera:low-light"))
