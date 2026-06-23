@@ -286,34 +286,33 @@ internal class CameraAppSettingsViewModelTest {
      * Effect is active, since concurrent camera strictly requires no effects.
      */
     @Test
-    fun concurrentCamera_whenCameraEffectIsActive_isDisabled() =
-        runTest(StandardTestDispatcher()) {
-            // Set selected_camera_effect to a non-empty value first
-            testDataStore.edit { prefs ->
-                prefs[stringPreferencesKey("selected_camera_effect")] = "single_stream"
-            }
-
-            val customViewModel = createViewModelWithConstraints(
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
-                    concurrentCamerasSupported = true
-                )
-            )
-            advanceUntilIdle()
-
-            val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
-            val enabledState = assertIsEnabled(uiState)
-
-            assertThat(enabledState.concurrentCameraUiState).isInstanceOf(
-                ConcurrentCameraUiState.Disabled::class.java
-            )
-            val disabledState =
-                enabledState.concurrentCameraUiState as ConcurrentCameraUiState.Disabled
-            assertThat(disabledState.disabledRationale).isInstanceOf(
-                DisabledRationale.ConcurrentCameraDisabledRationale::class.java
-            )
-            assertThat(disabledState.disabledRationale.reasonTextResId)
-                .isEqualTo(R.string.concurrent_camera_stream_config_unsupported)
+    fun concurrentCamera_whenCameraEffectIsActive_isDisabled() = runTest(StandardTestDispatcher()) {
+        // Set selected_camera_effect to a non-empty value first
+        testDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("selected_camera_effect")] = "single_stream"
         }
+
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                concurrentCamerasSupported = true
+            )
+        )
+        advanceUntilIdle()
+
+        val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+        val enabledState = assertIsEnabled(uiState)
+
+        assertThat(enabledState.concurrentCameraUiState).isInstanceOf(
+            ConcurrentCameraUiState.Disabled::class.java
+        )
+        val disabledState =
+            enabledState.concurrentCameraUiState as ConcurrentCameraUiState.Disabled
+        assertThat(disabledState.disabledRationale).isInstanceOf(
+            DisabledRationale.ConcurrentCameraDisabledRationale::class.java
+        )
+        assertThat(disabledState.disabledRationale.reasonTextResId)
+            .isEqualTo(R.string.concurrent_camera_stream_config_unsupported)
+    }
 
     /**
      * Verifies that the Concurrent Camera setting is disabled if Flash

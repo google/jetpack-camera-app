@@ -16,6 +16,7 @@
 package com.google.jetpackcamera
 
 import android.os.Build
+import android.os.Bundle
 import androidx.compose.ui.test.isNotSelected
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -36,7 +37,6 @@ import com.google.jetpackcamera.utils.visitSettingDialog
 import com.google.jetpackcamera.utils.visitSettingsScreen
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
-import android.os.Bundle
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -76,7 +76,8 @@ class CameraEffectDeviceTest {
                 dialogTestTag = BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG,
                 disabledMessage = "Stream configuration component is disabled"
             ) {
-                val singleStreamNode = onNodeWithTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG)
+                val singleStreamNode =
+                    onNodeWithTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG)
                 if (isNotSelected().matches(singleStreamNode.fetchSemanticsNode())) {
                     singleStreamNode.performClick()
                 }

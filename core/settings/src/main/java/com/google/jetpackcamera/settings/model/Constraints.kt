@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings.model
 
 import android.util.Range
+import com.google.jetpackcamera.model.CameraEffectTarget
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
@@ -24,7 +25,6 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
-import com.google.jetpackcamera.model.CameraEffectTarget
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 
