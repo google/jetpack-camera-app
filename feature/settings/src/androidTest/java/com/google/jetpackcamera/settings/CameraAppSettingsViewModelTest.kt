@@ -32,7 +32,6 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import java.io.File
@@ -283,16 +282,15 @@ internal class CameraAppSettingsViewModelTest {
     }
 
     /**
-     * Verifies that the Concurrent Camera setting is disabled if Stream
-     * Configuration is set to SINGLE_STREAM, since concurrent camera
-     * strictly requires MULTI_STREAM.
+     * Verifies that the Concurrent Camera setting is disabled if Camera
+     * Effect is active, since concurrent camera strictly requires no effects.
      */
     @Test
-    fun concurrentCamera_whenStreamConfigIsSingleStream_isDisabled() =
+    fun concurrentCamera_whenCameraEffectIsActive_isDisabled() =
         runTest(StandardTestDispatcher()) {
-            // Set StreamConfig to SINGLE_STREAM first
+            // Set selected_camera_effect to a non-empty value first
             testDataStore.edit { prefs ->
-                prefs[stringPreferencesKey("stream_config")] = StreamConfig.SINGLE_STREAM.name
+                prefs[stringPreferencesKey("selected_camera_effect")] = "single_stream"
             }
 
             val customViewModel = createViewModelWithConstraints(
@@ -414,10 +412,10 @@ internal class CameraAppSettingsViewModelTest {
     }
 
     /**
-     * Verifies that Stream Configuration is disabled if Concurrent Camera is enabled.
+     * Verifies that Camera Effect selection is disabled if Concurrent Camera is enabled.
      */
     @Test
-    fun streamConfig_whenConcurrentCameraIsEnabled_isDisabled() =
+    fun cameraEffect_whenConcurrentCameraIsEnabled_isDisabled() =
         runTest(StandardTestDispatcher()) {
             // Set ConcurrentCameraMode to DUAL first
             testDataStore.edit { prefs ->
@@ -439,9 +437,9 @@ internal class CameraAppSettingsViewModelTest {
             val enabledState = assertIsEnabled(uiState)
 
             assertThat(
-                enabledState.streamConfigUiState
-            ).isInstanceOf(StreamConfigUiState.Disabled::class.java)
-            val disabledState = enabledState.streamConfigUiState as StreamConfigUiState.Disabled
+                enabledState.cameraEffectUiState
+            ).isInstanceOf(CameraEffectUiState.Disabled::class.java)
+            val disabledState = enabledState.cameraEffectUiState as CameraEffectUiState.Disabled
             assertThat(disabledState.disabledRationale)
                 .isInstanceOf(DisabledRationale.ConcurrentCameraActiveRationale::class.java)
         }

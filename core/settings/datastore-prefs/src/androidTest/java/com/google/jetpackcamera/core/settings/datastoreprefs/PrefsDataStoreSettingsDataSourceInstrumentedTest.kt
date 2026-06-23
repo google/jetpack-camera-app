@@ -29,7 +29,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -170,14 +169,14 @@ class PrefsDataStoreSettingsDataSourceInstrumentedTest {
     }
 
     @Test
-    fun can_update_stream_config() = runTest {
-        val initialStreamConfig = dataSource.getCurrentDefaultCameraAppSettings().streamConfig
-        dataSource.updateStreamConfig(StreamConfig.SINGLE_STREAM)
+    fun can_update_selected_camera_effect() = runTest {
+        val initialEffect = dataSource.getCurrentDefaultCameraAppSettings().selectedCameraEffect
+        dataSource.updateSelectedCameraEffect("test_effect")
         advanceUntilIdle()
 
-        val newStreamConfig = dataSource.getCurrentDefaultCameraAppSettings().streamConfig
-        assertThat(initialStreamConfig).isEqualTo(StreamConfig.MULTI_STREAM)
-        assertThat(newStreamConfig).isEqualTo(StreamConfig.SINGLE_STREAM)
+        val newEffect = dataSource.getCurrentDefaultCameraAppSettings().selectedCameraEffect
+        assertThat(initialEffect).isEqualTo("")
+        assertThat(newEffect).isEqualTo("test_effect")
     }
 
     @Test

@@ -24,7 +24,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import kotlinx.coroutines.flow.Flow
@@ -65,9 +64,9 @@ interface SettingsDataSource {
     suspend fun updateAspectRatio(aspectRatio: AspectRatio)
 
     /**
-     * Updates the default stream configuration mode.
+     * Updates the selected camera effect.
      */
-    suspend fun updateStreamConfig(streamConfig: StreamConfig)
+    suspend fun updateSelectedCameraEffect(selectedCameraEffect: String)
 
     /**
      * Updates the low light boost execution priority setting.
