@@ -75,7 +75,8 @@ internal fun HdrUiState.Companion.from(
             if (supportsHdrImage && !isFlashHdrConflict) {
                 HdrUiState.Available(
                     selectedImageFormat = cameraAppSettings.imageFormat,
-                    selectedDynamicRange = DynamicRange.SDR // Force SDR in UI state for video
+                    // Force video dynamic range to SDR in UI state when in IMAGE_ONLY mode
+                    selectedDynamicRange = DynamicRange.SDR
                 )
             } else {
                 HdrUiState.Unavailable
@@ -90,7 +91,8 @@ internal fun HdrUiState.Companion.from(
 
             if (supportsHdrVideo && !isFlashHdrConflict && !isConcurrentConflict) {
                 HdrUiState.Available(
-                    selectedImageFormat = ImageOutputFormat.JPEG, // Force SDR in UI state for image
+                    // Force image format to SDR (JPEG) in UI state when in VIDEO_ONLY mode
+                    selectedImageFormat = ImageOutputFormat.JPEG,
                     selectedDynamicRange = cameraAppSettings.dynamicRange
                 )
             } else {
