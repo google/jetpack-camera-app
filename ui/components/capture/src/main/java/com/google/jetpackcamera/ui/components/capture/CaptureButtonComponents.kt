@@ -34,6 +34,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -607,7 +608,10 @@ private fun LockSwitchCaptureButtonNucleus(
                     .align(Alignment.CenterStart)
                     .padding(start = 8.dp)
                     .offset(x = -(switchWidth - pressedNucleusSize))
-                    .clickable(indication = null, interactionSource = null) {
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
                         onToggleSwitchPosition()
                     },
                 tint = Color.White,
