@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
@@ -67,7 +68,7 @@ internal class HdrUiStateAdapterTest {
 
         // When
         val hdrUiState =
-            HdrUiState.from(appSettings, systemConstraints, ExternalCaptureMode.Standard)
+            HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is unavailable in Standard mode
         assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
@@ -96,7 +97,7 @@ internal class HdrUiStateAdapterTest {
 
         // When
         val hdrUiState =
-            HdrUiState.from(appSettings, systemConstraints, ExternalCaptureMode.Standard)
+            HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is available
         assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
@@ -123,7 +124,7 @@ internal class HdrUiStateAdapterTest {
 
         // When
         val hdrUiState =
-            HdrUiState.from(appSettings, systemConstraints, ExternalCaptureMode.Standard)
+            HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is unavailable
         assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
@@ -151,7 +152,7 @@ internal class HdrUiStateAdapterTest {
 
         // When
         val hdrUiState =
-            HdrUiState.from(appSettings, systemConstraints, ExternalCaptureMode.Standard)
+            HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is unavailable because of the flash mode conflict
         assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
@@ -175,7 +176,7 @@ internal class HdrUiStateAdapterTest {
 
         // When
         val hdrUiState =
-            HdrUiState.from(appSettings, systemConstraints, ExternalCaptureMode.Standard)
+            HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is available
         assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
@@ -200,7 +201,7 @@ internal class HdrUiStateAdapterTest {
 
         // When
         val hdrUiState =
-            HdrUiState.from(appSettings, systemConstraints, ExternalCaptureMode.Standard)
+            HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is unavailable
         assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
@@ -223,9 +224,32 @@ internal class HdrUiStateAdapterTest {
 
         // When
         val hdrUiState =
-            HdrUiState.from(appSettings, systemConstraints, ExternalCaptureMode.Standard)
+            HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is unavailable because of the flash mode conflict
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
+    }
+
+    @Test
+    fun from_videoOnlyMode_concurrentCameraActive_returnsUnavailable() {
+        // Given in VIDEO_ONLY mode with HLG10 supported, but concurrent camera is DUAL
+        val appSettings = defaultCameraAppSettings.copy(
+            captureMode = CaptureMode.VIDEO_ONLY,
+            concurrentCameraMode = ConcurrentCameraMode.DUAL,
+            dynamicRange = DynamicRange.HLG10
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
+                )
+            )
+        )
+
+        // When
+        val hdrUiState = HdrUiState.from(appSettings, systemConstraints)
+
+        // Then HDR is unavailable due to concurrent camera conflict
         assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
     }
 }

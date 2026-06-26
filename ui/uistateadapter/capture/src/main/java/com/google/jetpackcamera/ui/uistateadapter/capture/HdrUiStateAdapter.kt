@@ -36,8 +36,7 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  * HDR formats ([DynamicRange.HLG10] for video, [ImageOutputFormat.JPEG_ULTRA_HDR] for images) and
  * various other settings that may conflict with HDR, such as flash mode or concurrent camera mode.
  *
- * The logic is tailored to the resolved [CaptureMode] (determined by the active settings and
- * [ExternalCaptureMode] overrides):
+ * The logic is tailored to the [CaptureMode]:
  * - **IMAGE_ONLY**: Checks for `JPEG_ULTRA_HDR` support.
  * - **VIDEO_ONLY**: Checks for `HLG10` dynamic range support.
  * - **STANDARD**: HDR is always unavailable.
@@ -47,26 +46,19 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  *
  * @param cameraAppSettings The current application and camera settings.
  * @param systemConstraints The capabilities and limitations of the device's camera hardware.
- * @param externalCaptureMode The mode indicating how the camera was launched (e.g., via an
- * external intent), which influences the resolved capture mode.
  *
  * @return [HdrUiState.Available] if the feature is supported and not blocked by other settings,
  * otherwise returns [HdrUiState.Unavailable].
  */
 internal fun HdrUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
-    systemConstraints: CameraSystemConstraints,
-    externalCaptureMode: ExternalCaptureMode
+    systemConstraints: CameraSystemConstraints
 ): HdrUiState {
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
     )
 
-    // Determine active capture mode, respecting external override
-    val activeCaptureMode =
-        externalCaptureMode.toCaptureMode() ?: cameraAppSettings.captureMode
-
-    return when (activeCaptureMode) {
+    return when (cameraAppSettings.captureMode) {
         CaptureMode.IMAGE_ONLY -> {
             val supportsHdrImage = cameraConstraints
                 ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
