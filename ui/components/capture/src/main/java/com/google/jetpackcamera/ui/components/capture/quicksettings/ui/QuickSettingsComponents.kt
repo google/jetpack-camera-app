@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -265,28 +266,26 @@ internal fun CaptureModeRow(
         SettingRow(
             modifier = modifier.testTag(ROW_QUICK_SETTINGS_CAPTURE_MODE),
             title = stringResource(id = R.string.quick_settings_title_capture_mode),
-            stateSubtitle = stringResource(enum.getTextResId()),
-            settingsButtons = captureModeUiState.availableCaptureModes
-                .map { selectableMode ->
-                    @Composable {
-                        val testTag = when (selectableMode.value) {
-                            CaptureMode.STANDARD ->
-                                BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-                            CaptureMode.IMAGE_ONLY ->
-                                BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-                            CaptureMode.VIDEO_ONLY ->
-                                BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
-                        }
-                        CaptureModeToggleButton(
-                            modifier = Modifier.testTag(testTag),
-                            onClick = { onSetCaptureMode(selectableMode.value) },
-                            assignedCaptureMode = selectableMode.value,
-                            captureModeUiState = captureModeUiState,
-                            isHighlightEnabled = true
-                        )
-                    }
-                }.toTypedArray()
-        )
+            stateSubtitle = stringResource(enum.getTextResId())
+        ) {
+            captureModeUiState.availableCaptureModes.forEach { selectableMode ->
+                val testTag = when (selectableMode.value) {
+                    CaptureMode.STANDARD ->
+                        BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
+                    CaptureMode.IMAGE_ONLY ->
+                        BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
+                    CaptureMode.VIDEO_ONLY ->
+                        BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
+                }
+                CaptureModeToggleButton(
+                    modifier = Modifier.testTag(testTag),
+                    onClick = { onSetCaptureMode(selectableMode.value) },
+                    assignedCaptureMode = selectableMode.value,
+                    captureModeUiState = captureModeUiState,
+                    isHighlightEnabled = true
+                )
+            }
+        }
     }
 }
 
@@ -317,28 +316,23 @@ internal fun HdrRow(
             stringResource(R.string.quick_settings_dynamic_range_hdr)
         } else {
             stringResource(R.string.quick_settings_dynamic_range_sdr)
-        },
-        settingsButtons = arrayOf(
-            {
-                QuickSettingToggleSelectorButton(
-                    modifier = Modifier.testTag(BTN_QUICK_SETTINGS_HDR_OPTION_ON),
-                    enum = CameraDynamicRange.HDR,
-                    onClick = { onClick(DEFAULT_HDR_DYNAMIC_RANGE, DEFAULT_HDR_IMAGE_OUTPUT) },
-                    isSelected = isHdrOn,
-                    enabled = isSupported
-                )
-            },
-            {
-                QuickSettingToggleSelectorButton(
-                    modifier = Modifier.testTag(BTN_QUICK_SETTINGS_HDR_OPTION_OFF),
-                    enum = CameraDynamicRange.SDR,
-                    onClick = { onClick(DynamicRange.SDR, ImageOutputFormat.JPEG) },
-                    isSelected = !isHdrOn,
-                    enabled = isSupported
-                )
-            }
+        }
+    ) {
+        QuickSettingToggleSelectorButton(
+            modifier = Modifier.testTag(BTN_QUICK_SETTINGS_HDR_OPTION_ON),
+            enum = CameraDynamicRange.HDR,
+            onClick = { onClick(DEFAULT_HDR_DYNAMIC_RANGE, DEFAULT_HDR_IMAGE_OUTPUT) },
+            isSelected = isHdrOn,
+            enabled = isSupported
         )
-    )
+        QuickSettingToggleSelectorButton(
+            modifier = Modifier.testTag(BTN_QUICK_SETTINGS_HDR_OPTION_OFF),
+            enum = CameraDynamicRange.SDR,
+            onClick = { onClick(DynamicRange.SDR, ImageOutputFormat.JPEG) },
+            isSelected = !isHdrOn,
+            enabled = isSupported
+        )
+    }
 }
 
 /**
@@ -355,36 +349,32 @@ internal fun AspectRatioRow(
     aspectRatioUiState: AspectRatioUiState
 ) {
     if (aspectRatioUiState is AspectRatioUiState.Available) {
-        val settingsButtons = aspectRatioUiState.availableAspectRatios
-            .map { selectableRatio ->
-                @Composable {
-                    val enum = when (selectableRatio.value) {
-                        AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
-                        AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
-                        AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-                    }
-                    val testTag = when (selectableRatio.value) {
-                        AspectRatio.THREE_FOUR -> QUICK_SETTINGS_RATIO_3_4_BUTTON
-                        AspectRatio.NINE_SIXTEEN -> QUICK_SETTINGS_RATIO_9_16_BUTTON
-                        AspectRatio.ONE_ONE -> QUICK_SETTINGS_RATIO_1_1_BUTTON
-                    }
-                    QuickSettingToggleSelectorButton(
-                        modifier = Modifier.testTag(testTag),
-                        onClick = { onSetAspectRatio(selectableRatio.value) },
-                        enum = enum,
-                        isSelected = selectableRatio.value == aspectRatioUiState.selectedAspectRatio
-                    )
-                }
-            }.toTypedArray()
-
         SettingRow(
             modifier = modifier.testTag(ROW_QUICK_SETTINGS_ASPECT_RATIO),
             title = stringResource(id = R.string.quick_settings_title_aspect_ratio),
             stateSubtitle = stringResource(
                 id = aspectRatioUiState.selectedAspectRatio.toSubtitleStringRes()
-            ),
-            settingsButtons = settingsButtons
-        )
+            )
+        ) {
+            aspectRatioUiState.availableAspectRatios.forEach { selectableRatio ->
+                val enum = when (selectableRatio.value) {
+                    AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
+                    AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
+                    AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
+                }
+                val testTag = when (selectableRatio.value) {
+                    AspectRatio.THREE_FOUR -> QUICK_SETTINGS_RATIO_3_4_BUTTON
+                    AspectRatio.NINE_SIXTEEN -> QUICK_SETTINGS_RATIO_9_16_BUTTON
+                    AspectRatio.ONE_ONE -> QUICK_SETTINGS_RATIO_1_1_BUTTON
+                }
+                QuickSettingToggleSelectorButton(
+                    modifier = Modifier.testTag(testTag),
+                    onClick = { onSetAspectRatio(selectableRatio.value) },
+                    enum = enum,
+                    isSelected = selectableRatio.value == aspectRatioUiState.selectedAspectRatio
+                )
+            }
+        }
     }
 }
 
@@ -407,40 +397,38 @@ internal fun FlashRow(
             title = stringResource(id = R.string.quick_settings_title_flash_mode),
             stateSubtitle = stringResource(
                 id = flashModeUiState.selectedFlashMode.toSubtitleStringRes()
-            ),
-            settingsButtons = flashModeUiState.availableFlashModes
-                .map { selectableMode ->
-                    @Composable {
-                        val testTag = when (selectableMode.value) {
-                            FlashMode.OFF -> BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
-                            FlashMode.ON -> BTN_QUICK_SETTINGS_FLASH_OPTION_ON
-                            FlashMode.AUTO -> BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
-                            FlashMode.LOW_LIGHT_BOOST ->
-                                BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
-                        }
-                        QuickSettingToggleSelectorButton(
-                            modifier = Modifier.testTag(testTag),
-                            enabled = selectableMode is SingleSelectableUiState.SelectableUi,
-                            enum = when (selectableMode.value) {
-                                FlashMode.OFF -> CameraFlashMode.OFF
-                                FlashMode.ON -> CameraFlashMode.ON
-                                FlashMode.AUTO -> CameraFlashMode.AUTO
-                                FlashMode.LOW_LIGHT_BOOST ->
-                                    when (flashModeUiState.isLowLightBoostActive) {
-                                        true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
-                                        false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
-                                    }
-                            },
-                            isSelected = flashModeUiState.selectedFlashMode == selectableMode.value,
-                            onClick = {
-                                onSetFlashMode(
-                                    selectableMode.value
-                                )
+            )
+        ) {
+            flashModeUiState.availableFlashModes.forEach { selectableMode ->
+                val testTag = when (selectableMode.value) {
+                    FlashMode.OFF -> BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
+                    FlashMode.ON -> BTN_QUICK_SETTINGS_FLASH_OPTION_ON
+                    FlashMode.AUTO -> BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
+                    FlashMode.LOW_LIGHT_BOOST ->
+                        BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
+                }
+                QuickSettingToggleSelectorButton(
+                    modifier = Modifier.testTag(testTag),
+                    enabled = selectableMode is SingleSelectableUiState.SelectableUi,
+                    enum = when (selectableMode.value) {
+                        FlashMode.OFF -> CameraFlashMode.OFF
+                        FlashMode.ON -> CameraFlashMode.ON
+                        FlashMode.AUTO -> CameraFlashMode.AUTO
+                        FlashMode.LOW_LIGHT_BOOST ->
+                            when (flashModeUiState.isLowLightBoostActive) {
+                                true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
+                                false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
                             }
+                    },
+                    isSelected = flashModeUiState.selectedFlashMode == selectableMode.value,
+                    onClick = {
+                        onSetFlashMode(
+                            selectableMode.value
                         )
                     }
-                }.toTypedArray()
-        )
+                )
+            }
+        }
     }
 }
 
@@ -455,8 +443,7 @@ private fun SettingRow(
     title: String,
     stateSubtitle: String,
     modifier: Modifier = Modifier,
-    // Using vararg to accept multiple button components
-    vararg settingsButtons: @Composable () -> Unit
+    buttons: @Composable RowScope.() -> Unit
 ) {
     Row(
         modifier = modifier
@@ -484,12 +471,9 @@ private fun SettingRow(
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            settingsButtons.forEach { button ->
-                button()
-            }
-        }
+            verticalAlignment = Alignment.CenterVertically,
+            content = buttons
+        )
     }
 }
 
@@ -741,39 +725,32 @@ private fun PreviewSettingRowDark() {
             SettingRow(
                 title = "Video Resolution",
                 stateSubtitle = "Standard Definition",
-                settingsButtons = arrayOf(
-                    {
-                        // Off State (Highlighted per your screenshot)
-                        QuickSettingToggleSelectorButton(
-                            text = "SD",
-                            accessibilityText = "Flash Off",
-                            painter = painterResource(id = R.drawable.video_resolution_sd_icon),
-                            isSelected = true,
-                            onClick = {}
-                        )
-                    },
-                    {
-                        // On State
-                        QuickSettingToggleSelectorButton(
-                            text = "HD",
-                            accessibilityText = "High Definition",
-                            painter = painterResource(id = R.drawable.video_resolution_hd_icon),
-                            isSelected = false,
-                            onClick = {}
-                        )
-                    },
-                    {
-                        // Auto State
-                        QuickSettingToggleSelectorButton(
-                            text = "FHD",
-                            accessibilityText = "Full High Definition",
-                            painter = painterResource(id = R.drawable.video_resolution_fhd_icon),
-                            isSelected = false,
-                            onClick = {}
-                        )
-                    }
+            ) {
+                // Off State (Highlighted per your screenshot)
+                QuickSettingToggleSelectorButton(
+                    text = "SD",
+                    accessibilityText = "Flash Off",
+                    painter = painterResource(id = R.drawable.video_resolution_sd_icon),
+                    isSelected = true,
+                    onClick = {}
                 )
-            )
+                // On State
+                QuickSettingToggleSelectorButton(
+                    text = "HD",
+                    accessibilityText = "High Definition",
+                    painter = painterResource(id = R.drawable.video_resolution_hd_icon),
+                    isSelected = false,
+                    onClick = {}
+                )
+                // Auto State
+                QuickSettingToggleSelectorButton(
+                    text = "FHD",
+                    accessibilityText = "Full High Definition",
+                    painter = painterResource(id = R.drawable.video_resolution_fhd_icon),
+                    isSelected = false,
+                    onClick = {}
+                )
+            }
         }
     }
 }
