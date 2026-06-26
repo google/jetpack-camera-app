@@ -36,18 +36,19 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  * HDR formats ([DynamicRange.HLG10] for video, [ImageOutputFormat.JPEG_ULTRA_HDR] for images) and
  * various other settings that may conflict with HDR, such as flash mode or concurrent camera mode.
  *
- * The logic is tailored to the [ExternalCaptureMode]:
- * - **ImageCapture / MultipleImageCapture**: Checks for `JPEG_ULTRA_HDR` support.
- * - **VideoCapture**: Checks for `HLG10` dynamic range support.
- * - **Standard**: Checks for support for either `HLG10` or `JPEG_ULTRA_HDR`.
+ * The logic is tailored to the resolved [CaptureMode] (determined by the active settings and
+ * [ExternalCaptureMode] overrides):
+ * - **IMAGE_ONLY**: Checks for `JPEG_ULTRA_HDR` support.
+ * - **VIDEO_ONLY**: Checks for `HLG10` dynamic range support.
+ * - **STANDARD**: HDR is always unavailable.
  *
- * In all cases, HDR is disabled if `LOW_LIGHT_BOOST` flash mode is active. For video and standard
- * modes, it is also disabled if concurrent camera mode is active.
+ * In all cases, HDR is disabled if `LOW_LIGHT_BOOST` flash mode is active. For video mode,
+ * it is also disabled if concurrent camera mode is active.
  *
  * @param cameraAppSettings The current application and camera settings.
  * @param systemConstraints The capabilities and limitations of the device's camera hardware.
  * @param externalCaptureMode The mode indicating how the camera was launched (e.g., via an
- * external intent), which influences which HDR formats are relevant.
+ * external intent), which influences the resolved capture mode.
  *
  * @return [HdrUiState.Available] if the feature is supported and not blocked by other settings,
  * otherwise returns [HdrUiState.Unavailable].
