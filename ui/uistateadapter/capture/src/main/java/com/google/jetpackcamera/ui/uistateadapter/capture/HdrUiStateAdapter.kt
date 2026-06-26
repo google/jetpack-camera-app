@@ -18,8 +18,6 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
-import com.google.jetpackcamera.model.ExternalCaptureMode
-import com.google.jetpackcamera.model.ExternalCaptureMode.Companion.toCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
