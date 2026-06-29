@@ -165,6 +165,17 @@ class PrefsDataStoreSettingsDataSource(
     }
 
     companion object {
+        /**
+         * Creates an instance of [SettingsDataSource] backed by Preferences DataStore.
+         *
+         * Note: To avoid breaking DataStore functionality, ensure that only a single instance
+         * of [DataStore] is active for the settings file at any time (e.g., by managing this
+         * instance as a Singleton via dependency injection).
+         *
+         * @param context The application context.
+         * @param defaultCaptureModeOverride The default capture mode override.
+         * @return A [SettingsDataSource] instance.
+         */
         fun create(
             context: android.content.Context,
             defaultCaptureModeOverride: CaptureMode

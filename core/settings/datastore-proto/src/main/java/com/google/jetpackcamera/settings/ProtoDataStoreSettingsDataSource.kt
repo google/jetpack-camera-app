@@ -174,9 +174,18 @@ class ProtoDataStoreSettingsDataSource(
     }
 
     companion object {
-        private const val TAG = "ProtoSettingsDS"
         private const val FILE_LOCATION = "CameraAppSettings.pb"
 
+        /**
+         * Creates an instance of [SettingsDataSource] backed by Proto DataStore.
+         *
+         * Note: To avoid breaking DataStore functionality, ensure that only a single instance
+         * of [DataStore] is active for the settings file at any time (e.g., by managing this
+         * instance as a Singleton via dependency injection).
+         *
+         * @param context The application context.
+         * @return A [SettingsDataSource] instance.
+         */
         fun create(context: Context): SettingsDataSource {
             val dataStore = DataStoreFactory.create(
                 serializer = ProtoCameraAppSettingsSerializer,

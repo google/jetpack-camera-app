@@ -38,6 +38,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -76,6 +77,7 @@ class ProtoDataStoreSettingsDataSourceTest {
     @After
     fun tearDown() {
         datastoreScope.cancel()
+        Dispatchers.resetMain()
     }
 
     @Test
