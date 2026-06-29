@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings
+package com.google.jetpackcamera.model.proto
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
@@ -38,7 +38,7 @@ import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 import org.junit.Test
 
-class MappersTest {
+class ModelMappersTest {
 
     @Test
     fun aspectRatioMapsCorrectly() {

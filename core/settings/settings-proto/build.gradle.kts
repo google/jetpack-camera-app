@@ -16,10 +16,11 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.protobuf)
 }
 
 android {
-    namespace = "com.google.jetpackcamera.settings.datastore.proto"
+    namespace = "com.google.jetpackcamera.settings.proto"
     compileSdk = libs.versions.compileSdk.get().toInt()
     
     defaultConfig {
@@ -46,10 +47,28 @@ android {
     }
 }
 
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.21.12"
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") {
+                    option("lite")
+                }
+                create("kotlin") {
+                    option("lite")
+                }
+            }
+        }
+    }
+}
 
 dependencies {
-    implementation(project(":core:settings:settings-proto"))
-    implementation(libs.androidx.datastore)
+    api(project(":core:settings"))
+    api(project(":core:model-proto"))
+    api(libs.protobuf.kotlin.lite)
 
     // Testing
     testImplementation(libs.junit)

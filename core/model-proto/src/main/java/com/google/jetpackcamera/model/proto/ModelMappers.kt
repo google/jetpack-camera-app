@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.settings
+package com.google.jetpackcamera.model.proto
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DarkMode
@@ -35,10 +35,8 @@ import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoo
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
-import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.proto.JcaSettings
 
-internal fun AspectRatioProto.toDomain(): AspectRatio {
+fun AspectRatioProto.toDomain(): AspectRatio {
     return when (this) {
         AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> AspectRatio.NINE_SIXTEEN
         AspectRatioProto.ASPECT_RATIO_ONE_ONE -> AspectRatio.ONE_ONE
@@ -48,7 +46,7 @@ internal fun AspectRatioProto.toDomain(): AspectRatio {
     }
 }
 
-internal fun AspectRatio.toProto(): AspectRatioProto {
+fun AspectRatio.toProto(): AspectRatioProto {
     return when (this) {
         AspectRatio.NINE_SIXTEEN -> AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN
         AspectRatio.ONE_ONE -> AspectRatioProto.ASPECT_RATIO_ONE_ONE
@@ -56,7 +54,7 @@ internal fun AspectRatio.toProto(): AspectRatioProto {
     }
 }
 
-internal fun DarkModeProto.toDomain(): DarkMode {
+fun DarkModeProto.toDomain(): DarkMode {
     return when (this) {
         DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
         DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
@@ -65,7 +63,7 @@ internal fun DarkModeProto.toDomain(): DarkMode {
     }
 }
 
-internal fun DarkMode.toProto(): DarkModeProto {
+fun DarkMode.toProto(): DarkModeProto {
     return when (this) {
         DarkMode.DARK -> DarkModeProto.DARK_MODE_DARK
         DarkMode.LIGHT -> DarkModeProto.DARK_MODE_LIGHT
@@ -73,7 +71,7 @@ internal fun DarkMode.toProto(): DarkModeProto {
     }
 }
 
-internal fun DynamicRangeProto.toDomain(): DynamicRange {
+fun DynamicRangeProto.toDomain(): DynamicRange {
     return when (this) {
         DynamicRangeProto.DYNAMIC_RANGE_HLG10 -> DynamicRange.HLG10
         DynamicRangeProto.DYNAMIC_RANGE_SDR,
@@ -82,14 +80,14 @@ internal fun DynamicRangeProto.toDomain(): DynamicRange {
     }
 }
 
-internal fun DynamicRange.toProto(): DynamicRangeProto {
+fun DynamicRange.toProto(): DynamicRangeProto {
     return when (this) {
         DynamicRange.HLG10 -> DynamicRangeProto.DYNAMIC_RANGE_HLG10
         DynamicRange.SDR -> DynamicRangeProto.DYNAMIC_RANGE_SDR
     }
 }
 
-internal fun FlashModeProto.toDomain(): FlashMode {
+fun FlashModeProto.toDomain(): FlashMode {
     return when (this) {
         FlashModeProto.FLASH_MODE_ON -> FlashMode.ON
         FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
@@ -99,7 +97,7 @@ internal fun FlashModeProto.toDomain(): FlashMode {
     }
 }
 
-internal fun FlashMode.toProto(): FlashModeProto {
+fun FlashMode.toProto(): FlashModeProto {
     return when (this) {
         FlashMode.ON -> FlashModeProto.FLASH_MODE_ON
         FlashMode.AUTO -> FlashModeProto.FLASH_MODE_AUTO
@@ -108,7 +106,7 @@ internal fun FlashMode.toProto(): FlashModeProto {
     }
 }
 
-internal fun ImageOutputFormatProto.toDomain(): ImageOutputFormat {
+fun ImageOutputFormatProto.toDomain(): ImageOutputFormat {
     return when (this) {
         ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR ->
             ImageOutputFormat.JPEG_ULTRA_HDR
@@ -117,7 +115,7 @@ internal fun ImageOutputFormatProto.toDomain(): ImageOutputFormat {
     }
 }
 
-internal fun ImageOutputFormat.toProto(): ImageOutputFormatProto {
+fun ImageOutputFormat.toProto(): ImageOutputFormatProto {
     return when (this) {
         ImageOutputFormat.JPEG_ULTRA_HDR ->
             ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
@@ -125,7 +123,7 @@ internal fun ImageOutputFormat.toProto(): ImageOutputFormatProto {
     }
 }
 
-internal fun LensFacingProto.toDomain(): LensFacing {
+fun LensFacingProto.toDomain(): LensFacing {
     return when (this) {
         LensFacingProto.LENS_FACING_FRONT -> LensFacing.FRONT
         LensFacingProto.LENS_FACING_BACK,
@@ -133,14 +131,14 @@ internal fun LensFacingProto.toDomain(): LensFacing {
     }
 }
 
-internal fun LensFacing.toProto(): LensFacingProto {
+fun LensFacing.toProto(): LensFacingProto {
     return when (this) {
         LensFacing.FRONT -> LensFacingProto.LENS_FACING_FRONT
         LensFacing.BACK -> LensFacingProto.LENS_FACING_BACK
     }
 }
 
-internal fun LowLightBoostPriorityProto.toDomain(): LowLightBoostPriority {
+fun LowLightBoostPriorityProto.toDomain(): LowLightBoostPriority {
     return when (this) {
         LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES ->
             LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
@@ -149,7 +147,7 @@ internal fun LowLightBoostPriorityProto.toDomain(): LowLightBoostPriority {
     }
 }
 
-internal fun LowLightBoostPriority.toProto(): LowLightBoostPriorityProto {
+fun LowLightBoostPriority.toProto(): LowLightBoostPriorityProto {
     return when (this) {
         LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES ->
             LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES
@@ -158,7 +156,7 @@ internal fun LowLightBoostPriority.toProto(): LowLightBoostPriorityProto {
     }
 }
 
-internal fun StabilizationModeProto.toDomain(): StabilizationMode {
+fun StabilizationModeProto.toDomain(): StabilizationMode {
     return when (this) {
         StabilizationModeProto.STABILIZATION_MODE_ON -> StabilizationMode.ON
         StabilizationModeProto.STABILIZATION_MODE_OFF -> StabilizationMode.OFF
@@ -170,7 +168,7 @@ internal fun StabilizationModeProto.toDomain(): StabilizationMode {
     }
 }
 
-internal fun StabilizationMode.toProto(): StabilizationModeProto {
+fun StabilizationMode.toProto(): StabilizationModeProto {
     return when (this) {
         StabilizationMode.ON -> StabilizationModeProto.STABILIZATION_MODE_ON
         StabilizationMode.OFF -> StabilizationModeProto.STABILIZATION_MODE_OFF
@@ -180,7 +178,7 @@ internal fun StabilizationMode.toProto(): StabilizationModeProto {
     }
 }
 
-internal fun StreamConfigProto.toDomain(): StreamConfig {
+fun StreamConfigProto.toDomain(): StreamConfig {
     return when (this) {
         StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
         StreamConfigProto.STREAM_CONFIG_MULTI_STREAM,
@@ -189,14 +187,14 @@ internal fun StreamConfigProto.toDomain(): StreamConfig {
     }
 }
 
-internal fun StreamConfig.toProto(): StreamConfigProto {
+fun StreamConfig.toProto(): StreamConfigProto {
     return when (this) {
         StreamConfig.SINGLE_STREAM -> StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM
         StreamConfig.MULTI_STREAM -> StreamConfigProto.STREAM_CONFIG_MULTI_STREAM
     }
 }
 
-internal fun VideoQualityProto.toDomain(): VideoQuality {
+fun VideoQualityProto.toDomain(): VideoQuality {
     return when (this) {
         VideoQualityProto.VIDEO_QUALITY_SD -> VideoQuality.SD
         VideoQualityProto.VIDEO_QUALITY_HD -> VideoQuality.HD
@@ -207,7 +205,7 @@ internal fun VideoQualityProto.toDomain(): VideoQuality {
     }
 }
 
-internal fun VideoQuality.toProto(): VideoQualityProto {
+fun VideoQuality.toProto(): VideoQualityProto {
     return when (this) {
         VideoQuality.SD -> VideoQualityProto.VIDEO_QUALITY_SD
         VideoQuality.HD -> VideoQualityProto.VIDEO_QUALITY_HD
@@ -215,22 +213,4 @@ internal fun VideoQuality.toProto(): VideoQualityProto {
         VideoQuality.UHD -> VideoQualityProto.VIDEO_QUALITY_UHD
         VideoQuality.UNSPECIFIED -> VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED
     }
-}
-
-internal fun JcaSettings.toDomain(): CameraAppSettings {
-    return CameraAppSettings(
-        cameraLensFacing = this.defaultLensFacing.toDomain(),
-        flashMode = this.flashModeStatus.toDomain(),
-        targetFrameRate = this.targetFrameRate,
-        aspectRatio = this.aspectRatioStatus.toDomain(),
-        streamConfig = this.streamConfigStatus.toDomain(),
-        stabilizationMode = this.stabilizationMode.toDomain(),
-        dynamicRange = this.dynamicRangeStatus.toDomain(),
-        imageFormat = this.imageFormatStatus.toDomain(),
-        maxVideoDurationMillis = this.maxVideoDurationMillis,
-        videoQuality = this.videoQuality.toDomain(),
-        audioEnabled = this.audioEnabledStatus,
-        lowLightBoostPriority = this.lowLightBoostPriority.toDomain(),
-        darkMode = this.darkModeStatus.toDomain()
-    )
 }

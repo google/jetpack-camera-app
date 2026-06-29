@@ -30,7 +30,7 @@ import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.proto.JcaSettings
+import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -52,7 +52,7 @@ class ProtoDataStoreSettingsDataSourceTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
-    private lateinit var testDataStore: DataStore<JcaSettings>
+    private lateinit var testDataStore: DataStore<CameraAppSettingsProto>
     private lateinit var datastoreScope: CoroutineScope
     private lateinit var repository: ProtoDataStoreSettingsDataSource
 

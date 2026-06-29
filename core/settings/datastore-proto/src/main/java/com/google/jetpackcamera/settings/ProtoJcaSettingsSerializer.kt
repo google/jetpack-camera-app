@@ -27,13 +27,13 @@ import com.google.jetpackcamera.model.proto.LensFacing
 import com.google.jetpackcamera.model.proto.StabilizationMode
 import com.google.jetpackcamera.model.proto.StreamConfig
 import com.google.jetpackcamera.model.proto.VideoQuality
-import com.google.jetpackcamera.settings.proto.JcaSettings
+import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
-object ProtoJcaSettingsSerializer : Serializer<JcaSettings> {
+object ProtoJcaSettingsSerializer : Serializer<CameraAppSettingsProto> {
 
-    override val defaultValue: JcaSettings = JcaSettings.newBuilder()
+    override val defaultValue: CameraAppSettingsProto = CameraAppSettingsProto.newBuilder()
         .setDarkModeStatus(DarkMode.DARK_MODE_DARK)
         .setDefaultLensFacing(LensFacing.LENS_FACING_BACK)
         .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
@@ -47,13 +47,13 @@ object ProtoJcaSettingsSerializer : Serializer<JcaSettings> {
         .setAudioEnabledStatus(true)
         .build()
 
-    override suspend fun readFrom(input: InputStream): JcaSettings {
+    override suspend fun readFrom(input: InputStream): CameraAppSettingsProto {
         try {
-            return JcaSettings.parseFrom(input)
+            return CameraAppSettingsProto.parseFrom(input)
         } catch (exception: InvalidProtocolBufferException) {
             throw CorruptionException("Cannot read proto.", exception)
         }
     }
 
-    override suspend fun writeTo(t: JcaSettings, output: OutputStream) = t.writeTo(output)
+    override suspend fun writeTo(t: CameraAppSettingsProto, output: OutputStream) = t.writeTo(output)
 }

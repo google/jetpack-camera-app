@@ -31,7 +31,7 @@ import "com/google/jetpackcamera/model/proto/low_light_boost_priority.proto";
 option java_package = "com.google.jetpackcamera.settings.proto";
 option java_multiple_files = true;
 
-message JcaSettings {
+message CameraAppSettings {
   // Camera settings
   LensFacing default_lens_facing = 1;
   FlashMode flash_mode_status = 2;

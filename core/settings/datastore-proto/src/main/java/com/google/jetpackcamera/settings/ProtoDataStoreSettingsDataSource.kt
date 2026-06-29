@@ -31,7 +31,8 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.proto.JcaSettings
+import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
+import com.google.jetpackcamera.model.proto.toProto
 import java.io.File
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -39,12 +40,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 class ProtoDataStoreSettingsDataSource(
-    private val jcaSettings: DataStore<JcaSettings>
+    private val jcaSettings: DataStore<CameraAppSettingsProto>
 ) : SettingsDataSource {
 
-    private val jcaSettingsFlow: Flow<JcaSettings> = jcaSettings.data.catch { exception ->
+    private val jcaSettingsFlow: Flow<CameraAppSettingsProto> = jcaSettings.data.catch { exception ->
         if (exception is java.io.IOException) {
-            emit(JcaSettings.getDefaultInstance())
+            emit(CameraAppSettingsProto.getDefaultInstance())
         } else {
             throw exception
         }
