@@ -19,6 +19,9 @@ import com.google.jetpackcamera.model.proto.toDomain
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
 
+/**
+ * Maps a [CameraAppSettingsProto] to a [CameraAppSettings] domain model.
+ */
 fun CameraAppSettingsProto.toDomain(): CameraAppSettings {
     return CameraAppSettings(
         cameraLensFacing = this.defaultLensFacing.toDomain(),
