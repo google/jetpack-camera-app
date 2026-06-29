@@ -17,6 +17,7 @@ package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.proto.AspectRatio
 import com.google.jetpackcamera.model.proto.ConcurrentCameraMode
@@ -52,7 +53,7 @@ internal object ProtoCameraAppSettingsSerializer : Serializer<CameraAppSettingsP
         .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
         .setAudioEnabledStatus(true)
         .setConcurrentCameraModeStatus(ConcurrentCameraMode.CONCURRENT_CAMERA_MODE_OFF)
-        .setTargetFrameRate(0)
+        .setTargetFrameRate(TARGET_FPS_AUTO)
         .setLowLightBoostPriority(
             LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_UNSPECIFIED
         )
