@@ -17,6 +17,7 @@ package com.google.jetpackcamera.model.proto
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -27,6 +28,7 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
 import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
@@ -37,7 +39,10 @@ import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationMo
 import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class ModelMappersTest {
 
     @Test
@@ -240,5 +245,26 @@ class ModelMappersTest {
         ).isEqualTo(VideoQuality.UNSPECIFIED)
 
         assertThat(VideoQualityProto.UNRECOGNIZED.toDomain()).isEqualTo(VideoQuality.UNSPECIFIED)
+    }
+
+    @Test
+    fun concurrentCameraModeMapsCorrectly() {
+        assertThat(
+            ConcurrentCameraMode.DUAL.toProto()
+        ).isEqualTo(ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL)
+        assertThat(
+            ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL.toDomain()
+        ).isEqualTo(ConcurrentCameraMode.DUAL)
+
+        assertThat(
+            ConcurrentCameraMode.OFF.toProto()
+        ).isEqualTo(ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF)
+        assertThat(
+            ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF.toDomain()
+        ).isEqualTo(ConcurrentCameraMode.OFF)
+
+        assertThat(
+            ConcurrentCameraModeProto.UNRECOGNIZED.toDomain()
+        ).isEqualTo(ConcurrentCameraMode.OFF)
     }
 }

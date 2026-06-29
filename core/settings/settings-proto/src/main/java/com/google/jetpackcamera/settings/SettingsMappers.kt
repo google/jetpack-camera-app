@@ -15,9 +15,9 @@
  */
 package com.google.jetpackcamera.settings
 
+import com.google.jetpackcamera.model.proto.toDomain
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
-import com.google.jetpackcamera.model.proto.toDomain
 
 fun CameraAppSettingsProto.toDomain(): CameraAppSettings {
     return CameraAppSettings(
@@ -33,6 +33,7 @@ fun CameraAppSettingsProto.toDomain(): CameraAppSettings {
         videoQuality = this.videoQuality.toDomain(),
         audioEnabled = this.audioEnabledStatus,
         lowLightBoostPriority = this.lowLightBoostPriority.toDomain(),
-        darkMode = this.darkModeStatus.toDomain()
+        darkMode = this.darkModeStatus.toDomain(),
+        concurrentCameraMode = this.concurrentCameraModeStatus.toDomain()
     )
 }

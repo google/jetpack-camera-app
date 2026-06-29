@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.settings
 
 import android.content.Context
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import com.google.jetpackcamera.model.AspectRatio
@@ -30,26 +29,30 @@ import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.model.proto.toProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
-import com.google.jetpackcamera.model.proto.toProto
 import java.io.File
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
+/**
+ * Settings data source using Proto DataStore.
+ */
 class ProtoDataStoreSettingsDataSource(
     private val jcaSettings: DataStore<CameraAppSettingsProto>
 ) : SettingsDataSource {
 
-    private val jcaSettingsFlow: Flow<CameraAppSettingsProto> = jcaSettings.data.catch { exception ->
-        if (exception is java.io.IOException) {
-            emit(CameraAppSettingsProto.getDefaultInstance())
-        } else {
-            throw exception
+    private val jcaSettingsFlow: Flow<CameraAppSettingsProto> =
+        jcaSettings.data.catch { exception ->
+            if (exception is java.io.IOException) {
+                emit(CameraAppSettingsProto.getDefaultInstance())
+            } else {
+                throw exception
+            }
         }
-    }
 
     override val defaultCameraAppSettings: Flow<CameraAppSettings> = jcaSettingsFlow.map {
         it.toDomain()
@@ -163,19 +166,20 @@ class ProtoDataStoreSettingsDataSource(
     }
 
     override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        // Not implemented because this field was introduced after the proto was removed.
-        // The DataStore should not be modified to include new fields, as it is only
-        // meant to keep backward compatibility with the old user data binary schemas.
-        Log.w(TAG, "Proto datastore does not support concurrent camera mode")
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.toBuilder()
+                .setConcurrentCameraModeStatus(concurrentCameraMode.toProto())
+                .build()
+        }
     }
 
     companion object {
         private const val TAG = "ProtoSettingsDS"
-        private const val FILE_LOCATION = "JcaSettings.pb"
+        private const val FILE_LOCATION = "CameraAppSettings.pb"
 
         fun create(context: Context): SettingsDataSource {
             val dataStore = DataStoreFactory.create(
-                serializer = ProtoJcaSettingsSerializer,
+                serializer = ProtoCameraAppSettingsSerializer,
                 produceFile = { File(context.filesDir, "datastore/$FILE_LOCATION") }
             )
             return ProtoDataStoreSettingsDataSource(dataStore)

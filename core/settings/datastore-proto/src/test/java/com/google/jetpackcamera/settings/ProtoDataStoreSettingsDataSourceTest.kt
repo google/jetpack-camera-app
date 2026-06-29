@@ -45,7 +45,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProtoDataStoreSettingsDataSourceTest {
 
@@ -62,7 +65,7 @@ class ProtoDataStoreSettingsDataSourceTest {
         datastoreScope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
 
         testDataStore = DataStoreFactory.create(
-            serializer = ProtoJcaSettingsSerializer,
+            serializer = ProtoCameraAppSettingsSerializer,
             scope = datastoreScope
         ) {
             java.io.File(tempFolder.root, "test_jca_settings.pb")
@@ -227,5 +230,18 @@ class ProtoDataStoreSettingsDataSourceTest {
 
         assertThat(initial).isTrue()
         assertThat(new).isFalse()
+    }
+
+    @Test
+    fun can_update_concurrent_camera_mode() = runTest {
+        val initial = repository.getCurrentDefaultCameraAppSettings().concurrentCameraMode
+        repository.updateConcurrentCameraMode(
+            com.google.jetpackcamera.model.ConcurrentCameraMode.DUAL
+        )
+        advanceUntilIdle()
+        val new = repository.getCurrentDefaultCameraAppSettings().concurrentCameraMode
+
+        assertThat(initial).isEqualTo(com.google.jetpackcamera.model.ConcurrentCameraMode.OFF)
+        assertThat(new).isEqualTo(com.google.jetpackcamera.model.ConcurrentCameraMode.DUAL)
     }
 }

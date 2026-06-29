@@ -19,6 +19,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.proto.AspectRatio
+import com.google.jetpackcamera.model.proto.ConcurrentCameraMode
 import com.google.jetpackcamera.model.proto.DarkMode
 import com.google.jetpackcamera.model.proto.DynamicRange
 import com.google.jetpackcamera.model.proto.FlashMode
@@ -31,7 +32,11 @@ import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSet
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
-object ProtoJcaSettingsSerializer : Serializer<CameraAppSettingsProto> {
+
+/**
+ * Serializer for the [CameraAppSettingsProto] DataStore.
+ */
+internal object ProtoCameraAppSettingsSerializer : Serializer<CameraAppSettingsProto> {
 
     override val defaultValue: CameraAppSettingsProto = CameraAppSettingsProto.newBuilder()
         .setDarkModeStatus(DarkMode.DARK_MODE_DARK)
@@ -45,6 +50,7 @@ object ProtoJcaSettingsSerializer : Serializer<CameraAppSettingsProto> {
         .setMaxVideoDurationMillis(UNLIMITED_VIDEO_DURATION)
         .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
         .setAudioEnabledStatus(true)
+        .setConcurrentCameraModeStatus(ConcurrentCameraMode.CONCURRENT_CAMERA_MODE_OFF)
         .build()
 
     override suspend fun readFrom(input: InputStream): CameraAppSettingsProto {
@@ -55,5 +61,6 @@ object ProtoJcaSettingsSerializer : Serializer<CameraAppSettingsProto> {
         }
     }
 
-    override suspend fun writeTo(t: CameraAppSettingsProto, output: OutputStream) = t.writeTo(output)
+    override suspend fun writeTo(t: CameraAppSettingsProto, output: OutputStream) =
+        t.writeTo(output)
 }

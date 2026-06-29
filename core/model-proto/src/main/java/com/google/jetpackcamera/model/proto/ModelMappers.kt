@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.model.proto
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -26,6 +27,7 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
+import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
 import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
@@ -36,6 +38,9 @@ import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationMo
 import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 
+/**
+ * Maps a Proto model to a Domain model.
+ */
 fun AspectRatioProto.toDomain(): AspectRatio {
     return when (this) {
         AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> AspectRatio.NINE_SIXTEEN
@@ -46,6 +51,9 @@ fun AspectRatioProto.toDomain(): AspectRatio {
     }
 }
 
+/**
+ * Maps a Domain model to a Proto model.
+ */
 fun AspectRatio.toProto(): AspectRatioProto {
     return when (this) {
         AspectRatio.NINE_SIXTEEN -> AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN
@@ -54,6 +62,9 @@ fun AspectRatio.toProto(): AspectRatioProto {
     }
 }
 
+/**
+ * Maps a Proto model to a Domain model.
+ */
 fun DarkModeProto.toDomain(): DarkMode {
     return when (this) {
         DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
@@ -63,6 +74,9 @@ fun DarkModeProto.toDomain(): DarkMode {
     }
 }
 
+/**
+ * Maps a Domain model to a Proto model.
+ */
 fun DarkMode.toProto(): DarkModeProto {
     return when (this) {
         DarkMode.DARK -> DarkModeProto.DARK_MODE_DARK
@@ -71,6 +85,9 @@ fun DarkMode.toProto(): DarkModeProto {
     }
 }
 
+/**
+ * Maps a Proto model to a Domain model.
+ */
 fun DynamicRangeProto.toDomain(): DynamicRange {
     return when (this) {
         DynamicRangeProto.DYNAMIC_RANGE_HLG10 -> DynamicRange.HLG10
@@ -80,6 +97,9 @@ fun DynamicRangeProto.toDomain(): DynamicRange {
     }
 }
 
+/**
+ * Maps a Domain model to a Proto model.
+ */
 fun DynamicRange.toProto(): DynamicRangeProto {
     return when (this) {
         DynamicRange.HLG10 -> DynamicRangeProto.DYNAMIC_RANGE_HLG10
@@ -87,6 +107,9 @@ fun DynamicRange.toProto(): DynamicRangeProto {
     }
 }
 
+/**
+ * Maps a Proto model to a Domain model.
+ */
 fun FlashModeProto.toDomain(): FlashMode {
     return when (this) {
         FlashModeProto.FLASH_MODE_ON -> FlashMode.ON
@@ -97,6 +120,9 @@ fun FlashModeProto.toDomain(): FlashMode {
     }
 }
 
+/**
+ * Maps a Domain model to a Proto model.
+ */
 fun FlashMode.toProto(): FlashModeProto {
     return when (this) {
         FlashMode.ON -> FlashModeProto.FLASH_MODE_ON
@@ -106,6 +132,9 @@ fun FlashMode.toProto(): FlashModeProto {
     }
 }
 
+/**
+ * Maps a Proto model to a Domain model.
+ */
 fun ImageOutputFormatProto.toDomain(): ImageOutputFormat {
     return when (this) {
         ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR ->
@@ -115,6 +144,9 @@ fun ImageOutputFormatProto.toDomain(): ImageOutputFormat {
     }
 }
 
+/**
+ * Maps a Domain model to a Proto model.
+ */
 fun ImageOutputFormat.toProto(): ImageOutputFormatProto {
     return when (this) {
         ImageOutputFormat.JPEG_ULTRA_HDR ->
@@ -123,6 +155,9 @@ fun ImageOutputFormat.toProto(): ImageOutputFormatProto {
     }
 }
 
+/**
+ * Maps a Proto model to a Domain model.
+ */
 fun LensFacingProto.toDomain(): LensFacing {
     return when (this) {
         LensFacingProto.LENS_FACING_FRONT -> LensFacing.FRONT
@@ -131,6 +166,9 @@ fun LensFacingProto.toDomain(): LensFacing {
     }
 }
 
+/**
+ * Maps a Domain model to a Proto model.
+ */
 fun LensFacing.toProto(): LensFacingProto {
     return when (this) {
         LensFacing.FRONT -> LensFacingProto.LENS_FACING_FRONT
@@ -138,6 +176,9 @@ fun LensFacing.toProto(): LensFacingProto {
     }
 }
 
+/**
+ * Maps a Proto model to a Domain model.
+ */
 fun LowLightBoostPriorityProto.toDomain(): LowLightBoostPriority {
     return when (this) {
         LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES ->
@@ -147,6 +188,9 @@ fun LowLightBoostPriorityProto.toDomain(): LowLightBoostPriority {
     }
 }
 
+/**
+ * Maps a Domain model to a Proto model.
+ */
 fun LowLightBoostPriority.toProto(): LowLightBoostPriorityProto {
     return when (this) {
         LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES ->
@@ -156,6 +200,9 @@ fun LowLightBoostPriority.toProto(): LowLightBoostPriorityProto {
     }
 }
 
+/**
+ * Maps a Proto model to a Domain model.
+ */
 fun StabilizationModeProto.toDomain(): StabilizationMode {
     return when (this) {
         StabilizationModeProto.STABILIZATION_MODE_ON -> StabilizationMode.ON
@@ -168,6 +215,9 @@ fun StabilizationModeProto.toDomain(): StabilizationMode {
     }
 }
 
+/**
+ * Maps a Domain model to a Proto model.
+ */
 fun StabilizationMode.toProto(): StabilizationModeProto {
     return when (this) {
         StabilizationMode.ON -> StabilizationModeProto.STABILIZATION_MODE_ON
@@ -178,6 +228,9 @@ fun StabilizationMode.toProto(): StabilizationModeProto {
     }
 }
 
+/**
+ * Maps a Proto model to a Domain model.
+ */
 fun StreamConfigProto.toDomain(): StreamConfig {
     return when (this) {
         StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
@@ -187,6 +240,9 @@ fun StreamConfigProto.toDomain(): StreamConfig {
     }
 }
 
+/**
+ * Maps a Domain model to a Proto model.
+ */
 fun StreamConfig.toProto(): StreamConfigProto {
     return when (this) {
         StreamConfig.SINGLE_STREAM -> StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM
@@ -194,6 +250,9 @@ fun StreamConfig.toProto(): StreamConfigProto {
     }
 }
 
+/**
+ * Maps a Proto model to a Domain model.
+ */
 fun VideoQualityProto.toDomain(): VideoQuality {
     return when (this) {
         VideoQualityProto.VIDEO_QUALITY_SD -> VideoQuality.SD
@@ -205,6 +264,9 @@ fun VideoQualityProto.toDomain(): VideoQuality {
     }
 }
 
+/**
+ * Maps a Domain model to a Proto model.
+ */
 fun VideoQuality.toProto(): VideoQualityProto {
     return when (this) {
         VideoQuality.SD -> VideoQualityProto.VIDEO_QUALITY_SD
@@ -212,5 +274,26 @@ fun VideoQuality.toProto(): VideoQualityProto {
         VideoQuality.FHD -> VideoQualityProto.VIDEO_QUALITY_FHD
         VideoQuality.UHD -> VideoQualityProto.VIDEO_QUALITY_UHD
         VideoQuality.UNSPECIFIED -> VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED
+    }
+}
+
+/**
+ * Maps a Proto model to a Domain model.
+ */
+fun ConcurrentCameraModeProto.toDomain(): ConcurrentCameraMode {
+    return when (this) {
+        ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL -> ConcurrentCameraMode.DUAL
+        ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF,
+        ConcurrentCameraModeProto.UNRECOGNIZED -> ConcurrentCameraMode.OFF
+    }
+}
+
+/**
+ * Maps a Domain model to a Proto model.
+ */
+fun ConcurrentCameraMode.toProto(): ConcurrentCameraModeProto {
+    return when (this) {
+        ConcurrentCameraMode.DUAL -> ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL
+        ConcurrentCameraMode.OFF -> ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF
     }
 }

@@ -21,7 +21,7 @@ import com.google.jetpackcamera.ui.uistate.DisableRationale
  * Represents reasons why a UI component or functionality might be disabled, providing
  * a string resource ID for user-facing explanation.
  */
-enum class DisabledReason(
+internal enum class DisabledReason(
     override val reasonTextResId: Int
 ) : DisableRationale {
     VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(

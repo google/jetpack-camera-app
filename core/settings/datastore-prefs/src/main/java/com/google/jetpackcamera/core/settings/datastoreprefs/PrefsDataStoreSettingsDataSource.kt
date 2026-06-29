@@ -165,6 +165,21 @@ class PrefsDataStoreSettingsDataSource(
     }
 
     companion object {
+        fun create(
+            context: android.content.Context,
+            defaultCaptureModeOverride: CaptureMode
+        ): SettingsDataSource {
+            val dataStore = androidx.datastore.preferences.core.PreferenceDataStoreFactory.create(
+                produceFile = {
+                    java.io.File(
+                        context.filesDir,
+                        "datastore/app_settings.preferences_pb"
+                    )
+                }
+            )
+            return PrefsDataStoreSettingsDataSource(dataStore, defaultCaptureModeOverride)
+        }
+
         private inline fun <reified T : Enum<T>> String?.toEnumOrDefault(default: T): T {
             if (this == null) return default
             return try {
