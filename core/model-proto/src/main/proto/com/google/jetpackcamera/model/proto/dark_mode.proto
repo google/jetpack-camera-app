@@ -20,7 +20,8 @@ option java_package = "com.google.jetpackcamera.model.proto";
 option java_multiple_files = true;
 
 enum DarkMode {
-  DARK_MODE_SYSTEM = 0;
-  DARK_MODE_LIGHT= 1;
-  DARK_MODE_DARK = 2;
+  DARK_MODE_UNSPECIFIED = 0;
+  DARK_MODE_SYSTEM = 1;
+  DARK_MODE_LIGHT= 2;
+  DARK_MODE_DARK = 3;
 }

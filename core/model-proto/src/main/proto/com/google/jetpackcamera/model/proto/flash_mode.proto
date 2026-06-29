@@ -20,8 +20,9 @@ option java_package = "com.google.jetpackcamera.model.proto";
 option java_multiple_files = true;
 
 enum FlashMode{
-  FLASH_MODE_AUTO = 0;
-  FLASH_MODE_ON = 1;
-  FLASH_MODE_OFF = 2;
-  FLASH_MODE_LOW_LIGHT_BOOST = 3;
+  FLASH_MODE_UNSPECIFIED = 0;
+  FLASH_MODE_AUTO = 1;
+  FLASH_MODE_ON = 2;
+  FLASH_MODE_OFF = 3;
+  FLASH_MODE_LOW_LIGHT_BOOST = 4;
 }

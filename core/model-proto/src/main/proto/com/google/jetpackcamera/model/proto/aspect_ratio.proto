@@ -20,7 +20,7 @@ option java_package = "com.google.jetpackcamera.model.proto";
 option java_multiple_files = true;
 
 enum AspectRatio {
-  ASPECT_RATIO_UNDEFINED = 0;
+  ASPECT_RATIO_UNSPECIFIED = 0;
   ASPECT_RATIO_THREE_FOUR = 1;
   ASPECT_RATIO_NINE_SIXTEEN= 2;
   ASPECT_RATIO_ONE_ONE = 3;
