@@ -19,6 +19,7 @@ option java_package = "com.google.jetpackcamera.model.proto";
 option java_multiple_files = true;
 
 enum ConcurrentCameraMode {
-  CONCURRENT_CAMERA_MODE_OFF = 0;
-  CONCURRENT_CAMERA_MODE_DUAL = 1;
+  CONCURRENT_CAMERA_MODE_UNSPECIFIED = 0;
+  CONCURRENT_CAMERA_MODE_OFF = 1;
+  CONCURRENT_CAMERA_MODE_DUAL = 2;
 }

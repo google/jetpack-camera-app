@@ -101,3 +101,5 @@ When reviewing a pull request, focus on the following key areas:
 * **Indicate Low Priority:** For minor cosmetic, spacing, or simple typographical suggestions, preface the comment with `nit:` to indicate it is a low-priority polish item.
 * **Cite Sources:** When suggesting a change based on a best practice or API guideline, link to the relevant official documentation (e.g., developer.android.com) to support your feedback.
 * **Tone:** Maintain a helpful, collaborative, concise, and professional tone.
+12. **Proto Enum Best Practices**
+    *   **Zero-Value Requirement:** In accordance with the [Proto3 Style Guide](https://protobuf.dev/programming-guides/style/#enums), the first value of any proto enum must be `0` and should be named `<ENUM_NAME>_UNSPECIFIED`. This zero-value acts as the default when a field is missing, preventing implicit fallbacks to a semantically valid choice.

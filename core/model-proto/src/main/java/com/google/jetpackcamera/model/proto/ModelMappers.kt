@@ -46,7 +46,7 @@ fun AspectRatioProto.toDomain(): AspectRatio {
         AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> AspectRatio.NINE_SIXTEEN
         AspectRatioProto.ASPECT_RATIO_ONE_ONE -> AspectRatio.ONE_ONE
         AspectRatioProto.ASPECT_RATIO_THREE_FOUR,
-        AspectRatioProto.ASPECT_RATIO_UNDEFINED,
+        AspectRatioProto.ASPECT_RATIO_UNSPECIFIED,
         AspectRatioProto.UNRECOGNIZED -> AspectRatio.THREE_FOUR
     }
 }
@@ -70,6 +70,7 @@ fun DarkModeProto.toDomain(): DarkMode {
         DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
         DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
         DarkModeProto.DARK_MODE_SYSTEM,
+        DarkModeProto.DARK_MODE_UNSPECIFIED,
         DarkModeProto.UNRECOGNIZED -> DarkMode.SYSTEM
     }
 }
@@ -116,6 +117,7 @@ fun FlashModeProto.toDomain(): FlashMode {
         FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
         FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST -> FlashMode.LOW_LIGHT_BOOST
         FlashModeProto.FLASH_MODE_OFF,
+        FlashModeProto.FLASH_MODE_UNSPECIFIED,
         FlashModeProto.UNRECOGNIZED -> FlashMode.OFF
     }
 }
@@ -140,6 +142,7 @@ fun ImageOutputFormatProto.toDomain(): ImageOutputFormat {
         ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR ->
             ImageOutputFormat.JPEG_ULTRA_HDR
         ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG,
+        ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_UNSPECIFIED,
         ImageOutputFormatProto.UNRECOGNIZED -> ImageOutputFormat.JPEG
     }
 }
@@ -162,6 +165,7 @@ fun LensFacingProto.toDomain(): LensFacing {
     return when (this) {
         LensFacingProto.LENS_FACING_FRONT -> LensFacing.FRONT
         LensFacingProto.LENS_FACING_BACK,
+        LensFacingProto.LENS_FACING_UNSPECIFIED,
         LensFacingProto.UNRECOGNIZED -> LensFacing.BACK
     }
 }
@@ -184,6 +188,7 @@ fun LowLightBoostPriorityProto.toDomain(): LowLightBoostPriority {
         LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES ->
             LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
         LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_AE_MODE,
+        LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_UNSPECIFIED,
         LowLightBoostPriorityProto.UNRECOGNIZED -> LowLightBoostPriority.PRIORITIZE_AE_MODE
     }
 }
@@ -210,7 +215,7 @@ fun StabilizationModeProto.toDomain(): StabilizationMode {
         StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY -> StabilizationMode.HIGH_QUALITY
         StabilizationModeProto.STABILIZATION_MODE_OPTICAL -> StabilizationMode.OPTICAL
         StabilizationModeProto.STABILIZATION_MODE_AUTO,
-        StabilizationModeProto.STABILIZATION_MODE_UNDEFINED,
+        StabilizationModeProto.STABILIZATION_MODE_UNSPECIFIED,
         StabilizationModeProto.UNRECOGNIZED -> StabilizationMode.AUTO
     }
 }
@@ -235,7 +240,7 @@ fun StreamConfigProto.toDomain(): StreamConfig {
     return when (this) {
         StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
         StreamConfigProto.STREAM_CONFIG_MULTI_STREAM,
-        StreamConfigProto.STREAM_CONFIG_UNDEFINED,
+        StreamConfigProto.STREAM_CONFIG_UNSPECIFIED,
         StreamConfigProto.UNRECOGNIZED -> StreamConfig.MULTI_STREAM
     }
 }
@@ -284,6 +289,7 @@ fun ConcurrentCameraModeProto.toDomain(): ConcurrentCameraMode {
     return when (this) {
         ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL -> ConcurrentCameraMode.DUAL
         ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF,
+        ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_UNSPECIFIED,
         ConcurrentCameraModeProto.UNRECOGNIZED -> ConcurrentCameraMode.OFF
     }
 }

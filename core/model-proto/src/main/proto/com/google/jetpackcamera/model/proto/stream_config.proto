@@ -20,7 +20,7 @@ option java_package = "com.google.jetpackcamera.model.proto";
 option java_multiple_files = true;
 
 enum StreamConfig {
-  STREAM_CONFIG_UNDEFINED = 0;
+  STREAM_CONFIG_UNSPECIFIED = 0;
   STREAM_CONFIG_MULTI_STREAM = 1;
   STREAM_CONFIG_SINGLE_STREAM = 2;
 }

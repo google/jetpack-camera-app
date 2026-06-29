@@ -20,6 +20,7 @@ option java_package = "com.google.jetpackcamera.model.proto";
 option java_multiple_files = true;
 
 enum LensFacing {
-  LENS_FACING_BACK = 0;
-  LENS_FACING_FRONT = 1;
+  LENS_FACING_UNSPECIFIED = 0;
+  LENS_FACING_BACK = 1;
+  LENS_FACING_FRONT = 2;
 }

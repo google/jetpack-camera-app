@@ -20,6 +20,7 @@ option java_package = "com.google.jetpackcamera.model.proto";
 option java_multiple_files = true;
 
 enum LowLightBoostPriority {
-  LOW_LIGHT_BOOST_PRIORITY_AE_MODE = 0;
-  LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES = 1;
+  LOW_LIGHT_BOOST_PRIORITY_UNSPECIFIED = 0;
+  LOW_LIGHT_BOOST_PRIORITY_AE_MODE = 1;
+  LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES = 2;
 }

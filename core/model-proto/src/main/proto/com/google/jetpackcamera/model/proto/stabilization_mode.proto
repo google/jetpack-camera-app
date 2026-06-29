@@ -20,7 +20,7 @@ option java_package = "com.google.jetpackcamera.model.proto";
 option java_multiple_files = true;
 
 enum StabilizationMode {
-  STABILIZATION_MODE_UNDEFINED = 0;
+  STABILIZATION_MODE_UNSPECIFIED = 0;
   STABILIZATION_MODE_AUTO = 1;
   STABILIZATION_MODE_OFF = 2;
   STABILIZATION_MODE_ON = 3;
