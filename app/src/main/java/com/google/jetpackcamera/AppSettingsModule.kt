@@ -16,13 +16,6 @@
 package com.google.jetpackcamera
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStoreFile
-import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
-import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
-import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.SettingsDataSource
 import dagger.Module
 import dagger.Provides
@@ -37,18 +30,9 @@ object AppSettingsModule {
 
     @Provides
     @Singleton
-    fun providePreferencesDataStore(@ApplicationContext context: Context): DataStore<Preferences> {
-        return PreferenceDataStoreFactory.create(
-            produceFile = { context.preferencesDataStoreFile("app_settings.preferences_pb") }
-        )
-    }
-
-    @Provides
-    @Singleton
     fun provideSettingsDataSource(
-        dataStore: DataStore<Preferences>,
-        @DefaultCaptureModeOverride defaultCaptureMode: CaptureMode
+        @ApplicationContext context: Context,
     ): SettingsDataSource {
-        return PrefsDataStoreSettingsDataSource(dataStore, defaultCaptureMode)
+        return com.google.jetpackcamera.settings.ProtoDataStoreSettingsDataSource.create(context)
     }
 }
