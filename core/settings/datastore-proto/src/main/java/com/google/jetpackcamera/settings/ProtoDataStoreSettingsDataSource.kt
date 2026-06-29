@@ -55,11 +55,11 @@ class ProtoDataStoreSettingsDataSource(
         }
 
     override val defaultCameraAppSettings: Flow<CameraAppSettings> = jcaSettingsFlow.map {
-        it.toDomain()
+        it.toModel()
     }
 
     override suspend fun getCurrentDefaultCameraAppSettings(): CameraAppSettings =
-        jcaSettingsFlow.first().toDomain()
+        jcaSettingsFlow.first().toModel()
 
     override suspend fun updateDefaultLensFacing(lensFacing: LensFacing) {
         jcaSettings.updateData { currentSettings ->

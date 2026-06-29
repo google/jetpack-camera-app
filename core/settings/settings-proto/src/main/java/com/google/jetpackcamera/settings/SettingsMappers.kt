@@ -15,28 +15,28 @@
  */
 package com.google.jetpackcamera.settings
 
-import com.google.jetpackcamera.model.proto.toDomain
+import com.google.jetpackcamera.model.proto.toModel
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
 
 /**
  * Maps a [CameraAppSettingsProto] to a [CameraAppSettings] domain model.
  */
-fun CameraAppSettingsProto.toDomain(): CameraAppSettings {
+fun CameraAppSettingsProto.toModel(): CameraAppSettings {
     return CameraAppSettings(
-        cameraLensFacing = this.defaultLensFacing.toDomain(),
-        flashMode = this.flashModeStatus.toDomain(),
+        cameraLensFacing = this.defaultLensFacing.toModel(),
+        flashMode = this.flashModeStatus.toModel(),
         targetFrameRate = this.targetFrameRate,
-        aspectRatio = this.aspectRatioStatus.toDomain(),
-        streamConfig = this.streamConfigStatus.toDomain(),
-        stabilizationMode = this.stabilizationMode.toDomain(),
-        dynamicRange = this.dynamicRangeStatus.toDomain(),
-        imageFormat = this.imageFormatStatus.toDomain(),
+        aspectRatio = this.aspectRatioStatus.toModel(),
+        streamConfig = this.streamConfigStatus.toModel(),
+        stabilizationMode = this.stabilizationMode.toModel(),
+        dynamicRange = this.dynamicRangeStatus.toModel(),
+        imageFormat = this.imageFormatStatus.toModel(),
         maxVideoDurationMillis = this.maxVideoDurationMillis,
-        videoQuality = this.videoQuality.toDomain(),
+        videoQuality = this.videoQuality.toModel(),
         audioEnabled = this.audioEnabledStatus,
-        lowLightBoostPriority = this.lowLightBoostPriority.toDomain(),
-        darkMode = this.darkModeStatus.toDomain(),
-        concurrentCameraMode = this.concurrentCameraModeStatus.toDomain()
+        lowLightBoostPriority = this.lowLightBoostPriority.toModel(),
+        darkMode = this.darkModeStatus.toModel(),
+        concurrentCameraMode = this.concurrentCameraModeStatus.toModel()
     )
 }

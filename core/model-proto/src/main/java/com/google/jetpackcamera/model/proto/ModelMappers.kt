@@ -41,7 +41,7 @@ import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 /**
  * Maps a Proto model to a Domain model.
  */
-fun AspectRatioProto.toDomain(): AspectRatio {
+fun AspectRatioProto.toModel(): AspectRatio {
     return when (this) {
         AspectRatioProto.ASPECT_RATIO_NINE_SIXTEEN -> AspectRatio.NINE_SIXTEEN
         AspectRatioProto.ASPECT_RATIO_ONE_ONE -> AspectRatio.ONE_ONE
@@ -65,7 +65,7 @@ fun AspectRatio.toProto(): AspectRatioProto {
 /**
  * Maps a Proto model to a Domain model.
  */
-fun DarkModeProto.toDomain(): DarkMode {
+fun DarkModeProto.toModel(): DarkMode {
     return when (this) {
         DarkModeProto.DARK_MODE_DARK -> DarkMode.DARK
         DarkModeProto.DARK_MODE_LIGHT -> DarkMode.LIGHT
@@ -89,7 +89,7 @@ fun DarkMode.toProto(): DarkModeProto {
 /**
  * Maps a Proto model to a Domain model.
  */
-fun DynamicRangeProto.toDomain(): DynamicRange {
+fun DynamicRangeProto.toModel(): DynamicRange {
     return when (this) {
         DynamicRangeProto.DYNAMIC_RANGE_HLG10 -> DynamicRange.HLG10
         DynamicRangeProto.DYNAMIC_RANGE_SDR,
@@ -111,7 +111,7 @@ fun DynamicRange.toProto(): DynamicRangeProto {
 /**
  * Maps a Proto model to a Domain model.
  */
-fun FlashModeProto.toDomain(): FlashMode {
+fun FlashModeProto.toModel(): FlashMode {
     return when (this) {
         FlashModeProto.FLASH_MODE_ON -> FlashMode.ON
         FlashModeProto.FLASH_MODE_AUTO -> FlashMode.AUTO
@@ -137,7 +137,7 @@ fun FlashMode.toProto(): FlashModeProto {
 /**
  * Maps a Proto model to a Domain model.
  */
-fun ImageOutputFormatProto.toDomain(): ImageOutputFormat {
+fun ImageOutputFormatProto.toModel(): ImageOutputFormat {
     return when (this) {
         ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR ->
             ImageOutputFormat.JPEG_ULTRA_HDR
@@ -161,7 +161,7 @@ fun ImageOutputFormat.toProto(): ImageOutputFormatProto {
 /**
  * Maps a Proto model to a Domain model.
  */
-fun LensFacingProto.toDomain(): LensFacing {
+fun LensFacingProto.toModel(): LensFacing {
     return when (this) {
         LensFacingProto.LENS_FACING_FRONT -> LensFacing.FRONT
         LensFacingProto.LENS_FACING_BACK,
@@ -183,7 +183,7 @@ fun LensFacing.toProto(): LensFacingProto {
 /**
  * Maps a Proto model to a Domain model.
  */
-fun LowLightBoostPriorityProto.toDomain(): LowLightBoostPriority {
+fun LowLightBoostPriorityProto.toModel(): LowLightBoostPriority {
     return when (this) {
         LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_GOOGLE_PLAY_SERVICES ->
             LowLightBoostPriority.PRIORITIZE_GOOGLE_PLAY_SERVICES
@@ -208,7 +208,7 @@ fun LowLightBoostPriority.toProto(): LowLightBoostPriorityProto {
 /**
  * Maps a Proto model to a Domain model.
  */
-fun StabilizationModeProto.toDomain(): StabilizationMode {
+fun StabilizationModeProto.toModel(): StabilizationMode {
     return when (this) {
         StabilizationModeProto.STABILIZATION_MODE_ON -> StabilizationMode.ON
         StabilizationModeProto.STABILIZATION_MODE_OFF -> StabilizationMode.OFF
@@ -236,7 +236,7 @@ fun StabilizationMode.toProto(): StabilizationModeProto {
 /**
  * Maps a Proto model to a Domain model.
  */
-fun StreamConfigProto.toDomain(): StreamConfig {
+fun StreamConfigProto.toModel(): StreamConfig {
     return when (this) {
         StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
         StreamConfigProto.STREAM_CONFIG_MULTI_STREAM,
@@ -258,7 +258,7 @@ fun StreamConfig.toProto(): StreamConfigProto {
 /**
  * Maps a Proto model to a Domain model.
  */
-fun VideoQualityProto.toDomain(): VideoQuality {
+fun VideoQualityProto.toModel(): VideoQuality {
     return when (this) {
         VideoQualityProto.VIDEO_QUALITY_SD -> VideoQuality.SD
         VideoQualityProto.VIDEO_QUALITY_HD -> VideoQuality.HD
@@ -285,7 +285,7 @@ fun VideoQuality.toProto(): VideoQualityProto {
 /**
  * Maps a Proto model to a Domain model.
  */
-fun ConcurrentCameraModeProto.toDomain(): ConcurrentCameraMode {
+fun ConcurrentCameraModeProto.toModel(): ConcurrentCameraMode {
     return when (this) {
         ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL -> ConcurrentCameraMode.DUAL
         ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF,
