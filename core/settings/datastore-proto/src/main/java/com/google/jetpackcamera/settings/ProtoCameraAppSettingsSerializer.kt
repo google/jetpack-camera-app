@@ -25,6 +25,7 @@ import com.google.jetpackcamera.model.proto.DynamicRange
 import com.google.jetpackcamera.model.proto.FlashMode
 import com.google.jetpackcamera.model.proto.ImageOutputFormat
 import com.google.jetpackcamera.model.proto.LensFacing
+import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoostPriorityProto
 import com.google.jetpackcamera.model.proto.StabilizationMode
 import com.google.jetpackcamera.model.proto.StreamConfig
 import com.google.jetpackcamera.model.proto.VideoQuality
@@ -51,6 +52,10 @@ internal object ProtoCameraAppSettingsSerializer : Serializer<CameraAppSettingsP
         .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
         .setAudioEnabledStatus(true)
         .setConcurrentCameraModeStatus(ConcurrentCameraMode.CONCURRENT_CAMERA_MODE_OFF)
+        .setTargetFrameRate(0)
+        .setLowLightBoostPriority(
+            LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_UNSPECIFIED
+        )
         .build()
 
     override suspend fun readFrom(input: InputStream): CameraAppSettingsProto {
