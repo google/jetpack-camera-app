@@ -35,6 +35,9 @@ import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.SettingsDataSource
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -174,13 +177,17 @@ class PrefsDataStoreSettingsDataSource(
          *
          * @param context The application context.
          * @param defaultCaptureModeOverride The default capture mode override.
+         * @param ioDispatcher The coroutine dispatcher for IO operations.
          * @return A [SettingsDataSource] instance.
          */
         fun create(
             context: android.content.Context,
-            defaultCaptureModeOverride: CaptureMode
+            defaultCaptureModeOverride: CaptureMode,
+            ioDispatcher: CoroutineDispatcher
         ): SettingsDataSource {
+            val scope = CoroutineScope(ioDispatcher + SupervisorJob())
             val dataStore = androidx.datastore.preferences.core.PreferenceDataStoreFactory.create(
+                scope = scope,
                 produceFile = {
                     java.io.File(
                         context.filesDir,

@@ -33,6 +33,9 @@ import com.google.jetpackcamera.model.proto.toProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
 import java.io.File
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -184,11 +187,14 @@ class ProtoDataStoreSettingsDataSource(
          * instance as a Singleton via dependency injection).
          *
          * @param context The application context.
+         * @param ioDispatcher The coroutine dispatcher for IO operations.
          * @return A [SettingsDataSource] instance.
          */
-        fun create(context: Context): SettingsDataSource {
+        fun create(context: Context, ioDispatcher: CoroutineDispatcher): SettingsDataSource {
+            val scope = CoroutineScope(ioDispatcher + SupervisorJob())
             val dataStore = DataStoreFactory.create(
                 serializer = ProtoCameraAppSettingsSerializer,
+                scope = scope,
                 produceFile = { File(context.filesDir, "datastore/$FILE_LOCATION") }
             )
             return ProtoDataStoreSettingsDataSource(dataStore)

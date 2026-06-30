@@ -17,6 +17,7 @@ package com.google.jetpackcamera
 
 import android.content.Context
 import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
+import com.google.jetpackcamera.core.common.IODispatcher
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.ProtoDataStoreSettingsDataSource
 import com.google.jetpackcamera.settings.SettingsDataSource
@@ -26,6 +27,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -35,8 +37,9 @@ object AppSettingsModule {
     @Singleton
     fun provideSettingsDataSource(
         @ApplicationContext context: Context,
-        @DefaultCaptureModeOverride defaultCaptureMode: CaptureMode
+        @DefaultCaptureModeOverride defaultCaptureMode: CaptureMode,
+        @IODispatcher ioDispatcher: CoroutineDispatcher
     ): SettingsDataSource {
-        return ProtoDataStoreSettingsDataSource.create(context)
+        return ProtoDataStoreSettingsDataSource.create(context, ioDispatcher)
     }
 }
