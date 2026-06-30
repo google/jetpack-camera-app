@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings.model
 
 import android.util.Range
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraEffectTarget
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -111,8 +112,8 @@ data class CameraConstraints(
     val supportedDynamicRanges: Set<DynamicRange>,
     val supportedVideoQualitiesMap: Map<DynamicRange, List<VideoQuality>>,
     val supportedImageFormatsMap: Map<Boolean, Set<ImageOutputFormat>>,
-    val supportedEffects: Set<String> = emptySet(),
-    val effectTargetsMap: Map<String, Set<CameraEffectTarget>> = emptyMap(),
+    val supportedEffects: Set<CameraEffectId> = emptySet(),
+    val effectTargetsMap: Map<CameraEffectId, Set<CameraEffectTarget>> = emptyMap(),
     val supportedIlluminants: Set<Illuminant>,
     val supportedFlashModes: Set<FlashMode>,
     val supportedZoomRange: Range<Float>?,

@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -45,7 +46,7 @@ interface SettingsRepository {
 
     suspend fun updateAspectRatio(aspectRatio: AspectRatio)
 
-    suspend fun updateSelectedCameraEffect(selectedCameraEffect: String)
+    suspend fun updateSelectedCameraEffect(selectedCameraEffect: CameraEffectId)
 
     suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority)
 

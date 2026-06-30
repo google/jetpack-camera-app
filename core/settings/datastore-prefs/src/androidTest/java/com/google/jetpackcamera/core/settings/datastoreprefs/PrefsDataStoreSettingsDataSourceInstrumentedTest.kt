@@ -21,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -28,6 +29,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
@@ -171,12 +173,12 @@ class PrefsDataStoreSettingsDataSourceInstrumentedTest {
     @Test
     fun can_update_selected_camera_effect() = runTest {
         val initialEffect = dataSource.getCurrentDefaultCameraAppSettings().selectedCameraEffect
-        dataSource.updateSelectedCameraEffect("test_effect")
+        dataSource.updateSelectedCameraEffect(CameraEffectId("test_effect"))
         advanceUntilIdle()
 
         val newEffect = dataSource.getCurrentDefaultCameraAppSettings().selectedCameraEffect
-        assertThat(initialEffect).isEqualTo("")
-        assertThat(newEffect).isEqualTo("test_effect")
+        assertThat(initialEffect).isEqualTo(NONE_EFFECT_ID)
+        assertThat(newEffect).isEqualTo(CameraEffectId("test_effect"))
     }
 
     @Test

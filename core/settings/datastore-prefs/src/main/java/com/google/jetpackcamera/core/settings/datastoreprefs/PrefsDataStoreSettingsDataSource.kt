@@ -20,6 +20,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
@@ -28,6 +29,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
@@ -57,7 +59,9 @@ class PrefsDataStoreSettingsDataSource(
             stabilizationMode = prefs[PreferenceKeys.KEY_STABILIZATION_MODE]
                 .toEnumOrDefault(StabilizationMode.AUTO),
             targetFrameRate = prefs[PreferenceKeys.KEY_TARGET_FRAME_RATE] ?: TARGET_FPS_AUTO,
-            selectedCameraEffect = prefs[PreferenceKeys.KEY_SELECTED_CAMERA_EFFECT] ?: "",
+            selectedCameraEffect = prefs[PreferenceKeys.KEY_SELECTED_CAMERA_EFFECT]?.let {
+                if (it.isEmpty()) NONE_EFFECT_ID else CameraEffectId(it)
+            } ?: NONE_EFFECT_ID,
             lowLightBoostPriority = prefs[PreferenceKeys.KEY_LOW_LIGHT_BOOST_PRIORITY]
                 .toEnumOrDefault(LowLightBoostPriority.PRIORITIZE_AE_MODE),
             dynamicRange = prefs[PreferenceKeys.KEY_DYNAMIC_RANGE]
@@ -108,9 +112,9 @@ class PrefsDataStoreSettingsDataSource(
         }
     }
 
-    override suspend fun updateSelectedCameraEffect(selectedCameraEffect: String) {
+    override suspend fun updateSelectedCameraEffect(selectedCameraEffect: CameraEffectId) {
         dataStore.edit { prefs ->
-            prefs[PreferenceKeys.KEY_SELECTED_CAMERA_EFFECT] = selectedCameraEffect
+            prefs[PreferenceKeys.KEY_SELECTED_CAMERA_EFFECT] = selectedCameraEffect.value
         }
     }
 

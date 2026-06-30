@@ -16,9 +16,12 @@
 package com.google.jetpackcamera.model
 
 /**
- * Represents the camera effects that can be selected in settings.
+ * A type-safe identifier for a camera effect.
  */
-enum class CameraEffect {
-    NONE,
-    SINGLE_STREAM
-}
+@JvmInline
+value class CameraEffectId(val value: String)
+
+/**
+ * Constant representing no active camera effect.
+ */
+val NONE_EFFECT_ID = CameraEffectId("none")

@@ -51,6 +51,7 @@ import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.core.common.IODispatcher
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -969,7 +970,7 @@ class CameraXCameraSystem(
         }
     }
 
-    override suspend fun setCameraEffect(cameraEffect: String) {
+    override suspend fun setCameraEffect(cameraEffect: CameraEffectId) {
         currentSettings.update { old ->
             old?.copy(selectedCameraEffect = cameraEffect)
                 ?.tryApplyImageFormatConstraints()

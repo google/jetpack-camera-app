@@ -39,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
@@ -116,7 +117,7 @@ private fun SettingsScreen(
     setFlashMode: (FlashMode) -> Unit = {},
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
-    setCameraEffect: (String) -> Unit = {},
+    setCameraEffect: (CameraEffectId) -> Unit = {},
     setStabilizationMode: (StabilizationMode) -> Unit = {},
     setAudio: (Boolean) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
@@ -176,7 +177,7 @@ internal fun SettingsList(
     setFlashMode: (FlashMode) -> Unit = {},
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
-    setCameraEffect: (String) -> Unit = {},
+    setCameraEffect: (CameraEffectId) -> Unit = {},
     setLowLightBoostPriority: (LowLightBoostPriority) -> Unit = {},
     setAudio: (Boolean) -> Unit = {},
     setStabilizationMode: (StabilizationMode) -> Unit = {},

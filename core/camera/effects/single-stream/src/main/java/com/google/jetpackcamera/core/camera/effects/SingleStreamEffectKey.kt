@@ -18,8 +18,8 @@ package com.google.jetpackcamera.core.camera.effects
 import com.google.jetpackcamera.model.CameraEffectId
 
 /**
- * A key used to identify a specific implementation of a camera effect.
+ * Key for the single stream effect.
  */
-interface CameraEffectFeatureKey {
-    val id: CameraEffectId
+object SingleStreamEffectKey : CameraEffectFeatureKey {
+    override val id: CameraEffectId = CameraEffectId("single_stream")
 }

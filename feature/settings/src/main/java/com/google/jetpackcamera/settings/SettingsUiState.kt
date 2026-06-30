@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
@@ -275,8 +276,8 @@ sealed interface AspectRatioUiState {
 
 sealed interface CameraEffectUiState {
     data class Enabled(
-        val currentCameraEffect: String,
-        val supportedEffects: Set<String>,
+        val currentCameraEffect: CameraEffectId,
+        val supportedEffects: Set<CameraEffectId>,
         val additionalContext: String = ""
     ) : CameraEffectUiState
 

@@ -23,6 +23,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -229,7 +230,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         TODO("Not yet implemented")
     }
 
-    override suspend fun setCameraEffect(cameraEffect: String) {
+    override suspend fun setCameraEffect(cameraEffect: CameraEffectId) {
         currentSettings.update { old ->
             old.copy(selectedCameraEffect = cameraEffect)
         }

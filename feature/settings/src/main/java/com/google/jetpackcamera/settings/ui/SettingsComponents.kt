@@ -59,12 +59,15 @@ import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.jetpackcamera.core.camera.effects.SingleStreamEffectKey
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
@@ -352,7 +355,7 @@ fun AspectRatioSetting(
 @Composable
 fun CameraEffectSetting(
     cameraEffectUiState: CameraEffectUiState,
-    setCameraEffect: (String) -> Unit,
+    setCameraEffect: (CameraEffectId) -> Unit,
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
@@ -362,9 +365,7 @@ fun CameraEffectSetting(
         enabled = cameraEffectUiState is CameraEffectUiState.Enabled,
         description = when (cameraEffectUiState) {
             is CameraEffectUiState.Enabled -> {
-                if (cameraEffectUiState.currentCameraEffect.isEmpty() ||
-                    cameraEffectUiState.currentCameraEffect == "none"
-                ) {
+                if (cameraEffectUiState.currentCameraEffect == NONE_EFFECT_ID) {
                     stringResource(id = R.string.stream_config_description_multi_stream)
                 } else {
                     stringResource(id = R.string.stream_config_description_single_stream)
@@ -385,12 +386,11 @@ fun CameraEffectSetting(
                         text = stringResource(
                             id = R.string.stream_config_selector_multi_stream
                         ),
-                        selected = cameraEffectUiState.currentCameraEffect.isEmpty() ||
-                            cameraEffectUiState.currentCameraEffect == "none",
+                        selected = cameraEffectUiState.currentCameraEffect == NONE_EFFECT_ID,
                         enabled = true,
-                        onClick = { setCameraEffect("none") }
+                        onClick = { setCameraEffect(NONE_EFFECT_ID) }
                     )
-                    if (cameraEffectUiState.supportedEffects.contains("single_stream")) {
+                    if (cameraEffectUiState.supportedEffects.contains(SingleStreamEffectKey.id)) {
                         SingleChoiceSelector(
                             modifier = Modifier.testTag(
                                 BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
@@ -398,9 +398,10 @@ fun CameraEffectSetting(
                             text = stringResource(
                                 id = R.string.stream_config_selector_single_stream
                             ),
-                            selected = cameraEffectUiState.currentCameraEffect == "single_stream",
+                            selected = cameraEffectUiState.currentCameraEffect ==
+                                SingleStreamEffectKey.id,
                             enabled = true,
-                            onClick = { setCameraEffect("single_stream") }
+                            onClick = { setCameraEffect(SingleStreamEffectKey.id) }
                         )
                     }
                 }

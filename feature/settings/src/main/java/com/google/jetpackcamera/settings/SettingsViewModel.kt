@@ -23,6 +23,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -707,10 +708,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setCameraEffect(cameraEffect: String) {
+    fun setCameraEffect(cameraEffect: CameraEffectId) {
         viewModelScope.launch {
             settingsRepository.updateSelectedCameraEffect(cameraEffect)
-            Log.d(TAG, "set camera effect: $cameraEffect")
+            Log.d(TAG, "set camera effect: ${cameraEffect.value}")
         }
     }
 

@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -198,9 +199,9 @@ interface CameraSystem {
     /**
      * Sets the camera effect.
      *
-     * @param cameraEffect The ID of the camera effect to set, or empty/\"none\" for no effect.
+     * @param cameraEffect The ID of the camera effect to set.
      */
-    suspend fun setCameraEffect(cameraEffect: String)
+    suspend fun setCameraEffect(cameraEffect: CameraEffectId)
 
     /**
      * Sets the dynamic range for the camera.
