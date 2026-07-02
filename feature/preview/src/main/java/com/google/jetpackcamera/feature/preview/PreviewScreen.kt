@@ -190,7 +190,7 @@ fun PreviewScreen(
         val readyStateProvider: () -> CaptureUiState.Ready = remember {
             {
                 requireNotNull(rawUiState.value as? CaptureUiState.Ready) {
-                    "Deferred read invoked when state was not Ready. "
+                    "Deferred read invoked when state was not Ready. " +
                     "Current state: ${rawUiState.value}"
                 }
             }
