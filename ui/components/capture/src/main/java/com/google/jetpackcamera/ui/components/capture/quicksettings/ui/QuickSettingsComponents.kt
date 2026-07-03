@@ -53,7 +53,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -116,7 +117,6 @@ fun QuickSetRatio(
                 AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
                 AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
                 AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-                else -> CameraAspectRatio.ONE_ONE
             }
         QuickSettingToggleButton(
             modifier = modifier,
@@ -711,7 +711,9 @@ private fun ExpandedQuickSetting(
             quickSettingButtons.size,
             (
                 (
-                    LocalConfiguration.current.screenWidthDp.dp - (
+                    with(LocalDensity.current) {
+                        LocalWindowInfo.current.containerSize.width.toDp()
+                    } - (
                         dimensionResource(
                             id = R.dimen.quick_settings_ui_horizontal_padding
                         ) * 2

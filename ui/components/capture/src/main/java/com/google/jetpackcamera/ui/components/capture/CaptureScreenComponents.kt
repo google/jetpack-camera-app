@@ -479,9 +479,11 @@ fun PreviewDisplay(
     focusMeteringUiState: FocusMeteringUiState,
     modifier: Modifier = Modifier
 ) {
-    if (previewDisplayUiState.aspectRatioUiState !is AspectRatioUiState.Available) {
+    val aspectRatioUiState = previewDisplayUiState.aspectRatioUiState
+    if (aspectRatioUiState !is AspectRatioUiState.Available) {
         return
     }
+    @Suppress("DEPRECATION")
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
             onScaleZoom(pinchZoomChange)
@@ -496,10 +498,8 @@ fun PreviewDisplay(
                 .background(Color.Black),
             contentAlignment = Alignment.TopCenter
         ) {
-            val aspectRatio = (
-                previewDisplayUiState.aspectRatioUiState as
-                    AspectRatioUiState.Available
-                ).selectedAspectRatio
+            val aspectRatio =
+                aspectRatioUiState.selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -765,10 +765,8 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                     VideoQuality.UHD ->
                         painterResource(R.drawable.video_resolution_uhd_icon)
 
-                    else ->
-                        throw IllegalStateException(
-                            "Illegal video quality state"
-                        )
+                    VideoQuality.UNSPECIFIED ->
+                        throw IllegalStateException("Illegal video quality state")
                 },
                 contentDescription = when (videoQuality) {
                     VideoQuality.SD ->
@@ -783,7 +781,7 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                     VideoQuality.UHD ->
                         stringResource(R.string.video_quality_description_uhd)
 
-                    else -> null
+                    VideoQuality.UNSPECIFIED -> null
                 }
             )
         }
@@ -831,7 +829,7 @@ fun FlipCameraButton(
                     )
                 }
             }
-            // dont rotate on the initial launch
+            // don't rotate on the initial launch
             else {
                 initialLaunch = true
             }
