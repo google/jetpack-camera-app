@@ -191,7 +191,7 @@ fun PreviewScreen(
             {
                 requireNotNull(rawUiState.value as? CaptureUiState.Ready) {
                     "Deferred read invoked when state was not Ready. " +
-                    "Current state: ${rawUiState.value}"
+                        "Current state: ${rawUiState.value}"
                 }
             }
         }
