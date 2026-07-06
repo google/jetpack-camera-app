@@ -24,8 +24,8 @@ const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
 const val IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
 
 const val IMAGE_CAPTURE_RESTRICTED_TAG = "ImageCaptureRestrictedTag"
-const val VIDEO_CAPTURE_RESTRICTED_TAG = "ImageCaptureRestrictedTag"
-const val HYBRID_CAPTURE_RESTRICTED_TAG = "ImageCaptureRestrictedTag"
+const val VIDEO_CAPTURE_RESTRICTED_TAG = "VideoCaptureRestrictedTag"
+const val HYBRID_CAPTURE_RESTRICTED_TAG = "HybridCaptureRestrictedTag"
 
 const val IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG =
     "ImageCaptureUnsupportedConcurrentCameraTag"
