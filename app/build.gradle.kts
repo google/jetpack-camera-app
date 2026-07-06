@@ -133,7 +133,9 @@ dependencies {
     androidTestImplementation(libs.camera.lifecycle) // to reset CameraX between tests
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.testParameterInjector)
+    androidTestImplementation(project(":ui:uistate"))
     androidTestImplementation(project(":ui:components:capture"))
+    androidTestImplementation(project(":ui:debug"))
     androidTestUtil(libs.androidx.orchestrator)
 
     implementation(libs.androidx.core.ktx)
@@ -151,9 +153,12 @@ dependencies {
 
     // Access settings & model data
     implementation(project(":data:settings"))
+    implementation(project(":core:settings:datastore-prefs"))
+    implementation(project(":core:settings"))
     implementation(project(":data:settings:api"))
 
     implementation(project(":core:model"))
+    implementation(libs.androidx.datastore.preferences)
 
     // Camera Preview
     implementation(project(":feature:preview"))
@@ -170,7 +175,9 @@ dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     // capture components
+    implementation(project(":ui:uistate"))
     implementation(project(":ui:components:capture"))
+    implementation(project(":ui:debug"))
 
     // Low Light implementations
     implementation(project(":core:camera:low-light-playservices"))

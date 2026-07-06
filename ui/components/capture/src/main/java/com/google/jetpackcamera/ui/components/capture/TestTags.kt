@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.components.capture
 const val CAPTURE_BUTTON = "CaptureButton"
 const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
+const val SNACKBAR_NODE_TAG = "SnackbarNodeTag"
 const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
 const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
 const val IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
@@ -41,14 +42,6 @@ const val AMPLITUDE_NONE_TAG = "AmplitudeNoneTag"
 const val AMPLITUDE_HOT_TAG = "AmplitudeHotTag"
 const val FOCUS_METERING_INDICATOR_TAG = "FocusMeteringIndicatorTag"
 
-// HDR disabled rationale tags
-const val HDR_IMAGE_UNSUPPORTED_ON_DEVICE_TAG = "HdrImageUnsupportedOnDeviceTag"
-const val HDR_IMAGE_UNSUPPORTED_ON_LENS_TAG = "HdrImageUnsupportedOnLensTag"
-const val HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM_TAG = "HdrImageUnsupportedOnSingleStreamTag"
-const val HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM_TAG = "HdrImageUnsupportedOnMultiStreamTag"
-const val HDR_VIDEO_UNSUPPORTED_ON_DEVICE_TAG = "HdrVideoUnsupportedOnDeviceTag"
-const val HDR_VIDEO_UNSUPPORTED_ON_LENS_TAG = "HdrVideoUnsupportedOnDeviceTag"
-const val HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED_TAG = "HdrSimultaneousImageVideoUnsupportedTag"
 const val ZOOM_BUTTON_ROW_TAG = "ZoomButtonRowTag"
 const val ZOOM_BUTTON_MIN_TAG = "ZoomButtonMinTag"
 const val ZOOM_BUTTON_1_TAG = "ZoomButton1Tag"
@@ -57,20 +50,8 @@ const val ZOOM_BUTTON_5_TAG = "ZoomButton5Tag"
 
 // debug component tags
 
-const val ZOOM_RATIO_TAG = "ZoomRatioTag"
-const val LOGICAL_CAMERA_ID_TAG = "LogicalCameraIdTag"
-const val PHYSICAL_CAMERA_ID_TAG = "PhysicalCameraIdTag"
 const val ELAPSED_TIME_TAG = "ElapsedTimeTag"
 const val VIDEO_QUALITY_TAG = "VideoQualityTag"
-const val DEBUG_OVERLAY_BUTTON = "DebugOverlayButton"
-
-const val BTN_DEBUG_HIDE_COMPONENTS_TAG = "btn_debug_hide_components"
-const val DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON = "DebugOverlayShowCameraPropertiesButton"
-const val DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON = "DebugOverlaySetZoomRatioButton"
-const val DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG = "DebugOverlayCameraPropertiesTag"
-const val DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD = "DebugOverlaySetZoomRatioTextField"
-const val DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON = "DebugOverlaySetZoomRatioSetButton"
-const val DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG = "DebugOverlayVideoResolutionTag"
 
 // quick settings tags
 // todo(kc): rename quick_settings_drop_down to something more appropriate?
@@ -82,8 +63,6 @@ const val QUICK_SETTINGS_BOTTOM_SHEET = "QuickSettingsBottomSheet"
 const val QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON = "QuickSettingsCloseExpandedButton"
 const val QUICK_SETTINGS_SCROLL_CONTAINER = "QuickSettingsScrollContainer"
 
-const val QUICK_SETTINGS_STREAM_CONFIG_BUTTON = "QuickSettingsStreamConfigButton"
-const val QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON = "QuickSettingsConcurrentCameraModeButton"
 const val QUICK_SETTINGS_HDR_BUTTON = "QuickSettingsHdrButton"
 const val QUICK_SETTINGS_FLASH_BUTTON = "QuickSettingsFlashButton"
 const val QUICK_SETTINGS_FLIP_CAMERA_BUTTON = "QuickSettingsFlipCameraButton"
@@ -100,3 +79,17 @@ const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY =
     "quick_settings_focused_capture_mode_btn_option_video_only"
 const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY =
     "quick_settings_focused_capture_mode_btn_option_image_only"
+
+const val BTN_QUICK_SETTINGS_FLASH_OPTION_OFF = "btn_quick_settings_flash_option_off"
+const val BTN_QUICK_SETTINGS_FLASH_OPTION_ON = "btn_quick_settings_flash_option_on"
+const val BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO = "btn_quick_settings_flash_option_auto"
+const val BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST =
+    "btn_quick_settings_flash_option_low_light_boost"
+
+const val BTN_QUICK_SETTINGS_HDR_OPTION_ON = "btn_quick_settings_hdr_option_on"
+const val BTN_QUICK_SETTINGS_HDR_OPTION_OFF = "btn_quick_settings_hdr_option_off"
+
+const val ROW_QUICK_SETTINGS_CAPTURE_MODE = "row_quick_settings_capture_mode"
+const val ROW_QUICK_SETTINGS_HDR = "row_quick_settings_hdr"
+const val ROW_QUICK_SETTINGS_ASPECT_RATIO = "row_quick_settings_aspect_ratio"
+const val ROW_QUICK_SETTINGS_FLASH = "row_quick_settings_flash"

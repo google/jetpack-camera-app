@@ -94,8 +94,7 @@ dependencies {
     androidTestImplementation(libs.truth)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
-    debugImplementation(libs.androidx.test.monitor)
-    implementation(libs.androidx.junit)
+    testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
@@ -109,6 +108,7 @@ dependencies {
     testImplementation(project(":core:common"))
     testImplementation(project(":core:camera:testing"))
     testImplementation(project(":data:settings"))
+    testImplementation(project(":core:settings"))
 
 }
 

@@ -16,10 +16,12 @@
 package com.google.jetpackcamera.core.camera.testing
 
 import com.google.common.truth.Truth
+import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -147,6 +149,22 @@ class FakeCameraSystemTest {
                 CameraSystem.ScreenFlashEvent.Type.CLEAR_UI
             )
         ).inOrder()
+    }
+
+    @Test
+    fun setSystemConstraints_updatesFlow() = runTest(testDispatcher) {
+        cameraSystem.setSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+        advanceUntilIdle()
+        Truth.assertThat(
+            cameraSystem.getSystemConstraints().value
+        ).isEqualTo(TYPICAL_SYSTEM_CONSTRAINTS)
+    }
+
+    @Test
+    fun setCurrentCameraState_updatesFlow() = runTest(testDispatcher) {
+        val newState = CameraState(isCameraRunning = true)
+        cameraSystem.setCurrentCameraState(newState)
+        Truth.assertThat(cameraSystem.getCurrentCameraState().value).isEqualTo(newState)
     }
 
     private fun TestScope.initAndRunCamera() {

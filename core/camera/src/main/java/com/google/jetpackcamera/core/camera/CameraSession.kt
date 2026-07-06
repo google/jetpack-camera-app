@@ -224,7 +224,6 @@ internal suspend fun runSingleCameraSession(
                     initialTransientSettings = currentTransientSettings,
                     stabilizationMode = sessionSettings.stabilizationMode,
                     aspectRatio = sessionSettings.aspectRatio,
-                    dynamicRange = sessionSettings.dynamicRange,
                     imageFormat = sessionSettings.imageFormat,
                     captureMode = sessionSettings.captureMode,
                     effect = cameraEffect,
@@ -591,7 +590,6 @@ internal fun createUseCaseGroup(
     stabilizationMode: StabilizationMode,
     aspectRatio: AspectRatio,
     videoCaptureUseCase: VideoCapture<Recorder>?,
-    dynamicRange: DynamicRange,
     imageFormat: ImageOutputFormat,
     captureMode: CaptureMode,
     effect: CameraEffect? = null,
@@ -607,7 +605,7 @@ internal fun createUseCaseGroup(
 
     // only create image use case in image or standard
     val imageCaptureUseCase = if (captureMode != CaptureMode.VIDEO_ONLY) {
-        createImageUseCase(cameraInfo, aspectRatio, dynamicRange, imageFormat)
+        createImageUseCase(cameraInfo, aspectRatio, imageFormat)
     } else {
         null
     }
@@ -666,15 +664,13 @@ private fun getHeightFromCropRect(cropRect: Rect?): Int {
 private fun createImageUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
-    dynamicRange: DynamicRange,
     imageFormat: ImageOutputFormat
 ): ImageCapture {
     val builder = ImageCapture.Builder()
     builder.setResolutionSelector(
         getResolutionSelector(cameraInfo.sensorLandscapeRatio, aspectRatio)
     )
-    if (dynamicRange != DynamicRange.SDR && imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
-    ) {
+    if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
         builder.setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
     }
     return builder.build()

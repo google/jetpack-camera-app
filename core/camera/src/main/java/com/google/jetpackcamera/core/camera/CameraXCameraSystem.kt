@@ -672,6 +672,9 @@ class CameraXCameraSystem(
 
     // Sets the camera to the designated lensFacing direction
     override suspend fun setLensFacing(lensFacing: LensFacing) {
+        // TODO: Handle lens flipping during recording when only one lens supports HDR.
+        // We should define the expected behavior (e.g., disable flip button, stop recording with error,
+        // or fallback to SDR mid-recording if supported by CameraX).
         currentSettings.update { old ->
             if (systemConstraints.availableLenses.contains(lensFacing)) {
                 old?.copy(cameraLensFacing = lensFacing)
@@ -706,29 +709,6 @@ class CameraXCameraSystem(
                 // concurrent currently only supports VIDEO_ONLY
                 if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
                     CaptureMode.VIDEO_ONLY
-                }
-
-                // if hdr is enabled...
-                else if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-                    dynamicRange == DynamicRange.HLG10
-                ) {
-                    // if both hdr video and image capture are supported, default to VIDEO_ONLY
-                    if (constraints.supportedDynamicRanges.contains(DynamicRange.HLG10) &&
-                        constraints.supportedImageFormatsMap[streamConfig]
-                            ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
-                    ) {
-                        if (captureMode == CaptureMode.STANDARD) {
-                            CaptureMode.VIDEO_ONLY
-                        } else {
-                            return this
-                        }
-                    }
-                    // return appropriate capture mode if only one is supported
-                    else if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
-                        CaptureMode.IMAGE_ONLY
-                    } else {
-                        CaptureMode.VIDEO_ONLY
-                    }
                 } else {
                     defaultCaptureMode ?: return this
                 }
@@ -784,10 +764,13 @@ class CameraXCameraSystem(
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedDynamicRanges) {
                 val newDynamicRange = if (contains(dynamicRange) &&
-                    flashMode != FlashMode.LOW_LIGHT_BOOST
+                    flashMode != FlashMode.LOW_LIGHT_BOOST &&
+                    captureMode != CaptureMode.STANDARD
                 ) {
                     dynamicRange
                 } else {
+                    // TODO: Consider preserving user preference for HDR instead of permanently
+                    //  resetting to SDR here when switching lenses.
                     DynamicRange.SDR
                 }
 
@@ -811,9 +794,15 @@ class CameraXCameraSystem(
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedImageFormatsMap[streamConfig]) {
-                val newImageFormat = if (this != null && contains(imageFormat)) {
+                // Prioritize Low Light Boost over Ultra HDR to maintain consistency with
+                // Video HDR / Low Light Boost conflict resolution.
+                val newImageFormat = if (this != null && contains(imageFormat) &&
+                    captureMode != CaptureMode.STANDARD &&
+                    flashMode != FlashMode.LOW_LIGHT_BOOST
+                ) {
                     imageFormat
                 } else {
+                    // TODO: Consider preserving user preference for HDR instead of permanently resetting to JPEG here when switching lenses.
                     ImageOutputFormat.JPEG
                 }
 
@@ -861,6 +850,7 @@ class CameraXCameraSystem(
             ConcurrentCameraMode.OFF -> this
             else ->
                 if (systemConstraints.concurrentCamerasSupported &&
+                    captureMode == CaptureMode.VIDEO_ONLY &&
                     dynamicRange == DynamicRange.SDR &&
                     streamConfig == StreamConfig.MULTI_STREAM &&
                     flashMode != FlashMode.LOW_LIGHT_BOOST
@@ -927,6 +917,7 @@ class CameraXCameraSystem(
         currentSettings.update { old ->
             old?.copy(flashMode = flashMode)
                 ?.tryApplyDynamicRangeConstraints()
+                ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
@@ -969,7 +960,7 @@ class CameraXCameraSystem(
             old?.copy(dynamicRange = dynamicRange)
                 ?.tryApplyDynamicRangeConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
-                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -983,7 +974,7 @@ class CameraXCameraSystem(
         currentSettings.update { old ->
             old?.copy(concurrentCameraMode = concurrentCameraMode)
                 ?.tryApplyConcurrentCameraModeConstraints()
-                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -991,7 +982,7 @@ class CameraXCameraSystem(
         currentSettings.update { old ->
             old?.copy(imageFormat = imageFormat)
                 ?.tryApplyImageFormatConstraints()
-                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -1025,6 +1016,9 @@ class CameraXCameraSystem(
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
             old?.copy(captureMode = captureMode)
+                ?.tryApplyDynamicRangeConstraints()
+                ?.tryApplyImageFormatConstraints()
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 

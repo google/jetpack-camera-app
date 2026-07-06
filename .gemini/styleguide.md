@@ -30,6 +30,7 @@ When reviewing a pull request, focus on the following key areas:
     * Scan for inefficient operations, especially within Composable functions (e.g., expensive calculations, improper state management leading to excessive recompositions).
     * Analyze camera configurations and use cases for potential performance bottlenecks.
     * Ensure coroutines and asynchronous operations are used efficiently.
+    * **State Conflation in Adapters:** High-frequency stream data (e.g., nanosecond timestamps) should be rounded or conflated at the `UiStateAdapter` level before reaching the UI state, to avoid unnecessary recompositions. [Introduced in PR #514]
 
 4.  **Jetpack Compose & CameraX Usage**
     * Verify that Compose and CameraX APIs are used correctly and effectively.
@@ -47,6 +48,7 @@ When reviewing a pull request, focus on the following key areas:
     * **Test Stability & Timeouts:**
         *   **Explicit Timeouts:** Avoid using `waitUntil` (or similar synchronization) without explicitly defining a `timeoutMillis`. Default timeouts are often too short for slower emulators (like API 28) or low-end devices, leading to flakiness.
         *   **Helper Functions for Waits:** If a wait condition is repeated (e.g., waiting for a specific UI element), extract it into a helper function (e.g., `waitForNodeWithTag`). This consolidates the logic and allows the timeout duration to be tuned centrally for that specific scenario.
+        *   **Animation Bypassing for Tests:** Any new animation added to the UI **must** respect `LocalDisableAnimations` and snap to its end state or use a fixed state when animations are disabled, to prevent Espresso timeouts on slow emulators.
 
 6.  **Documentation Sync**
     * **Check for necessary updates:** Analyze if the PR's changes (e.g., adding a new feature, changing build logic, deprecating functionality) require updates to `README.md` or other documentation files.
@@ -62,6 +64,7 @@ When reviewing a pull request, focus on the following key areas:
 8.  **Resource Management**
     * **No Hardcoded Strings:** Forbid hardcoded user-facing strings in composables. All text should be extracted into `strings.xml` to support localization and make updates easier.
     * **Prefer Vector Drawables:** For icons and simple graphics, vector drawables (SVGs) should be preferred over raster images (PNGs) to reduce APK size and ensure sharp rendering on all screen densities.
+    * **Delete Unused Resources:** When refactoring or removing components, ensure that any associated resources (such as strings in `strings.xml` or icons/drawables in the `res/drawable` directory) that are no longer used anywhere in the project are deleted to reduce the final file size and maintain codebase cleanliness.
 
 9.  **Readability, Logging, and Documentation**
     *   **Code Clarity:** Is the code clear, concise, and easy to understand? Are function and variable names descriptive?

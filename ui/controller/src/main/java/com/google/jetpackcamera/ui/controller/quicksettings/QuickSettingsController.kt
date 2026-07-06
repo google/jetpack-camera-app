@@ -17,13 +17,10 @@ package com.google.jetpackcamera.ui.controller.quicksettings
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.StreamConfig
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 
 /**
  * Interface for controlling quick settings.
@@ -33,13 +30,6 @@ interface QuickSettingsController {
      * Toggles the visibility of the quick settings menu.
      */
     fun toggleQuickSettings()
-
-    /**
-     * Sets the currently focused quick setting, used for expanding a setting's options.
-     *
-     * @param focusedQuickSetting The quick setting to focus.
-     */
-    fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting)
 
     /**
      * Sets the lens facing (e.g., front or back camera).
@@ -63,13 +53,6 @@ interface QuickSettingsController {
     fun setAspectRatio(aspectRatio: AspectRatio)
 
     /**
-     * Sets the stream configuration (e.g., single stream for performance, multi-stream for flexibility).
-     *
-     * @param streamConfig The stream configuration to set.
-     */
-    fun setStreamConfig(streamConfig: StreamConfig)
-
-    /**
      * Sets the dynamic range (e.g., SDR, HDR).
      *
      * @param dynamicRange The dynamic range to set.
@@ -82,13 +65,6 @@ interface QuickSettingsController {
      * @param imageOutputFormat The image format to set.
      */
     fun setImageFormat(imageOutputFormat: ImageOutputFormat)
-
-    /**
-     * Sets the concurrent camera mode.
-     *
-     * @param concurrentCameraMode The concurrent camera mode to set.
-     */
-    fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
 
     /**
      * Sets the capture mode (e.g., single image, single video, or hybrid).

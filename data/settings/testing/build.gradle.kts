@@ -50,9 +50,8 @@ android {
 
 dependencies {
     implementation(project(":data:settings"))
+    implementation(project(":core:settings"))
     implementation(project(":core:model"))
     
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.androidx.datastore)
-    implementation(libs.protobuf.kotlin.lite)
 }

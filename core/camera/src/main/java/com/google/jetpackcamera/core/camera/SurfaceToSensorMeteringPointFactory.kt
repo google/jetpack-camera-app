@@ -31,7 +31,7 @@ import androidx.camera.core.MeteringPointFactory
  * @param sensorToBufferTransform The transform from sensor coordinates to buffer coordinates.
  */
 @SuppressLint("RestrictedApi")
-class SurfaceToSensorMeteringPointFactory(
+internal class SurfaceToSensorMeteringPointFactory(
     private val sensorRect: Rect,
     private val sensorToBufferTransform: Matrix
 ) : MeteringPointFactory(Rational(sensorRect.width(), sensorRect.height())) {

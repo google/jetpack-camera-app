@@ -203,7 +203,7 @@ internal fun SavedStateHandle.getCaptureUris(defaultIfMissing: List<Uri> = empty
 
 internal fun SavedStateHandle.getDebugSettings(
     defaultIfMissing: DebugSettings = DebugSettings()
-): DebugSettings = get<ByteArray>(ARG_DEBUG_SETTINGS)?.let(DebugSettings::parseFromByteArray)
+): DebugSettings = get<String>(ARG_DEBUG_SETTINGS)?.let(DebugSettings::parseFromString)
     ?: defaultIfMissing
 
 internal fun SavedStateHandle.getUseDeveloperConfig(defaultIfMissing: Boolean = false): Boolean =

@@ -37,7 +37,8 @@ interface ConstraintsModule {
     /**
      * ConstraintsRepository without setter.
      *
-     * This is the same instance as the activity-retained SettableConstraintsRepository, but does not
+     * This is the same instance as the activity-retained
+     * SettableConstraintsRepository, but does not
      * have the ability to update the constraints.
      */
     @Binds

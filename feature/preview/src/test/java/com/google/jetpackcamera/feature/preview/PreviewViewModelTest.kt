@@ -74,7 +74,7 @@ class PreviewViewModelTest {
         previewViewModel = PreviewViewModel(
             cameraSystemRepository = cameraSystemRepository,
             constraintsRepository = constraintsRepository,
-            settingsRepository = FakeSettingsRepository,
+            settingsRepository = FakeSettingsRepository(),
             mediaRepository = FakeMediaRepository(),
             savedStateHandle = SavedStateHandle(),
             defaultSaveMode = SaveMode.Immediate,

@@ -24,12 +24,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState
@@ -245,8 +239,8 @@ internal class PostCaptureViewModelTest {
         val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
 
         assertThat(snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(snackBarUiState.snackBarQueue.first().testTag)
-            .isEqualTo(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS)
+        assertThat(snackBarUiState.snackBarQueue.first().stringResource)
+            .isEqualTo(R.string.snackbar_save_image_success)
     }
 
     @Test
@@ -262,8 +256,8 @@ internal class PostCaptureViewModelTest {
         // Then
         val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
         assertThat(snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(snackBarUiState.snackBarQueue.first().testTag)
-            .isEqualTo(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS)
+        assertThat(snackBarUiState.snackBarQueue.first().stringResource)
+            .isEqualTo(R.string.snackbar_save_video_success)
     }
 
     @Test
@@ -280,8 +274,8 @@ internal class PostCaptureViewModelTest {
         // Then
         val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
         assertThat(snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(snackBarUiState.snackBarQueue.first().testTag)
-            .isEqualTo(SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE)
+        assertThat(snackBarUiState.snackBarQueue.first().stringResource)
+            .isEqualTo(R.string.snackbar_save_image_failure)
     }
 
     @Test
@@ -298,8 +292,8 @@ internal class PostCaptureViewModelTest {
         // Then
         val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
         assertThat(snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(snackBarUiState.snackBarQueue.first().testTag)
-            .isEqualTo(SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE)
+        assertThat(snackBarUiState.snackBarQueue.first().stringResource)
+            .isEqualTo(R.string.snackbar_save_video_failure)
     }
 
     @Test
@@ -316,8 +310,8 @@ internal class PostCaptureViewModelTest {
         // Then
         val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
         assertThat(snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(snackBarUiState.snackBarQueue.first().testTag)
-            .isEqualTo(SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE)
+        assertThat(snackBarUiState.snackBarQueue.first().stringResource)
+            .isEqualTo(R.string.snackbar_delete_image_failure)
     }
 
     @Test
@@ -334,8 +328,8 @@ internal class PostCaptureViewModelTest {
         // Then
         val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
         assertThat(snackBarUiState.snackBarQueue).hasSize(1)
-        assertThat(snackBarUiState.snackBarQueue.first().testTag)
-            .isEqualTo(SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE)
+        assertThat(snackBarUiState.snackBarQueue.first().stringResource)
+            .isEqualTo(R.string.snackbar_delete_video_failure)
     }
 
     @Test

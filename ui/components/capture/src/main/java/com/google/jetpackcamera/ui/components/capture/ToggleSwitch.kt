@@ -19,6 +19,7 @@ import android.content.res.Configuration
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.Orientation
@@ -106,12 +107,19 @@ fun ToggleSwitch(
     // --- 2. Drag and Animation State ---
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val targetPosition = if (checked) 1f else 0f
+    val disableAnimations = LocalDisableAnimations.current
 
     // Animate the thumb position.
     // This snaps (0ms) during drag and animates (300ms) on tap or drag release.
     val animatedPosition by animateFloatAsState(
         targetValue = (targetPosition + (dragOffset / dims.dragRange)).coerceIn(0f, 1f),
-        animationSpec = tween(durationMillis = if (dragOffset == 0f) 300 else 0),
+        animationSpec = if (disableAnimations) {
+            snap()
+        } else {
+            tween(
+                durationMillis = if (dragOffset == 0f) 300 else 0
+            )
+        },
         label = "thumbPosition"
     )
     val initialThumbX = dims.startX + dims.dragRange * animatedPosition
@@ -120,12 +128,12 @@ fun ToggleSwitch(
     // color changes if togglemode is off (to indicate on/off state)
     val trackAnimatedColor by animateColorAsState(
         targetValue = trackColor,
-        animationSpec = tween(durationMillis = 300),
+        animationSpec = if (disableAnimations) snap() else tween(durationMillis = 300),
         label = "trackColor"
     )
     val thumbAnimatedColor by animateColorAsState(
         targetValue = if (!enabled) disableColor.copy(alpha = 0.12f) else thumbColor,
-        animationSpec = tween(durationMillis = 300),
+        animationSpec = if (disableAnimations) snap() else tween(durationMillis = 300),
         label = "thumbColor"
     )
 

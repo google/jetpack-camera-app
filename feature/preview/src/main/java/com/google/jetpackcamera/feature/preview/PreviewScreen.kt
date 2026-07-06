@@ -83,6 +83,7 @@ import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.PreviewLayout
 import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
 import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
 import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
@@ -91,7 +92,6 @@ import com.google.jetpackcamera.ui.components.capture.VideoQualityIcon
 import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
 import com.google.jetpackcamera.ui.components.capture.ZoomStateManager
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
-import com.google.jetpackcamera.ui.components.capture.debug.DebugOverlay
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsBottomSheet
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
@@ -101,13 +101,14 @@ import com.google.jetpackcamera.ui.controller.CaptureController
 import com.google.jetpackcamera.ui.controller.ImageWellController
 import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
-import com.google.jetpackcamera.ui.controller.debug.DebugController
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
+import com.google.jetpackcamera.ui.debug.DebugController
+import com.google.jetpackcamera.ui.debug.DebugOverlay
+import com.google.jetpackcamera.ui.debug.DebugUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
-import com.google.jetpackcamera.ui.uistate.capture.DebugUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
@@ -532,7 +533,8 @@ private fun ContentScreen(
                         quickSettingsController.toggleQuickSettings()
                         onNavigateToSettings()
                     },
-                    quickSettingsController = quickSettingsController
+                    quickSettingsController = quickSettingsController,
+                    showMoreSettingsButton = true
                 )
             }
         },
@@ -576,7 +578,7 @@ private fun ContentScreen(
                 if (snackBarData != null) {
                     snackBarController?.let { snackBarController ->
                         TestableSnackbar(
-                            modifier = modifier.testTag(snackBarData.testTag),
+                            modifier = modifier.testTag(SNACKBAR_NODE_TAG),
                             snackbarToShow = snackBarData,
                             snackbarHostState = snackbarHostState,
                             snackBarController = snackBarController

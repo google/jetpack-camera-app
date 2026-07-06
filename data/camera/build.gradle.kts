@@ -73,6 +73,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:model"))
     implementation(project(":data:settings"))
+    implementation(project(":core:settings"))
 }
 
 // Allow references to generated code

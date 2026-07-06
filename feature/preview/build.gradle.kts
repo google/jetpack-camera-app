@@ -113,8 +113,7 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
-    debugImplementation(libs.androidx.test.monitor)
-    implementation(libs.androidx.junit)
+    testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
@@ -140,6 +139,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":data:media"))
     implementation(project(":data:settings"))
+    implementation(project(":core:settings"))
     implementation(project(":data:settings:api"))
     implementation(project(":core:model"))
     testImplementation(project(":core:camera:testing"))
@@ -153,7 +153,7 @@ dependencies {
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:uistateadapter"))
     implementation(project(":ui:uistateadapter:capture"))
-
+    implementation(project(":ui:debug"))
 }
 
 // Allow references to generated code

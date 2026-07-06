@@ -50,7 +50,6 @@ sealed interface SingleSelectableUiState<T> {
  * Provides a way to get a human-readable message and a test tag for UI testing.
  */
 interface DisableRationale {
-    val testTag: String
     val reasonTextResId: Int
     fun getDisplayMessage(context: Context): String {
         return context.getString(reasonTextResId)

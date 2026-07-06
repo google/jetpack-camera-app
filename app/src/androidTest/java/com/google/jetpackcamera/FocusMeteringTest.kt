@@ -25,10 +25,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
-import com.google.jetpackcamera.ui.components.capture.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FOCUS_METERING_INDICATOR_TAG
 import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
+import com.google.jetpackcamera.ui.debug.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.utils.FOCUS_METERING_INDICATOR_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra

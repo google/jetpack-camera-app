@@ -18,16 +18,13 @@ package com.google.jetpackcamera.ui.controller.impl
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -61,12 +58,6 @@ class QuickSettingsControllerImpl(
         }
     }
 
-    override fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting) {
-        trackedCaptureUiState.update { old ->
-            old.copy(focusedQuickSetting = focusedQuickSetting)
-        }
-    }
-
     override fun setLensFacing(lensFace: LensFacing) {
         scope.launch {
             // apply to cameraSystem
@@ -87,12 +78,6 @@ class QuickSettingsControllerImpl(
         }
     }
 
-    override fun setStreamConfig(streamConfig: StreamConfig) {
-        scope.launch {
-            cameraSystem.setStreamConfig(streamConfig)
-        }
-    }
-
     override fun setDynamicRange(dynamicRange: DynamicRange) {
         if (externalCaptureMode != ExternalCaptureMode.ImageCapture &&
             externalCaptureMode != ExternalCaptureMode.MultipleImageCapture
@@ -108,12 +93,6 @@ class QuickSettingsControllerImpl(
             scope.launch {
                 cameraSystem.setImageFormat(imageOutputFormat)
             }
-        }
-    }
-
-    override fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        scope.launch {
-            cameraSystem.setConcurrentCameraMode(concurrentCameraMode)
         }
     }
 
