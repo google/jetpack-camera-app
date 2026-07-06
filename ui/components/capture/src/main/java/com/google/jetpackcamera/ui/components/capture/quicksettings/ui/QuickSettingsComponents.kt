@@ -724,7 +724,7 @@ private fun PreviewSettingRowDark() {
         ) {
             SettingRow(
                 title = "Video Resolution",
-                stateSubtitle = "Standard Definition",
+                stateSubtitle = "Standard Definition"
             ) {
                 // Off State (Highlighted per your screenshot)
                 QuickSettingToggleSelectorButton(

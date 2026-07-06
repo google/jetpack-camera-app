@@ -168,7 +168,7 @@ fun captureUiState(
                 systemConstraints,
                 cameraAppSettings,
                 roundedCameraState,
-                externalCaptureMode
+                externalCaptureMode,
                 appConfig.captureMode.uiRestriction
             ),
             hdrUiState = hdrUiState,
@@ -198,6 +198,7 @@ internal fun roundVideoRecordingState(
         is VideoRecordingState.Active.Recording -> videoRecordingState.copy(
             elapsedTimeNanos = roundedNanos
         )
+
         is VideoRecordingState.Active.Paused -> videoRecordingState.copy(
             elapsedTimeNanos = roundedNanos
         )
