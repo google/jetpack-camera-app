@@ -33,8 +33,6 @@ data class DeveloperAppConfig(
     val flashMode: SettingConfig<FlashMode>,
     val imageOutputFormat: SettingConfig<ImageOutputFormat>,
     val videoDynamicRange: SettingConfig<DynamicRange>
-    // val audio: SettingConfig<Boolean>,
-
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
@@ -48,7 +46,10 @@ data class DeveloperAppConfig(
             }
         }
 
-        require(flashMode.containsIfOptionsEnabled(setOf(FlashMode.OFF)))
+        // Ensure FlashMode.OFF is always available as a safe fallback to prevent hardware flash lockup
+        require(flashMode.containsIfOptionsEnabled(setOf(FlashMode.OFF))) {
+            "FlashMode.OFF must always be included in enabledOptions for flashMode."
+        }
     }
 
     /**
@@ -65,8 +66,6 @@ data class DeveloperAppConfig(
             captureMode = this.captureMode.defaultValue,
             imageFormat = this.imageOutputFormat.defaultValue,
             dynamicRange = this.videoDynamicRange.defaultValue
-            // audioEnabled = this.audio.defaultValue,
-
         )
     }
 }
@@ -98,6 +97,9 @@ data class SettingConfig<T>(
     }
 }
 
+/**
+ * Represents UI option restrictions applied to a setting.
+ */
 sealed interface OptionRestrictionConfig<T> {
     /** All device-supported options are available. */
     class NotRestricted<T> : OptionRestrictionConfig<T>

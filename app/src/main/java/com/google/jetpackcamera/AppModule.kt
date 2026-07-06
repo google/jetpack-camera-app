@@ -34,7 +34,7 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    private val JcaDefaultAppConfig: DeveloperAppConfig = DeveloperAppConfig(
+    private val jcaDefaultAppConfig: DeveloperAppConfig = DeveloperAppConfig(
         aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
         flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
         captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
@@ -44,7 +44,7 @@ object AppModule {
 
     @Provides
     @DefaultAppConfig
-    fun providesDeveloperAppConfig(): DeveloperAppConfig = JcaDefaultAppConfig
+    fun providesDeveloperAppConfig(): DeveloperAppConfig = jcaDefaultAppConfig
 
     /**
      * provides the default [CaptureMode] to override by the app

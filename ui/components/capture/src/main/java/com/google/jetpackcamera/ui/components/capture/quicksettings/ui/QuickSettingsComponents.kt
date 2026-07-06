@@ -729,7 +729,7 @@ private fun PreviewSettingRowDark() {
                 // Off State (Highlighted per your screenshot)
                 QuickSettingToggleSelectorButton(
                     text = "SD",
-                    accessibilityText = "Flash Off",
+                    accessibilityText = "Standard Definition",
                     painter = painterResource(id = R.drawable.video_resolution_sd_icon),
                     isSelected = true,
                     onClick = {}

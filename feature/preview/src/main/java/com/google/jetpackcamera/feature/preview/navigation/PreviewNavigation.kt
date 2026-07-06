@@ -20,6 +20,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavController
@@ -153,19 +154,21 @@ fun NavGraphBuilder.previewScreen(
         enterTransition = { fadeIn() }
     ) {
         val permissionStates = rememberMultiplePermissionsState(
-            permissions =
-            buildList {
-                add(Manifest.permission.CAMERA)
-                add(Manifest.permission.RECORD_AUDIO)
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            remember {
+                buildList {
+                    add(Manifest.permission.CAMERA)
+                    add(Manifest.permission.RECORD_AUDIO)
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                        add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    }
                 }
             }
         )
         // Automatically navigate to permissions screen when camera permission revoked
-        LaunchedEffect(key1 = permissionStates.permissions[0].status) {
-            if (!permissionStates.permissions[0].status.isGranted) {
+        val cameraPermissionStatus = permissionStates.permissions.firstOrNull { it.permission == Manifest.permission.CAMERA }?.status
+        LaunchedEffect(key1 = cameraPermissionStatus) {
+            if (cameraPermissionStatus?.isGranted == false) {
                 onNavigateToPermissions()
             }
         }
