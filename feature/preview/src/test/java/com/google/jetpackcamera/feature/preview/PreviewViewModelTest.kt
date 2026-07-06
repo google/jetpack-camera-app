@@ -27,11 +27,16 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
+import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.api.DeveloperAppConfig
+import com.google.jetpackcamera.settings.api.OptionRestrictionConfig
 import com.google.jetpackcamera.settings.api.SettingConfig
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
@@ -59,18 +64,18 @@ class PreviewViewModelTest {
     private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
         updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
+    private val defaultTestAppConfig = DeveloperAppConfig(
+        aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
+        flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
+        captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
+        imageOutputFormat = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
+        videoDynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
+    )
     private lateinit var previewViewModel: PreviewViewModel
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
-        val defaultAppConfig = DeveloperAppConfig(
-            aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
-            flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
-            captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
-            imageOutputFormat = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
-            videoDynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
-        )
         previewViewModel = PreviewViewModel(
             cameraSystemRepository = cameraSystemRepository,
             constraintsRepository = constraintsRepository,
@@ -78,7 +83,7 @@ class PreviewViewModelTest {
             mediaRepository = FakeMediaRepository(),
             savedStateHandle = SavedStateHandle(),
             defaultSaveMode = SaveMode.Immediate,
-            appConfig = defaultAppConfig
+            appConfig = defaultTestAppConfig
         )
         advanceUntilIdle()
     }
@@ -191,8 +196,78 @@ class PreviewViewModelTest {
         }
     }
 
-    private fun TestScope.startCameraUntilRunning() {
-        previewViewModel.cameraController.startCamera()
+    @Test
+    fun captureUiState_whenUseDeveloperConfigTrue_appliesRestrictions() = runTest(StandardTestDispatcher()) {
+        val restrictedAppConfig = defaultTestAppConfig.copy(
+            captureMode = SettingConfig(
+                defaultValue = CaptureMode.IMAGE_ONLY,
+                uiRestriction = OptionRestrictionConfig.FullyRestricted()
+            )
+        )
+        val viewModel = PreviewViewModel(
+            cameraSystemRepository = cameraSystemRepository,
+            constraintsRepository = constraintsRepository,
+            settingsRepository = FakeSettingsRepository(),
+            mediaRepository = FakeMediaRepository(),
+            savedStateHandle = SavedStateHandle(mapOf(PreviewRoute.ARG_USE_DEVELOPER_CONFIG to true)),
+            defaultSaveMode = SaveMode.Immediate,
+            appConfig = restrictedAppConfig
+        )
+        advanceUntilIdle()
+        viewModel.cameraController.startCamera()
+        advanceUntilIdle()
+
+        val uiState = viewModel.captureUiState.value
+        assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
+        val readyState = uiState as CaptureUiState.Ready
+        val quickSettings = readyState.quickSettingsUiState as QuickSettingsUiState.Available
+        val captureModeState = quickSettings.captureModeUiState as CaptureModeUiState.Available
+        val standardState = captureModeState.availableCaptureModes.find {
+            when (it) {
+                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.STANDARD
+                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.STANDARD
+            }
+        }
+        assertThat(standardState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
+    }
+
+    @Test
+    fun captureUiState_whenUseDeveloperConfigFalse_ignoresRestrictions() = runTest(StandardTestDispatcher()) {
+        val restrictedAppConfig = defaultTestAppConfig.copy(
+            captureMode = SettingConfig(
+                defaultValue = CaptureMode.IMAGE_ONLY,
+                uiRestriction = OptionRestrictionConfig.FullyRestricted()
+            )
+        )
+        val viewModel = PreviewViewModel(
+            cameraSystemRepository = cameraSystemRepository,
+            constraintsRepository = constraintsRepository,
+            settingsRepository = FakeSettingsRepository(),
+            mediaRepository = FakeMediaRepository(),
+            savedStateHandle = SavedStateHandle(mapOf(PreviewRoute.ARG_USE_DEVELOPER_CONFIG to false)),
+            defaultSaveMode = SaveMode.Immediate,
+            appConfig = restrictedAppConfig
+        )
+        advanceUntilIdle()
+        viewModel.cameraController.startCamera()
+        advanceUntilIdle()
+
+        val uiState = viewModel.captureUiState.value
+        assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
+        val readyState = uiState as CaptureUiState.Ready
+        val quickSettings = readyState.quickSettingsUiState as QuickSettingsUiState.Available
+        val captureModeState = quickSettings.captureModeUiState as CaptureModeUiState.Available
+        val standardState = captureModeState.availableCaptureModes.find {
+            when (it) {
+                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.STANDARD
+                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.STANDARD
+            }
+        }
+        assertThat(standardState).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
+    }
+
+    private fun TestScope.startCameraUntilRunning(viewModel: PreviewViewModel? = null) {
+        (viewModel ?: previewViewModel).cameraController.startCamera()
         advanceUntilIdle()
     }
 }
