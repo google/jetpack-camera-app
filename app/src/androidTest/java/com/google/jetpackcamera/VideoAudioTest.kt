@@ -19,7 +19,6 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.RequiresDevice
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
@@ -28,19 +27,21 @@ import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_TOGGLE
 import com.google.jetpackcamera.ui.components.capture.AudioInputState
 import com.google.jetpackcamera.ui.components.capture.AudioStateProperty
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.uistateadapter.capture.R
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.pressAndDragToLockVideoRecording
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTagAndSemantics
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@RequiresDevice
 class VideoAudioTest {
     @get:Rule
     val permissionsRule: GrantPermissionRule =
@@ -70,6 +71,14 @@ class VideoAudioTest {
             composeTestRule.waitForNodeWithTagAndSemantics(
                 tag = AUDIO_INPUT_TOGGLE,
                 semanticsProperty = AudioStateProperty to AudioInputState.INCOMING
+            )
+
+            // Stop recording
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).performClick()
+
+            composeTestRule.waitForSnackbarWithText(
+                R.string.toast_video_capture_success,
+                VIDEO_CAPTURE_TIMEOUT_MILLIS
             )
         }
     }
@@ -114,7 +123,11 @@ class VideoAudioTest {
 
             // Stop recording
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).performClick()
+
+            composeTestRule.waitForSnackbarWithText(
+                R.string.toast_video_capture_success,
+                VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
         }
     }
 
@@ -150,7 +163,10 @@ class VideoAudioTest {
 
             // Stop recording
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).performClick()
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).performClick()
+            composeTestRule.waitForSnackbarWithText(
+                R.string.toast_video_capture_success,
+                VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
         }
     }
 }
