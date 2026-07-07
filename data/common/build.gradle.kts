@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -21,7 +22,7 @@ plugins {
 }
 
 android {
-    namespace = "com.google.jetpackcamera.data.media"
+    namespace = "com.google.jetpackcamera.data.common"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -48,23 +49,6 @@ android {
     kotlin {
         jvmToolchain(17)
     }
-
-    @Suppress("UnstableApiUsage")
-    testOptions {
-        managedDevices {
-            localDevices {
-                create("pixel2Api28") {
-                    device = "Pixel 2"
-                    apiLevel = 28
-                }
-                create("pixel8Api34") {
-                    device = "Pixel 8"
-                    apiLevel = 34
-                    systemImageSource = "aosp_atd"
-                }
-            }
-        }
-    }
 }
 
 dependencies {
@@ -74,25 +58,8 @@ dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
-    // Testing
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.kotlinx.coroutines.test)
-
-    testImplementation(libs.robolectric)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.kotlinx.coroutines.test)
-
-
     // Project dependencies
     implementation(project(":core:common"))
-    implementation(project(":data:common"))
-    testImplementation(project(":core:common:testing"))
-    androidTestImplementation(project(":core:common:testing"))
-
 }
 
 // Allow references to generated code

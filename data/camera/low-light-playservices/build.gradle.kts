@@ -17,16 +17,17 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
-    namespace = "com.google.jetpackcamera.core.camera.postprocess"
+    namespace = "com.google.jetpackcamera.data.camera.lowlight.playservices"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -34,4 +35,21 @@ android {
     kotlin {
         jvmToolchain(17)
     }
+}
+
+dependencies {
+    implementation(project(":core:camera:low-light"))
+    implementation(libs.play.services.base)
+    implementation(libs.play.services.camera.low.light.boost)
+    implementation(libs.androidx.annotation)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.core)
+    implementation(libs.dagger.hilt.android)
+    kapt(libs.dagger.hilt.compiler)
+    implementation(libs.kotlinx.coroutines.play.services)
+}
+
+// Allow references to generated code
+kapt {
+    correctErrorTypes = true
 }

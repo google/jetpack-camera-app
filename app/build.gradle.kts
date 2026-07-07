@@ -101,6 +101,7 @@ android {
 dependencies {
     implementation(libs.androidx.tracing)
     implementation(project(":core:common"))
+    implementation(project(":data:common"))
     implementation(project(":feature:postcapture"))
     // Compose
     val composeBom = platform(libs.compose.bom)
@@ -178,7 +179,11 @@ dependencies {
     implementation(project(":ui:debug"))
 
     // Low Light implementations
-    implementation(project(":core:camera:low-light-playservices"))
+    implementation(project(":data:camera:low-light"))
+    implementation(project(":data:camera:low-light-playservices"))
+
+    // Postprocess implementations
+    implementation(project(":data:camera:postprocess"))
 }
 
 // Allow references to generated code

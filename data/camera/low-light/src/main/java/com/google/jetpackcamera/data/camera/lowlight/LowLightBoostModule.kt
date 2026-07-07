@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera.lowlight
+package com.google.jetpackcamera.data.camera.lowlight
 
+import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
+import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
+import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

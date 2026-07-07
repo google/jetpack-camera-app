@@ -45,10 +45,10 @@ import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
-import com.google.jetpackcamera.core.common.DefaultDispatcher
-import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
 import com.google.jetpackcamera.core.common.FilePathGenerator
-import com.google.jetpackcamera.core.common.IODispatcher
+import com.google.jetpackcamera.data.common.DefaultDispatcher
+import com.google.jetpackcamera.data.common.DefaultFilePathGenerator
+import com.google.jetpackcamera.data.common.IODispatcher
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode

@@ -71,6 +71,7 @@ dependencies {
     implementation(project(":core:camera:low-light"))
     implementation(project(":core:camera:postprocess"))
     implementation(project(":core:common"))
+    implementation(project(":data:common"))
     implementation(project(":core:model"))
     implementation(project(":data:settings"))
     implementation(project(":core:settings"))
