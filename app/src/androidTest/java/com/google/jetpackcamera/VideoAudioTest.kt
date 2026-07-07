@@ -24,9 +24,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_TOGGLE
 import com.google.jetpackcamera.ui.components.capture.AudioInputState
 import com.google.jetpackcamera.ui.components.capture.AudioStateProperty
-import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_TOGGLE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra

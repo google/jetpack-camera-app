@@ -156,7 +156,6 @@ fun ComposeTestRule.waitForCaptureButton(timeoutMillis: Long = APP_START_TIMEOUT
     }
 }
 
-
 fun ComposeTestRule.waitForNodeWithTag(
     tag: String,
     timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
