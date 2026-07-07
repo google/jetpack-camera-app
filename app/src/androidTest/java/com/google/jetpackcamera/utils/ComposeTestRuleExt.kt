@@ -28,6 +28,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -208,7 +209,7 @@ fun ComposeTestRule.waitForSnackbarWithText(
 ) {
     val expectedText = getResString(textResId)
     waitUntil(timeoutMillis = timeoutMillis) {
-        onAllNodes(hasTestTag(SNACKBAR_NODE_TAG) and hasText(expectedText))
+        onAllNodes(hasAnyAncestor(hasTestTag(SNACKBAR_NODE_TAG)) and hasText(expectedText))
             .fetchSemanticsNodes().isNotEmpty()
     }
 }
