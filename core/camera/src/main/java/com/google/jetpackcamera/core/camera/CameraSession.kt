@@ -1007,7 +1007,6 @@ private fun getPendingRecording(
 context(CameraSessionContext)
 @OptIn(ExperimentalPersistentRecording::class)
 private suspend fun startVideoRecordingInternal(
-    isInitialAudioEnabled: Boolean,
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
@@ -1031,7 +1030,7 @@ private suspend fun startVideoRecordingInternal(
 
     pendingRecord.apply {
         if (isAudioGranted) {
-            withAudioEnabled(isInitialAudioEnabled)
+            withAudioEnabled(initialMuted = !initialRecordingSettings.isAudioEnabled)
         }
     }
         .asPersistentRecording()
@@ -1170,8 +1169,6 @@ private suspend fun startVideoRecordingInternal(
                 }
             }
         }
-    }.apply {
-        mute(!isInitialAudioEnabled)
     }
 }
 
@@ -1199,7 +1196,6 @@ private suspend fun runVideoRecording(
         onVideoRecord
     )?.let {
         startVideoRecordingInternal(
-            isInitialAudioEnabled = currentSettings.isAudioEnabled,
             context = context,
             pendingRecord = it,
             maxDurationMillis = maxDurationMillis,
@@ -1216,13 +1212,10 @@ private suspend fun runVideoRecording(
                 transientSettings.filterNotNull()
                     .collectLatest { newTransientSettings ->
                         if (currentSettings.isAudioEnabled != newTransientSettings.isAudioEnabled) {
-                            recording.mute(newTransientSettings.isAudioEnabled)
+                            // audio mute state will be inverse of if audio is enabled.
+                            recording.mute(!newTransientSettings.isAudioEnabled)
                         }
-                        if (currentSettings.isFlashModeOn() !=
-                            newTransientSettings.isFlashModeOn()
-                        ) {
-                            currentSettings = newTransientSettings
-                        }
+                        currentSettings = newTransientSettings
                     }
             }
 

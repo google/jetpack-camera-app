@@ -24,8 +24,10 @@ const val IMAGE_WELL_TAG = "ImageWellTag"
 
 const val PREVIEW_DISPLAY = "PreviewDisplay"
 const val SCREEN_FLASH_OVERLAY = "ScreenFlashOverlay"
-const val AMPLITUDE_NONE_TAG = "AmplitudeNoneTag"
-const val AMPLITUDE_HOT_TAG = "AmplitudeHotTag"
+const val AUDIO_INPUT_TOGGLE = "AudioInputToggle"
+const val AUDIO_INPUT_OFF_TAG = "AudioInputOffTag"
+const val AUDIO_INPUT_READY_TAG = "AudioInputOnTag"
+const val AUDIO_INPUT_INCOMING_TAG = "AudioInputIncomingTag"
 const val FOCUS_METERING_INDICATOR_TAG = "FocusMeteringIndicatorTag"
 
 const val ZOOM_BUTTON_ROW_TAG = "ZoomButtonRowTag"

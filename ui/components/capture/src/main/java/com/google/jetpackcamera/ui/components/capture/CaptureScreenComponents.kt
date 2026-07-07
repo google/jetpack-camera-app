@@ -20,7 +20,6 @@ import android.content.pm.ActivityInfo
 import android.os.Build
 import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.CoordinateTransformer
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
@@ -92,6 +91,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -116,12 +117,13 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
-import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlin.time.Duration.Companion.nanoseconds
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -236,12 +238,18 @@ fun AmplitudeToggleButton(
         FilledIconToggleButton(
             modifier = modifier
                 .size(buttonSize)
-                .apply {
-                    if (audioUiState is AudioUiState.Enabled.On) {
-                        testTag(AMPLITUDE_HOT_TAG)
-                    } else {
-                        testTag(AMPLITUDE_NONE_TAG)
-                    }
+                .testTag(AUDIO_INPUT_TOGGLE)
+                .semantics {
+                    stateDescription =
+                        when (audioUiState) {
+                            is AudioUiState.Disabled, AudioUiState.Enabled.Mute -> AUDIO_INPUT_OFF_TAG
+                            is AudioUiState.Enabled.On -> {
+                                if (audioUiState.amplitude > 0.0)
+                                    AUDIO_INPUT_INCOMING_TAG
+                                else
+                                    AUDIO_INPUT_READY_TAG
+                            }
+                        }
                 }
                 .drawBehind {
                     if (audioUiState is AudioUiState.Enabled.On) {
@@ -298,9 +306,9 @@ fun CaptureModeToggleButton(
 
     val enabled =
         uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
-            uiState.isCaptureModeSelectable(
-                CaptureMode.IMAGE_ONLY
-            ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
+                uiState.isCaptureModeSelectable(
+                    CaptureMode.IMAGE_ONLY
+                ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
@@ -312,13 +320,13 @@ fun CaptureModeToggleButton(
         onToggleWhenDisabled = {
             val disabledReason: DisableRationale? =
                 (
-                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                        SingleSelectableUiState.Disabled<CaptureMode>
-                    )?.disabledReason
+                        uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                                SingleSelectableUiState.Disabled<CaptureMode>
+                        )?.disabledReason
                     ?: (
-                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                            as? SingleSelectableUiState.Disabled<CaptureMode>
-                        )
+                            uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                                    as? SingleSelectableUiState.Disabled<CaptureMode>
+                            )
                         ?.disabledReason
             disabledReason?.let { snackBarController?.enqueueDisabledHdrToggleSnackBar(it) }
         },
@@ -565,7 +573,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -690,8 +698,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Cannot retrieve icon for unimplemented " +
-                                            "stabilization mode:" +
-                                            "${stabilizationUiState.stabilizationMode}"
+                                                "stabilization mode:" +
+                                                "${stabilizationUiState.stabilizationMode}"
                                     )
                             }
 
@@ -706,8 +714,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Auto stabilization not yet implemented for " +
-                                            "${stabilizationUiState.stabilizationMode}, " +
-                                            "unable to retrieve icon."
+                                                "${stabilizationUiState.stabilizationMode}, " +
+                                                "unable to retrieve icon."
                                     )
                             }
                         }

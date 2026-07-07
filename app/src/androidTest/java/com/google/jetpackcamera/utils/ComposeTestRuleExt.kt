@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.utils
+
 import android.content.Context
 import android.util.Log
 import androidx.annotation.StringRes
@@ -33,7 +34,6 @@ import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
-import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -52,12 +52,13 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
+import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_OFF_TAG
+import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_TOGGLE
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
@@ -71,10 +72,11 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTO
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
-import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
 import org.junit.AssumptionViolatedException
+import com.google.jetpackcamera.settings.R as SettingsR
+import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 
 /**
  * Allows use of testRule.onNodeWithText that uses an integer string resource
@@ -147,6 +149,7 @@ fun ComposeTestRule.wait(timeoutMillis: Long) {
         /* do nothing, we just want to time out*/
     }
 }
+
 fun ComposeTestRule.waitForCaptureButton(timeoutMillis: Long = APP_START_TIMEOUT_MILLIS) {
     // Wait for the capture button to be displayed and enabled
     waitUntil(timeoutMillis = timeoutMillis) {
@@ -154,8 +157,19 @@ fun ComposeTestRule.waitForCaptureButton(timeoutMillis: Long = APP_START_TIMEOUT
     }
 }
 
-fun ComposeTestRule.waitForNodeWithTag(tag: String, timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS) {
-    waitUntil(timeoutMillis = timeoutMillis) { onNodeWithTag(tag).isDisplayed() }
+fun ComposeTestRule.waitForNodeWithTag(
+    tag: String,
+    timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
+    stateDescription: String? = null,
+) {
+    waitUntil(timeoutMillis = timeoutMillis) {
+        var matcher = hasTestTag(tag)
+
+        if (stateDescription != null)
+            matcher = matcher and hasStateDescription(stateDescription)
+
+        onNode(matcher).isDisplayed()
+    }
 }
 
 fun ComposeTestRule.waitForNodeWithTagToDisappear(
