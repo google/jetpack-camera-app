@@ -96,8 +96,7 @@ fun captureUiState(
         val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
         val hdrUiState = HdrUiState.from(
             cameraAppSettings,
-            systemConstraints,
-            externalCaptureMode
+            systemConstraints
         )
 
         flashModeUiState = flashModeUiState.let {
