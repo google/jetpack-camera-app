@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 const val CAPTURE_BUTTON = "CaptureButton"
 const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
@@ -25,10 +27,16 @@ const val IMAGE_WELL_TAG = "ImageWellTag"
 const val PREVIEW_DISPLAY = "PreviewDisplay"
 const val SCREEN_FLASH_OVERLAY = "ScreenFlashOverlay"
 const val AUDIO_INPUT_TOGGLE = "AudioInputToggle"
-const val AUDIO_INPUT_OFF_TAG = "AudioInputOffTag"
-const val AUDIO_INPUT_READY_TAG = "AudioInputOnTag"
-const val AUDIO_INPUT_INCOMING_TAG = "AudioInputIncomingTag"
 const val FOCUS_METERING_INDICATOR_TAG = "FocusMeteringIndicatorTag"
+
+enum class AudioInputState {
+    OFF,
+    READY,
+    INCOMING
+}
+
+val AudioStateProperty = SemanticsPropertyKey<AudioInputState>("AudioState")
+var SemanticsPropertyReceiver.audioState by AudioStateProperty
 
 const val ZOOM_BUTTON_ROW_TAG = "ZoomButtonRowTag"
 const val ZOOM_BUTTON_MIN_TAG = "ZoomButtonMinTag"

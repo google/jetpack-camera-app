@@ -92,7 +92,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -240,16 +239,17 @@ fun AmplitudeToggleButton(
                 .size(buttonSize)
                 .testTag(AUDIO_INPUT_TOGGLE)
                 .semantics {
-                    stateDescription =
-                        when (audioUiState) {
-                            is AudioUiState.Disabled, AudioUiState.Enabled.Mute -> AUDIO_INPUT_OFF_TAG
-                            is AudioUiState.Enabled.On -> {
-                                if (audioUiState.amplitude > 0.0)
-                                    AUDIO_INPUT_INCOMING_TAG
-                                else
-                                    AUDIO_INPUT_READY_TAG
+                    audioState = when (audioUiState) {
+                        is AudioUiState.Disabled,
+                        AudioUiState.Enabled.Mute -> AudioInputState.OFF
+                        is AudioUiState.Enabled.On -> {
+                            if (audioUiState.amplitude > 0.0) {
+                                AudioInputState.INCOMING
+                            } else {
+                                AudioInputState.READY
                             }
                         }
+                    }
                 }
                 .drawBehind {
                     if (audioUiState is AudioUiState.Enabled.On) {

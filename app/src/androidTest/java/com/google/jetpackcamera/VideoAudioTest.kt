@@ -24,9 +24,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_INCOMING_TAG
-import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_READY_TAG
-import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_OFF_TAG
+import com.google.jetpackcamera.ui.components.capture.AudioInputState
+import com.google.jetpackcamera.ui.components.capture.AudioStateProperty
 import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_TOGGLE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
@@ -34,7 +33,7 @@ import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.pressAndDragToLockVideoRecording
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.waitForCaptureButton
-import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithTagAndSemantics
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -68,9 +67,9 @@ class VideoAudioTest {
             composeTestRule.pressAndDragToLockVideoRecording()
 
             // assert hot amplitude tag visible
-            composeTestRule.waitForNodeWithTag(
+            composeTestRule.waitForNodeWithTagAndSemantics(
                 tag = AUDIO_INPUT_TOGGLE,
-                stateDescription = AUDIO_INPUT_READY_TAG
+                semanticsProperty = AudioStateProperty to AudioInputState.INCOMING
             )
         }
     }
@@ -81,36 +80,36 @@ class VideoAudioTest {
             composeTestRule.waitForCaptureButton()
 
             // verify audio button is initially set to enable audio
-            composeTestRule.waitForNodeWithTag(
+            composeTestRule.waitForNodeWithTagAndSemantics(
                 tag = AUDIO_INPUT_TOGGLE,
-                stateDescription = AUDIO_INPUT_READY_TAG
+                semanticsProperty = AudioStateProperty to AudioInputState.READY
             )
 
             // Start video recording and lock it
             composeTestRule.pressAndDragToLockVideoRecording()
 
             // Verify amplitude button is hot initially (audio is enabled by default)
-            composeTestRule.waitForNodeWithTag(
+            composeTestRule.waitForNodeWithTagAndSemantics(
                 tag = AUDIO_INPUT_TOGGLE,
-                stateDescription = AUDIO_INPUT_INCOMING_TAG
+                semanticsProperty = AudioStateProperty to AudioInputState.INCOMING
             )
 
             // Tap the amplitude button to mute
             composeTestRule.onNodeWithTag(AUDIO_INPUT_TOGGLE).performClick()
 
             // Verify amplitude button is now showing "none/muted" tag
-            composeTestRule.waitForNodeWithTag(
+            composeTestRule.waitForNodeWithTagAndSemantics(
                 tag = AUDIO_INPUT_TOGGLE,
-                stateDescription = AUDIO_INPUT_OFF_TAG
+                semanticsProperty = AudioStateProperty to AudioInputState.OFF
             )
 
             // Tap the amplitude button to unmute
             composeTestRule.onNodeWithTag(AUDIO_INPUT_TOGGLE).performClick()
 
             // Verify amplitude button is hot again
-            composeTestRule.waitForNodeWithTag(
+            composeTestRule.waitForNodeWithTagAndSemantics(
                 tag = AUDIO_INPUT_TOGGLE,
-                stateDescription = AUDIO_INPUT_READY_TAG
+                semanticsProperty = AudioStateProperty to AudioInputState.INCOMING
             )
 
             // Stop recording
@@ -125,29 +124,28 @@ class VideoAudioTest {
             composeTestRule.waitForCaptureButton()
 
             // Verify amplitude button is hot initially (audio is enabled by default)
-            composeTestRule.waitForNodeWithTag(
+            composeTestRule.waitForNodeWithTagAndSemantics(
                 tag = AUDIO_INPUT_TOGGLE,
-                stateDescription = AUDIO_INPUT_READY_TAG
+                semanticsProperty = AudioStateProperty to AudioInputState.READY
             )
 
             // Tap the amplitude button to mute
             composeTestRule.onNodeWithTag(AUDIO_INPUT_TOGGLE).performClick()
 
             // Verify amplitude button is now showing "none/muted" tag
-            composeTestRule.waitForNodeWithTag(
+            composeTestRule.waitForNodeWithTagAndSemantics(
                 tag = AUDIO_INPUT_TOGGLE,
-                stateDescription = AUDIO_INPUT_OFF_TAG
+                semanticsProperty = AudioStateProperty to AudioInputState.OFF
             )
-
 
             // Start video recording
             composeTestRule.pressAndDragToLockVideoRecording()
 
             // Verify it remains muted during recording
             // Verify amplitude button is now showing "none/muted" tag
-            composeTestRule.waitForNodeWithTag(
+            composeTestRule.waitForNodeWithTagAndSemantics(
                 tag = AUDIO_INPUT_TOGGLE,
-                stateDescription = AUDIO_INPUT_OFF_TAG
+                semanticsProperty = AudioStateProperty to AudioInputState.OFF
             )
 
             // Stop recording

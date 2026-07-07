@@ -20,6 +20,7 @@ import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ComposeTimeoutException
@@ -52,13 +53,12 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
-import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_OFF_TAG
-import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_TOGGLE
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
@@ -72,11 +72,10 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTO
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
+import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
 import org.junit.AssumptionViolatedException
-import com.google.jetpackcamera.settings.R as SettingsR
-import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 
 /**
  * Allows use of testRule.onNodeWithText that uses an integer string resource
@@ -157,17 +156,31 @@ fun ComposeTestRule.waitForCaptureButton(timeoutMillis: Long = APP_START_TIMEOUT
     }
 }
 
+
 fun ComposeTestRule.waitForNodeWithTag(
     tag: String,
     timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
-    stateDescription: String? = null,
+    stateDescription: String? = null
 ) {
     waitUntil(timeoutMillis = timeoutMillis) {
         var matcher = hasTestTag(tag)
-
-        if (stateDescription != null)
+        if (stateDescription != null) {
             matcher = matcher and hasStateDescription(stateDescription)
+        }
+        onNode(matcher).isDisplayed()
+    }
+}
 
+fun <T> ComposeTestRule.waitForNodeWithTagAndSemantics(
+    tag: String,
+    timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
+    semanticsProperty: Pair<SemanticsPropertyKey<T>, T>
+) {
+    waitUntil(timeoutMillis = timeoutMillis) {
+        val matcher = hasTestTag(tag) and SemanticsMatcher.expectValue(
+            semanticsProperty.first,
+            semanticsProperty.second
+        )
         onNode(matcher).isDisplayed()
     }
 }
