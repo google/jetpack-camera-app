@@ -132,14 +132,18 @@ private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
  * A composable that displays the elapsed time of a video recording in a "MM:SS" format.
  * This text is only visible during an active recording.
  *
- * @param elapsedTimeUiState the [ElapsedTimeUiState] for this component.
+ * @param elapsedTimeUiStateProvider the provider for [ElapsedTimeUiState] for this component.
  */
 @Composable
-fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
-    if (elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
+fun ElapsedTimeText(
+    modifier: Modifier = Modifier,
+    elapsedTimeUiStateProvider: () -> ElapsedTimeUiState
+) {
+    val state = elapsedTimeUiStateProvider()
+    if (state is ElapsedTimeUiState.Enabled) {
         Text(
             modifier = modifier,
-            text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
+            text = state.elapsedTimeNanos.nanoseconds
                 .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
             textAlign = TextAlign.Center,
             style = LocalTextStyle.current.copy(
@@ -159,7 +163,7 @@ fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTi
  * @param modifier the modifier for this component.
  * @param onSetPause the callback invoked when the button is tapped.
  * @param size the size of the button.
- * @param currentRecordingState the current recording state.
+ * @param currentRecordingStateProvider the provider for the current recording state.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -167,8 +171,9 @@ fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
     onSetPause: (Boolean) -> Unit,
     size: Dp = ButtonDefaults.MediumContainerHeight,
-    currentRecordingState: VideoRecordingState
+    currentRecordingStateProvider: () -> VideoRecordingState
 ) {
+    val currentRecordingState = currentRecordingStateProvider()
     if (currentRecordingState is VideoRecordingState.Active) {
         FilledIconToggleButton(
             checked = currentRecordingState is VideoRecordingState.Active.Recording,
@@ -474,9 +479,11 @@ fun PreviewDisplay(
     focusMeteringUiState: FocusMeteringUiState,
     modifier: Modifier = Modifier
 ) {
-    if (previewDisplayUiState.aspectRatioUiState !is AspectRatioUiState.Available) {
+    val aspectRatioUiState = previewDisplayUiState.aspectRatioUiState
+    if (aspectRatioUiState !is AspectRatioUiState.Available) {
         return
     }
+    @Suppress("DEPRECATION")
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
             onScaleZoom(pinchZoomChange)
@@ -491,10 +498,8 @@ fun PreviewDisplay(
                 .background(Color.Black),
             contentAlignment = Alignment.TopCenter
         ) {
-            val aspectRatio = (
-                previewDisplayUiState.aspectRatioUiState as
-                    AspectRatioUiState.Available
-                ).selectedAspectRatio
+            val aspectRatio =
+                aspectRatioUiState.selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -760,10 +765,8 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                     VideoQuality.UHD ->
                         painterResource(R.drawable.video_resolution_uhd_icon)
 
-                    else ->
-                        throw IllegalStateException(
-                            "Illegal video quality state"
-                        )
+                    VideoQuality.UNSPECIFIED ->
+                        throw IllegalStateException("Illegal video quality state")
                 },
                 contentDescription = when (videoQuality) {
                     VideoQuality.SD ->
@@ -778,7 +781,7 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                     VideoQuality.UHD ->
                         stringResource(R.string.video_quality_description_uhd)
 
-                    else -> null
+                    VideoQuality.UNSPECIFIED -> null
                 }
             )
         }
@@ -826,7 +829,7 @@ fun FlipCameraButton(
                     )
                 }
             }
-            // dont rotate on the initial launch
+            // don't rotate on the initial launch
             else {
                 initialLaunch = true
             }
