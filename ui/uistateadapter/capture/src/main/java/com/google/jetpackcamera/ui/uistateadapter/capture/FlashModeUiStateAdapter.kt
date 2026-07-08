@@ -29,8 +29,6 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState.Available
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState.Unavailable
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
-// Assuming Utils.getSelectableListFromValues is no longer needed with the new logic
-// import com.google.jetpackcamera.ui.uistateadapter.Utils
 
 private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
     FlashMode.OFF,
@@ -57,7 +55,7 @@ private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
  * @param systemConstraints The hardware capabilities of the camera system.
  * @return A [FlashModeUiState] which is either [Available] or [Unavailable].
  */
-fun FlashModeUiState.Companion.from(
+internal fun FlashModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
     hdrUiState: HdrUiState = HdrUiState.Unavailable
@@ -67,9 +65,10 @@ fun FlashModeUiState.Companion.from(
     val selectedFlashMode = cameraAppSettings.flashMode
 
     // All modes potentially supported by the device
-    val allDeviceSupportedFlashModes = systemConstraints.perLensConstraints.values
-        .flatMap { it.supportedFlashModes }
-        .toSet()
+    val allDeviceSupportedFlashModes = mutableSetOf<FlashMode>()
+    for (lensConstraint in systemConstraints.perLensConstraints.values) {
+        allDeviceSupportedFlashModes.addAll(lensConstraint.supportedFlashModes)
+    }
 
     // Modes supported by the CURRENT lens
     val currentLensSupportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)
@@ -147,7 +146,7 @@ fun FlashModeUiState.Companion.from(
  * @param cameraState The real-time state from the camera, used to check [LowLightBoostState].
  * @return An updated [FlashModeUiState].
  */
-fun FlashModeUiState.updateFrom(
+internal fun FlashModeUiState.updateFrom(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
     cameraState: CameraState,
