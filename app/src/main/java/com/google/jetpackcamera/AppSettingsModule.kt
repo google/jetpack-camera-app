@@ -20,8 +20,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
 import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
-import com.google.jetpackcamera.data.common.DefaultCaptureModeOverride
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.SettingsDataSource
 import dagger.Module

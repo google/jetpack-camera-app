@@ -28,9 +28,9 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import androidx.core.net.toFile
+import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
 import com.google.jetpackcamera.core.common.FilePathGenerator
-import com.google.jetpackcamera.data.common.DefaultFilePathGenerator
-import com.google.jetpackcamera.data.common.IODispatcher
+import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.IOException

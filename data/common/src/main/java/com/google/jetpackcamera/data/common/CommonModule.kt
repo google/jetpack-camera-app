@@ -15,11 +15,13 @@
  */
 package com.google.jetpackcamera.data.common
 
+import com.google.jetpackcamera.core.common.DefaultCoroutineScope
+import com.google.jetpackcamera.core.common.DefaultDispatcher
+import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -46,28 +48,3 @@ class CommonModule {
     fun providesCoroutineScope(@DefaultDispatcher dispatcher: CoroutineDispatcher) =
         CoroutineScope(SupervisorJob() + dispatcher)
 }
-
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DefaultFilePathGenerator
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DefaultCaptureModeOverride
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DefaultSaveMode
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DefaultDispatcher
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class IODispatcher
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DefaultCoroutineScope
