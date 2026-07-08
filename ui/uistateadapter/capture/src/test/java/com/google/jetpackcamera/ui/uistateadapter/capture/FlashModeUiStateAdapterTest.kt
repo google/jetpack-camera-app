@@ -29,6 +29,7 @@ import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import org.junit.Assert.assertThrows
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -356,5 +357,39 @@ class FlashModeUiStateAdapterTest {
         val disabledFlashOn = flashOnState as SingleSelectableUiState.Disabled
         assertThat(disabledFlashOn.disabledReason)
             .isEqualTo(DisabledReason.FLASH_UNSUPPORTED_ON_LENS)
+    }
+
+    @Test
+    fun from_hdrOff_lowLightBoostEnabled() {
+        // Given a system supporting LLB, and HDR is OFF (JPEG and SDR)
+        val appSettings = defaultCameraAppSettings.copy(flashMode = FlashMode.OFF)
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+
+        // Skip the test if LOW_LIGHT_BOOST is not present in the lens constraints
+        val currentLensConstraints = systemConstraints.perLensConstraints[appSettings.cameraLensFacing]
+        val isLlbSupported = currentLensConstraints?.supportedFlashModes?.contains(FlashMode.LOW_LIGHT_BOOST) == true
+        assumeTrue("Skipping: Low Light Boost is not supported by constraints", isLlbSupported)
+
+        val hdrUiState = HdrUiState.Available(
+            selectedImageFormat = ImageOutputFormat.JPEG,
+            selectedDynamicRange = DynamicRange.SDR
+        )
+
+        // When
+        val flashModeUiState = FlashModeUiState.from(appSettings, systemConstraints, hdrUiState)
+
+        // Then LLB is selectable
+        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = flashModeUiState as FlashModeUiState.Available
+        val llbState = availableUiState.availableFlashModes.find {
+            it.value == FlashMode.LOW_LIGHT_BOOST
+        }
+        assertThat(llbState).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
     }
 }
