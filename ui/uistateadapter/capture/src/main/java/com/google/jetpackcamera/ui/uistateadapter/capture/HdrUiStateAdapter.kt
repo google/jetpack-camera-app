@@ -15,9 +15,9 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
-import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -34,69 +34,63 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  * HDR formats ([DynamicRange.HLG10] for video, [ImageOutputFormat.JPEG_ULTRA_HDR] for images) and
  * various other settings that may conflict with HDR, such as flash mode or concurrent camera mode.
  *
- * The logic is tailored to the [ExternalCaptureMode]:
- * - **ImageCapture / MultipleImageCapture**: Checks for `JPEG_ULTRA_HDR` support.
- * - **VideoCapture**: Checks for `HLG10` dynamic range support.
- * - **Standard**: Checks for support for either `HLG10` or `JPEG_ULTRA_HDR`.
+ * The logic is tailored to the [CaptureMode]:
+ * - **IMAGE_ONLY**: Checks for `JPEG_ULTRA_HDR` support.
+ * - **VIDEO_ONLY**: Checks for `HLG10` dynamic range support.
+ * - **STANDARD**: HDR is always unavailable.
  *
- * In all cases, HDR is disabled if `LOW_LIGHT_BOOST` flash mode is active. For video and standard
- * modes, it is also disabled if concurrent camera mode is active.
+ * In all cases, HDR is disabled if `LOW_LIGHT_BOOST` flash mode is active. For video mode,
+ * it is also disabled if concurrent camera mode is active.
  *
  * @param cameraAppSettings The current application and camera settings.
  * @param systemConstraints The capabilities and limitations of the device's camera hardware.
- * @param externalCaptureMode The mode indicating how the camera was launched (e.g., via an
- * external intent), which influences which HDR formats are relevant.
  *
  * @return [HdrUiState.Available] if the feature is supported and not blocked by other settings,
  * otherwise returns [HdrUiState.Unavailable].
  */
-fun HdrUiState.Companion.from(
+internal fun HdrUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
-    systemConstraints: CameraSystemConstraints,
-    externalCaptureMode: ExternalCaptureMode
+    systemConstraints: CameraSystemConstraints
 ): HdrUiState {
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
     )
-    return when (externalCaptureMode) {
-        ExternalCaptureMode.ImageCapture,
-        ExternalCaptureMode.MultipleImageCapture -> if (
-            cameraConstraints
+
+    return when (cameraAppSettings.captureMode) {
+        CaptureMode.IMAGE_ONLY -> {
+            val supportsHdrImage = cameraConstraints
                 ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
-                ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false &&
-            cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
-        ) {
-            HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
-        } else {
-            HdrUiState.Unavailable
-        }
+                ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
+            val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
 
-        ExternalCaptureMode.VideoCapture -> if (
-            cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true &&
-            cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL &&
-            cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
-        ) {
-            HdrUiState.Available(
-                cameraAppSettings.imageFormat,
-                cameraAppSettings.dynamicRange
-            )
-        } else {
-            HdrUiState.Unavailable
+            if (supportsHdrImage && !isFlashHdrConflict) {
+                HdrUiState.Available(
+                    selectedImageFormat = cameraAppSettings.imageFormat,
+                    // Force video dynamic range to SDR in UI state when in IMAGE_ONLY mode
+                    selectedDynamicRange = DynamicRange.SDR
+                )
+            } else {
+                HdrUiState.Unavailable
+            }
         }
+        CaptureMode.VIDEO_ONLY -> {
+            val supportsHdrVideo =
+                cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
+            val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
+            val isConcurrentConflict =
+                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
 
-        ExternalCaptureMode.Standard -> if ((
-                cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) ==
-                    true ||
-                    cameraConstraints?.supportedImageFormatsMap?.get(
-                        cameraAppSettings.streamConfig
-                    )
-                        ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-                ) &&
-            cameraAppSettings.concurrentCameraMode != ConcurrentCameraMode.DUAL &&
-            cameraAppSettings.flashMode != FlashMode.LOW_LIGHT_BOOST
-        ) {
-            HdrUiState.Available(cameraAppSettings.imageFormat, cameraAppSettings.dynamicRange)
-        } else {
+            if (supportsHdrVideo && !isFlashHdrConflict && !isConcurrentConflict) {
+                HdrUiState.Available(
+                    // Force image format to SDR (JPEG) in UI state when in VIDEO_ONLY mode
+                    selectedImageFormat = ImageOutputFormat.JPEG,
+                    selectedDynamicRange = cameraAppSettings.dynamicRange
+                )
+            } else {
+                HdrUiState.Unavailable
+            }
+        }
+        CaptureMode.STANDARD -> {
             HdrUiState.Unavailable
         }
     }
