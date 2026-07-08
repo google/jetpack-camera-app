@@ -327,6 +327,4 @@ internal class HdrUiStateAdapterTest {
         val availableState = hdrUiState as HdrUiState.Available
         assertThat(availableState.isSupported).isFalse()
     }
-
 }
-

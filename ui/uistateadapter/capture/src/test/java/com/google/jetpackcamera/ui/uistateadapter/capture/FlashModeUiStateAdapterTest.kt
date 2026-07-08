@@ -372,9 +372,14 @@ class FlashModeUiStateAdapterTest {
         )
 
         // Skip the test if LOW_LIGHT_BOOST is not present in the lens constraints
-        val currentLensConstraints = systemConstraints.perLensConstraints[appSettings.cameraLensFacing]
-        val isLlbSupported = currentLensConstraints?.supportedFlashModes?.contains(FlashMode.LOW_LIGHT_BOOST) == true
-        assumeTrue("Skipping: Low Light Boost is not supported by constraints", isLlbSupported)
+        val currentLensConstraints =
+            systemConstraints.perLensConstraints[appSettings.cameraLensFacing]
+        val isLlbSupported = currentLensConstraints?.supportedFlashModes
+            ?.contains(FlashMode.LOW_LIGHT_BOOST) == true
+        assumeTrue(
+            "Skipping: Low Light Boost is not supported by constraints",
+            isLlbSupported
+        )
 
         val hdrUiState = HdrUiState.Available(
             selectedImageFormat = ImageOutputFormat.JPEG,

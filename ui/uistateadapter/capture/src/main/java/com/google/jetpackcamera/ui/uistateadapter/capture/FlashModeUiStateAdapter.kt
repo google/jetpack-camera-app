@@ -53,6 +53,7 @@ private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
  *
  * @param cameraAppSettings The current settings of the camera.
  * @param systemConstraints The hardware capabilities of the camera system.
+ * @param hdrUiState The UI state for HDR, used to check Flash/HDR conflicts.
  * @return A [FlashModeUiState] which is either [Available] or [Unavailable].
  */
 internal fun FlashModeUiState.Companion.from(
@@ -144,6 +145,7 @@ internal fun FlashModeUiState.Companion.from(
  * @param cameraAppSettings The current application settings for the camera.
  * @param systemConstraints The hardware capabilities of the camera system.
  * @param cameraState The real-time state from the camera, used to check [LowLightBoostState].
+ * @param hdrUiState The UI state for HDR, used to check Flash/HDR conflicts.
  * @return An updated [FlashModeUiState].
  */
 internal fun FlashModeUiState.updateFrom(

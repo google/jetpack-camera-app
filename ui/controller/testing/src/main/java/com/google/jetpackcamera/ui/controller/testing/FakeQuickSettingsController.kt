@@ -32,7 +32,6 @@ import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsControl
  * @param setAspectRatioAction The action to perform when [setAspectRatio] is called.
  * @param setDynamicRangeAction The action to perform when [setDynamicRange] is called.
  * @param setImageFormatAction The action to perform when [setImageFormat] is called.
- * @param setConcurrentCameraModeAction The action to perform when [setConcurrentCameraMode] is called.
  * @param setCaptureModeAction The action to perform when [setCaptureMode] is called.
  */
 class FakeQuickSettingsController(

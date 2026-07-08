@@ -38,7 +38,6 @@ sealed interface QuickSettingsUiState {
      *
      * @param aspectRatioUiState The UI state for the aspect ratio setting.
      * @param captureModeUiState The UI state for the capture mode (e.g., photo vs. video) setting.
-     * @param concurrentCameraUiState The UI state for concurrent camera mode.
      * @param flashModeUiState The UI state for the flash mode setting.
      * @param flipLensUiState The UI state for the flip lens (front/back camera) button.
      * @param hdrUiState The UI state for the HDR (High Dynamic Range) setting.
