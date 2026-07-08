@@ -104,7 +104,6 @@ internal fun HdrUiState.Companion.from(
                 HdrUiState.Unavailable
             }
         }
-
         CaptureMode.STANDARD -> {
             HdrUiState.Unavailable
         }

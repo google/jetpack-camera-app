@@ -52,6 +52,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -588,9 +590,18 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * A composable that displays an icon indicating the current flash mode.
+ *
+ * @param modifier the modifier for this component.
+ * @param flashModeUiStateProvider the provider for [FlashModeUiState] for this component.
+ */
 @Composable
-fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = Modifier) {
-    when (flashModeUiState) {
+fun FlashModeIndicator(
+    modifier: Modifier = Modifier,
+    flashModeUiStateProvider: () -> FlashModeUiState
+) {
+    when (val flashModeUiState = flashModeUiStateProvider()) {
         is FlashModeUiState.Unavailable ->
             TopBarQuickSettingIcon(
                 modifier = modifier,

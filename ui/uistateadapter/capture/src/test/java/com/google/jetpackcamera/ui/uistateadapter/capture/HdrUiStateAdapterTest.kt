@@ -155,7 +155,7 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState =
             HdrUiState.from(appSettings, systemConstraints)
 
-        // Then HDR is available but not supported because of the flash mode conflict
+        // Then HDR is visible but disabled because of the flash mode conflict
         assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
         val availableState = hdrUiState as HdrUiState.Available
         assertThat(availableState.isSupported).isFalse()
@@ -328,5 +328,5 @@ internal class HdrUiStateAdapterTest {
         assertThat(availableState.isSupported).isFalse()
     }
 
-
 }
+
