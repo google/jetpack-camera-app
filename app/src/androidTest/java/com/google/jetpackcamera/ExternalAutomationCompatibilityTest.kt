@@ -21,6 +21,7 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_BUTTON
@@ -30,7 +31,6 @@ import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
-import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -55,14 +55,15 @@ class ExternalAutomationCompatibilityTest {
         runMainActivityScenarioTest {
             // Wait for the capture button to be visible to UI Automator via Resource ID
             val captureButton = device.wait(Until.findObject(By.res(CAPTURE_BUTTON)), TIMEOUT_MS)
-            assertNotNull("Capture button not found by UI Automator via Resource ID", captureButton)
+            assertWithMessage("Capture button not found by UI Automator via Resource ID")
+                .that(captureButton)
+                .isNotNull()
 
             // Verify flip camera button is visible via Resource ID
             val flipButton = device.findObject(By.res(FLIP_CAMERA_BUTTON))
-            assertNotNull(
-                "Flip camera button not found by UI Automator via Resource ID",
-                flipButton
-            )
+            assertWithMessage("Flip camera button not found by UI Automator via Resource ID")
+                .that(flipButton)
+                .isNotNull()
         }
     }
 
@@ -74,10 +75,9 @@ class ExternalAutomationCompatibilityTest {
                 Until.findObject(By.res(DEBUG_OVERLAY_BUTTON)),
                 TIMEOUT_MS
             )
-            assertNotNull(
-                "Debug overlay button not found by UI Automator via Resource ID",
-                debugButton
-            )
+            assertWithMessage("Debug overlay button not found by UI Automator via Resource ID")
+                .that(debugButton)
+                .isNotNull()
         }
     }
 
@@ -89,7 +89,7 @@ class ExternalAutomationCompatibilityTest {
                 Until.findObject(By.res(DEBUG_OVERLAY_BUTTON)),
                 TIMEOUT_MS
             )
-            assertNotNull("Debug overlay button not found", debugButton)
+            assertWithMessage("Debug overlay button not found").that(debugButton).isNotNull()
             debugButton.click()
 
             // Click "Set Zoom Ratio" button using UI Automator
@@ -97,7 +97,7 @@ class ExternalAutomationCompatibilityTest {
                 Until.findObject(By.res(DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON)),
                 TIMEOUT_MS
             )
-            assertNotNull("Set Zoom Ratio button not found", setZoomButton)
+            assertWithMessage("Set Zoom Ratio button not found").that(setZoomButton).isNotNull()
             setZoomButton.click()
 
             // Verify the zoom dialog text field is visible to UI Automator
@@ -105,11 +105,15 @@ class ExternalAutomationCompatibilityTest {
                 Until.findObject(By.res(DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD)),
                 TIMEOUT_MS
             )
-            assertNotNull("Zoom text field not found by UI Automator", textField)
+            assertWithMessage(
+                "Zoom text field not found by UI Automator"
+            ).that(textField).isNotNull()
 
             // Verify the confirm button is visible to UI Automator
             val confirmButton = device.findObject(By.res(DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON))
-            assertNotNull("Confirm button not found by UI Automator", confirmButton)
+            assertWithMessage(
+                "Confirm button not found by UI Automator"
+            ).that(confirmButton).isNotNull()
         }
     }
 
