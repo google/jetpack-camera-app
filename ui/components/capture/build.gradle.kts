@@ -63,6 +63,7 @@ dependencies {
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
+    implementation(libs.androidx.foundation.layout)
 
     // Accompanist - Permissions
     implementation(libs.accompanist.permissions)

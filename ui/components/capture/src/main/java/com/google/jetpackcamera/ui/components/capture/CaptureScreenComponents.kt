@@ -20,7 +20,6 @@ import android.content.pm.ActivityInfo
 import android.os.Build
 import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
-import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.viewfinder.compose.CoordinateTransformer
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
@@ -49,11 +48,15 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -65,7 +68,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -92,7 +95,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
@@ -116,12 +122,14 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
-import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
+import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.seconds
+import androidx.camera.core.DynamicRange as CXDynamicRange
 
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
@@ -132,7 +140,11 @@ private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
  * A composable that displays the elapsed time of a video recording in a "MM:SS" format.
  * This text is only visible during an active recording.
  *
+ * @param modifier the modifier for this component.
  * @param elapsedTimeUiStateProvider the provider for [ElapsedTimeUiState] for this component.
+ * @param textStyle the [TextStyle] to use for the elapsed time text.
+ * @param textColor the [Color] to use for the elapsed time text.
+ * @param containerColor the [Color] to use for the background container.
  */
 @Composable
 fun ElapsedTimeText(
@@ -141,17 +153,27 @@ fun ElapsedTimeText(
 ) {
     val state = elapsedTimeUiStateProvider()
     if (state is ElapsedTimeUiState.Enabled) {
-        Text(
-            modifier = modifier,
-            text = state.elapsedTimeNanos.nanoseconds
-                .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
-            textAlign = TextAlign.Center,
-            style = LocalTextStyle.current.copy(
-                fontFeatureSettings = "tnum"
+        Box(
+            modifier = modifier
+                .defaultMinSize(minWidth = 72.dp, minHeight = 32.dp)
+                .background(color = Color(0xFFED0000), shape = CircleShape)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = state.elapsedTimeNanos.nanoseconds
+                    .toComponents { minutes, seconds, _ -> "%d:%02d".format(minutes, seconds) },
+                textAlign = TextAlign.Center,
+                color = Color.White,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFeatureSettings = "tnum"
+                )
             )
-        )
+        }
     }
 }
+
 
 /**
  * A toggle button that allows the user to pause and resume video recording.
@@ -298,9 +320,9 @@ fun CaptureModeToggleButton(
 
     val enabled =
         uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
-            uiState.isCaptureModeSelectable(
-                CaptureMode.IMAGE_ONLY
-            ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
+                uiState.isCaptureModeSelectable(
+                    CaptureMode.IMAGE_ONLY
+                ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
@@ -312,13 +334,13 @@ fun CaptureModeToggleButton(
         onToggleWhenDisabled = {
             val disabledReason: DisableRationale? =
                 (
-                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                        SingleSelectableUiState.Disabled<CaptureMode>
-                    )?.disabledReason
+                        uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                                SingleSelectableUiState.Disabled<CaptureMode>
+                        )?.disabledReason
                     ?: (
-                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                            as? SingleSelectableUiState.Disabled<CaptureMode>
-                        )
+                            uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                                    as? SingleSelectableUiState.Disabled<CaptureMode>
+                            )
                         ?.disabledReason
             disabledReason?.let { snackBarController?.enqueueDisabledHdrToggleSnackBar(it) }
         },
@@ -565,7 +587,7 @@ fun PreviewDisplay(
                                         Log.d(
                                             "TAG",
                                             "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
+                                                    "input{$it} -> surface{$surfaceCoords}"
                                         )
                                         onTapToFocus(surfaceCoords.x, surfaceCoords.y)
                                     }
@@ -690,8 +712,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Cannot retrieve icon for unimplemented " +
-                                            "stabilization mode:" +
-                                            "${stabilizationUiState.stabilizationMode}"
+                                                "stabilization mode:" +
+                                                "${stabilizationUiState.stabilizationMode}"
                                     )
                             }
 
@@ -706,8 +728,8 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 else ->
                                     TODO(
                                         "Auto stabilization not yet implemented for " +
-                                            "${stabilizationUiState.stabilizationMode}, " +
-                                            "unable to retrieve icon."
+                                                "${stabilizationUiState.stabilizationMode}, " +
+                                                "unable to retrieve icon."
                                     )
                             }
                         }
@@ -946,6 +968,54 @@ private fun FocusMeteringIndicator(
                         CircleShape
                     )
                     .size(TAP_TO_FOCUS_INDICATOR_SIZE)
+            )
+        }
+    }
+}
+
+@Preview(name = "Elapsed Time", showBackground = true, backgroundColor = 0xFF000000)
+@Composable
+private fun ElapsedTimeTextPreview() {
+    // Assuming you have a JcaTheme in the google/jetpack-camera-app repository,
+    // you would typically wrap this in your custom theme.
+    MaterialTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Scenario 1: Initial recording state (0:00)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(0L)
+                }
+            )
+
+            // Scenario 2: Standard recording state
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(30.seconds.inWholeNanoseconds)
+                }
+            )
+
+            // Scenario 3: Over a minute (1:05)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(65.seconds.inWholeNanoseconds)
+                }
+            )
+
+            // Scenario 4: Over 10 minutes (10:05)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(605.seconds.inWholeNanoseconds)
+                }
+            )
+
+            // Scenario 4: Unavailable state (renders nothing, verifying the if-condition)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Unavailable
+                }
             )
         }
     }
