@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,12 @@ import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_BUTTON
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
+import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -50,11 +53,21 @@ class ExternalAutomationCompatibilityTest {
         device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     }
 
+    @After
+    fun tearDown() {
+        device.pressBack()
+        device.pressHome()
+    }
+
     @Test
     fun verifyUiAutomator_canFindCaptureControls() {
         runMainActivityScenarioTest {
             // Wait for the capture button to be visible to UI Automator via Resource ID
-            val captureButton = device.wait(Until.findObject(By.res(CAPTURE_BUTTON)), TIMEOUT_MS)
+            val captureButton =
+                device.wait(
+                    Until.findObject(By.res(CAPTURE_BUTTON)),
+                    APP_START_TIMEOUT_MILLIS
+                )
             assertWithMessage("Capture button not found by UI Automator via Resource ID")
                 .that(captureButton)
                 .isNotNull()
@@ -73,7 +86,7 @@ class ExternalAutomationCompatibilityTest {
             // Verify debug overlay button is visible via Resource ID
             val debugButton = device.wait(
                 Until.findObject(By.res(DEBUG_OVERLAY_BUTTON)),
-                TIMEOUT_MS
+                APP_START_TIMEOUT_MILLIS
             )
             assertWithMessage("Debug overlay button not found by UI Automator via Resource ID")
                 .that(debugButton)
@@ -87,7 +100,7 @@ class ExternalAutomationCompatibilityTest {
             // Open debug menu using UI Automator
             val debugButton = device.wait(
                 Until.findObject(By.res(DEBUG_OVERLAY_BUTTON)),
-                TIMEOUT_MS
+                APP_START_TIMEOUT_MILLIS
             )
             assertWithMessage("Debug overlay button not found").that(debugButton).isNotNull()
             debugButton.click()
@@ -95,7 +108,7 @@ class ExternalAutomationCompatibilityTest {
             // Click "Set Zoom Ratio" button using UI Automator
             val setZoomButton = device.wait(
                 Until.findObject(By.res(DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON)),
-                TIMEOUT_MS
+                DEFAULT_TIMEOUT_MILLIS
             )
             assertWithMessage("Set Zoom Ratio button not found").that(setZoomButton).isNotNull()
             setZoomButton.click()
@@ -103,7 +116,7 @@ class ExternalAutomationCompatibilityTest {
             // Verify the zoom dialog text field is visible to UI Automator
             val textField = device.wait(
                 Until.findObject(By.res(DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD)),
-                TIMEOUT_MS
+                DEFAULT_TIMEOUT_MILLIS
             )
             assertWithMessage(
                 "Zoom text field not found by UI Automator"
@@ -115,9 +128,5 @@ class ExternalAutomationCompatibilityTest {
                 "Confirm button not found by UI Automator"
             ).that(confirmButton).isNotNull()
         }
-    }
-
-    companion object {
-        private const val TIMEOUT_MS = 5000L
     }
 }
