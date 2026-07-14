@@ -56,7 +56,7 @@ internal class HdrUiStateAdapterTest {
                 appSettings.cameraLensFacing to emptyCameraConstraints.copy(
                     supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10),
                     supportedImageFormatsMap = mapOf(
-                        appSettings.streamConfig to setOf(
+                        false to setOf(
                             ImageOutputFormat.JPEG,
                             ImageOutputFormat.JPEG_ULTRA_HDR
                         )
@@ -85,7 +85,7 @@ internal class HdrUiStateAdapterTest {
             perLensConstraints = mapOf(
                 appSettings.cameraLensFacing to emptyCameraConstraints.copy(
                     supportedImageFormatsMap = mapOf(
-                        appSettings.streamConfig to setOf(
+                        false to setOf(
                             ImageOutputFormat.JPEG,
                             ImageOutputFormat.JPEG_ULTRA_HDR
                         )
@@ -115,7 +115,7 @@ internal class HdrUiStateAdapterTest {
             perLensConstraints = mapOf(
                 appSettings.cameraLensFacing to emptyCameraConstraints.copy(
                     supportedImageFormatsMap = mapOf(
-                        appSettings.streamConfig to setOf(ImageOutputFormat.JPEG)
+                        false to setOf(ImageOutputFormat.JPEG)
                     )
                 )
             )
@@ -140,7 +140,7 @@ internal class HdrUiStateAdapterTest {
             perLensConstraints = mapOf(
                 appSettings.cameraLensFacing to emptyCameraConstraints.copy(
                     supportedImageFormatsMap = mapOf(
-                        appSettings.streamConfig to setOf(
+                        false to setOf(
                             ImageOutputFormat.JPEG,
                             ImageOutputFormat.JPEG_ULTRA_HDR
                         )

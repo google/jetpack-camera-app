@@ -550,9 +550,9 @@ class CameraXCameraSystemTest {
         assume().withMessage("Ultra HDR not supported on $lensFacing, skip the test.")
             .that(
                 cameraConstraints != null &&
-                    cameraConstraints.supportedImageFormatsMap[
-                        DEFAULT_CAMERA_APP_SETTINGS.streamConfig
-                    ]?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+                    cameraConstraints.supportedImageFormatsMap[false]?.contains(
+                        ImageOutputFormat.JPEG_ULTRA_HDR
+                    ) == true
             ).isTrue()
 
         cameraSystem.setLensFacing(lensFacing)
@@ -645,9 +645,9 @@ class CameraXCameraSystemTest {
         assume().withMessage("Ultra HDR not supported on $lensFacing, skip the test.")
             .that(
                 cameraConstraints != null &&
-                    cameraConstraints.supportedImageFormatsMap[
-                        DEFAULT_CAMERA_APP_SETTINGS.streamConfig
-                    ]?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+                    cameraConstraints.supportedImageFormatsMap[false]?.contains(
+                        ImageOutputFormat.JPEG_ULTRA_HDR
+                    ) == true
             ).isTrue()
 
         // Configure the camera to use the target lens and enable Ultra HDR
