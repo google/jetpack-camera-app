@@ -87,7 +87,7 @@ class CameraXCameraSystemTest {
         GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
-    private val context = instrumentation.context
+    private val context = instrumentation.targetContext
     private val application = context.applicationContext as Application
     private val filesToDelete = mutableSetOf<Uri>()
     private lateinit var cameraSystemScope: CoroutineScope
@@ -136,7 +136,7 @@ class CameraXCameraSystemTest {
         cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
-        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+        val unused = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
 
         // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
@@ -152,7 +152,7 @@ class CameraXCameraSystemTest {
 
         // Act.
         try {
-            cameraSystem.takePicture(
+            val unused = cameraSystem.takePicture(
                 context.contentResolver,
                 SaveLocation.Explicit(Uri.parse("asdfasdf"))
             ) {}
@@ -173,7 +173,7 @@ class CameraXCameraSystemTest {
 
         // Act.
         try {
-            cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+            val unused = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
         } catch (e: RuntimeException) {
             // Assert.
             assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
@@ -195,7 +195,7 @@ class CameraXCameraSystemTest {
         cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
-        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+        val unused = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
 
         // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isFalse()
@@ -550,9 +550,9 @@ class CameraXCameraSystemTest {
         assume().withMessage("Ultra HDR not supported on $lensFacing, skip the test.")
             .that(
                 cameraConstraints != null &&
-                    cameraConstraints.supportedImageFormatsMap[false]?.contains(
-                        ImageOutputFormat.JPEG_ULTRA_HDR
-                    ) == true
+                    cameraConstraints.supportedImageFormatsMap[
+                        DEFAULT_CAMERA_APP_SETTINGS.streamConfig
+                    ]?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
             ).isTrue()
 
         cameraSystem.setLensFacing(lensFacing)
@@ -645,9 +645,9 @@ class CameraXCameraSystemTest {
         assume().withMessage("Ultra HDR not supported on $lensFacing, skip the test.")
             .that(
                 cameraConstraints != null &&
-                    cameraConstraints.supportedImageFormatsMap[false]?.contains(
-                        ImageOutputFormat.JPEG_ULTRA_HDR
-                    ) == true
+                    cameraConstraints.supportedImageFormatsMap[
+                        DEFAULT_CAMERA_APP_SETTINGS.streamConfig
+                    ]?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
             ).isTrue()
 
         // Configure the camera to use the target lens and enable Ultra HDR

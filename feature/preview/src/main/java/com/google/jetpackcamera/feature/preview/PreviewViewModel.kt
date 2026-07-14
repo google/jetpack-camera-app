@@ -110,8 +110,9 @@ class PreviewViewModel @Inject constructor(
     val surfaceRequest: StateFlow<SurfaceRequest?> =
         cameraSystemRepository.cameraSystem.getSurfaceRequest()
 
-    private val _captureEvents = Channel<CaptureEvent>()
-    val captureEvents: ReceiveChannel<CaptureEvent> = _captureEvents
+    private val _outgoingCaptureEvents = Channel<CaptureEvent>()
+    val captureEvents: ReceiveChannel<CaptureEvent> = _outgoingCaptureEvents
+    private val _incomingCaptureEvents = Channel<CaptureEvent>(capacity = Channel.UNLIMITED)
 
     private val externalCaptureMode: ExternalCaptureMode = savedStateHandle.getExternalCaptureMode()
     private val externalUris: List<Uri> = savedStateHandle.getCaptureUris()
@@ -223,7 +224,7 @@ class PreviewViewModel @Inject constructor(
                 Pair(SaveLocation.Default, null)
             }
         },
-        captureEvents = _captureEvents,
+        captureEvents = _incomingCaptureEvents,
         imageWellController = imageWellController,
         coroutineContext = viewModelScope.coroutineContext
     )
@@ -271,7 +272,7 @@ class PreviewViewModel @Inject constructor(
             launch {
                 for (event in captureController.captureEvents) {
                     showSnackbarForCaptureEvent(event)
-                    _captureEvents.send(event)
+                    _outgoingCaptureEvents.send(event)
                 }
             }
         }
