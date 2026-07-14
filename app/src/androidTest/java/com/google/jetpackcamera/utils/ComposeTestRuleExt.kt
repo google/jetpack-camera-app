@@ -20,17 +20,21 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -50,6 +54,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
+import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
@@ -62,14 +67,13 @@ import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
+import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
 import org.junit.AssumptionViolatedException
 
 /**
@@ -144,9 +148,9 @@ fun ComposeTestRule.wait(timeoutMillis: Long) {
     }
 }
 fun ComposeTestRule.waitForCaptureButton(timeoutMillis: Long = APP_START_TIMEOUT_MILLIS) {
-    // Wait for the capture button to be displayed
+    // Wait for the capture button to be displayed and enabled
     waitUntil(timeoutMillis = timeoutMillis) {
-        onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        onNode(hasTestTag(CAPTURE_BUTTON) and isEnabled()).isDisplayed()
     }
 }
 
@@ -172,11 +176,24 @@ fun ComposeTestRule.waitForNodeWithText(
     }
 }
 
+fun ComposeTestRule.waitForSnackbarWithText(
+    @StringRes textResId: Int,
+    timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
+) {
+    val expectedText = getResString(textResId)
+    waitUntil(timeoutMillis = timeoutMillis) {
+        onAllNodes(hasAnyAncestor(hasTestTag(SNACKBAR_NODE_TAG)) and hasText(expectedText))
+            .fetchSemanticsNodes().isNotEmpty()
+    }
+}
+
 private fun ComposeTestRule.idleForVideoDuration(
     durationMillis: Long = VIDEO_DURATION_MILLIS,
     earlyExitPredicate: () -> Boolean = {
         // If the video capture fails, there is no point to continue the recording, so stop idling
-        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).isDisplayed()
+        onNodeWithText(
+            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+        ).isDisplayed()
     }
 ) {
     // TODO: replace with a check for the timestamp UI of the video duration
@@ -246,24 +263,34 @@ fun ComposeTestRule.pressAndDragToLockVideoRecording(
     durationMillis: Long = VIDEO_DURATION_MILLIS,
     checkWhileWaiting: () -> Unit = {
         // If the video capture fails, there is no point to continue waiting. Assert.
-        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).assertIsNotDisplayed()
+        onNodeWithText(
+            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+        ).assertIsNotDisplayed()
     }
 ) {
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            down(center)
-        }
+    onNodeWithTag(CAPTURE_BUTTON).assertExists().performTouchInput {
+        down(center)
+        advanceEventTime(viewConfiguration.longPressTimeoutMillis + 100)
+        moveBy(delta = Offset(1f, 0f))
+    }
+
+    // Wait for recording to start (timer displayed)
     waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
         checkWhileWaiting()
         onNodeWithTag(ELAPSED_TIME_TAG).isDisplayed()
     }
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            moveBy(delta = Offset(-400f, 0f))
-            up()
+
+    onNodeWithTag(CAPTURE_BUTTON).performTouchInput {
+        val steps = 10
+        val deltaX = -400f / steps
+        for (i in 1..steps) {
+            moveBy(delta = Offset(deltaX, 0f))
         }
+    }
+
+    onNodeWithTag(CAPTURE_BUTTON).performTouchInput { up() }
+
+    // Wait for the recording to reach desired duration
     waitUntilVideoRecordingDurationAtLeast(durationMillis, checkWhileWaiting)
 }
 
@@ -271,38 +298,39 @@ fun ComposeTestRule.longClickForVideoRecordingCheckingElapsedTime(
     durationMillis: Long = VIDEO_DURATION_MILLIS,
     checkWhileWaiting: () -> Unit = {
         // If the video capture fails, there is no point to continue waiting. Assert.
-        onNodeWithTag(VIDEO_CAPTURE_FAILURE_TAG).assertIsNotDisplayed()
+        onNodeWithText(
+            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+        ).assertIsNotDisplayed()
     }
 ) {
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            down(center)
-        }
+    onNodeWithTag(CAPTURE_BUTTON).assertExists().performTouchInput {
+        down(center)
+
+        advanceEventTime(viewConfiguration.longPressTimeoutMillis + 100)
+        moveBy(delta = Offset(1f, 0f))
+    }
+
+    // Wait for recording to start (timer displayed)
     waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
         checkWhileWaiting()
-        onNodeWithTag(ELAPSED_TIME_TAG).isDisplayed()
+        onAllNodesWithTag(ELAPSED_TIME_TAG).fetchSemanticsNodes().isNotEmpty()
     }
+
+    // Wait for the desired duration outside performTouchInput
     waitUntilVideoRecordingDurationAtLeast(durationMillis, checkWhileWaiting)
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            up()
-        }
+
+    // Complete the gesture (release touch)
+    onNodeWithTag(CAPTURE_BUTTON).performTouchInput { up() }
 }
 
 fun ComposeTestRule.longClickForVideoRecording(durationMillis: Long = VIDEO_DURATION_MILLIS) {
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            down(center)
-        }
-    idleForVideoDuration(durationMillis)
-    onNodeWithTag(CAPTURE_BUTTON)
-        .assertExists()
-        .performTouchInput {
-            up()
-        }
+    onNodeWithTag(CAPTURE_BUTTON).assertExists().performTouchInput {
+        down(center)
+        advanceEventTime(viewConfiguration.longPressTimeoutMillis + 100)
+        moveBy(delta = Offset(1f, 0f))
+        advanceEventTime(durationMillis)
+        up()
+    }
 }
 
 fun ComposeTestRule.tapStartLockedVideoRecording() {
@@ -457,32 +485,6 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
         }
         throw AssertionError("Unable to determine flash mode from quick settings")
     }
-}
-
-fun ComposeTestRule.getConcurrentState(): ConcurrentCameraMode = visitQuickSettings {
-    onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-        .assertExists()
-        .fetchSemanticsNode(
-            "Concurrent camera button is not visible when expected."
-        ).let { node ->
-            node.config[SemanticsProperties.ContentDescription].forEach { description ->
-                when (description) {
-                    getResString(
-                        CaptureR.string.quick_settings_description_concurrent_camera_off
-                    ) -> {
-                        return@let ConcurrentCameraMode.OFF
-                    }
-
-                    getResString(
-                        CaptureR.string.quick_settings_description_concurrent_camera_dual
-                    ) ->
-                        return@let ConcurrentCameraMode.DUAL
-                }
-            }
-            throw AssertionError(
-                "Unable to determine concurrent camera mode from quick settings"
-            )
-        }
 }
 
 fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
@@ -733,6 +735,32 @@ fun ComposeTestRule.unFocusQuickSetting() {
         }
 }
 
+/**
+ * Navigates to the Settings screen and sets the concurrent camera mode.
+ *
+ * Assumes the setting is enabled/supported by the device, skipping the test if not.
+ *
+ * @param concurrentMode the target [ConcurrentCameraMode] to set.
+ */
+fun ComposeTestRule.setConcurrentCameraModeInSettings(concurrentMode: ConcurrentCameraMode) {
+    visitSettingsScreen {
+        onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
+            .assertExists()
+            .apply {
+                val isCurrentlyOn = fetchSemanticsNode().config.getOrNull(
+                    SemanticsProperties.ToggleableState
+                ) == ToggleableState.On
+                val shouldBeOn = (concurrentMode == ConcurrentCameraMode.DUAL)
+                if (isCurrentlyOn != shouldBeOn) {
+                    assume(
+                        isEnabled()
+                    ) { "Concurrent camera toggle is not supported by the device" }
+                    performClick()
+                }
+            }
+    }
+}
+
 // ////////////////////////////
 //
 // Apply Quick Settings
@@ -748,21 +776,6 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
                 .performClick()
         }
         waitUntil(1000) { isHdrEnabled() == enabled }
-    }
-}
-
-fun ComposeTestRule.setConcurrentCameraMode(concurrentMode: ConcurrentCameraMode) {
-    visitQuickSettings {
-        searchForQuickSetting(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-        waitForNodeWithTag(tag = QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-        onNodeWithTag(QUICK_SETTINGS_CONCURRENT_CAMERA_MODE_BUTTON)
-            .assume(isEnabled()) { "Device does not support concurrent camera." }
-            .let {
-                if (getConcurrentState() != concurrentMode) {
-                    it.assertExists().performClick()
-                }
-            }
-        waitUntil(1_000) { getConcurrentState() == concurrentMode }
     }
 }
 

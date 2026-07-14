@@ -88,7 +88,6 @@ dependencies {
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons.extended)
 
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
@@ -97,6 +96,7 @@ dependencies {
     // Compose - Integration with ViewModels with Navigation and Hilt
     implementation(libs.androidx.navigation.compose)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.lifecycle.viewmodel.compose)
 
     // Compose - Lifecycle utilities
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -114,8 +114,7 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
-    debugImplementation(libs.androidx.test.monitor)
-    implementation(libs.androidx.junit)
+    testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
@@ -137,11 +136,16 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core:camera"))
+    implementation(project(":data:camera"))
     implementation(project(":core:common"))
     implementation(project(":data:media"))
     implementation(project(":data:settings"))
+    implementation(project(":core:settings"))
     implementation(project(":core:model"))
-    testImplementation(project(":core:common"))
+    testImplementation(project(":core:camera:testing"))
+    testImplementation(project(":data:settings:testing"))
+    testImplementation(project(":data:media:testing"))
+    testImplementation(project(":core:common:testing"))
     implementation(project(":ui:components:capture"))
     implementation(project(":ui:controller"))
     implementation(project(":ui:controller:impl"))
@@ -149,7 +153,7 @@ dependencies {
     implementation(project(":ui:uistate:capture"))
     implementation(project(":ui:uistateadapter"))
     implementation(project(":ui:uistateadapter:capture"))
-
+    implementation(project(":ui:debug"))
 }
 
 // Allow references to generated code

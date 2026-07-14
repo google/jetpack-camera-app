@@ -14,33 +14,13 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.model
-import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
-
 val DEFAULT_HDR_DYNAMIC_RANGE = DynamicRange.HLG10
 
+/**
+ * WARNING: The string representation of this enum is serialized and persisted in Preferences DataStore.
+ * Renaming constants will break compatibility with existing saved settings.
+ */
 enum class DynamicRange {
     SDR,
-    HLG10;
-
-    companion object {
-
-        /** returns the DynamicRangeType enum equivalent of a provided DynamicRangeTypeProto */
-        fun fromProto(dynamicRangeProto: DynamicRangeProto): DynamicRange {
-            return when (dynamicRangeProto) {
-                DynamicRangeProto.DYNAMIC_RANGE_HLG10 -> HLG10
-
-                // Treat unrecognized and unspecified as SDR as a fallback
-                DynamicRangeProto.DYNAMIC_RANGE_SDR,
-                DynamicRangeProto.DYNAMIC_RANGE_UNSPECIFIED,
-                DynamicRangeProto.UNRECOGNIZED -> SDR
-            }
-        }
-
-        fun DynamicRange.toProto(): DynamicRangeProto {
-            return when (this) {
-                SDR -> DynamicRangeProto.DYNAMIC_RANGE_SDR
-                HLG10 -> DynamicRangeProto.DYNAMIC_RANGE_HLG10
-            }
-        }
-    }
+    HLG10
 }

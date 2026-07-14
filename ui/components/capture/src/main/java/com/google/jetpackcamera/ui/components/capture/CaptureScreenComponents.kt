@@ -26,6 +26,8 @@ import androidx.camera.viewfinder.compose.CoordinateTransformer
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
@@ -35,6 +37,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -55,17 +58,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.FlipCameraAndroid
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.VideoStable
-import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconToggleButton
@@ -73,6 +65,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -94,7 +87,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -140,16 +132,23 @@ private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
  * A composable that displays the elapsed time of a video recording in a "MM:SS" format.
  * This text is only visible during an active recording.
  *
- * @param elapsedTimeUiState the [ElapsedTimeUiState] for this component.
+ * @param elapsedTimeUiStateProvider the provider for [ElapsedTimeUiState] for this component.
  */
 @Composable
-fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTimeUiState) {
-    if (elapsedTimeUiState is ElapsedTimeUiState.Enabled) {
+fun ElapsedTimeText(
+    modifier: Modifier = Modifier,
+    elapsedTimeUiStateProvider: () -> ElapsedTimeUiState
+) {
+    val state = elapsedTimeUiStateProvider()
+    if (state is ElapsedTimeUiState.Enabled) {
         Text(
             modifier = modifier,
-            text = elapsedTimeUiState.elapsedTimeNanos.nanoseconds
+            text = state.elapsedTimeNanos.nanoseconds
                 .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            style = LocalTextStyle.current.copy(
+                fontFeatureSettings = "tnum"
+            )
         )
     }
 }
@@ -164,7 +163,7 @@ fun ElapsedTimeText(modifier: Modifier = Modifier, elapsedTimeUiState: ElapsedTi
  * @param modifier the modifier for this component.
  * @param onSetPause the callback invoked when the button is tapped.
  * @param size the size of the button.
- * @param currentRecordingState the current recording state.
+ * @param currentRecordingStateProvider the provider for the current recording state.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -172,8 +171,9 @@ fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
     onSetPause: (Boolean) -> Unit,
     size: Dp = ButtonDefaults.MediumContainerHeight,
-    currentRecordingState: VideoRecordingState
+    currentRecordingStateProvider: () -> VideoRecordingState
 ) {
+    val currentRecordingState = currentRecordingStateProvider()
     if (currentRecordingState is VideoRecordingState.Active) {
         FilledIconToggleButton(
             checked = currentRecordingState is VideoRecordingState.Active.Recording,
@@ -187,9 +187,11 @@ fun PauseResumeToggleButton(
             Icon(
                 modifier = Modifier
                     .size(ButtonDefaults.MediumIconSize),
-                imageVector = when (currentRecordingState) {
-                    is VideoRecordingState.Active.Recording -> Icons.Filled.Pause
-                    is VideoRecordingState.Active.Paused -> Icons.Filled.PlayArrow
+                painter = when (currentRecordingState) {
+                    is VideoRecordingState.Active.Recording -> painterResource(R.drawable.ic_pause)
+                    is VideoRecordingState.Active.Paused -> painterResource(
+                        R.drawable.ic_play_arrow
+                    )
                 },
                 contentDescription = stringResource(id = R.string.pause_resume_button_description)
             )
@@ -220,13 +222,14 @@ fun AmplitudeToggleButton(
     val currentUiState = rememberUpdatedState(audioUiState)
 
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
+    val disableAnimations = LocalDisableAnimations.current
     val animatedAudioAlpha by animateFloatAsState(
-        targetValue = EaseOutExpo.transform(
-            (currentUiState.value.amplitude.toFloat()).coerceIn(
-                0f,
-                1f
-            )
-        ),
+        targetValue = if (disableAnimations) {
+            1f
+        } else {
+            EaseOutExpo.transform((currentUiState.value.amplitude.toFloat()).coerceIn(0f, 1f))
+        },
+        animationSpec = if (disableAnimations) snap() else tween(),
         label = "AudioAnimation"
     )
     Box(contentAlignment = Alignment.Center) {
@@ -256,10 +259,10 @@ fun AmplitudeToggleButton(
         ) {
             Icon(
                 modifier = Modifier.size(ButtonDefaults.MediumIconSize),
-                imageVector = if (currentUiState.value is AudioUiState.Enabled.On) {
-                    Icons.Filled.Mic
+                painter = if (currentUiState.value is AudioUiState.Enabled.On) {
+                    painterResource(R.drawable.ic_mic)
                 } else {
-                    Icons.Filled.MicOff
+                    painterResource(R.drawable.ic_mic_off)
                 },
                 contentDescription = stringResource(id = R.string.audio_visualizer_icon_description)
             )
@@ -323,16 +326,16 @@ fun CaptureModeToggleButton(
         leftIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.IMAGE_ONLY
         ) {
-            Icons.Filled.CameraAlt
+            R.drawable.ic_camera_alt_filled
         } else {
-            Icons.Outlined.CameraAlt
+            R.drawable.ic_camera_alt_outline
         },
         rightIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.VIDEO_ONLY
         ) {
-            Icons.Filled.Videocam
+            R.drawable.ic_videocam_filled
         } else {
-            Icons.Outlined.Videocam
+            R.drawable.ic_videocam_outline
         },
         leftIconDescription = if (enabled) {
             stringResource(id = R.string.capture_mode_image_capture_content_description)
@@ -367,7 +370,6 @@ fun TestableSnackbar(
         // box seems to need to have some size to be detected by UiAutomator
         modifier = modifier
             .size(20.dp)
-            .testTag(snackbarToShow.testTag)
     ) {
         val context = LocalContext.current
         LaunchedEffect(snackbarToShow) {
@@ -477,9 +479,11 @@ fun PreviewDisplay(
     focusMeteringUiState: FocusMeteringUiState,
     modifier: Modifier = Modifier
 ) {
-    if (previewDisplayUiState.aspectRatioUiState !is AspectRatioUiState.Available) {
+    val aspectRatioUiState = previewDisplayUiState.aspectRatioUiState
+    if (aspectRatioUiState !is AspectRatioUiState.Available) {
         return
     }
+    @Suppress("DEPRECATION")
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
             onScaleZoom(pinchZoomChange)
@@ -494,10 +498,8 @@ fun PreviewDisplay(
                 .background(Color.Black),
             contentAlignment = Alignment.TopCenter
         ) {
-            val aspectRatio = (
-                previewDisplayUiState.aspectRatioUiState as
-                    AspectRatioUiState.Available
-                ).selectedAspectRatio
+            val aspectRatio =
+                aspectRatioUiState.selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.toFloat()
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
@@ -505,12 +507,17 @@ fun PreviewDisplay(
             val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
             var imageVisible by remember { mutableStateOf(true) }
 
+            val disableAnimations = LocalDisableAnimations.current
             val imageAlpha: Float by animateFloatAsState(
                 targetValue = if (imageVisible) 1f else 0f,
-                animationSpec = tween(
-                    durationMillis = (BLINK_TIME / 2).toInt(),
-                    easing = LinearEasing
-                ),
+                animationSpec = if (disableAnimations) {
+                    snap()
+                } else {
+                    tween(
+                        durationMillis = (BLINK_TIME / 2).toInt(),
+                        easing = LinearEasing
+                    )
+                },
                 label = ""
             )
 
@@ -617,7 +624,9 @@ fun CaptureButton(
         modifier = modifier.testTag(CAPTURE_BUTTON),
         onIncrementZoom = onIncrementZoom,
         onImageCapture = {
-            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+            if (captureButtonUiState is CaptureButtonUiState.Enabled &&
+                captureButtonUiState.isEnabled
+            ) {
                 onCaptureImage(context.contentResolver)
             }
             if (isQuickSettingsOpen) {
@@ -625,7 +634,9 @@ fun CaptureButton(
             }
         },
         onStartRecording = {
-            if (captureButtonUiState is CaptureButtonUiState.Enabled) {
+            if (captureButtonUiState is CaptureButtonUiState.Enabled &&
+                captureButtonUiState.isEnabled
+            ) {
                 onStartVideoRecording()
             }
         },
@@ -674,7 +685,7 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                     painterResource(R.drawable.video_stable_ois_filled_icon)
 
                                 StabilizationMode.ON ->
-                                    rememberVectorPainter(Icons.Filled.VideoStable)
+                                    painterResource(R.drawable.ic_video_stable)
 
                                 else ->
                                     TODO(
@@ -754,10 +765,8 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                     VideoQuality.UHD ->
                         painterResource(R.drawable.video_resolution_uhd_icon)
 
-                    else ->
-                        throw IllegalStateException(
-                            "Illegal video quality state"
-                        )
+                    VideoQuality.UNSPECIFIED ->
+                        throw IllegalStateException("Illegal video quality state")
                 },
                 contentDescription = when (videoQuality) {
                     VideoQuality.SD ->
@@ -772,7 +781,7 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                     VideoQuality.UHD ->
                         stringResource(R.string.video_quality_description_uhd)
 
-                    else -> null
+                    VideoQuality.UNSPECIFIED -> null
                 }
             )
         }
@@ -801,21 +810,26 @@ fun FlipCameraButton(
         var rotation by remember { mutableFloatStateOf(0f) }
         val animatedRotation = remember { Animatable(0f) }
         var initialLaunch by remember { mutableStateOf(false) }
+        val disableAnimations = LocalDisableAnimations.current
 
         // spin animate whenever lensfacing changes
         LaunchedEffect(flipLensUiState.selectedLensFacing) {
             if (initialLaunch) {
                 // full 360
                 rotation -= 180f
-                animatedRotation.animateTo(
-                    targetValue = rotation,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessVeryLow
+                if (disableAnimations) {
+                    animatedRotation.snapTo(rotation)
+                } else {
+                    animatedRotation.animateTo(
+                        targetValue = rotation,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessVeryLow
+                        )
                     )
-                )
+                }
             }
-            // dont rotate on the initial launch
+            // don't rotate on the initial launch
             else {
                 initialLaunch = true
             }
@@ -826,7 +840,7 @@ fun FlipCameraButton(
             enabled = enabledCondition
         ) {
             Icon(
-                imageVector = Icons.Filled.FlipCameraAndroid,
+                painter = painterResource(R.drawable.ic_flip_camera_android),
                 contentDescription = stringResource(id = R.string.flip_camera_icon_description),
                 modifier = Modifier
                     .size(IconButtonDefaults.extraLargeIconSize)
@@ -849,16 +863,22 @@ private fun FocusMeteringIndicator(
     coordinateTransformer: CoordinateTransformer
 ) {
     if (focusMeteringUiState is FocusMeteringUiState.Specified) {
-        val transition = rememberInfiniteTransition(label = "FocusPulse")
-        val alpha by transition.animateFloat(
-            initialValue = 1f,
-            targetValue = 0.5f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(500),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "FocusPulseAlpha"
-        )
+        val disableAnimations = LocalDisableAnimations.current
+        val alpha = if (disableAnimations) {
+            1f
+        } else {
+            val transition = rememberInfiniteTransition(label = "FocusPulse")
+            val a by transition.animateFloat(
+                initialValue = 1f,
+                targetValue = 0.5f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(500),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "FocusPulseAlpha"
+            )
+            a
+        }
 
         // The indicator for SUCCESS/FAILURE is shown for a short duration
         var showResultIndicator by remember { mutableStateOf(false) }
@@ -887,17 +907,27 @@ private fun FocusMeteringIndicator(
                 }
             }
         val showFocusMeteringIndicator = status == FocusMeteringUiState.Status.RUNNING
+        val isVisible = showFocusMeteringIndicator || showResultIndicator
         AnimatedVisibility(
-            visible = showFocusMeteringIndicator || showResultIndicator,
-            enter = fadeIn() + scaleIn(initialScale = 1.5f),
-            exit = fadeOut() + when (focusMeteringUiState.status) {
-                FocusMeteringUiState.Status.SUCCESS -> scaleOut(targetScale = 0.5f)
-                FocusMeteringUiState.Status.FAILURE -> scaleOut(targetScale = 1.5f)
-                else -> fadeOut()
+            visible = isVisible,
+            enter = if (disableAnimations) {
+                EnterTransition.None
+            } else {
+                fadeIn() + scaleIn(
+                    initialScale = 1.5f
+                )
+            },
+            exit = if (disableAnimations) {
+                ExitTransition.None
+            } else {
+                fadeOut() + when (focusMeteringUiState.status) {
+                    FocusMeteringUiState.Status.SUCCESS -> scaleOut(targetScale = 0.5f)
+                    FocusMeteringUiState.Status.FAILURE -> scaleOut(targetScale = 1.5f)
+                    else -> fadeOut()
+                }
             },
             modifier = Modifier
                 .offset { tapCoords.round() }
-                // Offset the indicator to be centered on the tap coordinates
                 .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
         ) {
             Box(

@@ -32,13 +32,7 @@
 
     <string name="zoom_ratio_text">%1$.2fx</string>
 
-    <!-- Debug Overlay Text -->
 
-    <string name="debug_text_physical_camera_id_prefix">Physical ID: </string>
-    <string name="debug_text_logical_camera_id_prefix">Logical ID: </string>
-    <string name="debug_overlay_toggle_btn_text">Debug</string>
-    <string name="debug_hide_components_desc">Hiding components</string>
-    <string name="debug_show_components_desc">Displaying components</string>
 
 
     <!-- Notification Text -->
@@ -105,11 +99,6 @@
     <string name="quick_settings_flash_on_description">Flash on</string>
     <string name="quick_settings_flash_llb_description">Low Light Boost on</string>
 
-    <!-- Stream Config Text -->
-    <string name="quick_settings_stream_config_single">Single Stream</string>
-    <string name="quick_settings_stream_config_multi">Multi Stream</string>
-    <string name="quick_settings_stream_config_single_description">Single-stream capture mode on</string>
-    <string name="quick_settings_stream_config_multi_description">Multi-stream capture mode on</string>
 
 
     <!--- Low light boost Text -->
@@ -120,12 +109,7 @@
     <string name="low_light_boost_error_toast_message">An error occurred when running low light boost.</string>
 
 
-    <!--- Concurrent Camera Text -->
 
-    <string name="quick_settings_text_concurrent_camera_off">Single</string>
-    <string name="quick_settings_text_concurrent_camera_dual">Dual</string>
-    <string name="quick_settings_description_concurrent_camera_off">Single camera mode</string>
-    <string name="quick_settings_description_concurrent_camera_dual">Concurrent dual camera mode</string>
 
     <!-- Capture Mode Text -->
     <string name="quick_settings_text_capture_mode_standard">Hybrid Capture</string>

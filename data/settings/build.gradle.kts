@@ -19,7 +19,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.dagger.hilt.android)
-    alias(libs.plugins.google.protobuf)
 }
 
 android {
@@ -76,10 +75,6 @@ dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
-    // proto datastore
-    implementation(libs.androidx.datastore)
-    implementation(libs.protobuf.kotlin.lite)
-
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
@@ -87,32 +82,12 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(project(":data:settings:testing"))
 
     // Access Model data
     implementation(project(":core:model"))
     implementation(project(":core:common"))
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.21.12"
-    }
-
-    generateProtoTasks {
-        all().forEach { task ->
-            task.builtins {
-                create("java") {
-                    option("lite")
-                }
-            }
-
-            task.builtins {
-                create("kotlin") {
-                    option("lite")
-                }
-            }
-        }
-    }
+    implementation(project(":core:settings"))
 }
 
 // Allow references to generated code

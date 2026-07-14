@@ -30,9 +30,8 @@ import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.IMAGE_WELL_TAG
+import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
@@ -49,6 +48,7 @@ import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
 import com.google.jetpackcamera.utils.waitForNodeWithTagToDisappear
 import com.google.jetpackcamera.utils.waitForNodeWithText
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,9 +87,7 @@ class PermissionsTest {
     @Test
     fun allPermissions_alreadyGranted_screenNotShown() {
         runMainActivityScenarioTest {
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-            }
+            composeTestRule.waitForCaptureButton()
         }
     }
 
@@ -263,8 +261,8 @@ class PermissionsTest {
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
                 .assertExists()
                 .performClick()
-            composeTestRule.waitForNodeWithTag(
-                IMAGE_CAPTURE_SUCCESS_TAG,
+            composeTestRule.waitForSnackbarWithText(
+                StateR.string.toast_image_capture_success,
                 timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS
             )
         }
@@ -301,8 +299,8 @@ class PermissionsTest {
             // check for image capture failure
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
 
-            composeTestRule.waitForNodeWithTag(
-                IMAGE_CAPTURE_FAILURE_TAG,
+            composeTestRule.waitForSnackbarWithText(
+                StateR.string.toast_capture_failure,
                 timeoutMillis = IMAGE_CAPTURE_TIMEOUT_MILLIS
             )
             // imageWell shouldn't appear

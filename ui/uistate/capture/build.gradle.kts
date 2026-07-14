@@ -71,15 +71,13 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:camera"))
     implementation(project(":ui:uistate"))
-    implementation(project(":ui:uistateadapter"))
 
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
-    debugImplementation(libs.androidx.test.monitor)
-    implementation(libs.androidx.junit)
+    testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 

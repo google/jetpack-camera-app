@@ -18,8 +18,10 @@ package com.google.jetpackcamera.feature.preview.navigation
 import android.os.Bundle
 import androidx.navigation.NavType
 import com.google.jetpackcamera.model.DebugSettings
-import com.google.jetpackcamera.model.DebugSettings.Companion.encodeAsByteArray
 import com.google.jetpackcamera.model.DebugSettings.Companion.encodeAsString
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 /**
  * Custom NavType to handle DebugSettings data class.
@@ -31,27 +33,32 @@ internal object DebugSettingsNavType : NavType<DebugSettings>(isNullableAllowed 
      * Puts the [DebugSettings] value into the Bundle by converting to Proto and serializing.
      */
     override fun put(bundle: Bundle, key: String, value: DebugSettings) {
-        bundle.putByteArray(key, value.encodeAsByteArray())
+        bundle.putString(key, value.encodeAsString())
     }
 
     /**
      * Gets the [DebugSettings] value from the Bundle by deserializing the Proto.
      */
     override fun get(bundle: Bundle, key: String): DebugSettings? {
-        return bundle.getByteArray(key)?.let { bytes ->
-            DebugSettings.parseFromByteArray(bytes)
+        return bundle.getString(key)?.let { str ->
+            DebugSettings.parseFromString(str)
         }
     }
 
     /**
-     * Parses the Base64 encoded Proto string from the navigation route.
+     * Parses the URL-encoded serialized string from the navigation route.
      */
-    override fun parseValue(value: String): DebugSettings = DebugSettings.parseFromString(value)
+    override fun parseValue(value: String): DebugSettings {
+        val decoded = URLDecoder.decode(value, StandardCharsets.UTF_8.toString())
+        return DebugSettings.parseFromString(decoded)
+    }
 
     /**
-     * Encodes the [DebugSettings] data class to a Base64 string for navigation routes.
+     * Encodes the [DebugSettings] data class to a URL-encoded string for navigation routes.
      */
-    override fun serializeAsValue(value: DebugSettings): String = value.encodeAsString()
+    override fun serializeAsValue(value: DebugSettings): String {
+        return URLEncoder.encode(value.encodeAsString(), StandardCharsets.UTF_8.toString())
+    }
 
     override val name: String = "DebugSettingsNavType"
 }

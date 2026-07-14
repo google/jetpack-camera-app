@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera
 
-import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
@@ -30,10 +29,10 @@ import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_HOT_TAG
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
-import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -61,9 +60,7 @@ class VideoAudioTest {
         runMainActivityScenarioTest(debugExtra) {
             // check audio visualizer composable for muted/unmuted icon.
             // icon will only be unmuted if audio is nonzero
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-            }
+            composeTestRule.waitForCaptureButton()
 
             // record video
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON)

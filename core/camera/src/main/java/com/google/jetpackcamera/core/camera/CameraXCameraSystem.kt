@@ -40,6 +40,7 @@ import androidx.camera.video.Recorder
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
+import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
@@ -50,6 +51,7 @@ import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.core.common.IODispatcher
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -65,21 +67,20 @@ import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.TARGET_FPS_15
+import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_60
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.ZoomStrategy
-import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_15
-import com.google.jetpackcamera.settings.model.CameraConstraints.Companion.FPS_60
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
-import dagger.hilt.android.scopes.ViewModelScoped
 import java.io.File
 import java.io.FileNotFoundException
-import javax.inject.Inject
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -96,31 +97,23 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraXCameraSystem"
-const val TARGET_FPS_AUTO = 0
-const val TARGET_FPS_15 = 15
-const val TARGET_FPS_30 = 30
-const val TARGET_FPS_60 = 60
-
-const val UNLIMITED_VIDEO_DURATION = 0L
 
 /**
  * CameraX based implementation for [CameraSystem]
  */
-@ViewModelScoped
-class CameraXCameraSystem
-@Inject
-constructor(
+class CameraXCameraSystem(
     private val application: Application,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     @param:IODispatcher private val iODispatcher: CoroutineDispatcher,
-    private val constraintsRepository: SettableConstraintsRepository,
     @DefaultFilePathGenerator private val filePathGenerator: FilePathGenerator,
     availabilityCheckers:
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>>,
     effectProviders:
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostEffectProvider>>,
     val imagePostProcessors:
-    Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>>
+    Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>>,
+    private val cameraEffectProviders:
+    Map<CameraEffectFeatureKey, @JvmSuppressWildcards Provider<CameraEffectProvider>>
 ) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -139,6 +132,10 @@ constructor(
     // Could be improved by setting initial value only when camera is initialized
     private var currentCameraState = MutableStateFlow(CameraState())
     override fun getCurrentCameraState(): StateFlow<CameraState> = currentCameraState.asStateFlow()
+
+    private val _systemConstraints = MutableStateFlow<CameraSystemConstraints?>(null)
+    override fun getSystemConstraints(): StateFlow<CameraSystemConstraints?> =
+        _systemConstraints.asStateFlow()
 
     private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
@@ -244,8 +241,8 @@ constructor(
                         val unsupportedStabilizationFpsMap = buildMap {
                             for (stabilizationMode in supportedStabilizationModes) {
                                 when (stabilizationMode) {
-                                    StabilizationMode.ON -> setOf(FPS_15, FPS_60)
-                                    StabilizationMode.HIGH_QUALITY -> setOf(FPS_60)
+                                    StabilizationMode.ON -> setOf(TARGET_FPS_15, TARGET_FPS_60)
+                                    StabilizationMode.HIGH_QUALITY -> setOf(TARGET_FPS_60)
                                     StabilizationMode.OPTICAL -> emptySet()
                                     else -> null
                                 }?.let { put(stabilizationMode, it) }
@@ -275,12 +272,16 @@ constructor(
                                 supportedFixedFrameRates = supportedFixedFrameRates,
                                 supportedDynamicRanges = supportedDynamicRanges,
                                 supportedImageFormatsMap = mapOf(
-                                    // Only JPEG is supported in single-stream mode, since
-                                    // single-stream mode uses CameraEffect, which does not support
+                                    // Only JPEG is supported in single-stream mode (represented by true),
+                                    // since single-stream mode uses CameraEffect, which does not support
                                     // Ultra HDR now.
-                                    Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
-                                    Pair(StreamConfig.MULTI_STREAM, supportedImageFormats)
+                                    Pair(true, setOf(ImageOutputFormat.JPEG)),
+                                    Pair(false, supportedImageFormats)
                                 ),
+                                supportedEffects = cameraEffectProviders.keys.map { it.id }.toSet(),
+                                effectTargetsMap = cameraEffectProviders.map { (key, provider) ->
+                                    key.id to provider.get().targets
+                                }.toMap(),
                                 supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
@@ -294,7 +295,7 @@ constructor(
             }
         )
 
-        constraintsRepository.updateSystemConstraints(systemConstraints)
+        _systemConstraints.value = systemConstraints
 
         currentSettings.value =
             settingsWithVerifiedLens
@@ -430,10 +431,14 @@ constructor(
                             concurrentCameraMode = currentCameraSettings.concurrentCameraMode
                         )
 
+                        val activeCameraEffect = cameraEffectProviders.keys.firstOrNull {
+                            it.id == currentCameraSettings.selectedCameraEffect
+                        }
+
                         PerpetualSessionSettings.SingleCamera(
                             aspectRatio = currentCameraSettings.aspectRatio,
                             captureMode = currentCameraSettings.captureMode,
-                            streamConfig = currentCameraSettings.streamConfig,
+                            activeCameraEffect = activeCameraEffect,
                             targetFrameRate = currentCameraSettings.targetFrameRate,
                             stabilizationMode = resolvedStabilizationMode,
                             dynamicRange = currentCameraSettings.dynamicRange,
@@ -484,7 +489,8 @@ constructor(
                             currentCameraState = currentCameraState,
                             surfaceRequests = _surfaceRequest,
                             transientSettings = transientSettings,
-                            lowLightBoostEffectProvider = lowLightBoostEffectProvider
+                            lowLightBoostEffectProvider = lowLightBoostEffectProvider,
+                            cameraEffectProviders = cameraEffectProviders
                         )
                     ) {
                         try {
@@ -678,6 +684,9 @@ constructor(
 
     // Sets the camera to the designated lensFacing direction
     override suspend fun setLensFacing(lensFacing: LensFacing) {
+        // TODO: Handle lens flipping during recording when only one lens supports HDR.
+        // We should define the expected behavior (e.g., disable flip button, stop recording with error,
+        // or fallback to SDR mid-recording if supported by CameraX).
         currentSettings.update { old ->
             if (systemConstraints.availableLenses.contains(lensFacing)) {
                 old?.copy(cameraLensFacing = lensFacing)
@@ -690,6 +699,10 @@ constructor(
                 old
             }
         }
+    }
+
+    private fun CameraAppSettings.isSingleStreamLayout(): Boolean {
+        return cameraEffectProviders.keys.any { it.id == selectedCameraEffect }
     }
 
     /**
@@ -712,29 +725,6 @@ constructor(
                 // concurrent currently only supports VIDEO_ONLY
                 if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
                     CaptureMode.VIDEO_ONLY
-                }
-
-                // if hdr is enabled...
-                else if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-                    dynamicRange == DynamicRange.HLG10
-                ) {
-                    // if both hdr video and image capture are supported, default to VIDEO_ONLY
-                    if (constraints.supportedDynamicRanges.contains(DynamicRange.HLG10) &&
-                        constraints.supportedImageFormatsMap[streamConfig]
-                            ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
-                    ) {
-                        if (captureMode == CaptureMode.STANDARD) {
-                            CaptureMode.VIDEO_ONLY
-                        } else {
-                            return this
-                        }
-                    }
-                    // return appropriate capture mode if only one is supported
-                    else if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
-                        CaptureMode.IMAGE_ONLY
-                    } else {
-                        CaptureMode.VIDEO_ONLY
-                    }
                 } else {
                     defaultCaptureMode ?: return this
                 }
@@ -790,10 +780,13 @@ constructor(
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedDynamicRanges) {
                 val newDynamicRange = if (contains(dynamicRange) &&
-                    flashMode != FlashMode.LOW_LIGHT_BOOST
+                    flashMode != FlashMode.LOW_LIGHT_BOOST &&
+                    captureMode != CaptureMode.STANDARD
                 ) {
                     dynamicRange
                 } else {
+                    // TODO: Consider preserving user preference for HDR instead of permanently
+                    //  resetting to SDR here when switching lenses.
                     DynamicRange.SDR
                 }
 
@@ -816,10 +809,16 @@ constructor(
 
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            with(constraints.supportedImageFormatsMap[streamConfig]) {
-                val newImageFormat = if (this != null && contains(imageFormat)) {
+            with(constraints.supportedImageFormatsMap[isSingleStreamLayout()]) {
+                // Prioritize Low Light Boost over Ultra HDR to maintain consistency with
+                // Video HDR / Low Light Boost conflict resolution.
+                val newImageFormat = if (this != null && contains(imageFormat) &&
+                    captureMode != CaptureMode.STANDARD &&
+                    flashMode != FlashMode.LOW_LIGHT_BOOST
+                ) {
                     imageFormat
                 } else {
+                    // TODO: Consider preserving user preference for HDR instead of permanently resetting to JPEG here when switching lenses.
                     ImageOutputFormat.JPEG
                 }
 
@@ -867,8 +866,9 @@ constructor(
             ConcurrentCameraMode.OFF -> this
             else ->
                 if (systemConstraints.concurrentCamerasSupported &&
+                    captureMode == CaptureMode.VIDEO_ONLY &&
                     dynamicRange == DynamicRange.SDR &&
-                    streamConfig == StreamConfig.MULTI_STREAM &&
+                    !isSingleStreamLayout() &&
                     flashMode != FlashMode.LOW_LIGHT_BOOST
                 ) {
                     copy(
@@ -933,6 +933,7 @@ constructor(
         currentSettings.update { old ->
             old?.copy(flashMode = flashMode)
                 ?.tryApplyDynamicRangeConstraints()
+                ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
@@ -960,9 +961,9 @@ constructor(
         }
     }
 
-    override suspend fun setStreamConfig(streamConfig: StreamConfig) {
+    override suspend fun setCameraEffect(cameraEffect: CameraEffectId) {
         currentSettings.update { old ->
-            old?.copy(streamConfig = streamConfig)
+            old?.copy(selectedCameraEffect = cameraEffect)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
                 ?.tryApplyCaptureModeConstraints()
@@ -975,7 +976,7 @@ constructor(
             old?.copy(dynamicRange = dynamicRange)
                 ?.tryApplyDynamicRangeConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
-                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -989,7 +990,7 @@ constructor(
         currentSettings.update { old ->
             old?.copy(concurrentCameraMode = concurrentCameraMode)
                 ?.tryApplyConcurrentCameraModeConstraints()
-                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -997,7 +998,7 @@ constructor(
         currentSettings.update { old ->
             old?.copy(imageFormat = imageFormat)
                 ?.tryApplyImageFormatConstraints()
-                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -1031,6 +1032,9 @@ constructor(
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
             old?.copy(captureMode = captureMode)
+                ?.tryApplyDynamicRangeConstraints()
+                ?.tryApplyImageFormatConstraints()
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 
