@@ -36,6 +36,9 @@ import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.SettingsDataSource
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -167,6 +170,36 @@ class PrefsDataStoreSettingsDataSource(
     }
 
     companion object {
+        /**
+         * Creates an instance of [SettingsDataSource] backed by Preferences DataStore.
+         *
+         * Note: To avoid breaking DataStore functionality, ensure that only a single instance
+         * of [DataStore] is active for the settings file at any time (e.g., by managing this
+         * instance as a Singleton via dependency injection).
+         *
+         * @param context The application context.
+         * @param defaultCaptureModeOverride The default capture mode override.
+         * @param ioDispatcher The coroutine dispatcher for IO operations.
+         * @return A [SettingsDataSource] instance.
+         */
+        fun create(
+            context: android.content.Context,
+            defaultCaptureModeOverride: CaptureMode,
+            ioDispatcher: CoroutineDispatcher
+        ): SettingsDataSource {
+            val scope = CoroutineScope(ioDispatcher + SupervisorJob())
+            val dataStore = androidx.datastore.preferences.core.PreferenceDataStoreFactory.create(
+                scope = scope,
+                produceFile = {
+                    java.io.File(
+                        context.filesDir,
+                        "datastore/app_settings.preferences_pb"
+                    )
+                }
+            )
+            return PrefsDataStoreSettingsDataSource(dataStore, defaultCaptureModeOverride)
+        }
+
         private inline fun <reified T : Enum<T>> String?.toEnumOrDefault(default: T): T {
             if (this == null) return default
             return try {
