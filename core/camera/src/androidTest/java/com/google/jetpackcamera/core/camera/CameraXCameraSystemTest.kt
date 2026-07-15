@@ -32,6 +32,7 @@ import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatur
 import com.google.jetpackcamera.core.camera.postprocess.PostProcessModule.Companion.provideImagePostProcessorMap
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
+import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -136,7 +137,7 @@ class CameraXCameraSystemTest {
         cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
-        val unused = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}.ignoreResult()
 
         // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
@@ -152,10 +153,10 @@ class CameraXCameraSystemTest {
 
         // Act.
         try {
-            val unused = cameraSystem.takePicture(
+            cameraSystem.takePicture(
                 context.contentResolver,
                 SaveLocation.Explicit(Uri.parse("asdfasdf"))
-            ) {}
+            ) {}.ignoreResult()
         } catch (e: Exception) {}
 
         // Assert.
@@ -173,7 +174,10 @@ class CameraXCameraSystemTest {
 
         // Act.
         try {
-            val unused = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+            cameraSystem.takePicture(
+                context.contentResolver,
+                SaveLocation.Default
+            ) {}.ignoreResult()
         } catch (e: RuntimeException) {
             // Assert.
             assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
@@ -195,7 +199,7 @@ class CameraXCameraSystemTest {
         cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
-        val unused = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}.ignoreResult()
 
         // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isFalse()
