@@ -111,7 +111,7 @@ const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
 const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
 private const val TAG = "UiTestUtil"
 
-@SuppressWarnings("ImmutableEnum")
+@Suppress("ImmutableEnum")
 internal enum class CacheParam(val extras: Bundle?) {
     NO_CACHE(null),
     WITH_CACHE(cacheExtra)

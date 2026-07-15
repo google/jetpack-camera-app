@@ -136,7 +136,7 @@ class CameraXCameraSystemTest {
         cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
-        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+        val unused = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
 
         // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
@@ -152,7 +152,7 @@ class CameraXCameraSystemTest {
 
         // Act.
         try {
-            cameraSystem.takePicture(
+            val unused = cameraSystem.takePicture(
                 context.contentResolver,
                 SaveLocation.Explicit(Uri.parse("asdfasdf"))
             ) {}
@@ -173,7 +173,7 @@ class CameraXCameraSystemTest {
 
         // Act.
         try {
-            cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+            val unused = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
         } catch (e: RuntimeException) {
             // Assert.
             assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
@@ -195,7 +195,7 @@ class CameraXCameraSystemTest {
         cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
-        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+        val unused = cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
 
         // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isFalse()

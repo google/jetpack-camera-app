@@ -110,7 +110,7 @@ class PreviewViewModel @Inject constructor(
     val surfaceRequest: StateFlow<SurfaceRequest?> =
         cameraSystemRepository.cameraSystem.getSurfaceRequest()
 
-    private val outgoingCaptureEvents = Channel<CaptureEvent>()
+    private val outgoingCaptureEvents = Channel<CaptureEvent>(capacity = Channel.UNLIMITED)
     val captureEvents: ReceiveChannel<CaptureEvent> = outgoingCaptureEvents
     private val incomingCaptureEvents = Channel<CaptureEvent>(capacity = Channel.UNLIMITED)
 

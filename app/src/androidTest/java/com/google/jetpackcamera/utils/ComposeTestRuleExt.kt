@@ -230,14 +230,10 @@ private fun ComposeTestRule.waitUntilVideoRecordingDurationAtLeast(
 ) {
     waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
         checkWhileWaiting()
-        val nodes = onAllNodesWithTag(ELAPSED_TIME_TAG).fetchSemanticsNodes()
-        if (nodes.isEmpty()) {
-            false
-        } else {
-            val text = nodes.first().config.getOrNull(SemanticsProperties.Text)?.firstOrNull()?.text
-            val duration = text?.let { parseMinSecToMillis(it) }
-            duration != null && duration >= durationMillis
-        }
+        val text = onAllNodesWithTag(ELAPSED_TIME_TAG).fetchSemanticsNodes()
+            .firstOrNull()?.config?.getOrNull(SemanticsProperties.Text)?.firstOrNull()?.text
+        val duration = text?.let { parseMinSecToMillis(it) }
+        duration != null && duration >= durationMillis
     }
 }
 
