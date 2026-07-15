@@ -23,13 +23,15 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_60
@@ -43,6 +45,11 @@ import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.settings.model.forDevice
+import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_STREAM_CONFIG_TAG
+import com.google.jetpackcamera.settings.ui.FIXED_FPS_ACTIVE_TAG
+import com.google.jetpackcamera.settings.ui.FLASH_LLB_ACTIVE_TAG
+import com.google.jetpackcamera.settings.ui.HDR_ACTIVE_TAG
+import com.google.jetpackcamera.settings.ui.STABILIZATION_ACTIVE_TAG
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,7 +83,7 @@ class SettingsViewModel @Inject constructor(
             updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
-                streamConfigUiState = StreamConfigUiState.Enabled(updatedSettings.streamConfig),
+                cameraEffectUiState = getCameraEffectUiState(updatedSettings, constraints),
                 maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
                     updatedSettings.maxVideoDurationMillis
                 ),
@@ -92,7 +99,8 @@ class SettingsViewModel @Inject constructor(
                 videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings),
                 lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
                     updatedSettings.lowLightBoostPriority
-                )
+                ),
+                concurrentCameraUiState = getConcurrentCameraUiState(constraints, updatedSettings)
             )
         }.stateIn(
             scope = viewModelScope,
@@ -181,6 +189,12 @@ class SettingsViewModel @Inject constructor(
                         cameraAppSettings.targetFrameRate
                     )
                 )
+            } else if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+                SingleSelectableState.Disabled(
+                    DisabledRationale.ConcurrentCameraActiveRationale(
+                        R.string.flash_llb_rationale_prefix
+                    )
+                )
             } else {
                 SingleSelectableState.Selectable
             }
@@ -190,6 +204,43 @@ class SettingsViewModel @Inject constructor(
             onSelectableState = onSelectableState,
             autoSelectableState = autoSelectableState,
             lowLightSelectableState = llbSelectableState
+        )
+    }
+
+    private fun getCameraEffectUiState(
+        cameraAppSettings: CameraAppSettings,
+        constraints: CameraSystemConstraints
+    ): CameraEffectUiState {
+        val perLensConstraints = constraints.perLensConstraints[cameraAppSettings.cameraLensFacing]
+        var supportedEffects = perLensConstraints?.supportedEffects ?: emptySet()
+
+        if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+            return CameraEffectUiState.Disabled(
+                DisabledRationale.ConcurrentCameraActiveRationale(
+                    R.string.stream_config_rationale_prefix
+                )
+            )
+        }
+
+        if (cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
+            val effectTargetsMap = perLensConstraints?.effectTargetsMap ?: emptyMap()
+            supportedEffects = supportedEffects.filter { effectId ->
+                val targets = effectTargetsMap[effectId] ?: emptySet()
+                !targets.contains(com.google.jetpackcamera.model.CameraEffectTarget.IMAGE_CAPTURE)
+            }.toSet()
+
+            if (supportedEffects.isEmpty()) {
+                return CameraEffectUiState.Disabled(
+                    DisabledRationale.UltraHdrUnsupportedRationale(
+                        R.string.stream_config_rationale_prefix
+                    )
+                )
+            }
+        }
+
+        return CameraEffectUiState.Enabled(
+            currentCameraEffect = cameraAppSettings.selectedCameraEffect,
+            supportedEffects = supportedEffects
         )
     }
 
@@ -230,6 +281,13 @@ class SettingsViewModel @Inject constructor(
         systemConstraints: CameraSystemConstraints,
         cameraAppSettings: CameraAppSettings
     ): StabilizationUiState {
+        if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+            return StabilizationUiState.Disabled(
+                DisabledRationale.ConcurrentCameraActiveRationale(
+                    R.string.stabilization_rationale_prefix
+                )
+            )
+        }
         val deviceStabilizations: Set<StabilizationMode> =
             systemConstraints
                 .perLensConstraints.values
@@ -530,6 +588,14 @@ class SettingsViewModel @Inject constructor(
             )
         }
 
+        if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+            return FpsUiState.Disabled(
+                DisabledRationale.ConcurrentCameraActiveRationale(
+                    R.string.fps_rationale_prefix
+                )
+            )
+        }
+
         val currentLensConstraints = checkNotNull(
             systemConstraints.forCurrentLens(cameraAppSettings)
         ) {
@@ -642,10 +708,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setStreamConfig(streamConfig: StreamConfig) {
+    fun setCameraEffect(cameraEffect: CameraEffectId) {
         viewModelScope.launch {
-            settingsRepository.updateStreamConfig(streamConfig)
-            Log.d(TAG, "set default capture mode: $streamConfig")
+            settingsRepository.updateSelectedCameraEffect(cameraEffect)
+            Log.d(TAG, "set camera effect: ${cameraEffect.value}")
         }
     }
 
@@ -681,6 +747,76 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateAudioEnabled(isAudioEnabled)
             Log.d(TAG, "recording audio muted: $isAudioEnabled")
+        }
+    }
+
+    /**
+     * Updates the concurrent camera mode setting in the repository.
+     *
+     * @param concurrentCameraMode the new concurrent camera mode to set.
+     */
+    internal fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
+        viewModelScope.launch {
+            settingsRepository.updateConcurrentCameraMode(concurrentCameraMode)
+        }
+    }
+
+    private fun getConcurrentCameraUiState(
+        constraints: CameraSystemConstraints,
+        settings: CameraAppSettings
+    ): ConcurrentCameraUiState {
+        val isHdrOn = settings.dynamicRange == DynamicRange.HLG10 ||
+            settings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+
+        val supportedEffects = constraints.forCurrentLens(settings)?.supportedEffects ?: emptySet()
+        val isEffectActive = supportedEffects.contains(settings.selectedCameraEffect)
+
+        return if (!constraints.concurrentCamerasSupported) {
+            ConcurrentCameraUiState.Disabled(
+                DeviceUnsupportedRationale(R.string.concurrent_camera_rationale_prefix)
+            )
+        } else if (isHdrOn) {
+            ConcurrentCameraUiState.Disabled(
+                DisabledRationale.ConcurrentCameraDisabledRationale(
+                    R.string.hdr_active_unsupported,
+                    HDR_ACTIVE_TAG
+                )
+            )
+        } else if (isEffectActive) {
+            ConcurrentCameraUiState.Disabled(
+                DisabledRationale.ConcurrentCameraDisabledRationale(
+                    R.string.concurrent_camera_stream_config_unsupported,
+                    CONCURRENT_CAMERA_STREAM_CONFIG_TAG
+                )
+            )
+        } else if (settings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
+            ConcurrentCameraUiState.Disabled(
+                DisabledRationale.ConcurrentCameraDisabledRationale(
+                    R.string.flash_llb_active_unsupported,
+                    FLASH_LLB_ACTIVE_TAG
+                )
+            )
+        } else if (settings.stabilizationMode in setOf(
+                StabilizationMode.ON,
+                StabilizationMode.HIGH_QUALITY,
+                StabilizationMode.OPTICAL
+            )
+        ) {
+            ConcurrentCameraUiState.Disabled(
+                DisabledRationale.ConcurrentCameraDisabledRationale(
+                    R.string.stabilization_active_unsupported,
+                    STABILIZATION_ACTIVE_TAG
+                )
+            )
+        } else if (settings.targetFrameRate != TARGET_FPS_AUTO) {
+            ConcurrentCameraUiState.Disabled(
+                DisabledRationale.ConcurrentCameraDisabledRationale(
+                    R.string.fixed_fps_active_unsupported,
+                    FIXED_FPS_ACTIVE_TAG
+                )
+            )
+        } else {
+            ConcurrentCameraUiState.Enabled(settings.concurrentCameraMode)
         }
     }
 }

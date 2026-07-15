@@ -79,7 +79,6 @@ internal suspend fun runConcurrentCameraSession(
         initialTransientSettings = initialTransientSettings,
         stabilizationMode = StabilizationMode.OFF,
         aspectRatio = sessionSettings.aspectRatio,
-        dynamicRange = DynamicRange.SDR,
         imageFormat = ImageOutputFormat.JPEG,
         captureMode = sessionSettings.captureMode,
         videoCaptureUseCase = videoCapture

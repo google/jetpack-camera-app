@@ -73,7 +73,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.rules)
+    androidTestImplementation(libs.androidx.rules)
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
@@ -111,12 +111,14 @@ dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
-    // Proto Datastore
-    implementation(libs.androidx.datastore)
-    implementation(libs.protobuf.kotlin.lite)
-
     implementation(project(":data:settings"))
+    implementation(project(":core:settings"))
+    androidTestImplementation(project(":core:settings:datastore-prefs"))
+    androidTestImplementation(project(":core:settings:datastore-prefs:testing"))
+    androidTestImplementation(libs.androidx.datastore.preferences)
     implementation(project(":core:model"))
+    implementation(project(":core:camera"))
+    implementation(project(":core:camera:effects:single-stream"))
 }
 
 // Allow references to generated code

@@ -25,7 +25,6 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class FakeSnackBarControllerTest {
     private val testDisableRationale = object : DisableRationale {
-        override val testTag: String = "test-tag"
         override val reasonTextResId: Int = 123
     }
 
@@ -40,7 +39,6 @@ class FakeSnackBarControllerTest {
         assertThat(calledValue).isNotNull()
         assertThat(calledValue?.cookie).isEqualTo("DisabledHdrToggle-1")
         assertThat(calledValue?.stringResource).isEqualTo(testDisableRationale.reasonTextResId)
-        assertThat(calledValue?.testTag).isEqualTo(testDisableRationale.testTag)
     }
 
     @Test

@@ -18,12 +18,10 @@ package com.google.jetpackcamera.ui.controller.testing
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,14 +70,6 @@ class FakeQuickSettingsControllerTest {
     }
 
     @Test
-    fun setStreamConfig_invokesAction() {
-        var calledValue: StreamConfig? = null
-        val controller = FakeQuickSettingsController(setStreamConfigAction = { calledValue = it })
-        controller.setStreamConfig(StreamConfig.SINGLE_STREAM)
-        assertThat(calledValue).isEqualTo(StreamConfig.SINGLE_STREAM)
-    }
-
-    @Test
     fun setDynamicRange_invokesAction() {
         var calledValue: DynamicRange? = null
         val controller = FakeQuickSettingsController(setDynamicRangeAction = { calledValue = it })
@@ -93,16 +83,6 @@ class FakeQuickSettingsControllerTest {
         val controller = FakeQuickSettingsController(setImageFormatAction = { calledValue = it })
         controller.setImageFormat(ImageOutputFormat.JPEG)
         assertThat(calledValue).isEqualTo(ImageOutputFormat.JPEG)
-    }
-
-    @Test
-    fun setConcurrentCameraMode_invokesAction() {
-        var calledValue: ConcurrentCameraMode? = null
-        val controller = FakeQuickSettingsController(
-            setConcurrentCameraModeAction = { calledValue = it }
-        )
-        controller.setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-        assertThat(calledValue).isEqualTo(ConcurrentCameraMode.DUAL)
     }
 
     @Test

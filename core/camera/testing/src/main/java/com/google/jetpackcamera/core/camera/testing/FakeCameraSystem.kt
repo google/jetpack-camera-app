@@ -23,6 +23,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -34,7 +35,6 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -152,6 +152,15 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     }
 
     private val _currentCameraState = MutableStateFlow(CameraState())
+
+    /**
+     * Test-only method to manipulate the current camera state.
+     * Use this to simulate changes in the camera's lifecycle or state (e.g., recording vs not recording)
+     * during tests, triggering downstream observers.
+     */
+    fun setCurrentCameraState(cameraState: CameraState) {
+        _currentCameraState.value = cameraState
+    }
     override fun changeZoomRatio(newZoomState: CameraZoomRatio) {
         zoomChanges.update { newZoomState }
     }
@@ -165,6 +174,15 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
     private val _systemConstraints = MutableStateFlow<CameraSystemConstraints?>(null)
+
+    /**
+     * Test-only method to manipulate the camera system constraints.
+     * Use this to simulate different device capabilities (e.g., available lenses, flash support)
+     * during tests, ensuring the UI adapts correctly.
+     */
+    fun setSystemConstraints(systemConstraints: CameraSystemConstraints?) {
+        _systemConstraints.value = systemConstraints
+    }
     override fun getSystemConstraints(): StateFlow<CameraSystemConstraints?> =
         _systemConstraints.asStateFlow()
 
@@ -212,9 +230,9 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         TODO("Not yet implemented")
     }
 
-    override suspend fun setStreamConfig(streamConfig: StreamConfig) {
+    override suspend fun setCameraEffect(cameraEffect: CameraEffectId) {
         currentSettings.update { old ->
-            old.copy(streamConfig = streamConfig)
+            old.copy(selectedCameraEffect = cameraEffect)
         }
     }
 

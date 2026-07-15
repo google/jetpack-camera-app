@@ -105,22 +105,6 @@ enum class CameraAspectRatio : QuickSettingsEnum {
     }
 }
 
-enum class CameraStreamConfig : QuickSettingsEnum {
-    MULTI_STREAM {
-        override fun getDrawableResId() = R.drawable.multi_stream_icon
-
-        override fun getTextResId() = R.string.quick_settings_stream_config_multi
-        override fun getDescriptionResId() = R.string.quick_settings_stream_config_multi_description
-    },
-    SINGLE_STREAM {
-        override fun getDrawableResId() = R.drawable.single_stream_capture_icon
-
-        override fun getTextResId() = R.string.quick_settings_stream_config_single
-        override fun getDescriptionResId() =
-            R.string.quick_settings_stream_config_single_description
-    }
-}
-
 enum class CameraDynamicRange : QuickSettingsEnum {
     SDR {
 
@@ -163,21 +147,5 @@ enum class CameraCaptureMode : QuickSettingsEnum {
 
         override fun getDescriptionResId() =
             R.string.quick_settings_description_capture_mode_image_only
-    }
-}
-enum class CameraConcurrentCameraMode : QuickSettingsEnum {
-    OFF {
-        override fun getDrawableResId() = R.drawable.picture_in_picture_off_icon
-
-        override fun getTextResId() = R.string.quick_settings_text_concurrent_camera_off
-        override fun getDescriptionResId() =
-            R.string.quick_settings_description_concurrent_camera_off
-    },
-    DUAL {
-
-        override fun getDrawableResId() = R.drawable.ic_picture_in_picture
-        override fun getTextResId() = R.string.quick_settings_text_concurrent_camera_dual
-        override fun getDescriptionResId() =
-            R.string.quick_settings_description_concurrent_camera_dual
     }
 }
