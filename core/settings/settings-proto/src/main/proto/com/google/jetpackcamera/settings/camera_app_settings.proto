@@ -17,7 +17,6 @@
 syntax = "proto3";
 
 import "com/google/jetpackcamera/model/proto/aspect_ratio.proto";
-import "com/google/jetpackcamera/model/proto/stream_config.proto";
 import "com/google/jetpackcamera/model/proto/dark_mode.proto";
 import "com/google/jetpackcamera/model/proto/dynamic_range.proto";
 import "com/google/jetpackcamera/model/proto/flash_mode.proto";
@@ -38,7 +37,6 @@ message CameraAppSettings {
   FlashMode flash_mode_status = 2;
   int32 target_frame_rate = 3;
   AspectRatio aspect_ratio_status = 4;
-  StreamConfig stream_config_status = 5;
   StabilizationMode stabilization_mode = 6;
   DynamicRange dynamic_range_status = 8;
   ImageOutputFormat image_format_status = 10;
@@ -50,4 +48,5 @@ message CameraAppSettings {
   // Non-camera app settings
   DarkMode dark_mode_status = 9;
   ConcurrentCameraMode concurrent_camera_mode_status = 15;
+  string selected_camera_effect = 16;
 }

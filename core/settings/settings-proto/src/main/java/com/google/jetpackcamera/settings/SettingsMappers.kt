@@ -15,6 +15,9 @@
  */
 package com.google.jetpackcamera.settings
 
+import com.google.jetpackcamera.model.CameraEffectId
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.proto.toModel
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
@@ -22,13 +25,15 @@ import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSet
 /**
  * Maps a [CameraAppSettingsProto] to a [CameraAppSettings] domain model.
  */
-fun CameraAppSettingsProto.toModel(): CameraAppSettings {
+fun CameraAppSettingsProto.toModel(defaultCaptureModeOverride: CaptureMode): CameraAppSettings {
     return CameraAppSettings(
+        captureMode = defaultCaptureModeOverride,
+        selectedCameraEffect = if (this.selectedCameraEffect.isEmpty()) NONE_EFFECT_ID else CameraEffectId(this.selectedCameraEffect),
+
         cameraLensFacing = this.defaultLensFacing.toModel(),
         flashMode = this.flashModeStatus.toModel(),
         targetFrameRate = this.targetFrameRate,
         aspectRatio = this.aspectRatioStatus.toModel(),
-        streamConfig = this.streamConfigStatus.toModel(),
         stabilizationMode = this.stabilizationMode.toModel(),
         dynamicRange = this.dynamicRangeStatus.toModel(),
         imageFormat = this.imageFormatStatus.toModel(),

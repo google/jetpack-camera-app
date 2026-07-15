@@ -19,6 +19,8 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -27,7 +29,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.toProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -45,7 +46,8 @@ import kotlinx.coroutines.flow.map
  * Settings data source using Proto DataStore.
  */
 class ProtoDataStoreSettingsDataSource(
-    private val jcaSettings: DataStore<CameraAppSettingsProto>
+    private val jcaSettings: DataStore<CameraAppSettingsProto>,
+    private val defaultCaptureModeOverride: CaptureMode
 ) : SettingsDataSource {
 
     private val jcaSettingsFlow: Flow<CameraAppSettingsProto> =
@@ -58,11 +60,11 @@ class ProtoDataStoreSettingsDataSource(
         }
 
     override val defaultCameraAppSettings: Flow<CameraAppSettings> = jcaSettingsFlow.map {
-        it.toModel()
+        it.toModel(defaultCaptureModeOverride)
     }
 
     override suspend fun getCurrentDefaultCameraAppSettings(): CameraAppSettings =
-        jcaSettingsFlow.first().toModel()
+        jcaSettingsFlow.first().toModel(defaultCaptureModeOverride)
 
     override suspend fun updateDefaultLensFacing(lensFacing: LensFacing) {
         jcaSettings.updateData { currentSettings ->
@@ -96,10 +98,10 @@ class ProtoDataStoreSettingsDataSource(
         }
     }
 
-    override suspend fun updateStreamConfig(streamConfig: StreamConfig) {
+    override suspend fun updateSelectedCameraEffect(selectedCameraEffect: CameraEffectId) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setStreamConfigStatus(streamConfig.toProto())
+                .setSelectedCameraEffect(selectedCameraEffect.value)
                 .build()
         }
     }
@@ -190,14 +192,18 @@ class ProtoDataStoreSettingsDataSource(
          * @param ioDispatcher The coroutine dispatcher for IO operations.
          * @return A [SettingsDataSource] instance.
          */
-        fun create(context: Context, ioDispatcher: CoroutineDispatcher): SettingsDataSource {
+        fun create(
+            context: Context,
+            defaultCaptureModeOverride: CaptureMode,
+            ioDispatcher: CoroutineDispatcher
+        ): SettingsDataSource {
             val scope = CoroutineScope(ioDispatcher + SupervisorJob())
             val dataStore = DataStoreFactory.create(
                 serializer = ProtoCameraAppSettingsSerializer,
                 scope = scope,
                 produceFile = { File(context.filesDir, "datastore/$FILE_LOCATION") }
             )
-            return ProtoDataStoreSettingsDataSource(dataStore)
+            return ProtoDataStoreSettingsDataSource(dataStore, defaultCaptureModeOverride)
         }
     }
 }

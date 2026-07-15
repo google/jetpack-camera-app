@@ -40,6 +40,6 @@ object AppSettingsModule {
         @DefaultCaptureModeOverride defaultCaptureMode: CaptureMode,
         @IODispatcher ioDispatcher: CoroutineDispatcher
     ): SettingsDataSource {
-        return ProtoDataStoreSettingsDataSource.create(context, ioDispatcher)
+        return ProtoDataStoreSettingsDataSource.create(context, defaultCaptureMode, ioDispatcher)
     }
 }

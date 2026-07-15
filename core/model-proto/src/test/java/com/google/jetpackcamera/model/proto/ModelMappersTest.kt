@@ -25,7 +25,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
@@ -36,7 +35,6 @@ import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputForm
 import com.google.jetpackcamera.model.proto.LensFacing as LensFacingProto
 import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoostPriorityProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
-import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -202,25 +200,6 @@ class ModelMappersTest {
         ).isEqualTo(StabilizationMode.AUTO)
 
         assertThat(StabilizationModeProto.UNRECOGNIZED.toModel()).isEqualTo(StabilizationMode.AUTO)
-    }
-
-    @Test
-    fun streamConfigMapsCorrectly() {
-        assertThat(
-            StreamConfig.SINGLE_STREAM.toProto()
-        ).isEqualTo(StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM)
-        assertThat(
-            StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM.toModel()
-        ).isEqualTo(StreamConfig.SINGLE_STREAM)
-
-        assertThat(
-            StreamConfig.MULTI_STREAM.toProto()
-        ).isEqualTo(StreamConfigProto.STREAM_CONFIG_MULTI_STREAM)
-        assertThat(
-            StreamConfigProto.STREAM_CONFIG_MULTI_STREAM.toModel()
-        ).isEqualTo(StreamConfig.MULTI_STREAM)
-
-        assertThat(StreamConfigProto.UNRECOGNIZED.toModel()).isEqualTo(StreamConfig.MULTI_STREAM)
     }
 
     @Test

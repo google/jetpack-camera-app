@@ -24,7 +24,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
@@ -35,7 +34,6 @@ import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputForm
 import com.google.jetpackcamera.model.proto.LensFacing as LensFacingProto
 import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoostPriorityProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
-import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 
 /**
@@ -230,28 +228,6 @@ fun StabilizationMode.toProto(): StabilizationModeProto {
         StabilizationMode.HIGH_QUALITY -> StabilizationModeProto.STABILIZATION_MODE_HIGH_QUALITY
         StabilizationMode.OPTICAL -> StabilizationModeProto.STABILIZATION_MODE_OPTICAL
         StabilizationMode.AUTO -> StabilizationModeProto.STABILIZATION_MODE_AUTO
-    }
-}
-
-/**
- * Maps a Proto model to a Domain model.
- */
-fun StreamConfigProto.toModel(): StreamConfig {
-    return when (this) {
-        StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM -> StreamConfig.SINGLE_STREAM
-        StreamConfigProto.STREAM_CONFIG_MULTI_STREAM,
-        StreamConfigProto.STREAM_CONFIG_UNSPECIFIED,
-        StreamConfigProto.UNRECOGNIZED -> StreamConfig.MULTI_STREAM
-    }
-}
-
-/**
- * Maps a Domain model to a Proto model.
- */
-fun StreamConfig.toProto(): StreamConfigProto {
-    return when (this) {
-        StreamConfig.SINGLE_STREAM -> StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM
-        StreamConfig.MULTI_STREAM -> StreamConfigProto.STREAM_CONFIG_MULTI_STREAM
     }
 }
 
