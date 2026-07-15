@@ -93,6 +93,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -221,6 +222,8 @@ fun AmplitudeToggleButton(
     onToggleAudio: () -> Unit
 ) {
     val currentUiState = rememberUpdatedState(audioUiState)
+    val microphoneMutedDescription = stringResource(R.string.microphone_muted)
+    val microphoneOnDescription = stringResource(R.string.microphone_on)
 
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
     val disableAnimations = LocalDisableAnimations.current
@@ -239,6 +242,11 @@ fun AmplitudeToggleButton(
                 .size(buttonSize)
                 .testTag(AUDIO_INPUT_TOGGLE)
                 .semantics {
+                    stateDescription = if (audioUiState is AudioUiState.Enabled.On) {
+                        microphoneOnDescription
+                    } else {
+                        microphoneMutedDescription
+                    }
                     audioState = when (audioUiState) {
                         is AudioUiState.Disabled,
                         AudioUiState.Enabled.Mute -> AudioInputState.OFF

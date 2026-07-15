@@ -29,6 +29,8 @@
     <!-- Mute unmute -->
     <string name="pause_resume_button_description">Button to pause or resume video recording</string>
     <string name="audio_visualizer_icon_description">An icon of a microphone</string>
+    <string name="microphone_muted">Microphone Muted</string>
+    <string name="microphone_on">Microphone On</string>
 
     <string name="zoom_ratio_text">%1$.2fx</string>
 
