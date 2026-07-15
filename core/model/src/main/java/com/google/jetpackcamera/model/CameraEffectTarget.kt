@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 package com.google.jetpackcamera.model
 
 /**
- * WARNING: The string representation of this enum is serialized and persisted in Preferences DataStore.
- * Renaming constants will break compatibility with existing saved settings.
+ * Defines which outputs (targets) a camera effect should be applied to.
  */
-enum class StreamConfig {
-    MULTI_STREAM,
-    SINGLE_STREAM
+enum class CameraEffectTarget {
+    PREVIEW,
+    VIDEO_CAPTURE,
+    IMAGE_CAPTURE
 }
