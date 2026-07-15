@@ -66,7 +66,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.net.toFile
 import androidx.lifecycle.asFlow
-import com.google.jetpackcamera.core.camera.effects.SingleSurfaceForcingEffect
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -79,7 +78,6 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
@@ -154,9 +152,10 @@ internal suspend fun runSingleCameraSession(
     launch {
         processVideoControlEvents(
             videoCaptureUseCase,
-            captureTypeSuffix = when (sessionSettings.streamConfig) {
-                StreamConfig.MULTI_STREAM -> "MultiStream"
-                StreamConfig.SINGLE_STREAM -> "SingleStream"
+            captureTypeSuffix = if (sessionSettings.activeCameraEffect != null) {
+                "SingleStream"
+            } else {
+                "MultiStream"
             }
         )
     }
@@ -213,10 +212,10 @@ internal suspend fun runSingleCameraSession(
                         )
                     }
                 }
-                if (cameraEffect == null &&
-                    sessionSettings.streamConfig == StreamConfig.SINGLE_STREAM
-                ) {
-                    cameraEffect = SingleSurfaceForcingEffect(this@sessionScope)
+                if (cameraEffect == null) {
+                    sessionSettings.activeCameraEffect?.let { key ->
+                        cameraEffect = cameraEffectProviders[key]?.get()?.create(this@sessionScope)
+                    }
                 }
                 val useCaseGroup = createUseCaseGroup(
                     cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),

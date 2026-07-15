@@ -117,6 +117,8 @@ dependencies {
     androidTestImplementation(project(":core:settings:datastore-prefs:testing"))
     androidTestImplementation(libs.androidx.datastore.preferences)
     implementation(project(":core:model"))
+    implementation(project(":core:camera"))
+    implementation(project(":core:camera:effects:single-stream"))
 }
 
 // Allow references to generated code

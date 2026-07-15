@@ -55,11 +55,17 @@ internal fun HdrUiState.Companion.from(
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
     )
+    val activeEffectTargets = cameraConstraints?.effectTargetsMap?.get(
+        cameraAppSettings.selectedCameraEffect
+    ) ?: emptySet()
+    val affectsImageCapture = activeEffectTargets.contains(
+        com.google.jetpackcamera.model.CameraEffectTarget.IMAGE_CAPTURE
+    )
 
     return when (cameraAppSettings.captureMode) {
         CaptureMode.IMAGE_ONLY -> {
             val supportsHdrImage = cameraConstraints
-                ?.supportedImageFormatsMap?.get(cameraAppSettings.streamConfig)
+                ?.supportedImageFormatsMap?.get(affectsImageCapture)
                 ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
             val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
 
