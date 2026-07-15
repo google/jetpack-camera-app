@@ -28,7 +28,11 @@ import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSet
 fun CameraAppSettingsProto.toModel(defaultCaptureModeOverride: CaptureMode): CameraAppSettings {
     return CameraAppSettings(
         captureMode = defaultCaptureModeOverride,
-        selectedCameraEffect = if (this.selectedCameraEffect.isEmpty()) NONE_EFFECT_ID else CameraEffectId(this.selectedCameraEffect),
+        selectedCameraEffect = if (this.selectedCameraEffect.isEmpty()) {
+            NONE_EFFECT_ID
+        } else {
+            CameraEffectId(this.selectedCameraEffect)
+        },
 
         cameraLensFacing = this.defaultLensFacing.toModel(),
         flashMode = this.flashModeStatus.toModel(),
