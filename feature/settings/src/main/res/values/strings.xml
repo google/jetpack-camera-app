@@ -64,13 +64,18 @@
     <string name="audio_description_on">Recordings will start with audio enabled</string>
     <string name="audio_description_off">Recordings will start muted</string>
 
+    <!-- Concurrent Camera setting strings -->
+    <string name="concurrent_camera_title">Enable Concurrent Camera</string>
+    <string name="concurrent_camera_description_on">Record from multiple cameras concurrently</string>
+    <string name="concurrent_camera_description_off">Record from a single camera</string>
+
     <!-- Stream Config mode setting strings -->
-    <string name="stream_config_title">Set Stream Configuration</string>
+    <string name="stream_config_title">Set Camera Effect</string>
 
-    <string name="stream_config_selector_multi_stream">Multi Stream Capture</string>
-    <string name="stream_config_selector_single_stream">Single Stream Capture</string>
+    <string name="stream_config_selector_multi_stream">None</string>
+    <string name="stream_config_selector_single_stream">Single Stream Effect</string>
 
-    <string name="stream_config_description_multi_stream">Multi Stream</string>
+    <string name="stream_config_description_multi_stream">None</string>
     <string name="stream_config_description_single_stream">Single Stream</string>
 
     <!-- Low Light Boost priority setting strings -->
@@ -159,6 +164,9 @@
     <string name="video_quality_unsupported">%1$s is unsupported by the current video quality</string>
     <string name="permission_record_audio_unsupported">%1$s requires permission to record audio</string>
 
+    <string name="concurrent_camera_enabled">%1$s is unsupported when Concurrent Camera is active</string>
+    <string name="ultra_hdr_enabled">%1$s is unsupported when Ultra HDR is enabled</string>
+
 
     <!-- Rationale prefixes -->
     <string name="stabilization_rationale_prefix">Stabilization</string>
@@ -178,6 +186,16 @@
     <string name="no_fixed_fps_rationale_prefix">Fixed frame rate</string>
 
     <string name="mute_audio_rationale_prefix">Mute</string>
+    <string name="concurrent_camera_rationale_prefix">Concurrent camera</string>
+
+    <!-- Rationale texts -->
+    <string name="stabilization_active_unsupported">%1$s is unsupported when Video Stabilization is enabled</string>
+    <string name="fixed_fps_active_unsupported">%1$s is unsupported when a fixed frame rate is selected</string>
+    <string name="flash_llb_active_unsupported">%1$s is unsupported when Low Light Boost is active</string>
+    <string name="hdr_active_unsupported">%1$s is unsupported when HDR is active</string>
+    <string name="capture_mode_unsupported">%1$s is unsupported by the current capture mode</string>
+    <string name="concurrent_camera_stream_config_unsupported">Single Stream does not support concurrent camera</string>
+    <string name="stream_config_rationale_prefix">Stream configuration</string>
 
     <!-- Version info strings -->
     <string name="version_info_title">Version</string>

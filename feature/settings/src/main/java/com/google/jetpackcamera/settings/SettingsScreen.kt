@@ -39,14 +39,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
+import com.google.jetpackcamera.settings.ui.CameraEffectSetting
+import com.google.jetpackcamera.settings.ui.ConcurrentCameraSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
@@ -57,7 +60,6 @@ import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
 import com.google.jetpackcamera.settings.ui.SectionHeader
 import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.StabilizationSetting
-import com.google.jetpackcamera.settings.ui.StreamConfigSetting
 import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 import com.google.jetpackcamera.settings.ui.VersionInfo
 import com.google.jetpackcamera.settings.ui.VideoQualitySetting
@@ -84,13 +86,14 @@ fun SettingsScreen(
         setFlashMode = viewModel::setFlashMode,
         setTargetFrameRate = viewModel::setTargetFrameRate,
         setAspectRatio = viewModel::setAspectRatio,
-        setCaptureMode = viewModel::setStreamConfig,
+        setCameraEffect = viewModel::setCameraEffect,
         setAudio = viewModel::setVideoAudio,
         setStabilizationMode = viewModel::setStabilizationMode,
         setMaxVideoDuration = viewModel::setMaxVideoDuration,
         setDarkMode = viewModel::setDarkMode,
         setVideoQuality = viewModel::setVideoQuality,
-        setLowLightBoostPriority = viewModel::setLowLightBoostPriority
+        setLowLightBoostPriority = viewModel::setLowLightBoostPriority,
+        setConcurrentCameraMode = viewModel::setConcurrentCameraMode
     )
     val permissionStates = rememberMultiplePermissionsState(
         permissions =
@@ -114,13 +117,14 @@ private fun SettingsScreen(
     setFlashMode: (FlashMode) -> Unit = {},
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
-    setCaptureMode: (StreamConfig) -> Unit = {},
+    setCameraEffect: (CameraEffectId) -> Unit = {},
     setStabilizationMode: (StabilizationMode) -> Unit = {},
     setAudio: (Boolean) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
     setDarkMode: (DarkMode) -> Unit = {},
     setVideoQuality: (VideoQuality) -> Unit = {},
-    setLowLightBoostPriority: (LowLightBoostPriority) -> Unit = {}
+    setLowLightBoostPriority: (LowLightBoostPriority) -> Unit = {},
+    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {}
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
         rememberTopAppBarState()
@@ -151,13 +155,14 @@ private fun SettingsScreen(
                     setFlashMode = setFlashMode,
                     setTargetFrameRate = setTargetFrameRate,
                     setAspectRatio = setAspectRatio,
-                    setCaptureMode = setCaptureMode,
+                    setCameraEffect = setCameraEffect,
                     setStabilizationMode = setStabilizationMode,
                     setAudio = setAudio,
                     setMaxVideoDuration = setMaxVideoDuration,
                     setDarkMode = setDarkMode,
                     setVideoQuality = setVideoQuality,
-                    setLowLightBoostPriority = setLowLightBoostPriority
+                    setLowLightBoostPriority = setLowLightBoostPriority,
+                    setConcurrentCameraMode = setConcurrentCameraMode
                 )
             }
         }
@@ -165,20 +170,21 @@ private fun SettingsScreen(
 }
 
 @Composable
-fun SettingsList(
+internal fun SettingsList(
     uiState: SettingsUiState.Enabled,
     versionInfo: VersionInfoHolder,
     setDefaultLensFacing: (LensFacing) -> Unit = {},
     setFlashMode: (FlashMode) -> Unit = {},
     setTargetFrameRate: (Int) -> Unit = {},
     setAspectRatio: (AspectRatio) -> Unit = {},
-    setCaptureMode: (StreamConfig) -> Unit = {},
+    setCameraEffect: (CameraEffectId) -> Unit = {},
     setLowLightBoostPriority: (LowLightBoostPriority) -> Unit = {},
     setAudio: (Boolean) -> Unit = {},
     setStabilizationMode: (StabilizationMode) -> Unit = {},
     setVideoQuality: (VideoQuality) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
-    setDarkMode: (DarkMode) -> Unit = {}
+    setDarkMode: (DarkMode) -> Unit = {},
+    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {}
 ) {
     SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
@@ -202,16 +208,15 @@ fun SettingsList(
         setAspectRatio = setAspectRatio
     )
 
-    StreamConfigSetting(
-        streamConfigUiState = uiState.streamConfigUiState,
-        setStreamConfig = setCaptureMode
+    CameraEffectSetting(
+        cameraEffectUiState = uiState.cameraEffectUiState,
+        setCameraEffect = setCameraEffect
     )
 
     LowLightBoostPrioritySetting(
         lowLightBoostPriorityUiState = uiState.lowLightBoostPriorityUiState,
         setLowLightBoostPriority = setLowLightBoostPriority
     )
-
     SectionHeader(title = stringResource(R.string.section_title_recording_settings))
 
     RecordingAudioSetting(
@@ -222,6 +227,11 @@ fun SettingsList(
     MaxVideoDurationSetting(
         maxVideoDurationUiState = uiState.maxVideoDurationUiState,
         setMaxDuration = setMaxVideoDuration
+    )
+
+    ConcurrentCameraSetting(
+        concurrentCameraUiState = uiState.concurrentCameraUiState,
+        setConcurrentCameraMode = setConcurrentCameraMode
     )
 
     StabilizationSetting(

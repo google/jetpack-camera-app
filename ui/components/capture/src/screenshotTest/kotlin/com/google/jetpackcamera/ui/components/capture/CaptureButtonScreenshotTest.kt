@@ -133,8 +133,10 @@ fun PressedImageCaptureButtonScreenshotPreview() {
 @Preview
 @Composable
 fun PressedImageCaptureButtonBlack60ScreenshotPreview() {
-    CompositionLocalProvider(LocalShutterBackgroundStyle provides ShutterBackgroundStyle.BLACK_60,
-        LocalInitialPressedState provides true) {
+    CompositionLocalProvider(
+        LocalShutterBackgroundStyle provides ShutterBackgroundStyle.BLACK_60,
+        LocalInitialPressedState provides true
+    ) {
         PreviewCaptureButton(
             captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
         )

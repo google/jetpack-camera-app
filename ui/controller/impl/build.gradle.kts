@@ -70,7 +70,6 @@ dependencies {
     implementation(libs.kotlinx.atomicfu)
 
     implementation(project(":data:media"))
-    implementation(project(":ui:components:capture"))
     implementation(project(":ui:controller"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
@@ -87,6 +86,7 @@ dependencies {
     testImplementation(project(":core:common"))
     testImplementation(project(":core:camera:testing"))
     testImplementation(project(":data:settings"))
+    testImplementation(project(":core:settings"))
 }
 
 // Allow references to generated code

@@ -16,22 +16,25 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_ENABLED_TAG
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
+import com.google.jetpackcamera.settings.ui.ULTRA_HDR_ENABLED_TAG
 import com.google.jetpackcamera.settings.ui.VIDEO_QUALITY_UNSUPPORTED_TAG
 internal const val FIVE_SECONDS_DURATION = 5_000L
 internal const val TEN_SECONDS_DURATION = 10_000L
@@ -45,7 +48,7 @@ sealed interface SettingsUiState {
     data object Disabled : SettingsUiState
     data class Enabled(
         val aspectRatioUiState: AspectRatioUiState,
-        val streamConfigUiState: StreamConfigUiState,
+        val cameraEffectUiState: CameraEffectUiState,
         val darkModeUiState: DarkModeUiState,
         val flashUiState: FlashUiState,
         val fpsUiState: FpsUiState,
@@ -54,7 +57,8 @@ sealed interface SettingsUiState {
         val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
         val videoQualityUiState: VideoQualityUiState,
         val audioUiState: AudioUiState,
-        val lowLightBoostPriorityUiState: LowLightBoostPriorityUiState
+        val lowLightBoostPriorityUiState: LowLightBoostPriorityUiState,
+        val concurrentCameraUiState: ConcurrentCameraUiState
     ) : SettingsUiState
 }
 
@@ -109,6 +113,18 @@ sealed interface DisabledRationale {
         override val testTag = VIDEO_QUALITY_UNSUPPORTED_TAG
     }
 
+    data class ConcurrentCameraActiveRationale(override val affectedSettingNameResId: Int) :
+        DisabledRationale {
+        override val reasonTextResId: Int = R.string.concurrent_camera_enabled
+        override val testTag = CONCURRENT_CAMERA_ENABLED_TAG
+    }
+
+    data class UltraHdrUnsupportedRationale(override val affectedSettingNameResId: Int) :
+        DisabledRationale {
+        override val reasonTextResId: Int = R.string.ultra_hdr_enabled
+        override val testTag = ULTRA_HDR_ENABLED_TAG
+    }
+
     sealed interface LensUnsupportedRationale : DisabledRationale {
         data class FrontLensUnsupportedRationale(override val affectedSettingNameResId: Int) :
             LensUnsupportedRationale {
@@ -121,6 +137,13 @@ sealed interface DisabledRationale {
             override val reasonTextResId: Int = R.string.rear_lens_unsupported
             override val testTag = LENS_UNSUPPORTED_TAG
         }
+    }
+
+    data class ConcurrentCameraDisabledRationale(
+        override val reasonTextResId: Int,
+        override val testTag: String
+    ) : DisabledRationale {
+        override val affectedSettingNameResId = R.string.concurrent_camera_rationale_prefix
     }
 }
 
@@ -217,6 +240,29 @@ sealed interface LowLightBoostPriorityUiState {
     data class Disabled(val disabledRationale: DisabledRationale) : LowLightBoostPriorityUiState
 }
 
+/**
+ * UI State for the Concurrent Camera setting.
+ */
+sealed interface ConcurrentCameraUiState {
+    /**
+     * State when concurrent camera is supported by the device.
+     *
+     * @property currentConcurrentCameraMode the currently selected concurrent camera mode.
+     * @property additionalContext additional context or information about the state.
+     */
+    data class Enabled(
+        val currentConcurrentCameraMode: ConcurrentCameraMode,
+        val additionalContext: String = ""
+    ) : ConcurrentCameraUiState
+
+    /**
+     * State when concurrent camera is unsupported or disabled due to constraints.
+     *
+     * @property disabledRationale rationale explaining why the setting is disabled.
+     */
+    data class Disabled(val disabledRationale: DisabledRationale) : ConcurrentCameraUiState
+}
+
 // ////////////////////////////////////////////////////////////
 //
 // Settings that DON'T currently depend on constraints
@@ -228,9 +274,14 @@ sealed interface AspectRatioUiState {
         AspectRatioUiState
 }
 
-sealed interface StreamConfigUiState {
-    data class Enabled(val currentStreamConfig: StreamConfig, val additionalContext: String = "") :
-        StreamConfigUiState
+sealed interface CameraEffectUiState {
+    data class Enabled(
+        val currentCameraEffect: CameraEffectId,
+        val supportedEffects: Set<CameraEffectId>,
+        val additionalContext: String = ""
+    ) : CameraEffectUiState
+
+    data class Disabled(val disabledRationale: DisabledRationale) : CameraEffectUiState
 }
 
 sealed interface DarkModeUiState {
@@ -271,7 +322,10 @@ sealed interface VideoQualityUiState {
  */
 val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     aspectRatioUiState = AspectRatioUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
-    streamConfigUiState = StreamConfigUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.streamConfig),
+    cameraEffectUiState = CameraEffectUiState.Enabled(
+        currentCameraEffect = DEFAULT_CAMERA_APP_SETTINGS.selectedCameraEffect,
+        supportedEffects = emptySet()
+    ),
     darkModeUiState = DarkModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.darkMode),
     audioUiState = if (DEFAULT_CAMERA_APP_SETTINGS.audioEnabled) {
         AudioUiState.Enabled.On()
@@ -307,5 +361,8 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     ),
     lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
         DEFAULT_CAMERA_APP_SETTINGS.lowLightBoostPriority
+    ),
+    concurrentCameraUiState = ConcurrentCameraUiState.Disabled(
+        DeviceUnsupportedRationale(R.string.concurrent_camera_rationale_prefix)
     )
 )
