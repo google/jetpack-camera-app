@@ -73,6 +73,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -137,22 +138,37 @@ private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
 private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
 
 /**
- * A composable that displays the elapsed time of a video recording in a "MM:SS" format.
+ * A composable that displays the elapsed time of a video recording formatted as minutes and seconds.
  * This text is only visible during an active recording.
  *
  * @param modifier the modifier for this component.
  * @param elapsedTimeUiStateProvider the provider for [ElapsedTimeUiState] for this component.
- * @param textStyle the [TextStyle] to use for the elapsed time text.
- * @param textColor the [Color] to use for the elapsed time text.
- * @param containerColor the [Color] to use for the background container.
  */
 @Composable
 fun ElapsedTimeText(
     modifier: Modifier = Modifier,
     elapsedTimeUiStateProvider: () -> ElapsedTimeUiState
 ) {
-    val state = elapsedTimeUiStateProvider()
-    if (state is ElapsedTimeUiState.Enabled) {
+    // derivedStateOf prevents recomposing ElapsedTimeText when the timer ticks.
+    // Recomposition only occurs when visibility (isEnabled) changes.
+    val isEnabled by remember(elapsedTimeUiStateProvider) {
+        derivedStateOf {
+            elapsedTimeUiStateProvider() is ElapsedTimeUiState.Enabled
+        }
+    }
+    if (isEnabled) {
+        // derivedStateOf defers reading the provider to the Box content scope, ensuring only the Text component recomposes every second.
+        val formattedTime by remember(elapsedTimeUiStateProvider) {
+            derivedStateOf {
+                val state = elapsedTimeUiStateProvider()
+                if (state is ElapsedTimeUiState.Enabled) {
+                    state.elapsedTimeNanos.nanoseconds
+                        .toComponents { minutes, seconds, _ -> "%d:%02d".format(minutes, seconds) }
+                } else {
+                    ""
+                }
+            }
+        }
         Box(
             modifier = modifier
                 .defaultMinSize(minWidth = 72.dp, minHeight = 32.dp)
@@ -161,8 +177,7 @@ fun ElapsedTimeText(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = state.elapsedTimeNanos.nanoseconds
-                    .toComponents { minutes, seconds, _ -> "%d:%02d".format(minutes, seconds) },
+                text = formattedTime,
                 textAlign = TextAlign.Center,
                 color = Color.White,
                 style = MaterialTheme.typography.labelLarge.copy(
