@@ -26,7 +26,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -71,7 +71,10 @@ class ProtoDataStoreSettingsDataSourceTest {
         ) {
             java.io.File(tempFolder.root, "test_jca_settings.pb")
         }
-        repository = ProtoDataStoreSettingsDataSource(jcaSettings = testDataStore)
+        repository = ProtoDataStoreSettingsDataSource(
+            jcaSettings = testDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD
+        )
     }
 
     @After
@@ -153,17 +156,6 @@ class ProtoDataStoreSettingsDataSourceTest {
 
         assertThat(initial).isEqualTo(AspectRatio.NINE_SIXTEEN)
         assertThat(new).isEqualTo(AspectRatio.ONE_ONE)
-    }
-
-    @Test
-    fun can_update_stream_config() = runTest {
-        val initial = repository.getCurrentDefaultCameraAppSettings().streamConfig
-        repository.updateStreamConfig(StreamConfig.SINGLE_STREAM)
-        advanceUntilIdle()
-        val new = repository.getCurrentDefaultCameraAppSettings().streamConfig
-
-        assertThat(initial).isEqualTo(StreamConfig.MULTI_STREAM)
-        assertThat(new).isEqualTo(StreamConfig.SINGLE_STREAM)
     }
 
     @Test
