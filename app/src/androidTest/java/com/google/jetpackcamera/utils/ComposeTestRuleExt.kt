@@ -48,6 +48,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.action.ViewActions.swipeDown
 import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
+import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.FlashMode
@@ -660,7 +661,7 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
                 // It's visible, so perform the swipe down
                 bottomSheetNode.performTouchInput {
                     down(center)
-                    val unused = swipeDown()
+                    swipeDown().ignoreResult()
                     up()
                 }
 
@@ -721,7 +722,7 @@ fun ComposeTestRule.unFocusQuickSetting() {
  * @param concurrentMode the target [ConcurrentCameraMode] to set.
  */
 fun ComposeTestRule.setConcurrentCameraModeInSettings(concurrentMode: ConcurrentCameraMode) {
-    val unused = visitSettingsScreen {
+    visitSettingsScreen {
         onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
             .assertExists()
             .apply {
