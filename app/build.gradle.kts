@@ -177,8 +177,8 @@ dependencies {
     implementation(project(":ui:components:capture"))
     implementation(project(":ui:debug"))
 
-    // Low Light implementations
     implementation(project(":core:camera:low-light-playservices"))
+    implementation(project(":core:camera:effects:single-stream"))
 }
 
 // Allow references to generated code

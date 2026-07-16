@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -638,7 +640,7 @@ private fun TopBarQuickSettingIcon(
             modifier = modifier
                 .size(IconButtonDefaults.smallIconSize)
                 .clickable(
-                    interactionSource = null,
+                    interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onClick,
                     enabled = enabled
