@@ -29,7 +29,6 @@ import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import org.junit.Assert.assertThrows
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -409,7 +408,11 @@ class FlashModeUiStateAdapterTest {
         val systemConstraints = CameraSystemConstraints(
             perLensConstraints = mapOf(
                 appSettings.cameraLensFacing to emptyCameraConstraints.copy(
-                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON, FlashMode.LOW_LIGHT_BOOST)
+                    supportedFlashModes = setOf(
+                        FlashMode.OFF,
+                        FlashMode.ON,
+                        FlashMode.LOW_LIGHT_BOOST
+                    )
                 )
             )
         )
@@ -420,7 +423,9 @@ class FlashModeUiStateAdapterTest {
         // Then LLB is not present in available flash modes, but ON is present (keeping state Available)
         assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
         val availableUiState = flashModeUiState as FlashModeUiState.Available
-        val hasLlb = availableUiState.availableFlashModes.any { it.value == FlashMode.LOW_LIGHT_BOOST }
+        val hasLlb = availableUiState.availableFlashModes.any {
+            it.value == FlashMode.LOW_LIGHT_BOOST
+        }
         assertThat(hasLlb).isFalse()
         val hasFlashOn = availableUiState.availableFlashModes.any { it.value == FlashMode.ON }
         assertThat(hasFlashOn).isTrue()

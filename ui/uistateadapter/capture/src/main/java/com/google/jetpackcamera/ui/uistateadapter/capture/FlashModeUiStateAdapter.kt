@@ -16,8 +16,8 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.core.camera.CameraState
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -47,14 +47,14 @@ private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
  * 3.  Support by the currently active lens.
  * 4.  Interactions with other settings (e.g., HDR, Concurrent Camera).
  *
-  * Modes not supported by the device or not in `visibleFlashModes` are hidden.
-  * Modes not supported by the current lens are hidden.
-  * Modes supported by the current lens are shown as enabled, or disabled if in conflict.
-  *
-  * @param cameraAppSettings The current settings of the camera.
-  * @param systemConstraints The hardware capabilities of the camera system.
-  * @return A [FlashModeUiState] which is either [Available] or [Unavailable].
-  */
+ * Modes not supported by the device or not in `visibleFlashModes` are hidden.
+ * Modes not supported by the current lens are hidden.
+ * Modes supported by the current lens are shown as enabled, or disabled if in conflict.
+ *
+ * @param cameraAppSettings The current settings of the camera.
+ * @param systemConstraints The hardware capabilities of the camera system.
+ * @return A [FlashModeUiState] which is either [Available] or [Unavailable].
+ */
 internal fun FlashModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints
@@ -76,10 +76,10 @@ internal fun FlashModeUiState.Companion.from(
     val isHdrOn = (
         cameraAppSettings.captureMode == CaptureMode.IMAGE_ONLY &&
             cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
-    ) || (
+        ) || (
         cameraAppSettings.captureMode == CaptureMode.VIDEO_ONLY &&
             cameraAppSettings.dynamicRange == DynamicRange.HLG10
-    )
+        )
 
     val displayableModes = mutableListOf<SingleSelectableUiState<FlashMode>>()
 

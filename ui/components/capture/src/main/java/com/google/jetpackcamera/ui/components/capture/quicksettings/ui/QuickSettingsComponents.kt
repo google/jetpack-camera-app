@@ -18,22 +18,19 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -60,12 +57,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
@@ -579,10 +573,7 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
  * @param flashModeUiState the [FlashModeUiState] for this component.
  */
 @Composable
-fun FlashModeIndicator(
-    flashModeUiState: FlashModeUiState,
-    modifier: Modifier = Modifier
-) {
+fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = Modifier) {
     when (flashModeUiState) {
         is FlashModeUiState.Unavailable ->
             TopBarQuickSettingIcon(
@@ -718,21 +709,27 @@ private fun PreviewSettingRowDark() {
             ) {
                 // Off State (Highlighted per your screenshot)
                 QuickSettingToggleSelectorButton(
-                    accessibilityText = stringResource(R.string.quick_settings_preview_sd_description),
+                    accessibilityText = stringResource(
+                        R.string.quick_settings_preview_sd_description
+                    ),
                     painter = painterResource(id = R.drawable.video_resolution_sd_icon),
                     isSelected = true,
                     onClick = {}
                 )
                 // On State
                 QuickSettingToggleSelectorButton(
-                    accessibilityText = stringResource(R.string.quick_settings_preview_hd_description),
+                    accessibilityText = stringResource(
+                        R.string.quick_settings_preview_hd_description
+                    ),
                     painter = painterResource(id = R.drawable.video_resolution_hd_icon),
                     isSelected = false,
                     onClick = {}
                 )
                 // Auto State
                 QuickSettingToggleSelectorButton(
-                    accessibilityText = stringResource(R.string.quick_settings_preview_fhd_description),
+                    accessibilityText = stringResource(
+                        R.string.quick_settings_preview_fhd_description
+                    ),
                     painter = painterResource(id = R.drawable.video_resolution_fhd_icon),
                     isSelected = false,
                     onClick = {}
