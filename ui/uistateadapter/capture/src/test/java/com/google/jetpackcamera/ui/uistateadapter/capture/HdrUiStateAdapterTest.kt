@@ -274,12 +274,12 @@ internal class HdrUiStateAdapterTest {
             perLensConstraints = mapOf(
                 LensFacing.BACK to emptyCameraConstraints.copy(
                     supportedImageFormatsMap = mapOf(
-                        appSettings.streamConfig to setOf(ImageOutputFormat.JPEG)
+                        false to setOf(ImageOutputFormat.JPEG)
                     )
                 ),
                 LensFacing.FRONT to emptyCameraConstraints.copy(
                     supportedImageFormatsMap = mapOf(
-                        appSettings.streamConfig to setOf(
+                        false to setOf(
                             ImageOutputFormat.JPEG,
                             ImageOutputFormat.JPEG_ULTRA_HDR
                         )

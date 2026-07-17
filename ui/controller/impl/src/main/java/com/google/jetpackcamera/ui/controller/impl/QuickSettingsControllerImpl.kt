@@ -39,14 +39,14 @@ import kotlinx.coroutines.launch
  * [trackedCaptureUiState].
  *
  * @param trackedCaptureUiState The state flow to update with quick settings information.
+ * @param externalCaptureMode The external capture mode active.
  * @param cameraSystem The camera system to control.
- * @param externalCaptureMode The current external capture mode.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class QuickSettingsControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    private val cameraSystem: CameraSystem,
     private val externalCaptureMode: ExternalCaptureMode,
+    private val cameraSystem: CameraSystem,
     coroutineContext: CoroutineContext
 ) : QuickSettingsController {
     private val job = Job(parent = coroutineContext[Job.Key])

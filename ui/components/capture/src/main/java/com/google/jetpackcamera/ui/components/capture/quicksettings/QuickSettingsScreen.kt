@@ -15,7 +15,9 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -60,7 +62,7 @@ fun QuickSettingsBottomSheet(
     if (quickSettingsUiState is QuickSettingsUiState.Available &&
         quickSettingsUiState.quickSettingsIsOpen
     ) {
-        val sheetState = rememberModalBottomSheetState()
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         BottomSheetComponent(
             modifier = modifier,
             onDismiss = quickSettingsController::toggleQuickSettings,
@@ -106,19 +108,37 @@ fun QuickSettingsBottomSheet(
 }
 
 @Composable
+private fun QuickSettingsLayout(
+    @StringRes titleRes: Int,
+    showMoreSettingsButton: Boolean,
+    onNavigateToSettings: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column {
+        Text(
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            text = stringResource(id = titleRes),
+            style = MaterialTheme.typography.titleLarge
+        )
+        content()
+    }
+    if (showMoreSettingsButton) {
+        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
+    }
+}
+
+@Composable
 private fun HybridQuickSettings(
     quickSettingsUiState: QuickSettingsUiState.Available,
     quickSettingsController: QuickSettingsController,
     onNavigateToSettings: () -> Unit,
     showMoreSettingsButton: Boolean
 ) {
-    Column {
-        Text(
-            modifier = Modifier.padding(16.dp),
-            text = stringResource(id = R.string.quick_settings_title_photo_and_video_settings),
-            style = MaterialTheme.typography.titleLarge
-        )
-
+    QuickSettingsLayout(
+        titleRes = R.string.quick_settings_title_photo_and_video_settings,
+        showMoreSettingsButton = showMoreSettingsButton,
+        onNavigateToSettings = onNavigateToSettings
+    ) {
         // Flash Mode settings
         if (quickSettingsUiState.flashModeUiState is FlashModeUiState.Available) {
             FlashRow(
@@ -154,9 +174,6 @@ private fun HybridQuickSettings(
             )
         }
     }
-    if (showMoreSettingsButton) {
-        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
-    }
 }
 
 @Composable
@@ -166,13 +183,11 @@ private fun VideoQuickSettings(
     onNavigateToSettings: () -> Unit,
     showMoreSettingsButton: Boolean
 ) {
-    Column {
-        Text(
-            modifier = Modifier.padding(16.dp),
-            text = stringResource(id = R.string.quick_settings_title_video_settings),
-            style = MaterialTheme.typography.titleLarge
-        )
-
+    QuickSettingsLayout(
+        titleRes = R.string.quick_settings_title_video_settings,
+        showMoreSettingsButton = showMoreSettingsButton,
+        onNavigateToSettings = onNavigateToSettings
+    ) {
         // Flash Mode settings
         if (quickSettingsUiState.flashModeUiState is FlashModeUiState.Available) {
             FlashRow(
@@ -194,9 +209,6 @@ private fun VideoQuickSettings(
         // TODO: Add Resolution setting
         // TODO: Add Stabilization setting
     }
-    if (showMoreSettingsButton) {
-        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
-    }
 }
 
 @Composable
@@ -206,13 +218,11 @@ private fun ImageQuickSettings(
     onNavigateToSettings: () -> Unit,
     showMoreSettingsButton: Boolean
 ) {
-    Column {
-        Text(
-            modifier = Modifier.padding(16.dp),
-            text = stringResource(id = R.string.quick_settings_title_photo_settings),
-            style = MaterialTheme.typography.titleLarge
-        )
-
+    QuickSettingsLayout(
+        titleRes = R.string.quick_settings_title_photo_settings,
+        showMoreSettingsButton = showMoreSettingsButton,
+        onNavigateToSettings = onNavigateToSettings
+    ) {
         // Flash Mode settings
         if (quickSettingsUiState.flashModeUiState is FlashModeUiState.Available) {
             FlashRow(
@@ -240,9 +250,6 @@ private fun ImageQuickSettings(
         }
 
         // TODO: Add pre-capture timer setting
-    }
-    if (showMoreSettingsButton) {
-        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
     }
 }
 

@@ -115,9 +115,9 @@
 
     <!-- ImageWell -->
     <string name="image_well_content_description">View recently saved media</string>
-    <string name="quick_settings_title_video_settings">Video Settings</string>
-    <string name="quick_settings_title_photo_settings">Photo Settings</string>
-    <string name="quick_settings_title_photo_and_video_settings">Photo and Video Settings</string>
+    <string name="quick_settings_title_video_settings">Video settings</string>
+    <string name="quick_settings_title_photo_settings">Photo settings</string>
+    <string name="quick_settings_title_photo_and_video_settings">Photo and video settings</string>
 
     <!-- QuickSettings Titles -->
     <string name="quick_settings_title_capture_mode">Capture Mode</string>
@@ -135,4 +135,11 @@
     <string name="quick_settings_flash_mode_subtitle_auto">Auto</string>
     <string name="quick_settings_flash_mode_subtitle_on">On</string>
     <string name="quick_settings_flash_mode_subtitle_low_light_boost">Low Light Boost</string>
+
+    <!-- Previews -->
+    <string name="quick_settings_preview_video_resolution">Video Resolution</string>
+    <string name="quick_settings_preview_standard_definition">Standard Definition</string>
+    <string name="quick_settings_preview_sd_description">Standard Definition</string>
+    <string name="quick_settings_preview_hd_description">High Definition</string>
+    <string name="quick_settings_preview_fhd_description">Full High Definition</string>
 </resources>

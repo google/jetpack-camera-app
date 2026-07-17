@@ -18,6 +18,8 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -217,13 +219,14 @@ private fun CaptureModeToggleButton(
  * @param modifier The [Modifier] to be applied to this composable.
  * @param onDismiss The lambda function to be invoked when the bottom sheet is dismissed.
  * @param sheetState The [SheetState] controlling the visibility and behavior of the bottom sheet.
+ * @param content The composable content to display inside the bottom sheet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickSettingsBottomSheet(
-    modifier: Modifier,
     onDismiss: () -> Unit,
     sheetState: SheetState,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
@@ -450,7 +453,7 @@ private fun SettingRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp, horizontal = 16.dp),
+            .padding(vertical = 4.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -461,12 +464,12 @@ private fun SettingRow(
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = stateSubtitle,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -489,7 +492,6 @@ private fun QuickSettingToggleSelectorButton(
 ) {
     QuickSettingToggleSelectorButton(
         modifier = modifier,
-        text = stringResource(id = enum.getTextResId()),
         accessibilityText = stringResource(id = enum.getDescriptionResId()),
         onClick = { onClick() },
         isSelected = isSelected,
@@ -499,12 +501,9 @@ private fun QuickSettingToggleSelectorButton(
 }
 
 /**
- * A customizable toggle button used within the quick settings menu. This button displays an icon
- * and a text label, and can be highlighted to indicate a selected state. It serves as a generic
- * component for various quick settings options.
+ * A customizable toggle button used within the quick settings menu.
  *
  * @param onClick The lambda function to be invoked when the button is clicked.
- * @param text The text label displayed below the icon.
  * @param accessibilityText The content description for accessibility purposes.
  * @param painter The [Painter] for the icon displayed inside the button.
  * @param modifier The [Modifier] to be applied to this composable.
@@ -515,7 +514,6 @@ private fun QuickSettingToggleSelectorButton(
 @Composable
 private fun QuickSettingToggleSelectorButton(
     onClick: () -> Unit,
-    text: String,
     accessibilityText: String,
     painter: Painter,
     modifier: Modifier = Modifier,
@@ -526,44 +524,28 @@ private fun QuickSettingToggleSelectorButton(
         IconButtonDefaults.IconButtonWidthOption.Narrow
     )
 
-    Column(
-        modifier = Modifier.width(width = buttonSize.width),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    FilledIconToggleButton(
+        modifier = modifier
+            .minimumInteractiveComponentSize()
+            .size(buttonSize),
+        checked = isSelected,
+        enabled = enabled,
+        onCheckedChange = { _ -> onClick() },
+        shapes = IconButtonDefaults.toggleableShapes(
+            shape = CircleShape,
+            checkedShape = RoundedCornerShape(12.dp)
+        ),
+        colors = IconButtonDefaults.filledIconToggleButtonColors(
+            containerColor = Color.White.copy(alpha = 0.20f),
+            checkedContainerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            checkedContentColor = MaterialTheme.colorScheme.onPrimary
+        )
     ) {
-        FilledIconToggleButton(
-            modifier = modifier
-                .minimumInteractiveComponentSize()
-                .size(buttonSize),
-            checked = isSelected,
-            enabled = enabled,
-            onCheckedChange = { _ -> onClick() },
-            // 1. Size updated to width 48.dp and height 56.dp
-
-            shapes = IconButtonDefaults.toggleableShapes(),
-            colors = IconButtonDefaults.filledIconToggleButtonColors()
-                .copy(containerColor = Color.White.copy(alpha = .17f))
-        ) {
-            Icon(
-                modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
-                painter = painter,
-                contentDescription = accessibilityText
-            )
-        }
-
-        Spacer(Modifier.height(4.dp))
-        Text(
-            modifier = Modifier
-                .width(IntrinsicSize.Max)
-                .wrapContentWidth()
-                .semantics { hideFromAccessibility() },
-            text = text,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-            minLines = 2,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+        Icon(
+            modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
+            painter = painter,
+            contentDescription = accessibilityText
         )
     }
 }
@@ -594,14 +576,14 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
  * A composable that displays an icon indicating the current flash mode.
  *
  * @param modifier the modifier for this component.
- * @param flashModeUiStateProvider the provider for [FlashModeUiState] for this component.
+ * @param flashModeUiState the [FlashModeUiState] for this component.
  */
 @Composable
 fun FlashModeIndicator(
-    modifier: Modifier = Modifier,
-    flashModeUiStateProvider: () -> FlashModeUiState
+    flashModeUiState: FlashModeUiState,
+    modifier: Modifier = Modifier
 ) {
-    when (val flashModeUiState = flashModeUiStateProvider()) {
+    when (flashModeUiState) {
         is FlashModeUiState.Unavailable ->
             TopBarQuickSettingIcon(
                 modifier = modifier,
@@ -695,7 +677,6 @@ private fun QuickSettingToggleButtonPreview() {
             // Instance 1: Unchecked state
             QuickSettingToggleSelectorButton(
                 onClick = {},
-                text = "Flash Off",
                 accessibilityText = "",
                 painter = CameraFlashMode.OFF.getPainter(),
                 isSelected = false,
@@ -705,7 +686,6 @@ private fun QuickSettingToggleButtonPreview() {
             // Instance 2: Checked state
             QuickSettingToggleSelectorButton(
                 onClick = {},
-                text = "Flash On",
                 accessibilityText = "",
                 painter = CameraFlashMode.ON.getPainter(),
                 isSelected = true,
@@ -715,7 +695,6 @@ private fun QuickSettingToggleButtonPreview() {
             // Instance 3: Disabled state
             QuickSettingToggleSelectorButton(
                 onClick = {},
-                text = "Flash Off",
                 accessibilityText = "",
                 painter = CameraFlashMode.OFF.getPainter(),
                 isSelected = false,
@@ -734,29 +713,26 @@ private fun PreviewSettingRowDark() {
             color = Color.Black // Consistent with Camera UI
         ) {
             SettingRow(
-                title = "Video Resolution",
-                stateSubtitle = "Standard Definition"
+                title = stringResource(R.string.quick_settings_preview_video_resolution),
+                stateSubtitle = stringResource(R.string.quick_settings_preview_standard_definition)
             ) {
                 // Off State (Highlighted per your screenshot)
                 QuickSettingToggleSelectorButton(
-                    text = "SD",
-                    accessibilityText = "Flash Off",
+                    accessibilityText = stringResource(R.string.quick_settings_preview_sd_description),
                     painter = painterResource(id = R.drawable.video_resolution_sd_icon),
                     isSelected = true,
                     onClick = {}
                 )
                 // On State
                 QuickSettingToggleSelectorButton(
-                    text = "HD",
-                    accessibilityText = "High Definition",
+                    accessibilityText = stringResource(R.string.quick_settings_preview_hd_description),
                     painter = painterResource(id = R.drawable.video_resolution_hd_icon),
                     isSelected = false,
                     onClick = {}
                 )
                 // Auto State
                 QuickSettingToggleSelectorButton(
-                    text = "FHD",
-                    accessibilityText = "Full High Definition",
+                    accessibilityText = stringResource(R.string.quick_settings_preview_fhd_description),
                     painter = painterResource(id = R.drawable.video_resolution_fhd_icon),
                     isSelected = false,
                     onClick = {}
