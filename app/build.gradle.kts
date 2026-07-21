@@ -14,6 +14,36 @@
  * limitations under the License.
  */
 
+import org.gradle.api.provider.ValueSource
+import org.gradle.api.provider.ValueSourceParameters
+import org.gradle.process.ExecOperations
+import java.io.ByteArrayOutputStream
+import javax.inject.Inject
+
+abstract class GitRevParseValueSource : ValueSource<String, GitRevParseValueSource.Parameters> {
+    interface Parameters : ValueSourceParameters {
+        var args: List<String>
+    }
+
+    @get:Inject
+    abstract val execOperations: ExecOperations
+
+    override fun obtain(): String {
+        return try {
+            val output = ByteArrayOutputStream()
+            execOperations.exec {
+                commandLine("git", "rev-parse")
+                args(parameters.args)
+                standardOutput = output
+                isIgnoreExitValue = true
+            }
+            output.toString().trim()
+        } catch (e: Exception) {
+            ""
+        }
+    }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -31,10 +61,31 @@ android {
         applicationId = "com.google.jetpackcamera"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        val baseVersion = "0.1"
+        val runNumber = System.getenv("GITHUB_RUN_NUMBER") ?: "0"
+
+        versionCode = if (runNumber != "0") runNumber.toInt() else 1
+        versionName = if (runNumber != "0") "$baseVersion.$runNumber" else "$baseVersion.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
+
+        val gitFullSha = providers.of(GitRevParseValueSource::class.java) {
+            parameters.args = listOf("HEAD")
+        }.get()
+        val gitShortSha = providers.of(GitRevParseValueSource::class.java) {
+            parameters.args = listOf("--short", "HEAD")
+        }.get().ifEmpty { "unknown" }
+
+        buildConfigField("String", "PRIMARY_VERSION_STRING", "\"${versionName}-${gitShortSha}\"")
+        val buildOrigin = if (System.getenv("GITHUB_ACTIONS") == "true") {
+            "GitHub"
+        } else {
+            "Local Gradle"
+        }
+        buildConfigField("String", "BUILD_ORIGIN", "\"${buildOrigin}\"")
+        buildConfigField("String", "GIT_SHA", "\"${gitFullSha}\"")
+        buildConfigField("String", "CHANGELIST", "\"\"")
+        buildConfigField("String", "SOONG_BUILD_ID", "\"\"")
     }
 
     buildTypes {

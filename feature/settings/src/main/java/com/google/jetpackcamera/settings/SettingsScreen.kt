@@ -254,14 +254,16 @@ internal fun SettingsList(
     SectionHeader(title = stringResource(id = R.string.section_title_software_info))
 
     VersionInfo(
-        versionName = versionInfo.versionName,
-        buildType = versionInfo.buildType
+        versionInfo = versionInfo
     )
 }
 
 // will allow you to open stabilization popup or give disabled rationale
 
-data class VersionInfoHolder(val versionName: String, val buildType: String)
+data class VersionInfoHolder(
+    val primaryVersionString: String,
+    val detailedLabels: List<Pair<String, String>>
+)
 
 @Preview(name = "Light Mode")
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
@@ -271,8 +273,11 @@ private fun Preview_SettingsScreen() {
         SettingsScreen(
             uiState = TYPICAL_SETTINGS_UISTATE,
             versionInfo = VersionInfoHolder(
-                versionName = "1.0.0",
-                buildType = "release"
+                primaryVersionString = "1.0.0-debug",
+                detailedLabels = listOf(
+                    "Build Origin" to "Preview",
+                    "Git SHA" to "abcdef123"
+                )
             )
         )
     }

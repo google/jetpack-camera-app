@@ -46,6 +46,7 @@ import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
 import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
+import com.google.jetpackcamera.util.VersionUtil
 
 @Composable
 fun JcaApp(
@@ -144,10 +145,17 @@ private fun JetpackCameraNavHost(
                 )
             }
         ) {
+            val details = VersionUtil.getDetailedLabels(
+                buildOrigin = BuildConfig.BUILD_ORIGIN,
+                gitSha = BuildConfig.GIT_SHA,
+                changelist = BuildConfig.CHANGELIST,
+                soongBuildId = BuildConfig.SOONG_BUILD_ID
+            )
+
             SettingsScreen(
                 versionInfo = VersionInfoHolder(
-                    versionName = BuildConfig.VERSION_NAME,
-                    buildType = BuildConfig.BUILD_TYPE
+                    primaryVersionString = BuildConfig.PRIMARY_VERSION_STRING,
+                    detailedLabels = details
                 ),
                 onNavigateBack = { navController.popBackStack() }
             )

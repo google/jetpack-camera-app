@@ -46,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -53,9 +54,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.intl.Locale
-import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,6 +93,7 @@ import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
+import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.settings.VideoQualityUiState
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
@@ -934,20 +935,40 @@ internal fun ConcurrentCameraSetting(
 }
 
 @Composable
-fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: String = "") {
-    SettingUI(
-        modifier = modifier,
-        title = stringResource(id = R.string.version_info_title),
-        leadingIcon = null,
-        enabled = true
-    ) {
-        val versionString = versionName +
-            if (buildType.isNotEmpty()) {
-                "/${buildType.toUpperCase(Locale.current)}"
+fun VersionInfo(versionInfo: VersionInfoHolder, modifier: Modifier = Modifier) {
+    val clipboardManager = LocalClipboardManager.current
+    Column(modifier = modifier) {
+        SettingUI(
+            modifier = Modifier
+                .clickable {
+                    clipboardManager.setText(AnnotatedString(versionInfo.primaryVersionString))
+                }
+                .testTag(TEXT_SETTING_APP_VERSION_TAG),
+            title = stringResource(id = R.string.version_info_title),
+            description = versionInfo.primaryVersionString,
+            leadingIcon = null,
+            enabled = true,
+            trailingContent = null
+        )
+        versionInfo.detailedLabels.forEach { pair ->
+            val label = pair.first
+            val value = pair.second
+            val modifier = if (label == "Build Origin") {
+                Modifier
             } else {
-                ""
+                Modifier.clickable {
+                    clipboardManager.setText(AnnotatedString(value))
+                }
             }
-        Text(text = versionString, modifier = Modifier.testTag(TEXT_SETTING_APP_VERSION_TAG))
+            SettingUI(
+                modifier = modifier,
+                title = label,
+                description = value,
+                leadingIcon = null,
+                enabled = true,
+                trailingContent = null
+            )
+        }
     }
 }
 
@@ -1182,7 +1203,15 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
 @Composable
 private fun Preview_VersionInfo() {
     SettingsPreviewTheme {
-        VersionInfo(versionName = "0.1.0", buildType = "debug")
+        VersionInfo(
+            versionInfo = VersionInfoHolder(
+                primaryVersionString = "1.0.0-debug",
+                detailedLabels = listOf(
+                    "Build Origin" to "Preview",
+                    "Git SHA" to "abcdef123"
+                )
+            )
+        )
     }
 }
 
