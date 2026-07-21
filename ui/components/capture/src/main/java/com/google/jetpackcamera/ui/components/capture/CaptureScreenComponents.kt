@@ -148,25 +148,11 @@ fun ElapsedTimeText(
     modifier: Modifier = Modifier,
     elapsedTimeUiStateProvider: () -> ElapsedTimeUiState
 ) {
-    // derivedStateOf prevents recomposing ElapsedTimeText when the timer ticks.
-    // Recomposition only occurs when visibility (isEnabled) changes.
-    val isEnabled by remember(elapsedTimeUiStateProvider) {
-        derivedStateOf {
-            elapsedTimeUiStateProvider() is ElapsedTimeUiState.Enabled
-        }
-    }
-    if (isEnabled) {
-        // derivedStateOf defers reading the provider to the Box content scope, ensuring only the Text component recomposes every second.
-        val formattedTime by remember(elapsedTimeUiStateProvider) {
-            derivedStateOf {
-                val state = elapsedTimeUiStateProvider()
-                if (state is ElapsedTimeUiState.Enabled) {
-                    state.elapsedTimeNanos.nanoseconds
-                        .toComponents { minutes, seconds, _ -> "%d:%02d".format(minutes, seconds) }
-                } else {
-                    ""
-                }
-            }
+    val state = elapsedTimeUiStateProvider()
+    if (state is ElapsedTimeUiState.Enabled) {
+        val formattedTime = remember(state.elapsedTimeNanos) {
+            state.elapsedTimeNanos.nanoseconds
+                .toComponents { minutes, seconds, _ -> "%d:%02d".format(minutes, seconds) }
         }
         Box(
             modifier = modifier
@@ -1024,7 +1010,7 @@ private fun ElapsedTimeTextPreview() {
                 }
             )
 
-            // Scenario 4: Unavailable state (renders nothing, verifying the if-condition)
+            // Scenario 5: Unavailable state (renders nothing, verifying the if-condition)
             ElapsedTimeText(
                 elapsedTimeUiStateProvider = {
                     ElapsedTimeUiState.Unavailable
