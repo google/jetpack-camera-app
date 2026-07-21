@@ -55,8 +55,7 @@ fun CaptureButtonUiState.Companion.from(
             }
 
         is VideoRecordingState.Starting ->
-            CaptureButtonUiState
-                .Enabled.Idle(captureMode = cameraAppSettings.captureMode)
+            CaptureButtonUiState.Enabled.Recording.Pending
     }
 } else {
     CaptureButtonUiState

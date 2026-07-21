@@ -272,6 +272,7 @@ internal fun CaptureButton(
                     }
 
                     CaptureButtonUiState.Enabled.Recording.LockedRecording -> onStopRecording()
+                    CaptureButtonUiState.Enabled.Recording.Pending,
                     CaptureButtonUiState.Enabled.Recording.PressedRecording,
                     CaptureButtonUiState.Unavailable -> {
                     }
@@ -668,6 +669,7 @@ private fun CaptureButtonNucleus(
             // inner circle fills white ring when locked
             CaptureButtonUiState.Enabled.Recording.LockedRecording -> captureButtonSize.dp
 
+            CaptureButtonUiState.Enabled.Recording.Pending,
             CaptureButtonUiState.Enabled.Recording.PressedRecording ->
                 (captureButtonSize * pressedVideoCaptureScale).dp
 
