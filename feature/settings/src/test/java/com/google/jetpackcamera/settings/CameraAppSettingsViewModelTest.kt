@@ -295,7 +295,17 @@ internal class CameraAppSettingsViewModelTest {
 
         val customViewModel = createViewModelWithConstraints(
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
-                concurrentCamerasSupported = true
+                concurrentCamerasSupported = true,
+                perLensConstraints = buildMap {
+                    for (lensFacing in listOf(LensFacing.FRONT, LensFacing.BACK)) {
+                        put(
+                            lensFacing,
+                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[lensFacing]!!.copy(
+                                supportedEffects = setOf(SingleStreamEffectKey.id)
+                            )
+                        )
+                    }
+                }
             )
         )
         advanceUntilIdle()
