@@ -13,35 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera
+package com.google.jetpackcamera.di
 
+import android.content.Context
 import com.google.jetpackcamera.core.common.FilePathGenerator
-import com.google.jetpackcamera.di.DefaultCaptureModeOverride
-import com.google.jetpackcamera.di.DefaultFilePathGenerator
-import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.SaveMode
+import com.google.jetpackcamera.data.media.LocalMediaRepository
+import com.google.jetpackcamera.data.media.MediaRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
 
+/**
+ * Dagger [Module] for Media dependencies.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
-object AppModule {
-    /**
-     * provides the default [CaptureMode] to override by the app
-     */
-    @Provides
-    @DefaultCaptureModeOverride
-    fun providesDefaultCaptureModeOverride(): CaptureMode = CaptureMode.STANDARD
-
-    /**
-     * provides the default [SaveMode] to be used by the app
-     */
-    @Provides
-    fun providesSaveMode(): SaveMode = SaveMode.Immediate
+internal object MediaModule {
 
     @Provides
-    @DefaultFilePathGenerator
-    fun providesFilePathGenerator(): FilePathGenerator = JcaFilePathGenerator()
+    @Singleton
+    fun provideMediaRepository(
+        @ApplicationContext context: Context,
+        @IODispatcher ioDispatcher: CoroutineDispatcher,
+        @DefaultFilePathGenerator filePathGenerator: FilePathGenerator
+    ): MediaRepository {
+        return LocalMediaRepository(context, ioDispatcher, filePathGenerator)
+    }
 }

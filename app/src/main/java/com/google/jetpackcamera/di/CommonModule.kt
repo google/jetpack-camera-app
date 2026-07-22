@@ -13,31 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera.effects
+package com.google.jetpackcamera.di
 
-import com.google.jetpackcamera.core.camera.CameraEffectProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import dagger.multibindings.IntoSet
-import java.util.AbstractMap
-import javax.inject.Provider
+import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 /**
- * Hilt module to bind [SingleStreamEffectProvider] in the [SingletonComponent].
+ * Dagger [Module] for global application-level coroutine dispatchers and scope.
  */
 @Module
 @InstallIn(SingletonComponent::class)
-internal object EffectsModule {
+internal class CommonModule {
     @Provides
-    @IntoSet
-    fun provideSingleStreamEffectProviderEntry(): Map.Entry<
-        CameraEffectFeatureKey,
-        @JvmSuppressWildcards Provider<CameraEffectProvider>
-        > =
-        AbstractMap.SimpleImmutableEntry(
-            SingleStreamEffectKey,
-            Provider { SingleStreamEffectProvider() }
-        )
+    @DefaultDispatcher
+    fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+
+    @Provides
+    @IODispatcher
+    fun provideIODispatcher(): CoroutineDispatcher = Dispatchers.IO
+
+    @Singleton
+    @DefaultCoroutineScope
+    @Provides
+    fun providesCoroutineScope(@DefaultDispatcher dispatcher: CoroutineDispatcher) =
+        CoroutineScope(SupervisorJob() + dispatcher)
 }

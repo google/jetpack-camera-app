@@ -18,7 +18,6 @@ package com.google.jetpackcamera.core.settings.datastoreprefs
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
@@ -45,7 +44,7 @@ import kotlinx.coroutines.flow.map
  */
 class PrefsDataStoreSettingsDataSource(
     private val dataStore: DataStore<Preferences>,
-    @DefaultCaptureModeOverride private val defaultCaptureModeOverride: CaptureMode
+    private val defaultCaptureModeOverride: CaptureMode
 ) : SettingsDataSource {
 
     override val defaultCameraAppSettings: Flow<CameraAppSettings> = dataStore.data.map { prefs ->

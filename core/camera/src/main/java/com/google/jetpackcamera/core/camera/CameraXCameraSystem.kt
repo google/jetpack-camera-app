@@ -46,10 +46,7 @@ import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
-import com.google.jetpackcamera.core.common.DefaultDispatcher
-import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
 import com.google.jetpackcamera.core.common.FilePathGenerator
-import com.google.jetpackcamera.core.common.IODispatcher
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
@@ -103,9 +100,9 @@ private const val TAG = "CameraXCameraSystem"
  */
 class CameraXCameraSystem(
     private val application: Application,
-    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
-    @param:IODispatcher private val iODispatcher: CoroutineDispatcher,
-    @DefaultFilePathGenerator private val filePathGenerator: FilePathGenerator,
+    private val defaultDispatcher: CoroutineDispatcher,
+    private val iODispatcher: CoroutineDispatcher,
+    private val filePathGenerator: FilePathGenerator,
     availabilityCheckers:
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>>,
     effectProviders:

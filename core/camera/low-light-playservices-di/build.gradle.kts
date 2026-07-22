@@ -22,39 +22,12 @@ plugins {
 }
 
 android {
-    namespace = "com.google.jetpackcamera.data.camera"
+    namespace = "com.google.jetpackcamera.core.camera.lowlight.playservices.di"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
-        testOptions.targetSdk = libs.versions.targetSdk.get().toInt()
-        lint.targetSdk = libs.versions.targetSdk.get().toInt()
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
     }
-
-    buildTypes {
-        release {
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-        create("benchmark") {
-            initWith(buildTypes.getByName("release"))
-            matchingFallbacks += listOf("release")
-        }
-    }
-
-    flavorDimensions += "flavor"
-    productFlavors {
-        create("stable") {
-            dimension = "flavor"
-            isDefault = true
-        }
-    }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -65,18 +38,14 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:camera:low-light"))
+    implementation(project(":core:camera:low-light-playservices"))
+
+    // Hilt
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
-    implementation(project(":core:camera"))
-    implementation(project(":core:camera:low-light"))
-    implementation(project(":core:camera:postprocess"))
-    implementation(project(":core:common"))
-    implementation(project(":core:model"))
-    implementation(project(":data:settings"))
-    implementation(project(":core:settings"))
 }
 
-// Allow references to generated code
 kapt {
     correctErrorTypes = true
 }

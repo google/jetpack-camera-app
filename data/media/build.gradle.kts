@@ -89,7 +89,6 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core:common"))
-    implementation(project(":data:common"))
     testImplementation(project(":core:common:testing"))
     androidTestImplementation(project(":core:common:testing"))
 
