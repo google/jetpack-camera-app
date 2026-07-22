@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,23 @@
 package com.google.jetpackcamera.settings
 
 import android.Manifest
-import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.DataStoreFactory
-import androidx.datastore.dataStoreFile
-import androidx.test.core.app.ApplicationProvider
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.camera.effects.SingleStreamEffectKey
+import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
+import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
-import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
-import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
-import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
-import com.google.jetpackcamera.model.proto.StreamConfig as StreamConfigProto
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import java.io.File
@@ -50,7 +48,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 
 private val STABILIZATION_SUPPORTED_CONSTRAINTS = TYPICAL_SYSTEM_CONSTRAINTS.copy(
@@ -89,25 +89,31 @@ private val LLB_SUPPORTED_CONSTRAINTS = TYPICAL_SYSTEM_CONSTRAINTS.copy(
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 internal class CameraAppSettingsViewModelTest {
-    private val testContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
-    private lateinit var testDataStore: DataStore<JcaSettings>
+    @get:Rule
+    val tempFolder = TemporaryFolder()
+
+    private lateinit var testFile: File
+    private lateinit var testDataStore: DataStore<Preferences>
     private lateinit var datastoreScope: CoroutineScope
     private lateinit var settingsViewModel: SettingsViewModel
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
+        testFile = tempFolder.newFile("test_settings.preferences_pb")
         datastoreScope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
 
-        testDataStore = DataStoreFactory.create(
-            serializer = JcaSettingsSerializer,
-            scope = datastoreScope
-        ) {
-            testContext.dataStoreFile("test_jca_settings.pb")
-        }
-        val settingsRepository = LocalSettingsRepository(
-            jcaSettings = testDataStore,
+        testDataStore = FakeDataStoreModule.providePreferenceDataStore(
+            scope = datastoreScope,
+            file = testFile
+        )
+
+        val settingsDataSource = PrefsDataStoreSettingsDataSource(
+            dataStore = testDataStore,
             defaultCaptureModeOverride = CaptureMode.STANDARD
+        )
+        val settingsRepository = LocalSettingsRepository(
+            settingsDataSource = settingsDataSource
         )
         val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
             updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
@@ -121,11 +127,6 @@ internal class CameraAppSettingsViewModelTest {
 
     @After
     fun tearDown() {
-        File(
-            ApplicationProvider.getApplicationContext<Context>().filesDir,
-            "datastore"
-        ).deleteRecursively()
-
         datastoreScope.cancel()
     }
 
@@ -242,9 +243,12 @@ internal class CameraAppSettingsViewModelTest {
         systemConstraints: CameraSystemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
         defaultCaptureMode: CaptureMode = CaptureMode.VIDEO_ONLY
     ): SettingsViewModel {
-        val settingsRepository = LocalSettingsRepository(
-            jcaSettings = testDataStore,
+        val settingsDataSource = PrefsDataStoreSettingsDataSource(
+            dataStore = testDataStore,
             defaultCaptureModeOverride = defaultCaptureMode
+        )
+        val settingsRepository = LocalSettingsRepository(
+            settingsDataSource = settingsDataSource
         )
         val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
             updateSystemConstraints(systemConstraints)
@@ -279,41 +283,47 @@ internal class CameraAppSettingsViewModelTest {
     }
 
     /**
-     * Verifies that the Concurrent Camera setting is disabled if Stream
-     * Configuration is set to SINGLE_STREAM, since concurrent camera
-     * strictly requires MULTI_STREAM.
+     * Verifies that the Concurrent Camera setting is disabled if Camera
+     * Effect is active, since concurrent camera strictly requires no effects.
      */
     @Test
-    fun concurrentCamera_whenStreamConfigIsSingleStream_isDisabled() =
-        runTest(StandardTestDispatcher()) {
-            // Set StreamConfig to SINGLE_STREAM first
-            testDataStore.updateData {
-                it.toBuilder()
-                    .setStreamConfigStatus(StreamConfigProto.STREAM_CONFIG_SINGLE_STREAM)
-                    .build()
-            }
-
-            val customViewModel = createViewModelWithConstraints(
-                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
-                    concurrentCamerasSupported = true
-                )
-            )
-            advanceUntilIdle()
-
-            val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
-            val enabledState = assertIsEnabled(uiState)
-
-            assertThat(enabledState.concurrentCameraUiState).isInstanceOf(
-                ConcurrentCameraUiState.Disabled::class.java
-            )
-            val disabledState =
-                enabledState.concurrentCameraUiState as ConcurrentCameraUiState.Disabled
-            assertThat(disabledState.disabledRationale).isInstanceOf(
-                DisabledRationale.ConcurrentCameraDisabledRationale::class.java
-            )
-            assertThat(disabledState.disabledRationale.reasonTextResId)
-                .isEqualTo(R.string.concurrent_camera_stream_config_unsupported)
+    fun concurrentCamera_whenCameraEffectIsActive_isDisabled() = runTest(StandardTestDispatcher()) {
+        // Set selected_camera_effect to a non-empty value first
+        testDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("selected_camera_effect")] = SingleStreamEffectKey.id.value
         }
+
+        val customViewModel = createViewModelWithConstraints(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                concurrentCamerasSupported = true,
+                perLensConstraints = buildMap {
+                    for (lensFacing in listOf(LensFacing.FRONT, LensFacing.BACK)) {
+                        put(
+                            lensFacing,
+                            TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[lensFacing]!!.copy(
+                                supportedEffects = setOf(SingleStreamEffectKey.id)
+                            )
+                        )
+                    }
+                }
+            )
+        )
+        advanceUntilIdle()
+
+        val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+        val enabledState = assertIsEnabled(uiState)
+
+        assertThat(enabledState.concurrentCameraUiState).isInstanceOf(
+            ConcurrentCameraUiState.Disabled::class.java
+        )
+        val disabledState =
+            enabledState.concurrentCameraUiState as ConcurrentCameraUiState.Disabled
+        assertThat(disabledState.disabledRationale).isInstanceOf(
+            DisabledRationale.ConcurrentCameraDisabledRationale::class.java
+        )
+        assertThat(disabledState.disabledRationale.reasonTextResId)
+            .isEqualTo(R.string.concurrent_camera_stream_config_unsupported)
+    }
 
     /**
      * Verifies that the Concurrent Camera setting is disabled if Flash
@@ -323,8 +333,8 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun concurrentCamera_whenFlashLlbIsActive_isDisabled() = runTest(StandardTestDispatcher()) {
         // Set FlashMode to LOW_LIGHT_BOOST first
-        testDataStore.updateData {
-            it.toBuilder().setFlashModeStatus(FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST).build()
+        testDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("flash_mode")] = FlashMode.LOW_LIGHT_BOOST.name
         }
 
         val customViewModel = createViewModelWithConstraints(
@@ -354,9 +364,8 @@ internal class CameraAppSettingsViewModelTest {
     fun concurrentCamera_whenStabilizationIsActive_isDisabled() =
         runTest(StandardTestDispatcher()) {
             // Set StabilizationMode to ON first
-            testDataStore.updateData {
-                it.toBuilder().setStabilizationMode(StabilizationModeProto.STABILIZATION_MODE_ON)
-                    .build()
+            testDataStore.edit { prefs ->
+                prefs[stringPreferencesKey("stabilization_mode")] = StabilizationMode.ON.name
             }
 
             val customViewModel = createViewModelWithConstraints(
@@ -388,7 +397,9 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun concurrentCamera_whenFixedFpsIsActive_isDisabled() = runTest(StandardTestDispatcher()) {
         // Set targetFrameRate to fixed 30 FPS first
-        testDataStore.updateData { it.toBuilder().setTargetFrameRate(30).build() }
+        testDataStore.edit { prefs ->
+            prefs[intPreferencesKey("target_frame_rate")] = 30
+        }
 
         val customViewModel = createViewModelWithConstraints(
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
@@ -411,18 +422,18 @@ internal class CameraAppSettingsViewModelTest {
     }
 
     /**
-     * Verifies that Stream Configuration is disabled if Concurrent Camera is enabled.
+     * Verifies that Camera Effect selection is disabled if Concurrent Camera is enabled.
      */
     @Test
-    fun streamConfig_whenConcurrentCameraIsEnabled_isDisabled() =
+    fun cameraEffect_whenConcurrentCameraIsEnabled_isDisabled() =
         runTest(StandardTestDispatcher()) {
             // Set ConcurrentCameraMode to DUAL first
-            testDataStore.updateData {
-                it.toBuilder()
-                    .setConcurrentCameraModeStatus(
-                        ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL
+            testDataStore.edit { prefs ->
+                prefs[
+                    stringPreferencesKey(
+                        "concurrent_camera_mode"
                     )
-                    .build()
+                ] = ConcurrentCameraMode.DUAL.name
             }
 
             val customViewModel = createViewModelWithConstraints(
@@ -436,9 +447,9 @@ internal class CameraAppSettingsViewModelTest {
             val enabledState = assertIsEnabled(uiState)
 
             assertThat(
-                enabledState.streamConfigUiState
-            ).isInstanceOf(StreamConfigUiState.Disabled::class.java)
-            val disabledState = enabledState.streamConfigUiState as StreamConfigUiState.Disabled
+                enabledState.cameraEffectUiState
+            ).isInstanceOf(CameraEffectUiState.Disabled::class.java)
+            val disabledState = enabledState.cameraEffectUiState as CameraEffectUiState.Disabled
             assertThat(disabledState.disabledRationale)
                 .isInstanceOf(DisabledRationale.ConcurrentCameraActiveRationale::class.java)
         }
@@ -451,12 +462,8 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun flashLlb_whenConcurrentCameraIsEnabled_isDisabled() = runTest(StandardTestDispatcher()) {
         // Set ConcurrentCameraMode to DUAL first
-        testDataStore.updateData {
-            it.toBuilder()
-                .setConcurrentCameraModeStatus(
-                    ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL
-                )
-                .build()
+        testDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("concurrent_camera_mode")] = ConcurrentCameraMode.DUAL.name
         }
 
         val customViewModel = createViewModelWithConstraints(
@@ -484,12 +491,12 @@ internal class CameraAppSettingsViewModelTest {
     fun stabilization_whenConcurrentCameraIsEnabled_isDisabled() =
         runTest(StandardTestDispatcher()) {
             // Set ConcurrentCameraMode to DUAL first
-            testDataStore.updateData {
-                it.toBuilder()
-                    .setConcurrentCameraModeStatus(
-                        ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL
+            testDataStore.edit { prefs ->
+                prefs[
+                    stringPreferencesKey(
+                        "concurrent_camera_mode"
                     )
-                    .build()
+                ] = ConcurrentCameraMode.DUAL.name
             }
 
             val customViewModel = createViewModelWithConstraints(
@@ -514,12 +521,8 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun fps_whenConcurrentCameraIsEnabled_isDisabled() = runTest(StandardTestDispatcher()) {
         // Set ConcurrentCameraMode to DUAL first
-        testDataStore.updateData {
-            it.toBuilder()
-                .setConcurrentCameraModeStatus(
-                    ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL
-                )
-                .build()
+        testDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("concurrent_camera_mode")] = ConcurrentCameraMode.DUAL.name
         }
 
         val customViewModel = createViewModelWithConstraints(
@@ -537,14 +540,10 @@ internal class CameraAppSettingsViewModelTest {
     }
 
     @Test
-    fun streamConfigDisabled_whenUltraHdrEnabled() = runTest(StandardTestDispatcher()) {
+    fun cameraEffectDisabled_whenUltraHdrEnabled() = runTest(StandardTestDispatcher()) {
         // Set image format to Ultra HDR in datastore
-        testDataStore.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setImageFormatStatus(
-                    ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR
-                )
-                .build()
+        testDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("image_format")] = ImageOutputFormat.JPEG_ULTRA_HDR.name
         }
         advanceUntilIdle()
 
@@ -552,10 +551,10 @@ internal class CameraAppSettingsViewModelTest {
             it is SettingsUiState.Enabled
         }
 
-        val streamConfigUiState = assertIsEnabled(uiState).streamConfigUiState
-        assertThat(streamConfigUiState).isInstanceOf(StreamConfigUiState.Disabled::class.java)
+        val cameraEffectUiState = assertIsEnabled(uiState).cameraEffectUiState
+        assertThat(cameraEffectUiState).isInstanceOf(CameraEffectUiState.Disabled::class.java)
         val disabledRationale =
-            (streamConfigUiState as StreamConfigUiState.Disabled).disabledRationale
+            (cameraEffectUiState as CameraEffectUiState.Disabled).disabledRationale
         assertThat(disabledRationale)
             .isInstanceOf(DisabledRationale.UltraHdrUnsupportedRationale::class.java)
     }

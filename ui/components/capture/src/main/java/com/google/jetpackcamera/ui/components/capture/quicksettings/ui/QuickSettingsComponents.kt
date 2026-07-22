@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,11 +50,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -116,7 +119,6 @@ fun QuickSetRatio(
                 AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
                 AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
                 AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-                else -> CameraAspectRatio.ONE_ONE
             }
         QuickSettingToggleButton(
             modifier = modifier,
@@ -711,7 +713,9 @@ private fun ExpandedQuickSetting(
             quickSettingButtons.size,
             (
                 (
-                    LocalConfiguration.current.screenWidthDp.dp - (
+                    with(LocalDensity.current) {
+                        LocalWindowInfo.current.containerSize.width.toDp()
+                    } - (
                         dimensionResource(
                             id = R.dimen.quick_settings_ui_horizontal_padding
                         ) * 2
@@ -761,9 +765,18 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * A composable that displays an icon indicating the current flash mode.
+ *
+ * @param modifier the modifier for this component.
+ * @param flashModeUiStateProvider the provider for [FlashModeUiState] for this component.
+ */
 @Composable
-fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = Modifier) {
-    when (flashModeUiState) {
+fun FlashModeIndicator(
+    modifier: Modifier = Modifier,
+    flashModeUiStateProvider: () -> FlashModeUiState
+) {
+    when (val flashModeUiState = flashModeUiStateProvider()) {
         is FlashModeUiState.Unavailable ->
             TopBarQuickSettingIcon(
                 modifier = modifier,
@@ -802,7 +815,7 @@ private fun TopBarQuickSettingIcon(
             modifier = modifier
                 .size(IconButtonDefaults.smallIconSize)
                 .clickable(
-                    interactionSource = null,
+                    interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onClick,
                     enabled = enabled

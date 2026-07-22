@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings.testing
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -24,84 +25,90 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
-object FakeSettingsRepository : SettingsRepository {
-    private var currentCameraSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
-
+class FakeSettingsRepository(
+    initialSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
+) : SettingsRepository {
+    private val _defaultCameraAppSettings = MutableStateFlow(initialSettings)
     override val defaultCameraAppSettings: Flow<CameraAppSettings> =
-        flow { emit(currentCameraSettings) }
+        _defaultCameraAppSettings.asStateFlow()
 
-    override suspend fun getCurrentDefaultCameraAppSettings() = defaultCameraAppSettings.first()
+    override suspend fun getCurrentDefaultCameraAppSettings() = _defaultCameraAppSettings.value
 
     override suspend fun updateDefaultLensFacing(lensFacing: LensFacing) {
-        currentCameraSettings = currentCameraSettings.copy(cameraLensFacing = lensFacing)
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(cameraLensFacing = lensFacing)
     }
 
     override suspend fun updateDarkModeStatus(darkMode: DarkMode) {
-        currentCameraSettings = currentCameraSettings.copy(darkMode = darkMode)
+        _defaultCameraAppSettings.value = _defaultCameraAppSettings.value.copy(darkMode = darkMode)
     }
 
     override suspend fun updateFlashModeStatus(flashMode: FlashMode) {
-        currentCameraSettings = currentCameraSettings.copy(flashMode = flashMode)
+        _defaultCameraAppSettings.value = _defaultCameraAppSettings.value.copy(
+            flashMode = flashMode
+        )
     }
 
-    override suspend fun updateStreamConfig(streamConfig: StreamConfig) {
-        currentCameraSettings =
-            currentCameraSettings.copy(streamConfig = streamConfig)
+    override suspend fun updateSelectedCameraEffect(selectedCameraEffect: CameraEffectId) {
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(selectedCameraEffect = selectedCameraEffect)
     }
 
     override suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
-        currentCameraSettings =
-            currentCameraSettings.copy(lowLightBoostPriority = lowLightBoostPriority)
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(lowLightBoostPriority = lowLightBoostPriority)
     }
 
     override suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode) {
-        currentCameraSettings =
-            currentCameraSettings.copy(stabilizationMode = stabilizationMode)
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(stabilizationMode = stabilizationMode)
     }
 
     override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
-        currentCameraSettings =
-            currentCameraSettings.copy(dynamicRange = dynamicRange)
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(dynamicRange = dynamicRange)
     }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
-        currentCameraSettings =
-            currentCameraSettings.copy(aspectRatio = aspectRatio)
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(aspectRatio = aspectRatio)
     }
 
     override suspend fun updateTargetFrameRate(targetFrameRate: Int) {
-        currentCameraSettings =
-            currentCameraSettings.copy(targetFrameRate = targetFrameRate)
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(targetFrameRate = targetFrameRate)
     }
 
     override suspend fun updateImageFormat(imageFormat: ImageOutputFormat) {
-        currentCameraSettings = currentCameraSettings.copy(imageFormat = imageFormat)
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(imageFormat = imageFormat)
     }
 
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {
-        currentCameraSettings = currentCameraSettings.copy(maxVideoDurationMillis = durationMillis)
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(maxVideoDurationMillis = durationMillis)
     }
 
     override suspend fun updateVideoQuality(videoQuality: VideoQuality) {
-        currentCameraSettings = currentCameraSettings.copy(videoQuality = videoQuality)
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(videoQuality = videoQuality)
     }
 
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
-        currentCameraSettings =
-            currentCameraSettings.copy(audioEnabled = isAudioEnabled)
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(audioEnabled = isAudioEnabled)
     }
 
     override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        currentCameraSettings =
-            currentCameraSettings.copy(concurrentCameraMode = concurrentCameraMode)
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(concurrentCameraMode = concurrentCameraMode)
     }
 }
