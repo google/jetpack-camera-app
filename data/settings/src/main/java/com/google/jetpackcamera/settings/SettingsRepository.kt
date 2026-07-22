@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -24,7 +25,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import kotlinx.coroutines.flow.Flow
@@ -46,7 +46,7 @@ interface SettingsRepository {
 
     suspend fun updateAspectRatio(aspectRatio: AspectRatio)
 
-    suspend fun updateStreamConfig(streamConfig: StreamConfig)
+    suspend fun updateSelectedCameraEffect(selectedCameraEffect: CameraEffectId)
 
     suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority)
 

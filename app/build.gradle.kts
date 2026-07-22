@@ -184,6 +184,9 @@ dependencies {
 
     // Postprocess implementations
     implementation(project(":data:camera:postprocess"))
+
+    implementation(project(":core:camera:low-light-playservices"))
+    implementation(project(":core:camera:effects:single-stream"))
 }
 
 // Allow references to generated code

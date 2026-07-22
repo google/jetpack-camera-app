@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -30,7 +31,6 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -197,11 +197,11 @@ interface CameraSystem {
     suspend fun tapToFocus(x: Float, y: Float)
 
     /**
-     * Sets the stream configuration for the camera.
+     * Sets the camera effect.
      *
-     * @param streamConfig The [StreamConfig] to set.
+     * @param cameraEffect The ID of the camera effect to set.
      */
-    suspend fun setStreamConfig(streamConfig: StreamConfig)
+    suspend fun setCameraEffect(cameraEffect: CameraEffectId)
 
     /**
      * Sets the dynamic range for the camera.
@@ -303,7 +303,7 @@ interface CameraSystem {
         ) {
             applyDiff(new, CameraAppSettings::cameraLensFacing, cameraSystem::setLensFacing)
             applyDiff(new, CameraAppSettings::flashMode, cameraSystem::setFlashMode)
-            applyDiff(new, CameraAppSettings::streamConfig, cameraSystem::setStreamConfig)
+            applyDiff(new, CameraAppSettings::selectedCameraEffect, cameraSystem::setCameraEffect)
             applyDiff(new, CameraAppSettings::aspectRatio, cameraSystem::setAspectRatio)
             applyDiff(new, CameraAppSettings::stabilizationMode, cameraSystem::setStabilizationMode)
             applyDiff(new, CameraAppSettings::targetFrameRate, cameraSystem::setTargetFrameRate)
