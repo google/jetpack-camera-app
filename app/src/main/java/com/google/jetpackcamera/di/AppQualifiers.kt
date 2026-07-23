@@ -23,39 +23,39 @@ import javax.inject.Qualifier
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class DefaultFilePathGenerator
+internal annotation class DefaultFilePathGenerator
 
 /**
  * Identifies the fallback capture mode override when initializing repository settings.
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class DefaultCaptureModeOverride
+internal annotation class DefaultCaptureModeOverride
 
 /**
  * Identifies the default media saving location policy (e.g. device storage vs app cache).
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class DefaultSaveMode
+internal annotation class DefaultSaveMode
 
 /**
  * Identifies the CPU-bound [kotlinx.coroutines.CoroutineDispatcher] used for general computation.
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class DefaultDispatcher
+internal annotation class DefaultDispatcher
 
 /**
  * Identifies the I/O-bound [kotlinx.coroutines.CoroutineDispatcher] used for disk and network tasks.
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class IODispatcher
+internal annotation class IODispatcher
 
 /**
  * Identifies the root application-level [kotlinx.coroutines.CoroutineScope] tied to SingletonComponent lifecycle.
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class DefaultCoroutineScope
+internal annotation class DefaultCoroutineScope

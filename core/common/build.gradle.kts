@@ -67,7 +67,6 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.kotlinx.atomicfu)
     implementation(libs.androidx.tracing)
-    implementation("javax.inject:javax.inject:1")
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
