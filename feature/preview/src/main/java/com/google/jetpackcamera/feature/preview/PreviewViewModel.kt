@@ -188,7 +188,7 @@ class PreviewViewModel @Inject constructor(
         updateLastCapturedMediaCallback = {
             viewModelScope.launch {
                 trackedCaptureUiState.update { old ->
-                    old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
+                    old.copy(recentCapturedMedia = mediaRepository.lastCapturedMedia.value)
                 }
             }
         },
