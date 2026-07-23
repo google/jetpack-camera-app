@@ -24,8 +24,16 @@ import kotlinx.coroutines.flow.StateFlow
  */
 interface MediaRepository {
     val currentMedia: StateFlow<MediaDescriptor>
+
+    /**
+     * A [StateFlow] that emits the most recently captured media (image or video) from the MediaStore.
+     *
+     * The flow will emit a new [MediaDescriptor] whenever a new media item is saved to the
+     * MediaStore. The initial value is the most recent media available at the time of collection.
+     */
+    val lastCapturedMedia: StateFlow<MediaDescriptor>
+
     suspend fun setCurrentMedia(pendingMedia: MediaDescriptor)
-    suspend fun getLastCapturedMedia(): MediaDescriptor
 
     suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean
 
@@ -50,13 +58,13 @@ sealed interface MediaDescriptor {
         val thumbnail: Bitmap?
         val isCached: Boolean
 
-        class Image(
+        data class Image(
             override val uri: Uri,
             override val thumbnail: Bitmap?,
             override val isCached: Boolean = false
         ) : Content
 
-        class Video(
+        data class Video(
             override val uri: Uri,
             override val thumbnail: Bitmap?,
             override val isCached: Boolean = false

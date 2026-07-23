@@ -153,6 +153,7 @@ dependencies {
 
     // Access settings & model data
     implementation(project(":data:settings"))
+    implementation(project(":data:media"))
     implementation(project(":core:settings:datastore-prefs"))
     implementation(project(":core:settings"))
     implementation(project(":core:model"))

@@ -18,22 +18,25 @@ package com.google.jetpackcamera.ui.components.capture
 import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -52,7 +55,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
  * A composable that displays thumbnail image that can be clicked to open the full media in
  * post-capture
  *
- * @param imageWellUiState the [ImageWellUiState.LastCapture] for this component
+ * @param imageWellUiState the [ImageWellUiState] for this component
  * @param onClick the callback for when the image well is clicked
  * @param modifier the modifier for this component
  * @param shape the shape of the image well
@@ -61,13 +64,18 @@ import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun ImageWell(
-    imageWellUiState: ImageWellUiState.Content,
+    imageWellUiState: ImageWellUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(16.dp),
     enabled: Boolean = true
 ) {
-    val lastCapture = imageWellUiState.mediaDescriptor
+    val currentContent = (imageWellUiState as? ImageWellUiState.Content)?.mediaDescriptor
+    var lastValidContent by remember { mutableStateOf<MediaDescriptor.Content?>(null) }
+
+    if (currentContent != null) {
+        lastValidContent = currentContent
+    }
 
     Box(
         modifier = modifier
@@ -77,24 +85,37 @@ fun ImageWell(
             .clip(shape)
             .clickable(onClick = onClick, enabled = enabled)
     ) {
-        AnimatedContent(
-            targetState = lastCapture,
-            label = "ImageWellAnimation",
-            transitionSpec = {
-                (
-                    fadeIn() + expandHorizontally() +
-                        scaleIn(animationSpec = spring(0.8f))
-                    ).togetherWith(fadeOut())
-            }
-        ) { contentDesc ->
-            contentDesc.thumbnail?.let {
-                Image(
-                    bitmap = it.asImageBitmap(),
-                    contentDescription = stringResource(
-                        id = R.string.image_well_content_description
-                    ),
-                    contentScale = ContentScale.Crop
-                )
+        lastValidContent?.let { targetContent ->
+            AnimatedContent(
+                targetState = targetContent,
+                modifier = Modifier.fillMaxSize(),
+                label = "ImageWellAnimation",
+                contentKey = { it.uri },
+                transitionSpec = {
+                    val enter = slideInVertically(
+                        initialOffsetY = { -it },
+                        animationSpec = tween(300)
+                    )
+                    val exit = slideOutVertically(
+                        targetOffsetY = { it },
+                        animationSpec = tween(300)
+                    )
+                    enter.togetherWith(exit).apply {
+                        targetContentZIndex = 1f
+                    }
+                }
+            ) { contentDesc ->
+                contentDesc.thumbnail?.let { bitmap ->
+                    val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
+                    Image(
+                        bitmap = imageBitmap,
+                        modifier = Modifier.fillMaxSize(),
+                        contentDescription = stringResource(
+                            id = R.string.image_well_content_description
+                        ),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
         }
     }

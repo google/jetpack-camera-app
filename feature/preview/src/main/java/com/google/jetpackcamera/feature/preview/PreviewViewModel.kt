@@ -185,15 +185,16 @@ class PreviewViewModel @Inject constructor(
 
     val imageWellController: ImageWellController = ImageWellControllerImpl(
         mediaRepository = mediaRepository,
-        updateLastCapturedMediaCallback = {
-            viewModelScope.launch {
-                trackedCaptureUiState.update { old ->
-                    old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
-                }
-            }
-        },
         coroutineContext = viewModelScope.coroutineContext
     )
+
+    init {
+        viewModelScope.launch {
+            mediaRepository.lastCapturedMedia.collect { media ->
+                trackedCaptureUiState.update { old -> old.copy(recentCapturedMedia = media) }
+            }
+        }
+    }
 
     val cameraController: CameraController = CameraControllerImpl(
         initializationDeferred = initializationDeferred,
