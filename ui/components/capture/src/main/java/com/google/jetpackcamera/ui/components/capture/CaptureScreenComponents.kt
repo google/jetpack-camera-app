@@ -49,11 +49,15 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -65,13 +69,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -92,7 +97,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
@@ -117,6 +124,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -129,9 +137,10 @@ private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
 private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
 
 /**
- * A composable that displays the elapsed time of a video recording in a "MM:SS" format.
+ * A composable that displays the elapsed time of a video recording formatted as minutes and seconds.
  * This text is only visible during an active recording.
  *
+ * @param modifier the modifier for this component.
  * @param elapsedTimeUiStateProvider the provider for [ElapsedTimeUiState] for this component.
  */
 @Composable
@@ -139,17 +148,43 @@ fun ElapsedTimeText(
     modifier: Modifier = Modifier,
     elapsedTimeUiStateProvider: () -> ElapsedTimeUiState
 ) {
-    val state = elapsedTimeUiStateProvider()
-    if (state is ElapsedTimeUiState.Enabled) {
-        Text(
-            modifier = modifier,
-            text = state.elapsedTimeNanos.nanoseconds
-                .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
-            textAlign = TextAlign.Center,
-            style = LocalTextStyle.current.copy(
-                fontFeatureSettings = "tnum"
+    // derivedStateOf prevents recomposing ElapsedTimeText when the timer ticks.
+    // Recomposition only occurs when visibility (isEnabled) changes.
+    val isEnabled by remember(elapsedTimeUiStateProvider) {
+        derivedStateOf {
+            elapsedTimeUiStateProvider() is ElapsedTimeUiState.Enabled
+        }
+    }
+    if (isEnabled) {
+        // derivedStateOf defers reading the provider to the Box content scope, ensuring only the Text component recomposes every second.
+        val formattedTime by remember(elapsedTimeUiStateProvider) {
+            derivedStateOf {
+                val state = elapsedTimeUiStateProvider()
+                if (state is ElapsedTimeUiState.Enabled) {
+                    state.elapsedTimeNanos.nanoseconds
+                        .toComponents { minutes, seconds, _ -> "%d:%02d".format(minutes, seconds) }
+                } else {
+                    ""
+                }
+            }
+        }
+        Box(
+            modifier = modifier
+                .defaultMinSize(minWidth = 72.dp, minHeight = 32.dp)
+                .background(color = Color(0xFFED0000), shape = CircleShape)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = formattedTime,
+                textAlign = TextAlign.Center,
+                color = Color.White,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFeatureSettings = "tnum"
+                )
             )
-        )
+        }
     }
 }
 
@@ -946,6 +981,54 @@ private fun FocusMeteringIndicator(
                         CircleShape
                     )
                     .size(TAP_TO_FOCUS_INDICATOR_SIZE)
+            )
+        }
+    }
+}
+
+@Preview(name = "Elapsed Time", showBackground = true, backgroundColor = 0xFF000000)
+@Composable
+private fun ElapsedTimeTextPreview() {
+    // Assuming you have a JcaTheme in the google/jetpack-camera-app repository,
+    // you would typically wrap this in your custom theme.
+    MaterialTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Scenario 1: Initial recording state (0:00)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(0L)
+                }
+            )
+
+            // Scenario 2: Standard recording state
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(30.seconds.inWholeNanoseconds)
+                }
+            )
+
+            // Scenario 3: Over a minute (1:05)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(65.seconds.inWholeNanoseconds)
+                }
+            )
+
+            // Scenario 4: Over 10 minutes (10:05)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(605.seconds.inWholeNanoseconds)
+                }
+            )
+
+            // Scenario 4: Unavailable state (renders nothing, verifying the if-condition)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Unavailable
+                }
             )
         }
     }
