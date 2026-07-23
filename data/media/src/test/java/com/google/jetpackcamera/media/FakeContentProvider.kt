@@ -105,16 +105,25 @@ class FakeContentProvider : ContentProvider() {
                 }
             }
 
-            // Simple support for DISPLAY_NAME LIKE ?
-            if (selection != null && selection.contains(
-                    MediaStore.MediaColumns.DISPLAY_NAME
-                ) && selectionArgs != null
-            ) {
-                val pattern = selectionArgs[0].replace("%", ".*").replace("_", ".")
-                val regex = Regex(pattern)
-                filteredMedia = filteredMedia.filter {
-                    val name = it.value.getAsString(MediaStore.MediaColumns.DISPLAY_NAME) ?: ""
-                    regex.matches(name)
+            // Simple support for RELATIVE_PATH LIKE ? AND OWNER_PACKAGE_NAME = ?
+            // or DISPLAY_NAME LIKE ?
+            if (selection != null) {
+                if (selection.contains(MediaStore.MediaColumns.RELATIVE_PATH) && selectionArgs != null && selectionArgs.size >= 2) {
+                    val pathPattern = selectionArgs[0].replace("%", ".*").replace("_", ".")
+                    val ownerPattern = selectionArgs[1]
+                    val pathRegex = Regex(pathPattern)
+                    filteredMedia = filteredMedia.filter {
+                        val path = it.value.getAsString(MediaStore.MediaColumns.RELATIVE_PATH) ?: ""
+                        val owner = it.value.getAsString(MediaStore.MediaColumns.OWNER_PACKAGE_NAME) ?: context?.packageName
+                        pathRegex.matches(path) && owner == ownerPattern
+                    }
+                } else if (selection.contains(MediaStore.MediaColumns.DISPLAY_NAME) && selectionArgs != null) {
+                    val pattern = selectionArgs[0].replace("%", ".*").replace("_", ".")
+                    val regex = Regex(pattern)
+                    filteredMedia = filteredMedia.filter {
+                        val name = it.value.getAsString(MediaStore.MediaColumns.DISPLAY_NAME) ?: ""
+                        regex.matches(name)
+                    }
                 }
             }
 

@@ -272,6 +272,7 @@ class LocalMediaRepository
         val projection = mutableListOf(MediaStore.MediaColumns.DISPLAY_NAME)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             projection.add(MediaStore.MediaColumns.OWNER_PACKAGE_NAME)
+            projection.add(MediaStore.MediaColumns.RELATIVE_PATH)
         }
 
         try {
