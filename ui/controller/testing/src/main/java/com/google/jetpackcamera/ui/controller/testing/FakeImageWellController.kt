@@ -24,10 +24,9 @@ import com.google.jetpackcamera.ui.controller.ImageWellController
  * @param imageWellToRepositoryAction The action to perform when [imageWellToRepository] is called.
  */
 class FakeImageWellController(
-    var imageWellToRepositoryAction: (MediaDescriptor) -> Unit = {},
+    var imageWellToRepositoryAction: (MediaDescriptor) -> Unit = {}
 ) : ImageWellController {
     override fun imageWellToRepository(mediaDescriptor: MediaDescriptor) {
         imageWellToRepositoryAction(mediaDescriptor)
     }
-
 }

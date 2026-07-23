@@ -28,5 +28,4 @@ interface ImageWellController {
      * @param mediaDescriptor The media descriptor to be set.
      */
     fun imageWellToRepository(mediaDescriptor: MediaDescriptor)
-
 }

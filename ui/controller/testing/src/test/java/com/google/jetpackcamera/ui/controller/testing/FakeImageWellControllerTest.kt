@@ -34,6 +34,4 @@ class FakeImageWellControllerTest {
         controller.imageWellToRepository(descriptor)
         assertThat(calledDescriptor).isEqualTo(descriptor)
     }
-
 }
-
