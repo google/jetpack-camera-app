@@ -1224,7 +1224,10 @@ private suspend fun runVideoRecording(
             for (event in videoControlEvents) {
                 when (event) {
                     is VideoCaptureControlEvent.StartRecordingEvent ->
-                        throw IllegalStateException("A recording is already in progress")
+                        Log.w(
+                            TAG,
+                            "A recording is already in progress, ignoring extra StartRecordingEvent"
+                        )
 
                     VideoCaptureControlEvent.StopRecordingEvent -> {
                         recordingSettingsUpdater.cancel()

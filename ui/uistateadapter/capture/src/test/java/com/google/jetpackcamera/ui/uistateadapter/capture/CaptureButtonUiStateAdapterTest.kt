@@ -95,7 +95,7 @@ class CaptureButtonUiStateAdapterTest {
     }
 
     @Test
-    fun from_cameraRunning_recordingStarting_returnsIdleAndEnabled() {
+    fun from_cameraRunning_recordingStarting_returnsPendingRecording() {
         val cameraState = defaultCameraState.copy(
             videoRecordingState = VideoRecordingState.Starting(null)
         )
@@ -105,7 +105,8 @@ class CaptureButtonUiStateAdapterTest {
             lockedState = false
         )
 
-        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Enabled.Idle::class.java)
+        assertThat(uiState)
+            .isInstanceOf(CaptureButtonUiState.Enabled.Recording.Pending::class.java)
         assertThat(uiState.isEnabled).isTrue()
     }
 }
