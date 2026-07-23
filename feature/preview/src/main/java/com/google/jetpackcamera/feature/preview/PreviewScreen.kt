@@ -228,7 +228,6 @@ fun PreviewScreen(
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P ||
                 readStoragePermission.status.isGranted
             ) {
-                viewModel.imageWellController.updateLastCapturedMedia()
             }
         }
     }

@@ -22,17 +22,12 @@ import com.google.jetpackcamera.ui.controller.ImageWellController
  * A fake implementation of [ImageWellController] that allows for configuring actions for its methods.
  *
  * @param imageWellToRepositoryAction The action to perform when [imageWellToRepository] is called.
- * @param updateLastCapturedMediaAction The action to perform when [updateLastCapturedMedia] is called.
  */
 class FakeImageWellController(
     var imageWellToRepositoryAction: (MediaDescriptor) -> Unit = {},
-    var updateLastCapturedMediaAction: () -> Unit = {}
 ) : ImageWellController {
     override fun imageWellToRepository(mediaDescriptor: MediaDescriptor) {
         imageWellToRepositoryAction(mediaDescriptor)
     }
 
-    override fun updateLastCapturedMedia() {
-        updateLastCapturedMediaAction()
-    }
 }

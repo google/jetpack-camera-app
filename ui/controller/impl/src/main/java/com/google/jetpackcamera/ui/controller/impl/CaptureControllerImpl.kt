@@ -113,7 +113,7 @@ class CaptureControllerImpl(
                         }
                     }
                     if (saveLocation !is SaveLocation.Cache) {
-                        imageWellController.updateLastCapturedMedia()
+                        // MediaRepository's flow will automatically emit the new item
                     } else {
                         savedUri?.let {
                             scope.launch {
@@ -164,7 +164,7 @@ class CaptureControllerImpl(
                             }
 
                             if (saveLocation !is SaveLocation.Cache) {
-                                imageWellController.updateLastCapturedMedia()
+                                // MediaRepository's flow will automatically emit the new item
                             } else {
                                 scope.launch {
                                     postCurrentMediaToMediaRepository(

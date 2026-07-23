@@ -35,11 +35,5 @@ class FakeImageWellControllerTest {
         assertThat(calledDescriptor).isEqualTo(descriptor)
     }
 
-    @Test
-    fun updateLastCapturedMedia_invokesAction() {
-        var called = false
-        val controller = FakeImageWellController(updateLastCapturedMediaAction = { called = true })
-        controller.updateLastCapturedMedia()
-        assertThat(called).isTrue()
-    }
 }
+
