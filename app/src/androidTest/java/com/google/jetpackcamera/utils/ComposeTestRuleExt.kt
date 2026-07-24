@@ -467,7 +467,7 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
 }
 
 fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
-    waitUntil(timeoutMillis = 1000) {
+    waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
         onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
     }
     onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).fetchSemanticsNode(
@@ -754,7 +754,7 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
                 .assume(isEnabled()) { "Device does not support HDR." }
                 .performClick()
         }
-        waitUntil(1000) { isHdrEnabled() == enabled }
+        waitUntil(DEFAULT_TIMEOUT_MILLIS) { isHdrEnabled() == enabled }
     }
 }
 
@@ -762,7 +762,7 @@ fun ComposeTestRule.setCaptureMode(captureMode: CaptureMode) {
     visitQuickSettings {
         searchForQuickSetting(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
 
-        waitUntil(timeoutMillis = 1000) {
+        waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
             onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
         }
         // check that current capture mode != given capture mode
@@ -777,7 +777,7 @@ fun ComposeTestRule.setCaptureMode(captureMode: CaptureMode) {
                 .assume(isEnabled())
                 .performClick()
 
-            waitUntil(timeoutMillis = 1_000) {
+            waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
                 onNodeWithTag(optionButtonTag).isDisplayed()
             }
 
