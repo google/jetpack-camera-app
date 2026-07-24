@@ -633,7 +633,7 @@ class CameraXCameraSystem(
         }.also { outputFileResults ->
             outputFileResults.savedUri?.let {
                 for ((key, value) in imagePostProcessors) {
-                    value.get().postProcessImage(it)
+                    value.get().postProcessImage(it, contentResolver)
                     Log.d(TAG, "Post processed image with $key")
                 }
                 Log.d(TAG, "Saved image to $it")
