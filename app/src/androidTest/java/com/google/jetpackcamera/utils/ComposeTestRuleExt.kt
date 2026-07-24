@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 package com.google.jetpackcamera.utils
+
 import android.content.Context
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ComposeTimeoutException
@@ -147,6 +149,7 @@ fun ComposeTestRule.wait(timeoutMillis: Long) {
         /* do nothing, we just want to time out*/
     }
 }
+
 fun ComposeTestRule.waitForCaptureButton(timeoutMillis: Long = APP_START_TIMEOUT_MILLIS) {
     // Wait for the capture button to be displayed and enabled
     waitUntil(timeoutMillis = timeoutMillis) {
@@ -154,8 +157,32 @@ fun ComposeTestRule.waitForCaptureButton(timeoutMillis: Long = APP_START_TIMEOUT
     }
 }
 
-fun ComposeTestRule.waitForNodeWithTag(tag: String, timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS) {
-    waitUntil(timeoutMillis = timeoutMillis) { onNodeWithTag(tag).isDisplayed() }
+fun ComposeTestRule.waitForNodeWithTag(
+    tag: String,
+    timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
+    stateDescription: String? = null
+) {
+    waitUntil(timeoutMillis = timeoutMillis) {
+        var matcher = hasTestTag(tag)
+        if (stateDescription != null) {
+            matcher = matcher and hasStateDescription(stateDescription)
+        }
+        onNode(matcher).isDisplayed()
+    }
+}
+
+fun <T> ComposeTestRule.waitForNodeWithTagAndSemantics(
+    tag: String,
+    timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
+    semanticsProperty: Pair<SemanticsPropertyKey<T>, T>
+) {
+    waitUntil(timeoutMillis = timeoutMillis) {
+        val matcher = hasTestTag(tag) and SemanticsMatcher.expectValue(
+            semanticsProperty.first,
+            semanticsProperty.second
+        )
+        onNode(matcher).isDisplayed()
+    }
 }
 
 fun ComposeTestRule.waitForNodeWithTagToDisappear(
