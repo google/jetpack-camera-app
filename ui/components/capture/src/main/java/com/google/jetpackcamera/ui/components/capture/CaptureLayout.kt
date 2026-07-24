@@ -34,10 +34,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -80,6 +86,16 @@ fun PreviewLayout(
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var viewfinderBottom by remember { mutableFloatStateOf(0f) }
+    var buttonTop by remember { mutableFloatStateOf(0f) }
+    var buttonBottom by remember { mutableFloatStateOf(0f) }
+
+    val buttonHeight = buttonBottom - buttonTop
+    val isOverlapping = (viewfinderBottom - buttonTop) >= buttonHeight / 2 &&
+        buttonHeight > 0 &&
+        viewfinderBottom > 0
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = {
@@ -92,7 +108,11 @@ fun PreviewLayout(
         Box(modifier = modifier.background(Color.Black)) {
             Column {
                 indicatorRow(Modifier.statusBarsPadding())
-                viewfinder(Modifier)
+                viewfinder(
+                    Modifier.onGloballyPositioned { coordinates ->
+                        viewfinderBottom = coordinates.boundsInWindow().bottom
+                    }
+                )
             }
 
             Box(
@@ -102,17 +122,29 @@ fun PreviewLayout(
                     .safeDrawingPadding()
 
             ) {
-                debugVisibilityWrapper {
-                    VerticalMaterialControls(
-                        captureButton = captureButton,
-                        imageWell = imageWell,
-                        flipCameraButton = flipCameraButton,
-                        quickSettingsToggleButton = quickSettingsButton,
-                        captureModeToggleSwitch = captureModeToggle,
-                        bottomSheetQuickSettings = quickSettingsOverlay,
-                        zoomControls = zoomLevelDisplay,
-                        elapsedTimeDisplay = elapsedTimeDisplay
-                    )
+                val backgroundStyle = if (isOverlapping) {
+                    ShutterBackgroundStyle.BLACK_60
+                } else {
+                    ShutterBackgroundStyle.WHITE_20
+                }
+
+                CompositionLocalProvider(LocalShutterBackgroundStyle provides backgroundStyle) {
+                    debugVisibilityWrapper {
+                        VerticalMaterialControls(
+                            buttonModifier = Modifier.onGloballyPositioned { coordinates ->
+                                buttonTop = coordinates.boundsInWindow().top
+                                buttonBottom = coordinates.boundsInWindow().bottom
+                            },
+                            captureButton = captureButton,
+                            imageWell = imageWell,
+                            flipCameraButton = flipCameraButton,
+                            quickSettingsToggleButton = quickSettingsButton,
+                            captureModeToggleSwitch = captureModeToggle,
+                            bottomSheetQuickSettings = quickSettingsOverlay,
+                            zoomControls = zoomLevelDisplay,
+                            elapsedTimeDisplay = elapsedTimeDisplay
+                        )
+                    }
                 }
                 // controls overlay
                 snackBar(Modifier, snackbarHostState)
@@ -126,6 +158,7 @@ fun PreviewLayout(
 @Composable
 private fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
+    buttonModifier: Modifier = Modifier,
     captureButton: @Composable (Modifier) -> Unit,
     zoomControls: @Composable (Modifier) -> Unit,
     imageWell: @Composable (Modifier) -> Unit,
@@ -162,7 +195,7 @@ private fun VerticalMaterialControls(
                                 imageWell(Modifier)
                             }
                         }
-                        captureButton(Modifier)
+                        captureButton(buttonModifier)
 
                         // right capturebutton item
                         Box(
