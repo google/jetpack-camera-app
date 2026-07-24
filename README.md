@@ -1,5 +1,5 @@
 <img src="docs/images/readme-banner-uhdr.jpg" alt="Jetpack Camera App Banner" width="2560" height="1440" style="width: 100%; height: auto; border-radius: 3.125% / 5.56%;">
-<p align="end"><sup>Ultra HDR image created with <a href="https://github.com/google/libultrahdr">libultrahdr</a></sup></p>
+<p style="text-align: right;"><sup>Ultra HDR image created with <a href="https://github.com/google/libultrahdr">libultrahdr</a></sup></p>
 
 # Jetpack Camera App 📸
 
@@ -12,7 +12,7 @@ OEMs looking to validate their camera feature implementations.
 
 This project uses the gradle build system, and can be imported directly into Android Studio.
 
-Currently, Jetpack Camera App is built using the Android Gradle Plugin 8.10.0, which is only
+Currently, Jetpack Camera App is built using the Android Gradle Plugin 8.10.1, which is only
 compatible with Android Studio Meerkat or newer.
 
 ## Pre-push Hook (Recommended)
@@ -30,7 +30,6 @@ git config core.hooksPath scripts/git-hooks
 This command tells Git to use the hooks located in the `scripts/git-hooks/` directory for this
 repository only. It will not affect your other Git projects. After running the command, the hook
 will automatically run every time you push.
-
 
 ### Bypassing the Hook
 
@@ -105,8 +104,8 @@ point for utilizing the app's capabilities.
 ### Viewfinder
 
 The viewfinder provides a real-time preview of the camera's sensor output, accurately displaying the
-scene with correct scaling and orientation. It functions as a "What You See Is What You Get" (
-WYSIWYG) display, showing only the pixels that will be captured in the final image or video, when
+scene with correct scaling and orientation. It functions as a "What You See Is What You Get"
+(WYSIWYG) display, showing only the pixels that will be captured in the final image or video, when
 hardware and processing capabilities allow (see limitations). This ensures that the displayed
 preview precisely reflects the captured content, allowing for accurate composition and framing.
 
@@ -240,8 +239,8 @@ including:
   constant illumination during video capture.
 * **Auto:** Automatically determines the need for illumination based on ambient light conditions for
   image capture.
-* **Low-Light Boost:** Utilizes Camera2's `ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY` auto-exposure (
-  AE) mode to enhance brightness in low-light conditions, if the device supports it.
+* **Low-Light Boost:** Utilizes Camera2's `ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY` auto-exposure
+  (AE) mode to enhance brightness in low-light conditions, if the device supports it.
 * **Off:** Disables all scene illumination.
 
 #### How to Enable / Use
@@ -649,12 +648,14 @@ the user interface and does not impact the captured images or videos.
 2. Tap the “Set Dark Mode” setting under “App Settings”.
 3. Select the desired mode.
 
+---
+
 ### Media Saving and Review
 
 JCA supports two different media saving workflows, controlled by an intent extra. This allows developers to test and validate different user experiences for capturing and saving media.
 
-*   **Immediate Save (Default):** This is the default behavior. When a photo or video is captured, it is immediately saved to the device's MediaStore.
-*   **Cache-and-Review:** In this mode, captured media is saved to a temporary cache. After capture, the user is taken to a post-capture review screen where they can view the media and decide to either save it to the MediaStore or delete it. **Note: When JCA is launched via an `ACTION_IMAGE_CAPTURE` or `ACTION_VIDEO_CAPTURE` intent, the cache-and-review mode is bypassed, and media is saved directly to the provided output URI.**
+* **Immediate Save (Default):** This is the default behavior. When a photo or video is captured, it is immediately saved to the device's MediaStore.
+* **Cache-and-Review:** In this mode, captured media is saved to a temporary cache. After capture, the user is taken to a post-capture review screen where they can view the media and decide to either save it to the MediaStore or delete it. **Note: When JCA is launched via an `ACTION_IMAGE_CAPTURE` or `ACTION_VIDEO_CAPTURE` intent, the cache-and-review mode is bypassed, and media is saved directly to the provided output URI.**
 
 #### How to Enable Cache-and-Review
 
