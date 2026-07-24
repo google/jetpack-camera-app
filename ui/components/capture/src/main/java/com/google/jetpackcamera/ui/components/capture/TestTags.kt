@@ -65,3 +65,17 @@ const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY =
     "quick_settings_focused_capture_mode_btn_option_video_only"
 const val BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY =
     "quick_settings_focused_capture_mode_btn_option_image_only"
+
+const val BTN_QUICK_SETTINGS_FLASH_OPTION_OFF = "btn_quick_settings_flash_option_off"
+const val BTN_QUICK_SETTINGS_FLASH_OPTION_ON = "btn_quick_settings_flash_option_on"
+const val BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO = "btn_quick_settings_flash_option_auto"
+const val BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST =
+    "btn_quick_settings_flash_option_low_light_boost"
+
+const val BTN_QUICK_SETTINGS_HDR_OPTION_ON = "btn_quick_settings_hdr_option_on"
+const val BTN_QUICK_SETTINGS_HDR_OPTION_OFF = "btn_quick_settings_hdr_option_off"
+
+const val ROW_QUICK_SETTINGS_CAPTURE_MODE = "row_quick_settings_capture_mode"
+const val ROW_QUICK_SETTINGS_HDR = "row_quick_settings_hdr"
+const val ROW_QUICK_SETTINGS_ASPECT_RATIO = "row_quick_settings_aspect_ratio"
+const val ROW_QUICK_SETTINGS_FLASH = "row_quick_settings_flash"

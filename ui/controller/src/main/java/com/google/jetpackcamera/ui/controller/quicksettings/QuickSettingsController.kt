@@ -21,7 +21,6 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 
 /**
  * Interface for controlling quick settings.
@@ -31,13 +30,6 @@ interface QuickSettingsController {
      * Toggles the visibility of the quick settings menu.
      */
     fun toggleQuickSettings()
-
-    /**
-     * Sets the currently focused quick setting, used for expanding a setting's options.
-     *
-     * @param focusedQuickSetting The quick setting to focus.
-     */
-    fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting)
 
     /**
      * Sets the lens facing (e.g., front or back camera).

@@ -53,5 +53,11 @@ enum class DisabledReason(
     ),
     HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED(
         R.string.toast_hdr_simultaneous_image_video_unsupported
+    ),
+    FLASH_UNSUPPORTED_ON_LENS(
+        R.string.toast_flash_unsupported_on_lens
+    ),
+    LLB_DISABLED_BY_HDR(
+        R.string.toast_llb_disabled_by_hdr
     )
 }

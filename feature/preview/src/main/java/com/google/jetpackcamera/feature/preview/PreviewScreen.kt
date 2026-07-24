@@ -361,8 +361,8 @@ private fun ContentScreen(
     val flashModeIndicatorLambda = remember {
         @Composable { modifier: Modifier ->
             FlashModeIndicator(
-                modifier = modifier,
-                flashModeUiStateProvider = { flashModeState.value }
+                flashModeUiState = flashModeState.value,
+                modifier = modifier
             )
         }
     }
@@ -597,7 +597,8 @@ private fun ContentScreen(
                         quickSettingsController.toggleQuickSettings()
                         onNavigateToSettings()
                     },
-                    quickSettingsController = quickSettingsController
+                    quickSettingsController = quickSettingsController,
+                    showMoreSettingsButton = true
                 )
             }
             Unit

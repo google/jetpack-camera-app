@@ -25,7 +25,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -40,15 +39,14 @@ import kotlinx.coroutines.launch
  * [trackedCaptureUiState].
  *
  * @param trackedCaptureUiState The state flow to update with quick settings information.
- * @param scope The coroutine scope for launching camera operations.
+ * @param externalCaptureMode The external capture mode active.
  * @param cameraSystem The camera system to control.
- * @param externalCaptureMode The current external capture mode.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class QuickSettingsControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    private val cameraSystem: CameraSystem,
     private val externalCaptureMode: ExternalCaptureMode,
+    private val cameraSystem: CameraSystem,
     coroutineContext: CoroutineContext
 ) : QuickSettingsController {
     private val job = Job(parent = coroutineContext[Job.Key])
@@ -56,12 +54,6 @@ class QuickSettingsControllerImpl(
     override fun toggleQuickSettings() {
         trackedCaptureUiState.update { old ->
             old.copy(isQuickSettingsOpen = !old.isQuickSettingsOpen)
-        }
-    }
-
-    override fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting) {
-        trackedCaptureUiState.update { old ->
-            old.copy(focusedQuickSetting = focusedQuickSetting)
         }
     }
 

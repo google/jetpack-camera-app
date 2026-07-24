@@ -69,6 +69,7 @@ When reviewing a pull request, focus on the following key areas:
 8.  **Resource Management**
     * **No Hardcoded Strings:** Forbid hardcoded user-facing strings in composables. All text should be extracted into `strings.xml` to support localization and make updates easier.
     * **Prefer Vector Drawables:** For icons and simple graphics, vector drawables (SVGs) should be preferred over raster images (PNGs) to reduce APK size and ensure sharp rendering on all screen densities.
+    * **Delete Unused Resources:** When refactoring or removing components, ensure that any associated resources (such as strings in `strings.xml` or icons/drawables in the `res/drawable` directory) that are no longer used anywhere in the project are deleted to reduce the final file size and maintain codebase cleanliness.
 
 9.  **Readability, Logging, and Documentation**
     *   **Code Clarity:** Is the code clear, concise, and easy to understand? Are function and variable names descriptive?

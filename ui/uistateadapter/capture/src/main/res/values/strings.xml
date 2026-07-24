@@ -29,4 +29,6 @@
     <string name="toast_hdr_video_unsupported_on_device">HDR video not supported on this device</string>
     <string name="toast_hdr_video_unsupported_on_lens">HDR video not supported by current lens</string>
     <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be bound simultaneously</string>
+    <string name="toast_flash_unsupported_on_lens">Flash not supported by current lens</string>
+    <string name="toast_llb_disabled_by_hdr">Low Light Boost is disabled when HDR is on</string>
 </resources>

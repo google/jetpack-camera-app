@@ -38,13 +38,10 @@ sealed interface QuickSettingsUiState {
      *
      * @param aspectRatioUiState The UI state for the aspect ratio setting.
      * @param captureModeUiState The UI state for the capture mode (e.g., photo vs. video) setting.
-     * @param concurrentCameraUiState The UI state for concurrent camera mode.
      * @param flashModeUiState The UI state for the flash mode setting.
      * @param flipLensUiState The UI state for the flip lens (front/back camera) button.
      * @param hdrUiState The UI state for the HDR (High Dynamic Range) setting.
      * @param quickSettingsIsOpen Indicates whether the quick settings panel is currently open.
-     * @param focusedQuickSetting The specific quick setting that is currently focused by the user,
-     * allowing for more detailed interaction (e.g., showing a sub-menu).
      */
     data class Available(
         val aspectRatioUiState: AspectRatioUiState,
@@ -52,21 +49,8 @@ sealed interface QuickSettingsUiState {
         val flashModeUiState: FlashModeUiState,
         val flipLensUiState: FlipLensUiState,
         val hdrUiState: HdrUiState,
-        val quickSettingsIsOpen: Boolean = false,
-        val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE
+        val quickSettingsIsOpen: Boolean = false
     ) : QuickSettingsUiState
 
     companion object
-}
-
-/**
- * Represents which individual quick setting is currently focused by the user.
- *
- * When a quick setting is focused, the UI may highlight it or show a sub-panel with more options
- * related to that setting.
- */
-enum class FocusedQuickSetting {
-    NONE,
-    ASPECT_RATIO,
-    CAPTURE_MODE
 }

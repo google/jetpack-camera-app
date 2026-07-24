@@ -21,6 +21,7 @@ import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -105,6 +106,7 @@ internal class HdrUiStateAdapterTest {
         assertThat(availableState.selectedImageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
         // Dynamic range should be forced to SDR because we are in IMAGE_ONLY
         assertThat(availableState.selectedDynamicRange).isEqualTo(DynamicRange.SDR)
+        assertThat(availableState.isSupported).isTrue()
     }
 
     @Test
@@ -130,7 +132,7 @@ internal class HdrUiStateAdapterTest {
     }
 
     @Test
-    fun from_imageOnlyMode_lowLightBoostOn_returnsUnavailable() {
+    fun from_imageOnlyMode_lowLightBoostOn_returnsAvailableWithIsSupportedFalse() {
         // Given in IMAGE_ONLY capture mode with Low Light Boost ON, even though Ultra HDR is supported
         val appSettings = defaultCameraAppSettings.copy(
             captureMode = CaptureMode.IMAGE_ONLY,
@@ -153,8 +155,10 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState =
             HdrUiState.from(appSettings, systemConstraints)
 
-        // Then HDR is unavailable because of the flash mode conflict
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
+        // Then HDR is visible but disabled because of the flash mode conflict
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
+        val availableState = hdrUiState as HdrUiState.Available
+        assertThat(availableState.isSupported).isFalse()
     }
 
     @Test
@@ -184,6 +188,7 @@ internal class HdrUiStateAdapterTest {
         assertThat(availableState.selectedDynamicRange).isEqualTo(DynamicRange.HLG10)
         // Image format should be forced to JPEG because we are in VIDEO_ONLY
         assertThat(availableState.selectedImageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        assertThat(availableState.isSupported).isTrue()
     }
 
     @Test
@@ -207,7 +212,7 @@ internal class HdrUiStateAdapterTest {
     }
 
     @Test
-    fun from_videoOnlyMode_lowLightBoostOn_returnsUnavailable() {
+    fun from_videoOnlyMode_lowLightBoostOn_returnsAvailableWithIsSupportedFalse() {
         // Given in VIDEO_ONLY capture mode with Low Light Boost ON, even though HDR video is supported
         val appSettings = defaultCameraAppSettings.copy(
             captureMode = CaptureMode.VIDEO_ONLY,
@@ -225,17 +230,18 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState =
             HdrUiState.from(appSettings, systemConstraints)
 
-        // Then HDR is unavailable because of the flash mode conflict
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
+        // Then HDR is available but not supported because of the flash mode conflict
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
+        val availableState = hdrUiState as HdrUiState.Available
+        assertThat(availableState.isSupported).isFalse()
     }
 
     @Test
-    fun from_videoOnlyMode_concurrentCameraActive_returnsUnavailable() {
-        // Given in VIDEO_ONLY mode with HLG10 supported, but concurrent camera is DUAL
+    fun from_videoOnlyMode_concurrentCameraOn_returnsAvailableWithIsSupportedFalse() {
+        // Given in VIDEO_ONLY capture mode with Concurrent Camera ON, even though HDR video is supported
         val appSettings = defaultCameraAppSettings.copy(
             captureMode = CaptureMode.VIDEO_ONLY,
-            concurrentCameraMode = ConcurrentCameraMode.DUAL,
-            dynamicRange = DynamicRange.HLG10
+            concurrentCameraMode = ConcurrentCameraMode.DUAL
         )
         val systemConstraints = CameraSystemConstraints(
             perLensConstraints = mapOf(
@@ -246,9 +252,79 @@ internal class HdrUiStateAdapterTest {
         )
 
         // When
-        val hdrUiState = HdrUiState.from(appSettings, systemConstraints)
+        val hdrUiState =
+            HdrUiState.from(appSettings, systemConstraints)
 
-        // Then HDR is unavailable due to concurrent camera conflict
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
+        // Then HDR is available but not supported because of the concurrent camera conflict
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
+        val availableState = hdrUiState as HdrUiState.Available
+        assertThat(availableState.isSupported).isFalse()
+    }
+
+    @Test
+    fun from_imageOnlyMode_hdrUnsupportedOnCurrentLensOnly_returnsDisabled() {
+        // Given in IMAGE_ONLY capture mode
+        // Current lens (BACK) does NOT support HDR, but FRONT lens DOES support HDR
+        val appSettings = defaultCameraAppSettings.copy(
+            captureMode = CaptureMode.IMAGE_ONLY,
+            cameraLensFacing = LensFacing.BACK
+        )
+        val systemConstraints = CameraSystemConstraints(
+            availableLenses = listOf(LensFacing.BACK, LensFacing.FRONT),
+            perLensConstraints = mapOf(
+                LensFacing.BACK to emptyCameraConstraints.copy(
+                    supportedImageFormatsMap = mapOf(
+                        false to setOf(ImageOutputFormat.JPEG)
+                    )
+                ),
+                LensFacing.FRONT to emptyCameraConstraints.copy(
+                    supportedImageFormatsMap = mapOf(
+                        false to setOf(
+                            ImageOutputFormat.JPEG,
+                            ImageOutputFormat.JPEG_ULTRA_HDR
+                        )
+                    )
+                )
+            )
+        )
+
+        // When
+        val hdrUiState =
+            HdrUiState.from(appSettings, systemConstraints)
+
+        // Then HDR is available but not supported (disabled)
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
+        val availableState = hdrUiState as HdrUiState.Available
+        assertThat(availableState.isSupported).isFalse()
+    }
+
+    @Test
+    fun from_videoOnlyMode_hdrUnsupportedOnCurrentLensOnly_returnsDisabled() {
+        // Given in VIDEO_ONLY capture mode
+        // Current lens (BACK) does NOT support HDR, but FRONT lens DOES support HDR
+        val appSettings = defaultCameraAppSettings.copy(
+            captureMode = CaptureMode.VIDEO_ONLY,
+            cameraLensFacing = LensFacing.BACK
+        )
+        val systemConstraints = CameraSystemConstraints(
+            availableLenses = listOf(LensFacing.BACK, LensFacing.FRONT),
+            perLensConstraints = mapOf(
+                LensFacing.BACK to emptyCameraConstraints.copy(
+                    supportedDynamicRanges = setOf(DynamicRange.SDR)
+                ),
+                LensFacing.FRONT to emptyCameraConstraints.copy(
+                    supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
+                )
+            )
+        )
+
+        // When
+        val hdrUiState =
+            HdrUiState.from(appSettings, systemConstraints)
+
+        // Then HDR is available but not supported (disabled)
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
+        val availableState = hdrUiState as HdrUiState.Available
+        assertThat(availableState.isSupported).isFalse()
     }
 }

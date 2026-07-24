@@ -22,24 +22,20 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 
 /**
  * A fake implementation of [QuickSettingsController] that allows for configuring actions for its methods.
  *
  * @param toggleQuickSettingsAction The action to perform when [toggleQuickSettings] is called.
- * @param setFocusedSettingAction The action to perform when [setFocusedSetting] is called.
  * @param setLensFacingAction The action to perform when [setLensFacing] is called.
  * @param setFlashAction The action to perform when [setFlash] is called.
  * @param setAspectRatioAction The action to perform when [setAspectRatio] is called.
  * @param setDynamicRangeAction The action to perform when [setDynamicRange] is called.
  * @param setImageFormatAction The action to perform when [setImageFormat] is called.
- * @param setConcurrentCameraModeAction The action to perform when [setConcurrentCameraMode] is called.
  * @param setCaptureModeAction The action to perform when [setCaptureMode] is called.
  */
 class FakeQuickSettingsController(
     var toggleQuickSettingsAction: () -> Unit = {},
-    var setFocusedSettingAction: (FocusedQuickSetting) -> Unit = {},
     var setLensFacingAction: (LensFacing) -> Unit = {},
     var setFlashAction: (FlashMode) -> Unit = {},
     var setAspectRatioAction: (AspectRatio) -> Unit = {},
@@ -49,10 +45,6 @@ class FakeQuickSettingsController(
 ) : QuickSettingsController {
     override fun toggleQuickSettings() {
         toggleQuickSettingsAction()
-    }
-
-    override fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting) {
-        setFocusedSettingAction(focusedQuickSetting)
     }
 
     override fun setLensFacing(lensFace: LensFacing) {

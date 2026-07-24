@@ -36,10 +36,12 @@ sealed interface HdrUiState {
      *
      * @param selectedImageFormat The currently selected image output format, which may be related to HDR.
      * @param selectedDynamicRange The currently selected [DynamicRange].
+     * @param isSupported Whether HDR is supported in the current state/configuration.
      */
     data class Available(
         val selectedImageFormat: ImageOutputFormat,
-        val selectedDynamicRange: DynamicRange
+        val selectedDynamicRange: DynamicRange,
+        val isSupported: Boolean = true
     ) : HdrUiState
 
     companion object
