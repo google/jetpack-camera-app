@@ -48,6 +48,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.action.ViewActions.swipeDown
 import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
+import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.FlashMode
@@ -187,24 +188,6 @@ fun ComposeTestRule.waitForSnackbarWithText(
     }
 }
 
-private fun ComposeTestRule.idleForVideoDuration(
-    durationMillis: Long = VIDEO_DURATION_MILLIS,
-    earlyExitPredicate: () -> Boolean = {
-        // If the video capture fails, there is no point to continue the recording, so stop idling
-        onNodeWithText(
-            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
-        ).isDisplayed()
-    }
-) {
-    // TODO: replace with a check for the timestamp UI of the video duration
-    try {
-        waitUntil(timeoutMillis = durationMillis) {
-            earlyExitPredicate()
-        }
-    } catch (_: ComposeTimeoutException) {
-    }
-}
-
 fun ComposeTestRule.ensureTagNotAppears(
     componentTag: String,
     timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
@@ -248,13 +231,9 @@ private fun ComposeTestRule.waitUntilVideoRecordingDurationAtLeast(
 ) {
     waitUntil(timeoutMillis = ELAPSED_TIME_TEXT_TIMEOUT_MILLIS) {
         checkWhileWaiting()
-        val text = onNodeWithTag(ELAPSED_TIME_TAG)
-            .fetchSemanticsNode()
-            .config.getOrNull(SemanticsProperties.Text)
-            ?.firstOrNull()?.text
-
+        val text = onAllNodesWithTag(ELAPSED_TIME_TAG).fetchSemanticsNodes()
+            .firstOrNull()?.config?.getOrNull(SemanticsProperties.Text)?.firstOrNull()?.text
         val duration = text?.let { parseMinSecToMillis(it) }
-
         duration != null && duration >= durationMillis
     }
 }
@@ -333,12 +312,12 @@ fun ComposeTestRule.longClickForVideoRecording(durationMillis: Long = VIDEO_DURA
     }
 }
 
-fun ComposeTestRule.tapStartLockedVideoRecording() {
+fun ComposeTestRule.tapStartLockedVideoRecording(durationMillis: Long = VIDEO_DURATION_MILLIS) {
     assertThat(getCurrentCaptureMode()).isEqualTo(CaptureMode.VIDEO_ONLY)
     onNodeWithTag(CAPTURE_BUTTON)
         .assertExists()
         .performClick()
-    idleForVideoDuration()
+    waitUntilVideoRecordingDurationAtLeast(durationMillis)
 }
 
 // //////////////////////
@@ -409,7 +388,7 @@ inline fun <reified T> ComposeTestRule.checkComponentContentDescriptionState(
     waitForNodeWithTag(nodeTag)
     onNodeWithTag(nodeTag).assume(isEnabled()) { "$nodeTag is not enabled" }
         .fetchSemanticsNode().let { node ->
-            node.config[SemanticsProperties.ContentDescription].forEach { description ->
+            for (description in node.config[SemanticsProperties.ContentDescription]) {
                 val result = block(description)
                 if (result != null) return result
             }
@@ -451,7 +430,7 @@ fun ComposeTestRule.getCurrentLensFacing(): LensFacing = visitQuickSettings {
     onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
         "Flip camera button is not visible when expected."
     ).let { node ->
-        node.config[SemanticsProperties.ContentDescription].forEach { description ->
+        for (description in node.config[SemanticsProperties.ContentDescription]) {
             when (description) {
                 getResString(CaptureR.string.quick_settings_front_camera_description) ->
                     return@let LensFacing.FRONT
@@ -468,7 +447,7 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
     onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON).fetchSemanticsNode(
         "Flash button is not visible when expected."
     ).let { node ->
-        node.config[SemanticsProperties.ContentDescription].forEach { description ->
+        for (description in node.config[SemanticsProperties.ContentDescription]) {
             when (description) {
                 getResString(CaptureR.string.quick_settings_flash_off_description) ->
                     return@let FlashMode.OFF
@@ -488,13 +467,13 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
 }
 
 fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
-    waitUntil(timeoutMillis = 1000) {
+    waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
         onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
     }
     onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).fetchSemanticsNode(
         "Capture mode button is not visible when expected."
     ).let { node ->
-        node.config[SemanticsProperties.ContentDescription].forEach { description ->
+        for (description in node.config[SemanticsProperties.ContentDescription]) {
             // check description is one of the capture modes
             when (description) {
                 getResString(CaptureR.string.quick_settings_description_capture_mode_standard) ->
@@ -682,7 +661,7 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
                 // It's visible, so perform the swipe down
                 bottomSheetNode.performTouchInput {
                     down(center)
-                    swipeDown()
+                    swipeDown().ignoreResult()
                     up()
                 }
 
@@ -775,7 +754,7 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
                 .assume(isEnabled()) { "Device does not support HDR." }
                 .performClick()
         }
-        waitUntil(1000) { isHdrEnabled() == enabled }
+        waitUntil(DEFAULT_TIMEOUT_MILLIS) { isHdrEnabled() == enabled }
     }
 }
 
@@ -783,7 +762,7 @@ fun ComposeTestRule.setCaptureMode(captureMode: CaptureMode) {
     visitQuickSettings {
         searchForQuickSetting(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
 
-        waitUntil(timeoutMillis = 1000) {
+        waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
             onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
         }
         // check that current capture mode != given capture mode
@@ -798,7 +777,7 @@ fun ComposeTestRule.setCaptureMode(captureMode: CaptureMode) {
                 .assume(isEnabled())
                 .performClick()
 
-            waitUntil(timeoutMillis = 1_000) {
+            waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
                 onNodeWithTag(optionButtonTag).isDisplayed()
             }
 
