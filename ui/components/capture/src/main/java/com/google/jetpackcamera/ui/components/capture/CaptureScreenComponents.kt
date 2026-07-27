@@ -102,6 +102,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.round
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
@@ -166,8 +167,9 @@ fun ElapsedTimeText(
                 textAlign = TextAlign.Center,
                 color = Color.White,
                 style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    fontFeatureSettings = "tnum"
+                    fontWeight = FontWeight.Bold,
+                    fontFeatureSettings = "tnum",
+                    letterSpacing = 0.sp
                 )
             )
         }
