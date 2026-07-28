@@ -197,7 +197,8 @@ private fun CaptureModeToggleButton(
                 captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
         },
         isSelected =
-        isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
+            isHighlightEnabled &&
+                (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
     )
 }
 
@@ -217,7 +218,7 @@ private fun CaptureModeToggleButton(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuickSettingsBottomSheet(
+internal fun QuickSettingsModalBottomSheet(
     onDismiss: () -> Unit,
     sheetState: SheetState,
     modifier: Modifier = Modifier,
@@ -701,7 +702,11 @@ private fun QuickSettingToggleButtonPreview() {
     }
 }
 
-@Preview(name = "JCA Setting Row - Dark Mode", showBackground = true, backgroundColor = 0xFF000000)
+@Preview(
+    name = "JCA Setting Row - Dark Mode",
+    showBackground = true,
+    backgroundColor = 0xFF000000
+)
 @Composable
 private fun PreviewSettingRowDark() {
     MaterialTheme(colorScheme = darkColorScheme()) {

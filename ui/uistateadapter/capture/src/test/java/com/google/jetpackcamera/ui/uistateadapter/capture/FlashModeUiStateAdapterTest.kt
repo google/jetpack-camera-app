@@ -29,7 +29,6 @@ import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
-import org.junit.Assert.assertThrows
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -154,13 +153,17 @@ class FlashModeUiStateAdapterTest {
         )
 
         // Then an IllegalStateException is thrown
-        assertThrows(IllegalStateException::class.java) {
+        var exceptionThrown = false
+        try {
             uiState.updateFrom(
                 initialAppSettings,
                 newSystemConstraints,
                 defaultCameraState
             )
+        } catch (e: IllegalStateException) {
+            exceptionThrown = true
         }
+        assertThat(exceptionThrown).isTrue()
     }
 
     @Test
@@ -429,5 +432,35 @@ class FlashModeUiStateAdapterTest {
         assertThat(hasLlb).isFalse()
         val hasFlashOn = availableUiState.availableFlashModes.any { it.value == FlashMode.ON }
         assertThat(hasFlashOn).isTrue()
+    }
+
+    @Test
+    fun updateFrom_selectedFlashModeChanged_updatesSelection() {
+        // Given an initial UI state with OFF selected
+        val initialAppSettings = defaultCameraAppSettings.copy(flashMode = FlashMode.OFF)
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON)
+                )
+            )
+        )
+        val uiState = FlashModeUiState.from(initialAppSettings, systemConstraints)
+        assertThat((uiState as FlashModeUiState.Available).selectedFlashMode).isEqualTo(FlashMode.OFF)
+
+        // When the selected flash mode changes to ON in settings, but constraints are unchanged
+        val newAppSettings = initialAppSettings.copy(flashMode = FlashMode.ON)
+        val updatedUiState = uiState.updateFrom(
+            newAppSettings,
+            systemConstraints,
+            defaultCameraState
+        )
+
+        // Then the selected flash mode in UI state is updated
+        assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = updatedUiState as FlashModeUiState.Available
+        assertThat(availableUiState.selectedFlashMode).isEqualTo(FlashMode.ON)
+        // And the available modes did not change
+        assertThat(availableUiState.availableFlashModes).isEqualTo(uiState.availableFlashModes)
     }
 }

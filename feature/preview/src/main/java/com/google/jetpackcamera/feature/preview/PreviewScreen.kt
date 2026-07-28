@@ -351,7 +351,7 @@ private fun ContentScreen(
 
     // Slot lambdas are wrapped in remember blocks to isolate recompositions.
     val hdrState = remember { derivedStateOf { currentCaptureUiStateProvider().hdrUiState } }
-    val hdrIndicatorLambda = remember(hdrState) {
+    val hdrIndicatorLambda = remember {
         @Composable { modifier: Modifier ->
             HdrIndicator(modifier = modifier, hdrUiState = hdrState.value)
         }
@@ -368,7 +368,7 @@ private fun ContentScreen(
     }
     val videoQualityState =
         remember { derivedStateOf { currentCaptureUiStateProvider().videoQuality } }
-    val videoQualityIndicatorLambda = remember(videoQualityState) {
+    val videoQualityIndicatorLambda = remember {
         @Composable { modifier: Modifier ->
             VideoQualityIcon(
                 videoQualityState.value,
@@ -381,7 +381,7 @@ private fun ContentScreen(
             currentCaptureUiStateProvider().stabilizationUiState
         }
     }
-    val stabilizationIndicatorLambda = remember(stabilizationState) {
+    val stabilizationIndicatorLambda = remember {
         @Composable { modifier: Modifier ->
             StabilizationIcon(
                 modifier = modifier,
