@@ -144,7 +144,7 @@ fun ToggleQuickSettingsButton(
     ) {
         Icon(
             painter = painterResource(R.drawable.settings_photo_camera_icon),
-            contentDescription = stringResource(R.string.quick_settings_toggle_icon_description)
+            contentDescription = null
         )
     }
 }
@@ -544,6 +544,12 @@ private fun QuickSettingToggleSelectorButton(
     }
 }
 
+/**
+ * An indicator showing the current HDR status (SDR vs HDR).
+ *
+ * @param hdrUiState The current [HdrUiState] containing the selected dynamic range and format.
+ * @param modifier The [Modifier] to be applied to this indicator.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
@@ -701,7 +707,8 @@ private fun PreviewSettingRowDark() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            color = Color.Black // Consistent with Camera UI
+            // Consistent with Camera UI
+            color = Color.Black
         ) {
             SettingRow(
                 title = stringResource(R.string.quick_settings_preview_video_resolution),

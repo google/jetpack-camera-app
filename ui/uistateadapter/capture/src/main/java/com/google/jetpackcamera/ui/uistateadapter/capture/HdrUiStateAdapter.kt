@@ -96,7 +96,9 @@ internal fun HdrUiState.Companion.from(
 
             if (deviceSupportsHdrVideo) {
                 val supportsHdrVideo =
-                    cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
+                    cameraConstraints
+                        ?.supportedDynamicRanges
+                        ?.contains(DynamicRange.HLG10) == true
                 val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
                 val isConcurrentConflict =
                     cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL

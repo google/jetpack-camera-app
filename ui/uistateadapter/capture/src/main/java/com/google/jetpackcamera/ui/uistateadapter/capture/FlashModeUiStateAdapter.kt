@@ -103,7 +103,8 @@ internal fun FlashModeUiState.Companion.from(
         // 4. Special handling for LOW_LIGHT_BOOST based on other settings.
         if (mode == FlashMode.LOW_LIGHT_BOOST) {
             if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
-                continue // Hide LLB if Dual Camera is active
+                // Hide LLB if Dual Camera is active
+                continue
             }
         }
 
@@ -111,14 +112,15 @@ internal fun FlashModeUiState.Companion.from(
         val isLlbHdrConflict = mode == FlashMode.LOW_LIGHT_BOOST && isHdrOn
 
         if (!isLlbHdrConflict) {
-            displayableModes.add(SingleSelectableUiState.SelectableUi(mode)) // Enabled
+            // Enabled
+            displayableModes.add(SingleSelectableUiState.SelectableUi(mode))
         } else {
             displayableModes.add(
                 SingleSelectableUiState.Disabled(
                     value = mode,
                     disabledReason = DisabledReason.LLB_DISABLED_BY_HDR
                 )
-            ) // Disabled
+            )
         }
     }
 
@@ -134,7 +136,8 @@ internal fun FlashModeUiState.Companion.from(
         Available(
             selectedFlashMode = selectedFlashMode,
             availableFlashModes = displayableModes,
-            isLowLightBoostActive = false // Initial state
+            // Initial state
+            isLowLightBoostActive = false
         )
     }
 }
@@ -183,10 +186,12 @@ internal fun FlashModeUiState.updateFrom(
                             if (this.isLowLightBoostActive != newIsLowLightBoostActive) {
                                 copy(isLowLightBoostActive = newIsLowLightBoostActive)
                             } else {
-                                this // Nothing changed
+                                // Nothing changed
+                                this
                             }
                         } else {
-                            this // Nothing changed
+                            // Nothing changed
+                            this
                         }
                     }
                 }

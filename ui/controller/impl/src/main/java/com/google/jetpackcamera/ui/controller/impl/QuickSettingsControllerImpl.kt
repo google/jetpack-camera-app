@@ -19,7 +19,6 @@ import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
-import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
@@ -45,7 +44,6 @@ import kotlinx.coroutines.launch
  */
 class QuickSettingsControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    private val externalCaptureMode: ExternalCaptureMode,
     private val cameraSystem: CameraSystem,
     coroutineContext: CoroutineContext
 ) : QuickSettingsController {
@@ -78,20 +76,14 @@ class QuickSettingsControllerImpl(
     }
 
     override fun setDynamicRange(dynamicRange: DynamicRange) {
-        if (externalCaptureMode != ExternalCaptureMode.ImageCapture &&
-            externalCaptureMode != ExternalCaptureMode.MultipleImageCapture
-        ) {
-            scope.launch {
-                cameraSystem.setDynamicRange(dynamicRange)
-            }
+        scope.launch {
+            cameraSystem.setDynamicRange(dynamicRange)
         }
     }
 
     override fun setImageFormat(imageOutputFormat: ImageOutputFormat) {
-        if (externalCaptureMode != ExternalCaptureMode.VideoCapture) {
-            scope.launch {
-                cameraSystem.setImageFormat(imageOutputFormat)
-            }
+        scope.launch {
+            cameraSystem.setImageFormat(imageOutputFormat)
         }
     }
 
