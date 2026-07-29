@@ -737,6 +737,7 @@ private fun PreviewSettingRowDark() {
                     ),
                     painter = painterResource(id = R.drawable.video_resolution_sd_icon),
                     isSelected = true,
+                    shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                     onClick = {}
                 )
                 // On State
@@ -746,6 +747,7 @@ private fun PreviewSettingRowDark() {
                     ),
                     painter = painterResource(id = R.drawable.video_resolution_hd_icon),
                     isSelected = false,
+                    shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                     onClick = {}
                 )
                 // Auto State
@@ -755,6 +757,7 @@ private fun PreviewSettingRowDark() {
                     ),
                     painter = painterResource(id = R.drawable.video_resolution_fhd_icon),
                     isSelected = false,
+                    shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                     onClick = {}
                 )
             }
