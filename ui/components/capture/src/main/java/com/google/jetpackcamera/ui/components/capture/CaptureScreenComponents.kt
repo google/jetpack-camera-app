@@ -95,6 +95,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -152,6 +153,8 @@ fun ElapsedTimeText(
     val state = elapsedTimeUiStateProvider()
     if (state is ElapsedTimeUiState.Enabled) {
         val elapsedSeconds = state.elapsedTimeNanos.nanoseconds.inWholeSeconds
+        val minutes = elapsedSeconds / 60
+        val seconds = elapsedSeconds % 60
         val formatRes = if (state.isPaused) {
             R.string.elapsed_time_format_paused
         } else {
@@ -159,14 +162,20 @@ fun ElapsedTimeText(
         }
         val format = stringResource(formatRes)
         val formattedTime = remember(elapsedSeconds, format) {
-            val minutes = elapsedSeconds / 60
-            val seconds = elapsedSeconds % 60
             format.format(minutes, seconds)
         }
+        val accessibilityRes = if (state.isPaused) {
+            R.string.elapsed_time_accessibility_paused
+        } else {
+            R.string.elapsed_time_accessibility_recording
+        }
+        val accessibilityText = stringResource(accessibilityRes, minutes, seconds)
         Box(
             modifier = modifier
                 .testTag(ELAPSED_TIME_TAG)
-                .semantics(mergeDescendants = true){}
+                .semantics(mergeDescendants = true) {
+                    contentDescription = accessibilityText
+                }
                 .defaultMinSize(minWidth = 72.dp, minHeight = 32.dp)
                 .background(color = Color(0xFFED0000), shape = CircleShape)
                 .padding(horizontal = 12.dp, vertical = 6.dp),

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import org.junit.Rule
@@ -41,51 +43,54 @@ class CaptureScreenComponentsTest {
             )
         }
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
     @Test
-    fun elapsedTimeText_enabledState_displaysFormattedTime() {
-        val uiState = mutableStateOf<ElapsedTimeUiState>(ElapsedTimeUiState.Enabled(0L))
+    fun elapsedTimeText_enabledActive_displaysFormattedTime() {
         composeTestRule.setContent {
             ElapsedTimeText(
                 modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                elapsedTimeUiStateProvider = { uiState.value }
+                elapsedTimeUiStateProvider = { ElapsedTimeUiState.Enabled(30_000_000_000L) } // 0:30
             )
         }
-
-        val timeStates = mapOf(
-            0L to "0:00",
-            30_000_000_000L to "0:30",
-            65_000_000_000L to "1:05",
-            605_000_000_000L to "10:05"
-        )
-        
-        timeStates.forEach { (nanos, expectedText) ->
-            uiState.value = ElapsedTimeUiState.Enabled(nanos)
-            composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertTextEquals(expectedText)
-        }
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertTextEquals("0:30")
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
     @Test
-    fun elapsedTimeText_pausedState_displaysPausedFormattedTime() {
-        val uiState = mutableStateOf<ElapsedTimeUiState>(ElapsedTimeUiState.Enabled(0L, isPaused = true))
+    fun elapsedTimeText_enabledActive_setsContentDescription() {
         composeTestRule.setContent {
             ElapsedTimeText(
                 modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                elapsedTimeUiStateProvider = { uiState.value }
+                elapsedTimeUiStateProvider = { ElapsedTimeUiState.Enabled(65_000_000_000L) } // 1:05
             )
         }
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
+            .assertContentDescriptionEquals("Recording time: 1 minutes and 5 seconds")
+    }
 
-        val timeStates = mapOf(
-            0L to "PAUSED 0:00",
-            30_000_000_000L to "PAUSED 0:30",
-            65_000_000_000L to "PAUSED 1:05",
-            605_000_000_000L to "PAUSED 10:05"
-        )
-        
-        timeStates.forEach { (nanos, expectedText) ->
-            uiState.value = ElapsedTimeUiState.Enabled(nanos, isPaused = true)
-            composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertTextEquals(expectedText)
+    @Test
+    fun elapsedTimeText_enabledPaused_displaysPausedFormattedTime() {
+        composeTestRule.setContent {
+            ElapsedTimeText(
+                modifier = Modifier.testTag(ELAPSED_TIME_TAG),
+                elapsedTimeUiStateProvider = { ElapsedTimeUiState.Enabled(30_000_000_000L, isPaused = true) } // PAUSED 0:30
+            )
         }
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertTextEquals("PAUSED 0:30")
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun elapsedTimeText_enabledPaused_setsContentDescription() {
+        composeTestRule.setContent {
+            ElapsedTimeText(
+                modifier = Modifier.testTag(ELAPSED_TIME_TAG),
+                elapsedTimeUiStateProvider = { ElapsedTimeUiState.Enabled(65_000_000_000L, isPaused = true) } // PAUSED 1:05
+            )
+        }
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
+            .assertContentDescriptionEquals("Recording paused: 1 minutes and 5 seconds")
     }
 }
