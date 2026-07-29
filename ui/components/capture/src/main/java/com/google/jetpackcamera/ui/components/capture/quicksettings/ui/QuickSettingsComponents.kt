@@ -32,10 +32,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
@@ -263,6 +267,7 @@ internal fun CaptureModeRow(
  * @param onClick Callback invoked when HDR is toggled, providing the selected [DynamicRange] and [ImageOutputFormat].
  * @param hdrUiState The current [HdrUiState] representing HDR availability and selection.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun HdrRow(
     modifier: Modifier = Modifier,
@@ -290,14 +295,16 @@ internal fun HdrRow(
             enum = CameraDynamicRange.HDR,
             onClick = { onClick(DEFAULT_HDR_DYNAMIC_RANGE, DEFAULT_HDR_IMAGE_OUTPUT) },
             isSelected = isHdrOn,
-            enabled = isSupported
+            enabled = isSupported,
+            shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
         )
         QuickSettingToggleSelectorButton(
             modifier = Modifier.testTag(BTN_QUICK_SETTINGS_HDR_OPTION_OFF),
             enum = CameraDynamicRange.SDR,
             onClick = { onClick(DynamicRange.SDR, ImageOutputFormat.JPEG) },
             isSelected = !isHdrOn,
-            enabled = isSupported
+            enabled = isSupported,
+            shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
         )
     }
 }
@@ -397,6 +404,7 @@ internal fun FlashRow(
 //
 // ////////////////////////////////////////////////////
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun <T> QuickSettingsListRow(
     title: String,
@@ -413,29 +421,39 @@ private fun <T> QuickSettingsListRow(
         title = title,
         stateSubtitle = stateSubtitle
     ) {
-        items.forEach { selectableItem ->
+        items.forEachIndexed { index, selectableItem ->
             val value = selectableItem.value
             val isSelected = value == selectedItem
             val enumVal = enumMapper(value)
             val testTag = testTagMapper(value)
             val enabled = selectableItem is SingleSelectableUiState.SelectableUi
 
+            val shapes = when {
+                items.size == 1 -> ToggleButtonDefaults.shapes()
+                index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                index == items.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+            }
+
             QuickSettingToggleSelectorButton(
                 modifier = Modifier.testTag(testTag),
                 enum = enumVal,
                 onClick = { onItemClick(value) },
                 isSelected = isSelected,
-                enabled = enabled
+                enabled = enabled,
+                shapes = shapes
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SettingRow(
     title: String,
     stateSubtitle: String,
     modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
     buttons: @Composable RowScope.() -> Unit
 ) {
     Row(
@@ -463,20 +481,22 @@ private fun SettingRow(
         }
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = horizontalArrangement,
             verticalAlignment = Alignment.CenterVertically,
             content = buttons
         )
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun QuickSettingToggleSelectorButton(
     modifier: Modifier = Modifier,
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
     isSelected: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapes()
 ) {
     QuickSettingToggleSelectorButton(
         modifier = modifier,
@@ -484,7 +504,8 @@ private fun QuickSettingToggleSelectorButton(
         onClick = { onClick() },
         isSelected = isSelected,
         enabled = enabled,
-        painter = enum.getPainter()
+        painter = enum.getPainter(),
+        shapes = shapes
     )
 }
 
@@ -506,29 +527,28 @@ private fun QuickSettingToggleSelectorButton(
     painter: Painter,
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapes()
 ) {
     val buttonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
     )
 
-    FilledIconToggleButton(
+    ToggleButton(
         modifier = modifier
             .minimumInteractiveComponentSize()
             .size(buttonSize),
         checked = isSelected,
         enabled = enabled,
         onCheckedChange = { _ -> onClick() },
-        shapes = IconButtonDefaults.toggleableShapes(
-            shape = CircleShape,
-            checkedShape = RoundedCornerShape(12.dp)
-        ),
-        colors = IconButtonDefaults.filledIconToggleButtonColors(
+        shapes = shapes,
+        colors = ToggleButtonDefaults.toggleButtonColors(
             containerColor = Color.White.copy(alpha = 0.20f),
             checkedContainerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onSurface,
             checkedContentColor = MaterialTheme.colorScheme.onPrimary
-        )
+        ),
+        contentPadding = PaddingValues(0.dp)
     ) {
         Icon(
             modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
@@ -649,6 +669,7 @@ private fun FlashMode.toSubtitleStringRes(): Int = when (this) {
     FlashMode.LOW_LIGHT_BOOST -> R.string.quick_settings_flash_mode_subtitle_low_light_boost
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Composable
 private fun QuickSettingToggleButtonPreview() {
@@ -695,6 +716,7 @@ private fun QuickSettingToggleButtonPreview() {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview(
     name = "JCA Setting Row - Dark Mode",
     showBackground = true,
