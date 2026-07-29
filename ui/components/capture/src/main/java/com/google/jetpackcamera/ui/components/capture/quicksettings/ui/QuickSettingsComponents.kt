@@ -22,6 +22,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,17 +30,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
-import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
@@ -48,6 +44,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
@@ -102,7 +101,6 @@ import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsControl
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 
@@ -281,32 +279,34 @@ internal fun HdrRow(
                 hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
             )
 
-    SettingRow(
+    QuickSettingsListRow(
         modifier = modifier.testTag(ROW_QUICK_SETTINGS_HDR),
         title = stringResource(id = R.string.quick_settings_title_hdr),
         stateSubtitle = if (isHdrOn) {
             stringResource(R.string.quick_settings_dynamic_range_hdr)
         } else {
             stringResource(R.string.quick_settings_dynamic_range_sdr)
-        }
-    ) {
-        QuickSettingToggleSelectorButton(
-            modifier = Modifier.testTag(BTN_QUICK_SETTINGS_HDR_OPTION_ON),
-            enum = CameraDynamicRange.HDR,
-            onClick = { onClick(DEFAULT_HDR_DYNAMIC_RANGE, DEFAULT_HDR_IMAGE_OUTPUT) },
-            isSelected = isHdrOn,
-            enabled = isSupported,
-            shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
-        )
-        QuickSettingToggleSelectorButton(
-            modifier = Modifier.testTag(BTN_QUICK_SETTINGS_HDR_OPTION_OFF),
-            enum = CameraDynamicRange.SDR,
-            onClick = { onClick(DynamicRange.SDR, ImageOutputFormat.JPEG) },
-            isSelected = !isHdrOn,
-            enabled = isSupported,
-            shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
-        )
-    }
+        },
+        items = listOf(
+            SingleSelectableUiState.SelectableUi(true),
+            SingleSelectableUiState.SelectableUi(false)
+        ),
+        selectedItem = isHdrOn,
+        onItemClick = { hdrEnabled ->
+            if (hdrEnabled) {
+                onClick(DEFAULT_HDR_DYNAMIC_RANGE, DEFAULT_HDR_IMAGE_OUTPUT)
+            } else {
+                onClick(DynamicRange.SDR, ImageOutputFormat.JPEG)
+            }
+        },
+        testTagMapper = { hdrEnabled ->
+            if (hdrEnabled) BTN_QUICK_SETTINGS_HDR_OPTION_ON else BTN_QUICK_SETTINGS_HDR_OPTION_OFF
+        },
+        enumMapper = { hdrEnabled ->
+            if (hdrEnabled) CameraDynamicRange.HDR else CameraDynamicRange.SDR
+        },
+        isItemEnabled = { isSupported }
+    )
 }
 
 /**
@@ -414,7 +414,8 @@ private fun <T> QuickSettingsListRow(
     onItemClick: (T) -> Unit,
     enumMapper: (T) -> QuickSettingsEnum,
     testTagMapper: (T) -> String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isItemEnabled: (SingleSelectableUiState<T>) -> Boolean = { it is SingleSelectableUiState.SelectableUi }
 ) {
     SettingRow(
         modifier = modifier,
@@ -426,7 +427,7 @@ private fun <T> QuickSettingsListRow(
             val isSelected = value == selectedItem
             val enumVal = enumMapper(value)
             val testTag = testTagMapper(value)
-            val enabled = selectableItem is SingleSelectableUiState.SelectableUi
+            val enabled = isItemEnabled(selectableItem)
 
             val shapes = when {
                 items.size == 1 -> ToggleButtonDefaults.shapes()
@@ -453,7 +454,7 @@ private fun SettingRow(
     title: String,
     stateSubtitle: String,
     modifier: Modifier = Modifier,
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(2.dp),
     buttons: @Composable RowScope.() -> Unit
 ) {
     Row(
@@ -476,7 +477,7 @@ private fun SettingRow(
             Text(
                 text = stateSubtitle,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.primaryFixed
             )
         }
 
@@ -530,25 +531,20 @@ private fun QuickSettingToggleSelectorButton(
     enabled: Boolean = true,
     shapes: ToggleButtonShapes = ToggleButtonDefaults.shapes()
 ) {
-    val buttonSize = IconButtonDefaults.mediumContainerSize(
-        IconButtonDefaults.IconButtonWidthOption.Narrow
-    )
-
     ToggleButton(
         modifier = modifier
-            .minimumInteractiveComponentSize()
-            .size(buttonSize),
+            .minimumInteractiveComponentSize(),
         checked = isSelected,
         enabled = enabled,
         onCheckedChange = { _ -> onClick() },
         shapes = shapes,
         colors = ToggleButtonDefaults.toggleButtonColors(
-            containerColor = Color.White.copy(alpha = 0.20f),
+            containerColor = MaterialTheme.colorScheme.onSecondaryFixedVariant,
             checkedContainerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onSurface,
             checkedContentColor = MaterialTheme.colorScheme.onPrimary
         ),
-        contentPadding = PaddingValues(0.dp)
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Icon(
             modifier = Modifier.size(IconButtonDefaults.mediumIconSize),

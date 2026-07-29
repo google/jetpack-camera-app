@@ -95,10 +95,8 @@ internal fun FlashModeUiState.Companion.from(
             continue
         }*/
 
-        // 3. Hide if not supported on the current lens.
-        if (!currentLensSupportedFlashModes.contains(mode)) {
-            continue
-        }
+        // 3. Check if supported on the current lens
+        val isSupportedOnCurrentLens = currentLensSupportedFlashModes.contains(mode)
 
         // 4. Special handling for LOW_LIGHT_BOOST based on other settings.
         if (mode == FlashMode.LOW_LIGHT_BOOST) {
@@ -111,14 +109,26 @@ internal fun FlashModeUiState.Companion.from(
         // 5. Determine if Enabled or Disabled
         val isLlbHdrConflict = mode == FlashMode.LOW_LIGHT_BOOST && isHdrOn
 
-        if (!isLlbHdrConflict) {
+        if (isSupportedOnCurrentLens && !isLlbHdrConflict) {
             // Enabled
             displayableModes.add(SingleSelectableUiState.SelectableUi(mode))
         } else {
+            // Disabled
+            val reason = when {
+                !isSupportedOnCurrentLens -> {
+                    if (mode == FlashMode.LOW_LIGHT_BOOST) {
+                        DisabledReason.LLB_UNSUPPORTED_ON_LENS
+                    } else {
+                        DisabledReason.FLASH_UNSUPPORTED_ON_LENS
+                    }
+                }
+                isLlbHdrConflict -> DisabledReason.LLB_DISABLED_BY_HDR
+                else -> throw IllegalStateException("Unexpected disabled state")
+            }
             displayableModes.add(
                 SingleSelectableUiState.Disabled(
                     value = mode,
-                    disabledReason = DisabledReason.LLB_DISABLED_BY_HDR
+                    disabledReason = reason
                 )
             )
         }
