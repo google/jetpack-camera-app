@@ -20,7 +20,7 @@ plugins {
 
 android {
     namespace = "com.google.jetpackcamera.ui.uistateadapter.postcapture"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 23

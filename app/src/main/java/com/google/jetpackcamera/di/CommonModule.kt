@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.common
+package com.google.jetpackcamera.di
 
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -27,11 +26,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
 /**
- * Dagger [Module] for Common dependencies.
+ * Dagger [Module] for global application-level coroutine dispatchers and scope.
  */
 @Module
 @InstallIn(SingletonComponent::class)
-class CommonModule {
+internal class CommonModule {
     @Provides
     @DefaultDispatcher
     fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
@@ -46,31 +45,3 @@ class CommonModule {
     fun providesCoroutineScope(@DefaultDispatcher dispatcher: CoroutineDispatcher) =
         CoroutineScope(SupervisorJob() + dispatcher)
 }
-
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DefaultFilePathGenerator
-
-/**
- * provides the default [CaptureMode] to override in [LocalSettingsRepository]
- */
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DefaultCaptureModeOverride
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DefaultSaveMode
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DefaultDispatcher
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class IODispatcher
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DefaultCoroutineScope
