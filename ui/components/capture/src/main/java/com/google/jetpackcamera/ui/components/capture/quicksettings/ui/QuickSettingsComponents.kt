@@ -168,39 +168,7 @@ internal fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifi
     }
 }
 
-@Composable
-private fun CaptureModeToggleButton(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    captureModeUiState: CaptureModeUiState.Available,
-    assignedCaptureMode: CaptureMode,
-    isHighlightEnabled: Boolean = false
-) {
-    val enum = when (assignedCaptureMode) {
-        CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
-        CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
-        CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
-    }
 
-    QuickSettingToggleSelectorButton(
-        modifier = modifier,
-        enum = enum,
-        onClick = { onClick() },
-        enabled = when (assignedCaptureMode) {
-            CaptureMode.STANDARD ->
-                captureModeUiState.isCaptureModeSelectable(CaptureMode.STANDARD)
-
-            CaptureMode.VIDEO_ONLY ->
-                captureModeUiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY)
-
-            CaptureMode.IMAGE_ONLY ->
-                captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
-        },
-        isSelected =
-            isHighlightEnabled &&
-                (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
-    )
-}
 
 // ////////////////////////////////////////////////////
 //
@@ -263,29 +231,28 @@ internal fun CaptureModeRow(
             CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
         }
 
-        SettingRow(
+        QuickSettingsListRow(
             modifier = modifier.testTag(ROW_QUICK_SETTINGS_CAPTURE_MODE),
             title = stringResource(id = R.string.quick_settings_title_capture_mode),
-            stateSubtitle = stringResource(enum.getTextResId())
-        ) {
-            captureModeUiState.availableCaptureModes.forEach { selectableMode ->
-                val testTag = when (selectableMode.value) {
-                    CaptureMode.STANDARD ->
-                        BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-                    CaptureMode.IMAGE_ONLY ->
-                        BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-                    CaptureMode.VIDEO_ONLY ->
-                        BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
+            stateSubtitle = stringResource(enum.getTextResId()),
+            items = captureModeUiState.availableCaptureModes,
+            selectedItem = captureModeUiState.selectedCaptureMode,
+            onItemClick = onSetCaptureMode,
+            testTagMapper = { mode ->
+                when (mode) {
+                    CaptureMode.STANDARD -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
+                    CaptureMode.IMAGE_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
+                    CaptureMode.VIDEO_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
                 }
-                CaptureModeToggleButton(
-                    modifier = Modifier.testTag(testTag),
-                    onClick = { onSetCaptureMode(selectableMode.value) },
-                    assignedCaptureMode = selectableMode.value,
-                    captureModeUiState = captureModeUiState,
-                    isHighlightEnabled = true
-                )
+            },
+            enumMapper = { mode ->
+                when (mode) {
+                    CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
+                    CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
+                    CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
+                }
             }
-        }
+        )
     }
 }
 
@@ -349,32 +316,30 @@ internal fun AspectRatioRow(
     aspectRatioUiState: AspectRatioUiState
 ) {
     if (aspectRatioUiState is AspectRatioUiState.Available) {
-        SettingRow(
+        QuickSettingsListRow(
             modifier = modifier.testTag(ROW_QUICK_SETTINGS_ASPECT_RATIO),
             title = stringResource(id = R.string.quick_settings_title_aspect_ratio),
             stateSubtitle = stringResource(
                 id = aspectRatioUiState.selectedAspectRatio.toSubtitleStringRes()
-            )
-        ) {
-            aspectRatioUiState.availableAspectRatios.forEach { selectableRatio ->
-                val enum = when (selectableRatio.value) {
-                    AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
-                    AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
-                    AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-                }
-                val testTag = when (selectableRatio.value) {
+            ),
+            items = aspectRatioUiState.availableAspectRatios,
+            selectedItem = aspectRatioUiState.selectedAspectRatio,
+            onItemClick = onSetAspectRatio,
+            testTagMapper = { ratio ->
+                when (ratio) {
                     AspectRatio.THREE_FOUR -> QUICK_SETTINGS_RATIO_3_4_BUTTON
                     AspectRatio.NINE_SIXTEEN -> QUICK_SETTINGS_RATIO_9_16_BUTTON
                     AspectRatio.ONE_ONE -> QUICK_SETTINGS_RATIO_1_1_BUTTON
                 }
-                QuickSettingToggleSelectorButton(
-                    modifier = Modifier.testTag(testTag),
-                    onClick = { onSetAspectRatio(selectableRatio.value) },
-                    enum = enum,
-                    isSelected = selectableRatio.value == aspectRatioUiState.selectedAspectRatio
-                )
+            },
+            enumMapper = { ratio ->
+                when (ratio) {
+                    AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
+                    AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
+                    AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
+                }
             }
-        }
+        )
     }
 }
 
@@ -392,43 +357,37 @@ internal fun FlashRow(
     flashModeUiState: FlashModeUiState
 ) {
     if (flashModeUiState is FlashModeUiState.Available) {
-        SettingRow(
+        QuickSettingsListRow(
             modifier = modifier.testTag(ROW_QUICK_SETTINGS_FLASH),
             title = stringResource(id = R.string.quick_settings_title_flash_mode),
             stateSubtitle = stringResource(
                 id = flashModeUiState.selectedFlashMode.toSubtitleStringRes()
-            )
-        ) {
-            flashModeUiState.availableFlashModes.forEach { selectableMode ->
-                val testTag = when (selectableMode.value) {
+            ),
+            items = flashModeUiState.availableFlashModes,
+            selectedItem = flashModeUiState.selectedFlashMode,
+            onItemClick = onSetFlashMode,
+            testTagMapper = { mode ->
+                when (mode) {
                     FlashMode.OFF -> BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
                     FlashMode.ON -> BTN_QUICK_SETTINGS_FLASH_OPTION_ON
                     FlashMode.AUTO -> BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
-                    FlashMode.LOW_LIGHT_BOOST ->
-                        BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
+                    FlashMode.LOW_LIGHT_BOOST -> BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
                 }
-                QuickSettingToggleSelectorButton(
-                    modifier = Modifier.testTag(testTag),
-                    enabled = selectableMode is SingleSelectableUiState.SelectableUi,
-                    enum = when (selectableMode.value) {
-                        FlashMode.OFF -> CameraFlashMode.OFF
-                        FlashMode.ON -> CameraFlashMode.ON
-                        FlashMode.AUTO -> CameraFlashMode.AUTO
-                        FlashMode.LOW_LIGHT_BOOST ->
-                            when (flashModeUiState.isLowLightBoostActive) {
-                                true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
-                                false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
-                            }
-                    },
-                    isSelected = flashModeUiState.selectedFlashMode == selectableMode.value,
-                    onClick = {
-                        onSetFlashMode(
-                            selectableMode.value
-                        )
-                    }
-                )
+            },
+            enumMapper = { mode ->
+                when (mode) {
+                    FlashMode.OFF -> CameraFlashMode.OFF
+                    FlashMode.ON -> CameraFlashMode.ON
+                    FlashMode.AUTO -> CameraFlashMode.AUTO
+                    FlashMode.LOW_LIGHT_BOOST ->
+                        if (flashModeUiState.isLowLightBoostActive) {
+                            CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
+                        } else {
+                            CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
+                        }
+                }
             }
-        }
+        )
     }
 }
 
@@ -437,6 +396,40 @@ internal fun FlashRow(
 // subcomponents used to build completed components
 //
 // ////////////////////////////////////////////////////
+
+@Composable
+private fun <T> QuickSettingsListRow(
+    title: String,
+    stateSubtitle: String,
+    items: List<SingleSelectableUiState<T>>,
+    selectedItem: T,
+    onItemClick: (T) -> Unit,
+    enumMapper: (T) -> QuickSettingsEnum,
+    testTagMapper: (T) -> String,
+    modifier: Modifier = Modifier
+) {
+    SettingRow(
+        modifier = modifier,
+        title = title,
+        stateSubtitle = stateSubtitle
+    ) {
+        items.forEach { selectableItem ->
+            val value = selectableItem.value
+            val isSelected = value == selectedItem
+            val enumVal = enumMapper(value)
+            val testTag = testTagMapper(value)
+            val enabled = selectableItem is SingleSelectableUiState.SelectableUi
+
+            QuickSettingToggleSelectorButton(
+                modifier = Modifier.testTag(testTag),
+                enum = enumVal,
+                onClick = { onItemClick(value) },
+                isSelected = isSelected,
+                enabled = enabled
+            )
+        }
+    }
+}
 
 @Composable
 private fun SettingRow(
