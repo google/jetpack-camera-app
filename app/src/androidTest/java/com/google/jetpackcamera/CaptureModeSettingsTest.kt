@@ -178,7 +178,6 @@ internal class CaptureModeSettingsTest {
 
             // check that switch is disabled and only supports image
             composeTestRule.waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
-            assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
             assertThat(composeTestRule.getCaptureModeToggleState())
                 .isEqualTo(CaptureMode.IMAGE_ONLY)
 
@@ -189,6 +188,24 @@ internal class CaptureModeSettingsTest {
             composeTestRule.setHdrEnabled(false)
             assertThat(composeTestRule.isCaptureModeToggleEnabled()).isTrue()
             composeTestRule.checkCaptureModeSettingState(CaptureMode.IMAGE_ONLY)
+        }
+    }
+
+    @Test
+    fun hdr_toggle_maintains_video_capture_mode() {
+        runMainActivityScenarioTest {
+            composeTestRule.waitForCaptureButton()
+            composeTestRule.initializeCaptureSwitch()
+            composeTestRule.setHdrEnabled(true)
+
+            composeTestRule.waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
+
+            assume().that(composeTestRule.isCaptureModeToggleEnabled()).isTrue()
+            // Switch to video mode while HDR is on (which means Photo Ultra HDR was enabled)
+            composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
+
+            assertThat(composeTestRule.getCaptureModeToggleState())
+                .isEqualTo(CaptureMode.VIDEO_ONLY)
         }
     }
 
