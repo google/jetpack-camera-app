@@ -64,6 +64,9 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
 
+    // AndroidX Core KTX
+    implementation(libs.androidx.core.ktx)
+
     // Accompanist - Permissions
     implementation(libs.accompanist.permissions)
 
@@ -73,9 +76,6 @@ dependencies {
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
-
-    // Compose - Integration with ViewModels with Navigation and Hilt
-    implementation(libs.hilt.navigation.compose)
 
     // CameraX
     implementation(libs.camera.core)
