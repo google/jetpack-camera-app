@@ -351,6 +351,7 @@ class CameraXCameraSystemTest {
         availabilityCheckers = emptyMap(),
         effectProviders = emptyMap(),
         imagePostProcessors = getFakePostProcessorMap(fakeImagePostProcessor),
+        cameraEffectProviders = emptyMap(),
         filePathGenerator = FakeFilePathGenerator()
     ).apply {
         initialize(appSettings) {}
