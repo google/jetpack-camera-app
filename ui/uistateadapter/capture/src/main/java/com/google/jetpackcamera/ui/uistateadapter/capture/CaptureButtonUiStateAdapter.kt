@@ -55,7 +55,7 @@ fun CaptureButtonUiState.Companion.from(
             }
 
         is VideoRecordingState.Starting ->
-            CaptureButtonUiState.Enabled.Recording.Pending
+            CaptureButtonUiState.Enabled.Recording.Starting
     }
 } else {
     CaptureButtonUiState

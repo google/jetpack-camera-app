@@ -106,7 +106,7 @@ class CaptureButtonUiStateAdapterTest {
         )
 
         assertThat(uiState)
-            .isInstanceOf(CaptureButtonUiState.Enabled.Recording.Pending::class.java)
+            .isInstanceOf(CaptureButtonUiState.Enabled.Recording.Starting::class.java)
         assertThat(uiState.isEnabled).isTrue()
     }
 }
