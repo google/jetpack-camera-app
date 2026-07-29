@@ -178,18 +178,17 @@ internal class CaptureModeSettingsTest {
 
             // check that switch is disabled and only supports image
             composeTestRule.waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
-            assume().that(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
-            assume().that(composeTestRule.getCaptureModeToggleState())
+            assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
+            assertThat(composeTestRule.getCaptureModeToggleState())
                 .isEqualTo(CaptureMode.IMAGE_ONLY)
 
             // capture mode should be image only
             composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
                 assertThat(getCaptureModeToggleState()).isEqualTo(CaptureMode.IMAGE_ONLY)
             }
-            // should not be able to change capture mode
-            assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
             composeTestRule.setHdrEnabled(false)
-            composeTestRule.checkCaptureModeSettingState(CaptureMode.STANDARD)
+            assertThat(composeTestRule.isCaptureModeToggleEnabled()).isTrue()
+            composeTestRule.checkCaptureModeSettingState(CaptureMode.IMAGE_ONLY)
         }
     }
 
