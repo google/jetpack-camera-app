@@ -34,7 +34,7 @@ android {
 
     defaultConfig {
         //Our app has a minSDK of 21, but in order for the benchmark tool to function, it must be 23
-        minSdk = libs.versions.minSdk.get().toInt()
+        minSdk = 23
         targetSdk = libs.versions.targetSdk.get().toInt()
 
         // allows the benchmark to be run on an emulator
