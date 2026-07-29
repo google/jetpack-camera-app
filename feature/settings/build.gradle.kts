@@ -95,6 +95,13 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.junit)
+    testImplementation(libs.androidx.rules)
+    testImplementation(libs.truth)
+    testImplementation(libs.robolectric)
+    testImplementation(project(":core:settings:datastore-prefs"))
+    testImplementation(project(":core:settings:datastore-prefs:testing"))
+    testImplementation(libs.androidx.datastore.preferences)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.truth)
