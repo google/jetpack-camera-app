@@ -446,7 +446,9 @@ class FlashModeUiStateAdapterTest {
             )
         )
         val uiState = FlashModeUiState.from(initialAppSettings, systemConstraints)
-        assertThat((uiState as FlashModeUiState.Available).selectedFlashMode).isEqualTo(FlashMode.OFF)
+        assertThat(
+            (uiState as FlashModeUiState.Available).selectedFlashMode
+        ).isEqualTo(FlashMode.OFF)
 
         // When the selected flash mode changes to ON in settings, but constraints are unchanged
         val newAppSettings = initialAppSettings.copy(flashMode = FlashMode.ON)

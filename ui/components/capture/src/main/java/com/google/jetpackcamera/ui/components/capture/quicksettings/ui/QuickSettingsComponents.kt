@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -169,8 +168,6 @@ internal fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifi
         )
     }
 }
-
-
 
 // ////////////////////////////////////////////////////
 //
@@ -415,7 +412,9 @@ private fun <T> QuickSettingsListRow(
     enumMapper: (T) -> QuickSettingsEnum,
     testTagMapper: (T) -> String,
     modifier: Modifier = Modifier,
-    isItemEnabled: (SingleSelectableUiState<T>) -> Boolean = { it is SingleSelectableUiState.SelectableUi }
+    isItemEnabled: (
+        SingleSelectableUiState<T>
+    ) -> Boolean = { it is SingleSelectableUiState.SelectableUi }
 ) {
     SettingRow(
         modifier = modifier,
