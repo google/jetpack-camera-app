@@ -151,7 +151,7 @@ fun PreviewScreen(
     val isReady by remember { derivedStateOf { rawUiState.value is CaptureUiState.Ready } }
 
     val surfaceRequest: SurfaceRequest?
-            by viewModel.surfaceRequest.collectAsState()
+        by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.cameraController.startCamera()
@@ -197,7 +197,7 @@ fun PreviewScreen(
             {
                 requireNotNull(rawUiState.value as? CaptureUiState.Ready) {
                     "Deferred read invoked when state was not Ready. " +
-                            "Current state: ${rawUiState.value}"
+                        "Current state: ${rawUiState.value}"
                 }
             }
         }
@@ -287,7 +287,7 @@ private fun ContentScreen(
         }
         ZoomStateManager(
             initialZoomLevel =
-                (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
+            (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
             zoomRange = (zoomUiState.value as? ZoomUiState.Enabled)
                 ?.primaryZoomRange ?: Range(1f, 1f),
             zoomController = safeZoomController
@@ -297,7 +297,7 @@ private fun ContentScreen(
     LaunchedEffect((flipLensState.value as? FlipLensUiState.Available)?.selectedLensFacing) {
         zoomStateManager.onChangeLens(
             newInitialZoomLevel =
-                (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
+            (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
             newZoomRange = (zoomUiState.value as? ZoomUiState.Enabled)
                 ?.primaryZoomRange ?: Range(1f, 1f)
         )
@@ -798,7 +798,7 @@ private fun LayoutWrapper(
                 modifier = modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
                     modifier = Modifier.weight(1f),
@@ -811,6 +811,7 @@ private fun LayoutWrapper(
                     stabilizationIndicator(Modifier)
                 }
 
+                // TODO: this whole button is currently a PLACEHOLDER
                 TooltipIconButton(
                     icon = {
                         Box(
@@ -819,8 +820,9 @@ private fun LayoutWrapper(
                                 .background(Color.White, shape = CircleShape)
                         )
                     },
-                    tooltipText = "This is a placeholder tooltip message. It demonstrates how text " +
-                            "wraps and aligns with the beak pointing to the anchor.",
+                    tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
+                        " text wraps and aligns with the beak pointing to the anchor.",
+                    isOutlined = true,
                     beakStyle = BeakStyle(
                         alignment = BeakAlignment.End,
                         direction = BeakDirection.Up

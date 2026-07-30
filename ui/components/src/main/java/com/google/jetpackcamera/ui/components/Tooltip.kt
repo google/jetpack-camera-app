@@ -15,33 +15,41 @@
  */
 package com.google.jetpackcamera.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathOperation
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -49,7 +57,6 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
@@ -82,12 +89,24 @@ fun Tooltip(
             onDismissRequest = onDismissRequest,
             properties = PopupProperties(focusable = true)
         ) {
-            TooltipContent(
-                beakStyle = beakStyle,
-                colors = colors,
-                modifier = modifier.widthIn(max = maxWidth),
-                content = content
-            )
+            val slideDistance = with(density) { 12.dp.roundToPx() }
+            val enterTransition = if (beakStyle.direction == BeakDirection.Up) {
+                slideInVertically(initialOffsetY = { -slideDistance }) + fadeIn()
+            } else {
+                slideInVertically(initialOffsetY = { slideDistance }) + fadeIn()
+            }
+
+            AnimatedVisibility(
+                visible = true,
+                enter = enterTransition
+            ) {
+                TooltipContent(
+                    beakStyle = beakStyle,
+                    colors = colors,
+                    modifier = modifier.widthIn(max = maxWidth),
+                    content = content
+                )
+            }
         }
     }
 }
@@ -110,15 +129,28 @@ fun TooltipIconButton(
     beakStyle: BeakStyle = BeakStyle(),
     colors: TooltipColors = TooltipDefaults.tooltipColors(),
     maxWidth: Dp = TooltipDefaults.MaxWidth,
+    isOutlined: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     var showTooltip by remember { mutableStateOf(false) }
     Box(modifier = modifier) {
-        IconButton(onClick = {
-            showTooltip = true
-            onClick()
-        }) {
-            icon()
+        if (isOutlined) {
+            OutlinedIconButton(
+                onClick = {
+                    showTooltip = true
+                    onClick()
+                },
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
+            ) {
+                icon()
+            }
+        } else {
+            IconButton(onClick = {
+                showTooltip = true
+                onClick()
+            }) {
+                icon()
+            }
         }
         Tooltip(
             expanded = showTooltip,
@@ -142,8 +174,8 @@ fun TooltipIconButton(
 @Composable
 private fun TooltipContent(
     beakStyle: BeakStyle,
-    colors: TooltipColors,
     modifier: Modifier = Modifier,
+    colors: TooltipColors = TooltipDefaults.tooltipColors(),
     content: @Composable () -> Unit
 ) {
     val shape = TooltipShape(beakStyle)
@@ -193,7 +225,7 @@ private fun TooltipContent(
  * @param offset Optional horizontal offset from the alignment position.
  */
 data class BeakStyle(
-    val width: Dp = 24.dp,
+    val width: Dp = 10.dp,
     val height: Dp = 8.dp,
     val alignment: BeakAlignment = BeakAlignment.End,
     val direction: BeakDirection = BeakDirection.Up,
@@ -201,15 +233,18 @@ data class BeakStyle(
 )
 
 enum class BeakAlignment {
-    Start, Center, End
+    Start,
+    Center,
+    End
 }
 
 enum class BeakDirection {
-    Up, Down
+    Up,
+    Down
 }
 
 data class TooltipColors(
-    val containerColor: Color = Color.Unspecified,// 
+    val containerColor: Color = Color.Unspecified, //
     val contentColor: Color = Color.Unspecified
 )
 
@@ -250,8 +285,16 @@ private class TooltipShape(
         }
 
         val beakPath = Path().apply {
-            val yBase = if (beakStyle.direction == BeakDirection.Up) beakHeightPx else size.height - beakHeightPx
-            val yTip = if (beakStyle.direction == BeakDirection.Up) 0f else size.height
+            val yBase = if (beakStyle.direction == BeakDirection.Up) {
+                beakHeightPx
+            } else {
+                size.height - beakHeightPx
+            }
+            val yTip = if (beakStyle.direction == BeakDirection.Up) {
+                0f
+            } else {
+                size.height
+            }
 
             val xCenter = when (beakStyle.alignment) {
                 BeakAlignment.Start -> cornerRadiusPx + beakWidthPx / 2
@@ -332,13 +375,51 @@ private fun Color.takeOrElse(block: @Composable () -> Color): Color {
 
 @Preview(showBackground = true, backgroundColor = 0)
 @Composable
-private fun TooltipPreview() {
+private fun TooltipVariousStylesPreview() {
     MaterialTheme {
-        TooltipContent(
-            beakStyle = BeakStyle(alignment = BeakAlignment.Center),
-            colors = TooltipDefaults.tooltipColors()
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Text("This is a preview of the tooltip content.")
+            TooltipContent(
+                beakStyle = BeakStyle(direction = BeakDirection.Up, alignment = BeakAlignment.Start)
+            ) {
+                Text("Beak Up - Start Alignment")
+            }
+            TooltipContent(
+                beakStyle = BeakStyle(
+                    direction = BeakDirection.Up,
+                    alignment = BeakAlignment.Center
+                )
+            ) {
+                Text("Beak Up - Center Alignment")
+            }
+            TooltipContent(
+                beakStyle = BeakStyle(direction = BeakDirection.Up, alignment = BeakAlignment.End)
+            ) {
+                Text("Beak Up - End Alignment")
+            }
+            TooltipContent(
+                beakStyle = BeakStyle(
+                    direction = BeakDirection.Down,
+                    alignment = BeakAlignment.Start
+                )
+            ) {
+                Text("Beak Down - Start Alignment")
+            }
+            TooltipContent(
+                beakStyle = BeakStyle(
+                    direction = BeakDirection.Down,
+                    alignment = BeakAlignment.Center
+                )
+            ) {
+                Text("Beak Down - Center Alignment")
+            }
+            TooltipContent(
+                beakStyle = BeakStyle(direction = BeakDirection.Down, alignment = BeakAlignment.End)
+            ) {
+                Text("Beak Down - End Alignment")
+            }
         }
     }
 }
