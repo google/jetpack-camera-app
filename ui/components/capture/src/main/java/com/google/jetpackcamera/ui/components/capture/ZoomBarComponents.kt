@@ -141,12 +141,8 @@ private fun ZoomButton(
     val selectedFormat = remember { DecimalFormat("#.0") }
     val formatter = remember(targetZoom) {
         DecimalFormat("#.#").apply {
-            minimumIntegerDigits = 0
-            roundingMode = if (targetZoom >= 1) {
-                RoundingMode.DOWN
-            } else {
-                RoundingMode.UP
-            }
+            minimumIntegerDigits = 1
+            roundingMode = RoundingMode.HALF_UP
         }
     }
     val displayText by remember(isSelected, zoomRatio) {

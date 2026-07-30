@@ -20,6 +20,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
+import kotlin.math.ceil
 
 /**
  * Creates a [ZoomControlUiState] from various camera and application sources.
@@ -60,7 +61,10 @@ fun ZoomControlUiState.Companion.from(
     }
     val zoomLevels: List<Float> = buildList {
         if (zoomRange.lower < 1f) {
-            add(zoomRange.lower)
+            val roundedLower = ceil(zoomRange.lower * 10f) / 10f
+            if (roundedLower < 1f) {
+                add(roundedLower)
+            }
         }
         add(1f)
         if (zoomRange.contains(2f)) {
