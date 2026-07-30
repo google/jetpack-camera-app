@@ -147,6 +147,7 @@ dependencies {
     testImplementation(project(":data:media:testing"))
     testImplementation(project(":core:common:testing"))
     implementation(project(":ui:components:capture"))
+    implementation(project(":ui:components"))
     implementation(project(":ui:controller"))
     implementation(project(":ui:controller:impl"))
     implementation(project(":ui:uistate"))

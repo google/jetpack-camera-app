@@ -26,11 +26,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -71,6 +74,10 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.VideoCaptureEvent
+import com.google.jetpackcamera.ui.components.BeakAlignment
+import com.google.jetpackcamera.ui.components.BeakDirection
+import com.google.jetpackcamera.ui.components.BeakStyle
+import com.google.jetpackcamera.ui.components.TooltipIconButton
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CaptureButton
@@ -144,7 +151,7 @@ fun PreviewScreen(
     val isReady by remember { derivedStateOf { rawUiState.value is CaptureUiState.Ready } }
 
     val surfaceRequest: SurfaceRequest?
-        by viewModel.surfaceRequest.collectAsState()
+            by viewModel.surfaceRequest.collectAsState()
 
     LifecycleStartEffect(Unit) {
         viewModel.cameraController.startCamera()
@@ -190,7 +197,7 @@ fun PreviewScreen(
             {
                 requireNotNull(rawUiState.value as? CaptureUiState.Ready) {
                     "Deferred read invoked when state was not Ready. " +
-                        "Current state: ${rawUiState.value}"
+                            "Current state: ${rawUiState.value}"
                 }
             }
         }
@@ -280,7 +287,7 @@ private fun ContentScreen(
         }
         ZoomStateManager(
             initialZoomLevel =
-            (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
+                (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
             zoomRange = (zoomUiState.value as? ZoomUiState.Enabled)
                 ?.primaryZoomRange ?: Range(1f, 1f),
             zoomController = safeZoomController
@@ -290,7 +297,7 @@ private fun ContentScreen(
     LaunchedEffect((flipLensState.value as? FlipLensUiState.Available)?.selectedLensFacing) {
         zoomStateManager.onChangeLens(
             newInitialZoomLevel =
-            (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
+                (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
             newZoomRange = (zoomUiState.value as? ZoomUiState.Enabled)
                 ?.primaryZoomRange ?: Range(1f, 1f)
         )
@@ -303,6 +310,7 @@ private fun ContentScreen(
                 is VideoRecordingState.Starting -> {
                     initialRecordingSettings = this.initialRecordingSettings
                 }
+
                 is VideoRecordingState.Inactive -> {
                     initialRecordingSettings?.let {
                         val oldPrimaryLensFacing = it.lensFacing
@@ -323,6 +331,7 @@ private fun ContentScreen(
                     }
                     initialRecordingSettings = null
                 }
+
                 is VideoRecordingState.Active -> {}
             }
         }
@@ -787,14 +796,36 @@ private fun LayoutWrapper(
         indicatorRow = { modifier ->
             Row(
                 modifier = modifier
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                flashModeIndicator(Modifier)
-                hdrIndicator(Modifier)
-                videoQualityIndicator(Modifier)
-                stabilizationIndicator(Modifier)
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    flashModeIndicator(Modifier)
+                    hdrIndicator(Modifier)
+                    videoQualityIndicator(Modifier)
+                    stabilizationIndicator(Modifier)
+                }
+
+                TooltipIconButton(
+                    icon = {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color.White, shape = CircleShape)
+                        )
+                    },
+                    tooltipText = "This is a placeholder tooltip message. It demonstrates how text " +
+                            "wraps and aligns with the beak pointing to the anchor.",
+                    beakStyle = BeakStyle(
+                        alignment = BeakAlignment.End,
+                        direction = BeakDirection.Up
+                    )
+                )
             }
         },
         debugOverlay = { modifier ->
