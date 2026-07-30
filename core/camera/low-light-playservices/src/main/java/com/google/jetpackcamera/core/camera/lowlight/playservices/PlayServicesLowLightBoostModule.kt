@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera.lowlight.playservices.di
+package com.google.jetpackcamera.core.camera.lowlight.playservices
 
-import android.content.Context
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
-import com.google.jetpackcamera.core.camera.lowlight.playservices.PlayServicesLowLightBoostAvailabilityChecker
-import com.google.jetpackcamera.core.camera.lowlight.playservices.PlayServicesLowLightBoostEffectProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoSet
 import java.util.AbstractMap
@@ -37,25 +33,27 @@ object PlayServicesLowLightBoostFeatureKey : LowLightBoostFeatureKey
 internal object PlayServicesLowLightBoostModule {
     @Provides
     @IntoSet
-    fun provideAvailabilityCheckerEntry(): Map.Entry<
+    fun provideAvailabilityCheckerEntry(
+        impl: Provider<PlayServicesLowLightBoostAvailabilityChecker>
+    ): Map.Entry<
         LowLightBoostFeatureKey,
         @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>
         > =
         AbstractMap.SimpleImmutableEntry(
             PlayServicesLowLightBoostFeatureKey,
-            Provider { PlayServicesLowLightBoostAvailabilityChecker() }
+            Provider { impl.get() }
         )
 
     @Provides
     @IntoSet
     fun provideEffectProviderEntry(
-        @ApplicationContext context: Context
+        impl: Provider<PlayServicesLowLightBoostEffectProvider>
     ): Map.Entry<
         LowLightBoostFeatureKey,
         @JvmSuppressWildcards Provider<LowLightBoostEffectProvider>
         > =
         AbstractMap.SimpleImmutableEntry(
             PlayServicesLowLightBoostFeatureKey,
-            Provider { PlayServicesLowLightBoostEffectProvider(context) }
+            Provider { impl.get() }
         )
 }
