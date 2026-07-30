@@ -51,6 +51,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import java.math.RoundingMode
 import java.text.DecimalFormat
+import kotlin.math.round
 
 /**
  * A composable that displays a row of zoom buttons.
@@ -84,13 +85,15 @@ fun ZoomButtonRow(
 
                 val checkValue =
                     currentZoomState.animatingToValue ?: currentZoomState.primaryZoomRatio ?: 1f
-                if (checkValue >= 1f) {
-                    // -1 if no index is found
-                    currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
-                        checkValue >= zoomLevelOption
-                    }
-                } else {
+                val roundedCheckValue = round(checkValue * 10f) / 10f
+                val index = currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
+                    val roundedOption = round(zoomLevelOption * 10f) / 10f
+                    roundedCheckValue >= roundedOption
+                }
+                if (index == -1 && currentZoomState.zoomLevels.isNotEmpty()) {
                     0
+                } else {
+                    index
                 }
             }
         }
