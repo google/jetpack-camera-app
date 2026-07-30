@@ -45,6 +45,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
@@ -73,6 +74,8 @@ import kotlinx.coroutines.delay
  * @param modifier Modifier for the tooltip content.
  * @param beakStyle Configuration for the beak's size, alignment, and direction.
  * @param colors Colors for the tooltip container and content.
+ * @param maxWidth The maximum width of the tooltip.
+ * @param autoDismissDelayMillis The delay in milliseconds before the tooltip auto-dismisses. Use [TooltipDefaults.NoAutoDismiss] to disable.
  * @param content The content to display inside the tooltip (usually a Text composable).
  */
 @Composable
@@ -96,7 +99,9 @@ fun Tooltip(
         }
         val density = LocalDensity.current
         Popup(
-            popupPositionProvider = TooltipPositionProvider(beakStyle, density),
+            popupPositionProvider = remember(beakStyle, density) {
+                TooltipPositionProvider(beakStyle, density)
+            },
             onDismissRequest = onDismissRequest,
             properties = PopupProperties(focusable = true)
         ) {
@@ -130,6 +135,9 @@ fun Tooltip(
  * @param modifier Modifier for the button container.
  * @param beakStyle Configuration for the tooltip's beak.
  * @param colors Colors for the tooltip.
+ * @param maxWidth The maximum width of the tooltip.
+ * @param isOutlined Whether the icon button should be outlined.
+ * @param autoDismissDelayMillis The delay in milliseconds before the tooltip auto-dismisses.
  * @param onClick Optional callback when the button is clicked.
  */
 @Composable
@@ -191,7 +199,7 @@ private fun TooltipContent(
     colors: TooltipColors = TooltipDefaults.tooltipColors(),
     content: @Composable () -> Unit
 ) {
-    val shape = TooltipShape(beakStyle)
+    val shape = remember(beakStyle) { TooltipShape(beakStyle) }
     val containerColor = colors.containerColor.takeOrElse {
         MaterialTheme.colorScheme.secondaryFixed
     }
@@ -257,7 +265,7 @@ enum class BeakDirection {
 }
 
 data class TooltipColors(
-    val containerColor: Color = Color.Unspecified, //
+    val containerColor: Color = Color.Unspecified,
     val contentColor: Color = Color.Unspecified
 )
 
@@ -381,11 +389,7 @@ private class TooltipPositionProvider(
     }
 }
 
-// Extension to helper resolve unspecified colors
-@Composable
-private fun Color.takeOrElse(block: @Composable () -> Color): Color {
-    return if (this != Color.Unspecified) this else block()
-}
+
 
 @Preview(showBackground = true, backgroundColor = 0)
 @Composable

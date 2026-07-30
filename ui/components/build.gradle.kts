@@ -60,14 +60,14 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.compose.ui.tooling.preview)
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
-    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.compose.ui.tooling)
 }
 
 // Allow references to generated code

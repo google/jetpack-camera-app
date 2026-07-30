@@ -12,7 +12,7 @@ OEMs looking to validate their camera feature implementations.
 
 This project uses the gradle build system, and can be imported directly into Android Studio.
 
-Currently, Jetpack Camera App is built using the Android Gradle Plugin 8.10.0, which is only
+Currently, Jetpack Camera App is built using the Android Gradle Plugin 8.10.1, which is only
 compatible with Android Studio Meerkat or newer.
 
 ## Pre-push Hook (Recommended)
