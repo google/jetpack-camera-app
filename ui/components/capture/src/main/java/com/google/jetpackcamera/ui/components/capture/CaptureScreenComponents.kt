@@ -49,20 +49,23 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
@@ -97,11 +100,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.controller.SnackBarController
@@ -859,16 +864,23 @@ fun FlipCameraButton(
                 initialLaunch = true
             }
         }
-        IconButton(
-            modifier = modifier,
+        FilledIconButton(
+            modifier = modifier.size(56.dp),
             onClick = onClick,
-            enabled = enabledCondition
+            enabled = enabledCondition,
+            shape = RoundedCornerShape(12.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = Color.White.copy(alpha = 0.2f),
+                contentColor = Color.White,
+                disabledContainerColor = Color.White.copy(alpha = 0.05f),
+                disabledContentColor = Color.White.copy(alpha = 0.38f)
+            )
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_flip_camera_android),
                 contentDescription = stringResource(id = R.string.flip_camera_icon_description),
                 modifier = Modifier
-                    .size(IconButtonDefaults.extraLargeIconSize)
+                    .size(26.dp)
                     .rotate(animatedRotation.value)
             )
         }
@@ -971,6 +983,75 @@ private fun FocusMeteringIndicator(
                         CircleShape
                     )
                     .size(TAP_TO_FOCUS_INDICATOR_SIZE)
+            )
+        }
+    }
+}
+
+@Preview(name = "Flip Camera Button Previews")
+@Composable
+private fun PreviewFlipCameraButton() {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Dark Background
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            FlipCameraButton(
+                enabledCondition = true,
+                flipLensUiState = FlipLensUiState.Available(
+                    selectedLensFacing = LensFacing.BACK,
+                    availableLensFacings = listOf(
+                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                    )
+                ),
+                onClick = {}
+            )
+        }
+
+        // Light Gray Background
+        Box(
+            modifier = Modifier
+                .background(Color.LightGray)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            FlipCameraButton(
+                enabledCondition = true,
+                flipLensUiState = FlipLensUiState.Available(
+                    selectedLensFacing = LensFacing.BACK,
+                    availableLensFacings = listOf(
+                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                    )
+                ),
+                onClick = {}
+            )
+        }
+
+        // White Background
+        Box(
+            modifier = Modifier
+                .background(Color.White)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            FlipCameraButton(
+                enabledCondition = true,
+                flipLensUiState = FlipLensUiState.Available(
+                    selectedLensFacing = LensFacing.BACK,
+                    availableLensFacings = listOf(
+                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                    )
+                ),
+                onClick = {}
             )
         }
     }
