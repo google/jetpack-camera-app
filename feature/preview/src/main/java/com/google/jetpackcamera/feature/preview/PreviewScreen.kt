@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.google.jetpackcamera.feature.preview
 
 import android.Manifest
@@ -58,7 +59,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -821,7 +821,7 @@ private fun LayoutWrapper(
                     },
                     tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
                         " text wraps and aligns.",
-                    isOutlined = true,
+                    isOutlined = true
                 )
             }
         },
