@@ -170,7 +170,7 @@ internal class CaptureModeSettingsTest {
     }
 
     @Test
-    fun hdr_supports_image_only() {
+    fun hdr_toggle_maintains_image_only_capture_mode() {
         runMainActivityScenarioTest {
             composeTestRule.waitForCaptureButton()
             composeTestRule.initializeCaptureSwitch()
@@ -193,6 +193,26 @@ internal class CaptureModeSettingsTest {
 
     @Test
     fun hdr_toggle_maintains_video_capture_mode() {
+        runMainActivityScenarioTest {
+            composeTestRule.waitForCaptureButton()
+            composeTestRule.initializeCaptureSwitch(captureMode = CaptureMode.VIDEO_ONLY)
+            composeTestRule.setHdrEnabled(true)
+
+            composeTestRule.waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
+            assertThat(composeTestRule.getCaptureModeToggleState())
+                .isEqualTo(CaptureMode.VIDEO_ONLY)
+
+            composeTestRule.visitQuickSettings(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE) {
+                assertThat(getCaptureModeToggleState()).isEqualTo(CaptureMode.VIDEO_ONLY)
+            }
+            composeTestRule.setHdrEnabled(false)
+            assertThat(composeTestRule.isCaptureModeToggleEnabled()).isTrue()
+            composeTestRule.checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
+        }
+    }
+
+    @Test
+    fun hdr_toggle_change_from_image_to_video_capture_mode() {
         runMainActivityScenarioTest {
             composeTestRule.waitForCaptureButton()
             composeTestRule.initializeCaptureSwitch()
