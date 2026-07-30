@@ -20,9 +20,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -97,15 +98,15 @@ fun ZoomButtonRow(
         Row(
             modifier = modifier
                 .background(
-                    color = Color.Black.copy(alpha = 0.32f),
+                    color = Color.Black.copy(alpha = 0.6f),
                     shape = CircleShape
                 )
-                .padding(horizontal = spacing / 2, vertical = spacing / 2)
+                .padding(horizontal = 8.dp, vertical = 4.dp)
                 .semantics {
                     testTag = ZOOM_BUTTON_ROW_TAG
                     stateDescription = zoomControlUiState.primaryZoomRatio.toString()
                 }
-                .height(buttonSize),
+                .height(buttonSize + 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             zoomControlUiState.zoomLevels.forEachIndexed { index, value ->
@@ -135,6 +136,8 @@ private fun ZoomButton(
     isSelected: Boolean = false,
     onChangeZoom: (Float) -> Unit
 ) {
+    val contentDescriptionSelected = stringResource(id = R.string.zoom_button_selected)
+    val contentDescriptionNotSelected = stringResource(id = R.string.zoom_button_not_selected)
     val selectedFormat = remember { DecimalFormat("#.0") }
     val formatter = remember(targetZoom) {
         DecimalFormat("#.#").apply {
@@ -158,11 +161,16 @@ private fun ZoomButton(
     ToggleButton(
         checked = isSelected,
         onCheckedChange = { onChangeZoom(targetZoom) },
-        modifier = modifier.heightIn(buttonSize)
+        modifier = modifier
+            .height(buttonSize)
+            .widthIn(min = buttonSize + 16.dp)
             .semantics {
                 testTag = getZoomButtonTestTag(targetZoom)
-                // todo(kc): move to text resource
-                contentDescription = if (isSelected) "selected" else "not selected"
+                contentDescription = if (isSelected) {
+                    contentDescriptionSelected
+                } else {
+                    contentDescriptionNotSelected
+                }
             },
         shapes = ToggleButtonDefaults.shapesFor(buttonSize),
         contentPadding = ButtonDefaults.contentPaddingFor(buttonSize),
@@ -173,7 +181,7 @@ private fun ZoomButton(
             )
         } else {
             ToggleButtonDefaults.toggleButtonColors(
-                containerColor = Color.White.copy(alpha = .16f),
+                containerColor = Color.Transparent,
                 contentColor = Color.White
             )
         }
@@ -181,7 +189,9 @@ private fun ZoomButton(
         Text(
             modifier = Modifier.animateContentSize(),
             text = displayText,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontFeatureSettings = "tnum"
+            ),
             textAlign = TextAlign.Center
         )
     }

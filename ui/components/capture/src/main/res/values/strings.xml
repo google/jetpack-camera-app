@@ -125,4 +125,7 @@
 
     <!-- ImageWell -->
     <string name="image_well_content_description">View recently saved media</string>
+
+    <string name="zoom_button_selected">Selected</string>
+    <string name="zoom_button_not_selected">Not Selected</string>
 </resources>
