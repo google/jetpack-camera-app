@@ -15,9 +15,9 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -169,7 +169,7 @@ private fun ZoomButton(
                 }
             },
         shapes = ToggleButtonDefaults.shapesFor(buttonSize),
-        contentPadding = ButtonDefaults.contentPaddingFor(buttonSize),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
         colors = if (isSelected) {
             ToggleButtonDefaults.toggleButtonColors(
                 containerColor = MaterialTheme.colorScheme.primaryFixed,
@@ -183,7 +183,6 @@ private fun ZoomButton(
         }
     ) {
         Text(
-            modifier = Modifier.animateContentSize(),
             text = displayText,
             style = MaterialTheme.typography.labelLarge.copy(
                 fontFeatureSettings = "tnum"
