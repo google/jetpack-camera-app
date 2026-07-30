@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -186,6 +187,7 @@ private fun ZoomButton(
         }
     ) {
         Text(
+            modifier = Modifier.animateContentSize(),
             text = displayText,
             style = MaterialTheme.typography.labelLarge.copy(
                 fontFeatureSettings = "tnum"
