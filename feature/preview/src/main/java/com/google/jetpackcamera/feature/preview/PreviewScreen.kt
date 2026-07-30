@@ -823,6 +823,7 @@ private fun LayoutWrapper(
                     tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
                         " text wraps and aligns with the beak pointing to the anchor.",
                     isOutlined = true,
+                    autoDismissDelayMillis = 3000L,
                     beakStyle = BeakStyle(
                         alignment = BeakAlignment.End,
                         direction = BeakDirection.Up

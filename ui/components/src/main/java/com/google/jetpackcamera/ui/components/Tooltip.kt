@@ -31,11 +31,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -60,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import kotlinx.coroutines.delay
 
 /**
  * A custom tooltip component that overlays the screen using a [Popup].
@@ -80,9 +83,17 @@ fun Tooltip(
     beakStyle: BeakStyle = BeakStyle(),
     colors: TooltipColors = TooltipDefaults.tooltipColors(),
     maxWidth: Dp = TooltipDefaults.MaxWidth,
+    autoDismissDelayMillis: Long = TooltipDefaults.NoAutoDismiss,
     content: @Composable () -> Unit
 ) {
     if (expanded) {
+        if (autoDismissDelayMillis > 0) {
+            val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
+            LaunchedEffect(autoDismissDelayMillis) {
+                delay(autoDismissDelayMillis)
+                currentOnDismissRequest()
+            }
+        }
         val density = LocalDensity.current
         Popup(
             popupPositionProvider = TooltipPositionProvider(beakStyle, density),
@@ -130,6 +141,7 @@ fun TooltipIconButton(
     colors: TooltipColors = TooltipDefaults.tooltipColors(),
     maxWidth: Dp = TooltipDefaults.MaxWidth,
     isOutlined: Boolean = false,
+    autoDismissDelayMillis: Long = TooltipDefaults.NoAutoDismiss,
     onClick: () -> Unit = {}
 ) {
     var showTooltip by remember { mutableStateOf(false) }
@@ -157,7 +169,8 @@ fun TooltipIconButton(
             onDismissRequest = { showTooltip = false },
             beakStyle = beakStyle,
             colors = colors,
-            maxWidth = maxWidth
+            maxWidth = maxWidth,
+            autoDismissDelayMillis = autoDismissDelayMillis
         ) {
             Text(
                 text = tooltipText,
@@ -249,6 +262,7 @@ data class TooltipColors(
 )
 
 object TooltipDefaults {
+    const val NoAutoDismiss = 0L
     val MaxWidth: Dp = 296.dp
 
     @Composable
