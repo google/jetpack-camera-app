@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.google.jetpackcamera.feature.preview
 
 import android.Manifest
@@ -57,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -74,9 +76,6 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.VideoCaptureEvent
-import com.google.jetpackcamera.ui.components.BeakAlignment
-import com.google.jetpackcamera.ui.components.BeakDirection
-import com.google.jetpackcamera.ui.components.BeakStyle
 import com.google.jetpackcamera.ui.components.TooltipIconButton
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
@@ -821,13 +820,8 @@ private fun LayoutWrapper(
                         )
                     },
                     tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
-                        " text wraps and aligns with the beak pointing to the anchor.",
+                        " text wraps and aligns.",
                     isOutlined = true,
-                    autoDismissDelayMillis = 3000L,
-                    beakStyle = BeakStyle(
-                        alignment = BeakAlignment.End,
-                        direction = BeakDirection.Up
-                    )
                 )
             }
         },
