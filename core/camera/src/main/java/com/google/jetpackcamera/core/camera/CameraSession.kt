@@ -1071,9 +1071,9 @@ private suspend fun startVideoRecordingInternal(
 
         val callbackExecutor: Executor =
             (
-                currentCoroutineContext()[ContinuationInterceptor] as?
-                    CoroutineDispatcher
-                )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
+                    currentCoroutineContext()[ContinuationInterceptor] as?
+                            CoroutineDispatcher
+                    )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
         return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
             Log.d(TAG, onVideoRecordEvent.toString())
             when (onVideoRecordEvent) {
@@ -1182,22 +1182,23 @@ private suspend fun startVideoRecordingInternal(
                             )
                         }
 
-                    else -> {
-                        onVideoRecord(
-                            OnVideoRecordEvent.OnVideoRecordError(
-                                RuntimeException(
-                                    "Recording finished with error: ${onVideoRecordEvent.error}",
-                                    onVideoRecordEvent.cause
+                        else -> {
+                            onVideoRecord(
+                                OnVideoRecordEvent.OnVideoRecordError(
+                                    RuntimeException(
+                                        "Recording finished with error: ${onVideoRecordEvent.error}",
+                                        onVideoRecordEvent.cause
+                                    )
                                 )
                             )
-                        )
-                        currentCameraState.update { old ->
-                            old.copy(
-                                videoRecordingState = VideoRecordingState.Inactive(
-                                    finalElapsedTimeNanos = onVideoRecordEvent.recordingStats
-                                        .recordedDurationNanos
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    videoRecordingState = VideoRecordingState.Inactive(
+                                        finalElapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                            .recordedDurationNanos
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 }
@@ -1250,8 +1251,7 @@ private suspend fun runVideoRecording(
                             if (currentSettings.isAudioEnabled !=
                                 newTransientSettings.isAudioEnabled
                             ) {
-                                // audio mute state will be inverse of
-                            if audio is enabled.
+                                // audio mute state will be inverse of if audio is enabled.
                                 recording.mute(!newTransientSettings.isAudioEnabled)
                             }
                                 currentSettings = newTransientSettings
