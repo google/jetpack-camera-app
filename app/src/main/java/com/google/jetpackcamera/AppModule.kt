@@ -15,9 +15,10 @@
  */
 package com.google.jetpackcamera
 
+import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
+import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
+import com.google.jetpackcamera.core.common.DefaultSaveMode
 import com.google.jetpackcamera.core.common.FilePathGenerator
-import com.google.jetpackcamera.di.DefaultCaptureModeOverride
-import com.google.jetpackcamera.di.DefaultFilePathGenerator
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.SaveMode
 import dagger.Module
@@ -39,6 +40,7 @@ object AppModule {
      * provides the default [SaveMode] to be used by the app
      */
     @Provides
+    @DefaultSaveMode
     fun providesSaveMode(): SaveMode = SaveMode.Immediate
 
     @Provides
