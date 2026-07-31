@@ -46,9 +46,6 @@ android {
     }
     kotlin {
         jvmToolchain(17)
-            compilerOptions {
-            freeCompilerArgs.add("-Xcontext-parameters")
-        }
     }
     buildFeatures {
         buildConfig = true
