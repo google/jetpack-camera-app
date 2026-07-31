@@ -33,10 +33,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlin {
-
         jvmToolchain(17)
-
-            compilerOptions {
+        compilerOptions {
             freeCompilerArgs.add("-Xcontext-receivers")
         }
     }
