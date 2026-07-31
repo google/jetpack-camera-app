@@ -16,7 +16,6 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -93,10 +92,9 @@ android {
     }
     kotlin {
         jvmToolchain(17)
-    }
-
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
+        compilerOptions {
+            freeCompilerArgs.add("-Xcontext-receivers")
+        }
     }
 }
 
