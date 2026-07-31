@@ -154,10 +154,11 @@ private fun getAvailableCaptureModes(
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
     )
-    val isHdrOn = cameraAppSettings.dynamicRange == DynamicRange.HLG10 ||
-        cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+    val isHdrDynamicRangeOn = cameraAppSettings.dynamicRange == DynamicRange.HLG10
+    val isHdrImageFormatOn = cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+    val isHdrOn = isHdrDynamicRangeOn || isHdrImageFormatOn
     val currentHdrDynamicRangeSupported =
-        if (isHdrOn) {
+        if (isHdrDynamicRangeOn) {
             cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
         } else {
             true
@@ -170,7 +171,7 @@ private fun getAvailableCaptureModes(
         com.google.jetpackcamera.model.CameraEffectTarget.IMAGE_CAPTURE
     )
     val currentHdrImageFormatSupported =
-        if (isHdrOn) {
+        if (isHdrImageFormatOn) {
             cameraConstraints?.supportedImageFormatsMap?.get(
                 affectsImageCapture
             )?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
