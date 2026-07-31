@@ -1040,7 +1040,6 @@ private fun getPendingRecording(
 @OptIn(ExperimentalPersistentRecording::class)
 context(c: CameraSessionContext)
 private suspend fun startVideoRecordingInternal(
-    isInitialAudioEnabled: Boolean,
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
@@ -1065,7 +1064,7 @@ private suspend fun startVideoRecordingInternal(
 
         pendingRecord.apply {
             if (isAudioGranted) {
-                withAudioEnabled(isInitialAudioEnabled)
+                withAudioEnabled(initialMuted = !initialRecordingSettings.isAudioEnabled)
             }
         }
             .asPersistentRecording()
@@ -1183,29 +1182,26 @@ private suspend fun startVideoRecordingInternal(
                             )
                         }
 
-                        else -> {
-                            onVideoRecord(
-                                OnVideoRecordEvent.OnVideoRecordError(
-                                    RuntimeException(
-                                        "Recording finished with error: ${onVideoRecordEvent.error}",
-                                        onVideoRecordEvent.cause
-                                    )
+                    else -> {
+                        onVideoRecord(
+                            OnVideoRecordEvent.OnVideoRecordError(
+                                RuntimeException(
+                                    "Recording finished with error: ${onVideoRecordEvent.error}",
+                                    onVideoRecordEvent.cause
                                 )
                             )
-                            currentCameraState.update { old ->
-                                old.copy(
-                                    videoRecordingState = VideoRecordingState.Inactive(
-                                        finalElapsedTimeNanos = onVideoRecordEvent.recordingStats
-                                            .recordedDurationNanos
-                                    )
+                        )
+                        currentCameraState.update { old ->
+                            old.copy(
+                                videoRecordingState = VideoRecordingState.Inactive(
+                                    finalElapsedTimeNanos = onVideoRecordEvent.recordingStats
+                                        .recordedDurationNanos
                                 )
-                            }
+                            )
                         }
                     }
                 }
             }
-        }.apply {
-            mute(!isInitialAudioEnabled)
         }
     }
 }
@@ -1235,7 +1231,7 @@ private suspend fun runVideoRecording(
             onVideoRecord
         )?.let {
             startVideoRecordingInternal(
-                isInitialAudioEnabled = currentSettings.isAudioEnabled,
+
                 context = context,
                 pendingRecord = it,
                 maxDurationMillis = maxDurationMillis,
@@ -1254,15 +1250,14 @@ private suspend fun runVideoRecording(
                             if (currentSettings.isAudioEnabled !=
                                 newTransientSettings.isAudioEnabled
                             ) {
-                                recording.mute(newTransientSettings.isAudioEnabled)
+                                // audio mute state will be inverse of
+                            if audio is enabled.
+                                recording.mute(!newTransientSettings.isAudioEnabled)
                             }
-                            if (currentSettings.isFlashModeOn() !=
-                                newTransientSettings.isFlashModeOn()
-                            ) {
                                 currentSettings = newTransientSettings
                             }
                         }
-                }
+
 
                 for (event in videoControlEvents) {
                     when (event) {
