@@ -125,7 +125,6 @@ dependencies {
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.video)
 
-
     // Tracing
     implementation(libs.androidx.tracing)
     implementation(libs.kotlinx.atomicfu)
@@ -140,5 +139,4 @@ dependencies {
     implementation(project(":core:camera:postprocess"))
 
 }
-
 
