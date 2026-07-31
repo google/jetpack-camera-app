@@ -26,11 +26,12 @@ import com.google.android.gms.cameralowlight.LowLightBoost
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
+import javax.inject.Inject
 import kotlinx.coroutines.tasks.await
 
 private const val TAG = "PsLlbAvailChecker"
 
-class PlayServicesLowLightBoostAvailabilityChecker :
+class PlayServicesLowLightBoostAvailabilityChecker @Inject constructor() :
     LowLightBoostAvailabilityChecker {
     @OptIn(ExperimentalCamera2Interop::class)
     override suspend fun isImplementationAvailable(
