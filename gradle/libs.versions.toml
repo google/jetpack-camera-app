@@ -3,7 +3,7 @@
 compileSdk = "36"
 desugar_jdk_libs = "2.1.5"
 orchestrator = "1.6.1"
-minSdk = "23"
+minSdk = "24"
 targetSdk = "35"
 
 # Used below in dependency definitions

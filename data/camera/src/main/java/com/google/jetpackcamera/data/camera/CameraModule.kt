@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.di
+package com.google.jetpackcamera.data.camera
 
 import android.app.Application
 import android.content.Context
@@ -25,9 +25,10 @@ import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
+import com.google.jetpackcamera.core.common.DefaultDispatcher
+import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
 import com.google.jetpackcamera.core.common.FilePathGenerator
-import com.google.jetpackcamera.data.camera.CameraSystemRepository
-import com.google.jetpackcamera.data.camera.CameraXCameraSystemRepository
+import com.google.jetpackcamera.core.common.IODispatcher
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -39,11 +40,11 @@ import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
- * Dagger [Module] for camera dependencies.
+ * Dagger [Module] for camera data layer.
  */
 @Module
 @InstallIn(ActivityRetainedComponent::class)
-internal interface CameraModule {
+interface CameraModule {
 
     @Binds
     @ActivityRetainedScoped
