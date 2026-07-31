@@ -1071,9 +1071,9 @@ private suspend fun startVideoRecordingInternal(
 
         val callbackExecutor: Executor =
             (
-                    currentCoroutineContext()[ContinuationInterceptor] as?
-                            CoroutineDispatcher
-                    )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
+                currentCoroutineContext()[ContinuationInterceptor] as?
+                    CoroutineDispatcher
+                )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
         return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
             Log.d(TAG, onVideoRecordEvent.toString())
             when (onVideoRecordEvent) {
@@ -1254,10 +1254,9 @@ private suspend fun runVideoRecording(
                                 // audio mute state will be inverse of if audio is enabled.
                                 recording.mute(!newTransientSettings.isAudioEnabled)
                             }
-                                currentSettings = newTransientSettings
-                            }
+                            currentSettings = newTransientSettings
                         }
-
+                }
 
                 for (event in videoControlEvents) {
                     when (event) {
