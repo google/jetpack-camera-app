@@ -32,7 +32,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-
     flavorDimensions += "flavor"
     productFlavors {
         create("stable") {

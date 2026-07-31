@@ -32,7 +32,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-
     flavorDimensions += "flavor"
     productFlavors {
         create("stable") {
@@ -46,10 +45,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlin {
-
         jvmToolchain(17)
-
-            compilerOptions {
+        compilerOptions {
             freeCompilerArgs.add("-Xcontext-receivers")
         }
     }
