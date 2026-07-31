@@ -34,8 +34,8 @@ android {
     }
     kotlin {
         jvmToolchain(17)
-        compilerOptions {
-            freeCompilerArgs.add("-Xcontext-receivers")
+            compilerOptions {
+            freeCompilerArgs.add("-Xcontext-parameters")
         }
     }
 }
