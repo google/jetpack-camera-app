@@ -18,14 +18,8 @@ package com.google.jetpackcamera.permissions
 import android.Manifest
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.CreateNewFolder
-import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
@@ -36,19 +30,7 @@ import com.google.jetpackcamera.permissions.ui.WRITE_EXTERNAL_STORAGE_PERMISSION
  */
 sealed interface PermissionInfoProvider {
     @Composable
-    fun getPainter(): Painter {
-        val iconResId = getDrawableResId()
-        val iconVector = getImageVector()
-        require((iconResId == null).xor(iconVector == null)) {
-            "UI Item should have exactly one of iconResId or iconVector set."
-        }
-        return iconResId?.let { painterResource(it) }
-            ?: iconVector?.let {
-                rememberVectorPainter(
-                    it
-                )
-            }!! // !! allowed because we've checked null
-    }
+    fun getPainter(): Painter = painterResource(getDrawableResId())
 
     /**
      * @return the String reference for the permission
@@ -60,9 +42,7 @@ sealed interface PermissionInfoProvider {
     fun getTestTag(): String
 
     @DrawableRes
-    fun getDrawableResId(): Int?
-
-    fun getImageVector(): ImageVector?
+    fun getDrawableResId(): Int
 
     @StringRes
     fun getPermissionTitleResId(): Int
@@ -90,9 +70,7 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getTestTag(): String = CAMERA_PERMISSION_BUTTON
 
-        override fun getDrawableResId(): Int? = null
-
-        override fun getImageVector(): ImageVector = Icons.Outlined.CameraAlt
+        override fun getDrawableResId(): Int = R.drawable.ic_camera_alt
 
         override fun getPermissionTitleResId(): Int = R.string.camera_permission_screen_title
 
@@ -113,9 +91,7 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getTestTag(): String = RECORD_AUDIO_PERMISSION_BUTTON
 
-        override fun getDrawableResId(): Int? = null
-
-        override fun getImageVector(): ImageVector = Icons.Outlined.Mic
+        override fun getDrawableResId(): Int = R.drawable.ic_mic
 
         override fun getPermissionTitleResId(): Int = R.string.microphone_permission_screen_title
 
@@ -135,9 +111,7 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getTestTag(): String = WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
 
-        override fun getDrawableResId(): Int? = null
-
-        override fun getImageVector(): ImageVector = Icons.Outlined.CreateNewFolder
+        override fun getDrawableResId(): Int = R.drawable.ic_create_new_folder
 
         override fun getPermissionTitleResId(): Int = R.string.write_storage_permission_screen_title
 

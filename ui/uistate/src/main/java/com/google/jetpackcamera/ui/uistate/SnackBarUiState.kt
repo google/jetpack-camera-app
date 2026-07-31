@@ -49,6 +49,5 @@ data class SnackbarData(
     val stringResource: Int,
     val duration: SnackbarDuration = SnackbarDuration.Short,
     val actionLabelRes: Int? = null,
-    val withDismissAction: Boolean = false,
-    val testTag: String = ""
+    val withDismissAction: Boolean = false
 )

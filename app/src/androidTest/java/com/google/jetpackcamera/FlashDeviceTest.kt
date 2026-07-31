@@ -17,7 +17,6 @@ package com.google.jetpackcamera
 
 import android.os.Build
 import android.provider.MediaStore
-import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -32,10 +31,8 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.components.capture.SCREEN_FLASH_OVERLAY
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
@@ -46,7 +43,9 @@ import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedT
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.setFlashMode
+import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -72,9 +71,7 @@ internal class FlashDeviceTest {
     @Test
     fun set_flash_on() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         composeTestRule.setFlashMode(FlashMode.ON)
     }
@@ -82,9 +79,7 @@ internal class FlashDeviceTest {
     @Test
     fun set_flash_auto() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         composeTestRule.setFlashMode(FlashMode.AUTO)
     }
@@ -92,9 +87,7 @@ internal class FlashDeviceTest {
     @Test
     fun set_flash_off() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         composeTestRule.setFlashMode(FlashMode.OFF)
     }
@@ -102,9 +95,7 @@ internal class FlashDeviceTest {
     @Test
     fun set_flash_low_light_boost() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         composeTestRule.setFlashMode(FlashMode.LOW_LIGHT_BOOST)
     }
@@ -124,9 +115,7 @@ internal class FlashDeviceTest {
         assumeHalStableOnImageCapture()
 
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         // Ensure camera has a back camera and flip to it
         val lensFacing = composeTestRule.getCurrentLensFacing()
@@ -142,7 +131,10 @@ internal class FlashDeviceTest {
             .assertExists()
             .performClick()
 
-        composeTestRule.waitForNodeWithTag(IMAGE_CAPTURE_SUCCESS_TAG, IMAGE_CAPTURE_TIMEOUT_MILLIS)
+        composeTestRule.waitForSnackbarWithText(
+            StateR.string.toast_image_capture_success,
+            IMAGE_CAPTURE_TIMEOUT_MILLIS
+        )
     }
 
     @Test
@@ -152,9 +144,7 @@ internal class FlashDeviceTest {
             filePrefix = "JCA"
         ) {
             // Wait for the capture button to be displayed
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-            }
+            composeTestRule.waitForCaptureButton()
 
             // Ensure camera has a front camera and flip to it
             val lensFacing = composeTestRule.getCurrentLensFacing()
@@ -176,8 +166,8 @@ internal class FlashDeviceTest {
                 SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS
             )
 
-            composeTestRule.waitForNodeWithTag(
-                IMAGE_CAPTURE_SUCCESS_TAG,
+            composeTestRule.waitForSnackbarWithText(
+                StateR.string.toast_image_capture_success,
                 IMAGE_CAPTURE_TIMEOUT_MILLIS
             )
         }
@@ -195,9 +185,7 @@ internal class FlashDeviceTest {
             mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         ) {
             // Wait for the capture button to be displayed
-            composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-                composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-            }
+            composeTestRule.waitForCaptureButton()
 
             // Ensure camera has the target lens facing camera and flip to it
             val lensFacing = composeTestRule.getCurrentLensFacing()
@@ -210,8 +198,8 @@ internal class FlashDeviceTest {
             composeTestRule.setFlashMode(FlashMode.ON)
 
             composeTestRule.longClickForVideoRecordingCheckingElapsedTime()
-            composeTestRule.waitForNodeWithTag(
-                VIDEO_CAPTURE_SUCCESS_TAG,
+            composeTestRule.waitForSnackbarWithText(
+                StateR.string.toast_video_capture_success,
                 VIDEO_CAPTURE_TIMEOUT_MILLIS
             )
         }

@@ -16,7 +16,7 @@
 package com.google.jetpackcamera
 
 import android.os.Build
-import androidx.compose.ui.test.isDisplayed
+import androidx.compose.ui.test.isNotSelected
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -28,15 +28,19 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
-import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.settings.ui.BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
+import com.google.jetpackcamera.settings.ui.BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_STREAM_CONFIG_BUTTON
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.visitSettingDialog
+import com.google.jetpackcamera.utils.visitSettingsScreen
+import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -74,9 +78,7 @@ class BackgroundDeviceTest {
     @Test
     fun background_foreground() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         backgroundThenForegroundApp()
     }
@@ -84,9 +86,7 @@ class BackgroundDeviceTest {
     @Test
     fun flipCamera_then_background_foreground() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         // Navigate to quick settings
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
@@ -109,9 +109,7 @@ class BackgroundDeviceTest {
     @Test
     fun setAspectRatio_then_background_foreground() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
-        }
+        composeTestRule.waitForCaptureButton()
 
         // Navigate to quick settings
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
@@ -142,29 +140,30 @@ class BackgroundDeviceTest {
     }
 
     @Test
-    fun toggleCaptureMode_then_background_foreground() = runMainActivityScenarioTest {
+    fun toggleStreamConfig_then_background_foreground() = runMainActivityScenarioTest {
         // Skip this test on devices that don't support single stream
         assumeSupportsSingleStream()
 
         // Wait for the capture button to be displayed
-        composeTestRule.waitUntil(timeoutMillis = APP_START_TIMEOUT_MILLIS) {
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).isDisplayed()
+        composeTestRule.waitForCaptureButton()
+
+        composeTestRule.visitSettingsScreen {
+            visitSettingDialog(
+                settingTestTag = BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG,
+                dialogTestTag = BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG,
+                disabledMessage = "Stream configuration component is disabled"
+            ) {
+                val singleStreamNode =
+                    onNodeWithTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG)
+                if (isNotSelected().matches(singleStreamNode.fetchSemanticsNode())) {
+                    singleStreamNode.performClick()
+                } else {
+                    onNodeWithTag(
+                        BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
+                    ).performClick()
+                }
+            }
         }
-
-        // Navigate to quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
-
-        // Click the flip camera button
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_STREAM_CONFIG_BUTTON)
-            .assertExists()
-            .performClick()
-
-        // Exit quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
 
         backgroundThenForegroundApp()
     }

@@ -30,12 +30,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
-import com.google.jetpackcamera.feature.postcapture.ui.SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.impl.SnackBarControllerImpl
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
@@ -312,65 +306,56 @@ class PostCaptureViewModel @Inject constructor(
                 null
             )
             if (result != null) {
-                val (stringResource, testTag) = when (mediaDescriptor) {
+                val stringResource = when (mediaDescriptor) {
                     is MediaDescriptor.Content.Image ->
-                        R.string.snackbar_save_image_success to
-                            SNACKBAR_POST_CAPTURE_IMAGE_SAVE_SUCCESS
+                        R.string.snackbar_save_image_success
 
                     is MediaDescriptor.Content.Video ->
-                        R.string.snackbar_save_video_success to
-                            SNACKBAR_POST_CAPTURE_VIDEO_SAVE_SUCCESS
+                        R.string.snackbar_save_video_success
                 }
 
                 snackBarController.addSnackBarData(
                     SnackbarData(
                         cookie = cookie,
                         stringResource = stringResource,
-                        withDismissAction = true,
-                        testTag = testTag
+                        withDismissAction = true
                     )
                 )
             } else {
                 // potential custom behavior for null
                 Log.e(TAG, "null saved media Uri without exception")
 
-                val (stringResource, testTag) = when (mediaDescriptor) {
+                val stringResource = when (mediaDescriptor) {
                     is MediaDescriptor.Content.Image ->
-                        R.string.snackbar_save_image_failure to
-                            SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
+                        R.string.snackbar_save_image_failure
 
                     is MediaDescriptor.Content.Video ->
-                        R.string.snackbar_save_video_failure to
-                            SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
+                        R.string.snackbar_save_video_failure
                 }
 
                 snackBarController.addSnackBarData(
                     SnackbarData(
                         cookie = cookie,
                         stringResource = stringResource,
-                        withDismissAction = true,
-                        testTag = testTag
+                        withDismissAction = true
                     )
                 )
             }
         } catch (e: Exception) {
             // todo: custom message depending on failure reason
-            val (stringResource, testTag) = when (mediaDescriptor) {
+            val stringResource = when (mediaDescriptor) {
                 is MediaDescriptor.Content.Image ->
-                    R.string.snackbar_save_image_failure to
-                        SNACKBAR_POST_CAPTURE_IMAGE_SAVE_FAILURE
+                    R.string.snackbar_save_image_failure
 
                 is MediaDescriptor.Content.Video ->
-                    R.string.snackbar_save_video_failure to
-                        SNACKBAR_POST_CAPTURE_VIDEO_SAVE_FAILURE
+                    R.string.snackbar_save_video_failure
             }
 
             snackBarController.addSnackBarData(
                 SnackbarData(
                     cookie = cookie,
                     stringResource = stringResource,
-                    withDismissAction = true,
-                    testTag = testTag
+                    withDismissAction = true
                 )
             )
         }
@@ -401,14 +386,7 @@ class PostCaptureViewModel @Inject constructor(
                             is MediaDescriptor.Content.Video ->
                                 R.string.snackbar_delete_video_failure
                         },
-                        withDismissAction = true,
-                        testTag = when (mediaDescriptor) {
-                            is MediaDescriptor.Content.Image ->
-                                SNACKBAR_POST_CAPTURE_IMAGE_DELETE_FAILURE
-
-                            is MediaDescriptor.Content.Video ->
-                                SNACKBAR_POST_CAPTURE_VIDEO_DELETE_FAILURE
-                        }
+                        withDismissAction = true
                     )
                 )
             }

@@ -18,7 +18,7 @@ package com.google.jetpackcamera.core.camera
 /**
  * An event that can be sent to the camera coroutine.
  */
-sealed interface CameraEvent {
+internal sealed interface CameraEvent {
 
     /**
      * Represents a focus metering event, that the camera can act on.

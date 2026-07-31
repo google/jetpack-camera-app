@@ -19,7 +19,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.getSupportedMimeTypes
@@ -139,7 +138,7 @@ class ConstraintsTest {
             supportedFixedFrameRates = emptySet(),
             supportedDynamicRanges = dynamicRanges,
             supportedVideoQualitiesMap = emptyMap(),
-            supportedImageFormatsMap = mapOf(StreamConfig.SINGLE_STREAM to imageFormats),
+            supportedImageFormatsMap = mapOf(true to imageFormats),
             supportedIlluminants = emptySet(),
             supportedFlashModes = emptySet(),
             supportedZoomRange = null,

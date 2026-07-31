@@ -69,7 +69,6 @@ dependencies {
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons.extended)
 
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
@@ -95,8 +94,7 @@ dependencies {
     androidTestImplementation(libs.truth)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
-    debugImplementation(libs.androidx.test.monitor)
-    implementation(libs.androidx.junit)
+    testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
@@ -108,7 +106,9 @@ dependencies {
     implementation(project(":data:media"))
     implementation(project(":core:model"))
     testImplementation(project(":core:common"))
+    testImplementation(project(":core:camera:testing"))
     testImplementation(project(":data:settings"))
+    testImplementation(project(":core:settings"))
 
 }
 

@@ -16,8 +16,10 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.res.Configuration
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.Orientation
@@ -25,11 +27,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -48,10 +45,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
@@ -71,8 +67,8 @@ private const val TRACK_COLOR_ALPHA = .16f
  * @param enabled Whether the switch is interactive.
  * @param trackColor The color of the track when unchecked.
  * @param thumbColor The color of the thumb and the checked track.
- * @param leftIcon The [ImageVector] (e.g., Google Symbol) for the 'off' state.
- * @param rightIcon The [ImageVector] (e.g., Google Symbol) for the 'on' state.
+ * @param leftIcon The drawable resource ID for the 'off' state.
+ * @param rightIcon The drawable resource ID for the 'on' state.
  * @param unselectedIconColor The tint color for the 'off' icon.
  * @param selectedIconColor The tint color for the 'on' icon.
  */
@@ -86,8 +82,8 @@ fun ToggleSwitch(
     trackColor: Color = Color.White.copy(alpha = TRACK_COLOR_ALPHA),
     thumbColor: Color = MaterialTheme.colorScheme.primaryFixedDim,
     disableColor: Color = MaterialTheme.colorScheme.onSurface,
-    leftIcon: ImageVector? = null,
-    rightIcon: ImageVector? = null,
+    @DrawableRes leftIcon: Int? = null,
+    @DrawableRes rightIcon: Int? = null,
     leftIconDescription: String = "leftIcon",
     rightIconDescription: String = "rightIcon",
     unselectedIconColor: Color = MaterialTheme.colorScheme.secondaryFixed,
@@ -111,12 +107,19 @@ fun ToggleSwitch(
     // --- 2. Drag and Animation State ---
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val targetPosition = if (checked) 1f else 0f
+    val disableAnimations = LocalDisableAnimations.current
 
     // Animate the thumb position.
     // This snaps (0ms) during drag and animates (300ms) on tap or drag release.
     val animatedPosition by animateFloatAsState(
         targetValue = (targetPosition + (dragOffset / dims.dragRange)).coerceIn(0f, 1f),
-        animationSpec = tween(durationMillis = if (dragOffset == 0f) 300 else 0),
+        animationSpec = if (disableAnimations) {
+            snap()
+        } else {
+            tween(
+                durationMillis = if (dragOffset == 0f) 300 else 0
+            )
+        },
         label = "thumbPosition"
     )
     val initialThumbX = dims.startX + dims.dragRange * animatedPosition
@@ -125,18 +128,18 @@ fun ToggleSwitch(
     // color changes if togglemode is off (to indicate on/off state)
     val trackAnimatedColor by animateColorAsState(
         targetValue = trackColor,
-        animationSpec = tween(durationMillis = 300),
+        animationSpec = if (disableAnimations) snap() else tween(durationMillis = 300),
         label = "trackColor"
     )
     val thumbAnimatedColor by animateColorAsState(
         targetValue = if (!enabled) disableColor.copy(alpha = 0.12f) else thumbColor,
-        animationSpec = tween(durationMillis = 300),
+        animationSpec = if (disableAnimations) snap() else tween(durationMillis = 300),
         label = "thumbColor"
     )
 
     // --- 4. Icon Painters ---
-    val offIconPainter = leftIcon?.let { rememberVectorPainter(image = leftIcon) }
-    val onIconPainter = rightIcon?.let { rememberVectorPainter(image = rightIcon) }
+    val offIconPainter = leftIcon?.let { painterResource(id = it) }
+    val onIconPainter = rightIcon?.let { painterResource(id = it) }
 
     // --- 5. Gesture Handlers ---
     val draggableState = rememberDraggableState { delta ->
@@ -389,8 +392,8 @@ private fun Capture_ToggleSwitch_On_Disabled() {
         colorScheme = darkColorScheme(),
         content = {
             ToggleSwitch(
-                leftIcon = Icons.Outlined.CameraAlt,
-                rightIcon = Icons.Filled.Videocam,
+                leftIcon = R.drawable.ic_camera_alt_outline,
+                rightIcon = R.drawable.ic_videocam_filled,
                 checked = true,
                 onCheckedChange = {},
                 enabled = false
@@ -406,8 +409,8 @@ private fun Capture_ToggleSwitch_Off_Disabled() {
         colorScheme = darkColorScheme(),
         content = {
             ToggleSwitch(
-                leftIcon = Icons.Filled.CameraAlt,
-                rightIcon = Icons.Outlined.Videocam,
+                leftIcon = R.drawable.ic_camera_alt_filled,
+                rightIcon = R.drawable.ic_videocam_outline,
                 checked = false,
                 onCheckedChange = {},
                 enabled = false
@@ -423,8 +426,8 @@ private fun Capture_ToggleSwitch_On_Enabled() {
         colorScheme = darkColorScheme(),
         content = {
             ToggleSwitch(
-                leftIcon = Icons.Outlined.CameraAlt,
-                rightIcon = Icons.Filled.Videocam,
+                leftIcon = R.drawable.ic_camera_alt_outline,
+                rightIcon = R.drawable.ic_videocam_filled,
                 checked = true,
                 onCheckedChange = {},
                 enabled = true
@@ -440,8 +443,8 @@ private fun Capture_ToggleSwitch_Off_Enabled() {
         colorScheme = darkColorScheme(),
         content = {
             ToggleSwitch(
-                leftIcon = Icons.Filled.CameraAlt,
-                rightIcon = Icons.Outlined.Videocam,
+                leftIcon = R.drawable.ic_camera_alt_filled,
+                rightIcon = R.drawable.ic_videocam_outline,
                 checked = false,
                 onCheckedChange = {},
                 enabled = true
@@ -458,8 +461,8 @@ private fun Capture_Switch_Off_Enabled() {
         content =
         {
             ToggleSwitch(
-                leftIcon = Icons.Filled.CameraAlt,
-                rightIcon = Icons.Outlined.Videocam,
+                leftIcon = R.drawable.ic_camera_alt_filled,
+                rightIcon = R.drawable.ic_videocam_outline,
                 checked = false,
                 onCheckedChange = {},
                 enabled = true

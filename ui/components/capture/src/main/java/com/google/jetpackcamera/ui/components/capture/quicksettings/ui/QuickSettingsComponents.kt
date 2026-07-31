@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,9 +35,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
@@ -52,12 +50,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -72,14 +71,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
@@ -94,22 +91,18 @@ import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptureMode
-import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraConcurrentCameraMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraLensFace
-import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraStreamConfig
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
-import com.google.jetpackcamera.ui.uistate.capture.ConcurrentCameraUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
-import com.google.jetpackcamera.ui.uistate.capture.StreamConfigUiState
 import kotlin.math.min
 
 @Composable
@@ -126,7 +119,6 @@ fun QuickSetRatio(
                 AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
                 AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
                 AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-                else -> CameraAspectRatio.ONE_ONE
             }
         QuickSettingToggleButton(
             modifier = modifier,
@@ -236,7 +228,7 @@ fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifier = Modi
         onClick = onNavigateToSettings,
         text = stringResource(R.string.quick_settings_more_text),
         accessibilityText = stringResource(R.string.quick_settings_more_description),
-        painter = rememberVectorPainter(Icons.Filled.MoreHoriz),
+        painter = painterResource(R.drawable.ic_more_horiz),
         modifier = modifier.testTag(SETTINGS_BUTTON)
     )
 }
@@ -406,60 +398,6 @@ fun QuickFlipCamera(
             modifier = modifier,
             enum = enum,
             onClick = { setLensFacing(flipLensUiState.selectedLensFacing.flip()) }
-        )
-    }
-}
-
-@Composable
-fun QuickSetStreamConfig(
-    setStreamConfig: (StreamConfig) -> Unit,
-    streamConfigUiState: StreamConfigUiState,
-    modifier: Modifier = Modifier
-) {
-    if (streamConfigUiState is StreamConfigUiState.Available) {
-        val enum: CameraStreamConfig =
-            when (streamConfigUiState.selectedStreamConfig) {
-                StreamConfig.MULTI_STREAM -> CameraStreamConfig.MULTI_STREAM
-                StreamConfig.SINGLE_STREAM -> CameraStreamConfig.SINGLE_STREAM
-            }
-        QuickSettingToggleButton(
-            modifier = modifier,
-            enum = enum,
-            onClick = {
-                when (streamConfigUiState.selectedStreamConfig) {
-                    StreamConfig.MULTI_STREAM -> setStreamConfig(StreamConfig.SINGLE_STREAM)
-                    StreamConfig.SINGLE_STREAM -> setStreamConfig(StreamConfig.MULTI_STREAM)
-                }
-            },
-            enabled = streamConfigUiState.isActive
-        )
-    }
-}
-
-@Composable
-fun QuickSetConcurrentCamera(
-    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit,
-    concurrentCameraUiState: ConcurrentCameraUiState,
-    modifier: Modifier = Modifier
-) {
-    if (concurrentCameraUiState is ConcurrentCameraUiState.Available) {
-        val enum: CameraConcurrentCameraMode =
-            when (concurrentCameraUiState.selectedConcurrentCameraMode) {
-                ConcurrentCameraMode.OFF -> CameraConcurrentCameraMode.OFF
-                ConcurrentCameraMode.DUAL -> CameraConcurrentCameraMode.DUAL
-            }
-        QuickSettingToggleButton(
-            modifier = modifier,
-            enum = enum,
-            onClick = {
-                when (concurrentCameraUiState.selectedConcurrentCameraMode) {
-                    ConcurrentCameraMode.OFF -> setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-                    ConcurrentCameraMode.DUAL -> setConcurrentCameraMode(ConcurrentCameraMode.OFF)
-                }
-            },
-            isHighLighted = concurrentCameraUiState.selectedConcurrentCameraMode ==
-                ConcurrentCameraMode.DUAL,
-            enabled = concurrentCameraUiState.isEnabled
         )
     }
 }
@@ -658,7 +596,7 @@ private fun CloseExpandedSettingsButton(onUnFocus: () -> Unit, modifier: Modifie
         onClick = onUnFocus
     ) {
         Icon(
-            imageVector = Icons.Default.Close,
+            painter = painterResource(R.drawable.ic_close),
             contentDescription = stringResource(
                 R.string.quick_settings_btn_close_expanded_settings_description
             )
@@ -775,7 +713,9 @@ private fun ExpandedQuickSetting(
             quickSettingButtons.size,
             (
                 (
-                    LocalConfiguration.current.screenWidthDp.dp - (
+                    with(LocalDensity.current) {
+                        LocalWindowInfo.current.containerSize.width.toDp()
+                    } - (
                         dimensionResource(
                             id = R.dimen.quick_settings_ui_horizontal_padding
                         ) * 2
@@ -825,9 +765,18 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * A composable that displays an icon indicating the current flash mode.
+ *
+ * @param modifier the modifier for this component.
+ * @param flashModeUiStateProvider the provider for [FlashModeUiState] for this component.
+ */
 @Composable
-fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = Modifier) {
-    when (flashModeUiState) {
+fun FlashModeIndicator(
+    modifier: Modifier = Modifier,
+    flashModeUiStateProvider: () -> FlashModeUiState
+) {
+    when (val flashModeUiState = flashModeUiStateProvider()) {
         is FlashModeUiState.Unavailable ->
             TopBarQuickSettingIcon(
                 modifier = modifier,
@@ -866,7 +815,7 @@ private fun TopBarQuickSettingIcon(
             modifier = modifier
                 .size(IconButtonDefaults.smallIconSize)
                 .clickable(
-                    interactionSource = null,
+                    interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onClick,
                     enabled = enabled

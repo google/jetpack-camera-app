@@ -29,18 +29,10 @@ import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.model.VideoCaptureEvent
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.controller.CaptureController
 import com.google.jetpackcamera.ui.controller.ImageWellController
-import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.impl.Utils.nextSaveLocation
 import com.google.jetpackcamera.ui.controller.impl.Utils.postCurrentMediaToMediaRepository
-import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlin.coroutines.CoroutineContext
 import kotlinx.atomicfu.atomic
@@ -80,7 +72,6 @@ class CaptureControllerImpl(
     private val externalCapturesCallback: () -> Pair<SaveLocation, IntProgress?>,
     override val captureEvents: Channel<CaptureEvent>,
     private val imageWellController: ImageWellController,
-    private val snackBarController: SnackBarController?,
     coroutineContext: CoroutineContext
 ) : CaptureController {
 
@@ -92,14 +83,7 @@ class CaptureControllerImpl(
 
     override fun captureImage(contentResolver: ContentResolver) {
         if (externalCaptureMode == ExternalCaptureMode.VideoCapture) {
-            snackBarController?.addSnackBarData(
-                SnackbarData(
-                    cookie = "Image-ExternalVideoCaptureMode",
-                    stringResource = R.string.toast_image_capture_external_unsupported,
-                    withDismissAction = true,
-                    testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-                )
-            )
+            captureEvents.trySend(ImageCaptureEvent.ImageCaptureExternalUnsupported)
             return
         }
         Log.d(TAG, "captureImage")
@@ -158,19 +142,11 @@ class CaptureControllerImpl(
     override fun startVideoRecording() {
         if (externalCaptureMode == ExternalCaptureMode.ImageCapture) {
             Log.d(TAG, "externalVideoRecording")
-            snackBarController?.addSnackBarData(
-                SnackbarData(
-                    cookie = "Video-ExternalImageCaptureMode",
-                    stringResource = R.string.toast_video_capture_external_unsupported,
-                    withDismissAction = true,
-                    testTag = VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-                )
-            )
+            captureEvents.trySend(VideoCaptureEvent.VideoCaptureExternalUnsupported)
             return
         }
         Log.d(TAG, "startVideoRecording")
         recordingJob = scope.launch {
-            val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             val (saveLocation, _) = nextSaveLocation(
                 saveMode,
                 externalCaptureMode,
@@ -178,7 +154,6 @@ class CaptureControllerImpl(
             )
             try {
                 cameraSystem.startVideoRecording(saveLocation) {
-                    var snackbarToShow: SnackbarData?
                     when (it) {
                         is OnVideoRecordEvent.OnVideoRecorded -> {
                             Log.d(TAG, "cameraSystem.startRecording OnVideoRecorded")
@@ -200,33 +175,12 @@ class CaptureControllerImpl(
                             }
 
                             captureEvents.trySend(event)
-                            // don't display snackbar for successful capture
-                            snackbarToShow = if (saveLocation is SaveLocation.Cache) {
-                                null
-                            } else {
-                                SnackbarData(
-                                    cookie = cookie,
-                                    stringResource = R.string.toast_video_capture_success,
-                                    withDismissAction = true,
-                                    testTag = VIDEO_CAPTURE_SUCCESS_TAG
-                                )
-                            }
                         }
 
                         is OnVideoRecordEvent.OnVideoRecordError -> {
                             Log.d(TAG, "cameraSystem.startRecording OnVideoRecordError")
                             captureEvents.trySend(VideoCaptureEvent.VideoCaptureError(it.error))
-                            snackbarToShow = SnackbarData(
-                                cookie = cookie,
-                                stringResource = R.string.toast_video_capture_failure,
-                                withDismissAction = true,
-                                testTag = VIDEO_CAPTURE_FAILURE_TAG
-                            )
                         }
-                    }
-
-                    snackbarToShow?.let { data ->
-                        snackBarController?.addSnackBarData(data)
                     }
                 }
                 Log.d(TAG, "cameraSystem.startRecording success")
@@ -250,41 +204,16 @@ class CaptureControllerImpl(
         onSuccess: (T) -> Unit = {},
         onFailure: (exception: Exception) -> Unit = {}
     ) {
-        val cookieInt = snackBarController?.incrementAndGetSnackBarCount()
-            ?: traceCookie.incrementAndGet()
-        val cookie = "Image-$cookieInt"
-        val snackBarData = try {
-            traceAsync(IMAGE_CAPTURE_TRACE, cookieInt) {
+        val cookieInt = traceCookie.incrementAndGet()
+        try {
+            val result = traceAsync(IMAGE_CAPTURE_TRACE, cookieInt) {
                 doTakePicture()
-            }.also { result ->
-                onSuccess(result)
             }
+            onSuccess(result)
             Log.d(TAG, "cameraSystem.takePicture success")
-            // don't display snackbar for successful capture
-            if (saveLocation is SaveLocation.Cache) {
-                null
-            } else {
-                SnackbarData(
-                    cookie = cookie,
-                    stringResource = R.string.toast_image_capture_success,
-                    withDismissAction = true,
-                    testTag = IMAGE_CAPTURE_SUCCESS_TAG
-                )
-            }
         } catch (exception: Exception) {
             onFailure(exception)
             Log.d(TAG, "cameraSystem.takePicture error", exception)
-            SnackbarData(
-                cookie = cookie,
-                stringResource = R.string.toast_capture_failure,
-                withDismissAction = true,
-                testTag = IMAGE_CAPTURE_FAILURE_TAG
-            )
-        }
-        snackBarData?.let {
-            snackBarController?.addSnackBarData(
-                it
-            )
         }
     }
 

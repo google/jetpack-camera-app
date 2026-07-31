@@ -37,7 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -85,7 +85,7 @@ fun PermissionTemplate(
                 permissionState.launchPermissionRequest()
             }
         },
-        imageVector = permissionEnum.getImageVector()!!,
+        painter = permissionEnum.getPainter(),
         iconAccessibilityText = stringResource(permissionEnum.getIconAccessibilityTextResId()),
         title = stringResource(permissionEnum.getPermissionTitleResId()),
 
@@ -113,7 +113,7 @@ fun PermissionTemplate(
     modifier: Modifier = Modifier,
     testTag: String,
     onRequestPermission: () -> Unit,
-    imageVector: ImageVector,
+    painter: Painter,
     iconAccessibilityText: String,
     title: String,
     bodyText: String,
@@ -129,7 +129,7 @@ fun PermissionTemplate(
                 .height(IntrinsicSize.Min)
                 .align(Alignment.CenterHorizontally)
                 .testTag(testTag),
-            imageVector = imageVector,
+            painter = painter,
             accessibilityText = iconAccessibilityText
         )
         Spacer(modifier = Modifier.fillMaxHeight(.1f))
@@ -165,7 +165,7 @@ private fun Preview_Camera_Permission_Page() {
     PermissionTemplate(
         onRequestPermission = { /*TODO*/ },
         testTag = "",
-        imageVector = PermissionEnum.CAMERA.getImageVector()!!,
+        painter = PermissionEnum.CAMERA.getPainter(),
         iconAccessibilityText = "",
         title = stringResource(id = PermissionEnum.CAMERA.getPermissionTitleResId()),
         bodyText = stringResource(id = PermissionEnum.CAMERA.getPermissionBodyTextResId()),
@@ -179,7 +179,7 @@ private fun Preview_Audio_Permission_Page() {
     PermissionTemplate(
         onRequestPermission = { /*TODO*/ },
         testTag = "",
-        imageVector = PermissionEnum.RECORD_AUDIO.getImageVector()!!,
+        painter = PermissionEnum.RECORD_AUDIO.getPainter(),
         iconAccessibilityText = "",
         title = stringResource(id = PermissionEnum.RECORD_AUDIO.getPermissionTitleResId()),
         bodyText = stringResource(id = PermissionEnum.RECORD_AUDIO.getPermissionBodyTextResId()),
@@ -191,17 +191,13 @@ private fun Preview_Audio_Permission_Page() {
 Permission UI Subcomponents
  */
 @Composable
-fun PermissionImage(
-    modifier: Modifier = Modifier,
-    imageVector: ImageVector,
-    accessibilityText: String
-) {
+fun PermissionImage(modifier: Modifier = Modifier, painter: Painter, accessibilityText: String) {
     Box(modifier = modifier) {
         Icon(
             modifier = Modifier
                 .size(300.dp)
                 .align(Alignment.BottomCenter),
-            imageVector = imageVector,
+            painter = painter,
             tint = MaterialTheme.colorScheme.onPrimary,
             contentDescription = accessibilityText
         )

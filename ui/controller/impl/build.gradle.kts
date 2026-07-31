@@ -70,13 +70,23 @@ dependencies {
     implementation(libs.kotlinx.atomicfu)
 
     implementation(project(":data:media"))
-    implementation(project(":ui:components:capture"))
     implementation(project(":ui:controller"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
     implementation(project(":core:model"))
     implementation(project(":core:common"))
     implementation(project(":core:camera"))
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(project(":core:common"))
+    testImplementation(project(":core:camera:testing"))
+    testImplementation(project(":data:settings"))
+    testImplementation(project(":core:settings"))
 }
 
 // Allow references to generated code

@@ -26,28 +26,41 @@ import com.google.jetpackcamera.model.CaptureMode
  */
 sealed interface CaptureButtonUiState {
     /**
-     * The capture button is unavailable and should be disabled.
-     * This is used when the camera is not ready or an operation is in progress that
-     * precludes capturing.
+     * Whether the capture button is enabled and can be interacted with.
      */
-    data object Unavailable : CaptureButtonUiState
+    val isEnabled: Boolean
+
+    /**
+     * The capture button is unavailable and should not be shown or interacted with.
+     */
+    data object Unavailable : CaptureButtonUiState {
+        override val isEnabled: Boolean = false
+    }
 
     /**
      * The capture button is enabled and ready for user interaction.
      */
     sealed interface Enabled : CaptureButtonUiState {
+        override val isEnabled: Boolean get() = true
+
         /**
          * The button is in an idle state, ready to start a capture.
          *
          * @param captureMode The current [CaptureMode] (e.g., [CaptureMode.IMAGE] or
          *   [CaptureMode.VIDEO]) to indicate the button's primary action.
+         * @property isEnabled Whether the button is enabled for interaction.
          */
-        data class Idle(val captureMode: CaptureMode) : Enabled
+        data class Idle(
+            val captureMode: CaptureMode,
+            override val isEnabled: Boolean = true
+        ) : Enabled
 
         /**
          * The button is in a video recording state.
          */
         sealed interface Recording : Enabled {
+            override val isEnabled: Boolean get() = true
+
             /**
              * The user is actively pressing the button to record video (press-and-hold).
              */

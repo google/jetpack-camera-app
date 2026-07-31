@@ -26,8 +26,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,23 +47,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.jetpackcamera.core.camera.effects.SingleStreamEffectKey
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_60
@@ -74,6 +77,8 @@ import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.AspectRatioUiState
 import com.google.jetpackcamera.settings.AudioUiState
+import com.google.jetpackcamera.settings.CameraEffectUiState
+import com.google.jetpackcamera.settings.ConcurrentCameraUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
 import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
@@ -86,7 +91,6 @@ import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
-import com.google.jetpackcamera.settings.StreamConfigUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.VideoQualityUiState
@@ -116,8 +120,8 @@ fun SettingsPageHeader(
                 onClick = { navBack() }
             ) {
                 Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    stringResource(id = R.string.nav_back_accessibility)
+                    painter = painterResource(id = R.drawable.ic_arrow_back),
+                    contentDescription = stringResource(id = R.string.nav_back_accessibility)
                 )
             }
         },
@@ -197,7 +201,8 @@ fun DefaultCameraFacing(
         }
     )
     SwitchSettingUI(
-        modifier = modifier.testTag(BTN_SWITCH_SETTING_LENS_FACING_TAG)
+        modifier = modifier
+            .testTag(BTN_SWITCH_SETTING_LENS_FACING_TAG)
             .semantics {
                 stateDescription = description
             },
@@ -241,6 +246,7 @@ fun FlashModeSetting(
                     id = R.string.flash_mode_description_llb
                 )
             }
+
             is FlashUiState.Disabled -> stringResource(
                 flashUiState.disabledRationale.reasonTextResId,
                 stringResource(flashUiState.disabledRationale.affectedSettingNameResId)
@@ -306,8 +312,13 @@ fun AspectRatioSetting(
                     id = R.string.aspect_ratio_description_9_16
                 )
 
-                AspectRatio.THREE_FOUR -> stringResource(id = R.string.aspect_ratio_description_3_4)
-                AspectRatio.ONE_ONE -> stringResource(id = R.string.aspect_ratio_description_1_1)
+                AspectRatio.THREE_FOUR -> stringResource(
+                    id = R.string.aspect_ratio_description_3_4
+                )
+
+                AspectRatio.ONE_ONE -> stringResource(
+                    id = R.string.aspect_ratio_description_1_1
+                )
             }
         } else {
             TODO("aspect ratio currently has no disabled criteria")
@@ -342,49 +353,58 @@ fun AspectRatioSetting(
 }
 
 @Composable
-fun StreamConfigSetting(
-    streamConfigUiState: StreamConfigUiState,
-    setStreamConfig: (StreamConfig) -> Unit,
+fun CameraEffectSetting(
+    cameraEffectUiState: CameraEffectUiState,
+    setCameraEffect: (CameraEffectId) -> Unit,
     modifier: Modifier = Modifier
 ) {
     BasicPopupSetting(
         modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG),
-        title = stringResource(R.string.stream_config_title),
+        title = stringResource(id = R.string.stream_config_title),
         leadingIcon = null,
-        enabled = true,
-        description =
-        if (streamConfigUiState is StreamConfigUiState.Enabled) {
-            when (streamConfigUiState.currentStreamConfig) {
-                StreamConfig.MULTI_STREAM -> stringResource(
-                    id = R.string.stream_config_description_multi_stream
-                )
-
-                StreamConfig.SINGLE_STREAM -> stringResource(
-                    id = R.string.stream_config_description_single_stream
-                )
+        enabled = cameraEffectUiState is CameraEffectUiState.Enabled,
+        description = when (cameraEffectUiState) {
+            is CameraEffectUiState.Enabled -> {
+                if (cameraEffectUiState.currentCameraEffect == NONE_EFFECT_ID) {
+                    stringResource(id = R.string.stream_config_description_multi_stream)
+                } else {
+                    stringResource(id = R.string.stream_config_description_single_stream)
+                }
             }
-        } else {
-            TODO("stream config currently has no disabled criteria")
+
+            is CameraEffectUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = cameraEffectUiState.disabledRationale)
+            }
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(
-                        BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
-                    ),
-                    text = stringResource(id = R.string.stream_config_selector_multi_stream),
-                    selected = streamConfigUiState.currentStreamConfig == StreamConfig.MULTI_STREAM,
-                    enabled = true,
-                    onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
-                )
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG),
-                    text = stringResource(id = R.string.stream_config_description_single_stream),
-                    selected = streamConfigUiState.currentStreamConfig ==
-                        StreamConfig.SINGLE_STREAM,
-                    enabled = true,
-                    onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
-                )
+                if (cameraEffectUiState is CameraEffectUiState.Enabled) {
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(
+                            BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
+                        ),
+                        text = stringResource(
+                            id = R.string.stream_config_selector_multi_stream
+                        ),
+                        selected = cameraEffectUiState.currentCameraEffect == NONE_EFFECT_ID,
+                        enabled = true,
+                        onClick = { setCameraEffect(NONE_EFFECT_ID) }
+                    )
+                    if (cameraEffectUiState.supportedEffects.contains(SingleStreamEffectKey.id)) {
+                        SingleChoiceSelector(
+                            modifier = Modifier.testTag(
+                                BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
+                            ),
+                            text = stringResource(
+                                id = R.string.stream_config_selector_single_stream
+                            ),
+                            selected = cameraEffectUiState.currentCameraEffect ==
+                                SingleStreamEffectKey.id,
+                            enabled = true,
+                            onClick = { setCameraEffect(SingleStreamEffectKey.id) }
+                        )
+                    }
+                }
             }
         }
     )
@@ -842,9 +862,11 @@ fun RecordingAudioSetting(
             is AudioUiState.Enabled.On -> {
                 stringResource(R.string.audio_selector_on)
             }
+
             is AudioUiState.Enabled.Mute -> {
                 stringResource(R.string.audio_selector_off)
             }
+
             is AudioUiState.Disabled -> {
                 disabledRationaleString(disabledRationale = audioUiState.disabledRationale)
             }
@@ -856,6 +878,58 @@ fun RecordingAudioSetting(
             is AudioUiState.Disabled, is AudioUiState.Enabled.Mute -> false
         },
         enabled = audioUiState is AudioUiState.Enabled
+    )
+}
+
+/**
+ * A setting component that allows the user to enable or disable concurrent camera mode.
+ *
+ * @param modifier the [Modifier] to be applied to this setting.
+ * @param concurrentCameraUiState the current UI state of the concurrent camera setting.
+ * @param setConcurrentCameraMode callback to update the concurrent camera mode.
+ */
+@Composable
+internal fun ConcurrentCameraSetting(
+    modifier: Modifier = Modifier,
+    concurrentCameraUiState: ConcurrentCameraUiState,
+    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit
+) {
+    SwitchSettingUI(
+        modifier = modifier.testTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG),
+        title = stringResource(id = R.string.concurrent_camera_title),
+        description = when (concurrentCameraUiState) {
+            is ConcurrentCameraUiState.Enabled -> {
+                when (concurrentCameraUiState.currentConcurrentCameraMode) {
+                    ConcurrentCameraMode.DUAL -> stringResource(
+                        R.string.concurrent_camera_description_on
+                    )
+
+                    ConcurrentCameraMode.OFF -> stringResource(
+                        R.string.concurrent_camera_description_off
+                    )
+                }
+            }
+
+            is ConcurrentCameraUiState.Disabled -> {
+                disabledRationaleString(
+                    disabledRationale = concurrentCameraUiState.disabledRationale
+                )
+            }
+        },
+        leadingIcon = null,
+        onSwitchChanged = { on ->
+            setConcurrentCameraMode(
+                if (on) ConcurrentCameraMode.DUAL else ConcurrentCameraMode.OFF
+            )
+        },
+        settingValue = when (concurrentCameraUiState) {
+            is ConcurrentCameraUiState.Enabled ->
+                concurrentCameraUiState.currentConcurrentCameraMode ==
+                    ConcurrentCameraMode.DUAL
+
+            is ConcurrentCameraUiState.Disabled -> false
+        },
+        enabled = concurrentCameraUiState is ConcurrentCameraUiState.Enabled
     )
 }
 
@@ -905,6 +979,7 @@ fun BasicPopupSetting(
     )
     if (popupStatus.value) {
         AlertDialog(
+            modifier = Modifier.semantics { testTagsAsResourceId = true },
             onDismissRequest = { popupStatus.value = false },
             confirmButton = {
                 Text(
@@ -1082,6 +1157,21 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
         )
 
         is DisabledRationale.PermissionRecordAudioNotGrantedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.ConcurrentCameraDisabledRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.ConcurrentCameraActiveRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.UltraHdrUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )
