@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-val ktlintVersion = "1.2.1"
+val ktlintVersion = "1.8.0"
 
 initscript {
     val spotlessVersion = "6.25.0"
@@ -32,11 +32,12 @@ rootProject {
     subprojects {
         apply<com.diffplug.gradle.spotless.SpotlessPlugin>()
         extensions.configure<com.diffplug.gradle.spotless.SpotlessExtension> {
-            // limit format enforcement to just the files changed by this feature branch
             ratchetFrom("origin/main")
             kotlin {
                 target("**/*.kt")
-                targetExclude("**/build/**/*.kt")
+                targetExclude(
+                    "**/build/**/*.kt"
+                )
                 ktlint(ktlintVersion)
                     .setEditorConfigPath(rootProject.file(".editorconfig"))
                 licenseHeaderFile(rootProject.file("spotless/copyright.kt"))

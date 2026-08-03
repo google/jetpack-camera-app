@@ -13,7 +13,7 @@ composeBom = "2025.10.01"
 accompanist = "0.37.3"
 # kotlinPlugin and composeCompiler are linked
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
-kotlinPlugin = "2.2.0"
+kotlinPlugin = "2.4.10"
 androidGradlePlugin = "9.3.1"
 
 
@@ -43,7 +43,7 @@ composeMaterial = "1.5.0-alpha07"
 cmake = "3.22.1"
 kotlinxAtomicfu = "0.29.0"
 kotlinxCoroutines = "1.10.2"
-hilt = "2.59.2"
+hilt = "2.60.1"
 junit = "4.13.2"
 
 robolectric = "4.15.1"
