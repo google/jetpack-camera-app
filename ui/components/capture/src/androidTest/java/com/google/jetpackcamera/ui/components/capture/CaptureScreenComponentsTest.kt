@@ -51,7 +51,8 @@ class CaptureScreenComponentsTest {
         composeTestRule.setContent {
             ElapsedTimeText(
                 modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                elapsedTimeUiStateProvider = { ElapsedTimeUiState.Enabled(30_000_000_000L) } // 0:30
+                // 0:30
+                elapsedTimeUiStateProvider = { ElapsedTimeUiState.Enabled(30_000_000_000L) }
             )
         }
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertTextEquals("0:30")
@@ -63,7 +64,8 @@ class CaptureScreenComponentsTest {
         composeTestRule.setContent {
             ElapsedTimeText(
                 modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                elapsedTimeUiStateProvider = { ElapsedTimeUiState.Enabled(65_000_000_000L) } // 1:05
+                // 1:05
+                elapsedTimeUiStateProvider = { ElapsedTimeUiState.Enabled(65_000_000_000L) }
             )
         }
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
@@ -76,8 +78,9 @@ class CaptureScreenComponentsTest {
             ElapsedTimeText(
                 modifier = Modifier.testTag(ELAPSED_TIME_TAG),
                 elapsedTimeUiStateProvider = {
+                    // PAUSED 0:30
                     ElapsedTimeUiState.Enabled(30_000_000_000L, isPaused = true)
-                } // PAUSED 0:30
+                }
             )
         }
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertTextEquals("PAUSED 0:30")
@@ -90,8 +93,9 @@ class CaptureScreenComponentsTest {
             ElapsedTimeText(
                 modifier = Modifier.testTag(ELAPSED_TIME_TAG),
                 elapsedTimeUiStateProvider = {
+                    // PAUSED 1:05
                     ElapsedTimeUiState.Enabled(65_000_000_000L, isPaused = true)
-                } // PAUSED 1:05
+                }
             )
         }
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
