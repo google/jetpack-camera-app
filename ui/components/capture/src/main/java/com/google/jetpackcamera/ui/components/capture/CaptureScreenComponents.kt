@@ -836,7 +836,9 @@ fun FlipCameraButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (flipLensUiState is FlipLensUiState.Available) {
+    if (flipLensUiState is FlipLensUiState.Available &&
+        flipLensUiState.availableLensFacings.size > 1
+    ) {
         var rotation by remember { mutableFloatStateOf(0f) }
         val animatedRotation = remember { Animatable(0f) }
         var initialLaunch by remember { mutableStateOf(false) }
