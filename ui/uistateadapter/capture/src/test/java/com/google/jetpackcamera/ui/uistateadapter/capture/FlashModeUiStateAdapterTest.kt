@@ -330,7 +330,7 @@ class FlashModeUiStateAdapterTest {
     }
 
     @Test
-    fun from_flashUnsupportedOnCurrentLens_flashModeDisabled() {
+    fun from_flashUnsupportedOnCurrentLens_flashModeHidden() {
         // Given a device that supports FLASH_ON on some lens, but NOT on the current lens (which supports OFF and AUTO)
         val appSettings = defaultCameraAppSettings.copy(
             cameraLensFacing = LensFacing.BACK,
@@ -353,16 +353,11 @@ class FlashModeUiStateAdapterTest {
         // When
         val flashModeUiState = FlashModeUiState.from(appSettings, systemConstraints)
 
-        // Then FLASH_ON is disabled because it is unsupported on the current lens
+        // Then FLASH_ON is not present because it is unsupported on the current lens
         assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
         val availableUiState = flashModeUiState as FlashModeUiState.Available
-        val flashOnState =
-            availableUiState.availableFlashModes.find { it.value == FlashMode.ON }
-        assertThat(flashOnState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
-        val disabledFlashOn = flashOnState as SingleSelectableUiState.Disabled
-        assertThat(
-            disabledFlashOn.disabledReason
-        ).isEqualTo(DisabledReason.FLASH_UNSUPPORTED_ON_LENS)
+        val hasFlashOn = availableUiState.availableFlashModes.any { it.value == FlashMode.ON }
+        assertThat(hasFlashOn).isFalse()
         // Ensure other modes are present
         val hasFlashAuto = availableUiState.availableFlashModes.any { it.value == FlashMode.AUTO }
         assertThat(hasFlashAuto).isTrue()

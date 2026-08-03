@@ -264,7 +264,7 @@ internal class HdrUiStateAdapterTest {
     }
 
     @Test
-    fun from_imageOnlyMode_hdrUnsupportedOnCurrentLensOnly_returnsDisabled() {
+    fun from_imageOnlyMode_hdrUnsupportedOnCurrentLensOnly_returnsUnavailable() {
         // Given in IMAGE_ONLY capture mode
         // Current lens (BACK) does NOT support HDR, but FRONT lens DOES support HDR
         val appSettings = defaultCameraAppSettings.copy(
@@ -294,14 +294,12 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState =
             HdrUiState.from(appSettings, systemConstraints)
 
-        // Then HDR is available but not supported (disabled)
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
-        val availableState = hdrUiState as HdrUiState.Available
-        assertThat(availableState.isSupported).isFalse()
+        // Then HDR is unavailable
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
     }
 
     @Test
-    fun from_videoOnlyMode_hdrUnsupportedOnCurrentLensOnly_returnsDisabled() {
+    fun from_videoOnlyMode_hdrUnsupportedOnCurrentLensOnly_returnsUnavailable() {
         // Given in VIDEO_ONLY capture mode
         // Current lens (BACK) does NOT support HDR, but FRONT lens DOES support HDR
         val appSettings = defaultCameraAppSettings.copy(
@@ -324,10 +322,8 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState =
             HdrUiState.from(appSettings, systemConstraints)
 
-        // Then HDR is available but not supported (disabled)
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
-        val availableState = hdrUiState as HdrUiState.Available
-        assertThat(availableState.isSupported).isFalse()
+        // Then HDR is unavailable
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
     }
 
     @Test
@@ -359,7 +355,7 @@ internal class HdrUiStateAdapterTest {
     }
 
     @Test
-    fun from_imageOnlyMode_effectAffectingImage_hdrUnsupported() {
+    fun from_imageOnlyMode_effectAffectingImage_hdrUnavailable() {
         val appSettings = defaultCameraAppSettings.copy(
             captureMode = CaptureMode.IMAGE_ONLY,
             imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
@@ -381,8 +377,6 @@ internal class HdrUiStateAdapterTest {
 
         val hdrUiState = HdrUiState.from(appSettings, systemConstraints)
 
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
-        val availableState = hdrUiState as HdrUiState.Available
-        assertThat(availableState.isSupported).isFalse()
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
     }
 }
