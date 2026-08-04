@@ -25,13 +25,11 @@ import com.google.android.gms.cameralowlight.LowLightBoost
 import com.google.android.gms.cameralowlight.LowLightBoostSession
 import com.google.android.gms.cameralowlight.SceneDetectorCallback
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 
-class PlayServicesLowLightBoostEffectProvider @Inject constructor(
-    @ApplicationContext private val context: Context
+class PlayServicesLowLightBoostEffectProvider(
+    private val context: Context
 ) : LowLightBoostEffectProvider {
     @SuppressLint("RestrictedApi")
     @RequiresApi(Build.VERSION_CODES.R)
