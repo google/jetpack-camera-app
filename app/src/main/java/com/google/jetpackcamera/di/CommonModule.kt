@@ -30,7 +30,7 @@ import kotlinx.coroutines.SupervisorJob
  */
 @Module
 @InstallIn(SingletonComponent::class)
-internal class CommonModule {
+internal object CommonModule {
     @Provides
     @DefaultDispatcher
     fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default

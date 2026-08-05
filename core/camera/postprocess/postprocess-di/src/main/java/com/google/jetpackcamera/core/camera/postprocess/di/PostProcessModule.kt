@@ -27,9 +27,9 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-internal abstract class PostProcessModule {
+internal interface PostProcessModule {
     @Multibinds
-    abstract fun imagePostProcessorEntries(): Set<
+    fun imagePostProcessorEntries(): Set<
         Map.Entry<
             ImagePostProcessorFeatureKey,
             @JvmSuppressWildcards Provider<ImagePostProcessor>

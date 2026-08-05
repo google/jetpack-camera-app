@@ -32,9 +32,7 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -49,7 +47,6 @@ class LocalMediaRepository(
     private val iODispatcher: CoroutineDispatcher,
     private val filePathGenerator: FilePathGenerator
 ) : MediaRepository {
-    private val repositoryScope = CoroutineScope(iODispatcher + SupervisorJob())
     private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
 
     override val currentMedia = _currentMedia.asStateFlow()
@@ -173,7 +170,7 @@ class LocalMediaRepository(
      * @return `true` if the media was successfully deleted, `false` otherwise.
      */
     override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
-        val finalResult = withContext(repositoryScope.coroutineContext) {
+        val finalResult = withContext(iODispatcher) {
             val result =
                 if (mediaDescriptor.uri.scheme == ContentResolver.SCHEME_CONTENT) {
                     deleteContentMedia(mediaDescriptor.uri)
@@ -262,7 +259,7 @@ class LocalMediaRepository(
     override suspend fun saveToMediaStore(
         mediaDescriptor: MediaDescriptor.Content,
         outputFilename: String?
-    ): Uri? = withContext(repositoryScope.coroutineContext) {
+    ): Uri? = withContext(iODispatcher) {
         val finalOutputFilename: String
         val mimeType: String
         val mediaUrl: Uri
