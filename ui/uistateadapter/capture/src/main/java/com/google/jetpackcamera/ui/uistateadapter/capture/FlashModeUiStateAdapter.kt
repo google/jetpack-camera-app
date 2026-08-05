@@ -73,8 +73,14 @@ internal fun FlashModeUiState.Companion.from(
         ?.supportedFlashModes ?: setOf(FlashMode.OFF)
 
     val isHdrOn = with(cameraAppSettings) {
-        (captureMode == CaptureMode.IMAGE_ONLY && imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) ||
-            (captureMode == CaptureMode.VIDEO_ONLY && dynamicRange == DynamicRange.HLG10)
+        (
+            captureMode == CaptureMode.IMAGE_ONLY &&
+                imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            ) ||
+            (
+                captureMode == CaptureMode.VIDEO_ONLY &&
+                    dynamicRange == DynamicRange.HLG10
+                )
     }
 
     val displayableModes = buildList {
@@ -154,9 +160,7 @@ internal fun FlashModeUiState.updateFrom(
 
         is Available -> {
             // Regenerate the potential new state based on the latest settings
-            val newUiState = FlashModeUiState.from(cameraAppSettings, systemConstraints)
-
-            when (newUiState) {
+            when (val newUiState = FlashModeUiState.from(cameraAppSettings, systemConstraints)) {
                 is Unavailable -> newUiState
                 is Available -> {
                     // Check if the list of modes or their enabled/disabled states have changed.
