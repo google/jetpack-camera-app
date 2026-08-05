@@ -192,9 +192,10 @@ class CaptureControllerImpl(
 
     override fun stopVideoRecording() {
         Log.d(TAG, "stopVideoRecording")
+        recordingJob?.cancel()
+        recordingJob = null
         scope.launch {
             cameraSystem.stopVideoRecording()
-            recordingJob?.cancel()
         }
     }
 
