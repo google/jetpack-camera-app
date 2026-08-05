@@ -55,12 +55,9 @@ internal fun HdrUiState.Companion.from(
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
     )
-    val activeEffectTargets = cameraConstraints?.effectTargetsMap?.get(
+    val affectsImageCapture = cameraConstraints?.effectTargetsMap?.get(
         cameraAppSettings.selectedCameraEffect
-    ) ?: emptySet()
-    val affectsImageCapture = activeEffectTargets.contains(
-        com.google.jetpackcamera.model.CameraEffectTarget.IMAGE_CAPTURE
-    )
+    )?.contains(com.google.jetpackcamera.model.CameraEffectTarget.IMAGE_CAPTURE) == true
 
     return when (cameraAppSettings.captureMode) {
         CaptureMode.IMAGE_ONLY -> {

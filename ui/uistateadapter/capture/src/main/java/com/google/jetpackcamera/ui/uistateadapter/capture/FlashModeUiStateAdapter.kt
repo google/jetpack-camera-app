@@ -64,65 +64,54 @@ internal fun FlashModeUiState.Companion.from(
     val selectedFlashMode = cameraAppSettings.flashMode
 
     // All modes potentially supported by the device
-    val allDeviceSupportedFlashModes = mutableSetOf<FlashMode>()
-    for (lensConstraint in systemConstraints.perLensConstraints.values) {
-        allDeviceSupportedFlashModes.addAll(lensConstraint.supportedFlashModes)
-    }
+    val allDeviceSupportedFlashModes = systemConstraints.perLensConstraints.values
+        .flatMap { it.supportedFlashModes }
+        .toSet()
 
     // Modes supported by the CURRENT lens
     val currentLensSupportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)
         ?.supportedFlashModes ?: setOf(FlashMode.OFF)
 
-    val isHdrOn = (
-        cameraAppSettings.captureMode == CaptureMode.IMAGE_ONLY &&
-            cameraAppSettings.imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
-        ) || (
-        cameraAppSettings.captureMode == CaptureMode.VIDEO_ONLY &&
-            cameraAppSettings.dynamicRange == DynamicRange.HLG10
-        )
+    val isHdrOn = with(cameraAppSettings) {
+        (captureMode == CaptureMode.IMAGE_ONLY && imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) ||
+            (captureMode == CaptureMode.VIDEO_ONLY && dynamicRange == DynamicRange.HLG10)
+    }
 
-    val displayableModes = mutableListOf<SingleSelectableUiState<FlashMode>>()
+    val displayableModes = buildList {
+        for (mode in ORDERED_UI_SUPPORTED_FLASH_MODES) {
+            // 1. Hide if not supported by the device at all.
+            if (!allDeviceSupportedFlashModes.contains(mode)) {
+                continue
+            }
 
-    for (mode in ORDERED_UI_SUPPORTED_FLASH_MODES) {
-        // 1. Hide if not supported by the device at all.
-        if (!allDeviceSupportedFlashModes.contains(mode)) {
-            continue
-        }
+            // 3. Check if supported on the current lens
+            if (!currentLensSupportedFlashModes.contains(mode)) {
+                continue
+            }
 
-        // 2. Hide if not designated as visible by the developer.
-        // todo(kc): supply visible flash modes from developer options
-        /*if (!visibleFlashModes.contains(mode)) {
-            continue
-        }*/
-
-        // 3. Check if supported on the current lens
-        val isSupportedOnCurrentLens = currentLensSupportedFlashModes.contains(mode)
-        if (!isSupportedOnCurrentLens) {
-            continue
-        }
-
-        // 4. Special handling for LOW_LIGHT_BOOST based on other settings.
-        if (mode == FlashMode.LOW_LIGHT_BOOST) {
-            if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+            // 4. Special handling for LOW_LIGHT_BOOST based on other settings.
+            if (mode == FlashMode.LOW_LIGHT_BOOST &&
+                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
+            ) {
                 // Hide LLB if Dual Camera is active
                 continue
             }
-        }
 
-        // 5. Determine if Enabled or Disabled
-        val isLlbHdrConflict = mode == FlashMode.LOW_LIGHT_BOOST && isHdrOn
+            // 5. Determine if Enabled or Disabled
+            val isLlbHdrConflict = mode == FlashMode.LOW_LIGHT_BOOST && isHdrOn
 
-        if (!isLlbHdrConflict) {
-            // Enabled
-            displayableModes.add(SingleSelectableUiState.SelectableUi(mode))
-        } else {
-            // Disabled
-            displayableModes.add(
-                SingleSelectableUiState.Disabled(
-                    value = mode,
-                    disabledReason = DisabledReason.LLB_DISABLED_BY_HDR
+            if (!isLlbHdrConflict) {
+                // Enabled
+                add(SingleSelectableUiState.SelectableUi(mode))
+            } else {
+                // Disabled
+                add(
+                    SingleSelectableUiState.Disabled(
+                        value = mode,
+                        disabledReason = DisabledReason.LLB_DISABLED_BY_HDR
+                    )
                 )
-            )
+            }
         }
     }
 
