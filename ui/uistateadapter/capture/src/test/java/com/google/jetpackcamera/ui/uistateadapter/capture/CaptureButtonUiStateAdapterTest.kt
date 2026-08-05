@@ -95,7 +95,7 @@ class CaptureButtonUiStateAdapterTest {
     }
 
     @Test
-    fun from_cameraRunning_recordingStarting_returnsPendingRecording() {
+    fun from_cameraRunning_recordingStarting_returnsStartingRecording() {
         val cameraState = defaultCameraState.copy(
             videoRecordingState = VideoRecordingState.Starting(null)
         )
