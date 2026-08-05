@@ -61,7 +61,8 @@ fun CaptureModeToggleUiState.Companion.from(
     restrictionConfig: OptionRestrictionConfig<CaptureMode>
 ): CaptureModeToggleUiState =
     if (cameraState.videoRecordingState !is VideoRecordingState.Inactive ||
-        cameraAppSettings.captureMode == CaptureMode.STANDARD
+        cameraAppSettings.captureMode == CaptureMode.STANDARD ||
+        restrictionConfig is OptionRestrictionConfig.FullyRestricted
     ) {
         CaptureModeToggleUiState.Unavailable
     } else {
@@ -116,6 +117,9 @@ fun CaptureModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     externalCaptureMode: ExternalCaptureMode
 ): CaptureModeUiState {
+    if (restrictionConfig is OptionRestrictionConfig.FullyRestricted) {
+        return CaptureModeUiState.Unavailable
+    }
     val availableCaptureModes = getAvailableCaptureModes(
         systemConstraints,
         cameraAppSettings,
@@ -211,72 +215,23 @@ private fun getAvailableCaptureModes(
         currentHdrImageFormatSupported,
         externalCaptureMode
     )
-    // if all capture modes are supported, return capturemodeuistate
-    if (supportedCaptureModes.containsAll(ORDERED_UI_SUPPORTED_CAPTURE_MODES)) {
-        return ORDERED_UI_SUPPORTED_CAPTURE_MODES.filter {
-            it in supportedCaptureModes
-        }.map { supportedCaptureMode ->
-            SingleSelectableUiState.SelectableUi(supportedCaptureMode)
-        }
-    }
-    // if all capture modes are not supported, give disabledReason
-    // if image or video is not supported, default will also be disabled
-    else {
-        if (!supportedCaptureModes.contains(CaptureMode.VIDEO_ONLY)) {
-            val disabledReason =
-                getCaptureModeDisabledReason(
-                    disabledCaptureMode = CaptureMode.VIDEO_ONLY,
-                    currentHdrDynamicRangeSupported,
-                    currentHdrImageFormatSupported,
+    return ORDERED_UI_SUPPORTED_CAPTURE_MODES.map { mode ->
+        if (mode in supportedCaptureModes) {
+            SingleSelectableUiState.SelectableUi(mode)
+        } else {
+            SingleSelectableUiState.Disabled(
+                value = mode,
+                disabledReason = getCaptureModeDisabledReason(
+                    disabledCaptureMode = mode,
+                    hdrDynamicRangeSupported = currentHdrDynamicRangeSupported,
+                    hdrImageFormatSupported = currentHdrImageFormatSupported,
                     systemConstraints = systemConstraints,
                     restrictionConfig = config,
-                    cameraAppSettings.cameraLensFacing,
-                    affectsImageCapture,
-                    cameraAppSettings.concurrentCameraMode,
-                    externalCaptureMode = externalCaptureMode
-                )
-            return listOf(
-                SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
-                SingleSelectableUiState.Disabled(
-                    CaptureMode.VIDEO_ONLY,
-                    disabledReason = disabledReason
-                ),
-                SingleSelectableUiState.Disabled(
-                    CaptureMode.STANDARD,
-                    disabledReason = disabledReason
-                )
-            )
-        } else if (!supportedCaptureModes.contains(CaptureMode.IMAGE_ONLY)) {
-            val disabledReason =
-                getCaptureModeDisabledReason(
-                    disabledCaptureMode = CaptureMode.IMAGE_ONLY,
-                    currentHdrDynamicRangeSupported,
-                    currentHdrImageFormatSupported,
-                    systemConstraints,
-                    config,
-                    cameraAppSettings.cameraLensFacing,
-                    affectsImageCapture,
-                    cameraAppSettings.concurrentCameraMode,
-                    externalCaptureMode = externalCaptureMode
-                )
-            return listOf(
-                SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
-                SingleSelectableUiState.Disabled(
-                    CaptureMode.IMAGE_ONLY,
-                    disabledReason = disabledReason
-                ),
-                SingleSelectableUiState.Disabled(
-                    CaptureMode.STANDARD,
-                    disabledReason = disabledReason
-                )
-            )
-        } else {
-            return listOf(
-                SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
-                SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
-                SingleSelectableUiState.Disabled(
-                    CaptureMode.STANDARD,
-                    disabledReason = DisabledReason.HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED
+                    currentLensFacing = cameraAppSettings.cameraLensFacing,
+                    affectsImageCapture = affectsImageCapture,
+                    concurrentCameraMode = cameraAppSettings.concurrentCameraMode,
+                    externalCaptureMode = externalCaptureMode,
+                    isHdrOn = isHdrOn
                 )
             )
         }
@@ -292,7 +247,8 @@ private fun getCaptureModeDisabledReason(
     currentLensFacing: LensFacing,
     affectsImageCapture: Boolean,
     concurrentCameraMode: ConcurrentCameraMode,
-    externalCaptureMode: ExternalCaptureMode
+    externalCaptureMode: ExternalCaptureMode,
+    isHdrOn: Boolean
 ): DisabledReason {
     when (disabledCaptureMode) {
         CaptureMode.IMAGE_ONLY -> {
@@ -375,6 +331,14 @@ private fun getCaptureModeDisabledReason(
         }
 
         CaptureMode.STANDARD -> {
+            if (externalCaptureMode == ExternalCaptureMode.VideoCapture) {
+                return DisabledReason.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED
+            }
+            if (externalCaptureMode == ExternalCaptureMode.ImageCapture ||
+                externalCaptureMode == ExternalCaptureMode.MultipleImageCapture
+            ) {
+                return DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
+            }
             when (restrictionConfig) {
                 is OptionRestrictionConfig.FullyRestricted -> {
                     return DisabledReason.HYBRID_CAPTURE_RESTRICTED
@@ -386,6 +350,12 @@ private fun getCaptureModeDisabledReason(
                 }
 
                 is OptionRestrictionConfig.NotRestricted -> {}
+            }
+            if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
+                return DisabledReason.IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA
+            }
+            if (isHdrOn) {
+                return DisabledReason.HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED
             }
             throw RuntimeException("Unknown DisabledReason for hybrid mode.")
         }

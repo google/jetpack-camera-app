@@ -166,7 +166,9 @@ fun NavGraphBuilder.previewScreen(
             }
         )
         // Automatically navigate to permissions screen when camera permission revoked
-        val cameraPermissionStatus = permissionStates.permissions.firstOrNull { it.permission == Manifest.permission.CAMERA }?.status
+        val cameraPermissionStatus = permissionStates.permissions.firstOrNull {
+            it.permission == Manifest.permission.CAMERA
+        }?.status
         LaunchedEffect(key1 = cameraPermissionStatus) {
             if (cameraPermissionStatus?.isGranted == false) {
                 onNavigateToPermissions()

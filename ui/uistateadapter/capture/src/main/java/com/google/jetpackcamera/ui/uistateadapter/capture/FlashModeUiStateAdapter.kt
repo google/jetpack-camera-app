@@ -73,8 +73,14 @@ internal fun FlashModeUiState.Companion.from(
         ?.supportedFlashModes ?: setOf(FlashMode.OFF)
 
     val isHdrOn = with(cameraAppSettings) {
-        (captureMode == CaptureMode.IMAGE_ONLY && imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) ||
-            (captureMode == CaptureMode.VIDEO_ONLY && dynamicRange == DynamicRange.HLG10)
+        (
+            captureMode == CaptureMode.IMAGE_ONLY &&
+                imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            ) ||
+            (
+                captureMode == CaptureMode.VIDEO_ONLY &&
+                    dynamicRange == DynamicRange.HLG10
+                )
     }
 
     val displayableModes = buildList {
