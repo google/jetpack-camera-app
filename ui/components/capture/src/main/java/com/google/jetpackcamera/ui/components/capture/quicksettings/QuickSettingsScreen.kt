@@ -15,7 +15,9 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +39,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureMo
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsBottomSheet as BottomSheetComponent
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsModalBottomSheet
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -60,65 +62,63 @@ fun QuickSettingsBottomSheet(
     if (quickSettingsUiState is QuickSettingsUiState.Available &&
         quickSettingsUiState.quickSettingsIsOpen
     ) {
-        val sheetState = rememberModalBottomSheetState()
-        BottomSheetComponent(
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        QuickSettingsModalBottomSheet(
             modifier = modifier,
             onDismiss = quickSettingsController::toggleQuickSettings,
             sheetState = sheetState
         ) {
-            when (val captureModeUiState = quickSettingsUiState.captureModeUiState) {
-                is CaptureModeUiState.Available -> {
-                    when (captureModeUiState.selectedCaptureMode) {
-                        CaptureMode.VIDEO_ONLY -> VideoQuickSettings(
-                            quickSettingsUiState = quickSettingsUiState,
-                            quickSettingsController = quickSettingsController,
-                            onNavigateToSettings = onNavigateToSettings,
-                            showMoreSettingsButton = showMoreSettingsButton
-                        )
-
-                        CaptureMode.IMAGE_ONLY -> ImageQuickSettings(
-                            quickSettingsUiState = quickSettingsUiState,
-                            quickSettingsController = quickSettingsController,
-                            onNavigateToSettings = onNavigateToSettings,
-                            showMoreSettingsButton = showMoreSettingsButton
-                        )
-
-                        CaptureMode.STANDARD -> HybridQuickSettings(
-                            quickSettingsUiState = quickSettingsUiState,
-                            quickSettingsController = quickSettingsController,
-                            onNavigateToSettings = onNavigateToSettings,
-                            showMoreSettingsButton = showMoreSettingsButton
-                        )
-                    }
-                }
-
-                is CaptureModeUiState.Unavailable -> {
-                    ImageQuickSettings(
-                        quickSettingsUiState = quickSettingsUiState,
-                        quickSettingsController = quickSettingsController,
-                        onNavigateToSettings = onNavigateToSettings,
-                        showMoreSettingsButton = showMoreSettingsButton
-                    )
-                }
-            }
+            QuickSettingsContent(
+                quickSettingsUiState = quickSettingsUiState,
+                quickSettingsController = quickSettingsController,
+                onNavigateToSettings = onNavigateToSettings,
+                showMoreSettingsButton = showMoreSettingsButton
+            )
         }
     }
 }
 
 @Composable
-private fun HybridQuickSettings(
+private fun QuickSettingsLayout(
+    @StringRes titleRes: Int,
+    showMoreSettingsButton: Boolean,
+    onNavigateToSettings: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column {
+        Text(
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            text = stringResource(id = titleRes),
+            style = MaterialTheme.typography.titleLarge
+        )
+        content()
+    }
+    if (showMoreSettingsButton) {
+        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
+    }
+}
+
+@Composable
+private fun QuickSettingsContent(
     quickSettingsUiState: QuickSettingsUiState.Available,
     quickSettingsController: QuickSettingsController,
     onNavigateToSettings: () -> Unit,
     showMoreSettingsButton: Boolean
 ) {
-    Column {
-        Text(
-            modifier = Modifier.padding(16.dp),
-            text = stringResource(id = R.string.quick_settings_title_photo_and_video_settings),
-            style = MaterialTheme.typography.titleLarge
-        )
+    val captureMode = (quickSettingsUiState.captureModeUiState as? CaptureModeUiState.Available)
+        ?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
 
+    val titleRes = when (captureMode) {
+        CaptureMode.VIDEO_ONLY -> R.string.quick_settings_title_video_settings
+        CaptureMode.IMAGE_ONLY -> R.string.quick_settings_title_photo_settings
+        CaptureMode.STANDARD -> R.string.quick_settings_title_photo_and_video_settings
+    }
+
+    QuickSettingsLayout(
+        titleRes = titleRes,
+        showMoreSettingsButton = showMoreSettingsButton,
+        onNavigateToSettings = onNavigateToSettings
+    ) {
         // Flash Mode settings
         if (quickSettingsUiState.flashModeUiState is FlashModeUiState.Available) {
             FlashRow(
@@ -127,16 +127,20 @@ private fun HybridQuickSettings(
             )
         }
 
-        // Capture Mode settings
-        if (quickSettingsUiState.captureModeUiState is CaptureModeUiState.Available) {
+        // Capture Mode settings (Standard only)
+        if (captureMode == CaptureMode.STANDARD &&
+            quickSettingsUiState.captureModeUiState is CaptureModeUiState.Available
+        ) {
             CaptureModeRow(
                 onSetCaptureMode = quickSettingsController::setCaptureMode,
                 captureModeUiState = quickSettingsUiState.captureModeUiState
             )
         }
 
-        // Aspect Ratio settings
-        if (quickSettingsUiState.aspectRatioUiState is AspectRatioUiState.Available) {
+        // Aspect Ratio settings (Standard and Image only)
+        if ((captureMode == CaptureMode.STANDARD || captureMode == CaptureMode.IMAGE_ONLY) &&
+            quickSettingsUiState.aspectRatioUiState is AspectRatioUiState.Available
+        ) {
             AspectRatioRow(
                 aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
                 onSetAspectRatio = quickSettingsController::setAspectRatio
@@ -147,102 +151,18 @@ private fun HybridQuickSettings(
         if (quickSettingsUiState.hdrUiState is HdrUiState.Available) {
             HdrRow(
                 onClick = { d: DynamicRange, i: ImageOutputFormat ->
-                    quickSettingsController.setDynamicRange(d)
-                    quickSettingsController.setImageFormat(i)
+                    when (captureMode) {
+                        CaptureMode.STANDARD -> {
+                            quickSettingsController.setDynamicRange(d)
+                            quickSettingsController.setImageFormat(i)
+                        }
+                        CaptureMode.VIDEO_ONLY -> quickSettingsController.setDynamicRange(d)
+                        CaptureMode.IMAGE_ONLY -> quickSettingsController.setImageFormat(i)
+                    }
                 },
                 hdrUiState = quickSettingsUiState.hdrUiState
             )
         }
-    }
-    if (showMoreSettingsButton) {
-        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
-    }
-}
-
-@Composable
-private fun VideoQuickSettings(
-    quickSettingsUiState: QuickSettingsUiState.Available,
-    quickSettingsController: QuickSettingsController,
-    onNavigateToSettings: () -> Unit,
-    showMoreSettingsButton: Boolean
-) {
-    Column {
-        Text(
-            modifier = Modifier.padding(16.dp),
-            text = stringResource(id = R.string.quick_settings_title_video_settings),
-            style = MaterialTheme.typography.titleLarge
-        )
-
-        // Flash Mode settings
-        if (quickSettingsUiState.flashModeUiState is FlashModeUiState.Available) {
-            FlashRow(
-                onSetFlashMode = quickSettingsController::setFlash,
-                flashModeUiState = quickSettingsUiState.flashModeUiState
-            )
-        }
-
-        // HDR settings
-        if (quickSettingsUiState.hdrUiState is HdrUiState.Available) {
-            HdrRow(
-                onClick = { d: DynamicRange, _ ->
-                    quickSettingsController.setDynamicRange(d)
-                },
-                hdrUiState = quickSettingsUiState.hdrUiState
-            )
-        }
-        // TODO: Add FPS setting
-        // TODO: Add Resolution setting
-        // TODO: Add Stabilization setting
-    }
-    if (showMoreSettingsButton) {
-        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
-    }
-}
-
-@Composable
-private fun ImageQuickSettings(
-    quickSettingsUiState: QuickSettingsUiState.Available,
-    quickSettingsController: QuickSettingsController,
-    onNavigateToSettings: () -> Unit,
-    showMoreSettingsButton: Boolean
-) {
-    Column {
-        Text(
-            modifier = Modifier.padding(16.dp),
-            text = stringResource(id = R.string.quick_settings_title_photo_settings),
-            style = MaterialTheme.typography.titleLarge
-        )
-
-        // Flash Mode settings
-        if (quickSettingsUiState.flashModeUiState is FlashModeUiState.Available) {
-            FlashRow(
-                onSetFlashMode = quickSettingsController::setFlash,
-                flashModeUiState = quickSettingsUiState.flashModeUiState
-            )
-        }
-
-        // Aspect Ratio settings
-        if (quickSettingsUiState.aspectRatioUiState is AspectRatioUiState.Available) {
-            AspectRatioRow(
-                aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
-                onSetAspectRatio = quickSettingsController::setAspectRatio
-            )
-        }
-
-        // HDR settings
-        if (quickSettingsUiState.hdrUiState is HdrUiState.Available) {
-            HdrRow(
-                onClick = { _, i: ImageOutputFormat ->
-                    quickSettingsController.setImageFormat(i)
-                },
-                hdrUiState = quickSettingsUiState.hdrUiState
-            )
-        }
-
-        // TODO: Add pre-capture timer setting
-    }
-    if (showMoreSettingsButton) {
-        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
     }
 }
 

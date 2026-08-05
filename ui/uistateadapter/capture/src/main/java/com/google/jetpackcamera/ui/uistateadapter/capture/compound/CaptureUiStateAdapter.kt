@@ -106,10 +106,9 @@ fun captureUiState(
             it?.updateFrom(
                 cameraAppSettings = cameraAppSettings,
                 systemConstraints = systemConstraints,
-                cameraState = roundedCameraState,
-                hdrUiState = hdrUiState
+                cameraState = roundedCameraState
             )
-                ?: FlashModeUiState.from(cameraAppSettings, systemConstraints, hdrUiState)
+                ?: FlashModeUiState.from(cameraAppSettings, systemConstraints)
         }
         focusMeteringUiState = focusMeteringUiState.let {
             it?.updateFrom(

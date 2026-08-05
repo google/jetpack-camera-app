@@ -96,6 +96,7 @@ dependencies {
     // Compose - Integration with ViewModels with Navigation and Hilt
     implementation(libs.androidx.navigation.compose)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.lifecycle.viewmodel.compose)
 
     // Compose - Lifecycle utilities
     implementation(libs.androidx.lifecycle.viewmodel.compose)

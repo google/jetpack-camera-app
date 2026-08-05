@@ -31,6 +31,11 @@ When reviewing a pull request, focus on the following key areas:
     * Analyze camera configurations and use cases for potential performance bottlenecks.
     * Ensure coroutines and asynchronous operations are used efficiently.
     * **State Conflation in Adapters:** High-frequency stream data (e.g., nanosecond timestamps) should be rounded or conflated at the `UiStateAdapter` level before reaching the UI state, to avoid unnecessary recompositions. [Introduced in PR #514]
+    * **Deferred State Reading for High-Frequency State:** When a unified `StateFlow` contains high-frequency state (e.g., a ticking timer), do not read its `.value` at the top level of the screen to prevent global recomposition on every tick. Instead:
+        1.  **Collect without reading:** Keep the `State` object itself and pass a lambda provider down (e.g., `val provider = remember { { state.value } }`).
+        2.  **Shield static sub-components:** Use `derivedStateOf` to extract and debounce low-frequency static state, then wrap the component in a remembered lambda (e.g., `val myLambda = remember(debouncedState) { @Composable { Component(debouncedState.value) } }`).
+        3.  **Defer high-frequency reads:** Pass the lambda provider directly into the high-frequency component so the `.value` read is deferred into the deepest possible node.
+        4.  **Isolate conditional logic:** For conditional visibility or logic involving high-frequency state, extract the condition into a `derivedStateOf` boolean to keep the lambda body perfectly stable.
 
 4.  **Jetpack Compose & CameraX Usage**
     * Verify that Compose and CameraX APIs are used correctly and effectively.

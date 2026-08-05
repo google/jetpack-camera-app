@@ -26,7 +26,7 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         maven {
-            setUrl("https://androidx.dev/snapshots/builds/13672667/artifacts/repository")
+            setUrl("https://androidx.dev/snapshots/latest/artifacts/repository")
         }
         google()
         mavenCentral()
@@ -40,6 +40,7 @@ include(":data:camera")
 include(":core:camera:testing")
 include(":core:camera:low-light")
 include(":core:camera:low-light-playservices")
+include(":core:camera:effects:single-stream")
 include(":feature:settings")
 include(":data:settings")
 include(":data:settings:testing")

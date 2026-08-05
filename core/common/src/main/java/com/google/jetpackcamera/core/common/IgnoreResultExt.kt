@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.model
+package com.google.jetpackcamera.core.common
 
 /**
- * WARNING: The string representation of this enum is serialized and persisted in Preferences DataStore.
- * Renaming constants will break compatibility with existing saved settings.
+ * Explicitly ignores return results, particularly handy to suppress ErrorProne warnings
+ * on @CheckResult methods.
  */
-enum class StreamConfig {
-    MULTI_STREAM,
-    SINGLE_STREAM
-}
+fun <T> T.ignoreResult() = Unit

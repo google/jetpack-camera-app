@@ -25,7 +25,7 @@ internal object PreferenceKeys {
     val KEY_DARK_MODE = stringPreferencesKey("dark_mode")
     val KEY_FLASH_MODE = stringPreferencesKey("flash_mode")
     val KEY_ASPECT_RATIO = stringPreferencesKey("aspect_ratio")
-    val KEY_STREAM_CONFIG = stringPreferencesKey("stream_config")
+    val KEY_SELECTED_CAMERA_EFFECT = stringPreferencesKey("selected_camera_effect")
     val KEY_STABILIZATION_MODE = stringPreferencesKey("stabilization_mode")
     val KEY_DYNAMIC_RANGE = stringPreferencesKey("dynamic_range")
     val KEY_VIDEO_QUALITY = stringPreferencesKey("video_quality")

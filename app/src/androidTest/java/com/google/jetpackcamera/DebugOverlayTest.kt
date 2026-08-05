@@ -18,18 +18,21 @@ package com.google.jetpackcamera
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_HOT_TAG
-import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_NONE_TAG
+import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_TOGGLE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ZOOM_BUTTON_ROW_TAG
 import com.google.jetpackcamera.ui.debug.BTN_DEBUG_HIDE_COMPONENTS_TAG
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_BUTTON
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
 import com.google.jetpackcamera.ui.debug.LOGICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.debug.PHYSICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.debug.ZOOM_RATIO_TAG
@@ -45,7 +48,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class DebugHideComponentsTest {
+class DebugOverlayTest {
     @get:Rule
     val permissionsRule: GrantPermissionRule =
         GrantPermissionRule.grant(*(TEST_REQUIRED_PERMISSIONS).toTypedArray())
@@ -76,8 +79,7 @@ class DebugHideComponentsTest {
             composeTestRule.waitForNodeWithTagToDisappear(CAPTURE_BUTTON)
             composeTestRule.onNodeWithTag(ZOOM_BUTTON_ROW_TAG).assertDoesNotExist()
             composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
-            composeTestRule.onNodeWithTag(AMPLITUDE_NONE_TAG).assertDoesNotExist()
-            composeTestRule.onNodeWithTag(AMPLITUDE_HOT_TAG).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(AUDIO_INPUT_TOGGLE).assertDoesNotExist()
             composeTestRule.onNodeWithTag(DEBUG_OVERLAY_BUTTON).assertDoesNotExist()
             composeTestRule.onNodeWithTag(LOGICAL_CAMERA_ID_TAG).assertDoesNotExist()
             composeTestRule.onNodeWithTag(PHYSICAL_CAMERA_ID_TAG).assertDoesNotExist()
@@ -90,6 +92,37 @@ class DebugHideComponentsTest {
             composeTestRule.onNodeWithTag(DEBUG_OVERLAY_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(LOGICAL_CAMERA_ID_TAG).assertExists()
             composeTestRule.onNodeWithTag(PHYSICAL_CAMERA_ID_TAG).assertExists()
+            composeTestRule.onNodeWithTag(ZOOM_RATIO_TAG).assertExists()
+        }
+    }
+
+    @Test
+    fun setZoomRatio_viaDebugOverlay() {
+        runMainActivityScenarioTest(debugExtra) {
+            composeTestRule.waitForCaptureButton()
+
+            // Open debug menu
+            composeTestRule.onNodeWithTag(DEBUG_OVERLAY_BUTTON).performClick()
+
+            // Click "Set Zoom Ratio" button
+            composeTestRule.waitForNodeWithTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON)
+            composeTestRule.onNodeWithTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON).performClick()
+
+            // Find text field and enter value
+            composeTestRule.waitForNodeWithTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD)
+            composeTestRule.onNodeWithTag(
+                DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
+            ).performTextInput("1.5")
+
+            // Click "Confirm"
+            composeTestRule.onNodeWithTag(DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON).performClick()
+
+            // Verify dialog closed (text field should not exist anymore)
+            composeTestRule.onNodeWithTag(
+                DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
+            ).assertDoesNotExist()
+
+            // Verify zoom ratio text exists
             composeTestRule.onNodeWithTag(ZOOM_RATIO_TAG).assertExists()
         }
     }

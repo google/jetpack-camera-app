@@ -21,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -28,8 +29,8 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -170,14 +171,14 @@ class PrefsDataStoreSettingsDataSourceInstrumentedTest {
     }
 
     @Test
-    fun can_update_stream_config() = runTest {
-        val initialStreamConfig = dataSource.getCurrentDefaultCameraAppSettings().streamConfig
-        dataSource.updateStreamConfig(StreamConfig.SINGLE_STREAM)
+    fun can_update_selected_camera_effect() = runTest {
+        val initialEffect = dataSource.getCurrentDefaultCameraAppSettings().selectedCameraEffect
+        dataSource.updateSelectedCameraEffect(CameraEffectId("test_effect"))
         advanceUntilIdle()
 
-        val newStreamConfig = dataSource.getCurrentDefaultCameraAppSettings().streamConfig
-        assertThat(initialStreamConfig).isEqualTo(StreamConfig.MULTI_STREAM)
-        assertThat(newStreamConfig).isEqualTo(StreamConfig.SINGLE_STREAM)
+        val newEffect = dataSource.getCurrentDefaultCameraAppSettings().selectedCameraEffect
+        assertThat(initialEffect).isEqualTo(NONE_EFFECT_ID)
+        assertThat(newEffect).isEqualTo(CameraEffectId("test_effect"))
     }
 
     @Test

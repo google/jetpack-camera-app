@@ -18,23 +18,22 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -44,10 +43,14 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,12 +59,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
@@ -100,7 +100,6 @@ import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsControl
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 
@@ -146,7 +145,7 @@ fun ToggleQuickSettingsButton(
     ) {
         Icon(
             painter = painterResource(R.drawable.settings_photo_camera_icon),
-            contentDescription = stringResource(R.string.quick_settings_toggle_icon_description)
+            contentDescription = null
         )
     }
 }
@@ -170,39 +169,6 @@ internal fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifi
     }
 }
 
-@Composable
-private fun CaptureModeToggleButton(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    captureModeUiState: CaptureModeUiState.Available,
-    assignedCaptureMode: CaptureMode,
-    isHighlightEnabled: Boolean = false
-) {
-    val enum = when (assignedCaptureMode) {
-        CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
-        CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
-        CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
-    }
-
-    QuickSettingToggleSelectorButton(
-        modifier = modifier,
-        enum = enum,
-        onClick = { onClick() },
-        enabled = when (assignedCaptureMode) {
-            CaptureMode.STANDARD ->
-                captureModeUiState.isCaptureModeSelectable(CaptureMode.STANDARD)
-
-            CaptureMode.VIDEO_ONLY ->
-                captureModeUiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY)
-
-            CaptureMode.IMAGE_ONLY ->
-                captureModeUiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY)
-        },
-        isSelected =
-        isHighlightEnabled && (assignedCaptureMode == captureModeUiState.selectedCaptureMode)
-    )
-}
-
 // ////////////////////////////////////////////////////
 //
 // complete quick settings screen components
@@ -215,13 +181,14 @@ private fun CaptureModeToggleButton(
  * @param modifier The [Modifier] to be applied to this composable.
  * @param onDismiss The lambda function to be invoked when the bottom sheet is dismissed.
  * @param sheetState The [SheetState] controlling the visibility and behavior of the bottom sheet.
+ * @param content The composable content to display inside the bottom sheet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuickSettingsBottomSheet(
-    modifier: Modifier,
+internal fun QuickSettingsModalBottomSheet(
     onDismiss: () -> Unit,
     sheetState: SheetState,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
@@ -263,29 +230,28 @@ internal fun CaptureModeRow(
             CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
         }
 
-        SettingRow(
+        QuickSettingsListRow(
             modifier = modifier.testTag(ROW_QUICK_SETTINGS_CAPTURE_MODE),
             title = stringResource(id = R.string.quick_settings_title_capture_mode),
-            stateSubtitle = stringResource(enum.getTextResId())
-        ) {
-            captureModeUiState.availableCaptureModes.forEach { selectableMode ->
-                val testTag = when (selectableMode.value) {
-                    CaptureMode.STANDARD ->
-                        BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-                    CaptureMode.IMAGE_ONLY ->
-                        BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-                    CaptureMode.VIDEO_ONLY ->
-                        BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
+            stateSubtitle = stringResource(enum.getTextResId()),
+            items = captureModeUiState.availableCaptureModes,
+            selectedItem = captureModeUiState.selectedCaptureMode,
+            onItemClick = onSetCaptureMode,
+            testTagMapper = { mode ->
+                when (mode) {
+                    CaptureMode.STANDARD -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
+                    CaptureMode.IMAGE_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
+                    CaptureMode.VIDEO_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
                 }
-                CaptureModeToggleButton(
-                    modifier = Modifier.testTag(testTag),
-                    onClick = { onSetCaptureMode(selectableMode.value) },
-                    assignedCaptureMode = selectableMode.value,
-                    captureModeUiState = captureModeUiState,
-                    isHighlightEnabled = true
-                )
+            },
+            enumMapper = { mode ->
+                when (mode) {
+                    CaptureMode.STANDARD -> CameraCaptureMode.STANDARD
+                    CaptureMode.IMAGE_ONLY -> CameraCaptureMode.IMAGE_ONLY
+                    CaptureMode.VIDEO_ONLY -> CameraCaptureMode.VIDEO_ONLY
+                }
             }
-        }
+        )
     }
 }
 
@@ -296,6 +262,7 @@ internal fun CaptureModeRow(
  * @param onClick Callback invoked when HDR is toggled, providing the selected [DynamicRange] and [ImageOutputFormat].
  * @param hdrUiState The current [HdrUiState] representing HDR availability and selection.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun HdrRow(
     modifier: Modifier = Modifier,
@@ -309,30 +276,34 @@ internal fun HdrRow(
                 hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
             )
 
-    SettingRow(
+    QuickSettingsListRow(
         modifier = modifier.testTag(ROW_QUICK_SETTINGS_HDR),
         title = stringResource(id = R.string.quick_settings_title_hdr),
         stateSubtitle = if (isHdrOn) {
             stringResource(R.string.quick_settings_dynamic_range_hdr)
         } else {
             stringResource(R.string.quick_settings_dynamic_range_sdr)
-        }
-    ) {
-        QuickSettingToggleSelectorButton(
-            modifier = Modifier.testTag(BTN_QUICK_SETTINGS_HDR_OPTION_ON),
-            enum = CameraDynamicRange.HDR,
-            onClick = { onClick(DEFAULT_HDR_DYNAMIC_RANGE, DEFAULT_HDR_IMAGE_OUTPUT) },
-            isSelected = isHdrOn,
-            enabled = isSupported
-        )
-        QuickSettingToggleSelectorButton(
-            modifier = Modifier.testTag(BTN_QUICK_SETTINGS_HDR_OPTION_OFF),
-            enum = CameraDynamicRange.SDR,
-            onClick = { onClick(DynamicRange.SDR, ImageOutputFormat.JPEG) },
-            isSelected = !isHdrOn,
-            enabled = isSupported
-        )
-    }
+        },
+        items = listOf(
+            SingleSelectableUiState.SelectableUi(true),
+            SingleSelectableUiState.SelectableUi(false)
+        ),
+        selectedItem = isHdrOn,
+        onItemClick = { hdrEnabled ->
+            if (hdrEnabled) {
+                onClick(DEFAULT_HDR_DYNAMIC_RANGE, DEFAULT_HDR_IMAGE_OUTPUT)
+            } else {
+                onClick(DynamicRange.SDR, ImageOutputFormat.JPEG)
+            }
+        },
+        testTagMapper = { hdrEnabled ->
+            if (hdrEnabled) BTN_QUICK_SETTINGS_HDR_OPTION_ON else BTN_QUICK_SETTINGS_HDR_OPTION_OFF
+        },
+        enumMapper = { hdrEnabled ->
+            if (hdrEnabled) CameraDynamicRange.HDR else CameraDynamicRange.SDR
+        },
+        isItemEnabled = { isSupported }
+    )
 }
 
 /**
@@ -349,32 +320,30 @@ internal fun AspectRatioRow(
     aspectRatioUiState: AspectRatioUiState
 ) {
     if (aspectRatioUiState is AspectRatioUiState.Available) {
-        SettingRow(
+        QuickSettingsListRow(
             modifier = modifier.testTag(ROW_QUICK_SETTINGS_ASPECT_RATIO),
             title = stringResource(id = R.string.quick_settings_title_aspect_ratio),
             stateSubtitle = stringResource(
                 id = aspectRatioUiState.selectedAspectRatio.toSubtitleStringRes()
-            )
-        ) {
-            aspectRatioUiState.availableAspectRatios.forEach { selectableRatio ->
-                val enum = when (selectableRatio.value) {
-                    AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
-                    AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
-                    AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-                }
-                val testTag = when (selectableRatio.value) {
+            ),
+            items = aspectRatioUiState.availableAspectRatios,
+            selectedItem = aspectRatioUiState.selectedAspectRatio,
+            onItemClick = onSetAspectRatio,
+            testTagMapper = { ratio ->
+                when (ratio) {
                     AspectRatio.THREE_FOUR -> QUICK_SETTINGS_RATIO_3_4_BUTTON
                     AspectRatio.NINE_SIXTEEN -> QUICK_SETTINGS_RATIO_9_16_BUTTON
                     AspectRatio.ONE_ONE -> QUICK_SETTINGS_RATIO_1_1_BUTTON
                 }
-                QuickSettingToggleSelectorButton(
-                    modifier = Modifier.testTag(testTag),
-                    onClick = { onSetAspectRatio(selectableRatio.value) },
-                    enum = enum,
-                    isSelected = selectableRatio.value == aspectRatioUiState.selectedAspectRatio
-                )
+            },
+            enumMapper = { ratio ->
+                when (ratio) {
+                    AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
+                    AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
+                    AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
+                }
             }
-        }
+        )
     }
 }
 
@@ -392,43 +361,37 @@ internal fun FlashRow(
     flashModeUiState: FlashModeUiState
 ) {
     if (flashModeUiState is FlashModeUiState.Available) {
-        SettingRow(
+        QuickSettingsListRow(
             modifier = modifier.testTag(ROW_QUICK_SETTINGS_FLASH),
             title = stringResource(id = R.string.quick_settings_title_flash_mode),
             stateSubtitle = stringResource(
                 id = flashModeUiState.selectedFlashMode.toSubtitleStringRes()
-            )
-        ) {
-            flashModeUiState.availableFlashModes.forEach { selectableMode ->
-                val testTag = when (selectableMode.value) {
+            ),
+            items = flashModeUiState.availableFlashModes,
+            selectedItem = flashModeUiState.selectedFlashMode,
+            onItemClick = onSetFlashMode,
+            testTagMapper = { mode ->
+                when (mode) {
                     FlashMode.OFF -> BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
                     FlashMode.ON -> BTN_QUICK_SETTINGS_FLASH_OPTION_ON
                     FlashMode.AUTO -> BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
-                    FlashMode.LOW_LIGHT_BOOST ->
-                        BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
+                    FlashMode.LOW_LIGHT_BOOST -> BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
                 }
-                QuickSettingToggleSelectorButton(
-                    modifier = Modifier.testTag(testTag),
-                    enabled = selectableMode is SingleSelectableUiState.SelectableUi,
-                    enum = when (selectableMode.value) {
-                        FlashMode.OFF -> CameraFlashMode.OFF
-                        FlashMode.ON -> CameraFlashMode.ON
-                        FlashMode.AUTO -> CameraFlashMode.AUTO
-                        FlashMode.LOW_LIGHT_BOOST ->
-                            when (flashModeUiState.isLowLightBoostActive) {
-                                true -> CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
-                                false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
-                            }
-                    },
-                    isSelected = flashModeUiState.selectedFlashMode == selectableMode.value,
-                    onClick = {
-                        onSetFlashMode(
-                            selectableMode.value
-                        )
-                    }
-                )
+            },
+            enumMapper = { mode ->
+                when (mode) {
+                    FlashMode.OFF -> CameraFlashMode.OFF
+                    FlashMode.ON -> CameraFlashMode.ON
+                    FlashMode.AUTO -> CameraFlashMode.AUTO
+                    FlashMode.LOW_LIGHT_BOOST ->
+                        if (flashModeUiState.isLowLightBoostActive) {
+                            CameraFlashMode.LOW_LIGHT_BOOST_ACTIVE
+                        } else {
+                            CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
+                        }
+                }
             }
-        }
+        )
     }
 }
 
@@ -438,17 +401,65 @@ internal fun FlashRow(
 //
 // ////////////////////////////////////////////////////
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun <T> QuickSettingsListRow(
+    title: String,
+    stateSubtitle: String,
+    items: List<SingleSelectableUiState<T>>,
+    selectedItem: T,
+    onItemClick: (T) -> Unit,
+    enumMapper: (T) -> QuickSettingsEnum,
+    testTagMapper: (T) -> String,
+    modifier: Modifier = Modifier,
+    isItemEnabled: (
+        SingleSelectableUiState<T>
+    ) -> Boolean = { it is SingleSelectableUiState.SelectableUi }
+) {
+    SettingRow(
+        modifier = modifier,
+        title = title,
+        stateSubtitle = stateSubtitle
+    ) {
+        items.forEachIndexed { index, selectableItem ->
+            val value = selectableItem.value
+            val isSelected = value == selectedItem
+            val enumVal = enumMapper(value)
+            val testTag = testTagMapper(value)
+            val enabled = isItemEnabled(selectableItem)
+
+            val shapes = when {
+                items.size == 1 -> ToggleButtonDefaults.shapes()
+                index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                index == items.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+            }
+
+            QuickSettingToggleSelectorButton(
+                modifier = Modifier.testTag(testTag),
+                enum = enumVal,
+                onClick = { onItemClick(value) },
+                isSelected = isSelected,
+                enabled = enabled,
+                shapes = shapes
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SettingRow(
     title: String,
     stateSubtitle: String,
     modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(2.dp),
     buttons: @Composable RowScope.() -> Unit
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp, horizontal = 16.dp),
+            .padding(vertical = 4.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -459,50 +470,49 @@ private fun SettingRow(
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = stateSubtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primaryFixed
             )
         }
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = horizontalArrangement,
             verticalAlignment = Alignment.CenterVertically,
             content = buttons
         )
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun QuickSettingToggleSelectorButton(
     modifier: Modifier = Modifier,
     enum: QuickSettingsEnum,
     onClick: () -> Unit,
     isSelected: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapes()
 ) {
     QuickSettingToggleSelectorButton(
         modifier = modifier,
-        text = stringResource(id = enum.getTextResId()),
         accessibilityText = stringResource(id = enum.getDescriptionResId()),
         onClick = { onClick() },
         isSelected = isSelected,
         enabled = enabled,
-        painter = enum.getPainter()
+        painter = enum.getPainter(),
+        shapes = shapes
     )
 }
 
 /**
- * A customizable toggle button used within the quick settings menu. This button displays an icon
- * and a text label, and can be highlighted to indicate a selected state. It serves as a generic
- * component for various quick settings options.
+ * A customizable toggle button used within the quick settings menu.
  *
  * @param onClick The lambda function to be invoked when the button is clicked.
- * @param text The text label displayed below the icon.
  * @param accessibilityText The content description for accessibility purposes.
  * @param painter The [Painter] for the icon displayed inside the button.
  * @param modifier The [Modifier] to be applied to this composable.
@@ -513,59 +523,42 @@ private fun QuickSettingToggleSelectorButton(
 @Composable
 private fun QuickSettingToggleSelectorButton(
     onClick: () -> Unit,
-    text: String,
     accessibilityText: String,
     painter: Painter,
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapes()
 ) {
-    val buttonSize = IconButtonDefaults.mediumContainerSize(
-        IconButtonDefaults.IconButtonWidthOption.Narrow
-    )
-
-    Column(
-        modifier = Modifier.width(width = buttonSize.width),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    ToggleButton(
+        modifier = modifier
+            .minimumInteractiveComponentSize(),
+        checked = isSelected,
+        enabled = enabled,
+        onCheckedChange = { _ -> onClick() },
+        shapes = shapes,
+        colors = ToggleButtonDefaults.toggleButtonColors(
+            containerColor = MaterialTheme.colorScheme.onSecondaryFixedVariant,
+            checkedContainerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            checkedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
     ) {
-        FilledIconToggleButton(
-            modifier = modifier
-                .minimumInteractiveComponentSize()
-                .size(buttonSize),
-            checked = isSelected,
-            enabled = enabled,
-            onCheckedChange = { _ -> onClick() },
-            // 1. Size updated to width 48.dp and height 56.dp
-
-            shapes = IconButtonDefaults.toggleableShapes(),
-            colors = IconButtonDefaults.filledIconToggleButtonColors()
-                .copy(containerColor = Color.White.copy(alpha = .17f))
-        ) {
-            Icon(
-                modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
-                painter = painter,
-                contentDescription = accessibilityText
-            )
-        }
-
-        Spacer(Modifier.height(4.dp))
-        Text(
-            modifier = Modifier
-                .width(IntrinsicSize.Max)
-                .wrapContentWidth()
-                .semantics { hideFromAccessibility() },
-            text = text,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-            minLines = 2,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+        Icon(
+            modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
+            painter = painter,
+            contentDescription = accessibilityText
         )
     }
 }
 
+/**
+ * An indicator showing the current HDR status (SDR vs HDR).
+ *
+ * @param hdrUiState The current [HdrUiState] containing the selected dynamic range and format.
+ * @param modifier The [Modifier] to be applied to this indicator.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
@@ -588,6 +581,12 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * A composable that displays an icon indicating the current flash mode.
+ *
+ * @param modifier the modifier for this component.
+ * @param flashModeUiState the [FlashModeUiState] for this component.
+ */
 @Composable
 fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = Modifier) {
     when (flashModeUiState) {
@@ -629,7 +628,7 @@ private fun TopBarQuickSettingIcon(
             modifier = modifier
                 .size(IconButtonDefaults.smallIconSize)
                 .clickable(
-                    interactionSource = null,
+                    interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onClick,
                     enabled = enabled
@@ -665,6 +664,7 @@ private fun FlashMode.toSubtitleStringRes(): Int = when (this) {
     FlashMode.LOW_LIGHT_BOOST -> R.string.quick_settings_flash_mode_subtitle_low_light_boost
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Composable
 private fun QuickSettingToggleButtonPreview() {
@@ -684,7 +684,6 @@ private fun QuickSettingToggleButtonPreview() {
             // Instance 1: Unchecked state
             QuickSettingToggleSelectorButton(
                 onClick = {},
-                text = "Flash Off",
                 accessibilityText = "",
                 painter = CameraFlashMode.OFF.getPainter(),
                 isSelected = false,
@@ -694,7 +693,6 @@ private fun QuickSettingToggleButtonPreview() {
             // Instance 2: Checked state
             QuickSettingToggleSelectorButton(
                 onClick = {},
-                text = "Flash On",
                 accessibilityText = "",
                 painter = CameraFlashMode.ON.getPainter(),
                 isSelected = true,
@@ -704,7 +702,6 @@ private fun QuickSettingToggleButtonPreview() {
             // Instance 3: Disabled state
             QuickSettingToggleSelectorButton(
                 onClick = {},
-                text = "Flash Off",
                 accessibilityText = "",
                 painter = CameraFlashMode.OFF.getPainter(),
                 isSelected = false,
@@ -714,40 +711,52 @@ private fun QuickSettingToggleButtonPreview() {
     }
 }
 
-@Preview(name = "JCA Setting Row - Dark Mode", showBackground = true, backgroundColor = 0xFF000000)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Preview(
+    name = "JCA Setting Row - Dark Mode",
+    showBackground = true,
+    backgroundColor = 0xFF000000
+)
 @Composable
 private fun PreviewSettingRowDark() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            color = Color.Black // Consistent with Camera UI
+            // Consistent with Camera UI
+            color = Color.Black
         ) {
             SettingRow(
-                title = "Video Resolution",
-                stateSubtitle = "Standard Definition"
+                title = stringResource(R.string.quick_settings_preview_video_resolution),
+                stateSubtitle = stringResource(R.string.quick_settings_preview_standard_definition)
             ) {
                 // Off State (Highlighted per your screenshot)
                 QuickSettingToggleSelectorButton(
-                    text = "SD",
-                    accessibilityText = "Standard Definition",
+                    accessibilityText = stringResource(
+                        R.string.quick_settings_preview_sd_description
+                    ),
                     painter = painterResource(id = R.drawable.video_resolution_sd_icon),
                     isSelected = true,
+                    shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                     onClick = {}
                 )
                 // On State
                 QuickSettingToggleSelectorButton(
-                    text = "HD",
-                    accessibilityText = "High Definition",
+                    accessibilityText = stringResource(
+                        R.string.quick_settings_preview_hd_description
+                    ),
                     painter = painterResource(id = R.drawable.video_resolution_hd_icon),
                     isSelected = false,
+                    shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                     onClick = {}
                 )
                 // Auto State
                 QuickSettingToggleSelectorButton(
-                    text = "FHD",
-                    accessibilityText = "Full High Definition",
+                    accessibilityText = stringResource(
+                        R.string.quick_settings_preview_fhd_description
+                    ),
                     painter = painterResource(id = R.drawable.video_resolution_fhd_icon),
                     isSelected = false,
+                    shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                     onClick = {}
                 )
             }

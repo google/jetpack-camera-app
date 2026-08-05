@@ -132,10 +132,6 @@ dependencies {
     implementation(libs.androidx.tracing)
     implementation(libs.kotlinx.atomicfu)
 
-    // Graphics libraries
-    implementation(libs.androidx.graphics.core)
-
-
     implementation("javax.inject:javax.inject:1")
     implementation(libs.androidx.core.ktx)
     implementation(project(":data:settings"))

@@ -23,7 +23,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
 import com.google.jetpackcamera.feature.postcapture.PostCaptureViewModel.PostCaptureEvent
@@ -34,7 +33,6 @@ import com.google.jetpackcamera.feature.postcapture.ui.PostCaptureLayout
 import com.google.jetpackcamera.feature.postcapture.ui.SaveCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.ui.ShareCurrentMediaButton
 import com.google.jetpackcamera.feature.postcapture.utils.MediaSharing
-import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
@@ -143,7 +141,7 @@ fun PostCaptureComponent(
                         if (snackBarData != null) {
                             snackBarController?.let {
                                 TestableSnackbar(
-                                    modifier = modifier.testTag(SNACKBAR_NODE_TAG),
+                                    modifier = modifier,
                                     snackbarToShow = snackBarData,
                                     snackbarHostState = snackbarHostState,
                                     snackBarController = snackBarController
