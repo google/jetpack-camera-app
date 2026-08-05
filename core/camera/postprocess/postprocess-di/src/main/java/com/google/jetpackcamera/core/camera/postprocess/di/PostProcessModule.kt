@@ -27,7 +27,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-internal interface PostProcessModule {
+interface PostProcessModule {
     @Multibinds
     fun imagePostProcessorEntries(): Set<
         Map.Entry<
