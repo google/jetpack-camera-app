@@ -15,16 +15,19 @@
  */
 package com.google.jetpackcamera.settings.api
 
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class RestrictionConfigTest {
 
     @Test
@@ -48,6 +51,13 @@ class RestrictionConfigTest {
                     setOf(FlashMode.OFF)
                 )
             )
+        }
+    }
+
+    @Test
+    fun optionsEnabled_whenEmpty_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) {
+            OptionRestrictionConfig.OptionsEnabled<FlashMode>(emptySet())
         }
     }
 
@@ -81,10 +91,10 @@ class RestrictionConfigTest {
 
         val appSettings = developerConfig.toCameraAppSettings()
 
-        assertEquals(AspectRatio.NINE_SIXTEEN, appSettings.aspectRatio)
-        assertEquals(FlashMode.ON, appSettings.flashMode)
-        assertEquals(CaptureMode.VIDEO_ONLY, appSettings.captureMode)
-        assertEquals(ImageOutputFormat.JPEG, appSettings.imageFormat)
-        assertEquals(DynamicRange.SDR, appSettings.dynamicRange)
+        assertThat(appSettings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        assertThat(appSettings.flashMode).isEqualTo(FlashMode.ON)
+        assertThat(appSettings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        assertThat(appSettings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        assertThat(appSettings.dynamicRange).isEqualTo(DynamicRange.SDR)
     }
 }

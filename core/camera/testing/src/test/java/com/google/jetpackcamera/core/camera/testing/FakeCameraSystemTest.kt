@@ -18,6 +18,7 @@ package com.google.jetpackcamera.core.camera.testing
 import com.google.common.truth.Truth
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -165,6 +166,15 @@ class FakeCameraSystemTest {
         val newState = CameraState(isCameraRunning = true)
         cameraSystem.setCurrentCameraState(newState)
         Truth.assertThat(cameraSystem.getCurrentCameraState().value).isEqualTo(newState)
+    }
+
+    @Test
+    fun setCaptureMode_updatesSettings() = runTest(testDispatcher) {
+        initAndRunCamera()
+        cameraSystem.setCaptureMode(CaptureMode.VIDEO_ONLY)
+        advanceUntilIdle()
+        Truth.assertThat(cameraSystem.getCurrentSettings().value?.captureMode)
+            .isEqualTo(CaptureMode.VIDEO_ONLY)
     }
 
     private fun TestScope.initAndRunCamera() {

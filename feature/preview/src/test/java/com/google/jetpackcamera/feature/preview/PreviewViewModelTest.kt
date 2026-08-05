@@ -219,19 +219,16 @@ class PreviewViewModelTest {
             advanceUntilIdle()
             viewModel.cameraController.startCamera()
             advanceUntilIdle()
+            assertThat(cameraSystem.getCurrentSettings().value?.captureMode)
+                .isEqualTo(CaptureMode.IMAGE_ONLY)
 
             val uiState = viewModel.captureUiState.value
             assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
             val readyState = uiState as CaptureUiState.Ready
             val quickSettings = readyState.quickSettingsUiState as QuickSettingsUiState.Available
-            val captureModeState = quickSettings.captureModeUiState as CaptureModeUiState.Available
-            val standardState = captureModeState.availableCaptureModes.find {
-                when (it) {
-                    is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.STANDARD
-                    is SingleSelectableUiState.Disabled -> it.value == CaptureMode.STANDARD
-                }
-            }
-            assertThat(standardState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
+            assertThat(
+                quickSettings.captureModeUiState
+            ).isInstanceOf(CaptureModeUiState.Unavailable::class.java)
         }
 
     @Test
@@ -257,6 +254,8 @@ class PreviewViewModelTest {
             advanceUntilIdle()
             viewModel.cameraController.startCamera()
             advanceUntilIdle()
+            assertThat(cameraSystem.getCurrentSettings().value?.captureMode)
+                .isEqualTo(CaptureMode.STANDARD)
 
             val uiState = viewModel.captureUiState.value
             assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
