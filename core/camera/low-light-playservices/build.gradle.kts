@@ -17,6 +17,8 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -42,5 +44,12 @@ dependencies {
     implementation(libs.androidx.annotation)
     implementation(libs.camera.camera2)
     implementation(libs.camera.core)
+    implementation(libs.dagger.hilt.android)
+    kapt(libs.dagger.hilt.compiler)
     implementation(libs.kotlinx.coroutines.play.services)
+}
+
+// Allow references to generated code
+kapt {
+    correctErrorTypes = true
 }

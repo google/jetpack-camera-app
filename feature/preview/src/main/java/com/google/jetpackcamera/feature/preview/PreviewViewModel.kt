@@ -22,6 +22,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
+import com.google.jetpackcamera.core.common.DefaultSaveMode
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
@@ -93,7 +94,7 @@ private const val TAG = "PreviewViewModel"
 class PreviewViewModel @Inject constructor(
     private val cameraSystemRepository: CameraSystemRepository,
     private val savedStateHandle: SavedStateHandle,
-    private val defaultSaveMode: SaveMode,
+    @DefaultSaveMode private val defaultSaveMode: SaveMode,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: SettableConstraintsRepository,
     private val mediaRepository: MediaRepository
@@ -109,8 +110,9 @@ class PreviewViewModel @Inject constructor(
     val surfaceRequest: StateFlow<SurfaceRequest?> =
         cameraSystemRepository.cameraSystem.getSurfaceRequest()
 
-    private val _captureEvents = Channel<CaptureEvent>()
-    val captureEvents: ReceiveChannel<CaptureEvent> = _captureEvents
+    private val outgoingCaptureEvents = Channel<CaptureEvent>(capacity = Channel.UNLIMITED)
+    val captureEvents: ReceiveChannel<CaptureEvent> = outgoingCaptureEvents
+    private val incomingCaptureEvents = Channel<CaptureEvent>(capacity = Channel.UNLIMITED)
 
     private val externalCaptureMode: ExternalCaptureMode = savedStateHandle.getExternalCaptureMode()
     private val externalUris: List<Uri> = savedStateHandle.getCaptureUris()
@@ -222,7 +224,7 @@ class PreviewViewModel @Inject constructor(
                 Pair(SaveLocation.Default, null)
             }
         },
-        captureEvents = _captureEvents,
+        captureEvents = incomingCaptureEvents,
         imageWellController = imageWellController,
         coroutineContext = viewModelScope.coroutineContext
     )
@@ -270,7 +272,7 @@ class PreviewViewModel @Inject constructor(
             launch {
                 for (event in captureController.captureEvents) {
                     showSnackbarForCaptureEvent(event)
-                    _captureEvents.send(event)
+                    outgoingCaptureEvents.send(event)
                 }
             }
         }

@@ -32,12 +32,14 @@ import javax.inject.Provider
 internal object EffectsModule {
     @Provides
     @IntoSet
-    fun provideSingleStreamEffectProviderEntry(): Map.Entry<
+    fun provideSingleStreamEffectProviderEntry(
+        impl: Provider<SingleStreamEffectProvider>
+    ): Map.Entry<
         CameraEffectFeatureKey,
         @JvmSuppressWildcards Provider<CameraEffectProvider>
         > =
         AbstractMap.SimpleImmutableEntry(
             SingleStreamEffectKey,
-            Provider { SingleStreamEffectProvider() }
+            Provider { impl.get() }
         )
 }
