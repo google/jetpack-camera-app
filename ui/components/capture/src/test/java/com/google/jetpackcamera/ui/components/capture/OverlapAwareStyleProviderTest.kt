@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -41,9 +42,15 @@ class OverlapAwareStyleProviderTest {
         var detectedStyle: CameraControlBackgroundStyle? = null
 
         composeTestRule.setContent {
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val targetBoundsPx = remember(density) {
+                with(density) {
+                    Rect(0f, 0f, 100.dp.toPx(), 100.dp.toPx())
+                }
+            }
             Box(Modifier.size(500.dp)) {
                 CompositionLocalProvider(
-                    LocalOverlapTargetBounds provides mutableStateOf(Rect(0f, 0f, 100f, 100f))
+                    LocalOverlapTargetBounds provides mutableStateOf(targetBoundsPx)
                 ) {
                     OverlapAwareStyleProvider(
                         modifier = Modifier
@@ -64,9 +71,15 @@ class OverlapAwareStyleProviderTest {
         var detectedStyle: CameraControlBackgroundStyle? = null
 
         composeTestRule.setContent {
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val targetBoundsPx = remember(density) {
+                with(density) {
+                    Rect(0f, 0f, 100.dp.toPx(), 100.dp.toPx())
+                }
+            }
             Box(Modifier.size(500.dp)) {
                 CompositionLocalProvider(
-                    LocalOverlapTargetBounds provides mutableStateOf(Rect(0f, 0f, 100f, 100f))
+                    LocalOverlapTargetBounds provides mutableStateOf(targetBoundsPx)
                 ) {
                     OverlapAwareStyleProvider(
                         modifier = Modifier
@@ -87,9 +100,15 @@ class OverlapAwareStyleProviderTest {
         var detectedStyle: CameraControlBackgroundStyle? = null
 
         composeTestRule.setContent {
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val targetBoundsPx = remember(density) {
+                with(density) {
+                    Rect(0f, 0f, 100.dp.toPx(), 100.dp.toPx())
+                }
+            }
             Box(Modifier.size(500.dp)) {
                 CompositionLocalProvider(
-                    LocalOverlapTargetBounds provides mutableStateOf(Rect(0f, 0f, 100f, 100f))
+                    LocalOverlapTargetBounds provides mutableStateOf(targetBoundsPx)
                 ) {
                     OverlapAwareStyleProvider(
                         modifier = Modifier
