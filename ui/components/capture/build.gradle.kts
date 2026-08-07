@@ -19,14 +19,11 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.compose.screenshot)
 }
 
 android {
     namespace = "com.google.jetpackcamera.ui.components.capture"
     compileSdk = libs.versions.compileSdk.get().toInt()
-
-    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -97,8 +94,6 @@ dependencies {
     // noinspection TestManifestGradleConfiguration: required for release build unit tests
     testImplementation(libs.compose.test.manifest)
     testImplementation(libs.compose.junit)
-    screenshotTestImplementation(libs.screenshot.validation.api)
-    screenshotTestImplementation(libs.compose.ui.tooling)
 
     // Testing
     testImplementation(libs.junit)
@@ -109,9 +104,6 @@ dependencies {
     testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.espresso.accessibility)
-    androidTestImplementation(libs.compose.accessibility)
-    androidTestImplementation(libs.accessibility.test.framework)
 
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
@@ -130,11 +122,4 @@ dependencies {
 // Allow references to generated code
 kapt {
     correctErrorTypes = true
-}
-configurations.all {
-    resolutionStrategy {
-        // Exclude protobuf-lite to prevent DuplicateClassException conflicts with protobuf-javalite 
-        // that is brought in by androidx.datastore, since the accessibility-test-framework brings in protobuf-lite.
-        exclude(group = "com.google.protobuf", module = "protobuf-lite")
-    }
 }
