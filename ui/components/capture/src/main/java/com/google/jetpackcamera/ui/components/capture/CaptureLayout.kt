@@ -34,11 +34,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
@@ -82,46 +85,49 @@ fun PreviewLayout(
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
-            )
-        }
-    ) { paddingValues ->
-        Box(modifier = modifier.background(Color.Black)) {
-            Column {
-                indicatorRow(Modifier.statusBarsPadding())
-                viewfinder(Modifier)
+    CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
+                )
             }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .safeDrawingPadding()
-
-            ) {
-                debugVisibilityWrapper {
-                    VerticalMaterialControls(
-                        captureButton = captureButton,
-                        imageWell = imageWell,
-                        flipCameraButton = flipCameraButton,
-                        quickSettingsToggleButton = quickSettingsButton,
-                        captureModeToggleSwitch = captureModeToggle,
-                        bottomSheetQuickSettings = quickSettingsOverlay,
-                        zoomControls = zoomLevelDisplay,
-                        elapsedTimeDisplay = elapsedTimeDisplay
-                    )
+        ) { paddingValues ->
+            Box(modifier = modifier.background(Color.Black)) {
+                Column {
+                    indicatorRow(Modifier.statusBarsPadding())
+                    viewfinder(Modifier)
                 }
-                // controls overlay
-                snackBar(Modifier, snackbarHostState)
-                screenFlashOverlay(Modifier)
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .safeDrawingPadding()
+
+                ) {
+                    debugVisibilityWrapper {
+                        VerticalMaterialControls(
+                            captureButton = captureButton,
+                            imageWell = imageWell,
+                            flipCameraButton = flipCameraButton,
+                            quickSettingsToggleButton = quickSettingsButton,
+                            captureModeToggleSwitch = captureModeToggle,
+                            bottomSheetQuickSettings = quickSettingsOverlay,
+                            zoomControls = zoomLevelDisplay,
+                            elapsedTimeDisplay = elapsedTimeDisplay
+                        )
+                    }
+                    // controls overlay
+                    snackBar(Modifier, snackbarHostState)
+                    screenFlashOverlay(Modifier)
+                }
+                debugOverlay(Modifier)
             }
-            debugOverlay(Modifier)
         }
     }
 }
