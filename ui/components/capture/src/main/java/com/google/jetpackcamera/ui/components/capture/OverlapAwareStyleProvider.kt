@@ -30,9 +30,13 @@ import androidx.compose.ui.layout.onGloballyPositioned
 /**
  * Applies [LocalCameraControlBackgroundStyle] based on whether this
  * component's spatial bounds overlap with the [LocalOverlapTargetBounds].
+ *
+ * @param modifier The [Modifier] to be applied to the outer layout.
+ * @param overlapThreshold The ratio of overlap (between 0.0 and 1.0) required to switch the style.
+ * @param content The composable content that will receive the computed [LocalCameraControlBackgroundStyle].
  */
 @Composable
-fun OverlapAwareStyleProvider(
+internal fun OverlapAwareStyleProvider(
     modifier: Modifier = Modifier,
     overlapThreshold: Float = 0.5f,
     content: @Composable () -> Unit
