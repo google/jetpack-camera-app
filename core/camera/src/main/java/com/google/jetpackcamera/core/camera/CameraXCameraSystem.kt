@@ -732,7 +732,7 @@ class CameraXCameraSystem(
             Log.d(TAG, "new capture mode $newCaptureMode")
             this@tryApplyCaptureModeConstraints.copy(
                 captureMode = newCaptureMode
-            )
+            ).tryApplyAspectRatioForExternalCapture(newCaptureMode)
         } ?: this
     }
 
@@ -1033,6 +1033,7 @@ class CameraXCameraSystem(
         currentSettings.update { old ->
             old?.copy(captureMode = captureMode)
                 ?.tryApplyDynamicRangeConstraints()
+                ?.tryApplyAspectRatioForExternalCapture(captureMode)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
         }
