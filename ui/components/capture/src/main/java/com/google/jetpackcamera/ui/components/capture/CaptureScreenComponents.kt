@@ -50,7 +50,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -522,6 +526,7 @@ fun PreviewDisplay(
             val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
             val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
             var imageVisible by remember { mutableStateOf(true) }
+            val targetBoundsState = LocalOverlapTargetBounds.current
 
             val disableAnimations = LocalDisableAnimations.current
             val imageAlpha: Float by animateFloatAsState(
@@ -547,6 +552,12 @@ fun PreviewDisplay(
 
             Box(
                 modifier = Modifier
+                    .onGloballyPositioned { coordinates ->
+                        val bounds = coordinates.boundsInWindow()
+                        if (targetBoundsState.value != bounds) {
+                            targetBoundsState.value = bounds
+                        }
+                    }
                     .width(width)
                     .height(height)
                     .transformable(state = transformableState)
