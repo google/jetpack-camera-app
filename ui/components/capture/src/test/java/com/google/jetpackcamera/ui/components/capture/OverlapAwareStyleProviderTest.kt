@@ -18,11 +18,12 @@ package com.google.jetpackcamera.ui.components.capture
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
-import org.junit.Assert.assertEquals
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,14 +41,8 @@ class OverlapAwareStyleProviderTest {
 
         composeTestRule.setContent {
             CompositionLocalProvider(
-                LocalOverlapTargetBounds provides Rect(0f, 0f, 100f, 100f)
+                LocalOverlapTargetBounds provides mutableStateOf(Rect(0f, 0f, 100f, 100f))
             ) {
-                // If the element is at y=50, it overlaps the bottom 50px of the target.
-                // 50 x 100 overlap / 100x100 box = 0.5f overlap.
-                // However, let's use exact offsets.
-                // offset moves it relative to parent.
-                // We'll trust onGloballyPositioned will reflect the offset.
-                // But Robolectric testing density is 1f.
                 OverlapAwareStyleProvider(
                     modifier = Modifier
                         .offset(x = 0.dp, y = 10.dp)
@@ -59,8 +54,7 @@ class OverlapAwareStyleProviderTest {
         }
 
         composeTestRule.waitForIdle()
-        // 90px intersect / 10000px area = 0.9 overlap -> BLACK_60
-        assertEquals(CameraControlBackgroundStyle.BLACK_60, detectedStyle)
+        assertThat(detectedStyle).isEqualTo(CameraControlBackgroundStyle.BLACK_60)
     }
 
     @Test
@@ -69,7 +63,7 @@ class OverlapAwareStyleProviderTest {
 
         composeTestRule.setContent {
             CompositionLocalProvider(
-                LocalOverlapTargetBounds provides Rect(0f, 0f, 100f, 100f)
+                LocalOverlapTargetBounds provides mutableStateOf(Rect(0f, 0f, 100f, 100f))
             ) {
                 OverlapAwareStyleProvider(
                     modifier = Modifier
@@ -82,8 +76,7 @@ class OverlapAwareStyleProviderTest {
         }
 
         composeTestRule.waitForIdle()
-        // 40px intersect / 10000 px area = .4 overlap -> WHITE_20
-        assertEquals(CameraControlBackgroundStyle.WHITE_20, detectedStyle)
+        assertThat(detectedStyle).isEqualTo(CameraControlBackgroundStyle.WHITE_20)
     }
 
     @Test
@@ -92,7 +85,7 @@ class OverlapAwareStyleProviderTest {
 
         composeTestRule.setContent {
             CompositionLocalProvider(
-                LocalOverlapTargetBounds provides Rect(0f, 0f, 100f, 100f)
+                LocalOverlapTargetBounds provides mutableStateOf(Rect(0f, 0f, 100f, 100f))
             ) {
                 OverlapAwareStyleProvider(
                     modifier = Modifier
@@ -105,6 +98,6 @@ class OverlapAwareStyleProviderTest {
         }
 
         composeTestRule.waitForIdle()
-        assertEquals(CameraControlBackgroundStyle.WHITE_20, detectedStyle)
+        assertThat(detectedStyle).isEqualTo(CameraControlBackgroundStyle.WHITE_20)
     }
 }

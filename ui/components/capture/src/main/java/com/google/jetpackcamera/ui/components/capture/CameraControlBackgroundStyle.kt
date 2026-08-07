@@ -20,6 +20,9 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Rect
 
+/**
+ * Defines the visual background styles for camera controls.
+ */
 enum class CameraControlBackgroundStyle {
     BLACK_60,
     WHITE_20
