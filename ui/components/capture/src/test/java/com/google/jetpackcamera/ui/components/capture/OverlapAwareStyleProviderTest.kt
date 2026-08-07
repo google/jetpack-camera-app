@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.jetpackcamera.ui.components.capture
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
@@ -46,9 +44,9 @@ class OverlapAwareStyleProviderTest {
             ) {
                 // If the element is at y=50, it overlaps the bottom 50px of the target.
                 // 50 x 100 overlap / 100x100 box = 0.5f overlap.
-                // However, let's use exact offsets. 
-                // offset moves it relative to parent. 
-                // We'll trust onGloballyPositioned will reflect the offset. 
+                // However, let's use exact offsets.
+                // offset moves it relative to parent.
+                // We'll trust onGloballyPositioned will reflect the offset.
                 // But Robolectric testing density is 1f.
                 OverlapAwareStyleProvider(
                     modifier = Modifier
@@ -59,7 +57,7 @@ class OverlapAwareStyleProviderTest {
                 }
             }
         }
-        
+
         composeTestRule.waitForIdle()
         // 90px intersect / 10000px area = 0.9 overlap -> BLACK_60
         assertEquals(CameraControlBackgroundStyle.BLACK_60, detectedStyle)
@@ -82,7 +80,7 @@ class OverlapAwareStyleProviderTest {
                 }
             }
         }
-        
+
         composeTestRule.waitForIdle()
         // 40px intersect / 10000 px area = .4 overlap -> WHITE_20
         assertEquals(CameraControlBackgroundStyle.WHITE_20, detectedStyle)
@@ -105,7 +103,7 @@ class OverlapAwareStyleProviderTest {
                 }
             }
         }
-        
+
         composeTestRule.waitForIdle()
         assertEquals(CameraControlBackgroundStyle.WHITE_20, detectedStyle)
     }

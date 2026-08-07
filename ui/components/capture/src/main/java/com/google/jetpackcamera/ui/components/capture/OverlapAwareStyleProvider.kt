@@ -28,7 +28,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 
 /**
- * Applies [LocalCameraControlBackgroundStyle] based on whether this 
+ * Applies [LocalCameraControlBackgroundStyle] based on whether this
  * component's spatial bounds overlap with the [LocalOverlapTargetBounds].
  */
 @Composable
