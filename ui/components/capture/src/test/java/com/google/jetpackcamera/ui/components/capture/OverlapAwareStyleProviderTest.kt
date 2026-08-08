@@ -32,6 +32,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(manifest = org.robolectric.annotation.Config.NONE)
 class OverlapAwareStyleProviderTest {
 
     @get:Rule
