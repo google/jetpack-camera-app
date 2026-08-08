@@ -50,7 +50,9 @@ class OverlapAwareStyleProviderTest {
             }
             Box(Modifier.size(500.dp)) {
                 CompositionLocalProvider(
-                    LocalOverlapTargetBounds provides mutableStateOf(targetBoundsPx)
+                    LocalOverlapTargetBounds provides remember(
+                        targetBoundsPx
+                    ) { mutableStateOf(targetBoundsPx) }
                 ) {
                     OverlapAwareStyleProvider(
                         modifier = Modifier
@@ -79,7 +81,9 @@ class OverlapAwareStyleProviderTest {
             }
             Box(Modifier.size(500.dp)) {
                 CompositionLocalProvider(
-                    LocalOverlapTargetBounds provides mutableStateOf(targetBoundsPx)
+                    LocalOverlapTargetBounds provides remember(
+                        targetBoundsPx
+                    ) { mutableStateOf(targetBoundsPx) }
                 ) {
                     OverlapAwareStyleProvider(
                         modifier = Modifier
@@ -108,7 +112,9 @@ class OverlapAwareStyleProviderTest {
             }
             Box(Modifier.size(500.dp)) {
                 CompositionLocalProvider(
-                    LocalOverlapTargetBounds provides mutableStateOf(targetBoundsPx)
+                    LocalOverlapTargetBounds provides remember(
+                        targetBoundsPx
+                    ) { mutableStateOf(targetBoundsPx) }
                 ) {
                     OverlapAwareStyleProvider(
                         modifier = Modifier
