@@ -21,6 +21,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.core.camera.AudioStreamState
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -65,7 +66,7 @@ class CaptureButtonUiStateAdapterTest {
     @Test
     fun from_cameraRunning_recordingPressed_returnsPressedRecording() {
         val cameraState = defaultCameraState.copy(
-            videoRecordingState = VideoRecordingState.Active.Recording(0L, 0.0, 0L)
+            videoRecordingState = VideoRecordingState.Active.Recording(0L, AudioStreamState.Active(0.0), 0L)
         )
         val uiState = CaptureButtonUiState.from(
             defaultCameraAppSettings,
@@ -81,7 +82,7 @@ class CaptureButtonUiStateAdapterTest {
     @Test
     fun from_cameraRunning_recordingLocked_returnsLockedRecording() {
         val cameraState = defaultCameraState.copy(
-            videoRecordingState = VideoRecordingState.Active.Recording(0L, 0.0, 0L)
+            videoRecordingState = VideoRecordingState.Active.Recording(0L, AudioStreamState.Active(0.0), 0L)
         )
         val uiState = CaptureButtonUiState.from(
             defaultCameraAppSettings,

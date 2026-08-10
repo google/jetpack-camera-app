@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
@@ -34,9 +35,13 @@ fun AudioUiState.Companion.from(
 ): AudioUiState = if (cameraAppSettings.audioEnabled) {
     val videoRecordingState = cameraState.videoRecordingState
     if (videoRecordingState is VideoRecordingState.Active) {
-        AudioUiState.Enabled.On(videoRecordingState.audioAmplitude)
+        val streamState = videoRecordingState.audioStreamState
+        AudioUiState.Enabled.On(
+            amplitude = if (streamState is AudioStreamState.Active) streamState.amplitude else 0.0,
+            isAudioStreamActive = streamState is AudioStreamState.Active || streamState is AudioStreamState.Silenced
+        )
     } else {
-        AudioUiState.Enabled.On(0.0)
+        AudioUiState.Enabled.On(0.0, false)
     }
 } else {
     AudioUiState.Enabled.Mute
