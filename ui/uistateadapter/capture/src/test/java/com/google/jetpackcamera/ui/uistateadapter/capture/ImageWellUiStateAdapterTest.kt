@@ -18,13 +18,13 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import android.graphics.Bitmap
 import android.net.Uri
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import com.google.jetpackcamera.core.camera.AudioStreamState
 
 @RunWith(RobolectricTestRunner::class)
 class ImageWellUiStateAdapterTest {
@@ -74,7 +74,11 @@ class ImageWellUiStateAdapterTest {
     fun from_videoRecording_returnsUnavailable() {
         // Given
         val mediaDescriptor = MediaDescriptor.Content.Image(testUri, null, false)
-        val videoRecordingState = VideoRecordingState.Active.Recording(0, AudioStreamState.Active(0.0), 0)
+        val videoRecordingState = VideoRecordingState.Active.Recording(
+            0,
+            AudioStreamState.Active(0.0),
+            0
+        )
 
         // When
         val result = ImageWellUiState.from(mediaDescriptor, videoRecordingState)
@@ -87,7 +91,11 @@ class ImageWellUiStateAdapterTest {
     fun from_videoPaused_returnsUnavailable() {
         // Given
         val mediaDescriptor = MediaDescriptor.Content.Image(testUri, null, false)
-        val videoRecordingState = VideoRecordingState.Active.Paused(0, AudioStreamState.Active(0.0), 0)
+        val videoRecordingState = VideoRecordingState.Active.Paused(
+            0,
+            AudioStreamState.Active(0.0),
+            0
+        )
 
         // When
         val result = ImageWellUiState.from(mediaDescriptor, videoRecordingState)

@@ -119,7 +119,6 @@ sealed interface FocusState {
  */
 data class VideoQualityInfo(val quality: VideoQuality, val width: Int, val height: Int)
 
-
 /**
  * Represents the state of the audio stream during video recording.
  */

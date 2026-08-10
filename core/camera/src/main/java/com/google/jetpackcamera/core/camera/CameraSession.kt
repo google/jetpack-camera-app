@@ -49,6 +49,7 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.video.AudioStats
 import androidx.camera.video.ExperimentalPersistentRecording
 import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.FileDescriptorOutputOptions
@@ -110,7 +111,6 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import androidx.camera.video.AudioStats
 
 private const val TAG = "CameraSession"
 private val QUALITY_RANGE_MAP = mapOf(
@@ -1043,7 +1043,8 @@ private suspend fun startVideoRecordingInternal(
                 currentCameraState.update { old ->
                     old.copy(
                         videoRecordingState = VideoRecordingState.Active.Recording(
-                            audioStreamState = onVideoRecordEvent.recordingStats.audioStats.toAudioStreamState(),
+                            audioStreamState = onVideoRecordEvent.recordingStats.audioStats
+                                .toAudioStreamState(),
                             maxDurationMillis = maxDurationMillis,
                             elapsedTimeNanos = onVideoRecordEvent.recordingStats
                                 .recordedDurationNanos
@@ -1056,7 +1057,8 @@ private suspend fun startVideoRecordingInternal(
                 currentCameraState.update { old ->
                     old.copy(
                         videoRecordingState = VideoRecordingState.Active.Paused(
-                            audioStreamState = onVideoRecordEvent.recordingStats.audioStats.toAudioStreamState(),
+                            audioStreamState = onVideoRecordEvent.recordingStats.audioStats
+                                .toAudioStreamState(),
                             maxDurationMillis = maxDurationMillis,
                             elapsedTimeNanos = onVideoRecordEvent.recordingStats
                                 .recordedDurationNanos
@@ -1069,7 +1071,8 @@ private suspend fun startVideoRecordingInternal(
                 currentCameraState.update { old ->
                     old.copy(
                         videoRecordingState = VideoRecordingState.Active.Recording(
-                            audioStreamState = onVideoRecordEvent.recordingStats.audioStats.toAudioStreamState(),
+                            audioStreamState = onVideoRecordEvent.recordingStats.audioStats
+                                .toAudioStreamState(),
                             maxDurationMillis = maxDurationMillis,
                             elapsedTimeNanos = onVideoRecordEvent.recordingStats
                                 .recordedDurationNanos
@@ -1084,7 +1087,8 @@ private suspend fun startVideoRecordingInternal(
                     if (old.videoRecordingState is VideoRecordingState.Active.Paused) {
                         old.copy(
                             videoRecordingState = VideoRecordingState.Active.Paused(
-                                audioStreamState = onVideoRecordEvent.recordingStats.audioStats.toAudioStreamState(),
+                                audioStreamState = onVideoRecordEvent.recordingStats.audioStats
+                                    .toAudioStreamState(),
                                 maxDurationMillis = maxDurationMillis,
                                 elapsedTimeNanos = onVideoRecordEvent.recordingStats
                                     .recordedDurationNanos
@@ -1093,7 +1097,8 @@ private suspend fun startVideoRecordingInternal(
                     } else {
                         old.copy(
                             videoRecordingState = VideoRecordingState.Active.Recording(
-                                audioStreamState = onVideoRecordEvent.recordingStats.audioStats.toAudioStreamState(),
+                                audioStreamState = onVideoRecordEvent.recordingStats.audioStats
+                                    .toAudioStreamState(),
                                 maxDurationMillis = maxDurationMillis,
                                 elapsedTimeNanos = onVideoRecordEvent.recordingStats
                                     .recordedDurationNanos
@@ -1213,7 +1218,10 @@ private suspend fun runVideoRecording(
             for (event in videoControlEvents) {
                 when (event) {
                     is VideoCaptureControlEvent.StartRecordingEvent ->
-                        Log.w(TAG, "A recording is already in progress, ignoring extra StartRecordingEvent")
+                        Log.w(
+                            TAG,
+                            "A recording is already in progress, ignoring extra StartRecordingEvent"
+                        )
 
                     VideoCaptureControlEvent.StopRecordingEvent -> {
                         recordingSettingsUpdater.cancel()
