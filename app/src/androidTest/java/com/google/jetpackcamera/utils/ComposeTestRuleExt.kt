@@ -77,6 +77,8 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONT
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.common.truth.TruthJUnit.assume
 import org.junit.AssumptionViolatedException
 
 /**
@@ -855,4 +857,11 @@ internal fun buildGeneralErrorMessage(
     sb.appendLine(nodeInteraction.printToString())
 
     return sb.toString()
+}
+
+fun ComposeTestRule.assumeFlipCameraAvailable(
+    message: String = "Device does not have multiple cameras to flip between."
+) {
+    val isFlipAvailable = onAllNodesWithTag(FLIP_CAMERA_BUTTON).fetchSemanticsNodes().isNotEmpty()
+    assume().withMessage(message).that(isFlipAvailable).isTrue()
 }

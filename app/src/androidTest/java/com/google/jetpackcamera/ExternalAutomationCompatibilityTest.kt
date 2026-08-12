@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import android.content.pm.PackageManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -72,11 +73,17 @@ class ExternalAutomationCompatibilityTest {
                 .that(captureButton)
                 .isNotNull()
 
-            // Verify flip camera button is visible via Resource ID
-            val flipButton = device.findObject(By.res(FLIP_CAMERA_BUTTON))
-            assertWithMessage("Flip camera button not found by UI Automator via Resource ID")
-                .that(flipButton)
-                .isNotNull()
+            val pm = InstrumentationRegistry.getInstrumentation().targetContext.packageManager
+            val hasMultipleCameras = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT) &&
+                    pm.hasSystemFeature(PackageManager.FEATURE_CAMERA)
+
+            if (hasMultipleCameras) {
+                // Verify flip camera button is visible via Resource ID
+                val flipButton = device.findObject(By.res(FLIP_CAMERA_BUTTON))
+                assertWithMessage("Flip camera button not found by UI Automator via Resource ID")
+                    .that(flipButton)
+                    .isNotNull()
+            }
         }
     }
 
