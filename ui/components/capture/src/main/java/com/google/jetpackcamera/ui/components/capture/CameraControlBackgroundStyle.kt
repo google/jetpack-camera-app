@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.components.capture
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 
 /**
  * Defines the background style variants for camera controls to maintain visual
@@ -27,6 +28,18 @@ internal enum class CameraControlBackgroundStyle {
     BLACK_60,
     WHITE_20
 }
+
+internal val CameraControlBackgroundStyle.containerColor: Color
+    get() = when (this) {
+        CameraControlBackgroundStyle.BLACK_60 -> Color.Black.copy(alpha = 0.6f)
+        CameraControlBackgroundStyle.WHITE_20 -> Color.White.copy(alpha = 0.2f)
+    }
+
+internal val CameraControlBackgroundStyle.disabledContainerColor: Color
+    get() = when (this) {
+        CameraControlBackgroundStyle.BLACK_60 -> Color.Black.copy(alpha = 0.2f)
+        CameraControlBackgroundStyle.WHITE_20 -> Color.White.copy(alpha = 0.05f)
+    }
 
 /**
  * Provides the global bounds of the target overlapping region.

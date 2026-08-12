@@ -866,15 +866,16 @@ fun FlipCameraButton(
                 initialLaunch = true
             }
         }
+        val backgroundStyle = LocalCameraControlBackgroundStyle.current
         FilledIconButton(
             modifier = modifier.size(56.dp),
             onClick = onClick,
             enabled = enabledCondition,
             shape = RoundedCornerShape(12.dp),
             colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = Color.White.copy(alpha = 0.2f),
+                containerColor = backgroundStyle.containerColor,
                 contentColor = Color.White,
-                disabledContainerColor = Color.White.copy(alpha = 0.05f),
+                disabledContainerColor = backgroundStyle.disabledContainerColor,
                 disabledContentColor = Color.White.copy(alpha = 0.38f)
             )
         ) {
