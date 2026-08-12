@@ -21,9 +21,12 @@ import android.util.Log
 import android.util.Range
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -58,6 +61,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tracing.Trace
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
@@ -137,9 +141,9 @@ fun PreviewScreen(
 ) {
     Log.d(TAG, "PreviewScreen")
 
-    val rawUiState = viewModel.captureUiState.collectAsState()
-    val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
-    val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
+    val rawUiState = viewModel.captureUiState.collectAsStateWithLifecycle()
+    val debugUiState: DebugUiState by viewModel.debugUiState.collectAsStateWithLifecycle()
+    val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsStateWithLifecycle()
 
     val isReady by remember { derivedStateOf { rawUiState.value is CaptureUiState.Ready } }
 
@@ -522,10 +526,11 @@ private fun ContentScreen(
     val elapsedTimeDisplayLambda = remember(videoRecordingState) {
         @Composable { modifier: Modifier ->
             val isVisible = videoRecordingState.value is VideoRecordingState.Active
+            val disableAnimations = LocalDisableAnimations.current
             AnimatedVisibility(
                 visible = isVisible,
-                enter = fadeIn(),
-                exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
+                enter = if (disableAnimations) EnterTransition.None else fadeIn(),
+                exit = if (disableAnimations) ExitTransition.None else fadeOut(animationSpec = tween(delayMillis = 1_500))
             ) {
                 val elapsedTimeModifier = remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
                 ElapsedTimeText(
@@ -566,10 +571,11 @@ private fun ContentScreen(
     ) {
         @Composable { modifier: Modifier ->
             val isQuickSettingsVisible = !isVideoRecordingActive.value
+            val disableAnimations = LocalDisableAnimations.current
             AnimatedVisibility(
                 visible = isQuickSettingsVisible,
-                enter = fadeIn(),
-                exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
+                enter = if (disableAnimations) EnterTransition.None else fadeIn(),
+                exit = if (disableAnimations) ExitTransition.None else fadeOut(animationSpec = tween(delayMillis = 1_500))
             ) {
                 quickSettingsController?.let { quickSettingsController ->
                     ToggleQuickSettingsButton(

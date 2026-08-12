@@ -509,7 +509,6 @@ fun PreviewDisplay(
     surfaceRequest?.let {
         BoxWithConstraints(
             modifier
-                .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black),
             contentAlignment = Alignment.TopCenter
@@ -547,6 +546,7 @@ fun PreviewDisplay(
 
             Box(
                 modifier = Modifier
+                    .testTag(PREVIEW_DISPLAY)
                     .width(width)
                     .height(height)
                     .transformable(state = transformableState)
@@ -855,9 +855,13 @@ fun FlipCameraButton(
             onClick = onClick,
             enabled = enabledCondition
         ) {
+            val contentDescription = when (flipLensUiState.selectedLensFacing) {
+                com.google.jetpackcamera.model.LensFacing.FRONT -> stringResource(R.string.quick_settings_front_camera_description)
+                com.google.jetpackcamera.model.LensFacing.BACK -> stringResource(R.string.quick_settings_back_camera_description)
+            }
             Icon(
                 painter = painterResource(R.drawable.ic_flip_camera_android),
-                contentDescription = stringResource(id = R.string.flip_camera_icon_description),
+                contentDescription = contentDescription,
                 modifier = Modifier
                     .size(IconButtonDefaults.extraLargeIconSize)
                     .rotate(animatedRotation.value)

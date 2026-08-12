@@ -27,9 +27,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -75,9 +78,9 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
@@ -109,7 +112,11 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 //
 // ////////////////////////////////////////////////////
 /**
- * Button to toggle open quick settings
+ * Button to toggle open quick settings.
+ *
+ * @param isOpen Whether the quick settings panel is currently open.
+ * @param modifier The modifier for this component.
+ * @param quickSettingsController The controller for quick settings actions.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -192,21 +199,54 @@ internal fun QuickSettingsModalBottomSheet(
     content: @Composable () -> Unit
 ) {
     val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
+    val disableAnimations = LocalDisableAnimations.current
 
-    ModalBottomSheet(
-        modifier = modifier
-            .semantics {
-                // since Modal Bottom Sheet is placed above ALL other composables in the hierarchy,
-                // it doesn't inherit the "testTagsAsResourceId" property.
-                testTagsAsResourceId = true
-                testTag = QUICK_SETTINGS_BOTTOM_SHEET
-                contentDescription = openDescription
-            },
+    if (disableAnimations) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.32f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss
+                ),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Box(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {}
+                    )
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .semantics {
+                        testTagsAsResourceId = true
+                        testTag = QUICK_SETTINGS_BOTTOM_SHEET
+                        contentDescription = openDescription
+                    }
+            ) {
+                content()
+            }
+        }
+    } else {
+        ModalBottomSheet(
+            modifier = modifier
+                .semantics {
+                    // since Modal Bottom Sheet is placed above ALL other composables in the hierarchy,
+                    // it doesn't inherit the "testTagsAsResourceId" property.
+                    testTagsAsResourceId = true
+                    testTag = QUICK_SETTINGS_BOTTOM_SHEET
+                    contentDescription = openDescription
+                },
 
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
-    ) {
-        content()
+            onDismissRequest = onDismiss,
+            sheetState = sheetState
+        ) {
+            content()
+        }
     }
 }
 
@@ -239,9 +279,9 @@ internal fun CaptureModeRow(
             onItemClick = onSetCaptureMode,
             testTagMapper = { mode ->
                 when (mode) {
-                    CaptureMode.STANDARD -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-                    CaptureMode.IMAGE_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-                    CaptureMode.VIDEO_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
+                    CaptureMode.STANDARD -> BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
+                    CaptureMode.IMAGE_ONLY -> BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
+                    CaptureMode.VIDEO_ONLY -> BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
                 }
             },
             enumMapper = { mode ->

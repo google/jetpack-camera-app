@@ -68,7 +68,7 @@ class FlashModeUiStateAdapterTest {
         val flashModeUiState = FlashModeUiState.from(defaultCameraAppSettings, systemConstraints)
 
         // Then the UI state is Unavailable
-        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Unavailable::class.java)
+        assertThat(flashModeUiState).isEqualTo(FlashModeUiState.Unavailable)
     }
 
     @Test

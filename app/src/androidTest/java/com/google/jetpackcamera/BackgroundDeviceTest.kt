@@ -31,13 +31,12 @@ import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.visitQuickSettings
 import com.google.jetpackcamera.utils.visitSettingDialog
 import com.google.jetpackcamera.utils.visitSettingsScreen
 import com.google.jetpackcamera.utils.waitForCaptureButton
@@ -88,18 +87,8 @@ class BackgroundDeviceTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
 
-        // Navigate to quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
-
         // Click the flip camera button
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON)
-            .assertExists()
-            .performClick()
-
-        // Exit quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON)
             .assertExists()
             .performClick()
 
@@ -111,25 +100,12 @@ class BackgroundDeviceTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
 
-        // Navigate to quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
-
-        // Click the ratio button
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON)
-            .assertExists()
-            .performClick()
-
-        // Click the 1:1 ratio button
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON)
-            .assertExists()
-            .performClick()
-
-        // Exit quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
+        composeTestRule.visitQuickSettings {
+            // Click the 1:1 ratio button
+            onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON)
+                .assertExists()
+                .performClick()
+        }
 
         backgroundThenForegroundApp()
     }
