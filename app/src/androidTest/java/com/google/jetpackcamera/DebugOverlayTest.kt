@@ -68,7 +68,7 @@ class DebugOverlayTest {
     fun hideComponentsButton_togglesUiVisibility() {
         val pm = InstrumentationRegistry.getInstrumentation().targetContext.packageManager
         val hasMultipleCameras = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT) &&
-                pm.hasSystemFeature(PackageManager.FEATURE_CAMERA)
+            pm.hasSystemFeature(PackageManager.FEATURE_CAMERA)
 
         runMainActivityScenarioTest(debugExtra) {
             composeTestRule.waitForCaptureButton()

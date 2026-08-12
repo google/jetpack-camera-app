@@ -75,7 +75,7 @@ class ExternalAutomationCompatibilityTest {
 
             val pm = InstrumentationRegistry.getInstrumentation().targetContext.packageManager
             val hasMultipleCameras = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT) &&
-                    pm.hasSystemFeature(PackageManager.FEATURE_CAMERA)
+                pm.hasSystemFeature(PackageManager.FEATURE_CAMERA)
 
             if (hasMultipleCameras) {
                 // Verify flip camera button is visible via Resource ID

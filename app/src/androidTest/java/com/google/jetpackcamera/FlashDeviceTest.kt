@@ -17,7 +17,6 @@ package com.google.jetpackcamera
 
 import android.os.Build
 import android.provider.MediaStore
-import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -120,7 +119,9 @@ internal class FlashDeviceTest {
         // Ensure camera has a back camera and flip to it
         val lensFacing = composeTestRule.getCurrentLensFacing()
         if (lensFacing != LensFacing.BACK) {
-            composeTestRule.assumeFlipCameraAvailable("Device does not have a back camera to flip to.")
+            composeTestRule.assumeFlipCameraAvailable(
+                "Device does not have a back camera to flip to."
+            )
             composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
         }
 
@@ -148,7 +149,9 @@ internal class FlashDeviceTest {
             // Ensure camera has a front camera and flip to it
             val lensFacing = composeTestRule.getCurrentLensFacing()
             if (lensFacing != LensFacing.FRONT) {
-                composeTestRule.assumeFlipCameraAvailable("Device does not have a front camera to flip to.")
+                composeTestRule.assumeFlipCameraAvailable(
+                    "Device does not have a front camera to flip to."
+                )
                 composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
             }
 
@@ -188,7 +191,9 @@ internal class FlashDeviceTest {
             // Ensure camera has the target lens facing camera and flip to it
             val lensFacing = composeTestRule.getCurrentLensFacing()
             if (lensFacing != targetLensFacing) {
-                composeTestRule.assumeFlipCameraAvailable("Device does not have a $targetLensFacing camera to flip to.")
+                composeTestRule.assumeFlipCameraAvailable(
+                    "Device does not have a $targetLensFacing camera to flip to."
+                )
                 composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
             }
 

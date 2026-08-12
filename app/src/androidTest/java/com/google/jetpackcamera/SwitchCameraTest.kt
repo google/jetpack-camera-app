@@ -16,7 +16,6 @@
 package com.google.jetpackcamera
 
 import androidx.compose.ui.test.doubleClick
-import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
