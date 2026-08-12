@@ -24,8 +24,8 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
@@ -43,13 +43,12 @@ import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFI
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
-import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
-import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
@@ -58,9 +57,7 @@ import com.google.jetpackcamera.utils.getResString
 import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
-import com.google.jetpackcamera.utils.searchForQuickSetting
 import com.google.jetpackcamera.utils.setConcurrentCameraModeInSettings
-import com.google.jetpackcamera.utils.stateDescriptionMatches
 import com.google.jetpackcamera.utils.visitSettingsScreen
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForSnackbarWithText
@@ -139,7 +136,9 @@ class ConcurrentCameraTest {
                     .performClick()
 
                 // Assert the HDR button is disabled (if the row exists)
-                val hdrExists = onAllNodesWithTag(ROW_QUICK_SETTINGS_HDR).fetchSemanticsNodes().isNotEmpty()
+                val hdrExists = onAllNodesWithTag(
+                    ROW_QUICK_SETTINGS_HDR
+                ).fetchSemanticsNodes().isNotEmpty()
                 if (hdrExists) {
                     onNodeWithTag(BTN_QUICK_SETTINGS_HDR_OPTION_ON).assert(isNotEnabled())
                     onNodeWithTag(BTN_QUICK_SETTINGS_HDR_OPTION_OFF).assert(isNotEnabled())

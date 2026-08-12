@@ -17,8 +17,6 @@ package com.google.jetpackcamera.utils
 
 import android.content.Context
 import android.util.Log
-import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.UiDevice
 import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -45,12 +43,12 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollToIndex
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.action.ViewActions.swipeDown
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.jetpackcamera.core.common.ignoreResult
@@ -67,17 +65,16 @@ import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
-import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
-import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
@@ -451,7 +448,9 @@ fun ComposeTestRule.isHdrEnabled(): Boolean {
 }
 
 fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
-    onNodeWithTag(com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON).fetchSemanticsNode(
+    onNodeWithTag(
+        com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+    ).fetchSemanticsNode(
         "Flip camera button is not visible on main screen."
     ).let { node ->
         for (description in node.config[SemanticsProperties.ContentDescription]) {
@@ -757,7 +756,7 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
             BTN_QUICK_SETTINGS_HDR_OPTION_OFF
         }
         val exists = onAllNodesWithTag(targetButtonTag).fetchSemanticsNodes().isNotEmpty()
-        
+
         if (!exists) {
             if (enabled) {
                 throw AssumptionViolatedException(
@@ -807,7 +806,7 @@ fun ComposeTestRule.setFlashMode(flashMode: FlashMode) {
         onNodeWithTag(targetButtonTag)
             .assume(isEnabled()) { "Flash mode $flashMode is disabled" }
             .performClick()
-        
+
         waitUntil(DEFAULT_TIMEOUT_MILLIS) { getCurrentFlashMode() == flashMode }
     }
 }

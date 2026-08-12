@@ -26,7 +26,6 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -84,6 +83,7 @@ import com.google.jetpackcamera.ui.components.capture.ElapsedTimeText
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
 import com.google.jetpackcamera.ui.components.capture.ImageWell
+import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.PreviewLayout
@@ -530,7 +530,13 @@ private fun ContentScreen(
             AnimatedVisibility(
                 visible = isVisible,
                 enter = if (disableAnimations) EnterTransition.None else fadeIn(),
-                exit = if (disableAnimations) ExitTransition.None else fadeOut(animationSpec = tween(delayMillis = 1_500))
+                exit = if (disableAnimations) {
+                    ExitTransition.None
+                } else {
+                    fadeOut(
+                        animationSpec = tween(delayMillis = 1_500)
+                    )
+                }
             ) {
                 val elapsedTimeModifier = remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
                 ElapsedTimeText(
@@ -575,7 +581,13 @@ private fun ContentScreen(
             AnimatedVisibility(
                 visible = isQuickSettingsVisible,
                 enter = if (disableAnimations) EnterTransition.None else fadeIn(),
-                exit = if (disableAnimations) ExitTransition.None else fadeOut(animationSpec = tween(delayMillis = 1_500))
+                exit = if (disableAnimations) {
+                    ExitTransition.None
+                } else {
+                    fadeOut(
+                        animationSpec = tween(delayMillis = 1_500)
+                    )
+                }
             ) {
                 quickSettingsController?.let { quickSettingsController ->
                     ToggleQuickSettingsButton(

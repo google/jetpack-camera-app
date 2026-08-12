@@ -856,8 +856,12 @@ fun FlipCameraButton(
             enabled = enabledCondition
         ) {
             val contentDescription = when (flipLensUiState.selectedLensFacing) {
-                com.google.jetpackcamera.model.LensFacing.FRONT -> stringResource(R.string.quick_settings_front_camera_description)
-                com.google.jetpackcamera.model.LensFacing.BACK -> stringResource(R.string.quick_settings_back_camera_description)
+                com.google.jetpackcamera.model.LensFacing.FRONT -> stringResource(
+                    R.string.quick_settings_front_camera_description
+                )
+                com.google.jetpackcamera.model.LensFacing.BACK -> stringResource(
+                    R.string.quick_settings_back_camera_description
+                )
             }
             Icon(
                 painter = painterResource(R.drawable.ic_flip_camera_android),

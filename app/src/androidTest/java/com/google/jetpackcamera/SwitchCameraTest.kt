@@ -101,8 +101,6 @@ class SwitchCameraTest {
             initialLensFacing.flip().flip()
         ).inOrder()
     }
-
-
 }
 
 inline fun runFlipCameraTest(
