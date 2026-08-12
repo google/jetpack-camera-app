@@ -46,16 +46,18 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlin {
         jvmToolchain(17)
+
+        compilerOptions {
+            freeCompilerArgs.add("-Xcontext-receivers")
+        }
     }
+
     buildFeatures {
         buildConfig = true
         compose = true
-    }
-
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
     }
 }
 
