@@ -17,7 +17,6 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.android.legacy.kapt)
-    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -39,12 +38,5 @@ android {
 
 dependencies {
     implementation(libs.camera.core)
-    implementation(libs.dagger.hilt.android)
-    kapt(libs.dagger.hilt.compiler)
     implementation(libs.kotlinx.coroutines.core)
-}
-
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
 }

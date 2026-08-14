@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,17 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.android.legacy.kapt)
+    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
-    namespace = "com.google.jetpackcamera.core.camera.lowlight.playservices"
+    namespace = "com.google.jetpackcamera.core.camera.lowlight.di"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -37,10 +39,12 @@ android {
 
 dependencies {
     implementation(project(":core:camera:low-light"))
-    implementation(libs.play.services.base)
-    implementation(libs.play.services.camera.low.light.boost)
-    implementation(libs.androidx.annotation)
-    implementation(libs.camera.camera2)
-    implementation(libs.camera.core)
-    implementation(libs.kotlinx.coroutines.play.services)
+
+    // Hilt
+    implementation(libs.dagger.hilt.android)
+    kapt(libs.dagger.hilt.compiler)
+}
+
+kapt {
+    correctErrorTypes = true
 }
