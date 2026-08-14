@@ -32,7 +32,6 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
-import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureModeRow
@@ -40,12 +39,25 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsModalBottomSheet
-import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+
+/**
+ * Events representing user interactions with the Quick Settings UI.
+ */
+sealed interface QuickSettingsEvent {
+    data class SetFlashMode(val flashMode: FlashMode) : QuickSettingsEvent
+    data class SetCaptureMode(val captureMode: CaptureMode) : QuickSettingsEvent
+    data class SetAspectRatio(val aspectRatio: AspectRatio) : QuickSettingsEvent
+    data class SetHdr(
+        val dynamicRange: DynamicRange,
+        val imageFormat: ImageOutputFormat
+    ) : QuickSettingsEvent
+    data object ToggleSheet : QuickSettingsEvent
+}
 
 /**
  * The UI bottom sheet component for quick settings.
@@ -54,7 +66,7 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 @Composable
 fun QuickSettingsBottomSheet(
     quickSettingsUiState: QuickSettingsUiState,
-    quickSettingsController: QuickSettingsController,
+    onEvent: (QuickSettingsEvent) -> Unit,
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     showMoreSettingsButton: Boolean = true
@@ -65,12 +77,12 @@ fun QuickSettingsBottomSheet(
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         QuickSettingsModalBottomSheet(
             modifier = modifier,
-            onDismiss = quickSettingsController::toggleQuickSettings,
+            onDismiss = { onEvent(QuickSettingsEvent.ToggleSheet) },
             sheetState = sheetState
         ) {
             QuickSettingsContent(
                 quickSettingsUiState = quickSettingsUiState,
-                quickSettingsController = quickSettingsController,
+                onEvent = onEvent,
                 onNavigateToSettings = onNavigateToSettings,
                 showMoreSettingsButton = showMoreSettingsButton
             )
@@ -101,7 +113,7 @@ private fun QuickSettingsLayout(
 @Composable
 private fun QuickSettingsContent(
     quickSettingsUiState: QuickSettingsUiState.Available,
-    quickSettingsController: QuickSettingsController,
+    onEvent: (QuickSettingsEvent) -> Unit,
     onNavigateToSettings: () -> Unit,
     showMoreSettingsButton: Boolean
 ) {
@@ -122,7 +134,7 @@ private fun QuickSettingsContent(
         // Flash Mode settings
         if (quickSettingsUiState.flashModeUiState is FlashModeUiState.Available) {
             FlashRow(
-                onSetFlashMode = quickSettingsController::setFlash,
+                onSetFlashMode = { onEvent(QuickSettingsEvent.SetFlashMode(it)) },
                 flashModeUiState = quickSettingsUiState.flashModeUiState
             )
         }
@@ -132,7 +144,7 @@ private fun QuickSettingsContent(
             quickSettingsUiState.captureModeUiState is CaptureModeUiState.Available
         ) {
             CaptureModeRow(
-                onSetCaptureMode = quickSettingsController::setCaptureMode,
+                onSetCaptureMode = { onEvent(QuickSettingsEvent.SetCaptureMode(it)) },
                 captureModeUiState = quickSettingsUiState.captureModeUiState
             )
         }
@@ -143,7 +155,7 @@ private fun QuickSettingsContent(
         ) {
             AspectRatioRow(
                 aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
-                onSetAspectRatio = quickSettingsController::setAspectRatio
+                onSetAspectRatio = { onEvent(QuickSettingsEvent.SetAspectRatio(it)) }
             )
         }
 
@@ -151,36 +163,10 @@ private fun QuickSettingsContent(
         if (quickSettingsUiState.hdrUiState is HdrUiState.Available) {
             HdrRow(
                 onClick = { d: DynamicRange, i: ImageOutputFormat ->
-                    when (captureMode) {
-                        CaptureMode.STANDARD -> {
-                            quickSettingsController.setDynamicRange(d)
-                            quickSettingsController.setImageFormat(i)
-                        }
-                        CaptureMode.VIDEO_ONLY -> quickSettingsController.setDynamicRange(d)
-                        CaptureMode.IMAGE_ONLY -> quickSettingsController.setImageFormat(i)
-                    }
+                    onEvent(QuickSettingsEvent.SetHdr(d, i))
                 },
                 hdrUiState = quickSettingsUiState.hdrUiState
             )
         }
     }
-}
-
-/**
- * A no-op implementation of [QuickSettingsController] for use in Compose previews and tests.
- */
-class NoOpQuickSettingsController : QuickSettingsController {
-    override fun toggleQuickSettings() {}
-
-    override fun setLensFacing(lensFace: LensFacing) {}
-
-    override fun setFlash(flashMode: FlashMode) {}
-
-    override fun setAspectRatio(aspectRatio: AspectRatio) {}
-
-    override fun setDynamicRange(dynamicRange: DynamicRange) {}
-
-    override fun setImageFormat(imageOutputFormat: ImageOutputFormat) {}
-
-    override fun setCaptureMode(captureMode: CaptureMode) {}
 }

@@ -38,7 +38,6 @@ import kotlinx.coroutines.launch
  * [trackedCaptureUiState].
  *
  * @param trackedCaptureUiState The state flow to update with quick settings information.
- * @param externalCaptureMode The external capture mode active.
  * @param cameraSystem The camera system to control.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */

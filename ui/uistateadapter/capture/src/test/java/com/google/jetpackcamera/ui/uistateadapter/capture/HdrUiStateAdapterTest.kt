@@ -73,7 +73,7 @@ internal class HdrUiStateAdapterTest {
             HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is unavailable in Standard mode
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
+        assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
     }
 
     @Test
@@ -130,7 +130,7 @@ internal class HdrUiStateAdapterTest {
             HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is unavailable
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
+        assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
     }
 
     @Test
@@ -210,7 +210,7 @@ internal class HdrUiStateAdapterTest {
             HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is unavailable
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
+        assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
     }
 
     @Test
@@ -295,7 +295,7 @@ internal class HdrUiStateAdapterTest {
             HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is unavailable
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
+        assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
     }
 
     @Test
@@ -323,7 +323,7 @@ internal class HdrUiStateAdapterTest {
             HdrUiState.from(appSettings, systemConstraints)
 
         // Then HDR is unavailable
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
+        assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
     }
 
     @Test
@@ -377,6 +377,6 @@ internal class HdrUiStateAdapterTest {
 
         val hdrUiState = HdrUiState.from(appSettings, systemConstraints)
 
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Unavailable::class.java)
+        assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
     }
 }

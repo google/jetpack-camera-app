@@ -71,13 +71,13 @@ import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
@@ -96,7 +96,6 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptur
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEnum
-import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -109,15 +108,15 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 //
 // ////////////////////////////////////////////////////
 /**
- * Button to toggle open quick settings
+ * Button to toggle open quick settings.
+ *
+ * @param isOpen Whether the quick settings panel is currently open.
+ * @param modifier The modifier for this component.
+ * @param onClick The behavior for when this button is clicked.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ToggleQuickSettingsButton(
-    isOpen: Boolean,
-    modifier: Modifier = Modifier,
-    quickSettingsController: QuickSettingsController
-) {
+fun ToggleQuickSettingsButton(isOpen: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val buttonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
     )
@@ -135,7 +134,7 @@ fun ToggleQuickSettingsButton(
                     closedDescription
                 }
             },
-        onClick = quickSettingsController::toggleQuickSettings,
+        onClick = onClick,
         colors = IconButtonDefaults.iconButtonColors(
             // Set the background color of the button
             containerColor = Color.White.copy(alpha = 0.08f),
@@ -239,9 +238,9 @@ internal fun CaptureModeRow(
             onItemClick = onSetCaptureMode,
             testTagMapper = { mode ->
                 when (mode) {
-                    CaptureMode.STANDARD -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-                    CaptureMode.IMAGE_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-                    CaptureMode.VIDEO_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
+                    CaptureMode.STANDARD -> BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
+                    CaptureMode.IMAGE_ONLY -> BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
+                    CaptureMode.VIDEO_ONLY -> BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
                 }
             },
             enumMapper = { mode ->
