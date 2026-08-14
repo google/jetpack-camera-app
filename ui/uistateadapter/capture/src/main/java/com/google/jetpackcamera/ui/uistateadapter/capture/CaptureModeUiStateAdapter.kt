@@ -326,8 +326,7 @@ private fun getCaptureModeDisabledReason(
                 }
                 return DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_DEVICE
             }
-
-            throw RuntimeException("Unknown DisabledReason for video mode.")
+            return DisabledReason.UNKNOWN
         }
 
         CaptureMode.STANDARD -> {

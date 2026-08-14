@@ -24,6 +24,7 @@ import com.google.jetpackcamera.ui.uistate.DisableRationale
 enum class DisabledReason(
     override val reasonTextResId: Int
 ) : DisableRationale {
+    UNKNOWN(R.string.toast_unknown_disabled_rationale),
     IMAGE_CAPTURE_RESTRICTED(
         R.string.toast_image_capture_restricted
     ),
