@@ -60,7 +60,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tracing.Trace
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
@@ -97,6 +96,7 @@ import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
 import com.google.jetpackcamera.ui.components.capture.ZoomStateManager
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsBottomSheet
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEvent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
@@ -114,6 +114,7 @@ import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
@@ -141,9 +142,9 @@ fun PreviewScreen(
 ) {
     Log.d(TAG, "PreviewScreen")
 
-    val rawUiState = viewModel.captureUiState.collectAsStateWithLifecycle()
-    val debugUiState: DebugUiState by viewModel.debugUiState.collectAsStateWithLifecycle()
-    val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsStateWithLifecycle()
+    val rawUiState = viewModel.captureUiState.collectAsState()
+    val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
+    val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
 
     val isReady by remember { derivedStateOf { rawUiState.value is CaptureUiState.Ready } }
 
@@ -562,8 +563,12 @@ private fun ContentScreen(
             if (captureModeToggleUiState is CaptureModeToggleUiState.Available) {
                 CaptureModeToggleButton(
                     uiState = captureModeToggleUiState,
-                    quickSettingsController = quickSettingsController,
-                    snackBarController = snackBarController,
+                    onChangeCaptureMode = { newCaptureMode ->
+                        quickSettingsController?.setCaptureMode(newCaptureMode)
+                    },
+                    onToggleWhenDisabled = { disableRationale ->
+                        snackBarController?.enqueueDisabledHdrToggleSnackBar(disableRationale)
+                    },
                     modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
                 )
             }
@@ -589,12 +594,12 @@ private fun ContentScreen(
                     )
                 }
             ) {
-                quickSettingsController?.let { quickSettingsController ->
+                quickSettingsController?.let { controller ->
                     ToggleQuickSettingsButton(
-                        modifier = modifier,
                         isOpen = (quickSettingsState.value as? QuickSettingsUiState.Available)
                             ?.quickSettingsIsOpen == true,
-                        quickSettingsController = quickSettingsController
+                        onClick = controller::toggleQuickSettings,
+                        modifier = modifier
                     )
                 }
             }
@@ -607,15 +612,35 @@ private fun ContentScreen(
         onNavigateToSettings
     ) {
         @Composable { modifier: Modifier ->
-            quickSettingsController?.let { quickSettingsController ->
+            quickSettingsController?.let { controller ->
                 QuickSettingsBottomSheet(
                     modifier = modifier,
                     quickSettingsUiState = quickSettingsState.value,
                     onNavigateToSettings = {
-                        quickSettingsController.toggleQuickSettings()
+                        controller.toggleQuickSettings()
                         onNavigateToSettings()
                     },
-                    quickSettingsController = quickSettingsController,
+                    onEvent = { event ->
+                        when (event) {
+                            is QuickSettingsEvent.SetFlashMode -> controller.setFlash(event.flashMode)
+                            is QuickSettingsEvent.SetCaptureMode -> controller.setCaptureMode(event.captureMode)
+                            is QuickSettingsEvent.SetAspectRatio -> controller.setAspectRatio(event.aspectRatio)
+                            is QuickSettingsEvent.SetHdr -> {
+                                val captureMode = (quickSettingsState.value as? QuickSettingsUiState.Available)
+                                    ?.captureModeUiState as? CaptureModeUiState.Available
+                                val selectedCaptureMode = captureMode?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
+                                when (selectedCaptureMode) {
+                                    CaptureMode.STANDARD -> {
+                                        controller.setDynamicRange(event.dynamicRange)
+                                        controller.setImageFormat(event.imageFormat)
+                                    }
+                                    CaptureMode.VIDEO_ONLY -> controller.setDynamicRange(event.dynamicRange)
+                                    CaptureMode.IMAGE_ONLY -> controller.setImageFormat(event.imageFormat)
+                                }
+                            }
+                            is QuickSettingsEvent.ToggleSheet -> controller.toggleQuickSettings()
+                        }
+                    },
                     showMoreSettingsButton = true
                 )
             }

@@ -80,6 +80,8 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    testImplementation(project(":core:camera:testing"))
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 // Allow references to generated code

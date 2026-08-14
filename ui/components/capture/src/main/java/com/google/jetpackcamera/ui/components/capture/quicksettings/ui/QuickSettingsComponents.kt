@@ -81,7 +81,6 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
-import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
@@ -98,7 +97,6 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptur
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEnum
-import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -115,14 +113,14 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  *
  * @param isOpen Whether the quick settings panel is currently open.
  * @param modifier The modifier for this component.
- * @param quickSettingsController The controller for quick settings actions.
+ * @param onClick The behavior for when this button is clicked.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ToggleQuickSettingsButton(
     isOpen: Boolean,
-    modifier: Modifier = Modifier,
-    quickSettingsController: QuickSettingsController
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val buttonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
@@ -141,7 +139,7 @@ fun ToggleQuickSettingsButton(
                     closedDescription
                 }
             },
-        onClick = quickSettingsController::toggleQuickSettings,
+        onClick = onClick,
         colors = IconButtonDefaults.iconButtonColors(
             // Set the background color of the button
             containerColor = Color.White.copy(alpha = 0.08f),
@@ -198,54 +196,21 @@ internal fun QuickSettingsModalBottomSheet(
     content: @Composable () -> Unit
 ) {
     val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
-    val disableAnimations = LocalDisableAnimations.current
 
-    if (disableAnimations) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.32f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDismiss
-                ),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Box(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {}
-                    )
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .semantics {
-                        testTagsAsResourceId = true
-                        testTag = QUICK_SETTINGS_BOTTOM_SHEET
-                        contentDescription = openDescription
-                    }
-            ) {
-                content()
-            }
-        }
-    } else {
-        ModalBottomSheet(
-            modifier = modifier
-                .semantics {
-                    // since Modal Bottom Sheet is placed above ALL other composables in the hierarchy,
-                    // it doesn't inherit the "testTagsAsResourceId" property.
-                    testTagsAsResourceId = true
-                    testTag = QUICK_SETTINGS_BOTTOM_SHEET
-                    contentDescription = openDescription
-                },
+    ModalBottomSheet(
+        modifier = modifier
+            .semantics {
+                // since Modal Bottom Sheet is placed above ALL other composables in the hierarchy,
+                // it doesn't inherit the "testTagsAsResourceId" property.
+                testTagsAsResourceId = true
+                testTag = QUICK_SETTINGS_BOTTOM_SHEET
+                contentDescription = openDescription
+            },
 
-            onDismissRequest = onDismiss,
-            sheetState = sheetState
-        ) {
-            content()
-        }
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        content()
     }
 }
 

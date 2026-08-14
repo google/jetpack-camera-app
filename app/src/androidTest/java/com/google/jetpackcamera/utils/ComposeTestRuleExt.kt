@@ -682,16 +682,8 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
                 }
 
                 // Assert that the sheet is no longer visible (e.g., the text disappears)
-                try {
-                    waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                        onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
-                    }
-                } catch (e: AssertionError) {
-                    // Fallback to back button press if swipe gesture fails
-                    UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressBack()
-                    waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                        onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
-                    }
+                waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+                    onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
                 }
             } else {
                 Log.d(

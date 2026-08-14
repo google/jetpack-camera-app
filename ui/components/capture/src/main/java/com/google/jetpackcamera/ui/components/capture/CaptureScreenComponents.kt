@@ -300,8 +300,8 @@ fun AmplitudeToggleButton(
 @Composable
 fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
-    quickSettingsController: QuickSettingsController?,
-    snackBarController: SnackBarController?,
+    onChangeCaptureMode: (CaptureMode) -> Unit,
+    onToggleWhenDisabled: (DisableRationale) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Captures image (left), else captures video (right).
@@ -323,7 +323,7 @@ fun CaptureModeToggleButton(
         checked = toggleState,
         onCheckedChange = { isChecked ->
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
-            quickSettingsController?.setCaptureMode(newCaptureMode)
+            onChangeCaptureMode(newCaptureMode)
         },
         onToggleWhenDisabled = {
             val disabledReason: DisableRationale? =
@@ -336,7 +336,7 @@ fun CaptureModeToggleButton(
                             as? SingleSelectableUiState.Disabled<CaptureMode>
                         )
                         ?.disabledReason
-            disabledReason?.let { snackBarController?.enqueueDisabledHdrToggleSnackBar(it) }
+            disabledReason?.let(onToggleWhenDisabled)
         },
         enabled = enabled,
         leftIcon = if (uiState.selectedCaptureMode ==

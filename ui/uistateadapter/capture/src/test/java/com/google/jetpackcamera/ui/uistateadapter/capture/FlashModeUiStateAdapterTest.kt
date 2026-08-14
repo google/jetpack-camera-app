@@ -131,7 +131,7 @@ class FlashModeUiStateAdapterTest {
     }
 
     @Test
-    fun updateFrom_unavailablePreviouslySelectedFlashMode_throwsException() {
+    fun updateFrom_unavailablePreviouslySelectedFlashMode_fallbackToOff() {
         // Given an initial UI state with ON selected
         val initialAppSettings = defaultCameraAppSettings.copy(flashMode = FlashMode.ON)
         val initialSystemConstraints = CameraSystemConstraints(
@@ -152,18 +152,17 @@ class FlashModeUiStateAdapterTest {
             )
         )
 
-        // Then an IllegalStateException is thrown
-        var exceptionThrown = false
-        try {
-            uiState.updateFrom(
-                initialAppSettings,
-                newSystemConstraints,
-                defaultCameraState
-            )
-        } catch (e: IllegalStateException) {
-            exceptionThrown = true
-        }
-        assertThat(exceptionThrown).isTrue()
+        // When updating the state
+        val updatedUiState = uiState.updateFrom(
+            initialAppSettings,
+            newSystemConstraints,
+            defaultCameraState
+        )
+
+        // Then it falls back to OFF
+        assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = updatedUiState as FlashModeUiState.Available
+        assertThat(availableUiState.selectedFlashMode).isEqualTo(FlashMode.OFF)
     }
 
     @Test
@@ -464,5 +463,50 @@ class FlashModeUiStateAdapterTest {
         assertThat(availableUiState.selectedFlashMode).isEqualTo(FlashMode.ON)
         // And the available modes did not change
         assertThat(availableUiState.availableFlashModes).isEqualTo(uiState.availableFlashModes)
+    }
+
+    @Test
+    fun updateFrom_availableModesChangeAndLlbActive_preservesLlbActiveState() {
+        // Given an initial UI state with LOW_LIGHT_BOOST selected and active
+        val initialAppSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.LOW_LIGHT_BOOST
+        )
+        val initialSystemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+        val cameraState = defaultCameraState.copy(
+            lowLightBoostState = LowLightBoostState.Active(strength = 0.7f)
+        )
+        var uiState = FlashModeUiState.from(initialAppSettings, initialSystemConstraints)
+        uiState = uiState.updateFrom(initialAppSettings, initialSystemConstraints, cameraState)
+        assertThat((uiState as FlashModeUiState.Available).isLowLightBoostActive).isEqualTo(true)
+
+        // When the available flash modes change (e.g. adding AUTO)
+        val newSystemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.AUTO, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+        val updatedUiState = uiState.updateFrom(
+            initialAppSettings,
+            newSystemConstraints,
+            cameraState
+        )
+
+        // Then isLowLightBoostActive is preserved as true
+        assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = updatedUiState as FlashModeUiState.Available
+        assertThat(availableUiState.isLowLightBoostActive).isEqualTo(true)
+        assertThat(availableUiState.availableFlashModes.map { it.value }).containsExactly(
+            FlashMode.OFF,
+            FlashMode.AUTO,
+            FlashMode.LOW_LIGHT_BOOST
+        )
     }
 }
