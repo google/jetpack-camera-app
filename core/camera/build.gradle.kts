@@ -113,6 +113,7 @@ dependencies {
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.truth)
     androidTestImplementation(project(":core:common:testing"))
+    androidTestImplementation(project(":core:camera:postprocess:postprocess-di"))
     testImplementation(project(":core:camera:testing"))
 
     // Futures

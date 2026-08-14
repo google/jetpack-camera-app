@@ -29,7 +29,7 @@ import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecordErro
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecorded
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
-import com.google.jetpackcamera.core.camera.postprocess.PostProcessModule.Companion.provideImagePostProcessorMap
+import com.google.jetpackcamera.core.camera.postprocess.di.PostProcessModule.Companion.provideImagePostProcessorMap
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
 import com.google.jetpackcamera.core.common.ignoreResult
