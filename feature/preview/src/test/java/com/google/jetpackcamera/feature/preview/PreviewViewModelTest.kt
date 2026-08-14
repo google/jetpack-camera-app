@@ -115,6 +115,22 @@ class PreviewViewModelTest {
     }
 
     @Test
+    fun fastStartAndStopVideoRecording_cancelsRecording() = runTest(StandardTestDispatcher()) {
+        startCameraUntilRunning()
+
+        // Start and stop immediately without advancing the dispatcher
+        previewViewModel.captureController.startVideoRecording()
+        previewViewModel.captureController.stopVideoRecording()
+
+        // Let the coroutines execute
+        advanceUntilIdle()
+
+        // Verify that because we cancelled the job synchronously, the start implementation
+        // was bypassed completely to protect us from the channel race condition!
+        assertThat(cameraSystem.numVideoRecordingStarts).isEqualTo(0)
+    }
+
+    @Test
     fun setFlash() = runTest(StandardTestDispatcher()) {
         previewViewModel.cameraController.startCamera()
         previewViewModel.quickSettingsController.setFlash(FlashMode.AUTO)

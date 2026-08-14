@@ -32,8 +32,11 @@ import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatur
 import com.google.jetpackcamera.core.camera.postprocess.PostProcessModule.Companion.provideImagePostProcessorMap
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
+import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
@@ -87,7 +90,7 @@ class CameraXCameraSystemTest {
         GrantPermissionRule.grant(*(APP_REQUIRED_PERMISSIONS).toTypedArray())
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
-    private val context = instrumentation.context
+    private val context = instrumentation.targetContext
     private val application = context.applicationContext as Application
     private val filesToDelete = mutableSetOf<Uri>()
     private lateinit var cameraSystemScope: CoroutineScope
@@ -136,7 +139,7 @@ class CameraXCameraSystemTest {
         cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
-        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}.ignoreResult()
 
         // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
@@ -155,7 +158,7 @@ class CameraXCameraSystemTest {
             cameraSystem.takePicture(
                 context.contentResolver,
                 SaveLocation.Explicit(Uri.parse("asdfasdf"))
-            ) {}
+            ) {}.ignoreResult()
         } catch (e: Exception) {}
 
         // Assert.
@@ -173,7 +176,10 @@ class CameraXCameraSystemTest {
 
         // Act.
         try {
-            cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+            cameraSystem.takePicture(
+                context.contentResolver,
+                SaveLocation.Default
+            ) {}.ignoreResult()
         } catch (e: RuntimeException) {
             // Assert.
             assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
@@ -195,7 +201,7 @@ class CameraXCameraSystemTest {
         cameraSystem.startCameraAndWaitUntilRunning()
 
         // Act.
-        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}
+        cameraSystem.takePicture(context.contentResolver, SaveLocation.Default) {}.ignoreResult()
 
         // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isFalse()
@@ -351,6 +357,7 @@ class CameraXCameraSystemTest {
         availabilityCheckers = emptyMap(),
         effectProviders = emptyMap(),
         imagePostProcessors = getFakePostProcessorMap(fakeImagePostProcessor),
+        cameraEffectProviders = emptyMap(),
         filePathGenerator = FakeFilePathGenerator()
     ).apply {
         initialize(appSettings) {}
@@ -684,6 +691,86 @@ class CameraXCameraSystemTest {
         settings = settingsCheck.receive()
         assertThat(settings.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
         assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+        // Clean-up.
+        settingsCheck.cancel()
+    }
+
+    @Test
+    fun switchCaptureMode_updatesAspectRatio(): Unit = runBlocking {
+        // Arrange. Start with STANDARD mode and 4:3 aspect ratio
+        val cameraSystem =
+            createAndInitCameraXCameraSystem(
+                appSettings =
+                CameraAppSettings(
+                    captureMode = CaptureMode.STANDARD,
+                    aspectRatio = AspectRatio.THREE_FOUR
+                )
+            )
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        val settingsCheck = cameraSystem.getCurrentSettings().filterNotNull().produceIn(this)
+
+        // Ensure we start in STANDARD with 4:3
+        var settings = settingsCheck.receive()
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.STANDARD)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+
+        // Act. Switch to VIDEO_ONLY
+        cameraSystem.setCaptureMode(CaptureMode.VIDEO_ONLY)
+
+        // Assert. Aspect ratio should be overridden to NINE_SIXTEEN
+        settings = settingsCheck.receive()
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+        // Act. Switch to IMAGE_ONLY
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+
+        // Assert. Aspect ratio should be overridden to THREE_FOUR
+        settings = settingsCheck.receive()
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+
+        // Clean-up.
+        settingsCheck.cancel()
+    }
+
+    @Test
+    fun switchConcurrentCameraMode_toDual_updatesAspectRatio(): Unit = runBlocking {
+        // Arrange. Start with STANDARD mode and 4:3 aspect ratio
+        val cameraSystem =
+            createAndInitCameraXCameraSystem(
+                appSettings =
+                CameraAppSettings(
+                    captureMode = CaptureMode.STANDARD,
+                    aspectRatio = AspectRatio.THREE_FOUR
+                )
+            )
+        val systemConstraints = cameraSystem.getSystemConstraints().value
+        assume()
+            .withMessage("Concurrent camera not supported, skip the test.")
+            .that(systemConstraints?.concurrentCamerasSupported == true)
+            .isTrue()
+
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        val settingsCheck = cameraSystem.getCurrentSettings().filterNotNull().produceIn(this)
+
+        // Ensure we start in STANDARD with 4:3
+        var settings = settingsCheck.receive()
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.STANDARD)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+
+        // Act. Switch to DUAL concurrent camera mode.
+        // This should force capture mode to VIDEO_ONLY and aspect ratio to NINE_SIXTEEN.
+        cameraSystem.setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
+
+        // Assert.
+        settings = settingsCheck.receive()
+        assertThat(settings.concurrentCameraMode).isEqualTo(ConcurrentCameraMode.DUAL)
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
 
         // Clean-up.
         settingsCheck.cancel()
