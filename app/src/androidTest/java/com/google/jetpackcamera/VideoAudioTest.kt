@@ -16,30 +16,32 @@
 package com.google.jetpackcamera
 
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.RequiresDevice
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_HOT_TAG
+import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_TOGGLE
+import com.google.jetpackcamera.ui.components.capture.AudioInputState
+import com.google.jetpackcamera.ui.components.capture.AudioStateProperty
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.uistateadapter.capture.R
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.debugExtra
+import com.google.jetpackcamera.utils.pressAndDragToLockVideoRecording
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.waitForCaptureButton
+import com.google.jetpackcamera.utils.waitForNodeWithTagAndSemantics
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@RequiresDevice
 class VideoAudioTest {
     @get:Rule
     val permissionsRule: GrantPermissionRule =
@@ -62,14 +64,108 @@ class VideoAudioTest {
             // icon will only be unmuted if audio is nonzero
             composeTestRule.waitForCaptureButton()
 
-            // record video
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
-                .assertExists().performTouchInput { longClick(durationMillis = 5000) }
+            // Start video recording and lock it
+            composeTestRule.pressAndDragToLockVideoRecording()
 
             // assert hot amplitude tag visible
-            uiDevice.wait(
-                Until.findObject(By.res(AMPLITUDE_HOT_TAG)),
-                5000
+            composeTestRule.waitForNodeWithTagAndSemantics(
+                tag = AUDIO_INPUT_TOGGLE,
+                semanticsProperty = AudioStateProperty to AudioInputState.INCOMING
+            )
+
+            // Stop recording
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).performClick()
+
+            composeTestRule.waitForSnackbarWithText(
+                R.string.toast_video_capture_success,
+                VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
+        }
+    }
+
+    @Test
+    fun muteAndUnmuteDuringRecording() {
+        runMainActivityScenarioTest(debugExtra) {
+            composeTestRule.waitForCaptureButton()
+
+            // verify audio button is initially set to enable audio
+            composeTestRule.waitForNodeWithTagAndSemantics(
+                tag = AUDIO_INPUT_TOGGLE,
+                semanticsProperty = AudioStateProperty to AudioInputState.READY
+            )
+
+            // Start video recording and lock it
+            composeTestRule.pressAndDragToLockVideoRecording()
+
+            // Verify amplitude button is hot initially (audio is enabled by default)
+            composeTestRule.waitForNodeWithTagAndSemantics(
+                tag = AUDIO_INPUT_TOGGLE,
+                semanticsProperty = AudioStateProperty to AudioInputState.INCOMING
+            )
+
+            // Tap the amplitude button to mute
+            composeTestRule.onNodeWithTag(AUDIO_INPUT_TOGGLE).performClick()
+
+            // Verify amplitude button is now showing "none/muted" tag
+            composeTestRule.waitForNodeWithTagAndSemantics(
+                tag = AUDIO_INPUT_TOGGLE,
+                semanticsProperty = AudioStateProperty to AudioInputState.OFF
+            )
+
+            // Tap the amplitude button to unmute
+            composeTestRule.onNodeWithTag(AUDIO_INPUT_TOGGLE).performClick()
+
+            // Verify amplitude button is hot again
+            composeTestRule.waitForNodeWithTagAndSemantics(
+                tag = AUDIO_INPUT_TOGGLE,
+                semanticsProperty = AudioStateProperty to AudioInputState.INCOMING
+            )
+
+            // Stop recording
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).performClick()
+
+            composeTestRule.waitForSnackbarWithText(
+                R.string.toast_video_capture_success,
+                VIDEO_CAPTURE_TIMEOUT_MILLIS
+            )
+        }
+    }
+
+    @Test
+    fun startRecordingMuted() {
+        runMainActivityScenarioTest(debugExtra) {
+            composeTestRule.waitForCaptureButton()
+
+            // Verify amplitude button is hot initially (audio is enabled by default)
+            composeTestRule.waitForNodeWithTagAndSemantics(
+                tag = AUDIO_INPUT_TOGGLE,
+                semanticsProperty = AudioStateProperty to AudioInputState.READY
+            )
+
+            // Tap the amplitude button to mute
+            composeTestRule.onNodeWithTag(AUDIO_INPUT_TOGGLE).performClick()
+
+            // Verify amplitude button is now showing "none/muted" tag
+            composeTestRule.waitForNodeWithTagAndSemantics(
+                tag = AUDIO_INPUT_TOGGLE,
+                semanticsProperty = AudioStateProperty to AudioInputState.OFF
+            )
+
+            // Start video recording
+            composeTestRule.pressAndDragToLockVideoRecording()
+
+            // Verify it remains muted during recording
+            // Verify amplitude button is now showing "none/muted" tag
+            composeTestRule.waitForNodeWithTagAndSemantics(
+                tag = AUDIO_INPUT_TOGGLE,
+                semanticsProperty = AudioStateProperty to AudioInputState.OFF
+            )
+
+            // Stop recording
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).performClick()
+            composeTestRule.waitForSnackbarWithText(
+                R.string.toast_video_capture_success,
+                VIDEO_CAPTURE_TIMEOUT_MILLIS
             )
         }
     }
