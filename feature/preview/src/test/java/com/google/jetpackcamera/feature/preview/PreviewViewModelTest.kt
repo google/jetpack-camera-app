@@ -25,6 +25,7 @@ import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveMode
@@ -36,6 +37,7 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -285,6 +287,60 @@ class PreviewViewModelTest {
                 }
             }
             assertThat(standardState).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
+        }
+
+    @Test
+    fun captureUiState_whenExternalCaptureModeImageCapture_captureModeToggleIsUnavailable() =
+        runTest(StandardTestDispatcher()) {
+            val viewModel = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                constraintsRepository = constraintsRepository,
+                settingsRepository = FakeSettingsRepository(),
+                mediaRepository = FakeMediaRepository(),
+                savedStateHandle = SavedStateHandle(
+                    mapOf(
+                        PreviewRoute.ARG_EXTERNAL_CAPTURE_MODE to ExternalCaptureMode.ImageCapture
+                    )
+                ),
+                defaultSaveMode = SaveMode.Immediate,
+                appConfig = defaultTestAppConfig
+            )
+            advanceUntilIdle()
+            viewModel.cameraController.startCamera()
+            advanceUntilIdle()
+
+            val uiState = viewModel.captureUiState.value
+            assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
+            val readyState = uiState as CaptureUiState.Ready
+            assertThat(readyState.captureModeToggleUiState)
+                .isEqualTo(CaptureModeToggleUiState.Unavailable)
+        }
+
+    @Test
+    fun captureUiState_whenExternalCaptureModeVideoCapture_captureModeToggleIsUnavailable() =
+        runTest(StandardTestDispatcher()) {
+            val viewModel = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                constraintsRepository = constraintsRepository,
+                settingsRepository = FakeSettingsRepository(),
+                mediaRepository = FakeMediaRepository(),
+                savedStateHandle = SavedStateHandle(
+                    mapOf(
+                        PreviewRoute.ARG_EXTERNAL_CAPTURE_MODE to ExternalCaptureMode.VideoCapture
+                    )
+                ),
+                defaultSaveMode = SaveMode.Immediate,
+                appConfig = defaultTestAppConfig
+            )
+            advanceUntilIdle()
+            viewModel.cameraController.startCamera()
+            advanceUntilIdle()
+
+            val uiState = viewModel.captureUiState.value
+            assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
+            val readyState = uiState as CaptureUiState.Ready
+            assertThat(readyState.captureModeToggleUiState)
+                .isEqualTo(CaptureModeToggleUiState.Unavailable)
         }
 
     private fun TestScope.startCameraUntilRunning(viewModel: PreviewViewModel? = null) {

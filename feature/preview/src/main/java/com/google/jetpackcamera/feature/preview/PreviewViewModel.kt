@@ -43,7 +43,6 @@ import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.api.DeveloperAppConfig
-import com.google.jetpackcamera.settings.api.SettingConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
 import com.google.jetpackcamera.ui.components.capture.R
@@ -152,17 +151,7 @@ class PreviewViewModel @Inject constructor(
 
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         cameraSystemRepository.cameraSystem,
-        if (useDeveloperConfig) {
-            appConfig
-        } else {
-            DeveloperAppConfig(
-                aspectRatio = SettingConfig(appConfig.aspectRatio.defaultValue),
-                flashMode = SettingConfig(appConfig.flashMode.defaultValue),
-                captureMode = SettingConfig(appConfig.captureMode.defaultValue),
-                imageOutputFormat = SettingConfig(appConfig.imageOutputFormat.defaultValue),
-                videoDynamicRange = SettingConfig(appConfig.videoDynamicRange.defaultValue)
-            )
-        },
+        if (useDeveloperConfig) appConfig else appConfig.withoutRestrictions(),
         constraintsRepository,
         trackedCaptureUiState,
         externalCaptureMode

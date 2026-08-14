@@ -97,4 +97,56 @@ class RestrictionConfigTest {
         assertThat(appSettings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(appSettings.dynamicRange).isEqualTo(DynamicRange.SDR)
     }
+
+    @Test
+    fun withoutRestrictions_preservesDefaultValuesAndClearsRestrictions() {
+        val restrictedConfig = DeveloperAppConfig(
+            aspectRatio = SettingConfig(
+                defaultValue = AspectRatio.NINE_SIXTEEN,
+                uiRestriction = OptionRestrictionConfig.FullyRestricted()
+            ),
+            flashMode = SettingConfig(
+                defaultValue = FlashMode.ON,
+                uiRestriction = OptionRestrictionConfig.OptionsEnabled(
+                    setOf(FlashMode.ON, FlashMode.OFF)
+                )
+            ),
+            captureMode = SettingConfig(
+                defaultValue = CaptureMode.VIDEO_ONLY,
+                uiRestriction = OptionRestrictionConfig.FullyRestricted()
+            ),
+            imageOutputFormat = SettingConfig(
+                defaultValue = ImageOutputFormat.JPEG,
+                uiRestriction = OptionRestrictionConfig.FullyRestricted()
+            ),
+            videoDynamicRange = SettingConfig(
+                defaultValue = DynamicRange.SDR,
+                uiRestriction = OptionRestrictionConfig.FullyRestricted()
+            )
+        )
+
+        val unrestricted = restrictedConfig.withoutRestrictions()
+
+        assertThat(unrestricted.aspectRatio.defaultValue).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        assertThat(unrestricted.aspectRatio.uiRestriction is OptionRestrictionConfig.NotRestricted)
+            .isTrue()
+
+        assertThat(unrestricted.flashMode.defaultValue).isEqualTo(FlashMode.ON)
+        assertThat(unrestricted.flashMode.uiRestriction is OptionRestrictionConfig.NotRestricted)
+            .isTrue()
+
+        assertThat(unrestricted.captureMode.defaultValue).isEqualTo(CaptureMode.VIDEO_ONLY)
+        assertThat(unrestricted.captureMode.uiRestriction is OptionRestrictionConfig.NotRestricted)
+            .isTrue()
+
+        assertThat(unrestricted.imageOutputFormat.defaultValue).isEqualTo(ImageOutputFormat.JPEG)
+        assertThat(
+            unrestricted.imageOutputFormat.uiRestriction is OptionRestrictionConfig.NotRestricted
+        ).isTrue()
+
+        assertThat(unrestricted.videoDynamicRange.defaultValue).isEqualTo(DynamicRange.SDR)
+        assertThat(
+            unrestricted.videoDynamicRange.uiRestriction is OptionRestrictionConfig.NotRestricted
+        ).isTrue()
+    }
 }

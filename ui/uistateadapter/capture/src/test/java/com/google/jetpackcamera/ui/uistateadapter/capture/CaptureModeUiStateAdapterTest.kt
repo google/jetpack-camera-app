@@ -98,6 +98,60 @@ class CaptureModeUiStateAdapterTest {
         assertThat(imageState).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
     }
 
+    @Test
+    fun from_optionsEnabledExcludingImageMode_disablesImageModeWithRestrictedReason() {
+        val uiState = CaptureModeUiState.from(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+            restrictionConfig = OptionRestrictionConfig.OptionsEnabled(
+                setOf(CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY)
+            ),
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.VIDEO_ONLY
+            ),
+            externalCaptureMode = ExternalCaptureMode.Standard
+        )
+
+        assertThat(uiState).isInstanceOf(CaptureModeUiState.Available::class.java)
+        val available = uiState as CaptureModeUiState.Available
+
+        val imageState = available.availableCaptureModes.find {
+            when (it) {
+                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.IMAGE_ONLY
+                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.IMAGE_ONLY
+            }
+        }
+        assertThat(imageState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
+        assertThat((imageState as SingleSelectableUiState.Disabled).disabledReason)
+            .isEqualTo(DisabledReason.IMAGE_CAPTURE_RESTRICTED)
+    }
+
+    @Test
+    fun from_optionsEnabledExcludingVideoMode_disablesVideoModeWithRestrictedReason() {
+        val uiState = CaptureModeUiState.from(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+            restrictionConfig = OptionRestrictionConfig.OptionsEnabled(
+                setOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY)
+            ),
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.IMAGE_ONLY
+            ),
+            externalCaptureMode = ExternalCaptureMode.Standard
+        )
+
+        assertThat(uiState).isInstanceOf(CaptureModeUiState.Available::class.java)
+        val available = uiState as CaptureModeUiState.Available
+
+        val videoState = available.availableCaptureModes.find {
+            when (it) {
+                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.VIDEO_ONLY
+                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.VIDEO_ONLY
+            }
+        }
+        assertThat(videoState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
+        assertThat((videoState as SingleSelectableUiState.Disabled).disabledReason)
+            .isEqualTo(DisabledReason.VIDEO_CAPTURE_RESTRICTED)
+    }
+
     // Toggle tests
     @Test
     fun toggleFrom_notRestricted_returnsAvailable() {
@@ -166,5 +220,150 @@ class CaptureModeUiStateAdapterTest {
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
+    }
+
+    @Test
+    fun toggleFrom_externalCaptureModeImageCapture_returnsUnavailable() {
+        val uiState = CaptureModeToggleUiState.from(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.IMAGE_ONLY
+            ),
+            cameraState = CameraState(),
+            externalCaptureMode = ExternalCaptureMode.ImageCapture,
+            restrictionConfig = OptionRestrictionConfig.NotRestricted()
+        )
+
+        assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
+    }
+
+    @Test
+    fun toggleFrom_externalCaptureModeMultipleImageCapture_returnsUnavailable() {
+        val uiState = CaptureModeToggleUiState.from(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.IMAGE_ONLY
+            ),
+            cameraState = CameraState(),
+            externalCaptureMode = ExternalCaptureMode.MultipleImageCapture,
+            restrictionConfig = OptionRestrictionConfig.NotRestricted()
+        )
+
+        assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
+    }
+
+    @Test
+    fun toggleFrom_externalCaptureModeVideoCapture_returnsUnavailable() {
+        val uiState = CaptureModeToggleUiState.from(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.VIDEO_ONLY
+            ),
+            cameraState = CameraState(),
+            externalCaptureMode = ExternalCaptureMode.VideoCapture,
+            restrictionConfig = OptionRestrictionConfig.NotRestricted()
+        )
+
+        assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
+    }
+
+    @Test
+    fun toggleFrom_restrictedToImageOnly_returnsUnavailable() {
+        val uiState = CaptureModeToggleUiState.from(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.IMAGE_ONLY
+            ),
+            cameraState = CameraState(),
+            externalCaptureMode = ExternalCaptureMode.Standard,
+            restrictionConfig = OptionRestrictionConfig.OptionsEnabled(
+                setOf(CaptureMode.IMAGE_ONLY)
+            )
+        )
+
+        assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
+    }
+
+    @Test
+    fun toggleFrom_restrictedToVideoOnly_returnsUnavailable() {
+        val uiState = CaptureModeToggleUiState.from(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.VIDEO_ONLY
+            ),
+            cameraState = CameraState(),
+            externalCaptureMode = ExternalCaptureMode.Standard,
+            restrictionConfig = OptionRestrictionConfig.OptionsEnabled(
+                setOf(CaptureMode.VIDEO_ONLY)
+            )
+        )
+
+        assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
+    }
+
+    @Test
+    fun from_externalCaptureModeImageCapture_disablesVideoAndHybrid() {
+        val uiState = CaptureModeUiState.from(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+            restrictionConfig = OptionRestrictionConfig.NotRestricted(),
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.IMAGE_ONLY
+            ),
+            externalCaptureMode = ExternalCaptureMode.ImageCapture
+        )
+
+        assertThat(uiState).isInstanceOf(CaptureModeUiState.Available::class.java)
+        val available = uiState as CaptureModeUiState.Available
+
+        val imageMode = available.availableCaptureModes.find {
+            when (it) {
+                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.IMAGE_ONLY
+                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.IMAGE_ONLY
+            }
+        }
+        assertThat(imageMode).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
+
+        val videoMode = available.availableCaptureModes.find {
+            when (it) {
+                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.VIDEO_ONLY
+                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.VIDEO_ONLY
+            }
+        }
+        assertThat(videoMode).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
+        assertThat((videoMode as SingleSelectableUiState.Disabled).disabledReason)
+            .isEqualTo(DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED)
+    }
+
+    @Test
+    fun from_externalCaptureModeVideoCapture_disablesImageAndHybrid() {
+        val uiState = CaptureModeUiState.from(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+            restrictionConfig = OptionRestrictionConfig.NotRestricted(),
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.VIDEO_ONLY
+            ),
+            externalCaptureMode = ExternalCaptureMode.VideoCapture
+        )
+
+        assertThat(uiState).isInstanceOf(CaptureModeUiState.Available::class.java)
+        val available = uiState as CaptureModeUiState.Available
+
+        val videoMode = available.availableCaptureModes.find {
+            when (it) {
+                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.VIDEO_ONLY
+                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.VIDEO_ONLY
+            }
+        }
+        assertThat(videoMode).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
+
+        val imageMode = available.availableCaptureModes.find {
+            when (it) {
+                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.IMAGE_ONLY
+                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.IMAGE_ONLY
+            }
+        }
+        assertThat(imageMode).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
+        assertThat((imageMode as SingleSelectableUiState.Disabled).disabledReason)
+            .isEqualTo(DisabledReason.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED)
     }
 }
