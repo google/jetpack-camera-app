@@ -308,6 +308,7 @@ private fun ContentScreen(
                 is VideoRecordingState.Starting -> {
                     initialRecordingSettings = this.initialRecordingSettings
                 }
+
                 is VideoRecordingState.Inactive -> {
                     initialRecordingSettings?.let {
                         val oldPrimaryLensFacing = it.lensFacing
@@ -328,6 +329,7 @@ private fun ContentScreen(
                     }
                     initialRecordingSettings = null
                 }
+
                 is VideoRecordingState.Active -> {}
             }
         }
@@ -622,22 +624,34 @@ private fun ContentScreen(
                     },
                     onEvent = { event ->
                         when (event) {
-                            is QuickSettingsEvent.SetFlashMode -> controller.setFlash(event.flashMode)
-                            is QuickSettingsEvent.SetCaptureMode -> controller.setCaptureMode(event.captureMode)
-                            is QuickSettingsEvent.SetAspectRatio -> controller.setAspectRatio(event.aspectRatio)
+                            is QuickSettingsEvent.SetFlashMode ->
+                                controller.setFlash(event.flashMode)
+
+                            is QuickSettingsEvent.SetCaptureMode ->
+                                controller.setCaptureMode(event.captureMode)
+
+                            is QuickSettingsEvent.SetAspectRatio ->
+                                controller.setAspectRatio(event.aspectRatio)
+
                             is QuickSettingsEvent.SetHdr -> {
-                                val captureMode = (quickSettingsState.value as? QuickSettingsUiState.Available)
-                                    ?.captureModeUiState as? CaptureModeUiState.Available
-                                val selectedCaptureMode = captureMode?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
+                                val captureMode =
+                                    (quickSettingsState.value as? QuickSettingsUiState.Available)
+                                        ?.captureModeUiState as? CaptureModeUiState.Available
+                                val selectedCaptureMode =
+                                    captureMode?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
                                 when (selectedCaptureMode) {
                                     CaptureMode.STANDARD -> {
                                         controller.setDynamicRange(event.dynamicRange)
                                         controller.setImageFormat(event.imageFormat)
                                     }
-                                    CaptureMode.VIDEO_ONLY -> controller.setDynamicRange(event.dynamicRange)
-                                    CaptureMode.IMAGE_ONLY -> controller.setImageFormat(event.imageFormat)
+
+                                    CaptureMode.VIDEO_ONLY ->
+                                        controller.setDynamicRange(event.dynamicRange)
+                                    CaptureMode.IMAGE_ONLY ->
+                                        controller.setImageFormat(event.imageFormat)
                                 }
                             }
+
                             is QuickSettingsEvent.ToggleSheet -> controller.toggleQuickSettings()
                         }
                     },

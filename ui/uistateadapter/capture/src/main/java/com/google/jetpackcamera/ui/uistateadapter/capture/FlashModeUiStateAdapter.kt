@@ -128,10 +128,16 @@ internal fun FlashModeUiState.Companion.from(
     val finalSelectedFlashMode = if (isSelectedSelectable) {
         selectedFlashMode
     } else {
-        if (displayableModes.any { it.value == FlashMode.OFF && it is SingleSelectableUiState.SelectableUi }) {
+        if (displayableModes.any {
+                it.value == FlashMode.OFF &&
+                    it is SingleSelectableUiState.SelectableUi
+            }
+        ) {
             FlashMode.OFF
         } else {
-            displayableModes.firstOrNull { it is SingleSelectableUiState.SelectableUi }?.value ?: FlashMode.OFF
+            displayableModes.firstOrNull {
+                it is SingleSelectableUiState.SelectableUi
+            }?.value ?: FlashMode.OFF
         }
     }
 
@@ -178,9 +184,11 @@ internal fun FlashModeUiState.updateFrom(
             when (val newUiState = FlashModeUiState.from(cameraAppSettings, systemConstraints)) {
                 is Unavailable -> newUiState
                 is Available -> {
-                    val currentLlbActive = cameraState.isLowLightBoostActive(newUiState.selectedFlashMode)
-                    val updatedNewUiState = newUiState.copy(isLowLightBoostActive = currentLlbActive)
-                    
+                    val currentLlbActive =
+                        cameraState.isLowLightBoostActive(newUiState.selectedFlashMode)
+                    val updatedNewUiState =
+                        newUiState.copy(isLowLightBoostActive = currentLlbActive)
+
                     if (this.availableFlashModes == updatedNewUiState.availableFlashModes &&
                         this.selectedFlashMode == updatedNewUiState.selectedFlashMode &&
                         this.isLowLightBoostActive == updatedNewUiState.isLowLightBoostActive

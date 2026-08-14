@@ -118,8 +118,9 @@ class CaptureUiStateAdapterTest {
         runCurrent()
         assertThat(states).isNotEmpty()
         val initialState = states.last() as CaptureUiState.Ready
-        assertThat(initialState.aspectRatioUiState).isInstanceOf(AspectRatioUiState.Available::class.java)
-        val initialRatio = (initialState.aspectRatioUiState as AspectRatioUiState.Available).selectedAspectRatio
+        assertThat(initialState.aspectRatioUiState is AspectRatioUiState.Available).isTrue()
+        val initialRatio =
+            (initialState.aspectRatioUiState as AspectRatioUiState.Available).selectedAspectRatio
         assertThat(initialRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
 
         // Change aspect ratio in camera system
@@ -128,7 +129,8 @@ class CaptureUiStateAdapterTest {
 
         assertThat(states.size).isAtLeast(2)
         val updatedState = states.last() as CaptureUiState.Ready
-        val updatedRatio = (updatedState.aspectRatioUiState as AspectRatioUiState.Available).selectedAspectRatio
+        val updatedRatio = (updatedState.aspectRatioUiState as AspectRatioUiState.Available)
+            .selectedAspectRatio
         assertThat(updatedRatio).isEqualTo(AspectRatio.THREE_FOUR)
 
         job.cancel()
@@ -138,7 +140,7 @@ class CaptureUiStateAdapterTest {
     fun captureUiState_flashModeUpdate_emitsUpdatedState() = runTest {
         val cameraSystem = FakeCameraSystem()
         val constraintsRepository = SettableConstraintsRepositoryImpl()
-        
+
         // We need constraints that support flash ON and OFF
         val systemConstraints = CameraSystemConstraints(
             availableLenses = listOf(LensFacing.BACK),
@@ -176,8 +178,9 @@ class CaptureUiStateAdapterTest {
         runCurrent()
         assertThat(states).isNotEmpty()
         val initialState = states.last() as CaptureUiState.Ready
-        assertThat(initialState.flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
-        val initialFlash = (initialState.flashModeUiState as FlashModeUiState.Available).selectedFlashMode
+        assertThat(initialState.flashModeUiState is FlashModeUiState.Available).isTrue()
+        val initialFlash = (initialState.flashModeUiState as FlashModeUiState.Available)
+            .selectedFlashMode
         assertThat(initialFlash).isEqualTo(FlashMode.OFF)
 
         // Change flash mode in camera system
@@ -186,7 +189,8 @@ class CaptureUiStateAdapterTest {
 
         assertThat(states.size).isAtLeast(2)
         val updatedState = states.last() as CaptureUiState.Ready
-        val updatedFlash = (updatedState.flashModeUiState as FlashModeUiState.Available).selectedFlashMode
+        val updatedFlash =
+            (updatedState.flashModeUiState as FlashModeUiState.Available).selectedFlashMode
         assertThat(updatedFlash).isEqualTo(FlashMode.ON)
 
         job.cancel()

@@ -32,7 +32,6 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
-import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureModeRow
@@ -53,7 +52,10 @@ sealed interface QuickSettingsEvent {
     data class SetFlashMode(val flashMode: FlashMode) : QuickSettingsEvent
     data class SetCaptureMode(val captureMode: CaptureMode) : QuickSettingsEvent
     data class SetAspectRatio(val aspectRatio: AspectRatio) : QuickSettingsEvent
-    data class SetHdr(val dynamicRange: DynamicRange, val imageFormat: ImageOutputFormat) : QuickSettingsEvent
+    data class SetHdr(
+        val dynamicRange: DynamicRange,
+        val imageFormat: ImageOutputFormat
+    ) : QuickSettingsEvent
     data object ToggleSheet : QuickSettingsEvent
 }
 

@@ -489,7 +489,11 @@ class FlashModeUiStateAdapterTest {
         val newSystemConstraints = CameraSystemConstraints(
             perLensConstraints = mapOf(
                 initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
-                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.AUTO, FlashMode.LOW_LIGHT_BOOST)
+                    supportedFlashModes = setOf(
+                        FlashMode.OFF,
+                        FlashMode.AUTO,
+                        FlashMode.LOW_LIGHT_BOOST
+                    )
                 )
             )
         )

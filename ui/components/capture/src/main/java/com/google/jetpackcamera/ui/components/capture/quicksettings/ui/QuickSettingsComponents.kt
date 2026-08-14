@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -117,11 +116,7 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ToggleQuickSettingsButton(
-    isOpen: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun ToggleQuickSettingsButton(isOpen: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val buttonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
     )
