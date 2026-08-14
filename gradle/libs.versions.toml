@@ -14,7 +14,7 @@ accompanist = "0.37.3"
 # kotlinPlugin and composeCompiler are linked
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 kotlinPlugin = "2.2.0"
-androidGradlePlugin = "8.10.1"
+androidGradlePlugin = "9.3.1"
 
 
 androidxActivityCompose = "1.10.1"
@@ -43,7 +43,7 @@ composeMaterial = "1.5.0-alpha07"
 cmake = "3.22.1"
 kotlinxAtomicfu = "0.29.0"
 kotlinxCoroutines = "1.10.2"
-hilt = "2.57"
+hilt = "2.59.2"
 junit = "4.13.2"
 
 robolectric = "4.15.1"
@@ -124,3 +124,4 @@ dagger-hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hi
 
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlinPlugin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlinPlugin" }
+android-legacy-kapt = { id = "com.android.legacy-kapt", version.ref = "androidGradlePlugin" }
