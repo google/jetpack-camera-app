@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera.lowlight
+package com.google.jetpackcamera.core.camera.lowlight.di
 
+import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
+import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
+import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,10 +28,10 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class LowLightBoostModule {
+internal interface LowLightBoostModule {
 
     @Multibinds
-    abstract fun availabilityCheckerEntries(): Set<
+    fun availabilityCheckerEntries(): Set<
         Map.Entry<
             LowLightBoostFeatureKey,
             @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>
@@ -36,7 +39,7 @@ abstract class LowLightBoostModule {
         >
 
     @Multibinds
-    abstract fun effectProviderEntries(): Set<
+    fun effectProviderEntries(): Set<
         Map.Entry<
             LowLightBoostFeatureKey,
             @JvmSuppressWildcards Provider<LowLightBoostEffectProvider>
