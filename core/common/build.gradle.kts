@@ -17,8 +17,6 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -77,11 +75,4 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Hilt
-    implementation(libs.dagger.hilt.android)
-    kapt(libs.dagger.hilt.compiler)
-}
-
-kapt {
-    correctErrorTypes = true
 }
