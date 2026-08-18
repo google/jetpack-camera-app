@@ -28,14 +28,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.FlashMode
-import com.google.jetpackcamera.model.AspectRatio
-import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.VideoQuality
-import com.google.jetpackcamera.model.DarkMode
-import com.google.jetpackcamera.model.LowLightBoostPriority
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -44,6 +36,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.DarkMode
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.ConcurrentCameraSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
@@ -113,6 +113,12 @@ fun SettingsScreen(
     }
 }
 
+/**
+ * Stateful wrapper for the default camera settings section.
+ *
+ * @param customEffectSlot A slot for injecting custom camera effects.
+ * @param viewModel The [SettingsViewModel] providing the settings state.
+ */
 @Composable
 fun DefaultCameraSettings(
     customEffectSlot: @Composable () -> Unit = {},
@@ -133,6 +139,17 @@ fun DefaultCameraSettings(
     )
 }
 
+/**
+ * Stateless default camera settings section.
+ *
+ * @param customEffectSlot A slot for injecting custom camera effects.
+ * @param enabledState The current [SettingsUiState.Enabled] state.
+ * @param setDefaultLensFacing Callback to set default lens facing.
+ * @param setFlashMode Callback to set flash mode.
+ * @param setTargetFrameRate Callback to set target frame rate.
+ * @param setAspectRatio Callback to set aspect ratio.
+ * @param setLowLightBoostPriority Callback to set low light boost priority.
+ */
 @Composable
 fun DefaultCameraSettings(
     customEffectSlot: @Composable () -> Unit,
@@ -173,10 +190,13 @@ fun DefaultCameraSettings(
     )
 }
 
+/**
+ * Stateful wrapper for the default recording settings section.
+ *
+ * @param viewModel The [SettingsViewModel] providing the settings state.
+ */
 @Composable
-fun DefaultRecordingSettings(
-    viewModel: SettingsViewModel = hiltViewModel()
-) {
+fun DefaultRecordingSettings(viewModel: SettingsViewModel = hiltViewModel()) {
     val uiState by viewModel.settingsUiState.collectAsState()
     if (uiState !is SettingsUiState.Enabled) return
     val enabledState = uiState as SettingsUiState.Enabled
@@ -191,6 +211,16 @@ fun DefaultRecordingSettings(
     )
 }
 
+/**
+ * Stateless default recording settings section.
+ *
+ * @param enabledState The current [SettingsUiState.Enabled] state.
+ * @param setVideoAudio Callback to set video audio state.
+ * @param setMaxVideoDuration Callback to set max video duration.
+ * @param setConcurrentCameraMode Callback to set concurrent camera mode.
+ * @param setStabilizationMode Callback to set stabilization mode.
+ * @param setVideoQuality Callback to set video quality.
+ */
 @Composable
 fun DefaultRecordingSettings(
     enabledState: SettingsUiState.Enabled,
@@ -228,6 +258,12 @@ fun DefaultRecordingSettings(
     )
 }
 
+/**
+ * Stateful wrapper for the default app settings section.
+ *
+ * @param versionInfo The [VersionInfoHolder] containing app version information.
+ * @param viewModel The [SettingsViewModel] providing the settings state.
+ */
 @Composable
 fun DefaultAppSettings(
     versionInfo: VersionInfoHolder,
@@ -244,6 +280,13 @@ fun DefaultAppSettings(
     )
 }
 
+/**
+ * Stateless default app settings section.
+ *
+ * @param versionInfo The [VersionInfoHolder] containing app version information.
+ * @param enabledState The current [SettingsUiState.Enabled] state.
+ * @param setDarkMode Callback to set the dark mode.
+ */
 @Composable
 fun DefaultAppSettings(
     versionInfo: VersionInfoHolder,

@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.google.jetpackcamera.ui
 
 import androidx.compose.foundation.layout.Column
@@ -11,21 +26,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.google.jetpackcamera.core.camera.effects.SingleStreamEffectKey
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
+import com.google.jetpackcamera.settings.CameraEffectUiState
+import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SettingsUiState
 import com.google.jetpackcamera.settings.SettingsViewModel
-import com.google.jetpackcamera.settings.CameraEffectUiState
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG
 import com.google.jetpackcamera.settings.ui.BasicPopupSetting
 import com.google.jetpackcamera.settings.ui.SingleChoiceSelector
 import com.google.jetpackcamera.settings.ui.disabledRationaleString
-import com.google.jetpackcamera.settings.R
 
+/**
+ * A setting component for configuring Jetpack Camera App effects.
+ *
+ * @param viewModel The [SettingsViewModel] used to manage the settings state.
+ */
 @Composable
-fun JcaEffectsSetting(
-    viewModel: SettingsViewModel = hiltViewModel()
-) {
+internal fun JcaEffectsSetting(viewModel: SettingsViewModel = hiltViewModel()) {
     val uiState by viewModel.settingsUiState.collectAsState()
     if (uiState !is SettingsUiState.Enabled) return
     val enabledState = uiState as SettingsUiState.Enabled
@@ -60,7 +78,8 @@ fun JcaEffectsSetting(
                             text = stringResource(
                                 id = R.string.stream_config_selector_single_stream
                             ),
-                            selected = cameraEffectUiState.currentCameraEffect == SingleStreamEffectKey.id,
+                            selected = cameraEffectUiState.currentCameraEffect ==
+                                SingleStreamEffectKey.id,
                             enabled = true,
                             onClick = { viewModel.setCameraEffect(SingleStreamEffectKey.id) }
                         )
