@@ -120,13 +120,12 @@ fun SettingsScreen(
  * @param viewModel The [SettingsViewModel] providing the settings state.
  */
 @Composable
-fun DefaultCameraSettings(
+internal fun DefaultCameraSettings(
     customEffectSlot: @Composable () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.settingsUiState.collectAsState()
-    if (uiState !is SettingsUiState.Enabled) return
-    val enabledState = uiState as SettingsUiState.Enabled
+    val enabledState = uiState as? SettingsUiState.Enabled ?: return
 
     DefaultCameraSettings(
         customEffectSlot = customEffectSlot,
@@ -151,7 +150,7 @@ fun DefaultCameraSettings(
  * @param setLowLightBoostPriority Callback to set low light boost priority.
  */
 @Composable
-fun DefaultCameraSettings(
+internal fun DefaultCameraSettings(
     customEffectSlot: @Composable () -> Unit,
     enabledState: SettingsUiState.Enabled,
     setDefaultLensFacing: (LensFacing) -> Unit,
@@ -196,10 +195,9 @@ fun DefaultCameraSettings(
  * @param viewModel The [SettingsViewModel] providing the settings state.
  */
 @Composable
-fun DefaultRecordingSettings(viewModel: SettingsViewModel = hiltViewModel()) {
+internal fun DefaultRecordingSettings(viewModel: SettingsViewModel = hiltViewModel()) {
     val uiState by viewModel.settingsUiState.collectAsState()
-    if (uiState !is SettingsUiState.Enabled) return
-    val enabledState = uiState as SettingsUiState.Enabled
+    val enabledState = uiState as? SettingsUiState.Enabled ?: return
 
     DefaultRecordingSettings(
         enabledState = enabledState,
@@ -222,7 +220,7 @@ fun DefaultRecordingSettings(viewModel: SettingsViewModel = hiltViewModel()) {
  * @param setVideoQuality Callback to set video quality.
  */
 @Composable
-fun DefaultRecordingSettings(
+internal fun DefaultRecordingSettings(
     enabledState: SettingsUiState.Enabled,
     setVideoAudio: (Boolean) -> Unit,
     setMaxVideoDuration: (Long) -> Unit,
@@ -265,13 +263,12 @@ fun DefaultRecordingSettings(
  * @param viewModel The [SettingsViewModel] providing the settings state.
  */
 @Composable
-fun DefaultAppSettings(
+internal fun DefaultAppSettings(
     versionInfo: VersionInfoHolder,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.settingsUiState.collectAsState()
-    if (uiState !is SettingsUiState.Enabled) return
-    val enabledState = uiState as SettingsUiState.Enabled
+    val enabledState = uiState as? SettingsUiState.Enabled ?: return
 
     DefaultAppSettings(
         versionInfo = versionInfo,
@@ -288,7 +285,7 @@ fun DefaultAppSettings(
  * @param setDarkMode Callback to set the dark mode.
  */
 @Composable
-fun DefaultAppSettings(
+internal fun DefaultAppSettings(
     versionInfo: VersionInfoHolder,
     enabledState: SettingsUiState.Enabled,
     setDarkMode: (DarkMode) -> Unit

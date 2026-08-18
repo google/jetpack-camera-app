@@ -45,8 +45,7 @@ import com.google.jetpackcamera.settings.ui.disabledRationaleString
 @Composable
 internal fun JcaEffectsSetting(viewModel: SettingsViewModel = hiltViewModel()) {
     val uiState by viewModel.settingsUiState.collectAsState()
-    if (uiState !is SettingsUiState.Enabled) return
-    val enabledState = uiState as SettingsUiState.Enabled
+    val enabledState = uiState as? SettingsUiState.Enabled ?: return
     val cameraEffectUiState = enabledState.cameraEffectUiState
 
     BasicPopupSetting(
