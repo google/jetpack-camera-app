@@ -32,12 +32,10 @@ rootProject {
     subprojects {
         apply<com.diffplug.gradle.spotless.SpotlessPlugin>()
         extensions.configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+            // limit format enforcement to just the files changed by this feature branch
+            ratchetFrom("origin/main")
             kotlin {
-                target(
-                    "app/src/main/java/com/google/jetpackcamera/ui/JcaEffectsSetting.kt",
-                    "feature/settings/src/main/java/com/google/jetpackcamera/settings/SettingsScreen.kt",
-                    "app/src/androidTest/java/com/google/jetpackcamera/BackgroundDeviceTest.kt"
-                )
+                target("**/*.kt")
                 targetExclude("**/build/**/*.kt")
                 ktlint(ktlintVersion)
                     .setEditorConfigPath(rootProject.file(".editorconfig"))
