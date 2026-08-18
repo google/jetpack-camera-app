@@ -16,9 +16,6 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -46,14 +43,6 @@ android {
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
 
-    // Hilt
-    implementation(libs.dagger.hilt.android)
-    kapt(libs.dagger.hilt.compiler)
-
     // Domain models
     implementation(project(":core:model"))
-}
-
-kapt {
-    correctErrorTypes = true
 }
