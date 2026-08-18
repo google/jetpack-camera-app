@@ -148,8 +148,8 @@ class OverlapAwareStyleProviderTest {
             }
         }
         composeTestRule.waitForIdle()
-        
-        // Because the missing provider falls back to Rect.Zero, 
+
+        // Because the missing provider falls back to Rect.Zero,
         // the 0f intersection correctly results in WHITE_20.
         assertThat(detectedStyle).isEqualTo(CameraControlBackgroundStyle.WHITE_20)
     }
