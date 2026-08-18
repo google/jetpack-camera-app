@@ -154,7 +154,6 @@ private fun JetpackCameraNavHost(
                 cameraSettingsSlot = {
                     DefaultCameraSettings(
                         customEffectSlot = {
-                            
                             JcaEffectsSetting()
                         }
                     )
