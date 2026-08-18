@@ -25,6 +25,7 @@ When reviewing a pull request, focus on the following key areas:
     * **Remove Unused Imports:** Check for and remove any unused import statements to maintain code cleanliness.
     * Look for potential null-safety issues, improper error handling, or resource leaks.
     * **Promote Reusability (DRY Principle):** Identify duplicated or highly similar blocks of code. If a pattern of logic is repeated—even with minor variations—suggest extracting it into a reusable function, composable, or helper class.
+    * **Avoid Magic Numbers:** Avoid scattering literal dimension values or scales directly in the layout code. Instead, group them into a `private object Tokens` at the top of the file if file-scoped, or in a separate `Dimensions.kt` or `Tokens.kt` file if shared across features. Use semantic naming (e.g., `SmallPadding`) rather than value-based naming (e.g., `Dp16`).
 
 3.  **Performance and Efficiency**
     * Scan for inefficient operations, especially within Composable functions (e.g., expensive calculations, improper state management leading to excessive recompositions).
@@ -94,6 +95,11 @@ When reviewing a pull request, focus on the following key areas:
     *   **Apply Proper Semantics:** When building custom UI components from the ground up (e.g., a custom button made of an `Icon` and a `Text`), apply the correct semantics to ensure they are accessible.
         *   Use `semantics { role = Role.Button }` (or `Role.Checkbox`, etc.) to define the component's logical purpose for screen readers.
         *   For components made of multiple parts that should be read as a single, coherent unit, use `semantics { mergeDescendants = true }`. This prevents screen readers from announcing inner elements (like an icon and its text label) as separate, unrelated items.
+        *   **Explicit Focusability:** When building custom components that handle input manually via low-level gestures (e.g., using `pointerInput` or `detectTapGestures`) rather than `Modifier.clickable()`, they may not automatically become focusable. In such cases, explicitly add `Modifier.focusable()` to ensure they are reachable via keyboard navigation and analyzed by automated accessibility checks.
+        *   **Content vs State Descriptions:**
+            *   Use `contentDescription` to describe the **identity** or **action** of the component (e.g., "Capture Photo", "Start Video Recording").
+            *   Use `stateDescription` to describe the **current state** of the component (e.g., "Locked", "Selected").
+            *   **Avoid Redundancy:** Do not include state information or control type in `contentDescription` (e.g., avoid "Locked Video Button" or "Shutter Button"). Let the system announce role and state automatically.
 
 ## Rules for Providing Feedback
 * **Be Constructive:** Frame feedback as suggestions, not commands. Explain the reasoning ("why") behind each comment.
