@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.camera.postprocess
+package com.google.jetpackcamera.core.camera.postprocess.di
 
+import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
+import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,9 +27,9 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class PostProcessModule {
+interface PostProcessModule {
     @Multibinds
-    abstract fun imagePostProcessorEntries(): Set<
+    fun imagePostProcessorEntries(): Set<
         Map.Entry<
             ImagePostProcessorFeatureKey,
             @JvmSuppressWildcards Provider<ImagePostProcessor>

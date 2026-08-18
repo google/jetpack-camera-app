@@ -15,8 +15,7 @@
  */
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.android.legacy.kapt)
     alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.compose.compiler)
 }
@@ -33,7 +32,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-
     flavorDimensions += "flavor"
     productFlavors {
         create("stable") {
@@ -48,6 +46,9 @@ android {
     }
     kotlin {
         jvmToolchain(17)
+        compilerOptions {
+            freeCompilerArgs.add("-Xcontext-receivers")
+        }
     }
     buildFeatures {
         buildConfig = true
@@ -73,10 +74,6 @@ android {
                 }
             }
         }
-    }
-
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
     }
 }
 

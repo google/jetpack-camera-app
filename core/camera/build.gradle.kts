@@ -16,7 +16,6 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -93,10 +92,9 @@ android {
     }
     kotlin {
         jvmToolchain(17)
-    }
-
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
+        compilerOptions {
+            freeCompilerArgs.add("-Xcontext-receivers")
+        }
     }
 }
 
@@ -113,6 +111,7 @@ dependencies {
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.truth)
     androidTestImplementation(project(":core:common:testing"))
+    androidTestImplementation(project(":core:camera:postprocess:postprocess-di"))
     testImplementation(project(":core:camera:testing"))
 
     // Futures
@@ -126,7 +125,6 @@ dependencies {
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.video)
-
 
     // Tracing
     implementation(libs.androidx.tracing)
@@ -142,5 +140,4 @@ dependencies {
     implementation(project(":core:camera:postprocess"))
 
 }
-
 
