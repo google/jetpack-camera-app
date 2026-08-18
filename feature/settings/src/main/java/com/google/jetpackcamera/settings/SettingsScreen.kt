@@ -120,7 +120,7 @@ fun SettingsScreen(
  * @param viewModel The [SettingsViewModel] providing the settings state.
  */
 @Composable
-internal fun DefaultCameraSettings(
+fun DefaultCameraSettings(
     customEffectSlot: @Composable () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -150,7 +150,7 @@ internal fun DefaultCameraSettings(
  * @param setLowLightBoostPriority Callback to set low light boost priority.
  */
 @Composable
-internal fun DefaultCameraSettings(
+fun DefaultCameraSettings(
     customEffectSlot: @Composable () -> Unit,
     enabledState: SettingsUiState.Enabled,
     setDefaultLensFacing: (LensFacing) -> Unit,
@@ -195,7 +195,7 @@ internal fun DefaultCameraSettings(
  * @param viewModel The [SettingsViewModel] providing the settings state.
  */
 @Composable
-internal fun DefaultRecordingSettings(viewModel: SettingsViewModel = hiltViewModel()) {
+fun DefaultRecordingSettings(viewModel: SettingsViewModel = hiltViewModel()) {
     val uiState by viewModel.settingsUiState.collectAsState()
     val enabledState = uiState as? SettingsUiState.Enabled ?: return
 
@@ -220,7 +220,7 @@ internal fun DefaultRecordingSettings(viewModel: SettingsViewModel = hiltViewMod
  * @param setVideoQuality Callback to set video quality.
  */
 @Composable
-internal fun DefaultRecordingSettings(
+fun DefaultRecordingSettings(
     enabledState: SettingsUiState.Enabled,
     setVideoAudio: (Boolean) -> Unit,
     setMaxVideoDuration: (Long) -> Unit,
@@ -263,7 +263,7 @@ internal fun DefaultRecordingSettings(
  * @param viewModel The [SettingsViewModel] providing the settings state.
  */
 @Composable
-internal fun DefaultAppSettings(
+fun DefaultAppSettings(
     versionInfo: VersionInfoHolder,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -285,7 +285,7 @@ internal fun DefaultAppSettings(
  * @param setDarkMode Callback to set the dark mode.
  */
 @Composable
-internal fun DefaultAppSettings(
+fun DefaultAppSettings(
     versionInfo: VersionInfoHolder,
     enabledState: SettingsUiState.Enabled,
     setDarkMode: (DarkMode) -> Unit
