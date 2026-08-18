@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.settings
 
 import android.Manifest
-import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -29,26 +28,23 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.model.DarkMode
+import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.jetpackcamera.model.AspectRatio
-import com.google.jetpackcamera.model.CameraEffectId
-import com.google.jetpackcamera.model.ConcurrentCameraMode
-import com.google.jetpackcamera.model.DarkMode
-import com.google.jetpackcamera.model.FlashMode
-import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.model.LowLightBoostPriority
-import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
-import com.google.jetpackcamera.settings.ui.CameraEffectSetting
 import com.google.jetpackcamera.settings.ui.ConcurrentCameraSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
@@ -63,38 +59,21 @@ import com.google.jetpackcamera.settings.ui.StabilizationSetting
 import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 import com.google.jetpackcamera.settings.ui.VersionInfo
 import com.google.jetpackcamera.settings.ui.VideoQualitySetting
-import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 
 /**
  * Screen used for the Settings feature.
  */
 
-@OptIn(ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     versionInfo: VersionInfoHolder,
-    viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    cameraSettingsSlot: @Composable () -> Unit = { DefaultCameraSettings() },
+    recordingSettingsSlot: @Composable () -> Unit = { DefaultRecordingSettings() },
+    appSettingsSlot: @Composable () -> Unit = { DefaultAppSettings(versionInfo = versionInfo) }
 ) {
-    val settingsUiState by viewModel.settingsUiState.collectAsState()
-
-    SettingsScreen(
-        uiState = settingsUiState,
-        versionInfo = versionInfo,
-        onNavigateBack = onNavigateBack,
-        setDefaultLensFacing = viewModel::setDefaultLensFacing,
-        setFlashMode = viewModel::setFlashMode,
-        setTargetFrameRate = viewModel::setTargetFrameRate,
-        setAspectRatio = viewModel::setAspectRatio,
-        setCameraEffect = viewModel::setCameraEffect,
-        setAudio = viewModel::setVideoAudio,
-        setStabilizationMode = viewModel::setStabilizationMode,
-        setMaxVideoDuration = viewModel::setMaxVideoDuration,
-        setDarkMode = viewModel::setDarkMode,
-        setVideoQuality = viewModel::setVideoQuality,
-        setLowLightBoostPriority = viewModel::setLowLightBoostPriority,
-        setConcurrentCameraMode = viewModel::setConcurrentCameraMode
-    )
+    val viewModel: SettingsViewModel = hiltViewModel()
     val permissionStates = rememberMultiplePermissionsState(
         permissions =
         listOf(
@@ -105,27 +84,7 @@ fun SettingsScreen(
     )
 
     viewModel.setGrantedPermissions(permissionStates)
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SettingsScreen(
-    uiState: SettingsUiState,
-    versionInfo: VersionInfoHolder,
-    onNavigateBack: () -> Unit = {},
-    setDefaultLensFacing: (LensFacing) -> Unit = {},
-    setFlashMode: (FlashMode) -> Unit = {},
-    setTargetFrameRate: (Int) -> Unit = {},
-    setAspectRatio: (AspectRatio) -> Unit = {},
-    setCameraEffect: (CameraEffectId) -> Unit = {},
-    setStabilizationMode: (StabilizationMode) -> Unit = {},
-    setAudio: (Boolean) -> Unit = {},
-    setMaxVideoDuration: (Long) -> Unit = {},
-    setDarkMode: (DarkMode) -> Unit = {},
-    setVideoQuality: (VideoQuality) -> Unit = {},
-    setLowLightBoostPriority: (LowLightBoostPriority) -> Unit = {},
-    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {}
-) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
         rememberTopAppBarState()
     )
@@ -147,107 +106,154 @@ private fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .background(color = MaterialTheme.colorScheme.background)
         ) {
-            if (uiState is SettingsUiState.Enabled) {
-                SettingsList(
-                    uiState = uiState,
-                    versionInfo = versionInfo,
-                    setDefaultLensFacing = setDefaultLensFacing,
-                    setFlashMode = setFlashMode,
-                    setTargetFrameRate = setTargetFrameRate,
-                    setAspectRatio = setAspectRatio,
-                    setCameraEffect = setCameraEffect,
-                    setStabilizationMode = setStabilizationMode,
-                    setAudio = setAudio,
-                    setMaxVideoDuration = setMaxVideoDuration,
-                    setDarkMode = setDarkMode,
-                    setVideoQuality = setVideoQuality,
-                    setLowLightBoostPriority = setLowLightBoostPriority,
-                    setConcurrentCameraMode = setConcurrentCameraMode
-                )
-            }
+            cameraSettingsSlot()
+            recordingSettingsSlot()
+            appSettingsSlot()
         }
     }
 }
 
 @Composable
-internal fun SettingsList(
-    uiState: SettingsUiState.Enabled,
-    versionInfo: VersionInfoHolder,
-    setDefaultLensFacing: (LensFacing) -> Unit = {},
-    setFlashMode: (FlashMode) -> Unit = {},
-    setTargetFrameRate: (Int) -> Unit = {},
-    setAspectRatio: (AspectRatio) -> Unit = {},
-    setCameraEffect: (CameraEffectId) -> Unit = {},
-    setLowLightBoostPriority: (LowLightBoostPriority) -> Unit = {},
-    setAudio: (Boolean) -> Unit = {},
-    setStabilizationMode: (StabilizationMode) -> Unit = {},
-    setVideoQuality: (VideoQuality) -> Unit = {},
-    setMaxVideoDuration: (Long) -> Unit = {},
-    setDarkMode: (DarkMode) -> Unit = {},
-    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {}
+fun DefaultCameraSettings(
+    customEffectSlot: @Composable () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.settingsUiState.collectAsState()
+    if (uiState !is SettingsUiState.Enabled) return
+    val enabledState = uiState as SettingsUiState.Enabled
+
+    DefaultCameraSettings(
+        customEffectSlot = customEffectSlot,
+        enabledState = enabledState,
+        setDefaultLensFacing = viewModel::setDefaultLensFacing,
+        setFlashMode = viewModel::setFlashMode,
+        setTargetFrameRate = viewModel::setTargetFrameRate,
+        setAspectRatio = viewModel::setAspectRatio,
+        setLowLightBoostPriority = viewModel::setLowLightBoostPriority
+    )
+}
+
+@Composable
+fun DefaultCameraSettings(
+    customEffectSlot: @Composable () -> Unit,
+    enabledState: SettingsUiState.Enabled,
+    setDefaultLensFacing: (LensFacing) -> Unit,
+    setFlashMode: (FlashMode) -> Unit,
+    setTargetFrameRate: (Int) -> Unit,
+    setAspectRatio: (AspectRatio) -> Unit,
+    setLowLightBoostPriority: (LowLightBoostPriority) -> Unit
 ) {
     SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
     DefaultCameraFacing(
-        lensUiState = uiState.lensFlipUiState,
+        lensUiState = enabledState.lensFlipUiState,
         setDefaultLensFacing = setDefaultLensFacing
     )
 
     FlashModeSetting(
-        flashUiState = uiState.flashUiState,
+        flashUiState = enabledState.flashUiState,
         setFlashMode = setFlashMode
     )
 
     TargetFpsSetting(
-        fpsUiState = uiState.fpsUiState,
+        fpsUiState = enabledState.fpsUiState,
         setTargetFps = setTargetFrameRate
     )
 
     AspectRatioSetting(
-        aspectRatioUiState = uiState.aspectRatioUiState,
+        aspectRatioUiState = enabledState.aspectRatioUiState,
         setAspectRatio = setAspectRatio
     )
 
-    CameraEffectSetting(
-        cameraEffectUiState = uiState.cameraEffectUiState,
-        setCameraEffect = setCameraEffect
-    )
+    customEffectSlot()
 
     LowLightBoostPrioritySetting(
-        lowLightBoostPriorityUiState = uiState.lowLightBoostPriorityUiState,
+        lowLightBoostPriorityUiState = enabledState.lowLightBoostPriorityUiState,
         setLowLightBoostPriority = setLowLightBoostPriority
     )
+}
+
+@Composable
+fun DefaultRecordingSettings(
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.settingsUiState.collectAsState()
+    if (uiState !is SettingsUiState.Enabled) return
+    val enabledState = uiState as SettingsUiState.Enabled
+
+    DefaultRecordingSettings(
+        enabledState = enabledState,
+        setVideoAudio = viewModel::setVideoAudio,
+        setMaxVideoDuration = viewModel::setMaxVideoDuration,
+        setConcurrentCameraMode = viewModel::setConcurrentCameraMode,
+        setStabilizationMode = viewModel::setStabilizationMode,
+        setVideoQuality = viewModel::setVideoQuality
+    )
+}
+
+@Composable
+fun DefaultRecordingSettings(
+    enabledState: SettingsUiState.Enabled,
+    setVideoAudio: (Boolean) -> Unit,
+    setMaxVideoDuration: (Long) -> Unit,
+    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit,
+    setStabilizationMode: (StabilizationMode) -> Unit,
+    setVideoQuality: (VideoQuality) -> Unit
+) {
     SectionHeader(title = stringResource(R.string.section_title_recording_settings))
 
     RecordingAudioSetting(
-        audioUiState = uiState.audioUiState,
-        setDefaultAudio = setAudio
+        audioUiState = enabledState.audioUiState,
+        setDefaultAudio = setVideoAudio
     )
 
     MaxVideoDurationSetting(
-        maxVideoDurationUiState = uiState.maxVideoDurationUiState,
+        maxVideoDurationUiState = enabledState.maxVideoDurationUiState,
         setMaxDuration = setMaxVideoDuration
     )
 
     ConcurrentCameraSetting(
-        concurrentCameraUiState = uiState.concurrentCameraUiState,
+        concurrentCameraUiState = enabledState.concurrentCameraUiState,
         setConcurrentCameraMode = setConcurrentCameraMode
     )
 
     StabilizationSetting(
-        stabilizationUiState = uiState.stabilizationUiState,
+        stabilizationUiState = enabledState.stabilizationUiState,
         setStabilizationMode = setStabilizationMode
     )
 
     VideoQualitySetting(
-        videQualityUiState = uiState.videoQualityUiState,
+        videQualityUiState = enabledState.videoQualityUiState,
         setVideoQuality = setVideoQuality
     )
+}
 
+@Composable
+fun DefaultAppSettings(
+    versionInfo: VersionInfoHolder,
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.settingsUiState.collectAsState()
+    if (uiState !is SettingsUiState.Enabled) return
+    val enabledState = uiState as SettingsUiState.Enabled
+
+    DefaultAppSettings(
+        versionInfo = versionInfo,
+        enabledState = enabledState,
+        setDarkMode = viewModel::setDarkMode
+    )
+}
+
+@Composable
+fun DefaultAppSettings(
+    versionInfo: VersionInfoHolder,
+    enabledState: SettingsUiState.Enabled,
+    setDarkMode: (DarkMode) -> Unit
+) {
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
 
     DarkModeSetting(
-        darkModeUiState = uiState.darkModeUiState,
+        darkModeUiState = enabledState.darkModeUiState,
         setDarkMode = setDarkMode
     )
 
@@ -259,21 +265,4 @@ internal fun SettingsList(
     )
 }
 
-// will allow you to open stabilization popup or give disabled rationale
-
 data class VersionInfoHolder(val versionName: String, val buildType: String)
-
-@Preview(name = "Light Mode")
-@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun Preview_SettingsScreen() {
-    SettingsPreviewTheme {
-        SettingsScreen(
-            uiState = TYPICAL_SETTINGS_UISTATE,
-            versionInfo = VersionInfoHolder(
-                versionName = "1.0.0",
-                buildType = "release"
-            )
-        )
-    }
-}

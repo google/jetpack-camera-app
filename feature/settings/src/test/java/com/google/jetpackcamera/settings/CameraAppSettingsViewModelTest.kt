@@ -23,7 +23,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.core.camera.effects.SingleStreamEffectKey
+
 import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
 import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
 import com.google.jetpackcamera.model.CaptureMode
@@ -288,9 +288,10 @@ internal class CameraAppSettingsViewModelTest {
      */
     @Test
     fun concurrentCamera_whenCameraEffectIsActive_isDisabled() = runTest(StandardTestDispatcher()) {
+        val testEffectId = com.google.jetpackcamera.model.CameraEffectId("fake_effect")
         // Set selected_camera_effect to a non-empty value first
         testDataStore.edit { prefs ->
-            prefs[stringPreferencesKey("selected_camera_effect")] = SingleStreamEffectKey.id.value
+            prefs[stringPreferencesKey("selected_camera_effect")] = testEffectId.value
         }
 
         val customViewModel = createViewModelWithConstraints(
@@ -298,7 +299,7 @@ internal class CameraAppSettingsViewModelTest {
                 concurrentCamerasSupported = true,
                 perLensConstraints =
                 TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.mapValues { (_, constraints) ->
-                    constraints.copy(supportedEffects = setOf(SingleStreamEffectKey.id))
+                    constraints.copy(supportedEffects = setOf(testEffectId))
                 }
             )
         )
