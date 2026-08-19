@@ -66,12 +66,12 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 class CaptureControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     private val cameraSystem: CameraSystem,
-    private val mediaRepository: MediaRepository,
+    private val mediaRepository: MediaRepository? = null,
     private val saveMode: SaveMode,
     private val externalCaptureMode: ExternalCaptureMode,
     private val externalCapturesCallback: () -> Pair<SaveLocation, IntProgress?>,
     override val captureEvents: Channel<CaptureEvent>,
-    private val imageWellController: ImageWellController,
+    private val imageWellController: ImageWellController? = null,
     coroutineContext: CoroutineContext
 ) : CaptureController {
 
@@ -113,14 +113,16 @@ class CaptureControllerImpl(
                         }
                     }
                     if (saveLocation !is SaveLocation.Cache) {
-                        imageWellController.updateLastCapturedMedia()
+                        imageWellController?.updateLastCapturedMedia()
                     } else {
-                        savedUri?.let {
-                            scope.launch {
-                                postCurrentMediaToMediaRepository(
-                                    mediaRepository,
-                                    MediaDescriptor.Content.Image(it, null, true)
-                                )
+                        savedUri?.let { uri ->
+                            mediaRepository?.let { repo ->
+                                scope.launch {
+                                    postCurrentMediaToMediaRepository(
+                                        repo,
+                                        MediaDescriptor.Content.Image(uri, null, true)
+                                    )
+                                }
                             }
                         }
                     }
@@ -164,13 +166,15 @@ class CaptureControllerImpl(
                             }
 
                             if (saveLocation !is SaveLocation.Cache) {
-                                imageWellController.updateLastCapturedMedia()
+                                imageWellController?.updateLastCapturedMedia()
                             } else {
-                                scope.launch {
-                                    postCurrentMediaToMediaRepository(
-                                        mediaRepository,
-                                        MediaDescriptor.Content.Video(it.savedUri, null, true)
-                                    )
+                                mediaRepository?.let { repo ->
+                                    scope.launch {
+                                        postCurrentMediaToMediaRepository(
+                                            repo,
+                                            MediaDescriptor.Content.Video(it.savedUri, null, true)
+                                        )
+                                    }
                                 }
                             }
 
