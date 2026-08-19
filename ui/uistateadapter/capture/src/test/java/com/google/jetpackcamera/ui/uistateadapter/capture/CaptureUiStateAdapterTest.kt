@@ -46,7 +46,21 @@ import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-class CaptureUiStateAdapterTest {
+internal class CaptureUiStateAdapterTest {
+
+    private val cameraSystem = FakeCameraSystem()
+    private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
+        updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+    }
+    private val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
+    private val externalCaptureMode = ExternalCaptureMode.Standard
+
+    private fun createCaptureUiStateFlow() = captureUiState(
+        cameraSystem = cameraSystem,
+        constraintsRepository = constraintsRepository,
+        trackedCaptureUiState = trackedCaptureUiState,
+        externalCaptureMode = externalCaptureMode
+    )
 
     @Test
     fun roundVideoRecordingState_nanoseconds_noRounding() {
@@ -78,18 +92,7 @@ class CaptureUiStateAdapterTest {
 
     @Test
     fun captureUiState_initialEmitsReadyState() = runTest {
-        val cameraSystem = FakeCameraSystem()
-        val constraintsRepository = SettableConstraintsRepositoryImpl()
-        constraintsRepository.updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
-        val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
-        val externalCaptureMode = ExternalCaptureMode.Standard
-
-        val uiStateFlow = captureUiState(
-            cameraSystem = cameraSystem,
-            constraintsRepository = constraintsRepository,
-            trackedCaptureUiState = trackedCaptureUiState,
-            externalCaptureMode = externalCaptureMode
-        )
+        val uiStateFlow = createCaptureUiStateFlow()
 
         val firstState = uiStateFlow.first()
         assertThat(firstState).isInstanceOf(CaptureUiState.Ready::class.java)
@@ -97,28 +100,15 @@ class CaptureUiStateAdapterTest {
 
     @Test
     fun captureUiState_aspectRatioUpdate_emitsUpdatedState() = runTest {
-        val cameraSystem = FakeCameraSystem()
-        val constraintsRepository = SettableConstraintsRepositoryImpl()
-        constraintsRepository.updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
-        val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
-        val externalCaptureMode = ExternalCaptureMode.Standard
-
-        val uiStateFlow = captureUiState(
-            cameraSystem = cameraSystem,
-            constraintsRepository = constraintsRepository,
-            trackedCaptureUiState = trackedCaptureUiState,
-            externalCaptureMode = externalCaptureMode
-        )
-
+        val uiStateFlow = createCaptureUiStateFlow()
         val states = mutableListOf<CaptureUiState>()
-        val job = launch {
+        backgroundScope.launch {
             uiStateFlow.collect { states.add(it) }
         }
 
         runCurrent()
-        assertThat(states).isNotEmpty()
-        val initialState = states.last() as CaptureUiState.Ready
-        assertThat(initialState.aspectRatioUiState is AspectRatioUiState.Available).isTrue()
+        val initialState = assertIsReady(states.last())
+        assertThat(initialState.aspectRatioUiState).isInstanceOf(AspectRatioUiState.Available::class.java)
         val initialRatio =
             (initialState.aspectRatioUiState as AspectRatioUiState.Available).selectedAspectRatio
         assertThat(initialRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
@@ -127,72 +117,62 @@ class CaptureUiStateAdapterTest {
         cameraSystem.setAspectRatio(AspectRatio.THREE_FOUR)
         runCurrent()
 
-        assertThat(states.size).isAtLeast(2)
-        val updatedState = states.last() as CaptureUiState.Ready
-        val updatedRatio = (updatedState.aspectRatioUiState as AspectRatioUiState.Available)
-            .selectedAspectRatio
+        val updatedState = assertIsReady(states.last())
+        assertThat(updatedState.aspectRatioUiState).isInstanceOf(AspectRatioUiState.Available::class.java)
+        val updatedRatio =
+            (updatedState.aspectRatioUiState as AspectRatioUiState.Available).selectedAspectRatio
         assertThat(updatedRatio).isEqualTo(AspectRatio.THREE_FOUR)
-
-        job.cancel()
     }
 
     @Test
     fun captureUiState_flashModeUpdate_emitsUpdatedState() = runTest {
-        val cameraSystem = FakeCameraSystem()
-        val constraintsRepository = SettableConstraintsRepositoryImpl()
-
-        // We need constraints that support flash ON and OFF
-        val systemConstraints = CameraSystemConstraints(
-            availableLenses = listOf(LensFacing.BACK),
-            perLensConstraints = mapOf(
-                LensFacing.BACK to CameraConstraints(
-                    supportedFixedFrameRates = emptySet(),
-                    supportedStabilizationModes = emptySet(),
-                    supportedDynamicRanges = emptySet(),
-                    supportedVideoQualitiesMap = emptyMap(),
-                    supportedImageFormatsMap = emptyMap(),
-                    supportedIlluminants = setOf(Illuminant.FLASH_UNIT),
-                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON),
-                    supportedZoomRange = null,
-                    unsupportedStabilizationFpsMap = emptyMap(),
-                    supportedTestPatterns = emptySet()
+        constraintsRepository.updateSystemConstraints(
+            CameraSystemConstraints(
+                availableLenses = listOf(LensFacing.BACK),
+                perLensConstraints = mapOf(
+                    LensFacing.BACK to CameraConstraints(
+                        supportedFixedFrameRates = emptySet(),
+                        supportedStabilizationModes = emptySet(),
+                        supportedDynamicRanges = emptySet(),
+                        supportedVideoQualitiesMap = emptyMap(),
+                        supportedImageFormatsMap = emptyMap(),
+                        supportedIlluminants = setOf(Illuminant.FLASH_UNIT),
+                        supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON),
+                        supportedZoomRange = null,
+                        unsupportedStabilizationFpsMap = emptyMap(),
+                        supportedTestPatterns = emptySet()
+                    )
                 )
             )
         )
-        constraintsRepository.updateSystemConstraints(systemConstraints)
-        val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
-        val externalCaptureMode = ExternalCaptureMode.Standard
 
-        val uiStateFlow = captureUiState(
-            cameraSystem = cameraSystem,
-            constraintsRepository = constraintsRepository,
-            trackedCaptureUiState = trackedCaptureUiState,
-            externalCaptureMode = externalCaptureMode
-        )
-
+        val uiStateFlow = createCaptureUiStateFlow()
         val states = mutableListOf<CaptureUiState>()
-        val job = launch {
+        backgroundScope.launch {
             uiStateFlow.collect { states.add(it) }
         }
 
         runCurrent()
-        assertThat(states).isNotEmpty()
-        val initialState = states.last() as CaptureUiState.Ready
-        assertThat(initialState.flashModeUiState is FlashModeUiState.Available).isTrue()
-        val initialFlash = (initialState.flashModeUiState as FlashModeUiState.Available)
-            .selectedFlashMode
+        val initialState = assertIsReady(states.last())
+        assertThat(initialState.flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val initialFlash =
+            (initialState.flashModeUiState as FlashModeUiState.Available).selectedFlashMode
         assertThat(initialFlash).isEqualTo(FlashMode.OFF)
 
         // Change flash mode in camera system
         cameraSystem.setFlashMode(FlashMode.ON)
         runCurrent()
 
-        assertThat(states.size).isAtLeast(2)
-        val updatedState = states.last() as CaptureUiState.Ready
+        val updatedState = assertIsReady(states.last())
+        assertThat(updatedState.flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
         val updatedFlash =
             (updatedState.flashModeUiState as FlashModeUiState.Available).selectedFlashMode
         assertThat(updatedFlash).isEqualTo(FlashMode.ON)
-
-        job.cancel()
     }
+
+    private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready =
+        when (uiState) {
+            is CaptureUiState.Ready -> uiState
+            else -> throw AssertionError("CaptureUiState expected to be Ready, but was ${uiState::class}")
+        }
 }
