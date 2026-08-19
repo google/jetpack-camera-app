@@ -108,7 +108,9 @@ internal class CaptureUiStateAdapterTest {
 
         runCurrent()
         val initialState = assertIsReady(states.last())
-        assertThat(initialState.aspectRatioUiState).isInstanceOf(AspectRatioUiState.Available::class.java)
+        assertThat(
+            initialState.aspectRatioUiState
+        ).isInstanceOf(AspectRatioUiState.Available::class.java)
         val initialRatio =
             (initialState.aspectRatioUiState as AspectRatioUiState.Available).selectedAspectRatio
         assertThat(initialRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
@@ -118,7 +120,9 @@ internal class CaptureUiStateAdapterTest {
         runCurrent()
 
         val updatedState = assertIsReady(states.last())
-        assertThat(updatedState.aspectRatioUiState).isInstanceOf(AspectRatioUiState.Available::class.java)
+        assertThat(
+            updatedState.aspectRatioUiState
+        ).isInstanceOf(AspectRatioUiState.Available::class.java)
         val updatedRatio =
             (updatedState.aspectRatioUiState as AspectRatioUiState.Available).selectedAspectRatio
         assertThat(updatedRatio).isEqualTo(AspectRatio.THREE_FOUR)
@@ -154,7 +158,9 @@ internal class CaptureUiStateAdapterTest {
 
         runCurrent()
         val initialState = assertIsReady(states.last())
-        assertThat(initialState.flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        assertThat(
+            initialState.flashModeUiState
+        ).isInstanceOf(FlashModeUiState.Available::class.java)
         val initialFlash =
             (initialState.flashModeUiState as FlashModeUiState.Available).selectedFlashMode
         assertThat(initialFlash).isEqualTo(FlashMode.OFF)
@@ -164,15 +170,18 @@ internal class CaptureUiStateAdapterTest {
         runCurrent()
 
         val updatedState = assertIsReady(states.last())
-        assertThat(updatedState.flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        assertThat(
+            updatedState.flashModeUiState
+        ).isInstanceOf(FlashModeUiState.Available::class.java)
         val updatedFlash =
             (updatedState.flashModeUiState as FlashModeUiState.Available).selectedFlashMode
         assertThat(updatedFlash).isEqualTo(FlashMode.ON)
     }
 
-    private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready =
-        when (uiState) {
-            is CaptureUiState.Ready -> uiState
-            else -> throw AssertionError("CaptureUiState expected to be Ready, but was ${uiState::class}")
-        }
+    private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready = when (uiState) {
+        is CaptureUiState.Ready -> uiState
+        else -> throw AssertionError(
+            "CaptureUiState expected to be Ready, but was ${uiState::class}"
+        )
+    }
 }
