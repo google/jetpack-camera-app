@@ -17,6 +17,10 @@
 <resources>
     <!-- Preview Screen Text -->
     <string name="camera_not_ready">Camera Loading…</string>
+    <string name="elapsed_time_format">%1$d:%2$02d</string>
+    <string name="elapsed_time_format_paused">PAUSED %1$d:%2$02d</string>
+    <string name="elapsed_time_accessibility_recording">Recording time: %1$d minutes and %2$d seconds</string>
+    <string name="elapsed_time_accessibility_paused">Recording paused: %1$d minutes and %2$d seconds</string>
 
     <!-- Capture Mode Toggle -->
     <string name="capture_mode_image_capture_content_description">Image capture mode</string>
