@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 
@@ -40,13 +41,14 @@ internal val CameraControlBackgroundStyle.disabledContainerColor: Color
         CameraControlBackgroundStyle.BLACK_60 -> Color.Black.copy(alpha = 0.2f)
         CameraControlBackgroundStyle.WHITE_20 -> Color.White.copy(alpha = 0.05f)
     }
+private val DefaultOverlapTargetBounds = mutableStateOf(Rect.Zero)
 
 /**
  * Provides the global bounds of the target overlapping region.
  * Elements can read this to determine their overlap with the targeted background (e.g. ViewFinder).
  */
 internal val LocalOverlapTargetBounds = compositionLocalOf<MutableState<Rect>> {
-    error("No LocalOverlapTargetBounds provided")
+    DefaultOverlapTargetBounds
 }
 
 /**

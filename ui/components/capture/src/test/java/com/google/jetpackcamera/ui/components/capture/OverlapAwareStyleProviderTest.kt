@@ -129,4 +129,28 @@ class OverlapAwareStyleProviderTest {
         composeTestRule.waitForIdle()
         assertThat(detectedStyle).isEqualTo(CameraControlBackgroundStyle.WHITE_20)
     }
+
+    @Test
+    fun overlapAware_noProvider_defaultsSafelyToWhite20() {
+        var detectedStyle: CameraControlBackgroundStyle? = null
+
+        composeTestRule.setContent {
+            // We consciously DO NOT wrap this in a CompositionLocalProvider
+            // to test the new fallback mechanism.
+            Box(Modifier.size(500.dp)) {
+                OverlapAwareStyleProvider(
+                    modifier = Modifier
+                        .offset(x = 0.dp, y = 10.dp)
+                        .size(100.dp)
+                ) {
+                    detectedStyle = LocalCameraControlBackgroundStyle.current
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // Because the missing provider falls back to Rect.Zero,
+        // the 0f intersection correctly results in WHITE_20.
+        assertThat(detectedStyle).isEqualTo(CameraControlBackgroundStyle.WHITE_20)
+    }
 }

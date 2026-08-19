@@ -16,8 +16,7 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.android.legacy.kapt)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -61,6 +60,7 @@ dependencies {
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
+    implementation(libs.androidx.foundation.layout)
 
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)

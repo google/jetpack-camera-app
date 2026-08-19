@@ -16,8 +16,7 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.android.legacy.kapt)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -55,14 +54,13 @@ android {
     }
     kotlin {
         jvmToolchain(17)
+        compilerOptions {
+            freeCompilerArgs.add("-Xcontext-receivers")
+        }
     }
     buildFeatures {
         buildConfig = true
         compose = true
-    }
-
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
     }
 }
 
@@ -70,6 +68,10 @@ dependencies {
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
+    implementation(libs.androidx.foundation.layout)
+
+    // AndroidX Core KTX
+    implementation(libs.androidx.core.ktx)
 
     // Accompanist - Permissions
     implementation(libs.accompanist.permissions)
@@ -80,9 +82,6 @@ dependencies {
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
-
-    // Compose - Integration with ViewModels with Navigation and Hilt
-    implementation(libs.hilt.navigation.compose)
 
     // CameraX
     implementation(libs.camera.core)
