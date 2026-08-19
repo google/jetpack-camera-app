@@ -49,6 +49,7 @@ import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.action.ViewActions.swipeDown
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.TruthJUnit.assume
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.model.CaptureMode
@@ -68,6 +69,7 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_C
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
@@ -855,4 +857,11 @@ internal fun buildGeneralErrorMessage(
     sb.appendLine(nodeInteraction.printToString())
 
     return sb.toString()
+}
+
+fun ComposeTestRule.assumeFlipCameraAvailable(
+    message: String = "Device does not have multiple cameras to flip between."
+) {
+    val isFlipAvailable = onAllNodesWithTag(FLIP_CAMERA_BUTTON).fetchSemanticsNodes().isNotEmpty()
+    assume().withMessage(message).that(isFlipAvailable).isTrue()
 }

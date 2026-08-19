@@ -17,7 +17,6 @@ package com.google.jetpackcamera
 
 import android.os.Build
 import android.provider.MediaStore
-import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -37,7 +36,7 @@ import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
-import com.google.jetpackcamera.utils.assume
+import com.google.jetpackcamera.utils.assumeFlipCameraAvailable
 import com.google.jetpackcamera.utils.getCurrentLensFacing
 import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
@@ -120,9 +119,10 @@ internal class FlashDeviceTest {
         // Ensure camera has a back camera and flip to it
         val lensFacing = composeTestRule.getCurrentLensFacing()
         if (lensFacing != LensFacing.BACK) {
-            composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
+            composeTestRule.assumeFlipCameraAvailable(
                 "Device does not have a back camera to flip to."
-            }.performClick()
+            )
+            composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
         }
 
         composeTestRule.setFlashMode(FlashMode.ON)
@@ -149,9 +149,10 @@ internal class FlashDeviceTest {
             // Ensure camera has a front camera and flip to it
             val lensFacing = composeTestRule.getCurrentLensFacing()
             if (lensFacing != LensFacing.FRONT) {
-                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
+                composeTestRule.assumeFlipCameraAvailable(
                     "Device does not have a front camera to flip to."
-                }.performClick()
+                )
+                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
             }
 
             composeTestRule.setFlashMode(FlashMode.ON)
@@ -190,9 +191,10 @@ internal class FlashDeviceTest {
             // Ensure camera has the target lens facing camera and flip to it
             val lensFacing = composeTestRule.getCurrentLensFacing()
             if (lensFacing != targetLensFacing) {
-                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
+                composeTestRule.assumeFlipCameraAvailable(
                     "Device does not have a $targetLensFacing camera to flip to."
-                }.performClick()
+                )
+                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
             }
 
             composeTestRule.setFlashMode(FlashMode.ON)
