@@ -16,12 +16,11 @@
 package com.google.jetpackcamera.ui.controller.impl
 
 import android.content.ContentResolver
+import android.net.Uri
 import android.util.Log
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
-import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
@@ -32,7 +31,6 @@ import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.controller.CaptureController
 import com.google.jetpackcamera.ui.controller.ImageWellController
 import com.google.jetpackcamera.ui.controller.impl.Utils.nextSaveLocation
-import com.google.jetpackcamera.ui.controller.impl.Utils.postCurrentMediaToMediaRepository
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlin.coroutines.CoroutineContext
 import kotlinx.atomicfu.atomic
@@ -50,28 +48,29 @@ private const val TAG = "CaptureButtonControllerImpl"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 /**
- * Implementation of [CaptureController] that interacts with [CameraSystem] and [MediaRepository].
+ * Implementation of [CaptureController] that interacts with [CameraSystem].
  *
  * @param trackedCaptureUiState State for tracking UI changes during capture.
  * @param cameraSystem The camera system to perform capture operations.
- * @param mediaRepository Repository for managing captured media.
  * @param saveMode Mode for saving captured media.
  * @param externalCaptureMode Mode for external capture requests.
  * @param externalCapturesCallback Callback for getting external capture information.
  * @property captureEvents Channel for sending capture-related events.
- * @param captureScreenController Controller for UI-related capture screen actions.
- * @param snackBarController Controller for showing snackbars.
+ * @param imageWellController Controller for managing the image well UI.
+ * @param onImageCached Callback invoked when an image is saved to cache.
+ * @param onVideoCached Callback invoked when a video is saved to cache.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class CaptureControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     private val cameraSystem: CameraSystem,
-    private val mediaRepository: MediaRepository,
     private val saveMode: SaveMode,
     private val externalCaptureMode: ExternalCaptureMode,
     private val externalCapturesCallback: () -> Pair<SaveLocation, IntProgress?>,
     override val captureEvents: Channel<CaptureEvent>,
-    private val imageWellController: ImageWellController,
+    private val imageWellController: ImageWellController? = null,
+    private val onImageCached: ((Uri) -> Unit)? = null,
+    private val onVideoCached: ((Uri) -> Unit)? = null,
     coroutineContext: CoroutineContext
 ) : CaptureController {
 
@@ -113,15 +112,10 @@ class CaptureControllerImpl(
                         }
                     }
                     if (saveLocation !is SaveLocation.Cache) {
-                        imageWellController.updateLastCapturedMedia()
+                        imageWellController?.updateLastCapturedMedia()
                     } else {
-                        savedUri?.let {
-                            scope.launch {
-                                postCurrentMediaToMediaRepository(
-                                    mediaRepository,
-                                    MediaDescriptor.Content.Image(it, null, true)
-                                )
-                            }
+                        savedUri?.let { uri ->
+                            onImageCached?.invoke(uri)
                         }
                     }
                     captureEvents.trySend(event)
@@ -164,14 +158,9 @@ class CaptureControllerImpl(
                             }
 
                             if (saveLocation !is SaveLocation.Cache) {
-                                imageWellController.updateLastCapturedMedia()
+                                imageWellController?.updateLastCapturedMedia()
                             } else {
-                                scope.launch {
-                                    postCurrentMediaToMediaRepository(
-                                        mediaRepository,
-                                        MediaDescriptor.Content.Video(it.savedUri, null, true)
-                                    )
-                                }
+                                onVideoCached?.invoke(it.savedUri)
                             }
 
                             captureEvents.trySend(event)
