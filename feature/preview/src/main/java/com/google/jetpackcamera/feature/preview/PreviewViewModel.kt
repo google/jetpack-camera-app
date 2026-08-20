@@ -23,6 +23,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
+import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
@@ -205,7 +206,6 @@ class PreviewViewModel @Inject constructor(
     val captureController: CaptureController = CaptureControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
         cameraSystem = cameraSystemRepository.cameraSystem,
-        mediaRepository = mediaRepository,
         saveMode = saveMode,
         externalCaptureMode = externalCaptureMode,
         externalCapturesCallback = {
@@ -225,6 +225,20 @@ class PreviewViewModel @Inject constructor(
         },
         captureEvents = incomingCaptureEvents,
         imageWellController = imageWellController,
+        onImageCached = { uri ->
+            viewModelScope.launch {
+                mediaRepository.setCurrentMedia(
+                    MediaDescriptor.Content.Image(uri, null, true)
+                )
+            }
+        },
+        onVideoCached = { uri ->
+            viewModelScope.launch {
+                mediaRepository.setCurrentMedia(
+                    MediaDescriptor.Content.Video(uri, null, true)
+                )
+            }
+        },
         coroutineContext = viewModelScope.coroutineContext
     )
 
