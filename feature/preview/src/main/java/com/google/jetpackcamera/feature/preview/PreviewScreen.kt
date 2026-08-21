@@ -21,6 +21,8 @@ import android.util.Log
 import android.util.Range
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -80,6 +82,7 @@ import com.google.jetpackcamera.ui.components.capture.ElapsedTimeText
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
 import com.google.jetpackcamera.ui.components.capture.ImageWell
+import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.PreviewLayout
@@ -93,6 +96,7 @@ import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
 import com.google.jetpackcamera.ui.components.capture.ZoomStateManager
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsBottomSheet
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEvent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
@@ -110,6 +114,7 @@ import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
@@ -303,6 +308,7 @@ private fun ContentScreen(
                 is VideoRecordingState.Starting -> {
                     initialRecordingSettings = this.initialRecordingSettings
                 }
+
                 is VideoRecordingState.Inactive -> {
                     initialRecordingSettings?.let {
                         val oldPrimaryLensFacing = it.lensFacing
@@ -323,6 +329,7 @@ private fun ContentScreen(
                     }
                     initialRecordingSettings = null
                 }
+
                 is VideoRecordingState.Active -> {}
             }
         }
@@ -351,7 +358,7 @@ private fun ContentScreen(
 
     // Slot lambdas are wrapped in remember blocks to isolate recompositions.
     val hdrState = remember { derivedStateOf { currentCaptureUiStateProvider().hdrUiState } }
-    val hdrIndicatorLambda = remember(hdrState) {
+    val hdrIndicatorLambda = remember {
         @Composable { modifier: Modifier ->
             HdrIndicator(modifier = modifier, hdrUiState = hdrState.value)
         }
@@ -361,14 +368,14 @@ private fun ContentScreen(
     val flashModeIndicatorLambda = remember {
         @Composable { modifier: Modifier ->
             FlashModeIndicator(
-                modifier = modifier,
-                flashModeUiStateProvider = { flashModeState.value }
+                flashModeUiState = flashModeState.value,
+                modifier = modifier
             )
         }
     }
     val videoQualityState =
         remember { derivedStateOf { currentCaptureUiStateProvider().videoQuality } }
-    val videoQualityIndicatorLambda = remember(videoQualityState) {
+    val videoQualityIndicatorLambda = remember {
         @Composable { modifier: Modifier ->
             VideoQualityIcon(
                 videoQualityState.value,
@@ -381,7 +388,7 @@ private fun ContentScreen(
             currentCaptureUiStateProvider().stabilizationUiState
         }
     }
-    val stabilizationIndicatorLambda = remember(stabilizationState) {
+    val stabilizationIndicatorLambda = remember {
         @Composable { modifier: Modifier ->
             StabilizationIcon(
                 modifier = modifier,
@@ -522,10 +529,17 @@ private fun ContentScreen(
     val elapsedTimeDisplayLambda = remember(videoRecordingState) {
         @Composable { modifier: Modifier ->
             val isVisible = videoRecordingState.value is VideoRecordingState.Active
+            val disableAnimations = LocalDisableAnimations.current
             AnimatedVisibility(
                 visible = isVisible,
-                enter = fadeIn(),
-                exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
+                enter = if (disableAnimations) EnterTransition.None else fadeIn(),
+                exit = if (disableAnimations) {
+                    ExitTransition.None
+                } else {
+                    fadeOut(
+                        animationSpec = tween(delayMillis = 1_500)
+                    )
+                }
             ) {
                 val elapsedTimeModifier = remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
                 ElapsedTimeText(
@@ -551,8 +565,12 @@ private fun ContentScreen(
             if (captureModeToggleUiState is CaptureModeToggleUiState.Available) {
                 CaptureModeToggleButton(
                     uiState = captureModeToggleUiState,
-                    quickSettingsController = quickSettingsController,
-                    snackBarController = snackBarController,
+                    onChangeCaptureMode = { newCaptureMode ->
+                        quickSettingsController?.setCaptureMode(newCaptureMode)
+                    },
+                    onToggleWhenDisabled = { disableRationale ->
+                        snackBarController?.enqueueDisabledHdrToggleSnackBar(disableRationale)
+                    },
                     modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
                 )
             }
@@ -566,17 +584,24 @@ private fun ContentScreen(
     ) {
         @Composable { modifier: Modifier ->
             val isQuickSettingsVisible = !isVideoRecordingActive.value
+            val disableAnimations = LocalDisableAnimations.current
             AnimatedVisibility(
                 visible = isQuickSettingsVisible,
-                enter = fadeIn(),
-                exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
+                enter = if (disableAnimations) EnterTransition.None else fadeIn(),
+                exit = if (disableAnimations) {
+                    ExitTransition.None
+                } else {
+                    fadeOut(
+                        animationSpec = tween(delayMillis = 1_500)
+                    )
+                }
             ) {
-                quickSettingsController?.let { quickSettingsController ->
+                quickSettingsController?.let { controller ->
                     ToggleQuickSettingsButton(
-                        modifier = modifier,
                         isOpen = (quickSettingsState.value as? QuickSettingsUiState.Available)
                             ?.quickSettingsIsOpen == true,
-                        quickSettingsController = quickSettingsController
+                        onClick = controller::toggleQuickSettings,
+                        modifier = modifier
                     )
                 }
             }
@@ -589,15 +614,48 @@ private fun ContentScreen(
         onNavigateToSettings
     ) {
         @Composable { modifier: Modifier ->
-            quickSettingsController?.let { quickSettingsController ->
+            quickSettingsController?.let { controller ->
                 QuickSettingsBottomSheet(
                     modifier = modifier,
                     quickSettingsUiState = quickSettingsState.value,
                     onNavigateToSettings = {
-                        quickSettingsController.toggleQuickSettings()
+                        controller.toggleQuickSettings()
                         onNavigateToSettings()
                     },
-                    quickSettingsController = quickSettingsController
+                    onEvent = { event ->
+                        when (event) {
+                            is QuickSettingsEvent.SetFlashMode ->
+                                controller.setFlash(event.flashMode)
+
+                            is QuickSettingsEvent.SetCaptureMode ->
+                                controller.setCaptureMode(event.captureMode)
+
+                            is QuickSettingsEvent.SetAspectRatio ->
+                                controller.setAspectRatio(event.aspectRatio)
+
+                            is QuickSettingsEvent.SetHdr -> {
+                                val captureMode =
+                                    (quickSettingsState.value as? QuickSettingsUiState.Available)
+                                        ?.captureModeUiState as? CaptureModeUiState.Available
+                                val selectedCaptureMode =
+                                    captureMode?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
+                                when (selectedCaptureMode) {
+                                    CaptureMode.STANDARD -> {
+                                        controller.setDynamicRange(event.dynamicRange)
+                                        controller.setImageFormat(event.imageFormat)
+                                    }
+
+                                    CaptureMode.VIDEO_ONLY ->
+                                        controller.setDynamicRange(event.dynamicRange)
+                                    CaptureMode.IMAGE_ONLY ->
+                                        controller.setImageFormat(event.imageFormat)
+                                }
+                            }
+
+                            is QuickSettingsEvent.ToggleSheet -> controller.toggleQuickSettings()
+                        }
+                    },
+                    showMoreSettingsButton = true
                 )
             }
             Unit
