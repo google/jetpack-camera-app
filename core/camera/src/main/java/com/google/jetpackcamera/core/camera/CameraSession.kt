@@ -89,11 +89,13 @@ import com.google.jetpackcamera.settings.model.CameraConstraints
 import java.io.File
 import java.io.FileNotFoundException
 import java.util.concurrent.Executor
+import javax.inject.Provider
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -214,7 +216,7 @@ internal suspend fun runSingleCameraSession(
                 }
                 if (cameraEffect == null) {
                     sessionSettings.activeCameraEffect?.let { key ->
-                        cameraEffect = cameraEffectProviders[key]?.get()?.create(this@sessionScope)
+                        cameraEffect = cameraEffectProviders[key]?.createEffect(this@sessionScope)
                     }
                 }
                 val useCaseGroup = createUseCaseGroup(
@@ -1395,3 +1397,6 @@ private fun publishStabilizationMode(result: TotalCaptureResult) {
         }
     }
 }
+
+private fun Provider<CameraEffectProvider>.createEffect(scope: CoroutineScope): CameraEffect =
+    get().create(scope)
