@@ -63,6 +63,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureEvent
@@ -893,13 +894,13 @@ private val FAKE_PREVIEW_UI_STATE_READY = CaptureUiState.Ready(
 )
 
 private val FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(
-    videoRecordingState = VideoRecordingState.Active.Recording(0, 0.0, 0),
+    videoRecordingState = VideoRecordingState.Active.Recording(0, AudioStreamState.Active(0.0), 0),
     captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording,
-    audioUiState = AudioUiState.Enabled.On(1.0)
+    audioUiState = AudioUiState.Enabled.On(1.0, true)
 )
 
 private val FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(
-    videoRecordingState = VideoRecordingState.Active.Recording(0, 0.0, 0),
+    videoRecordingState = VideoRecordingState.Active.Recording(0, AudioStreamState.Active(0.0), 0),
     captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording,
-    audioUiState = AudioUiState.Enabled.On(1.0)
+    audioUiState = AudioUiState.Enabled.On(1.0, true)
 )

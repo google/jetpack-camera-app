@@ -32,6 +32,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+            isIncludeAndroidResources = true
+        }
+    }
+
+
     flavorDimensions += "flavor"
     productFlavors {
         create("stable") {
@@ -60,6 +68,7 @@ dependencies {
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
+    implementation(libs.androidx.foundation.layout)
 
     // AndroidX Core KTX
     implementation(libs.androidx.core.ktx)
