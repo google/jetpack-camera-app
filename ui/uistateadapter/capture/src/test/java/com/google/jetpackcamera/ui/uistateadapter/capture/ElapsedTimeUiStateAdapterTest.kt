@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
@@ -31,7 +32,7 @@ class ElapsedTimeUiStateAdapterTest {
         val cameraState = CameraState(
             videoRecordingState = VideoRecordingState.Active.Recording(
                 maxDurationMillis = 0L,
-                audioAmplitude = 0.0,
+                audioStreamState = AudioStreamState.Active(0.0),
                 elapsedTimeNanos = 123456L
             )
         )
@@ -47,7 +48,7 @@ class ElapsedTimeUiStateAdapterTest {
         val cameraState = CameraState(
             videoRecordingState = VideoRecordingState.Active.Paused(
                 maxDurationMillis = 0L,
-                audioAmplitude = 0.0,
+                audioStreamState = AudioStreamState.Active(0.0),
                 elapsedTimeNanos = 654321L
             )
         )

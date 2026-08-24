@@ -294,7 +294,7 @@ fun AmplitudeToggleButton(
                         is AudioUiState.Disabled,
                         AudioUiState.Enabled.Mute -> AudioInputState.OFF
                         is AudioUiState.Enabled.On -> {
-                            if (audioUiState.amplitude > 0.0) {
+                            if (audioUiState.isAudioStreamActive || audioUiState.amplitude > 0.0) {
                                 AudioInputState.INCOMING
                             } else {
                                 AudioInputState.READY
