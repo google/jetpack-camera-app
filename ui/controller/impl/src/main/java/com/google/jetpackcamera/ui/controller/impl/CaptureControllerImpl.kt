@@ -69,9 +69,7 @@ class CaptureControllerImpl(
     private val externalCapturesCallback: () -> Pair<SaveLocation, IntProgress?>,
     override val captureEvents: Channel<CaptureEvent>,
     private val imageWellController: ImageWellController? = null,
-    private val imageWellController: ImageWellController? = null,
-    private val onImageCaptureComplete: ((Uri) -> Unit)? = null,
-    private val onVideoCaptureComplete: ((Uri) -> Unit)? = null,
+    private val onImageCached: ((Uri) -> Unit)? = null,
     private val onVideoCached: ((Uri) -> Unit)? = null,
     coroutineContext: CoroutineContext
 ) : CaptureController {
