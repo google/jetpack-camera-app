@@ -1,6 +1,7 @@
 [versions]
 # Used directly in build.gradle.kts files
-compileSdk = "36"
+compileSdk = "37"
+compileSdkMinor = "1"
 desugar_jdk_libs = "2.1.5"
 orchestrator = "1.6.1"
 minSdk = "24"
