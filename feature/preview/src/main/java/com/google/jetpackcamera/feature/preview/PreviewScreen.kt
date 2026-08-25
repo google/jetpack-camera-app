@@ -97,7 +97,6 @@ import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
 import com.google.jetpackcamera.ui.components.capture.ZoomStateManager
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsBottomSheet
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEvent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
@@ -115,7 +114,6 @@ import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
@@ -623,40 +621,7 @@ private fun ContentScreen(
                         controller.toggleQuickSettings()
                         onNavigateToSettings()
                     },
-                    onEvent = { event ->
-                        when (event) {
-                            is QuickSettingsEvent.SetFlashMode ->
-                                controller.setFlash(event.flashMode)
-
-                            is QuickSettingsEvent.SetCaptureMode ->
-                                controller.setCaptureMode(event.captureMode)
-
-                            is QuickSettingsEvent.SetAspectRatio ->
-                                controller.setAspectRatio(event.aspectRatio)
-
-                            is QuickSettingsEvent.SetHdr -> {
-                                val captureMode =
-                                    (quickSettingsState.value as? QuickSettingsUiState.Available)
-                                        ?.captureModeUiState as? CaptureModeUiState.Available
-                                val selectedCaptureMode =
-                                    captureMode?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
-                                when (selectedCaptureMode) {
-                                    CaptureMode.STANDARD -> {
-                                        controller.setDynamicRange(event.dynamicRange)
-                                        controller.setImageFormat(event.imageFormat)
-                                    }
-
-                                    CaptureMode.VIDEO_ONLY ->
-                                        controller.setDynamicRange(event.dynamicRange)
-                                    CaptureMode.IMAGE_ONLY ->
-                                        controller.setImageFormat(event.imageFormat)
-                                }
-                            }
-
-                            is QuickSettingsEvent.ToggleSheet -> controller.toggleQuickSettings()
-                        }
-                    },
-                    showMoreSettingsButton = true
+                    quickSettingsController = controller
                 )
             }
             Unit
