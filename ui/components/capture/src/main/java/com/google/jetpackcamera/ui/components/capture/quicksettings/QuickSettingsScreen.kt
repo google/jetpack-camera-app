@@ -15,9 +15,8 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -81,32 +80,23 @@ fun QuickSettingsBottomSheet(
     }
 }
 
+/**
+ * Agnostic content for the Quick Settings panel containing the title header, option rows
+ * (Flash, Capture Mode, Aspect Ratio, HDR), and an optional navigation button to full settings.
+ *
+ * @param quickSettingsUiState The current [QuickSettingsUiState.Available].
+ * @param quickSettingsController The [QuickSettingsController] to handle setting changes.
+ * @param onNavigateToSettings Callback when the user navigates to full settings.
+ * @param modifier The [Modifier] to apply to the content column.
+ * @param showMoreSettingsButton Whether to show the "More settings" navigation button.
+ */
 @Composable
-private fun QuickSettingsLayout(
-    @StringRes titleRes: Int,
-    showMoreSettingsButton: Boolean,
-    onNavigateToSettings: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Column {
-        Text(
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-            text = stringResource(id = titleRes),
-            style = MaterialTheme.typography.titleLarge
-        )
-        content()
-    }
-    if (showMoreSettingsButton) {
-        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
-    }
-}
-
-@Composable
-private fun QuickSettingsContent(
+internal fun QuickSettingsContent(
     quickSettingsUiState: QuickSettingsUiState.Available,
     quickSettingsController: QuickSettingsController,
     onNavigateToSettings: () -> Unit,
-    showMoreSettingsButton: Boolean
+    modifier: Modifier = Modifier,
+    showMoreSettingsButton: Boolean = true
 ) {
     val captureMode = (quickSettingsUiState.captureModeUiState as? CaptureModeUiState.Available)
         ?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
@@ -117,11 +107,13 @@ private fun QuickSettingsContent(
         CaptureMode.STANDARD -> R.string.quick_settings_title_photo_and_video_settings
     }
 
-    QuickSettingsLayout(
-        titleRes = titleRes,
-        showMoreSettingsButton = showMoreSettingsButton,
-        onNavigateToSettings = onNavigateToSettings
-    ) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            text = stringResource(id = titleRes),
+            style = MaterialTheme.typography.titleLarge
+        )
+
         // Flash Mode settings
         if (quickSettingsUiState.flashModeUiState is FlashModeUiState.Available) {
             FlashRow(
@@ -131,8 +123,7 @@ private fun QuickSettingsContent(
         }
 
         // Capture Mode settings (Standard only)
-        if (captureMode == CaptureMode.STANDARD &&
-            quickSettingsUiState.captureModeUiState is CaptureModeUiState.Available
+        if (captureMode == CaptureMode.STANDARD
         ) {
             CaptureModeRow(
                 onSetCaptureMode = quickSettingsController::setCaptureMode,
@@ -165,6 +156,13 @@ private fun QuickSettingsContent(
                     }
                 },
                 hdrUiState = quickSettingsUiState.hdrUiState
+            )
+        }
+
+        if (showMoreSettingsButton) {
+            QuickNavSettings(
+                onNavigateToSettings = onNavigateToSettings,
+                modifier = Modifier.padding(top = 12.dp)
             )
         }
     }
