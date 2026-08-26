@@ -57,8 +57,8 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
  * @param externalCapturesCallback Callback for getting external capture information.
  * @property captureEvents Channel for sending capture-related events.
  * @param imageWellController Controller for managing the image well UI.
- * @param onImageCached Callback invoked when an image is saved to cache.
- * @param onVideoCached Callback invoked when a video is saved to cache.
+ * @param onImageCaptureComplete Callback invoked when an image capture completes.
+ * @param onVideoCaptureComplete Callback invoked when a video capture completes.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class CaptureControllerImpl(
@@ -69,8 +69,8 @@ class CaptureControllerImpl(
     private val externalCapturesCallback: () -> Pair<SaveLocation, IntProgress?>,
     override val captureEvents: Channel<CaptureEvent>,
     private val imageWellController: ImageWellController? = null,
-    private val onImageCached: ((Uri) -> Unit)? = null,
-    private val onVideoCached: ((Uri) -> Unit)? = null,
+    private val onImageCaptureComplete: ((Uri) -> Unit)? = null,
+    private val onVideoCaptureComplete: ((Uri) -> Unit)? = null,
     coroutineContext: CoroutineContext
 ) : CaptureController {
 
@@ -115,7 +115,7 @@ class CaptureControllerImpl(
                         imageWellController?.updateLastCapturedMedia()
                     } else {
                         savedUri?.let { uri ->
-                            onImageCached?.invoke(uri)
+                            onImageCaptureComplete?.invoke(uri)
                         }
                     }
                     captureEvents.trySend(event)
@@ -160,7 +160,7 @@ class CaptureControllerImpl(
                             if (saveLocation !is SaveLocation.Cache) {
                                 imageWellController?.updateLastCapturedMedia()
                             } else {
-                                onVideoCached?.invoke(it.savedUri)
+                                onVideoCaptureComplete?.invoke(it.savedUri)
                             }
 
                             captureEvents.trySend(event)

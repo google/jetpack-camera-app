@@ -85,8 +85,8 @@ class CaptureControllerImplTest {
             Pair(SaveLocation.Default, null)
         },
         imageWellController: ImageWellController? = fakeImageWellController,
-        onImageCached: ((Uri) -> Unit)? = null,
-        onVideoCached: ((Uri) -> Unit)? = null
+        onImageCaptureComplete: ((Uri) -> Unit)? = null,
+        onVideoCaptureComplete: ((Uri) -> Unit)? = null
     ): CaptureControllerImpl {
         return CaptureControllerImpl(
             trackedCaptureUiState = trackedCaptureUiState,
@@ -96,8 +96,8 @@ class CaptureControllerImplTest {
             externalCapturesCallback = externalCapturesCallback,
             captureEvents = captureEvents,
             imageWellController = imageWellController,
-            onImageCached = onImageCached,
-            onVideoCached = onVideoCached,
+            onImageCaptureComplete = onImageCaptureComplete,
+            onVideoCaptureComplete = onVideoCaptureComplete,
             coroutineContext = testScope.coroutineContext
         )
     }
@@ -105,17 +105,17 @@ class CaptureControllerImplTest {
     @Test
     fun captureImage_standardSaveLocation_updatesImageWellAndEmitsSingleImageSaved() =
         runCameraTest {
-            var imageCachedUri: Uri? = null
+            var imageCaptureCompleteUri: Uri? = null
             val controller = createCaptureController(
                 saveMode = SaveMode.Immediate,
-                onImageCached = { imageCachedUri = it }
+                onImageCaptureComplete = { imageCaptureCompleteUri = it }
             )
 
             controller.captureImage(contentResolver)
             advanceUntilIdle()
 
             assertThat(fakeImageWellController.updateLastCapturedMediaCallCount).isEqualTo(1)
-            assertThat(imageCachedUri).isNull()
+            assertThat(imageCaptureCompleteUri).isNull()
             val event = captureEvents.receive()
             assertThat(event).isInstanceOf(ImageCaptureEvent.SingleImageSaved::class.java)
             assertThat(
@@ -124,19 +124,19 @@ class CaptureControllerImplTest {
         }
 
     @Test
-    fun captureImage_cacheSaveLocation_invokesOnImageCachedAndEmitsSingleImageCached() =
+    fun captureImage_cacheSaveLocation_invokesOnImageCaptureCompleteAndEmitsSingleImageCached() =
         runCameraTest {
-            var imageCachedUri: Uri? = null
+            var imageCaptureCompleteUri: Uri? = null
             val controller = createCaptureController(
                 saveMode = SaveMode.CacheAndReview(cacheDir = testCacheDir),
-                onImageCached = { imageCachedUri = it }
+                onImageCaptureComplete = { imageCaptureCompleteUri = it }
             )
 
             controller.captureImage(contentResolver)
             advanceUntilIdle()
 
             assertThat(fakeImageWellController.updateLastCapturedMediaCallCount).isEqualTo(0)
-            assertThat(imageCachedUri).isEqualTo(testImageUri)
+            assertThat(imageCaptureCompleteUri).isEqualTo(testImageUri)
             val event = captureEvents.receive()
             assertThat(event).isInstanceOf(ImageCaptureEvent.SingleImageCached::class.java)
             assertThat(
@@ -149,7 +149,7 @@ class CaptureControllerImplTest {
         val controller = createCaptureController(
             saveMode = SaveMode.Immediate,
             imageWellController = null,
-            onImageCached = null
+            onImageCaptureComplete = null
         )
 
         controller.captureImage(contentResolver)
@@ -160,19 +160,20 @@ class CaptureControllerImplTest {
     }
 
     @Test
-    fun captureImage_cacheModeWithNullOnImageCached_succeedsWithoutError() = runCameraTest {
-        val controller = createCaptureController(
-            saveMode = SaveMode.CacheAndReview(cacheDir = testCacheDir),
-            imageWellController = null,
-            onImageCached = null
-        )
+    fun captureImage_cacheModeWithNullOnImageCaptureComplete_succeedsWithoutError() =
+        runCameraTest {
+            val controller = createCaptureController(
+                saveMode = SaveMode.CacheAndReview(cacheDir = testCacheDir),
+                imageWellController = null,
+                onImageCaptureComplete = null
+            )
 
-        controller.captureImage(contentResolver)
-        advanceUntilIdle()
+            controller.captureImage(contentResolver)
+            advanceUntilIdle()
 
-        val event = captureEvents.receive()
-        assertThat(event).isInstanceOf(ImageCaptureEvent.SingleImageCached::class.java)
-    }
+            val event = captureEvents.receive()
+            assertThat(event).isInstanceOf(ImageCaptureEvent.SingleImageCached::class.java)
+        }
 
     @Test
     fun captureImage_externalVideoCaptureMode_emitsImageCaptureExternalUnsupported() =
@@ -211,36 +212,36 @@ class CaptureControllerImplTest {
     @Test
     fun startVideoRecording_standardSaveLocation_updatesImageWellAndEmitsVideoSaved() =
         runCameraTest {
-            var videoCachedUri: Uri? = null
+            var videoCaptureCompleteUri: Uri? = null
             val controller = createCaptureController(
                 saveMode = SaveMode.Immediate,
-                onVideoCached = { videoCachedUri = it }
+                onVideoCaptureComplete = { videoCaptureCompleteUri = it }
             )
 
             controller.startVideoRecording()
             advanceUntilIdle()
 
             assertThat(fakeImageWellController.updateLastCapturedMediaCallCount).isEqualTo(1)
-            assertThat(videoCachedUri).isNull()
+            assertThat(videoCaptureCompleteUri).isNull()
             val event = captureEvents.receive()
             assertThat(event).isInstanceOf(VideoCaptureEvent.VideoSaved::class.java)
             assertThat((event as VideoCaptureEvent.VideoSaved).savedUri).isEqualTo(testVideoUri)
         }
 
     @Test
-    fun startVideoRecording_cacheSaveLocation_invokesOnVideoCachedAndEmitsVideoCached() =
+    fun startVideoRecording_cacheSaveLocation_invokesOnVideoCaptureCompleteAndEmitsVideoCached() =
         runCameraTest {
-            var videoCachedUri: Uri? = null
+            var videoCaptureCompleteUri: Uri? = null
             val controller = createCaptureController(
                 saveMode = SaveMode.CacheAndReview(cacheDir = testCacheDir),
-                onVideoCached = { videoCachedUri = it }
+                onVideoCaptureComplete = { videoCaptureCompleteUri = it }
             )
 
             controller.startVideoRecording()
             advanceUntilIdle()
 
             assertThat(fakeImageWellController.updateLastCapturedMediaCallCount).isEqualTo(0)
-            assertThat(videoCachedUri).isEqualTo(testVideoUri)
+            assertThat(videoCaptureCompleteUri).isEqualTo(testVideoUri)
             val event = captureEvents.receive()
             assertThat(event).isInstanceOf(VideoCaptureEvent.VideoCached::class.java)
             assertThat((event as VideoCaptureEvent.VideoCached).capturedUri).isEqualTo(testVideoUri)
@@ -251,7 +252,7 @@ class CaptureControllerImplTest {
         val controller = createCaptureController(
             saveMode = SaveMode.Immediate,
             imageWellController = null,
-            onVideoCached = null
+            onVideoCaptureComplete = null
         )
 
         controller.startVideoRecording()

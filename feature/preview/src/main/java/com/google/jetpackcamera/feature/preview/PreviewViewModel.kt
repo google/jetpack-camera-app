@@ -225,14 +225,14 @@ class PreviewViewModel @Inject constructor(
         },
         captureEvents = incomingCaptureEvents,
         imageWellController = imageWellController,
-        onImageCached = { uri ->
+        onImageCaptureComplete = { uri ->
             viewModelScope.launch {
                 mediaRepository.setCurrentMedia(
                     MediaDescriptor.Content.Image(uri, null, true)
                 )
             }
         },
-        onVideoCached = { uri ->
+        onVideoCaptureComplete = { uri ->
             viewModelScope.launch {
                 mediaRepository.setCurrentMedia(
                     MediaDescriptor.Content.Video(uri, null, true)
