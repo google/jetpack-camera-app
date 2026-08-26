@@ -420,6 +420,7 @@ private fun ContentScreen(
     ) {
         @Composable { modifier: Modifier ->
             PreviewDisplay(
+                modifier = modifier,
                 previewDisplayUiState = previewDisplayState.value,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocusLambda,
@@ -454,6 +455,7 @@ private fun ContentScreen(
                 action()
             }
             CaptureButton(
+                modifier = modifier,
                 captureButtonUiState = captureButtonState.value,
                 isQuickSettingsOpen = (quickSettingsUiState as? QuickSettingsUiState.Available)
                     ?.quickSettingsIsOpen ?: false,
