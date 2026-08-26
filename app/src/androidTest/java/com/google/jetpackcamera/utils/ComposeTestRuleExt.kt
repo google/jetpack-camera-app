@@ -72,10 +72,14 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPT
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
+import com.google.jetpackcamera.ui.uistateadapter.capture.R
 import org.junit.AssumptionViolatedException
 
 /**
@@ -269,7 +273,7 @@ fun ComposeTestRule.pressAndDragToLockVideoRecording(
     checkWhileWaiting: () -> Unit = {
         // If the video capture fails, there is no point to continue waiting. Assert.
         onNodeWithText(
-            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+            R.string.toast_video_capture_failure
         ).assertIsNotDisplayed()
     }
 ) {
@@ -304,7 +308,7 @@ fun ComposeTestRule.longClickForVideoRecordingCheckingElapsedTime(
     checkWhileWaiting: () -> Unit = {
         // If the video capture fails, there is no point to continue waiting. Assert.
         onNodeWithText(
-            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+            R.string.toast_video_capture_failure
         ).assertIsNotDisplayed()
     }
 ) {
@@ -447,7 +451,7 @@ fun ComposeTestRule.isHdrEnabled(): Boolean {
 
 fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
     onNodeWithTag(
-        com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+        FLIP_CAMERA_BUTTON
     ).fetchSemanticsNode(
         "Flip camera button is not visible on main screen."
     ).let { node ->
@@ -486,7 +490,7 @@ fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
 
 fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
     val standardRowExists = onAllNodesWithTag(
-        com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
+        ROW_QUICK_SETTINGS_CAPTURE_MODE
     ).fetchSemanticsNodes().isNotEmpty()
 
     if (standardRowExists) {
@@ -494,14 +498,22 @@ fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
     }
 
     val aspectRatioRowExists = onAllNodesWithTag(
-        com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
+        ROW_QUICK_SETTINGS_ASPECT_RATIO
     ).fetchSemanticsNodes().isNotEmpty()
 
     if (aspectRatioRowExists) {
         return@visitQuickSettings CaptureMode.IMAGE_ONLY
     }
 
-    return@visitQuickSettings CaptureMode.VIDEO_ONLY
+    val videoSettingsTitleExists = onAllNodes(
+        hasText(getResString(CaptureR.string.quick_settings_title_video_settings))
+    ).fetchSemanticsNodes().isNotEmpty()
+
+    if (videoSettingsTitleExists) {
+        return@visitQuickSettings CaptureMode.VIDEO_ONLY
+    }
+
+    throw AssertionError("Unable to determine capture mode from quick settings")
 }
 
 // ////////////////////////////
