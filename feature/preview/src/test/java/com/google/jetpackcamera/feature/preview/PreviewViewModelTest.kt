@@ -32,7 +32,6 @@ import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -168,32 +167,6 @@ class PreviewViewModelTest {
             ).isEqualTo(LensFacing.FRONT)
         }
         assertThat(cameraSystem.isLensFacingFront).isTrue()
-    }
-
-    @Test
-    fun toggleQuickSettings() = runTest(StandardTestDispatcher()) {
-        startCameraUntilRunning()
-        // Initial state should be closed
-        assertIsReady(previewViewModel.captureUiState.value).also {
-            val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available
-            assertThat(quickSettings.quickSettingsIsOpen).isFalse()
-        }
-
-        // Toggle to open
-        previewViewModel.quickSettingsController.toggleQuickSettings()
-        advanceUntilIdle()
-        assertIsReady(previewViewModel.captureUiState.value).also {
-            val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available
-            assertThat(quickSettings.quickSettingsIsOpen).isTrue()
-        }
-
-        // Toggle back to closed
-        previewViewModel.quickSettingsController.toggleQuickSettings()
-        advanceUntilIdle()
-        assertIsReady(previewViewModel.captureUiState.value).also {
-            val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available
-            assertThat(quickSettings.quickSettingsIsOpen).isFalse()
-        }
     }
 
     private fun TestScope.startCameraUntilRunning() {

@@ -23,9 +23,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -42,23 +40,14 @@ internal class QuickSettingsControllerImplTest {
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
 
     private val cameraSystem = FakeCameraSystem()
-    private val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
     private lateinit var controller: QuickSettingsControllerImpl
 
     @Before
     fun setup() {
         controller = QuickSettingsControllerImpl(
-            trackedCaptureUiState = trackedCaptureUiState,
             cameraSystem = cameraSystem,
             coroutineContext = testDispatcher
         )
-    }
-
-    @Test
-    fun toggleQuickSettings_mutatesUiState() = testScope.runTest {
-        val initialValue = trackedCaptureUiState.value.isQuickSettingsOpen
-        controller.toggleQuickSettings()
-        assertThat(trackedCaptureUiState.value.isQuickSettingsOpen).isEqualTo(!initialValue)
     }
 
     @Test

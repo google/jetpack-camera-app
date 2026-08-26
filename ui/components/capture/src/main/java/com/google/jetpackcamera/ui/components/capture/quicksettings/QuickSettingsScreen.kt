@@ -56,19 +56,19 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickSettingsBottomSheet(
-    modifier: Modifier = Modifier,
+    isOpen: Boolean,
+    onDismiss: () -> Unit,
     quickSettingsUiState: QuickSettingsUiState,
     onNavigateToSettings: () -> Unit,
     quickSettingsController: QuickSettingsController,
+    modifier: Modifier = Modifier,
     showMoreSettingsButton: Boolean = true
 ) {
-    if (quickSettingsUiState is QuickSettingsUiState.Available &&
-        quickSettingsUiState.quickSettingsIsOpen
-    ) {
+    if (isOpen && quickSettingsUiState is QuickSettingsUiState.Available) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         QuickSettingsModalBottomSheet(
             modifier = modifier,
-            onDismiss = quickSettingsController::toggleQuickSettings,
+            onDismiss = onDismiss,
             sheetState = sheetState
         ) {
             QuickSettingsContent(
@@ -174,8 +174,6 @@ private fun QuickSettingsContent(
  * A no-op implementation of [QuickSettingsController] for use in Compose previews and tests.
  */
 class NoOpQuickSettingsController : QuickSettingsController {
-    override fun toggleQuickSettings() {}
-
     override fun setLensFacing(lensFace: LensFacing) {}
 
     override fun setFlash(flashMode: FlashMode) {}
@@ -194,6 +192,8 @@ class NoOpQuickSettingsController : QuickSettingsController {
 fun ExpandedQuickSettingsUiPreview() {
     MaterialTheme {
         QuickSettingsBottomSheet(
+            isOpen = true,
+            onDismiss = {},
             quickSettingsUiState = QuickSettingsUiState.Available(
                 aspectRatioUiState = AspectRatioUiState.Available(
                     selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
@@ -227,8 +227,7 @@ fun ExpandedQuickSettingsUiPreview() {
                         SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
                     )
                 ),
-                hdrUiState = HdrUiState.Unavailable,
-                quickSettingsIsOpen = true
+                hdrUiState = HdrUiState.Unavailable
             ),
             onNavigateToSettings = {},
             quickSettingsController = NoOpQuickSettingsController()

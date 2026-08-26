@@ -48,6 +48,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -119,7 +120,6 @@ import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
 
@@ -300,6 +300,7 @@ private fun ContentScreen(
         )
     }
 
+    var isQuickSettingsOpen by rememberSaveable { mutableStateOf(false) }
     var initialRecordingSettings by remember { mutableStateOf<InitialRecordingSettings?>(null) }
     LaunchedEffect(videoRecordingState.value) {
         with(videoRecordingState.value) {
@@ -444,36 +445,21 @@ private fun ContentScreen(
     }
     val captureButtonLambda = remember(
         captureButtonState,
-        quickSettingsState,
-        quickSettingsController,
         captureController
     ) {
         @Composable { modifier: Modifier ->
-            val quickSettingsUiState = quickSettingsState.value
-            fun runCaptureAction(action: () -> Unit) {
-                if ((quickSettingsUiState as? QuickSettingsUiState.Available)
-                        ?.quickSettingsIsOpen == true
-                ) {
-                    quickSettingsController?.toggleQuickSettings()
-                }
-                action()
-            }
             CaptureButton(
                 captureButtonUiState = captureButtonState.value,
-                isQuickSettingsOpen = (quickSettingsUiState as? QuickSettingsUiState.Available)
-                    ?.quickSettingsIsOpen ?: false,
                 onCaptureImage = {
-                    runCaptureAction {
-                        captureController?.captureImage(it)
-                    }
+                    isQuickSettingsOpen = false
+                    captureController?.captureImage(it)
                 },
                 onIncrementZoom = { targetZoom ->
                     scope.launch { zoomStateManager.incrementZoom(targetZoom, LensToZoom.PRIMARY) }
                 },
                 onStartVideoRecording = {
-                    runCaptureAction {
-                        captureController?.startVideoRecording()
-                    }
+                    isQuickSettingsOpen = false
+                    captureController?.startVideoRecording()
                 },
                 onStopVideoRecording = { captureController?.stopVideoRecording() },
                 onLockVideoRecording = { isLocked ->
@@ -578,8 +564,7 @@ private fun ContentScreen(
 
     val quickSettingsButtonLambda = remember(
         isVideoRecordingActive,
-        quickSettingsState,
-        quickSettingsController
+        isQuickSettingsOpen
     ) {
         @Composable { modifier: Modifier ->
             val isQuickSettingsVisible = !isVideoRecordingActive.value
@@ -595,19 +580,17 @@ private fun ContentScreen(
                     )
                 }
             ) {
-                quickSettingsController?.let { controller ->
-                    ToggleQuickSettingsButton(
-                        isOpen = (quickSettingsState.value as? QuickSettingsUiState.Available)
-                            ?.quickSettingsIsOpen == true,
-                        onClick = controller::toggleQuickSettings,
-                        modifier = modifier
-                    )
-                }
+                ToggleQuickSettingsButton(
+                    isOpen = isQuickSettingsOpen,
+                    onClick = { isQuickSettingsOpen = !isQuickSettingsOpen },
+                    modifier = modifier
+                )
             }
         }
     }
 
     val quickSettingsOverlayLambda = remember(
+        isQuickSettingsOpen,
         quickSettingsState,
         quickSettingsController,
         onNavigateToSettings
@@ -615,10 +598,12 @@ private fun ContentScreen(
         @Composable { modifier: Modifier ->
             quickSettingsController?.let { controller ->
                 QuickSettingsBottomSheet(
+                    isOpen = isQuickSettingsOpen,
+                    onDismiss = { isQuickSettingsOpen = false },
                     modifier = modifier,
                     quickSettingsUiState = quickSettingsState.value,
                     onNavigateToSettings = {
-                        controller.toggleQuickSettings()
+                        isQuickSettingsOpen = false
                         onNavigateToSettings()
                     },
                     quickSettingsController = controller
