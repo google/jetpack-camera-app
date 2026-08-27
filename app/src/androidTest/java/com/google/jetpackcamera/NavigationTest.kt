@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -117,7 +118,7 @@ class NavigationTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
 
         // Assert bottom sheet is not open
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsNotDisplayed()
     }
 
     @Test

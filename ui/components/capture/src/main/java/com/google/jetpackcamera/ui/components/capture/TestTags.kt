@@ -55,6 +55,7 @@ const val QUICK_SETTINGS_DROP_DOWN = "QuickSettingsDropDown"
 const val SETTINGS_BUTTON = "SettingsButton"
 
 const val QUICK_SETTINGS_BOTTOM_SHEET = "QuickSettingsBottomSheet"
+const val QUICK_SETTINGS_DRAG_HANDLE = "QuickSettingsDragHandle"
 
 const val QUICK_SETTINGS_RATIO_3_4_BUTTON = "QuickSettingsRatio3:4Button"
 const val QUICK_SETTINGS_RATIO_9_16_BUTTON = "QuickSettingsRatio9:16Button"

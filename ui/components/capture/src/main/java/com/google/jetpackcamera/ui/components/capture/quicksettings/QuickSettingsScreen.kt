@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,6 +35,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureModeRow
@@ -48,6 +51,35 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+
+/**
+ * Agnostic content for the Quick Settings panel wrapped for a BottomSheetScaffold sheet.
+ */
+@Composable
+fun QuickSettingsScaffoldContent(
+    quickSettingsUiState: QuickSettingsUiState,
+    onNavigateToSettings: () -> Unit,
+    quickSettingsController: QuickSettingsController,
+    modifier: Modifier = Modifier,
+    showMoreSettingsButton: Boolean = true
+) {
+    if (quickSettingsUiState is QuickSettingsUiState.Available) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(bottom = 24.dp)
+                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+        ) {
+            QuickSettingsContent(
+                quickSettingsUiState = quickSettingsUiState,
+                quickSettingsController = quickSettingsController,
+                onNavigateToSettings = onNavigateToSettings,
+                showMoreSettingsButton = showMoreSettingsButton
+            )
+        }
+    }
+}
 
 /**
  * The UI bottom sheet component for quick settings.

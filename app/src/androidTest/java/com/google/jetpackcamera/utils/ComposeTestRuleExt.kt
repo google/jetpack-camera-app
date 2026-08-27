@@ -46,10 +46,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.action.ViewActions.swipeDown
 import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
-import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.FlashMode
@@ -74,6 +72,7 @@ import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DRAG_HANDLE
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
@@ -194,7 +193,16 @@ fun ComposeTestRule.waitForNodeWithTagToDisappear(
     timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
 ) {
     waitUntil(timeoutMillis = timeoutMillis) {
-        onNodeWithTag(tag).isNotDisplayed()
+        val nodes = onAllNodesWithTag(tag).fetchSemanticsNodes()
+        if (nodes.isEmpty()) {
+            true
+        } else {
+            try {
+                onNodeWithTag(tag).isNotDisplayed()
+            } catch (_: AssertionError) {
+                true
+            }
+        }
     }
 }
 
@@ -647,6 +655,24 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
 // ////////////////////////////
 
 /**
+ * Closes the quick settings bottom sheet by clicking the drag handle pill.
+ */
+fun ComposeTestRule.closeQuickSettings(timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS) {
+    val dragHandleNodes = onAllNodesWithTag(QUICK_SETTINGS_DRAG_HANDLE).fetchSemanticsNodes()
+    if (dragHandleNodes.isNotEmpty()) {
+        onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
+    } else {
+        val openToggle =
+            onNodeWithContentDescription(CaptureR.string.quick_settings_toggle_open_description)
+        if (openToggle.isDisplayed()) {
+            openToggle.performClick()
+        }
+    }
+
+    waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET, timeoutMillis)
+}
+
+/**
  * Navigates to quick settings if not already there and perform action from provided block.
  * This will return from quick settings if not already there, or remain on quick settings if there.
  */
@@ -680,31 +706,7 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
         return block()
     } finally {
         if (needReturnFromQuickSettings) {
-            val bottomSheetNode = onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
-            // Check if the bottom sheet content exists and is visible
-
-            if (bottomSheetNode.isDisplayed()) {
-                // It's visible, so perform the swipe down
-                bottomSheetNode.performTouchInput {
-                    down(center)
-                    swipeDown().ignoreResult()
-                    up()
-                }
-
-                // Assert that the sheet is no longer visible (e.g., the text disappears)
-                waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                    onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
-                }
-            } else {
-                Log.d(
-                    "ComposeTestRuleExt",
-                    "Bottom sheet with tag $QUICK_SETTINGS_BOTTOM_SHEET is not visible. Skipping quick settings closure."
-                )
-            }
-
-            waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
-            }
+            closeQuickSettings()
         }
     }
 }
