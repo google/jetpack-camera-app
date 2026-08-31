@@ -131,4 +131,12 @@
 
     <!-- ImageWell -->
     <string name="image_well_content_description">View recently saved media</string>
+
+    <string name="camera_viewfinder_content_description">Camera viewfinder</string>
+
+    <!-- Focus Metering Accessibility -->
+    <string name="focus_scanning">Focusing</string>
+    <string name="focus_locked">Focused</string>
+    <string name="focus_failed">Focus failed</string>
+    <string name="focus_released">Focus released</string>
 </resources>

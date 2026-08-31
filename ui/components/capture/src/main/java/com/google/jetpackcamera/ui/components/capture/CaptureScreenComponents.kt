@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
@@ -30,6 +31,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -91,14 +93,18 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -139,7 +145,7 @@ import kotlinx.coroutines.flow.onCompletion
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
 private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
-private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
+private const val FOCUS_INDICATOR_FAILURE_DELAY = 500L
 
 /**
  * A composable that displays the elapsed time of a video recording formatted as minutes and seconds.
@@ -615,9 +621,12 @@ fun PreviewDisplay(
                 )
 
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
+                val viewfinderDescription =
+                    stringResource(R.string.camera_viewfinder_content_description)
                 CameraXViewfinder(
                     modifier = Modifier
                         .fillMaxSize()
+                        .semantics { contentDescription = viewfinderDescription }
                         .pointerInput(onFlipCamera) {
                             detectTapGestures(
                                 onDoubleTap = { offset ->
@@ -923,95 +932,165 @@ fun FlipCameraButton(
  * @param coordinateTransformer The coordinate transformer to use to map the surface coordinates
  * to screen coordinates. This should come from [CameraXViewfinder].
  */
+@VisibleForTesting
 @Composable
-private fun FocusMeteringIndicator(
+internal fun FocusMeteringIndicator(
     focusMeteringUiState: FocusMeteringUiState,
     coordinateTransformer: CoordinateTransformer
 ) {
+    var lastSpecifiedState by remember { mutableStateOf<FocusMeteringUiState.Specified?>(null) }
     if (focusMeteringUiState is FocusMeteringUiState.Specified) {
-        val disableAnimations = LocalDisableAnimations.current
-        val alpha = if (disableAnimations) {
-            1f
+        lastSpecifiedState = focusMeteringUiState
+    }
+
+    val activeState =
+        (focusMeteringUiState as? FocusMeteringUiState.Specified)
+            ?: lastSpecifiedState
+            ?: return
+
+    val disableAnimations = LocalDisableAnimations.current
+    val pulseAlpha = if (disableAnimations) {
+        1f
+    } else {
+        val transition = rememberInfiniteTransition(label = "FocusPulse")
+        val a by transition.animateFloat(
+            initialValue = 1f,
+            targetValue = 0.75f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(400),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "FocusPulseAlpha"
+        )
+        a
+    }
+
+    val currentStatus = (focusMeteringUiState as? FocusMeteringUiState.Specified)?.status
+    var showFailureIndicator by remember { mutableStateOf(false) }
+    LaunchedEffect(currentStatus) {
+        if (currentStatus == FocusMeteringUiState.Status.FAILURE) {
+            showFailureIndicator = true
+            delay(FOCUS_INDICATOR_FAILURE_DELAY)
+            showFailureIndicator = false
         } else {
-            val transition = rememberInfiniteTransition(label = "FocusPulse")
-            val a by transition.animateFloat(
-                initialValue = 1f,
-                targetValue = 0.5f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(500),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "FocusPulseAlpha"
-            )
-            a
+            showFailureIndicator = false
+        }
+    }
+
+    // Accessibility: resolve focus status strings for semantics and TalkBack
+    val focusScanningDescription = stringResource(R.string.focus_scanning)
+    val focusLockedDescription = stringResource(R.string.focus_locked)
+    val focusFailedDescription = stringResource(R.string.focus_failed)
+    val focusReleasedDescription = stringResource(R.string.focus_released)
+
+    val focusStatusDescription = when (currentStatus) {
+        FocusMeteringUiState.Status.RUNNING -> focusScanningDescription
+        FocusMeteringUiState.Status.SUCCESS -> focusLockedDescription
+        FocusMeteringUiState.Status.FAILURE -> focusFailedDescription
+        FocusMeteringUiState.Status.CANCELLED -> focusReleasedDescription
+        null -> ""
+    }
+
+    // Accessibility: announce focus state transitions to TalkBack
+    val view = LocalView.current
+    val context = LocalContext.current
+    LaunchedEffect(currentStatus) {
+        when (currentStatus) {
+            FocusMeteringUiState.Status.RUNNING ->
+                view.announceForAccessibility(context.getString(R.string.focus_scanning))
+            FocusMeteringUiState.Status.SUCCESS ->
+                view.announceForAccessibility(context.getString(R.string.focus_locked))
+            FocusMeteringUiState.Status.FAILURE ->
+                view.announceForAccessibility(context.getString(R.string.focus_failed))
+            FocusMeteringUiState.Status.CANCELLED ->
+                view.announceForAccessibility(context.getString(R.string.focus_released))
+            null -> {}
+        }
+    }
+
+    val isVisible = currentStatus == FocusMeteringUiState.Status.RUNNING ||
+        currentStatus == FocusMeteringUiState.Status.SUCCESS ||
+        showFailureIndicator
+
+    val animatedScale by animateFloatAsState(
+        targetValue = if (currentStatus == FocusMeteringUiState.Status.SUCCESS) 0.8f else 1.0f,
+        animationSpec =
+        if (disableAnimations) {
+            snap()
+        } else {
+            tween(300, easing = FastOutSlowInEasing)
+        },
+        label = "FocusIndicatorScale"
+    )
+
+    val reticleAlpha = when (currentStatus) {
+        FocusMeteringUiState.Status.RUNNING -> pulseAlpha
+        FocusMeteringUiState.Status.SUCCESS -> 0.5f
+        FocusMeteringUiState.Status.FAILURE -> 1.0f
+        FocusMeteringUiState.Status.CANCELLED, null -> {
+            when (lastSpecifiedState?.status) {
+                FocusMeteringUiState.Status.SUCCESS -> 0.5f
+                FocusMeteringUiState.Status.FAILURE -> 1.0f
+                FocusMeteringUiState.Status.RUNNING -> pulseAlpha
+                else -> 0.5f
+            }
+        }
+    }
+
+    // Map coordinates from surface coordinates back to screen coordinates
+    val tapCoords =
+        remember(
+            coordinateTransformer.transformMatrix,
+            activeState.surfaceCoordinates
+        ) {
+            Matrix().run {
+                setFrom(coordinateTransformer.transformMatrix)
+                invert()
+                map(activeState.surfaceCoordinates)
+            }
         }
 
-        // The indicator for SUCCESS/FAILURE is shown for a short duration
-        var showResultIndicator by remember { mutableStateOf(false) }
-        val status = focusMeteringUiState.status
-        LaunchedEffect(status) {
-            if (status == FocusMeteringUiState.Status.SUCCESS ||
-                status == FocusMeteringUiState.Status.FAILURE
-            ) {
-                showResultIndicator = true
-                delay(FOCUS_INDICATOR_RESULT_DELAY)
-                showResultIndicator = false
-            } else {
-                showResultIndicator = false
-            }
-        }
-        // Map coordinates from surface coordinates back to screen coordinates
-        val tapCoords =
-            remember(
-                coordinateTransformer.transformMatrix,
-                focusMeteringUiState.surfaceCoordinates
-            ) {
-                Matrix().run {
-                    setFrom(coordinateTransformer.transformMatrix)
-                    invert()
-                    map(focusMeteringUiState.surfaceCoordinates)
-                }
-            }
-        val showFocusMeteringIndicator = status == FocusMeteringUiState.Status.RUNNING
-        val isVisible = showFocusMeteringIndicator || showResultIndicator
-        AnimatedVisibility(
-            visible = isVisible,
-            enter = if (disableAnimations) {
-                EnterTransition.None
-            } else {
-                fadeIn() + scaleIn(
-                    initialScale = 1.5f
-                )
-            },
-            exit = if (disableAnimations) {
-                ExitTransition.None
-            } else {
-                fadeOut() + when (focusMeteringUiState.status) {
-                    FocusMeteringUiState.Status.SUCCESS -> scaleOut(targetScale = 0.5f)
-                    FocusMeteringUiState.Status.FAILURE -> scaleOut(targetScale = 1.5f)
-                    else -> fadeOut()
-                }
-            },
-            modifier = Modifier
-                .offset { tapCoords.round() }
-                .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = if (disableAnimations) {
+            EnterTransition.None
+        } else {
+            fadeIn() + scaleIn(
+                initialScale = 1.5f
+            )
+        },
+        exit = if (disableAnimations) {
+            ExitTransition.None
+        } else {
+            fadeOut(tween(300, easing = FastOutSlowInEasing)) + scaleOut(
+                targetScale = 1.5f,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            )
+        },
+        modifier = Modifier
+            .offset { tapCoords.round() }
+            .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
+    ) {
+        Box(
+            modifier = Modifier.size(TAP_TO_FOCUS_INDICATOR_SIZE),
+            contentAlignment = Alignment.Center
         ) {
             Box(
                 Modifier
                     .testTag(FOCUS_METERING_INDICATOR_TAG)
-                    .alpha(
-                        if (focusMeteringUiState.status == FocusMeteringUiState.Status.SUCCESS) {
-                            1f
-                        } else {
-                            alpha
-                        }
-                    )
+                    .semantics {
+                        contentDescription = focusStatusDescription
+                        liveRegion = LiveRegionMode.Polite
+                    }
+                    .graphicsLayer {
+                        alpha = reticleAlpha
+                    }
                     .border(
-                        1.dp,
+                        2.dp,
                         Color.White,
                         CircleShape
                     )
-                    .size(TAP_TO_FOCUS_INDICATOR_SIZE)
+                    .size(TAP_TO_FOCUS_INDICATOR_SIZE * animatedScale)
             )
         }
     }
