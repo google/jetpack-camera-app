@@ -15,18 +15,22 @@
  */
 package com.google.jetpackcamera.core.camera
 
+import kotlinx.coroutines.CancellationException
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
 import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.SurfaceRequest
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -41,7 +45,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-
+import kotlinx.coroutines.launch
 private const val TAG = "FocusMetering"
 private const val SCENE_CHANGE_POST_LOCK_DELAY_MILLIS = 3000L
 private const val REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES = 3
@@ -130,23 +134,8 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
                     ) {
                         delay(SCENE_CHANGE_POST_LOCK_DELAY_MILLIS)
 
-                        var consecutiveFrames = 0
-                        captureResults.filterNotNull().first { result ->
-                            val isSceneChange = result.get(CaptureResult.CONTROL_AF_SCENE_CHANGE) ==
-                                CameraMetadata.CONTROL_AF_SCENE_CHANGE_DETECTED
-                            if (isSceneChange) {
-                                consecutiveFrames++
-                            } else {
-                                consecutiveFrames = 0
-                            }
-                            consecutiveFrames >= REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES
-                        }
-                        Log.i(
-                            TAG,
-                            "*** AF SCENE CHANGE DETECTED " +
-                                "($REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES consecutive frames)! " +
-                                "Cancelling focus lock ***"
-                        )
+                        awaitClearFocusLock(captureResults)
+
                         try {
                             cameraControl.cancelFocusAndMetering().await()
                         } catch (_: CameraControl.OperationCanceledException) {
@@ -170,4 +159,55 @@ private fun SurfaceRequest.createTransformationInfoFlow(
     setTransformationInfoListener(executor, listener)
 
     awaitClose { clearTransformationInfoListener() }
+}
+
+@RequiresApi(Build.VERSION_CODES.P)
+private suspend fun awaitClearFocusLock(captureResults: StateFlow<TotalCaptureResult?>) {
+    class FallbackTimeoutException(
+        message: String
+    ) : CancellationException(message)
+
+    try {
+        coroutineScope {
+            val fallbackTimeoutJob = launch {
+                delay(15000L)
+                this@coroutineScope.cancel(
+                    FallbackTimeoutException("SceneChange fallback triggered")
+                )
+            }
+
+            var consecutiveFrames = 0
+            captureResults.filterNotNull().first { result ->
+                val sceneChangeStatus = result.get(CaptureResult.CONTROL_AF_SCENE_CHANGE)
+                if (sceneChangeStatus != null) {
+                    // Supported! Cancel the fallback timer immediately.
+                    fallbackTimeoutJob.cancel()
+
+                    val isSceneChange =
+                        sceneChangeStatus == CameraMetadata.CONTROL_AF_SCENE_CHANGE_DETECTED
+                    if (isSceneChange) {
+                        consecutiveFrames++
+                    } else {
+                        consecutiveFrames = 0
+                    }
+                    consecutiveFrames >= REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES
+                } else {
+                    false
+                }
+            }
+
+            Log.i(
+                TAG,
+                "*** AF SCENE CHANGE DETECTED " +
+                    "($REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES consecutive frames)!" +
+                    " Cancelling focus lock ***"
+            )
+        }
+    } catch (e: FallbackTimeoutException) {
+        Log.i(
+            TAG,
+            "Device did not produce AF_SCENE_CHANGE metadata within 15s timeout. " +
+                "Cancelling focus lock ***"
+        )
+    }
 }
