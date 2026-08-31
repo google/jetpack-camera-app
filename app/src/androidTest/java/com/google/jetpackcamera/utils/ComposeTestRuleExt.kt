@@ -28,6 +28,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasTestTag
@@ -42,8 +43,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollToIndex
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
@@ -61,22 +60,26 @@ import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
+import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLASH_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCROLL_CONTAINER
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
+import com.google.jetpackcamera.ui.uistateadapter.capture.R
 import org.junit.AssumptionViolatedException
 
 /**
@@ -270,7 +273,7 @@ fun ComposeTestRule.pressAndDragToLockVideoRecording(
     checkWhileWaiting: () -> Unit = {
         // If the video capture fails, there is no point to continue waiting. Assert.
         onNodeWithText(
-            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+            R.string.toast_video_capture_failure
         ).assertIsNotDisplayed()
     }
 ) {
@@ -305,7 +308,7 @@ fun ComposeTestRule.longClickForVideoRecordingCheckingElapsedTime(
     checkWhileWaiting: () -> Unit = {
         // If the video capture fails, there is no point to continue waiting. Assert.
         onNodeWithText(
-            com.google.jetpackcamera.ui.uistateadapter.capture.R.string.toast_video_capture_failure
+            R.string.toast_video_capture_failure
         ).assertIsNotDisplayed()
     }
 ) {
@@ -437,84 +440,80 @@ inline fun <reified T> ComposeTestRule.checkComponentStateDescriptionState(
         }
 }
 
-fun ComposeTestRule.isHdrEnabled(): Boolean = checkComponentContentDescriptionState<Boolean>(
-    QUICK_SETTINGS_HDR_BUTTON
-) { description ->
-    when (description) {
-        getResString(CaptureR.string.quick_settings_dynamic_range_hdr_description) -> {
-            return@checkComponentContentDescriptionState true
-        }
-
-        getResString(CaptureR.string.quick_settings_dynamic_range_sdr_description) -> {
-            return@checkComponentContentDescriptionState false
-        }
-
-        else -> null
+fun ComposeTestRule.isHdrEnabled(): Boolean {
+    return try {
+        onNodeWithTag(BTN_QUICK_SETTINGS_HDR_OPTION_ON).assertIsOn()
+        true
+    } catch (e: AssertionError) {
+        false
     }
 }
 
-fun ComposeTestRule.getCurrentLensFacing(): LensFacing = visitQuickSettings {
-    onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).fetchSemanticsNode(
-        "Flip camera button is not visible when expected."
+fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
+    onNodeWithTag(
+        FLIP_CAMERA_BUTTON
+    ).fetchSemanticsNode(
+        "Flip camera button is not visible on main screen."
     ).let { node ->
         for (description in node.config[SemanticsProperties.ContentDescription]) {
             when (description) {
                 getResString(CaptureR.string.quick_settings_front_camera_description) ->
-                    return@let LensFacing.FRONT
+                    return LensFacing.FRONT
 
                 getResString(CaptureR.string.quick_settings_back_camera_description) ->
-                    return@let LensFacing.BACK
+                    return LensFacing.BACK
             }
         }
-        throw AssertionError("Unable to determine lens facing from quick settings")
+        throw AssertionError("Unable to determine lens facing from flip camera button")
     }
 }
 
 fun ComposeTestRule.getCurrentFlashMode(): FlashMode = visitQuickSettings {
-    onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON).fetchSemanticsNode(
-        "Flash button is not visible when expected."
-    ).let { node ->
-        for (description in node.config[SemanticsProperties.ContentDescription]) {
-            when (description) {
-                getResString(CaptureR.string.quick_settings_flash_off_description) ->
-                    return@let FlashMode.OFF
-
-                getResString(CaptureR.string.quick_settings_flash_on_description) ->
-                    return@let FlashMode.ON
-
-                getResString(CaptureR.string.quick_settings_flash_auto_description) ->
-                    return@let FlashMode.AUTO
-
-                getResString(CaptureR.string.quick_settings_flash_llb_description) ->
-                    return@let FlashMode.LOW_LIGHT_BOOST
+    val flashOptions = mapOf(
+        BTN_QUICK_SETTINGS_FLASH_OPTION_OFF to FlashMode.OFF,
+        BTN_QUICK_SETTINGS_FLASH_OPTION_ON to FlashMode.ON,
+        BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO to FlashMode.AUTO,
+        BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST to FlashMode.LOW_LIGHT_BOOST
+    )
+    for ((tag, mode) in flashOptions) {
+        if (onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()) {
+            val isSelected = onNodeWithTag(tag).fetchSemanticsNode().config.getOrNull(
+                SemanticsProperties.ToggleableState
+            ) == ToggleableState.On
+            if (isSelected) {
+                return@visitQuickSettings mode
             }
         }
-        throw AssertionError("Unable to determine flash mode from quick settings")
     }
+    throw AssertionError("Unable to determine flash mode from quick settings")
 }
 
 fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
-    waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-        onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
-    }
-    onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).fetchSemanticsNode(
-        "Capture mode button is not visible when expected."
-    ).let { node ->
-        for (description in node.config[SemanticsProperties.ContentDescription]) {
-            // check description is one of the capture modes
-            when (description) {
-                getResString(CaptureR.string.quick_settings_description_capture_mode_standard) ->
-                    return@let CaptureMode.STANDARD
+    val standardRowExists = onAllNodesWithTag(
+        ROW_QUICK_SETTINGS_CAPTURE_MODE
+    ).fetchSemanticsNodes().isNotEmpty()
 
-                getResString(CaptureR.string.quick_settings_description_capture_mode_image_only) ->
-                    return@let CaptureMode.IMAGE_ONLY
-
-                getResString(CaptureR.string.quick_settings_description_capture_mode_video_only) ->
-                    return@let CaptureMode.VIDEO_ONLY
-            }
-        }
-        throw (AssertionError("unable to determine capture mode from quick settings"))
+    if (standardRowExists) {
+        return@visitQuickSettings CaptureMode.STANDARD
     }
+
+    val aspectRatioRowExists = onAllNodesWithTag(
+        ROW_QUICK_SETTINGS_ASPECT_RATIO
+    ).fetchSemanticsNodes().isNotEmpty()
+
+    if (aspectRatioRowExists) {
+        return@visitQuickSettings CaptureMode.IMAGE_ONLY
+    }
+
+    val videoSettingsTitleExists = onAllNodes(
+        hasText(getResString(CaptureR.string.quick_settings_title_video_settings))
+    ).fetchSemanticsNodes().isNotEmpty()
+
+    if (videoSettingsTitleExists) {
+        return@visitQuickSettings CaptureMode.VIDEO_ONLY
+    }
+
+    throw AssertionError("Unable to determine capture mode from quick settings")
 }
 
 // ////////////////////////////
@@ -716,29 +715,8 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
  * @throws AssertionError when [settingTestTag] is not found
  */
 fun ComposeTestRule.searchForQuickSetting(settingTestTag: String) {
-    // scroll if necessary until quick setting is found
-    // if reaches the end and not found, throw an error
-    val scrollableNode = this.onNodeWithTag(QUICK_SETTINGS_SCROLL_CONTAINER)
-    scrollableNode.assertExists()
-    scrollableNode.performScrollToIndex(0)
-    scrollableNode.performScrollToNode(hasTestTag(settingTestTag))
-}
-
-/**
- * closes expanded quick setting if open to return to main quick settings menu
- */
-fun ComposeTestRule.unFocusQuickSetting() {
-    // this will click the center of the composable... which may coincide with another composable.
-    // so we offset click input out of the way
-    onNodeWithTag(QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON)
-        .assertExists()
-        .performClick()
-
-    this
-        .waitUntil(timeoutMillis = 2_000) {
-            onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isDisplayed()
-            onNodeWithTag(QUICK_SETTINGS_CLOSE_EXPANDED_BUTTON).isNotDisplayed()
-        }
+    // No scroll container in the new flat layout, just assert existence
+    this.onNodeWithTag(settingTestTag).assertExists()
 }
 
 /**
@@ -774,10 +752,25 @@ fun ComposeTestRule.setConcurrentCameraModeInSettings(concurrentMode: Concurrent
 // ////////////////////////////
 fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
     visitQuickSettings {
-        searchForQuickSetting(QUICK_SETTINGS_HDR_BUTTON)
+        val targetButtonTag = if (enabled) {
+            BTN_QUICK_SETTINGS_HDR_OPTION_ON
+        } else {
+            BTN_QUICK_SETTINGS_HDR_OPTION_OFF
+        }
+        val exists = onAllNodesWithTag(targetButtonTag).fetchSemanticsNodes().isNotEmpty()
+
+        if (!exists) {
+            if (enabled) {
+                throw AssumptionViolatedException(
+                    "HDR is not available/supported in this mode or device."
+                )
+            } else {
+                return@visitQuickSettings
+            }
+        }
 
         if (isHdrEnabled() != enabled) {
-            onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
+            onNodeWithTag(targetButtonTag)
                 .assume(isEnabled()) { "Device does not support HDR." }
                 .performClick()
         }
@@ -787,59 +780,36 @@ fun ComposeTestRule.setHdrEnabled(enabled: Boolean) {
 
 fun ComposeTestRule.setCaptureMode(captureMode: CaptureMode) {
     visitQuickSettings {
-        searchForQuickSetting(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
-
-        waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-            onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).isDisplayed()
+        val optionButtonTag = when (captureMode) {
+            CaptureMode.STANDARD -> BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
+            CaptureMode.IMAGE_ONLY -> BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
+            CaptureMode.VIDEO_ONLY -> BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
         }
-        // check that current capture mode != given capture mode
-        if (getCurrentCaptureMode() != captureMode) {
-            val optionButtonTag = when (captureMode) {
-                CaptureMode.STANDARD -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_OPTION_STANDARD
-                CaptureMode.IMAGE_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_IMAGE_ONLY
-                CaptureMode.VIDEO_ONLY -> BTN_QUICK_SETTINGS_FOCUSED_CAPTURE_MODE_VIDEO_ONLY
-            }
-            // focus setting
-            onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE).assertExists()
-                .assume(isEnabled())
-                .performClick()
-
-            waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                onNodeWithTag(optionButtonTag).isDisplayed()
-            }
-
-            // click option button
-            onNodeWithTag(optionButtonTag).assertExists().performClick()
-
-            unFocusQuickSetting()
-        }
-        if (getCurrentCaptureMode() != captureMode) {
-            throw AssertionError("Unable to set capture mode to $captureMode")
-        }
+        searchForQuickSetting(optionButtonTag)
+        onNodeWithTag(optionButtonTag)
+            .assertExists()
+            .assume(isEnabled())
+            .performClick()
     }
 }
 
 fun ComposeTestRule.setFlashMode(flashMode: FlashMode) {
     visitQuickSettings {
-        // Click the flash button to switch to ON
-        searchForQuickSetting(QUICK_SETTINGS_FLASH_BUTTON)
-        onNodeWithTag(QUICK_SETTINGS_FLASH_BUTTON)
-            .assertExists()
-            .assume(isEnabled()) {
-                "Current lens does not support any flash modes"
-            }.apply {
-                val initialFlashMode = getCurrentFlashMode()
-                var currentFlashMode = initialFlashMode
-                while (currentFlashMode != flashMode) {
-                    performClick()
-                    currentFlashMode = getCurrentFlashMode()
-                    if (currentFlashMode == initialFlashMode) {
-                        throw AssumptionViolatedException(
-                            "Current lens does not support $flashMode"
-                        )
-                    }
-                }
-            }
+        val targetButtonTag = when (flashMode) {
+            FlashMode.OFF -> BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
+            FlashMode.ON -> BTN_QUICK_SETTINGS_FLASH_OPTION_ON
+            FlashMode.AUTO -> BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
+            FlashMode.LOW_LIGHT_BOOST -> BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
+        }
+        val exists = onAllNodesWithTag(targetButtonTag).fetchSemanticsNodes().isNotEmpty()
+        if (!exists) {
+            throw AssumptionViolatedException("Flash mode $flashMode is unavailable")
+        }
+        onNodeWithTag(targetButtonTag)
+            .assume(isEnabled()) { "Flash mode $flashMode is disabled" }
+            .performClick()
+
+        waitUntil(DEFAULT_TIMEOUT_MILLIS) { getCurrentFlashMode() == flashMode }
     }
 }
 

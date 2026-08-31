@@ -19,13 +19,11 @@ import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
-import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -40,15 +38,12 @@ import kotlinx.coroutines.launch
  * [trackedCaptureUiState].
  *
  * @param trackedCaptureUiState The state flow to update with quick settings information.
- * @param scope The coroutine scope for launching camera operations.
  * @param cameraSystem The camera system to control.
- * @param externalCaptureMode The current external capture mode.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class QuickSettingsControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     private val cameraSystem: CameraSystem,
-    private val externalCaptureMode: ExternalCaptureMode,
     coroutineContext: CoroutineContext
 ) : QuickSettingsController {
     private val job = Job(parent = coroutineContext[Job.Key])
@@ -56,12 +51,6 @@ class QuickSettingsControllerImpl(
     override fun toggleQuickSettings() {
         trackedCaptureUiState.update { old ->
             old.copy(isQuickSettingsOpen = !old.isQuickSettingsOpen)
-        }
-    }
-
-    override fun setFocusedSetting(focusedQuickSetting: FocusedQuickSetting) {
-        trackedCaptureUiState.update { old ->
-            old.copy(focusedQuickSetting = focusedQuickSetting)
         }
     }
 
@@ -86,20 +75,14 @@ class QuickSettingsControllerImpl(
     }
 
     override fun setDynamicRange(dynamicRange: DynamicRange) {
-        if (externalCaptureMode != ExternalCaptureMode.ImageCapture &&
-            externalCaptureMode != ExternalCaptureMode.MultipleImageCapture
-        ) {
-            scope.launch {
-                cameraSystem.setDynamicRange(dynamicRange)
-            }
+        scope.launch {
+            cameraSystem.setDynamicRange(dynamicRange)
         }
     }
 
     override fun setImageFormat(imageOutputFormat: ImageOutputFormat) {
-        if (externalCaptureMode != ExternalCaptureMode.VideoCapture) {
-            scope.launch {
-                cameraSystem.setImageFormat(imageOutputFormat)
-            }
+        scope.launch {
+            cameraSystem.setImageFormat(imageOutputFormat)
         }
     }
 

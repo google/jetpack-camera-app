@@ -162,23 +162,34 @@ class PreviewViewModel @Inject constructor(
             initialValue = DebugUiState.Disabled
         )
 
+    /**
+     * Controller for managing the quick settings UI panel and state.
+     */
     val quickSettingsController: QuickSettingsController = QuickSettingsControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
         cameraSystem = cameraSystemRepository.cameraSystem,
-        externalCaptureMode = externalCaptureMode,
         coroutineContext = viewModelScope.coroutineContext
     )
 
+    /**
+     * Controller for toggling and configuring debug features.
+     */
     val debugController: DebugController = DebugControllerImpl(
         cameraSystem = cameraSystemRepository.cameraSystem,
         trackedCaptureUiState = trackedCaptureUiState
     )
 
+    /**
+     * Controller for posting messages to the transient snackbar.
+     */
     val snackBarController: SnackBarController = SnackBarControllerImpl(
         snackBarUiState = _snackBarUiState,
         coroutineContext = viewModelScope.coroutineContext
     )
 
+    /**
+     * Controller for managing zoom operations and animations.
+     */
     val zoomController: ZoomController = ZoomControllerImpl(
         cameraSystem = cameraSystemRepository.cameraSystem,
         trackedCaptureUiState = trackedCaptureUiState
