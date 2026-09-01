@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.core.camera
 
-import kotlinx.coroutines.CancellationException
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
@@ -28,10 +27,11 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.SurfaceRequest
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
