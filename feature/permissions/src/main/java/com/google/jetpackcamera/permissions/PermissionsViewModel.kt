@@ -74,13 +74,17 @@ class PermissionsViewModel @Inject constructor(
  */
 @OptIn(ExperimentalPermissionsApi::class)
 fun getRequestablePermissions(permissionStates: MultiplePermissionsState): List<PermissionEnum> =
-    buildList {
+    buildSet {
         permissionStates.permissions.forEach { permissionState ->
             val permission = PermissionEnum.fromString(permissionState.permission)
-            if (!permissionState.status.isGranted) {
+            val isAnyGranted = permission.getPermissions().any { permStr ->
+                permissionStates.permissions.firstOrNull { it.permission == permStr }
+                    ?.status?.isGranted == true
+            }
+            if (!isAnyGranted) {
                 if (!permission.isOptional() || !permissionState.status.shouldShowRationale) {
                     add(permission)
                 }
             }
         }
-    }
+    }.toList()

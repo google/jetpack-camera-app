@@ -30,6 +30,8 @@
     <string name="write_storage_permission_screen_title">Allow App to Write External Storage</string>
     <string name="write_storage_permission_required_rationale">Please provide permission to write to external storage. You will be unable to save captured mages or videos if this permission is denied.</string>
     <string name="write_storage_permission_accessibility_text">An icon representing a file folder</string>
-
+    <string name="location_permission_screen_title">Enable Location</string>
+    <string name="location_permission_required_rationale">Please provide permission to access location. This allows Jetpack Camera to tag photos and videos with where they were captured.</string>
+    <string name="location_permission_accessibility_text">An icon representing a location pin</string>
 
 </resources>

@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
+import com.google.jetpackcamera.permissions.ui.LOCATION_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
 
@@ -36,6 +37,8 @@ sealed interface PermissionInfoProvider {
      * @return the String reference for the permission
      */
     fun getPermission(): String
+
+    fun getPermissions(): List<String> = listOf(getPermission())
 
     fun isOptional(): Boolean
 
@@ -122,11 +125,36 @@ enum class PermissionEnum : PermissionInfoProvider {
 
         override fun getIconAccessibilityTextResId(): Int =
             R.string.write_storage_permission_accessibility_text
+    },
+
+    LOCATION {
+        override fun getPermission(): String = Manifest.permission.ACCESS_FINE_LOCATION
+
+        override fun getPermissions(): List<String> = listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
+        override fun isOptional(): Boolean = true
+
+        override fun getTestTag(): String = LOCATION_PERMISSION_BUTTON
+
+        override fun getDrawableResId(): Int = R.drawable.ic_location_on
+
+        override fun getPermissionTitleResId(): Int = R.string.location_permission_screen_title
+
+        override fun getPermissionBodyTextResId(): Int =
+            R.string.location_permission_required_rationale
+
+        override fun getRationaleBodyTextResId(): Int? = null
+
+        override fun getIconAccessibilityTextResId(): Int =
+            R.string.location_permission_accessibility_text
     };
 
     companion object {
         fun fromString(permission: String): PermissionEnum =
-            entries.firstOrNull { it.getPermission() == permission }
+            entries.firstOrNull { it.getPermissions().contains(permission) }
                 ?: throw IllegalArgumentException("Unknown permission: $permission")
     }
 }
