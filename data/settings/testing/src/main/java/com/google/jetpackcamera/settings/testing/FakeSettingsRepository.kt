@@ -111,4 +111,11 @@ class FakeSettingsRepository(
         _defaultCameraAppSettings.value =
             _defaultCameraAppSettings.value.copy(concurrentCameraMode = concurrentCameraMode)
     }
+    fun updateLocationEnabled(locationEnabled: Boolean) {
+        println("updateLocationEnabled called with: $locationEnabled")
+        _defaultCameraAppSettings.value = _defaultCameraAppSettings.value.copy(
+            locationEnabled = locationEnabled
+        )
+        println("Now it is: ${_defaultCameraAppSettings.value.locationEnabled}")
+    }
 }
