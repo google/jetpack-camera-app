@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -428,7 +429,7 @@ private fun <T> QuickSettingsListRow(
             val enabled = isItemEnabled(selectableItem)
 
             val shapes = when {
-                items.size == 1 -> ToggleButtonDefaults.shapesFor(48.dp)
+                items.size == 1 -> ToggleButtonDefaults.shapesFor(ButtonDefaults.MinHeight)
                 index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                 index == items.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
                 else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
@@ -495,7 +496,7 @@ private fun QuickSettingToggleSelectorButton(
     onClick: () -> Unit,
     isSelected: Boolean = false,
     enabled: Boolean = true,
-    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapesFor(48.dp)
+    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapesFor(ButtonDefaults.MinHeight)
 ) {
     QuickSettingToggleSelectorButton(
         modifier = modifier,
@@ -527,7 +528,7 @@ private fun QuickSettingToggleSelectorButton(
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
     enabled: Boolean = true,
-    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapesFor(48.dp)
+    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapesFor(ButtonDefaults.MinHeight)
 ) {
     ToggleButton(
         modifier = modifier
