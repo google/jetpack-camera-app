@@ -1086,6 +1086,11 @@ internal fun FocusMeteringIndicator(
             Box(
                 Modifier
                     .testTag(FOCUS_METERING_INDICATOR_TAG)
+                    .semantics {
+                        if (focusStatusDescription.isNotEmpty()) {
+                            contentDescription = focusStatusDescription
+                        }
+                    }
                     .graphicsLayer {
                         alpha = reticleAlpha
                     }

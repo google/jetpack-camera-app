@@ -128,17 +128,21 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
 
                     updateFocusState(completionStatus)
 
-                    if (completionStatus == FocusState.Status.SUCCESS &&
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-                        captureResults != null
-                    ) {
-                        delay(SCENE_CHANGE_POST_LOCK_DELAY_MILLIS)
+                    if (completionStatus == FocusState.Status.SUCCESS) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                            captureResults != null
+                        ) {
+                            delay(SCENE_CHANGE_POST_LOCK_DELAY_MILLIS)
 
-                        awaitClearFocusLock(
-                            captureResults
-                                .filterNotNull()
-                                .map { it.get(CaptureResult.CONTROL_AF_SCENE_CHANGE) }
-                        )
+                            awaitClearFocusLock(
+                                captureResults
+                                    .filterNotNull()
+                                    .map { it.get(CaptureResult.CONTROL_AF_SCENE_CHANGE) }
+                            )
+                        } else {
+                            // Fallback for API < 28 or when captureResults is null
+                            delay(15000L)
+                        }
 
                         try {
                             cameraControl.cancelFocusAndMetering().await()
