@@ -113,4 +113,9 @@ interface SettingsDataSource {
      * Updates the default concurrent camera mode.
      */
     suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
+
+    /**
+     * Updates whether location tagging is enabled.
+     */
+    suspend fun updateLocationEnabled(locationEnabled: Boolean)
 }

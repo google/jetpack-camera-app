@@ -65,4 +65,6 @@ interface SettingsRepository {
     suspend fun updateAudioEnabled(isAudioEnabled: Boolean)
 
     suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
+
+    suspend fun updateLocationEnabled(locationEnabled: Boolean)
 }

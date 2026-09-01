@@ -35,4 +35,5 @@ internal object PreferenceKeys {
     val KEY_LOW_LIGHT_BOOST_PRIORITY = stringPreferencesKey("low_light_boost_priority")
     val KEY_TARGET_FRAME_RATE = intPreferencesKey("target_frame_rate")
     val KEY_CONCURRENT_CAMERA_MODE = stringPreferencesKey("concurrent_camera_mode")
+    val KEY_LOCATION_ENABLED = booleanPreferencesKey("location_enabled")
 }
