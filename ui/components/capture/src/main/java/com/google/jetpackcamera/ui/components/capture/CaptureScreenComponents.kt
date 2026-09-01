@@ -947,8 +947,10 @@ internal fun FocusMeteringIndicator(
     coordinateTransformer: CoordinateTransformer
 ) {
     var lastSpecifiedState by remember { mutableStateOf<FocusMeteringUiState.Specified?>(null) }
-    if (focusMeteringUiState is FocusMeteringUiState.Specified) {
-        lastSpecifiedState = focusMeteringUiState
+    androidx.compose.runtime.SideEffect {
+        if (focusMeteringUiState is FocusMeteringUiState.Specified) {
+            lastSpecifiedState = focusMeteringUiState
+        }
     }
 
     val activeState =
@@ -1086,10 +1088,6 @@ internal fun FocusMeteringIndicator(
             Box(
                 Modifier
                     .testTag(FOCUS_METERING_INDICATOR_TAG)
-                    .semantics {
-                        contentDescription = focusStatusDescription
-                        liveRegion = LiveRegionMode.Polite
-                    }
                     .graphicsLayer {
                         alpha = reticleAlpha
                     }

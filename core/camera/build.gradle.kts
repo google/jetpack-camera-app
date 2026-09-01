@@ -143,8 +143,6 @@ dependencies {
     implementation(project(":core:camera:low-light"))
     implementation(project(":core:camera:postprocess"))
 
-    testImplementation("org.mockito:mockito-core:5.11.0")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 
 }
 
