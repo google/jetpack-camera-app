@@ -24,6 +24,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
+import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -64,6 +65,7 @@ class CaptureControllerImplTest {
     private val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
     private val captureEvents = Channel<CaptureEvent>(capacity = Channel.UNLIMITED)
     private val fakeImageWellController = FakeImageWellController()
+    private val fakeLocationProvider = FakeLocationProvider()
     private lateinit var contentResolver: ContentResolver
 
     private val testImageUri = Uri.parse("content://media/external/images/media/1")
@@ -98,6 +100,7 @@ class CaptureControllerImplTest {
             imageWellController = imageWellController,
             onImageCached = onImageCached,
             onVideoCached = onVideoCached,
+            locationProvider = fakeLocationProvider,
             coroutineContext = testScope.coroutineContext
         )
     }
@@ -312,6 +315,32 @@ class CaptureControllerImplTest {
         assertThat(fakeCameraSystem.isRecordingPaused).isFalse()
     }
 
+    @Test
+    fun captureImage_passesLocationFromLocationProviderToCameraSystem() = runCameraTest {
+        val controller = createCaptureController()
+        fakeLocationProvider.setLocation(latitude = 37.4220, longitude = -122.0841)
+
+        controller.captureImage(contentResolver)
+        advanceUntilIdle()
+
+        assertThat(fakeCameraSystem.lastPictureTakenLocation).isNotNull()
+        assertThat(fakeCameraSystem.lastPictureTakenLocation?.latitude).isEqualTo(37.4220)
+        assertThat(fakeCameraSystem.lastPictureTakenLocation?.longitude).isEqualTo(-122.0841)
+    }
+
+    @Test
+    fun startVideoRecording_passesLocationFromLocationProviderToCameraSystem() = runCameraTest {
+        val controller = createCaptureController()
+        fakeLocationProvider.setLocation(latitude = 37.4220, longitude = -122.0841)
+
+        controller.startVideoRecording()
+        advanceUntilIdle()
+
+        assertThat(fakeCameraSystem.lastVideoRecordingLocation).isNotNull()
+        assertThat(fakeCameraSystem.lastVideoRecordingLocation?.latitude).isEqualTo(37.4220)
+        assertThat(fakeCameraSystem.lastVideoRecordingLocation?.longitude).isEqualTo(-122.0841)
+    }
+
     private fun runCameraTest(testBody: suspend TestScope.() -> Unit) = runTest(testDispatcher) {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             fakeCameraSystem.initialize(DEFAULT_CAMERA_APP_SETTINGS) {}
@@ -330,17 +359,19 @@ private class TestCameraSystem(private val delegate: FakeCameraSystem) :
     override suspend fun takePicture(
         contentResolver: ContentResolver,
         saveLocation: SaveLocation,
+        location: android.location.Location?,
         onCaptureStarted: () -> Unit
     ): ImageCapture.OutputFileResults {
-        delegate.takePicture(onCaptureStarted)
+        delegate.takePicture(contentResolver, saveLocation, location, onCaptureStarted)
         return ImageCapture.OutputFileResults(savedImageUri)
     }
 
     override suspend fun startVideoRecording(
         saveLocation: SaveLocation,
+        location: android.location.Location?,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) {
-        delegate.startVideoRecording(saveLocation, onVideoRecord)
+        delegate.startVideoRecording(saveLocation, location, onVideoRecord)
         val error = videoRecordError
         if (error != null) {
             onVideoRecord(OnVideoRecordEvent.OnVideoRecordError(error))

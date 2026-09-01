@@ -22,6 +22,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
+import com.google.jetpackcamera.core.location.LocationProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
@@ -97,7 +98,8 @@ class PreviewViewModel @Inject constructor(
     private val defaultSaveMode: SaveMode,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: SettableConstraintsRepository,
-    private val mediaRepository: MediaRepository
+    private val mediaRepository: MediaRepository,
+    private val locationProvider: LocationProvider
 ) : ViewModel() {
     private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState> =
@@ -236,6 +238,7 @@ class PreviewViewModel @Inject constructor(
         },
         captureEvents = incomingCaptureEvents,
         imageWellController = imageWellController,
+        locationProvider = locationProvider,
         onImageCached = { uri ->
             viewModelScope.launch {
                 mediaRepository.setCurrentMedia(
@@ -252,6 +255,14 @@ class PreviewViewModel @Inject constructor(
         },
         coroutineContext = viewModelScope.coroutineContext
     )
+
+    fun startLocationWarmup() {
+        locationProvider.startLocationUpdates()
+    }
+
+    fun stopLocationWarmup() {
+        locationProvider.stopLocationUpdates()
+    }
 
     init {
         viewModelScope.launch {

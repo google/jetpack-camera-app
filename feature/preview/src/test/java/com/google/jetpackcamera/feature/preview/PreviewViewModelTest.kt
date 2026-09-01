@@ -21,6 +21,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
+import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
 import com.google.jetpackcamera.model.FlashMode
@@ -66,6 +67,7 @@ class PreviewViewModelTest {
             constraintsRepository = constraintsRepository,
             settingsRepository = FakeSettingsRepository(),
             mediaRepository = FakeMediaRepository(),
+            locationProvider = FakeLocationProvider(),
             savedStateHandle = SavedStateHandle(),
             defaultSaveMode = SaveMode.Immediate
         )
