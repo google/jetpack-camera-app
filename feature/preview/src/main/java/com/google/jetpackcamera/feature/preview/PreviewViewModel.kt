@@ -23,6 +23,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
+import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
@@ -161,23 +162,34 @@ class PreviewViewModel @Inject constructor(
             initialValue = DebugUiState.Disabled
         )
 
+    /**
+     * Controller for managing the quick settings UI panel and state.
+     */
     val quickSettingsController: QuickSettingsController = QuickSettingsControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
         cameraSystem = cameraSystemRepository.cameraSystem,
-        externalCaptureMode = externalCaptureMode,
         coroutineContext = viewModelScope.coroutineContext
     )
 
+    /**
+     * Controller for toggling and configuring debug features.
+     */
     val debugController: DebugController = DebugControllerImpl(
         cameraSystem = cameraSystemRepository.cameraSystem,
         trackedCaptureUiState = trackedCaptureUiState
     )
 
+    /**
+     * Controller for posting messages to the transient snackbar.
+     */
     val snackBarController: SnackBarController = SnackBarControllerImpl(
         snackBarUiState = _snackBarUiState,
         coroutineContext = viewModelScope.coroutineContext
     )
 
+    /**
+     * Controller for managing zoom operations and animations.
+     */
     val zoomController: ZoomController = ZoomControllerImpl(
         cameraSystem = cameraSystemRepository.cameraSystem,
         trackedCaptureUiState = trackedCaptureUiState
@@ -205,7 +217,6 @@ class PreviewViewModel @Inject constructor(
     val captureController: CaptureController = CaptureControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
         cameraSystem = cameraSystemRepository.cameraSystem,
-        mediaRepository = mediaRepository,
         saveMode = saveMode,
         externalCaptureMode = externalCaptureMode,
         externalCapturesCallback = {
@@ -225,6 +236,20 @@ class PreviewViewModel @Inject constructor(
         },
         captureEvents = incomingCaptureEvents,
         imageWellController = imageWellController,
+        onImageCached = { uri ->
+            viewModelScope.launch {
+                mediaRepository.setCurrentMedia(
+                    MediaDescriptor.Content.Image(uri, null, true)
+                )
+            }
+        },
+        onVideoCached = { uri ->
+            viewModelScope.launch {
+                mediaRepository.setCurrentMedia(
+                    MediaDescriptor.Content.Video(uri, null, true)
+                )
+            }
+        },
         coroutineContext = viewModelScope.coroutineContext
     )
 

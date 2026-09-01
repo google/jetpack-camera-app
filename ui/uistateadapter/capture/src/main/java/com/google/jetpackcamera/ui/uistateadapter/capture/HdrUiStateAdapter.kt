@@ -55,42 +55,42 @@ internal fun HdrUiState.Companion.from(
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
     )
-    val activeEffectTargets = cameraConstraints?.effectTargetsMap?.get(
+    val affectsImageCapture = cameraConstraints?.effectTargetsMap?.get(
         cameraAppSettings.selectedCameraEffect
-    ) ?: emptySet()
-    val affectsImageCapture = activeEffectTargets.contains(
-        com.google.jetpackcamera.model.CameraEffectTarget.IMAGE_CAPTURE
-    )
+    )?.contains(com.google.jetpackcamera.model.CameraEffectTarget.IMAGE_CAPTURE) == true
 
     return when (cameraAppSettings.captureMode) {
         CaptureMode.IMAGE_ONLY -> {
             val supportsHdrImage = cameraConstraints
                 ?.supportedImageFormatsMap?.get(affectsImageCapture)
                 ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
-            val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
-
-            if (supportsHdrImage && !isFlashHdrConflict) {
+            if (supportsHdrImage) {
+                val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
                 HdrUiState.Available(
                     selectedImageFormat = cameraAppSettings.imageFormat,
                     // Force video dynamic range to SDR in UI state when in IMAGE_ONLY mode
-                    selectedDynamicRange = DynamicRange.SDR
+                    selectedDynamicRange = DynamicRange.SDR,
+                    isSupported = !isFlashHdrConflict
                 )
             } else {
                 HdrUiState.Unavailable
             }
         }
+
         CaptureMode.VIDEO_ONLY -> {
             val supportsHdrVideo =
-                cameraConstraints?.supportedDynamicRanges?.contains(DynamicRange.HLG10) == true
-            val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
-            val isConcurrentConflict =
-                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
-
-            if (supportsHdrVideo && !isFlashHdrConflict && !isConcurrentConflict) {
+                cameraConstraints
+                    ?.supportedDynamicRanges
+                    ?.contains(DynamicRange.HLG10) == true
+            if (supportsHdrVideo) {
+                val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
+                val isConcurrentConflict =
+                    cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
                 HdrUiState.Available(
                     // Force image format to SDR (JPEG) in UI state when in VIDEO_ONLY mode
                     selectedImageFormat = ImageOutputFormat.JPEG,
-                    selectedDynamicRange = cameraAppSettings.dynamicRange
+                    selectedDynamicRange = cameraAppSettings.dynamicRange,
+                    isSupported = !isFlashHdrConflict && !isConcurrentConflict
                 )
             } else {
                 HdrUiState.Unavailable

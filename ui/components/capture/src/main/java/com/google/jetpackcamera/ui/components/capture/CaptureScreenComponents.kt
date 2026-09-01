@@ -349,8 +349,8 @@ fun AmplitudeToggleButton(
 @Composable
 fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
-    quickSettingsController: QuickSettingsController?,
-    snackBarController: SnackBarController?,
+    onChangeCaptureMode: (CaptureMode) -> Unit,
+    onToggleWhenDisabled: (DisableRationale) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Captures image (left), else captures video (right).
@@ -372,7 +372,7 @@ fun CaptureModeToggleButton(
         checked = toggleState,
         onCheckedChange = { isChecked ->
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
-            quickSettingsController?.setCaptureMode(newCaptureMode)
+            onChangeCaptureMode(newCaptureMode)
         },
         onToggleWhenDisabled = {
             val disabledReason: DisableRationale? =
@@ -385,7 +385,7 @@ fun CaptureModeToggleButton(
                             as? SingleSelectableUiState.Disabled<CaptureMode>
                         )
                         ?.disabledReason
-            disabledReason?.let { snackBarController?.enqueueDisabledHdrToggleSnackBar(it) }
+            disabledReason?.let(onToggleWhenDisabled)
         },
         enabled = enabled,
         leftIcon = if (uiState.selectedCaptureMode ==
@@ -558,7 +558,6 @@ fun PreviewDisplay(
     surfaceRequest?.let {
         BoxWithConstraints(
             modifier
-                .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black),
             contentAlignment = Alignment.TopCenter
@@ -597,6 +596,7 @@ fun PreviewDisplay(
 
             Box(
                 modifier = Modifier
+                    .testTag(PREVIEW_DISPLAY)
                     .onGloballyPositioned { coordinates ->
                         val bounds = coordinates.boundsInWindow()
                         if (targetBoundsState.value != bounds) {
@@ -914,9 +914,17 @@ fun FlipCameraButton(
             onClick = onClick,
             enabled = enabledCondition
         ) {
+            val contentDescription = when (flipLensUiState.selectedLensFacing) {
+                com.google.jetpackcamera.model.LensFacing.FRONT -> stringResource(
+                    R.string.quick_settings_front_camera_description
+                )
+                com.google.jetpackcamera.model.LensFacing.BACK -> stringResource(
+                    R.string.quick_settings_back_camera_description
+                )
+            }
             Icon(
                 painter = painterResource(R.drawable.ic_flip_camera_android),
-                contentDescription = stringResource(id = R.string.flip_camera_icon_description),
+                contentDescription = contentDescription,
                 modifier = Modifier
                     .size(IconButtonDefaults.extraLargeIconSize)
                     .rotate(animatedRotation.value)
