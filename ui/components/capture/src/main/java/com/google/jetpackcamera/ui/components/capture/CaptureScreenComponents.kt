@@ -944,24 +944,22 @@ internal fun FocusMeteringIndicator(
     focusMeteringUiState: FocusMeteringUiState,
     coordinateTransformer: CoordinateTransformer
 ) {
-    var lastSpecifiedState by remember { mutableStateOf<FocusMeteringUiState.Specified?>(null) }
-    androidx.compose.runtime.SideEffect {
-        if (focusMeteringUiState is FocusMeteringUiState.Specified) {
-            lastSpecifiedState = focusMeteringUiState
-        }
+    val lastSpecifiedState = remember { arrayOfNulls<FocusMeteringUiState.Specified>(1) }
+    if (focusMeteringUiState is FocusMeteringUiState.Specified) {
+        lastSpecifiedState[0] = focusMeteringUiState
     }
 
     val activeState =
         (focusMeteringUiState as? FocusMeteringUiState.Specified)
-            ?: lastSpecifiedState
+            ?: lastSpecifiedState[0]
             ?: return
 
     val disableAnimations = LocalDisableAnimations.current
-    val pulseAlpha = if (disableAnimations) {
-        1f
+    val pulseAlphaProvider: () -> Float = if (disableAnimations) {
+        { 1f }
     } else {
         val transition = rememberInfiniteTransition(label = "FocusPulse")
-        val a by transition.animateFloat(
+        val alphaState = transition.animateFloat(
             initialValue = 1f,
             targetValue = 0.75f,
             animationSpec = infiniteRepeatable(
@@ -970,7 +968,8 @@ internal fun FocusMeteringIndicator(
             ),
             label = "FocusPulseAlpha"
         )
-        a
+        val provider: () -> Float = { alphaState.value }
+        provider
     }
 
     val currentStatus = (focusMeteringUiState as? FocusMeteringUiState.Specified)?.status
@@ -1031,16 +1030,18 @@ internal fun FocusMeteringIndicator(
         label = "FocusIndicatorScale"
     )
 
-    val reticleAlpha = when (currentStatus) {
-        FocusMeteringUiState.Status.RUNNING -> pulseAlpha
-        FocusMeteringUiState.Status.SUCCESS -> 0.5f
-        FocusMeteringUiState.Status.FAILURE -> 1.0f
-        FocusMeteringUiState.Status.CANCELLED, null -> {
-            when (lastSpecifiedState?.status) {
-                FocusMeteringUiState.Status.SUCCESS -> 0.5f
-                FocusMeteringUiState.Status.FAILURE -> 1.0f
-                FocusMeteringUiState.Status.RUNNING -> pulseAlpha
-                else -> 0.5f
+    val reticleAlphaProvider = {
+        when (currentStatus) {
+            FocusMeteringUiState.Status.RUNNING -> pulseAlphaProvider()
+            FocusMeteringUiState.Status.SUCCESS -> 0.5f
+            FocusMeteringUiState.Status.FAILURE -> 1.0f
+            FocusMeteringUiState.Status.CANCELLED, null -> {
+                when (lastSpecifiedState[0]?.status) {
+                    FocusMeteringUiState.Status.SUCCESS -> 0.5f
+                    FocusMeteringUiState.Status.FAILURE -> 1.0f
+                    FocusMeteringUiState.Status.RUNNING -> pulseAlphaProvider()
+                    else -> 0.5f
+                }
             }
         }
     }
@@ -1092,7 +1093,7 @@ internal fun FocusMeteringIndicator(
                         }
                     }
                     .graphicsLayer {
-                        alpha = reticleAlpha
+                        alpha = reticleAlphaProvider()
                     }
                     .border(
                         2.dp,
