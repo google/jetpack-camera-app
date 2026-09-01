@@ -134,7 +134,11 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
                     ) {
                         delay(SCENE_CHANGE_POST_LOCK_DELAY_MILLIS)
 
-                        awaitClearFocusLock(captureResults)
+                        awaitClearFocusLock(
+                            captureResults
+                                .filterNotNull()
+                                .map { it.get(CaptureResult.CONTROL_AF_SCENE_CHANGE) }
+                        )
 
                         try {
                             cameraControl.cancelFocusAndMetering().await()
@@ -162,7 +166,7 @@ private fun SurfaceRequest.createTransformationInfoFlow(
 }
 
 @RequiresApi(Build.VERSION_CODES.P)
-private suspend fun awaitClearFocusLock(captureResults: StateFlow<TotalCaptureResult?>) {
+internal suspend fun awaitClearFocusLock(sceneChangeStatusFlow: Flow<Int?>) {
     class FallbackTimeoutException(
         message: String
     ) : CancellationException(message)
@@ -177,8 +181,7 @@ private suspend fun awaitClearFocusLock(captureResults: StateFlow<TotalCaptureRe
             }
 
             var consecutiveFrames = 0
-            captureResults.filterNotNull().first { result ->
-                val sceneChangeStatus = result.get(CaptureResult.CONTROL_AF_SCENE_CHANGE)
+            sceneChangeStatusFlow.first { sceneChangeStatus ->
                 if (sceneChangeStatus != null) {
                     // Supported! Cancel the fallback timer immediately.
                     fallbackTimeoutJob.cancel()
