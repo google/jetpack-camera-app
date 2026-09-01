@@ -62,12 +62,16 @@ class LocationProviderImpl @Inject constructor(
     }
 
     override fun getCachedLocation(): Location? {
-        val location = cachedLocation.get() ?: return null
-        if (!isValidLocation(location) || isStale(location)) {
-            cachedLocation.set(null)
-            return null
+        while (true) {
+            val location = cachedLocation.get() ?: return null
+            if (!isValidLocation(location) || isStale(location)) {
+                if (cachedLocation.compareAndSet(location, null)) {
+                    return null
+                }
+            } else {
+                return location
+            }
         }
-        return location
     }
 
     override suspend fun getCurrentLocation(): Location? {
@@ -129,9 +133,15 @@ class LocationProviderImpl @Inject constructor(
     private fun handleLocationUpdate(location: Location) {
         if (!isValidLocation(location)) return
 
-        val oldLoc = cachedLocation.get()
-        if (oldLoc == null || location.accuracy <= oldLoc.accuracy || isStale(oldLoc)) {
-            cachedLocation.set(location)
+        while (true) {
+            val oldLoc = cachedLocation.get()
+            if (oldLoc == null || location.accuracy <= oldLoc.accuracy || isStale(oldLoc)) {
+                if (cachedLocation.compareAndSet(oldLoc, location)) {
+                    break
+                }
+            } else {
+                break
+            }
         }
 
         // 50m accuracy threshold
