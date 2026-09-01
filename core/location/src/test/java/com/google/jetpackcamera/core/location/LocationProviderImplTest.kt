@@ -47,7 +47,8 @@ class LocationProviderImplTest {
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         shadowLocationManager = shadowOf(locationManager)
 
-        fakeSettingsRepository = FakeSettingsRepository().apply { updateLocationEnabled(true) }
+        fakeSettingsRepository = FakeSettingsRepository()
+        kotlinx.coroutines.runBlocking { fakeSettingsRepository.updateLocationEnabled(true) }
 
         locationProvider = LocationProviderImpl(context, fakeSettingsRepository)
     }
