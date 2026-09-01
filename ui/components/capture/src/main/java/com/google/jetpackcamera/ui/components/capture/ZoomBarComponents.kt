@@ -167,12 +167,12 @@ private fun ZoomButton(
         shapes = ToggleButtonDefaults.shapesFor(buttonSize),
         contentPadding = ButtonDefaults.contentPaddingFor(buttonSize),
         colors = if (isSelected) {
-            ToggleButtonDefaults.toggleButtonColors(
+            ToggleButtonDefaults.colors(
                 containerColor = MaterialTheme.colorScheme.primaryFixed,
                 contentColor = MaterialTheme.colorScheme.onPrimaryFixed
             )
         } else {
-            ToggleButtonDefaults.toggleButtonColors(
+            ToggleButtonDefaults.colors(
                 containerColor = Color.White.copy(alpha = .16f),
                 contentColor = Color.White
             )
