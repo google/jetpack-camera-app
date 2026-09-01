@@ -85,6 +85,7 @@ import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
 import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
+import com.google.jetpackcamera.settings.LocationUiState
 import com.google.jetpackcamera.settings.LowLightBoostPriorityUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
 import com.google.jetpackcamera.settings.R
@@ -881,6 +882,38 @@ fun RecordingAudioSetting(
     )
 }
 
+@Composable
+fun LocationSetting(
+    modifier: Modifier = Modifier,
+    locationUiState: LocationUiState,
+    onLocationToggled: (Boolean) -> Unit
+) {
+    SwitchSettingUI(
+        modifier = modifier.testTag(BTN_SWITCH_SETTING_LOCATION_TAG),
+        title = stringResource(id = R.string.location_setting_title),
+        description = when (locationUiState) {
+            is LocationUiState.Enabled.On -> {
+                stringResource(R.string.location_setting_description_on)
+            }
+
+            is LocationUiState.Enabled.Off -> {
+                stringResource(R.string.location_setting_description_off)
+            }
+
+            is LocationUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = locationUiState.disabledRationale)
+            }
+        },
+        leadingIcon = null,
+        onSwitchChanged = onLocationToggled,
+        settingValue = when (locationUiState) {
+            is LocationUiState.Enabled.On -> true
+            is LocationUiState.Disabled, is LocationUiState.Enabled.Off -> false
+        },
+        enabled = true // always clickable to allow on-demand permission prompts
+    )
+}
+
 /**
  * A setting component that allows the user to enable or disable concurrent camera mode.
  *
@@ -1157,6 +1190,11 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
         )
 
         is DisabledRationale.PermissionRecordAudioNotGrantedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.PermissionLocationNotGrantedRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )

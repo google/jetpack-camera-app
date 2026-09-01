@@ -93,6 +93,11 @@ class SettingsViewModel @Inject constructor(
                     updatedSettings.audioEnabled,
                     grantedPerms.contains(Manifest.permission.RECORD_AUDIO)
                 ),
+                locationUiState = getLocationUiState(
+                    updatedSettings.locationEnabled,
+                    grantedPerms.contains(Manifest.permission.ACCESS_FINE_LOCATION) ||
+                        grantedPerms.contains(Manifest.permission.ACCESS_COARSE_LOCATION)
+                ),
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
                 stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
@@ -259,6 +264,24 @@ class SettingsViewModel @Inject constructor(
                     )
             )
         }
+
+    private fun getLocationUiState(
+        isLocationEnabled: Boolean,
+        permissionGranted: Boolean
+    ): LocationUiState = if (permissionGranted) {
+        if (isLocationEnabled) {
+            LocationUiState.Enabled.On()
+        } else {
+            LocationUiState.Enabled.Off()
+        }
+    } else {
+        LocationUiState.Disabled(
+            DisabledRationale
+                .PermissionLocationNotGrantedRationale(
+                    R.string.save_location_rationale_prefix
+                )
+        )
+    }
 
     @OptIn(ExperimentalPermissionsApi::class)
     fun setGrantedPermissions(multiplePermissionsState: MultiplePermissionsState) {
@@ -747,6 +770,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateAudioEnabled(isAudioEnabled)
             Log.d(TAG, "recording audio muted: $isAudioEnabled")
+        }
+    }
+
+    fun setLocationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateLocationEnabled(enabled)
+            Log.d(TAG, "set save location enabled: $enabled")
         }
     }
 

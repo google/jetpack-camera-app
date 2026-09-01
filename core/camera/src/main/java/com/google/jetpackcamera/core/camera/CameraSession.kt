@@ -25,6 +25,7 @@ import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
+import android.location.Location
 import android.os.Build
 import android.os.SystemClock
 import android.provider.MediaStore
@@ -871,6 +872,7 @@ private fun getPendingRecording(
     filePathGenerator: FilePathGenerator,
     captureTypeSuffix: String,
     saveLocation: SaveLocation,
+    location: Location?,
     onVideoRecord: (OnVideoRecordEvent) -> Unit
 ): PendingRecording? {
     Log.d(TAG, "getPendingRecording")
@@ -882,9 +884,17 @@ private fun getPendingRecording(
                         saveLocation.locationUri,
                         "rw"
                     )?.let { pfd ->
+                        val optionsBuilder = FileDescriptorOutputOptions.Builder(pfd)
+                        if (location != null) {
+                            try {
+                                optionsBuilder.setLocation(location)
+                            } catch (e: IllegalArgumentException) {
+                                // invalid location coordinates
+                            }
+                        }
                         videoCaptureUseCase.output.prepareRecording(
                             context,
-                            FileDescriptorOutputOptions.Builder(pfd).build()
+                            optionsBuilder.build()
                         )
                     } ?: run {
                         onVideoRecord(
@@ -906,7 +916,15 @@ private fun getPendingRecording(
             } else {
                 if (saveLocation.locationUri.scheme == "file") {
                     saveLocation.locationUri.path?.let { path ->
-                        val fileOutputOptions = FileOutputOptions.Builder(File(path)).build()
+                        val optionsBuilder = FileOutputOptions.Builder(File(path))
+                        if (location != null) {
+                            try {
+                                optionsBuilder.setLocation(location)
+                            } catch (e: IllegalArgumentException) {
+                                // invalid location coordinates
+                            }
+                        }
+                        val fileOutputOptions = optionsBuilder.build()
                         videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
                     } ?: run {
                         onVideoRecord(
@@ -961,14 +979,21 @@ private fun getPendingRecording(
                         )
                     }
                 }
-            val mediaStoreOutput =
+            val optionsBuilder =
                 MediaStoreOutputOptions.Builder(
                     contentResolver,
                     mediaUrl
                 )
                     .setDurationLimitMillis(maxDurationMillis)
                     .setContentValues(contentValues)
-                    .build()
+            if (location != null) {
+                try {
+                    optionsBuilder.setLocation(location)
+                } catch (e: IllegalArgumentException) {
+                    // invalid location coordinates
+                }
+            }
+            val mediaStoreOutput = optionsBuilder.build()
             videoCaptureUseCase.output.prepareRecording(context, mediaStoreOutput)
         }
 
@@ -986,9 +1011,16 @@ private fun getPendingRecording(
                 )
 
                 // 3. Build FileOutputOptions with the File object
-                val fileOutputOptions = FileOutputOptions.Builder(tempFile)
+                val optionsBuilder = FileOutputOptions.Builder(tempFile)
                     .setDurationLimitMillis(maxDurationMillis)
-                    .build()
+                if (location != null) {
+                    try {
+                        optionsBuilder.setLocation(location)
+                    } catch (e: IllegalArgumentException) {
+                        // invalid location coordinates
+                    }
+                }
+                val fileOutputOptions = optionsBuilder.build()
 
                 // 4. Prepare the recording
                 videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
@@ -1178,6 +1210,7 @@ private suspend fun runVideoRecording(
     maxDurationMillis: Long,
     transientSettings: StateFlow<TransientSessionSettings?>,
     saveLocation: SaveLocation,
+    location: Location?,
     videoControlEvents: Channel<VideoCaptureControlEvent>,
     onVideoRecord: (OnVideoRecordEvent) -> Unit,
     filePathGenerator: FilePathGenerator
@@ -1191,6 +1224,7 @@ private suspend fun runVideoRecording(
         filePathGenerator,
         captureTypeSuffix,
         saveLocation,
+        location,
         onVideoRecord
     )?.let {
         startVideoRecordingInternal(
@@ -1258,6 +1292,7 @@ internal suspend fun processVideoControlEvents(
                     event.maxVideoDuration,
                     transientSettings,
                     event.saveLocation,
+                    event.location,
                     videoCaptureControlEvents,
                     event.onVideoRecord,
                     filePathGenerator

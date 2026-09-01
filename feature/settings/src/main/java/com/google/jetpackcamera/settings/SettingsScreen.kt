@@ -37,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
@@ -53,6 +54,7 @@ import com.google.jetpackcamera.settings.ui.ConcurrentCameraSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
+import com.google.jetpackcamera.settings.ui.LocationSetting
 import com.google.jetpackcamera.settings.ui.LowLightBoostPrioritySetting
 import com.google.jetpackcamera.settings.ui.MaxVideoDurationSetting
 import com.google.jetpackcamera.settings.ui.RecordingAudioSetting
@@ -78,6 +80,17 @@ fun SettingsScreen(
 ) {
     val settingsUiState by viewModel.settingsUiState.collectAsState()
 
+    val permissionStates = rememberMultiplePermissionsState(
+        permissions =
+        listOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    )
+
     SettingsScreen(
         uiState = settingsUiState,
         versionInfo = versionInfo,
@@ -93,15 +106,25 @@ fun SettingsScreen(
         setDarkMode = viewModel::setDarkMode,
         setVideoQuality = viewModel::setVideoQuality,
         setLowLightBoostPriority = viewModel::setLowLightBoostPriority,
-        setConcurrentCameraMode = viewModel::setConcurrentCameraMode
-    )
-    val permissionStates = rememberMultiplePermissionsState(
-        permissions =
-        listOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
+        setConcurrentCameraMode = viewModel::setConcurrentCameraMode,
+        setLocationEnabled = { enabled ->
+            if (enabled) {
+                val hasLocationPermission = permissionStates.permissions.any {
+                    (
+                        it.permission == Manifest.permission.ACCESS_FINE_LOCATION ||
+                            it.permission == Manifest.permission.ACCESS_COARSE_LOCATION
+                        ) &&
+                        it.status.isGranted
+                }
+                if (hasLocationPermission) {
+                    viewModel.setLocationEnabled(true)
+                } else {
+                    permissionStates.launchMultiplePermissionRequest()
+                }
+            } else {
+                viewModel.setLocationEnabled(false)
+            }
+        }
     )
 
     viewModel.setGrantedPermissions(permissionStates)
@@ -124,7 +147,8 @@ private fun SettingsScreen(
     setDarkMode: (DarkMode) -> Unit = {},
     setVideoQuality: (VideoQuality) -> Unit = {},
     setLowLightBoostPriority: (LowLightBoostPriority) -> Unit = {},
-    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {}
+    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {},
+    setLocationEnabled: (Boolean) -> Unit = {}
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
         rememberTopAppBarState()
@@ -162,7 +186,8 @@ private fun SettingsScreen(
                     setDarkMode = setDarkMode,
                     setVideoQuality = setVideoQuality,
                     setLowLightBoostPriority = setLowLightBoostPriority,
-                    setConcurrentCameraMode = setConcurrentCameraMode
+                    setConcurrentCameraMode = setConcurrentCameraMode,
+                    setLocationEnabled = setLocationEnabled
                 )
             }
         }
@@ -184,7 +209,8 @@ internal fun SettingsList(
     setVideoQuality: (VideoQuality) -> Unit = {},
     setMaxVideoDuration: (Long) -> Unit = {},
     setDarkMode: (DarkMode) -> Unit = {},
-    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {}
+    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit = {},
+    setLocationEnabled: (Boolean) -> Unit = {}
 ) {
     SectionHeader(title = stringResource(id = R.string.section_title_camera_settings))
 
@@ -245,6 +271,11 @@ internal fun SettingsList(
     )
 
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
+
+    LocationSetting(
+        locationUiState = uiState.locationUiState,
+        onLocationToggled = setLocationEnabled
+    )
 
     DarkModeSetting(
         darkModeUiState = uiState.darkModeUiState,

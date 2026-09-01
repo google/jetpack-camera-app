@@ -191,6 +191,51 @@ internal class CameraAppSettingsViewModelTest {
     }
 
     @Test
+    fun setLocation_permission_granted() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        settingsViewModel.setGrantedPermissions(
+            mutableSetOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        )
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialLocationState = assertIsEnabled(initialState).locationUiState
+        // assert that locationUiState is Enabled.Off
+        assertThat(initialLocationState).isInstanceOf(LocationUiState.Enabled.Off::class.java)
+
+        val nextLocationUiState = LocationUiState.Enabled.On()
+        settingsViewModel.setLocationEnabled(true)
+
+        advanceUntilIdle()
+
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.locationUiState).isEqualTo(nextLocationUiState)
+        }
+    }
+
+    @Test
+    fun setLocation_permission_not_granted() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialLocationState = assertIsEnabled(initialState).locationUiState
+        // assert that locationUiState is disabled
+        assertThat(initialLocationState).isNotInstanceOf(LocationUiState.Enabled::class.java)
+
+        settingsViewModel.setLocationEnabled(true)
+
+        advanceUntilIdle()
+
+        // ensure still disabled
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.locationUiState).isNotInstanceOf(LocationUiState.Enabled::class.java)
+        }
+    }
+
+    @Test
     fun setDefaultToFrontCamera() = runTest(StandardTestDispatcher()) {
         // Wait for first Enabled state
         val initialState = settingsViewModel.settingsUiState.first {

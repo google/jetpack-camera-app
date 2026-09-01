@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.core.camera
 
+import android.location.Location
 import com.google.jetpackcamera.model.SaveLocation
 
 /**
@@ -30,6 +31,7 @@ internal sealed interface VideoCaptureControlEvent {
     class StartRecordingEvent(
         val saveLocation: SaveLocation,
         val maxVideoDuration: Long,
+        val location: Location? = null,
         val onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) : VideoCaptureControlEvent
 

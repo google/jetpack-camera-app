@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.content.ContentResolver
+import android.location.Location
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.model.AspectRatio
@@ -80,6 +81,7 @@ interface CameraSystem {
     suspend fun takePicture(
         contentResolver: ContentResolver,
         saveLocation: SaveLocation,
+        location: Location? = null,
         onCaptureStarted: (() -> Unit) = {}
     ): ImageCapture.OutputFileResults
 
@@ -91,6 +93,7 @@ interface CameraSystem {
      */
     suspend fun startVideoRecording(
         saveLocation: SaveLocation,
+        location: Location? = null,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
 
