@@ -19,6 +19,7 @@ import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.ConstraintsRepository
+import com.google.jetpackcamera.settings.api.DeveloperAppConfig
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -65,6 +66,7 @@ import kotlinx.coroutines.flow.filterNotNull
  */
 fun captureUiState(
     cameraSystem: CameraSystem,
+    appConfig: DeveloperAppConfig,
     constraintsRepository: ConstraintsRepository,
     trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     externalCaptureMode: ExternalCaptureMode,
@@ -86,6 +88,7 @@ fun captureUiState(
 
         val captureModeUiState = CaptureModeUiState.from(
             systemConstraints,
+            appConfig.captureMode.uiRestriction,
             cameraAppSettings,
             externalCaptureMode
         )
@@ -164,7 +167,8 @@ fun captureUiState(
                 systemConstraints,
                 cameraAppSettings,
                 roundedCameraState,
-                externalCaptureMode
+                externalCaptureMode,
+                appConfig.captureMode.uiRestriction
             ),
             hdrUiState = hdrUiState,
             focusMeteringUiState = focusMeteringUiState,
@@ -193,6 +197,7 @@ internal fun roundVideoRecordingState(
         is VideoRecordingState.Active.Recording -> videoRecordingState.copy(
             elapsedTimeNanos = roundedNanos
         )
+
         is VideoRecordingState.Active.Paused -> videoRecordingState.copy(
             elapsedTimeNanos = roundedNanos
         )

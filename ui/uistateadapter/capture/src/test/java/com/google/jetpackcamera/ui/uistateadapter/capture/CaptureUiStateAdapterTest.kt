@@ -25,8 +25,11 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
+import com.google.jetpackcamera.settings.api.DeveloperAppConfig
+import com.google.jetpackcamera.settings.api.SettingConfig
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
@@ -56,12 +59,22 @@ internal class CaptureUiStateAdapterTest {
     private val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
     private val externalCaptureMode = ExternalCaptureMode.Standard
 
-    private fun createCaptureUiStateFlow() = captureUiState(
-        cameraSystem = cameraSystem,
-        constraintsRepository = constraintsRepository,
-        trackedCaptureUiState = trackedCaptureUiState,
-        externalCaptureMode = externalCaptureMode
+    private val defaultAppConfig = DeveloperAppConfig(
+        aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
+        flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
+        captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
+        imageOutputFormat = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
+        videoDynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
     )
+
+    private fun createCaptureUiStateFlow(appConfig: DeveloperAppConfig = defaultAppConfig) =
+        captureUiState(
+            cameraSystem = cameraSystem,
+            appConfig = appConfig,
+            constraintsRepository = constraintsRepository,
+            trackedCaptureUiState = trackedCaptureUiState,
+            externalCaptureMode = externalCaptureMode
+        )
 
     @Test
     fun roundVideoRecordingState_nanoseconds_noRounding() {
