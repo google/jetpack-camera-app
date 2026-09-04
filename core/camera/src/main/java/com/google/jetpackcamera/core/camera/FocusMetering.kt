@@ -49,6 +49,7 @@ import kotlinx.coroutines.launch
 private const val TAG = "FocusMetering"
 private const val SCENE_CHANGE_POST_LOCK_DELAY_MILLIS = 3000L
 private const val REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES = 3
+internal const val FOCUS_LOCK_FALLBACK_TIMEOUT_MILLIS = 15000L
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal suspend fun CameraSessionContext.processFocusMeteringEvents(
@@ -141,7 +142,7 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
                             )
                         } else {
                             // Fallback for API < 28 or when captureResults is null
-                            delay(15000L)
+                            delay(FOCUS_LOCK_FALLBACK_TIMEOUT_MILLIS)
                         }
 
                         try {
@@ -178,7 +179,7 @@ internal suspend fun awaitClearFocusLock(sceneChangeStatusFlow: Flow<Int?>) {
     try {
         coroutineScope {
             val fallbackTimeoutJob = launch {
-                delay(15000L)
+                delay(FOCUS_LOCK_FALLBACK_TIMEOUT_MILLIS)
                 this@coroutineScope.cancel(
                     FallbackTimeoutException("SceneChange fallback triggered")
                 )

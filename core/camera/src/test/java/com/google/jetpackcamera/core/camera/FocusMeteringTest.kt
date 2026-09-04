@@ -43,10 +43,10 @@ class FocusMeteringTest {
             completed = true
         }
 
-        advanceTimeBy(10000)
+        advanceTimeBy(FOCUS_LOCK_FALLBACK_TIMEOUT_MILLIS - 1000)
         assertThat(completed).isFalse() // Hasn't completed yet
 
-        advanceTimeBy(6000)
+        advanceTimeBy(2000)
         assertThat(completed).isTrue() // Timeout reached!
     }
 

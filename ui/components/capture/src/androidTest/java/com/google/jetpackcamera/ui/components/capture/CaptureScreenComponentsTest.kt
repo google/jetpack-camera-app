@@ -38,6 +38,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+private val TEST_COORDINATES = Offset(100f, 100f)
+
 @RunWith(AndroidJUnit4::class)
 class CaptureScreenComponentsTest {
     @get:Rule
@@ -141,7 +143,7 @@ class CaptureScreenComponentsTest {
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 FocusMeteringIndicator(
                     focusMeteringUiState = FocusMeteringUiState.Specified(
-                        surfaceCoordinates = Offset(100f, 100f),
+                        surfaceCoordinates = TEST_COORDINATES,
                         status = FocusMeteringUiState.Status.RUNNING
                     ),
                     coordinateTransformer = coordinateTransformer
@@ -159,7 +161,7 @@ class CaptureScreenComponentsTest {
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 FocusMeteringIndicator(
                     focusMeteringUiState = FocusMeteringUiState.Specified(
-                        surfaceCoordinates = Offset(100f, 100f),
+                        surfaceCoordinates = TEST_COORDINATES,
                         status = FocusMeteringUiState.Status.SUCCESS
                     ),
                     coordinateTransformer = coordinateTransformer
@@ -179,7 +181,7 @@ class CaptureScreenComponentsTest {
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 FocusMeteringIndicator(
                     focusMeteringUiState = FocusMeteringUiState.Specified(
-                        surfaceCoordinates = Offset(100f, 100f),
+                        surfaceCoordinates = TEST_COORDINATES,
                         status = FocusMeteringUiState.Status.FAILURE
                     ),
                     coordinateTransformer = coordinateTransformer
@@ -197,7 +199,7 @@ class CaptureScreenComponentsTest {
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 FocusMeteringIndicator(
                     focusMeteringUiState = FocusMeteringUiState.Specified(
-                        surfaceCoordinates = Offset(100f, 100f),
+                        surfaceCoordinates = TEST_COORDINATES,
                         status = FocusMeteringUiState.Status.CANCELLED
                     ),
                     coordinateTransformer = coordinateTransformer
@@ -214,7 +216,7 @@ class CaptureScreenComponentsTest {
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 FocusMeteringIndicator(
                     focusMeteringUiState = FocusMeteringUiState.Specified(
-                        surfaceCoordinates = Offset(100f, 100f),
+                        surfaceCoordinates = TEST_COORDINATES,
                         status = FocusMeteringUiState.Status.RUNNING
                     ),
                     coordinateTransformer = coordinateTransformer
@@ -233,7 +235,7 @@ class CaptureScreenComponentsTest {
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 FocusMeteringIndicator(
                     focusMeteringUiState = FocusMeteringUiState.Specified(
-                        surfaceCoordinates = Offset(100f, 100f),
+                        surfaceCoordinates = TEST_COORDINATES,
                         status = FocusMeteringUiState.Status.SUCCESS
                     ),
                     coordinateTransformer = coordinateTransformer

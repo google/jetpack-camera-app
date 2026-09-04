@@ -144,6 +144,15 @@ private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
 private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
 private const val FOCUS_INDICATOR_FAILURE_DELAY = 500L
+private val FOCUS_INDICATOR_BORDER_WIDTH = 2.dp
+
+private const val FOCUS_PULSE_DURATION_MILLIS = 400
+private const val FOCUS_ANIMATION_DURATION_MILLIS = 300
+private const val FOCUS_PULSE_MIN_ALPHA = 0.75f
+private const val FOCUS_LOCKED_ALPHA = 0.5f
+private const val FOCUS_FAILURE_ALPHA = 1.0f
+private const val FOCUS_LOCKED_SCALE = 0.8f
+private const val FOCUS_BURST_SCALE = 1.5f
 
 /**
  * A composable that displays the elapsed time of a video recording formatted as minutes and seconds.
@@ -961,9 +970,9 @@ internal fun FocusMeteringIndicator(
         val transition = rememberInfiniteTransition(label = "FocusPulse")
         val alphaState = transition.animateFloat(
             initialValue = 1f,
-            targetValue = 0.75f,
+            targetValue = FOCUS_PULSE_MIN_ALPHA,
             animationSpec = infiniteRepeatable(
-                animation = tween(400),
+                animation = tween(FOCUS_PULSE_DURATION_MILLIS),
                 repeatMode = RepeatMode.Reverse
             ),
             label = "FocusPulseAlpha"
@@ -1020,12 +1029,16 @@ internal fun FocusMeteringIndicator(
         showFailureIndicator
 
     val animatedScale by animateFloatAsState(
-        targetValue = if (currentStatus == FocusMeteringUiState.Status.SUCCESS) 0.8f else 1.0f,
+        targetValue = if (currentStatus == FocusMeteringUiState.Status.SUCCESS) {
+            FOCUS_LOCKED_SCALE
+        } else {
+            1.0f
+        },
         animationSpec =
         if (disableAnimations) {
             snap()
         } else {
-            tween(300, easing = FastOutSlowInEasing)
+            tween(FOCUS_ANIMATION_DURATION_MILLIS, easing = FastOutSlowInEasing)
         },
         label = "FocusIndicatorScale"
     )
@@ -1033,14 +1046,14 @@ internal fun FocusMeteringIndicator(
     val reticleAlphaProvider = {
         when (currentStatus) {
             FocusMeteringUiState.Status.RUNNING -> pulseAlphaProvider()
-            FocusMeteringUiState.Status.SUCCESS -> 0.5f
-            FocusMeteringUiState.Status.FAILURE -> 1.0f
+            FocusMeteringUiState.Status.SUCCESS -> FOCUS_LOCKED_ALPHA
+            FocusMeteringUiState.Status.FAILURE -> FOCUS_FAILURE_ALPHA
             FocusMeteringUiState.Status.CANCELLED, null -> {
                 when (lastSpecifiedState[0]?.status) {
-                    FocusMeteringUiState.Status.SUCCESS -> 0.5f
-                    FocusMeteringUiState.Status.FAILURE -> 1.0f
+                    FocusMeteringUiState.Status.SUCCESS -> FOCUS_LOCKED_ALPHA
+                    FocusMeteringUiState.Status.FAILURE -> FOCUS_FAILURE_ALPHA
                     FocusMeteringUiState.Status.RUNNING -> pulseAlphaProvider()
-                    else -> 0.5f
+                    else -> FOCUS_LOCKED_ALPHA
                 }
             }
         }
@@ -1065,16 +1078,20 @@ internal fun FocusMeteringIndicator(
             EnterTransition.None
         } else {
             fadeIn() + scaleIn(
-                initialScale = 1.5f
+                initialScale = FOCUS_BURST_SCALE
             )
         },
         exit = if (disableAnimations) {
             ExitTransition.None
         } else {
-            fadeOut(tween(300, easing = FastOutSlowInEasing)) + scaleOut(
-                targetScale = 1.5f,
-                animationSpec = tween(300, easing = FastOutSlowInEasing)
-            )
+            fadeOut(tween(FOCUS_ANIMATION_DURATION_MILLIS, easing = FastOutSlowInEasing)) +
+                scaleOut(
+                    targetScale = FOCUS_BURST_SCALE,
+                    animationSpec = tween(
+                        FOCUS_ANIMATION_DURATION_MILLIS,
+                        easing = FastOutSlowInEasing
+                    )
+                )
         },
         modifier = Modifier
             .offset { tapCoords.round() }
@@ -1096,7 +1113,7 @@ internal fun FocusMeteringIndicator(
                         alpha = reticleAlphaProvider()
                     }
                     .border(
-                        2.dp,
+                        FOCUS_INDICATOR_BORDER_WIDTH,
                         Color.White,
                         CircleShape
                     )
