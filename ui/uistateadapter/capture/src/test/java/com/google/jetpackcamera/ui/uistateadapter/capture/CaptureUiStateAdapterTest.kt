@@ -27,7 +27,7 @@ import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.api.DeveloperAppConfig
-import com.google.jetpackcamera.settings.api.OptionRestrictionConfig
+import com.google.jetpackcamera.settings.api.OptionAvailabilityConfig
 import com.google.jetpackcamera.settings.api.SettingConfig
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -214,7 +214,7 @@ internal class CaptureUiStateAdapterTest {
         val restrictedConfig = defaultAppConfig.copy(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.IMAGE_ONLY,
-                uiRestriction = OptionRestrictionConfig.FullyRestricted
+                uiVisibility = OptionAvailabilityConfig.Hidden
             )
         )
         val uiStateFlow = createCaptureUiStateFlow(appConfig = restrictedConfig)

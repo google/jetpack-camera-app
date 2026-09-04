@@ -20,7 +20,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.api.DeveloperAppConfig
-import com.google.jetpackcamera.settings.api.OptionRestrictionConfig
+import com.google.jetpackcamera.settings.api.OptionAvailabilityConfig
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -89,7 +89,7 @@ fun captureUiState(
         val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
 
         val captureModeRestriction =
-            appConfig?.captureMode?.uiRestriction ?: OptionRestrictionConfig.NotRestricted
+            appConfig?.captureMode?.uiVisibility ?: OptionAvailabilityConfig.NotRestricted
         val captureModeUiState = CaptureModeUiState.from(
             systemConstraints,
             captureModeRestriction,

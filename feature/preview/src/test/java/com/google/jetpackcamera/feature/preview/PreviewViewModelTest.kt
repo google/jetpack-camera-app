@@ -31,7 +31,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.api.DeveloperAppConfig
-import com.google.jetpackcamera.settings.api.OptionRestrictionConfig
+import com.google.jetpackcamera.settings.api.OptionAvailabilityConfig
 import com.google.jetpackcamera.settings.api.SettingConfig
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
@@ -227,7 +227,7 @@ class PreviewViewModelTest {
             val restrictedAppConfig = defaultTestAppConfig.copy(
                 captureMode = SettingConfig(
                     defaultValue = CaptureMode.IMAGE_ONLY,
-                    uiRestriction = OptionRestrictionConfig.FullyRestricted
+                    uiVisibility = OptionAvailabilityConfig.Hidden
                 )
             )
             val viewModel = PreviewViewModel(
@@ -263,7 +263,7 @@ class PreviewViewModelTest {
             val restrictedAppConfig = defaultTestAppConfig.copy(
                 captureMode = SettingConfig(
                     defaultValue = CaptureMode.IMAGE_ONLY,
-                    uiRestriction = OptionRestrictionConfig.FullyRestricted
+                    uiVisibility = OptionAvailabilityConfig.Hidden
                 )
             )
             val viewModel = PreviewViewModel(

@@ -36,14 +36,14 @@ data class DeveloperAppConfig(
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
-        when (val restriction = flashMode.uiRestriction) {
-            is OptionRestrictionConfig.OptionsEnabled -> require(FlashMode.OFF in restriction.enabledOptions) {
+        when (val visibility = flashMode.uiVisibility) {
+            is OptionAvailabilityConfig.OptionsEnabled -> require(FlashMode.OFF in visibility.enabledOptions) {
                 "FlashMode.OFF must always be included in enabledOptions for flashMode."
             }
-            is OptionRestrictionConfig.FullyRestricted -> require(flashMode.defaultValue == FlashMode.OFF) {
-                "When flashMode is FullyRestricted, defaultValue must be FlashMode.OFF to prevent hardware flash lockup."
+            is OptionAvailabilityConfig.Hidden -> require(flashMode.defaultValue == FlashMode.OFF) {
+                "When flashMode is Hidden, defaultValue must be FlashMode.OFF."
             }
-            is OptionRestrictionConfig.NotRestricted -> Unit
+            is OptionAvailabilityConfig.NotRestricted -> Unit
         }
     }
 
@@ -67,49 +67,41 @@ data class DeveloperAppConfig(
 
 /**
  * Represents a single configurable setting in the application, including its
- * default value and any UI restrictions that apply to it.
+ * default value and UI visibility / option availability.
  *
  * @param defaultValue The initial value for this setting.
- * @param uiRestriction The restrictions applied to this setting in the UI.
+ * @param uiVisibility The UI visibility and option availability configuration for this setting.
  */
 data class SettingConfig<T>(
     val defaultValue: T,
-    val uiRestriction: OptionRestrictionConfig<T> = OptionRestrictionConfig.NotRestricted
+    val uiVisibility: OptionAvailabilityConfig<T> = OptionAvailabilityConfig.NotRestricted
 ) {
     init {
         // Validate that if options are enabled for this setting, the default value
         // is always included in the set of enabled options.
-        if (uiRestriction is OptionRestrictionConfig.OptionsEnabled) {
-            require(uiRestriction.enabledOptions.size >= 2) {
-                "enabledOptions must contain at least 2 options. Use FullyRestricted to hide the control."
-            }
-            require(defaultValue in uiRestriction.enabledOptions) {
-                "The defaultValue ('$defaultValue') must be one of the enabledOptions: ${uiRestriction.enabledOptions}"
+        if (uiVisibility is OptionAvailabilityConfig.OptionsEnabled) {
+            require(defaultValue in uiVisibility.enabledOptions) {
+                "The defaultValue ('$defaultValue') must be one of the enabledOptions: ${uiVisibility.enabledOptions}"
             }
         }
     }
 }
 
 /**
- * Represents UI option restrictions applied to a setting.
+ * Represents UI option availability applied to a setting.
  */
-sealed interface OptionRestrictionConfig<out T> {
+sealed interface OptionAvailabilityConfig<out T> {
     /** All device-supported options are available. */
-    data object NotRestricted : OptionRestrictionConfig<Nothing> {
-        operator fun invoke(): OptionRestrictionConfig<Nothing> = this
-    }
+    data object NotRestricted : OptionAvailabilityConfig<Nothing>
 
     /** The entire setting is unavailable and hidden from the UI. */
-    data object FullyRestricted : OptionRestrictionConfig<Nothing> {
-        operator fun invoke(): OptionRestrictionConfig<Nothing> = this
-    }
+    data object Hidden : OptionAvailabilityConfig<Nothing>
 
     /** ONLY the options in this set are allowed, if supported by the device. */
-    data class OptionsEnabled<T>(val enabledOptions: Set<T>) : OptionRestrictionConfig<T> {
+    data class OptionsEnabled<T>(val enabledOptions: Set<T>) : OptionAvailabilityConfig<T> {
         init {
-            require(enabledOptions.isNotEmpty()) {
-                "enabledOptions must not be empty. " +
-                    "Use FullyRestricted to disable the feature."
+            require(enabledOptions.size >= 2) {
+                "enabledOptions must contain at least 2 options. Use Hidden to lock a single option and hide the control."
             }
         }
     }

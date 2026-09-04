@@ -35,7 +35,7 @@ class RestrictionConfigTest {
         assertThrows(IllegalArgumentException::class.java) {
             SettingConfig(
                 defaultValue = FlashMode.OFF,
-                uiRestriction = OptionRestrictionConfig.OptionsEnabled(
+                uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
                     setOf(FlashMode.ON, FlashMode.AUTO)
                 )
             )
@@ -47,7 +47,7 @@ class RestrictionConfigTest {
         assertThrows(IllegalArgumentException::class.java) {
             SettingConfig(
                 defaultValue = FlashMode.OFF,
-                uiRestriction = OptionRestrictionConfig.OptionsEnabled(
+                uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
                     setOf(FlashMode.OFF)
                 )
             )
@@ -55,9 +55,12 @@ class RestrictionConfigTest {
     }
 
     @Test
-    fun optionsEnabled_whenEmpty_throwsException() {
+    fun optionsEnabled_whenLessThanTwoOptions_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
-            OptionRestrictionConfig.OptionsEnabled<FlashMode>(emptySet())
+            OptionAvailabilityConfig.OptionsEnabled<FlashMode>(emptySet())
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            OptionAvailabilityConfig.OptionsEnabled(setOf(FlashMode.OFF))
         }
     }
 
@@ -69,7 +72,7 @@ class RestrictionConfigTest {
         assertThat(config.captureMode.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.captureMode)
         assertThat(config.imageOutputFormat.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.imageFormat)
         assertThat(config.videoDynamicRange.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
-        assertThat(config.aspectRatio.uiRestriction).isEqualTo(OptionRestrictionConfig.NotRestricted)
+        assertThat(config.aspectRatio.uiVisibility).isEqualTo(OptionAvailabilityConfig.NotRestricted)
     }
 
     @Test
@@ -78,7 +81,7 @@ class RestrictionConfigTest {
             DeveloperAppConfig(
                 flashMode = SettingConfig(
                     defaultValue = FlashMode.ON,
-                    uiRestriction = OptionRestrictionConfig.OptionsEnabled(
+                    uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
                         setOf(FlashMode.ON, FlashMode.AUTO)
                     )
                 )
@@ -87,21 +90,33 @@ class RestrictionConfigTest {
     }
 
     @Test
-    fun developerAppConfig_whenFlashModeFullyRestrictedAndNotOff_throwsException() {
+    fun developerAppConfig_whenFlashModeHiddenAndNotOff_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             DeveloperAppConfig(
                 flashMode = SettingConfig(
                     defaultValue = FlashMode.ON,
-                    uiRestriction = OptionRestrictionConfig.FullyRestricted
+                    uiVisibility = OptionAvailabilityConfig.Hidden
                 )
             )
         }
     }
 
     @Test
+    fun developerAppConfig_whenFlashModeHiddenAndOff_succeeds() {
+        val config = DeveloperAppConfig(
+            flashMode = SettingConfig(
+                defaultValue = FlashMode.OFF,
+                uiVisibility = OptionAvailabilityConfig.Hidden
+            )
+        )
+        assertThat(config.flashMode.defaultValue).isEqualTo(FlashMode.OFF)
+        assertThat(config.flashMode.uiVisibility).isEqualTo(OptionAvailabilityConfig.Hidden)
+    }
+
+    @Test
     fun settingConfig_structuralEquality_matches() {
-        val config1 = SettingConfig(FlashMode.OFF, OptionRestrictionConfig.NotRestricted)
-        val config2 = SettingConfig(FlashMode.OFF, OptionRestrictionConfig.NotRestricted)
+        val config1 = SettingConfig(FlashMode.OFF, OptionAvailabilityConfig.NotRestricted)
+        val config2 = SettingConfig(FlashMode.OFF, OptionAvailabilityConfig.NotRestricted)
         assertThat(config1).isEqualTo(config2)
 
         val appConfig1 = DeveloperAppConfig()
