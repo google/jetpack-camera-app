@@ -62,21 +62,51 @@ class RestrictionConfigTest {
     }
 
     @Test
+    fun developerAppConfig_defaultConstructor_usesDefaultSettings() {
+        val config = DeveloperAppConfig()
+        assertThat(config.aspectRatio.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio)
+        assertThat(config.flashMode.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.flashMode)
+        assertThat(config.captureMode.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.captureMode)
+        assertThat(config.imageOutputFormat.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.imageFormat)
+        assertThat(config.videoDynamicRange.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
+        assertThat(config.aspectRatio.uiRestriction).isEqualTo(OptionRestrictionConfig.NotRestricted)
+    }
+
+    @Test
     fun developerAppConfig_whenFlashModeExcludesOff_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             DeveloperAppConfig(
-                aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
                 flashMode = SettingConfig(
                     defaultValue = FlashMode.ON,
                     uiRestriction = OptionRestrictionConfig.OptionsEnabled(
                         setOf(FlashMode.ON, FlashMode.AUTO)
                     )
-                ),
-                captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
-                imageOutputFormat = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
-                videoDynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
+                )
             )
         }
+    }
+
+    @Test
+    fun developerAppConfig_whenFlashModeFullyRestrictedAndNotOff_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) {
+            DeveloperAppConfig(
+                flashMode = SettingConfig(
+                    defaultValue = FlashMode.ON,
+                    uiRestriction = OptionRestrictionConfig.FullyRestricted
+                )
+            )
+        }
+    }
+
+    @Test
+    fun settingConfig_structuralEquality_matches() {
+        val config1 = SettingConfig(FlashMode.OFF, OptionRestrictionConfig.NotRestricted)
+        val config2 = SettingConfig(FlashMode.OFF, OptionRestrictionConfig.NotRestricted)
+        assertThat(config1).isEqualTo(config2)
+
+        val appConfig1 = DeveloperAppConfig()
+        val appConfig2 = DeveloperAppConfig()
+        assertThat(appConfig1).isEqualTo(appConfig2)
     }
 
     @Test
@@ -99,11 +129,26 @@ class RestrictionConfigTest {
     }
 
     @Test
+    fun toCameraAppSettings_withCustomDefaults_preservesUnoverriddenSettings() {
+        val customDefaults = DEFAULT_CAMERA_APP_SETTINGS.copy(
+            maxVideoDurationMillis = 60_000L
+        )
+        val developerConfig = DeveloperAppConfig(
+            captureMode = SettingConfig(CaptureMode.VIDEO_ONLY)
+        )
+
+        val appSettings = developerConfig.toCameraAppSettings(customDefaults)
+
+        assertThat(appSettings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        assertThat(appSettings.maxVideoDurationMillis).isEqualTo(60_000L)
+    }
+
+    @Test
     fun withoutRestrictions_preservesDefaultValuesAndClearsRestrictions() {
         val restrictedConfig = DeveloperAppConfig(
             aspectRatio = SettingConfig(
                 defaultValue = AspectRatio.NINE_SIXTEEN,
-                uiRestriction = OptionRestrictionConfig.FullyRestricted()
+                uiRestriction = OptionRestrictionConfig.FullyRestricted
             ),
             flashMode = SettingConfig(
                 defaultValue = FlashMode.ON,
@@ -113,40 +158,38 @@ class RestrictionConfigTest {
             ),
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.VIDEO_ONLY,
-                uiRestriction = OptionRestrictionConfig.FullyRestricted()
+                uiRestriction = OptionRestrictionConfig.FullyRestricted
             ),
             imageOutputFormat = SettingConfig(
                 defaultValue = ImageOutputFormat.JPEG,
-                uiRestriction = OptionRestrictionConfig.FullyRestricted()
+                uiRestriction = OptionRestrictionConfig.FullyRestricted
             ),
             videoDynamicRange = SettingConfig(
                 defaultValue = DynamicRange.SDR,
-                uiRestriction = OptionRestrictionConfig.FullyRestricted()
+                uiRestriction = OptionRestrictionConfig.FullyRestricted
             )
         )
 
         val unrestricted = restrictedConfig.withoutRestrictions()
 
         assertThat(unrestricted.aspectRatio.defaultValue).isEqualTo(AspectRatio.NINE_SIXTEEN)
-        assertThat(unrestricted.aspectRatio.uiRestriction is OptionRestrictionConfig.NotRestricted)
-            .isTrue()
+        assertThat(unrestricted.aspectRatio.uiRestriction)
+            .isInstanceOf(OptionRestrictionConfig.NotRestricted::class.java)
 
         assertThat(unrestricted.flashMode.defaultValue).isEqualTo(FlashMode.ON)
-        assertThat(unrestricted.flashMode.uiRestriction is OptionRestrictionConfig.NotRestricted)
-            .isTrue()
+        assertThat(unrestricted.flashMode.uiRestriction)
+            .isInstanceOf(OptionRestrictionConfig.NotRestricted::class.java)
 
         assertThat(unrestricted.captureMode.defaultValue).isEqualTo(CaptureMode.VIDEO_ONLY)
-        assertThat(unrestricted.captureMode.uiRestriction is OptionRestrictionConfig.NotRestricted)
-            .isTrue()
+        assertThat(unrestricted.captureMode.uiRestriction)
+            .isInstanceOf(OptionRestrictionConfig.NotRestricted::class.java)
 
         assertThat(unrestricted.imageOutputFormat.defaultValue).isEqualTo(ImageOutputFormat.JPEG)
-        assertThat(
-            unrestricted.imageOutputFormat.uiRestriction is OptionRestrictionConfig.NotRestricted
-        ).isTrue()
+        assertThat(unrestricted.imageOutputFormat.uiRestriction)
+            .isInstanceOf(OptionRestrictionConfig.NotRestricted::class.java)
 
         assertThat(unrestricted.videoDynamicRange.defaultValue).isEqualTo(DynamicRange.SDR)
-        assertThat(
-            unrestricted.videoDynamicRange.uiRestriction is OptionRestrictionConfig.NotRestricted
-        ).isTrue()
+        assertThat(unrestricted.videoDynamicRange.uiRestriction)
+            .isInstanceOf(OptionRestrictionConfig.NotRestricted::class.java)
     }
 }

@@ -28,27 +28,22 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
  * to override the default app settings.
  */
 data class DeveloperAppConfig(
-    val captureMode: SettingConfig<CaptureMode>,
-    val aspectRatio: SettingConfig<AspectRatio>,
-    val flashMode: SettingConfig<FlashMode>,
-    val imageOutputFormat: SettingConfig<ImageOutputFormat>,
-    val videoDynamicRange: SettingConfig<DynamicRange>
+    val captureMode: SettingConfig<CaptureMode> = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
+    val aspectRatio: SettingConfig<AspectRatio> = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
+    val flashMode: SettingConfig<FlashMode> = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
+    val imageOutputFormat: SettingConfig<ImageOutputFormat> = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
+    val videoDynamicRange: SettingConfig<DynamicRange> = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
-        fun <T : Any> SettingConfig<T>.containsIfOptionsEnabled(options: Set<T>): Boolean {
-            return when (val restriction = this.uiRestriction) {
-                is OptionRestrictionConfig.OptionsEnabled -> {
-                    restriction.enabledOptions.containsAll(options)
-                }
-
-                else -> true
+        when (val restriction = flashMode.uiRestriction) {
+            is OptionRestrictionConfig.OptionsEnabled -> require(FlashMode.OFF in restriction.enabledOptions) {
+                "FlashMode.OFF must always be included in enabledOptions for flashMode."
             }
-        }
-
-        // Ensure FlashMode.OFF is always available as a safe fallback to prevent hardware flash lockup
-        require(flashMode.containsIfOptionsEnabled(setOf(FlashMode.OFF))) {
-            "FlashMode.OFF must always be included in enabledOptions for flashMode."
+            is OptionRestrictionConfig.FullyRestricted -> require(flashMode.defaultValue == FlashMode.OFF) {
+                "When flashMode is FullyRestricted, defaultValue must be FlashMode.OFF to prevent hardware flash lockup."
+            }
+            is OptionRestrictionConfig.NotRestricted -> Unit
         }
     }
 
@@ -91,19 +86,17 @@ data class DeveloperAppConfig(
  */
 data class SettingConfig<T>(
     val defaultValue: T,
-    val uiRestriction: OptionRestrictionConfig<T> = OptionRestrictionConfig.NotRestricted()
+    val uiRestriction: OptionRestrictionConfig<T> = OptionRestrictionConfig.NotRestricted
 ) {
     init {
         // Validate that if options are enabled for this setting, the default value
         // is always included in the set of enabled options.
-        (uiRestriction as? OptionRestrictionConfig.OptionsEnabled)?.let {
-            require(
-                uiRestriction.enabledOptions.size >= 2 &&
-                    uiRestriction.enabledOptions.contains(
-                        defaultValue
-                    )
-            ) {
-                "OptionsRestrictionConfig.OptionsEnabled#enabledOptions must also contain the defaultValue"
+        if (uiRestriction is OptionRestrictionConfig.OptionsEnabled) {
+            require(uiRestriction.enabledOptions.size >= 2) {
+                "enabledOptions must contain at least 2 options. Use FullyRestricted to hide the control."
+            }
+            require(defaultValue in uiRestriction.enabledOptions) {
+                "The defaultValue ('$defaultValue') must be one of the enabledOptions: ${uiRestriction.enabledOptions}"
             }
         }
     }
@@ -112,12 +105,16 @@ data class SettingConfig<T>(
 /**
  * Represents UI option restrictions applied to a setting.
  */
-sealed interface OptionRestrictionConfig<T> {
+sealed interface OptionRestrictionConfig<out T> {
     /** All device-supported options are available. */
-    class NotRestricted<T> : OptionRestrictionConfig<T>
+    data object NotRestricted : OptionRestrictionConfig<Nothing> {
+        operator fun invoke(): OptionRestrictionConfig<Nothing> = this
+    }
 
     /** The entire setting is unavailable and hidden from the UI. */
-    class FullyRestricted<T> : OptionRestrictionConfig<T>
+    data object FullyRestricted : OptionRestrictionConfig<Nothing> {
+        operator fun invoke(): OptionRestrictionConfig<Nothing> = this
+    }
 
     /** ONLY the options in this set are allowed, if supported by the device. */
     data class OptionsEnabled<T>(val enabledOptions: Set<T>) : OptionRestrictionConfig<T> {

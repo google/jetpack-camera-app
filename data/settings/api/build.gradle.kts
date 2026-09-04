@@ -53,16 +53,10 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-
     // Access Model data
     implementation(project(":core:model"))
     implementation(project(":core:settings"))
 
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
 }
