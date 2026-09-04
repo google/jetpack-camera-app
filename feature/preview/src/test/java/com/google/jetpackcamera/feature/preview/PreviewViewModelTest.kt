@@ -48,8 +48,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -88,6 +90,11 @@ class PreviewViewModelTest {
             appConfig = defaultTestAppConfig
         )
         advanceUntilIdle()
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
@@ -220,7 +227,7 @@ class PreviewViewModelTest {
             val restrictedAppConfig = defaultTestAppConfig.copy(
                 captureMode = SettingConfig(
                     defaultValue = CaptureMode.IMAGE_ONLY,
-                    uiRestriction = OptionRestrictionConfig.FullyRestricted()
+                    uiRestriction = OptionRestrictionConfig.FullyRestricted
                 )
             )
             val viewModel = PreviewViewModel(
@@ -235,8 +242,7 @@ class PreviewViewModelTest {
                 appConfig = restrictedAppConfig
             )
             advanceUntilIdle()
-            viewModel.cameraController.startCamera()
-            advanceUntilIdle()
+            startCameraUntilRunning(viewModel)
             assertThat(cameraSystem.getCurrentSettings().value?.captureMode)
                 .isEqualTo(CaptureMode.IMAGE_ONLY)
 
@@ -247,6 +253,8 @@ class PreviewViewModelTest {
             assertThat(
                 quickSettings.captureModeUiState
             ).isInstanceOf(CaptureModeUiState.Unavailable::class.java)
+            assertThat(readyState.captureModeToggleUiState)
+                .isEqualTo(CaptureModeToggleUiState.Unavailable)
         }
 
     @Test
@@ -255,7 +263,7 @@ class PreviewViewModelTest {
             val restrictedAppConfig = defaultTestAppConfig.copy(
                 captureMode = SettingConfig(
                     defaultValue = CaptureMode.IMAGE_ONLY,
-                    uiRestriction = OptionRestrictionConfig.FullyRestricted()
+                    uiRestriction = OptionRestrictionConfig.FullyRestricted
                 )
             )
             val viewModel = PreviewViewModel(
@@ -270,8 +278,7 @@ class PreviewViewModelTest {
                 appConfig = restrictedAppConfig
             )
             advanceUntilIdle()
-            viewModel.cameraController.startCamera()
-            advanceUntilIdle()
+            startCameraUntilRunning(viewModel)
             assertThat(cameraSystem.getCurrentSettings().value?.captureMode)
                 .isEqualTo(CaptureMode.STANDARD)
 
@@ -281,10 +288,7 @@ class PreviewViewModelTest {
             val quickSettings = readyState.quickSettingsUiState as QuickSettingsUiState.Available
             val captureModeState = quickSettings.captureModeUiState as CaptureModeUiState.Available
             val standardState = captureModeState.availableCaptureModes.find {
-                when (it) {
-                    is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.STANDARD
-                    is SingleSelectableUiState.Disabled -> it.value == CaptureMode.STANDARD
-                }
+                it.value == CaptureMode.STANDARD
             }
             assertThat(standardState).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
         }
@@ -306,8 +310,7 @@ class PreviewViewModelTest {
                 appConfig = defaultTestAppConfig
             )
             advanceUntilIdle()
-            viewModel.cameraController.startCamera()
-            advanceUntilIdle()
+            startCameraUntilRunning(viewModel)
 
             val uiState = viewModel.captureUiState.value
             assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
@@ -333,8 +336,7 @@ class PreviewViewModelTest {
                 appConfig = defaultTestAppConfig
             )
             advanceUntilIdle()
-            viewModel.cameraController.startCamera()
-            advanceUntilIdle()
+            startCameraUntilRunning(viewModel)
 
             val uiState = viewModel.captureUiState.value
             assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)

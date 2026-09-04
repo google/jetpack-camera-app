@@ -89,7 +89,7 @@ fun NavController.navigateToPreview(
     }
     useDeveloperConfig?.let {
         queryParams.add(
-            "${PreviewRoute.ARG_USE_DEVELOPER_CONFIG}=${
+            "${ARG_USE_DEVELOPER_CONFIG}=${
                 NavType.BoolType.serializeAsValue(it)}"
         )
     }
@@ -146,7 +146,7 @@ fun NavGraphBuilder.previewScreen(
                 type = DebugSettingsNavType
                 defaultValue = debugSettings
             },
-            navArgument(name = PreviewRoute.ARG_USE_DEVELOPER_CONFIG) {
+            navArgument(name = ARG_USE_DEVELOPER_CONFIG) {
                 type = NavType.BoolType
                 defaultValue = useDeveloperConfig
             }
@@ -212,4 +212,4 @@ internal fun SavedStateHandle.getDebugSettings(
     ?: defaultIfMissing
 
 internal fun SavedStateHandle.getUseDeveloperConfig(defaultIfMissing: Boolean = false): Boolean =
-    get(PreviewRoute.ARG_USE_DEVELOPER_CONFIG) ?: defaultIfMissing
+    get(ARG_USE_DEVELOPER_CONFIG) ?: defaultIfMissing

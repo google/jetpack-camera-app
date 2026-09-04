@@ -136,12 +136,13 @@ class PreviewViewModel @Inject constructor(
     // Eagerly initialize the CameraSystem and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
+        val defaultSettings = settingsRepository.defaultCameraAppSettings.first()
         cameraSystemRepository.cameraSystem.initialize(
             cameraAppSettings =
             if (useDeveloperConfig) {
-                appConfig.toCameraAppSettings()
+                appConfig.toCameraAppSettings(defaultSettings)
             } else {
-                settingsRepository.defaultCameraAppSettings.first()
+                defaultSettings
             }
                 .applyExternalCaptureMode(externalCaptureMode)
                 .copy(debugSettings = debugSettings)
@@ -150,7 +151,7 @@ class PreviewViewModel @Inject constructor(
 
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         cameraSystemRepository.cameraSystem,
-        if (useDeveloperConfig) appConfig else appConfig.withoutRestrictions(),
+        if (useDeveloperConfig) appConfig else null,
         constraintsRepository,
         trackedCaptureUiState,
         externalCaptureMode
