@@ -19,10 +19,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -42,7 +40,6 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureMo
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsModalBottomSheet
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -54,6 +51,12 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
 /**
  * Agnostic content for the Quick Settings panel wrapped for a BottomSheetScaffold sheet.
+ *
+ * @param quickSettingsUiState The current [QuickSettingsUiState].
+ * @param onNavigateToSettings Callback when the user navigates to full settings.
+ * @param quickSettingsController The [QuickSettingsController] to handle setting changes.
+ * @param modifier The [Modifier] to apply to the content column.
+ * @param showMoreSettingsButton Whether to show the "More settings" navigation button.
  */
 @Composable
 fun QuickSettingsScaffoldContent(
@@ -70,37 +73,6 @@ fun QuickSettingsScaffoldContent(
                 .navigationBarsPadding()
                 .padding(bottom = 24.dp)
                 .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
-        ) {
-            QuickSettingsContent(
-                quickSettingsUiState = quickSettingsUiState,
-                quickSettingsController = quickSettingsController,
-                onNavigateToSettings = onNavigateToSettings,
-                showMoreSettingsButton = showMoreSettingsButton
-            )
-        }
-    }
-}
-
-/**
- * The UI bottom sheet component for quick settings.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun QuickSettingsBottomSheet(
-    isOpen: Boolean,
-    onDismiss: () -> Unit,
-    quickSettingsUiState: QuickSettingsUiState,
-    onNavigateToSettings: () -> Unit,
-    quickSettingsController: QuickSettingsController,
-    modifier: Modifier = Modifier,
-    showMoreSettingsButton: Boolean = true
-) {
-    if (isOpen && quickSettingsUiState is QuickSettingsUiState.Available) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        QuickSettingsModalBottomSheet(
-            modifier = modifier,
-            onDismiss = onDismiss,
-            sheetState = sheetState
         ) {
             QuickSettingsContent(
                 quickSettingsUiState = quickSettingsUiState,
@@ -203,7 +175,7 @@ internal fun QuickSettingsContent(
 /**
  * A no-op implementation of [QuickSettingsController] for use in Compose previews and tests.
  */
-class NoOpQuickSettingsController : QuickSettingsController {
+internal class NoOpQuickSettingsController : QuickSettingsController {
     override fun setLensFacing(lensFace: LensFacing) {}
 
     override fun setFlash(flashMode: FlashMode) {}
@@ -219,11 +191,9 @@ class NoOpQuickSettingsController : QuickSettingsController {
 
 @Preview
 @Composable
-fun ExpandedQuickSettingsUiPreview() {
+private fun ExpandedQuickSettingsUiPreview() {
     MaterialTheme {
-        QuickSettingsBottomSheet(
-            isOpen = true,
-            onDismiss = {},
+        QuickSettingsScaffoldContent(
             quickSettingsUiState = QuickSettingsUiState.Available(
                 aspectRatioUiState = AspectRatioUiState.Available(
                     selectedAspectRatio = AspectRatio.NINE_SIXTEEN,

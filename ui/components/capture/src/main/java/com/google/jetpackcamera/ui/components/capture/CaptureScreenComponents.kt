@@ -663,8 +663,6 @@ fun PreviewDisplay(
  *
  * @param modifier the modifier for this component.
  * @param captureButtonUiState the [CaptureButtonUiState] that dictates the button's behavior.
- * @param isQuickSettingsOpen true if the quick settings panel is open.
- * @param onToggleQuickSettings callback to open or close the quick settings.
  * @param onIncrementZoom callback to adjust the camera's zoom level.
  * @param onCaptureImage callback to trigger image capture.
  * @param onStartVideoRecording callback to start video recording.
