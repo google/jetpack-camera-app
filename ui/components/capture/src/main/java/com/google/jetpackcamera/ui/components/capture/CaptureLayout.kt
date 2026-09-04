@@ -51,6 +51,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -105,7 +107,7 @@ fun PreviewLayout(
 
     CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
         BottomSheetScaffold(
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
             scaffoldState = scaffoldState,
             sheetPeekHeight = 0.dp,
             sheetDragHandle = {
@@ -113,7 +115,10 @@ fun PreviewLayout(
                     modifier = Modifier
                         .testTag(QUICK_SETTINGS_DRAG_HANDLE)
                         .clickable(
-                            onClickLabel = "Close quick settings",
+                            role = Role.Button,
+                            onClickLabel = stringResource(
+                                R.string.quick_settings_btn_close_expanded_settings_description
+                            ),
                             onClick = onDismissQuickSettings
                         )
                 )
@@ -130,7 +135,7 @@ fun PreviewLayout(
                 )
             }
         ) { paddingValues ->
-            Box(modifier = modifier.background(Color.Black)) {
+            Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
                 Column {
                     indicatorRow(Modifier.statusBarsPadding())
                     viewfinder(Modifier)

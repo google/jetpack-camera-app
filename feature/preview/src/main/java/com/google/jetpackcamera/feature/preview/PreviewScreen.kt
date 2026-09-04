@@ -53,7 +53,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -305,7 +304,6 @@ private fun ContentScreen(
         )
     }
 
-    var isQuickSettingsOpen by rememberSaveable { mutableStateOf(false) }
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.Hidden,
@@ -313,29 +311,24 @@ private fun ContentScreen(
         )
     )
 
-    // Programmatic sync: When `isQuickSettingsOpen` changes via button click or dismiss action,
-    // drive the bottom sheet animation to expand or hide accordingly.
-    LaunchedEffect(isQuickSettingsOpen) {
-        if (isQuickSettingsOpen) {
-            scaffoldState.bottomSheetState.expand()
-        } else {
-            scaffoldState.bottomSheetState.hide()
-        }
-    }
-
-    // Gesture sync: When the user manually swipes down to dismiss the bottom sheet,
-    // synchronize the state holder so `isQuickSettingsOpen` resets to false when hidden.
-    LaunchedEffect(scaffoldState.bottomSheetState.isVisible) {
-        if (!scaffoldState.bottomSheetState.isVisible && isQuickSettingsOpen) {
-            isQuickSettingsOpen = false
+    // Derive whether quick settings is open directly from the sheet state's target value.
+    // This provides a single source of truth without bidirectional synchronization loops.
+    val isQuickSettingsOpen by remember(scaffoldState.bottomSheetState) {
+        derivedStateOf {
+            scaffoldState.bottomSheetState.targetValue != SheetValue.Hidden
         }
     }
 
     // Intercept back navigation only while Quick Settings is actively open.
-    // Note: Checking `isQuickSettingsOpen` instead of `bottomSheetState.isVisible` ensures back handling
-    // is immediately relinquished back to the Activity the instant the sheet begins closing.
     BackHandler(enabled = isQuickSettingsOpen) {
-        isQuickSettingsOpen = false
+        scope.launch { scaffoldState.bottomSheetState.hide() }
+    }
+
+    val onDismissQuickSettings: () -> Unit = remember(scope, scaffoldState.bottomSheetState) {
+        {
+            scope.launch { scaffoldState.bottomSheetState.hide() }
+            Unit
+        }
     }
 
     var initialRecordingSettings by remember { mutableStateOf<InitialRecordingSettings?>(null) }
@@ -482,20 +475,28 @@ private fun ContentScreen(
     }
     val captureButtonLambda = remember(
         captureButtonState,
-        captureController
+        captureController,
+        zoomStateManager,
+        scaffoldState.bottomSheetState,
+        scope
     ) {
         @Composable { modifier: Modifier ->
             CaptureButton(
+                modifier = modifier,
                 captureButtonUiState = captureButtonState.value,
                 onCaptureImage = {
-                    isQuickSettingsOpen = false
+                    if (scaffoldState.bottomSheetState.isVisible) {
+                        scope.launch { scaffoldState.bottomSheetState.hide() }
+                    }
                     captureController?.captureImage(it)
                 },
                 onIncrementZoom = { targetZoom ->
                     scope.launch { zoomStateManager.incrementZoom(targetZoom, LensToZoom.PRIMARY) }
                 },
                 onStartVideoRecording = {
-                    isQuickSettingsOpen = false
+                    if (scaffoldState.bottomSheetState.isVisible) {
+                        scope.launch { scaffoldState.bottomSheetState.hide() }
+                    }
                     captureController?.startVideoRecording()
                 },
                 onStopVideoRecording = { captureController?.stopVideoRecording() },
@@ -601,7 +602,9 @@ private fun ContentScreen(
 
     val quickSettingsButtonLambda = remember(
         isVideoRecordingActive,
-        isQuickSettingsOpen
+        isQuickSettingsOpen,
+        scaffoldState.bottomSheetState,
+        scope
     ) {
         @Composable { modifier: Modifier ->
             val isQuickSettingsVisible = !isVideoRecordingActive.value
@@ -619,7 +622,15 @@ private fun ContentScreen(
             ) {
                 ToggleQuickSettingsButton(
                     isOpen = isQuickSettingsOpen,
-                    onClick = { isQuickSettingsOpen = !isQuickSettingsOpen },
+                    onClick = {
+                        scope.launch {
+                            if (scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded) {
+                                scaffoldState.bottomSheetState.hide()
+                            } else {
+                                scaffoldState.bottomSheetState.expand()
+                            }
+                        }
+                    },
                     modifier = modifier
                 )
             }
@@ -629,7 +640,9 @@ private fun ContentScreen(
     val quickSettingsOverlayLambda = remember(
         quickSettingsState,
         quickSettingsController,
-        onNavigateToSettings
+        onNavigateToSettings,
+        scaffoldState.bottomSheetState,
+        scope
     ) {
         @Composable { modifier: Modifier ->
             quickSettingsController?.let { controller ->
@@ -637,7 +650,7 @@ private fun ContentScreen(
                     modifier = modifier,
                     quickSettingsUiState = quickSettingsState.value,
                     onNavigateToSettings = {
-                        isQuickSettingsOpen = false
+                        scope.launch { scaffoldState.bottomSheetState.hide() }
                         onNavigateToSettings()
                     },
                     quickSettingsController = controller
@@ -754,7 +767,7 @@ private fun ContentScreen(
     LayoutWrapper(
         modifier = modifier,
         scaffoldState = scaffoldState,
-        onDismissQuickSettings = { isQuickSettingsOpen = false },
+        onDismissQuickSettings = onDismissQuickSettings,
         hdrIndicator = hdrIndicatorLambda,
         flashModeIndicator = flashModeIndicatorLambda,
         videoQualityIndicator = videoQualityIndicatorLambda,
