@@ -28,16 +28,22 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
  * to override the default app settings.
  */
 data class DeveloperAppConfig(
-    val captureMode: SettingConfig<CaptureMode> = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
-    val aspectRatio: SettingConfig<AspectRatio> = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
+    val captureMode: SettingConfig<CaptureMode> =
+        SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
+    val aspectRatio: SettingConfig<AspectRatio> =
+        SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
     val flashMode: SettingConfig<FlashMode> = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
-    val imageOutputFormat: SettingConfig<ImageOutputFormat> = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
-    val videoDynamicRange: SettingConfig<DynamicRange> = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
+    val imageOutputFormat: SettingConfig<ImageOutputFormat> =
+        SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
+    val videoDynamicRange: SettingConfig<DynamicRange> =
+        SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
         when (val visibility = flashMode.uiVisibility) {
-            is OptionAvailabilityConfig.OptionsEnabled -> require(FlashMode.OFF in visibility.enabledOptions) {
+            is OptionAvailabilityConfig.OptionsEnabled -> require(
+                FlashMode.OFF in visibility.enabledOptions
+            ) {
                 "FlashMode.OFF must always be included in enabledOptions for flashMode."
             }
             is OptionAvailabilityConfig.Hidden -> require(flashMode.defaultValue == FlashMode.OFF) {

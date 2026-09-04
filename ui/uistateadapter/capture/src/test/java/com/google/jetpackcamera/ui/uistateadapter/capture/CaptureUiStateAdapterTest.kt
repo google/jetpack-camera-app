@@ -20,9 +20,9 @@ import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
-import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
@@ -219,7 +219,9 @@ internal class CaptureUiStateAdapterTest {
         )
         val uiStateFlow = createCaptureUiStateFlow(appConfig = restrictedConfig)
         val state = assertIsReady(uiStateFlow.first())
-        assertThat(state.quickSettingsUiState).isInstanceOf(QuickSettingsUiState.Available::class.java)
+        assertThat(
+            state.quickSettingsUiState
+        ).isInstanceOf(QuickSettingsUiState.Available::class.java)
         val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
         assertThat(quickSettings.captureModeUiState).isEqualTo(CaptureModeUiState.Unavailable)
         assertThat(state.captureModeToggleUiState).isEqualTo(CaptureModeToggleUiState.Unavailable)

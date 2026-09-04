@@ -80,7 +80,9 @@ class CaptureModeUiStateAdapterTest {
         assertThat(uiState).isInstanceOf(CaptureModeUiState.Available::class.java)
         val available = uiState as CaptureModeUiState.Available
 
-        val standardState = available.availableCaptureModes.find { it.value == CaptureMode.STANDARD }
+        val standardState = available.availableCaptureModes.find {
+            it.value == CaptureMode.STANDARD
+        }
         assertThat(standardState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
         assertThat((standardState as SingleSelectableUiState.Disabled).disabledReason)
             .isEqualTo(DisabledReason.HYBRID_CAPTURE_RESTRICTED)
@@ -168,7 +170,9 @@ class CaptureModeUiStateAdapterTest {
     fun toggleFrom_optionsEnabledWithImageAndVideo_returnsAvailable() {
         val uiState = CaptureModeToggleUiState.from(
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(captureMode = CaptureMode.IMAGE_ONLY),
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.IMAGE_ONLY
+            ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
             restrictionConfig = OptionAvailabilityConfig.OptionsEnabled(

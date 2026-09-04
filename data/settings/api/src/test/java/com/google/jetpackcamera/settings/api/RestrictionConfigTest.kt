@@ -67,12 +67,22 @@ class RestrictionConfigTest {
     @Test
     fun developerAppConfig_defaultConstructor_usesDefaultSettings() {
         val config = DeveloperAppConfig()
-        assertThat(config.aspectRatio.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio)
+        assertThat(
+            config.aspectRatio.defaultValue
+        ).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio)
         assertThat(config.flashMode.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.flashMode)
-        assertThat(config.captureMode.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.captureMode)
-        assertThat(config.imageOutputFormat.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.imageFormat)
-        assertThat(config.videoDynamicRange.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
-        assertThat(config.aspectRatio.uiVisibility).isEqualTo(OptionAvailabilityConfig.NotRestricted)
+        assertThat(
+            config.captureMode.defaultValue
+        ).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.captureMode)
+        assertThat(
+            config.imageOutputFormat.defaultValue
+        ).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.imageFormat)
+        assertThat(
+            config.videoDynamicRange.defaultValue
+        ).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
+        assertThat(
+            config.aspectRatio.uiVisibility
+        ).isEqualTo(OptionAvailabilityConfig.NotRestricted)
     }
 
     @Test
