@@ -20,18 +20,26 @@ import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
+import com.google.jetpackcamera.settings.api.DeveloperAppConfig
+import com.google.jetpackcamera.settings.api.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.api.SettingConfig
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.roundVideoRecordingState
 import java.util.concurrent.TimeUnit
@@ -56,12 +64,22 @@ internal class CaptureUiStateAdapterTest {
     private val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
     private val externalCaptureMode = ExternalCaptureMode.Standard
 
-    private fun createCaptureUiStateFlow() = captureUiState(
-        cameraSystem = cameraSystem,
-        constraintsRepository = constraintsRepository,
-        trackedCaptureUiState = trackedCaptureUiState,
-        externalCaptureMode = externalCaptureMode
+    private val defaultAppConfig = DeveloperAppConfig(
+        aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
+        flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
+        captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
+        imageOutputFormat = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
+        videoDynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
     )
+
+    private fun createCaptureUiStateFlow(appConfig: DeveloperAppConfig = defaultAppConfig) =
+        captureUiState(
+            cameraSystem = cameraSystem,
+            appConfig = appConfig,
+            constraintsRepository = constraintsRepository,
+            trackedCaptureUiState = trackedCaptureUiState,
+            externalCaptureMode = externalCaptureMode
+        )
 
     @Test
     fun roundVideoRecordingState_nanoseconds_noRounding() {
@@ -189,6 +207,24 @@ internal class CaptureUiStateAdapterTest {
         val updatedFlash =
             (updatedState.flashModeUiState as FlashModeUiState.Available).selectedFlashMode
         assertThat(updatedFlash).isEqualTo(FlashMode.ON)
+    }
+
+    @Test
+    fun captureUiState_withRestrictedAppConfig_emitsRestrictedUiStates() = runTest {
+        val restrictedConfig = defaultAppConfig.copy(
+            captureMode = SettingConfig(
+                defaultValue = CaptureMode.IMAGE_ONLY,
+                uiVisibility = OptionAvailabilityConfig.Hidden
+            )
+        )
+        val uiStateFlow = createCaptureUiStateFlow(appConfig = restrictedConfig)
+        val state = assertIsReady(uiStateFlow.first())
+        assertThat(
+            state.quickSettingsUiState
+        ).isInstanceOf(QuickSettingsUiState.Available::class.java)
+        val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
+        assertThat(quickSettings.captureModeUiState).isEqualTo(CaptureModeUiState.Unavailable)
+        assertThat(state.captureModeToggleUiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
     }
 
     private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready = when (uiState) {

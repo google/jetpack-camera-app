@@ -29,6 +29,7 @@ import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
 import com.google.jetpackcamera.feature.preview.navigation.getExternalCaptureMode
 import com.google.jetpackcamera.feature.preview.navigation.getRequestedSaveMode
+import com.google.jetpackcamera.feature.preview.navigation.getUseDeveloperConfig
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -40,6 +41,7 @@ import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.api.DeveloperAppConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
 import com.google.jetpackcamera.ui.components.capture.R
@@ -95,6 +97,7 @@ class PreviewViewModel @Inject constructor(
     private val cameraSystemRepository: CameraSystemRepository,
     private val savedStateHandle: SavedStateHandle,
     private val defaultSaveMode: SaveMode,
+    private val appConfig: DeveloperAppConfig,
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: SettableConstraintsRepository,
     private val mediaRepository: MediaRepository
@@ -118,6 +121,8 @@ class PreviewViewModel @Inject constructor(
     private val externalUris: List<Uri> = savedStateHandle.getCaptureUris()
     private lateinit var externalUriProgress: IntProgress
 
+    private val useDeveloperConfig: Boolean = savedStateHandle.getUseDeveloperConfig()
+
     private val debugSettings: DebugSettings = savedStateHandle.getDebugSettings()
 
     private var cameraPropertiesJSON = ""
@@ -131,8 +136,14 @@ class PreviewViewModel @Inject constructor(
     // Eagerly initialize the CameraSystem and encapsulate in a Deferred that can be
     // used to ensure we don't start the camera before initialization is complete.
     private var initializationDeferred: Deferred<Unit> = viewModelScope.async {
+        val defaultSettings = settingsRepository.defaultCameraAppSettings.first()
         cameraSystemRepository.cameraSystem.initialize(
-            cameraAppSettings = settingsRepository.defaultCameraAppSettings.first()
+            cameraAppSettings =
+            if (useDeveloperConfig) {
+                appConfig.toCameraAppSettings(defaultSettings)
+            } else {
+                defaultSettings
+            }
                 .applyExternalCaptureMode(externalCaptureMode)
                 .copy(debugSettings = debugSettings)
         ) { cameraPropertiesJSON = it }
@@ -140,6 +151,7 @@ class PreviewViewModel @Inject constructor(
 
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         cameraSystemRepository.cameraSystem,
+        if (useDeveloperConfig) appConfig else null,
         constraintsRepository,
         trackedCaptureUiState,
         externalCaptureMode

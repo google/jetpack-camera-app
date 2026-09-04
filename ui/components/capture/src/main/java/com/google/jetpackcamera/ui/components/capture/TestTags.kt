@@ -21,6 +21,20 @@ const val CAPTURE_BUTTON = "CaptureButton"
 const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
 const val SNACKBAR_NODE_TAG = "SnackbarNodeTag"
+const val IMAGE_CAPTURE_SUCCESS_TAG = "ImageCaptureSuccessTag"
+const val IMAGE_CAPTURE_FAILURE_TAG = "ImageCaptureFailureTag"
+const val IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "ImageCaptureExternalUnsupportedTag"
+
+const val IMAGE_CAPTURE_RESTRICTED_TAG = "ImageCaptureRestrictedTag"
+const val VIDEO_CAPTURE_RESTRICTED_TAG = "VideoCaptureRestrictedTag"
+const val HYBRID_CAPTURE_RESTRICTED_TAG = "HybridCaptureRestrictedTag"
+
+const val IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA_TAG =
+    "ImageCaptureUnsupportedConcurrentCameraTag"
+const val VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG = "VideoCaptureExternalUnsupportedTag"
+const val VIDEO_CAPTURE_SUCCESS_TAG = "VideoCaptureSuccessTag"
+const val VIDEO_CAPTURE_FAILURE_TAG = "VideoCaptureFailureTag"
+const val LOW_LIGHT_BOOST_FAILURE_TAG = "LowLightBoostFailureTag"
 
 const val IMAGE_WELL_TAG = "ImageWellTag"
 
