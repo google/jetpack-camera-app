@@ -51,6 +51,7 @@ import com.google.jetpackcamera.ui.Routes.SETTINGS_ROUTE
 fun JcaApp(
     externalCaptureMode: ExternalCaptureMode,
     shouldReviewAfterCapture: Boolean,
+    useDeveloperConfig: Boolean = false,
     captureUris: List<Uri>,
     debugSettings: DebugSettings,
     onRequestWindowColorMode: (Int) -> Unit,
@@ -63,6 +64,7 @@ fun JcaApp(
         modifier = modifier,
         externalCaptureMode = externalCaptureMode,
         shouldReviewAfterCapture = shouldReviewAfterCapture,
+        useDeveloperConfig = useDeveloperConfig,
         captureUris = captureUris,
         debugSettings = debugSettings,
         onOpenAppSettings = openAppSettings,
@@ -78,6 +80,7 @@ private fun JetpackCameraNavHost(
     modifier: Modifier = Modifier,
     externalCaptureMode: ExternalCaptureMode,
     shouldReviewAfterCapture: Boolean,
+    useDeveloperConfig: Boolean = false,
     captureUris: List<Uri>,
     debugSettings: DebugSettings,
     onOpenAppSettings: () -> Unit,
@@ -113,6 +116,7 @@ private fun JetpackCameraNavHost(
         previewScreen(
             externalCaptureMode = externalCaptureMode,
             shouldCacheReview = shouldReviewAfterCapture,
+            useDeveloperConfig = useDeveloperConfig,
             captureUris = captureUris,
             debugSettings = debugSettings,
             onRequestWindowColorMode = onRequestWindowColorMode,
