@@ -48,6 +48,7 @@ import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.action.ViewActions.swipeDown
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.TruthJUnit.assume
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.model.CaptureMode
@@ -825,4 +826,11 @@ internal fun buildGeneralErrorMessage(
     sb.appendLine(nodeInteraction.printToString())
 
     return sb.toString()
+}
+
+fun ComposeTestRule.assumeFlipCameraAvailable(
+    message: String = "Device does not have multiple cameras to flip between."
+) {
+    val isFlipAvailable = onAllNodesWithTag(FLIP_CAMERA_BUTTON).fetchSemanticsNodes().isNotEmpty()
+    assume().withMessage(message).that(isFlipAvailable).isTrue()
 }
