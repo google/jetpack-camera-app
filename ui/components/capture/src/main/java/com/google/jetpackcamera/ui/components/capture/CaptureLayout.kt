@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,9 +31,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.BottomSheetScaffoldState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +51,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -49,6 +60,8 @@ import androidx.compose.ui.unit.dp
  * The base layout for the camera capture screen.
  *
  * @param modifier the modifier for this component
+ * @param scaffoldState the bottom sheet scaffold state
+ * @param onDismissQuickSettings callback to dismiss quick settings when clicking the drag handle
  * @param viewfinder the viewfinder composable
  * @param captureButton the capture button composable
  * @param imageWell the image well composable
@@ -64,9 +77,17 @@ import androidx.compose.ui.unit.dp
  * @param screenFlashOverlay the screen flash overlay composable
  * @param snackBar the snack bar composable for showing messages
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
+    scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            skipHiddenState = false
+        )
+    ),
+    onDismissQuickSettings: () -> Unit = {},
     viewfinder: @Composable (Modifier) -> Unit,
     captureButton: @Composable (Modifier) -> Unit,
     imageWell: @Composable (Modifier) -> Unit,
@@ -82,20 +103,39 @@ fun PreviewLayout(
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
     CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
+        BottomSheetScaffold(
+            modifier = modifier.fillMaxSize(),
+            scaffoldState = scaffoldState,
+            sheetPeekHeight = 0.dp,
+            sheetDragHandle = {
+                BottomSheetDefaults.DragHandle(
+                    modifier = Modifier
+                        .testTag(QUICK_SETTINGS_DRAG_HANDLE)
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = stringResource(
+                                R.string.quick_settings_btn_close_expanded_settings_description
+                            ),
+                            onClick = onDismissQuickSettings
+                        )
+                )
+            },
+            sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            sheetContent = {
+                quickSettingsOverlay(Modifier)
+            },
             snackbarHost = {
                 SnackbarHost(
-                    hostState = snackbarHostState,
+                    hostState = scaffoldState.snackbarHostState,
                     modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
                 )
             }
         ) { paddingValues ->
-            Box(modifier = modifier.background(Color.Black)) {
+            Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
                 Column {
                     indicatorRow(Modifier.statusBarsPadding())
                     viewfinder(Modifier)
@@ -115,13 +155,12 @@ fun PreviewLayout(
                             flipCameraButton = flipCameraButton,
                             quickSettingsToggleButton = quickSettingsButton,
                             captureModeToggleSwitch = captureModeToggle,
-                            bottomSheetQuickSettings = quickSettingsOverlay,
                             zoomControls = zoomLevelDisplay,
                             elapsedTimeDisplay = elapsedTimeDisplay
                         )
                     }
                     // controls overlay
-                    snackBar(Modifier, snackbarHostState)
+                    snackBar(Modifier, scaffoldState.snackbarHostState)
                     screenFlashOverlay(Modifier)
                 }
                 debugOverlay(Modifier)
@@ -138,7 +177,6 @@ private fun VerticalMaterialControls(
     imageWell: @Composable (Modifier) -> Unit,
     flipCameraButton: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
-    bottomSheetQuickSettings: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
     elapsedTimeDisplay: @Composable (Modifier) -> Unit
 ) {
@@ -229,10 +267,10 @@ private fun VerticalMaterialControls(
                 }
             }
         }
-        bottomSheetQuickSettings(Modifier)
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun CaptureLayoutPreview() {

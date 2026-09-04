@@ -23,36 +23,25 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
-import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
 /**
- * Implementation of [QuickSettingsController] that interacts with [CameraSystem] and updates
- * [trackedCaptureUiState].
+ * Implementation of [QuickSettingsController] that interacts with [CameraSystem].
  *
- * @param trackedCaptureUiState The state flow to update with quick settings information.
  * @param cameraSystem The camera system to control.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class QuickSettingsControllerImpl(
-    private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     private val cameraSystem: CameraSystem,
     coroutineContext: CoroutineContext
 ) : QuickSettingsController {
     private val job = Job(parent = coroutineContext[Job.Key])
     private val scope = CoroutineScope(coroutineContext + job)
-    override fun toggleQuickSettings() {
-        trackedCaptureUiState.update { old ->
-            old.copy(isQuickSettingsOpen = !old.isQuickSettingsOpen)
-        }
-    }
 
     override fun setLensFacing(lensFace: LensFacing) {
         scope.launch {

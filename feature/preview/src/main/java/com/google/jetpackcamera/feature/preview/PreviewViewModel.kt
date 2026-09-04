@@ -166,7 +166,6 @@ class PreviewViewModel @Inject constructor(
      * Controller for managing the quick settings UI panel and state.
      */
     val quickSettingsController: QuickSettingsController = QuickSettingsControllerImpl(
-        trackedCaptureUiState = trackedCaptureUiState,
         cameraSystem = cameraSystemRepository.cameraSystem,
         coroutineContext = viewModelScope.coroutineContext
     )

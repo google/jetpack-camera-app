@@ -113,7 +113,6 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.controller.SnackBarController
-import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
@@ -664,8 +663,6 @@ fun PreviewDisplay(
  *
  * @param modifier the modifier for this component.
  * @param captureButtonUiState the [CaptureButtonUiState] that dictates the button's behavior.
- * @param isQuickSettingsOpen true if the quick settings panel is open.
- * @param onToggleQuickSettings callback to open or close the quick settings.
  * @param onIncrementZoom callback to adjust the camera's zoom level.
  * @param onCaptureImage callback to trigger image capture.
  * @param onStartVideoRecording callback to start video recording.
@@ -676,13 +673,11 @@ fun PreviewDisplay(
 fun CaptureButton(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
-    isQuickSettingsOpen: Boolean,
     onIncrementZoom: (Float) -> Unit = {},
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onLockVideoRecording: (Boolean) -> Unit = {},
-    quickSettingsController: QuickSettingsController? = null
+    onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -694,9 +689,6 @@ fun CaptureButton(
                 captureButtonUiState.isEnabled
             ) {
                 onCaptureImage(context.contentResolver)
-            }
-            if (isQuickSettingsOpen) {
-                quickSettingsController?.toggleQuickSettings()
             }
         },
         onStartRecording = {
