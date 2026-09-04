@@ -63,18 +63,6 @@ data class DeveloperAppConfig(
             dynamicRange = this.videoDynamicRange.defaultValue
         )
     }
-
-    /**
-     * Returns a copy of this [DeveloperAppConfig] with all UI restrictions removed,
-     * preserving each setting's default value.
-     */
-    fun withoutRestrictions(): DeveloperAppConfig = DeveloperAppConfig(
-        aspectRatio = SettingConfig(this.aspectRatio.defaultValue),
-        flashMode = SettingConfig(this.flashMode.defaultValue),
-        captureMode = SettingConfig(this.captureMode.defaultValue),
-        imageOutputFormat = SettingConfig(this.imageOutputFormat.defaultValue),
-        videoDynamicRange = SettingConfig(this.videoDynamicRange.defaultValue)
-    )
 }
 
 /**

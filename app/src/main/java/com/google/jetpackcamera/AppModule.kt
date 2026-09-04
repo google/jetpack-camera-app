@@ -21,8 +21,6 @@ import com.google.jetpackcamera.di.DefaultFilePathGenerator
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.api.DeveloperAppConfig
-import com.google.jetpackcamera.settings.api.SettingConfig
-import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,19 +30,11 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    private val jcaDefaultAppConfig: DeveloperAppConfig = DeveloperAppConfig(
-        aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
-        flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
-        captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
-        imageOutputFormat = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
-        videoDynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
-    )
-
     /**
      * Provides the default [DeveloperAppConfig] configuration.
      */
     @Provides
-    fun providesDeveloperAppConfig(): DeveloperAppConfig = jcaDefaultAppConfig
+    fun providesDeveloperAppConfig(): DeveloperAppConfig = DeveloperAppConfig()
 
     /**
      * provides the default [CaptureMode] to override by the app
