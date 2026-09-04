@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -33,11 +34,13 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
+import com.google.jetpackcamera.utils.closeQuickSettings
 import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.searchForQuickSetting
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForNodeWithTagToDisappear
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,9 +64,10 @@ class NavigationTest {
 
         // open quick settings
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertExists()
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
 
         // Navigate to the settings screen
+        composeTestRule.waitForNodeWithTag(SETTINGS_BUTTON)
         composeTestRule.searchForQuickSetting(SETTINGS_BUTTON)
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON)
             .assertExists()
@@ -101,9 +105,10 @@ class NavigationTest {
 
         // open quick settings
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertExists()
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
 
         // Navigate to the settings screen
+        composeTestRule.waitForNodeWithTag(SETTINGS_BUTTON)
         composeTestRule.searchForQuickSetting(SETTINGS_BUTTON)
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON)
             .assertExists()
@@ -118,7 +123,7 @@ class NavigationTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
 
         // Assert bottom sheet is not open
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsNotDisplayed()
+        composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
     }
 
     @Test
@@ -137,7 +142,25 @@ class NavigationTest {
         // Press the device's back button
         uiDevice.pressBack()
 
-        // Assert we're on PreviewScreen by finding the flip camera button
-        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
+        // Assert we're on PreviewScreen and bottom sheet is closed
+        composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
+    }
+
+    @Test
+    fun dismissQuickSettings_viaDragHandle_returnsToPreview() = runMainActivityScenarioTest {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitForCaptureButton()
+
+        // open quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+
+        // close quick settings via drag handle
+        composeTestRule.closeQuickSettings()
+
+        // Assert we're on PreviewScreen and bottom sheet is closed
+        composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
     }
 }

@@ -655,17 +655,42 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
 // ////////////////////////////
 
 /**
- * Closes the quick settings bottom sheet by clicking the drag handle pill.
+ * Checks whether the quick settings bottom sheet is currently displayed without throwing.
+ */
+fun ComposeTestRule.isQuickSettingsSheetOpen(): Boolean {
+    val nodes = onAllNodesWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNodes()
+    if (nodes.isEmpty()) return false
+    return try {
+        onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isDisplayed()
+    } catch (_: AssertionError) {
+        false
+    }
+}
+
+/**
+ * Closes the quick settings bottom sheet if it is open.
  */
 fun ComposeTestRule.closeQuickSettings(timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS) {
+    if (!isQuickSettingsSheetOpen()) return
+
     val dragHandleNodes = onAllNodesWithTag(QUICK_SETTINGS_DRAG_HANDLE).fetchSemanticsNodes()
     if (dragHandleNodes.isNotEmpty()) {
-        onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
+        try {
+            if (onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).isDisplayed()) {
+                onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
+            }
+        } catch (_: AssertionError) {
+            // Drag handle not displayed
+        }
     } else {
-        val openToggle =
-            onNodeWithContentDescription(CaptureR.string.quick_settings_toggle_open_description)
-        if (openToggle.isDisplayed()) {
-            openToggle.performClick()
+        try {
+            val openToggle =
+                onNodeWithContentDescription(CaptureR.string.quick_settings_toggle_open_description)
+            if (openToggle.isDisplayed()) {
+                openToggle.performClick()
+            }
+        } catch (_: AssertionError) {
+            // Open toggle not displayed
         }
     }
 
@@ -682,23 +707,21 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
     crossinline block: ComposeTestRule.() -> T
 ): T {
     var needReturnFromQuickSettings = false
-    onNodeWithContentDescription(CaptureR.string.quick_settings_toggle_closed_description).apply {
-        if (isDisplayed()) {
-            performClick()
-            needReturnFromQuickSettings = true
+    if (!isQuickSettingsSheetOpen()) {
+        try {
+            val closedToggle =
+                onNodeWithContentDescription(CaptureR.string.quick_settings_toggle_closed_description)
+            if (closedToggle.isDisplayed()) {
+                closedToggle.performClick()
+                needReturnFromQuickSettings = true
+            }
+        } catch (_: AssertionError) {
+            // Closed toggle not displayed
         }
     }
 
     waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-        try {
-            onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isDisplayed()
-        } catch (e: AssertionError) {
-            Log.e(
-                "ComposeTestRuleExt",
-                "Quick settings can only be entered from PreviewScreen or QuickSettings screen"
-            )
-            throw e
-        }
+        isQuickSettingsSheetOpen()
     }
     // if we opened quick settings and want to immediately search for a setting
     settingTagToFind?.let { searchForQuickSetting(it) }
