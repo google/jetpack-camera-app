@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.utils
 
 import android.content.Context
-import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -710,7 +709,9 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
     if (!isQuickSettingsSheetOpen()) {
         try {
             val closedToggle =
-                onNodeWithContentDescription(CaptureR.string.quick_settings_toggle_closed_description)
+                onNodeWithContentDescription(
+                    CaptureR.string.quick_settings_toggle_closed_description
+                )
             if (closedToggle.isDisplayed()) {
                 closedToggle.performClick()
                 needReturnFromQuickSettings = true

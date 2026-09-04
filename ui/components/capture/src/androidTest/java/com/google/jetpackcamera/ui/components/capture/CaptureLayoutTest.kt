@@ -35,7 +35,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -50,10 +49,6 @@ class CaptureLayoutTest {
     @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun previewLayout_dragHandle_hasButtonRoleAndAccessibilityLabel() {
-        val targetDescription = InstrumentationRegistry.getInstrumentation().targetContext.getString(
-            R.string.quick_settings_btn_close_expanded_settings_description
-        )
-
         composeTestRule.setContent {
             val scaffoldState = rememberBottomSheetScaffoldState(
                 bottomSheetState = rememberStandardBottomSheetState(
@@ -64,8 +59,20 @@ class CaptureLayoutTest {
             PreviewLayout(
                 scaffoldState = scaffoldState,
                 onDismissQuickSettings = {},
-                viewfinder = { Box(modifier = Modifier.size(100.dp).testTag("Viewfinder")) },
-                captureButton = { Box(modifier = Modifier.size(50.dp).testTag("CaptureButton")) },
+                viewfinder = {
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .testTag("Viewfinder")
+                    )
+                },
+                captureButton = {
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .testTag("CaptureButton")
+                    )
+                },
                 imageWell = { Box(modifier = Modifier.size(30.dp)) },
                 flipCameraButton = { Box(modifier = Modifier.size(30.dp)) },
                 zoomLevelDisplay = { Box(modifier = Modifier.size(20.dp)) },
@@ -73,7 +80,13 @@ class CaptureLayoutTest {
                 quickSettingsButton = { Box(modifier = Modifier.size(30.dp)) },
                 indicatorRow = { Box(modifier = Modifier.size(20.dp)) },
                 captureModeToggle = { Box(modifier = Modifier.size(20.dp)) },
-                quickSettingsOverlay = { Box(modifier = Modifier.size(200.dp).testTag("QuickSettingsOverlay")) },
+                quickSettingsOverlay = {
+                    Box(
+                        modifier = Modifier
+                            .size(200.dp)
+                            .testTag("QuickSettingsOverlay")
+                    )
+                },
                 debugOverlay = {},
                 debugVisibilityWrapper = { it() },
                 screenFlashOverlay = {},
