@@ -107,6 +107,9 @@ dependencies {
     testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.accessibility)
+    androidTestImplementation(libs.compose.accessibility)
+    androidTestImplementation(libs.accessibility.test.framework)
 
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
@@ -125,4 +128,11 @@ dependencies {
 // Allow references to generated code
 kapt {
     correctErrorTypes = true
+}
+configurations.all {
+    resolutionStrategy {
+        // Exclude protobuf-lite to prevent DuplicateClassException conflicts with protobuf-javalite
+        // that is brought in by androidx.datastore, since the accessibility-test-framework brings in protobuf-lite.
+        exclude(group = "com.google.protobuf", module = "protobuf-lite")
+    }
 }
