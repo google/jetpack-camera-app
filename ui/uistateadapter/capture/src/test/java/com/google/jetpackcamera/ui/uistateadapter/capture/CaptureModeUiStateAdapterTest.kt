@@ -30,9 +30,9 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
+import org.junit.runners.JUnit4
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(JUnit4::class)
 class CaptureModeUiStateAdapterTest {
 
     @Test
@@ -80,23 +80,16 @@ class CaptureModeUiStateAdapterTest {
         assertThat(uiState).isInstanceOf(CaptureModeUiState.Available::class.java)
         val available = uiState as CaptureModeUiState.Available
 
-        val standardState = available.availableCaptureModes.find {
-            when (it) {
-                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.STANDARD
-                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.STANDARD
-            }
-        }
+        val standardState = available.availableCaptureModes.find { it.value == CaptureMode.STANDARD }
         assertThat(standardState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
         assertThat((standardState as SingleSelectableUiState.Disabled).disabledReason)
             .isEqualTo(DisabledReason.HYBRID_CAPTURE_RESTRICTED)
 
-        val imageState = available.availableCaptureModes.find {
-            when (it) {
-                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.IMAGE_ONLY
-                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.IMAGE_ONLY
-            }
-        }
+        val imageState = available.availableCaptureModes.find { it.value == CaptureMode.IMAGE_ONLY }
         assertThat(imageState).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
+
+        val videoState = available.availableCaptureModes.find { it.value == CaptureMode.VIDEO_ONLY }
+        assertThat(videoState).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
     }
 
     @Test
@@ -169,6 +162,20 @@ class CaptureModeUiStateAdapterTest {
         assertThat(uiState).isInstanceOf(CaptureModeToggleUiState.Available::class.java)
         val available = uiState as CaptureModeToggleUiState.Available
         assertThat(available.selectedCaptureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
+    }
+
+    @Test
+    fun toggleFrom_optionsEnabledWithImageAndVideo_returnsAvailable() {
+        val uiState = CaptureModeToggleUiState.from(
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(captureMode = CaptureMode.IMAGE_ONLY),
+            cameraState = CameraState(),
+            externalCaptureMode = ExternalCaptureMode.Standard,
+            restrictionConfig = OptionRestrictionConfig.OptionsEnabled(
+                setOf(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+            )
+        )
+        assertThat(uiState).isInstanceOf(CaptureModeToggleUiState.Available::class.java)
     }
 
     @Test

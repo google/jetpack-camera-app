@@ -73,18 +73,8 @@ fun CaptureModeToggleUiState.Companion.from(
             restrictionConfig
         )
         // Find the IMAGE_ONLY and VIDEO_ONLY states
-        val imageOnlyState = availableCaptureModes.first { item ->
-            when (item) {
-                is SingleSelectableUiState.SelectableUi -> item.value == CaptureMode.IMAGE_ONLY
-                is SingleSelectableUiState.Disabled -> item.value == CaptureMode.IMAGE_ONLY
-            }
-        }
-        val videoOnlyState = availableCaptureModes.first { item ->
-            when (item) {
-                is SingleSelectableUiState.SelectableUi -> item.value == CaptureMode.VIDEO_ONLY
-                is SingleSelectableUiState.Disabled -> item.value == CaptureMode.VIDEO_ONLY
-            }
-        }
+        val imageOnlyState = availableCaptureModes.first { it.value == CaptureMode.IMAGE_ONLY }
+        val videoOnlyState = availableCaptureModes.first { it.value == CaptureMode.VIDEO_ONLY }
         if (imageOnlyState is SingleSelectableUiState.Disabled ||
             videoOnlyState is SingleSelectableUiState.Disabled
         ) {
@@ -356,7 +346,7 @@ private fun getCaptureModeDisabledReason(
             if (isHdrOn) {
                 return DisabledReason.HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED
             }
-            throw RuntimeException("Unknown DisabledReason for hybrid mode.")
+            return DisabledReason.UNKNOWN
         }
     }
 }
