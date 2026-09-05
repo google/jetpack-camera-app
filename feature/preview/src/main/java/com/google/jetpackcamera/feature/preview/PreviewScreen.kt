@@ -315,7 +315,7 @@ private fun ContentScreen(
     // This provides a single source of truth without bidirectional synchronization loops.
     val isQuickSettingsOpen by remember(scaffoldState.bottomSheetState) {
         derivedStateOf {
-            scaffoldState.bottomSheetState.targetValue != SheetValue.Hidden
+            scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
         }
     }
 

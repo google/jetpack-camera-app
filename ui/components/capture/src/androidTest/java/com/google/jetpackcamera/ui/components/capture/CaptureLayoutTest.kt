@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,7 +26,9 @@ import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
@@ -34,6 +38,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.compose.ui.unit.dp
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -45,6 +50,9 @@ class CaptureLayoutTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    private fun getResString(@StringRes resId: Int): String =
+        ApplicationProvider.getApplicationContext<Context>().getString(resId)
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Test
@@ -94,10 +102,19 @@ class CaptureLayoutTest {
             )
         }
 
+        val targetDescription = getResString(
+            R.string.quick_settings_btn_close_expanded_settings_description
+        )
+
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
             .assertIsDisplayed()
             .assert(
                 SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)
+            )
+            .assert(
+                SemanticsMatcher("onClickLabel equals $targetDescription") { node ->
+                    node.config.getOrNull(SemanticsActions.OnClick)?.label == targetDescription
+                }
             )
 
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
@@ -137,5 +154,78 @@ class CaptureLayoutTest {
 
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
         assertThat(onDismissCalled).isTrue()
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun previewLayout_scrim_displayedWhenExpanded_andClickCallsDismiss() {
+        var onDismissCalled = false
+
+        composeTestRule.setContent {
+            val scaffoldState = rememberBottomSheetScaffoldState(
+                bottomSheetState = rememberStandardBottomSheetState(
+                    initialValue = SheetValue.Expanded,
+                    skipHiddenState = false
+                )
+            )
+            PreviewLayout(
+                scaffoldState = scaffoldState,
+                onDismissQuickSettings = { onDismissCalled = true },
+                viewfinder = { Box(modifier = Modifier.size(100.dp)) },
+                captureButton = { Box(modifier = Modifier.size(50.dp)) },
+                imageWell = { Box(modifier = Modifier.size(30.dp)) },
+                flipCameraButton = { Box(modifier = Modifier.size(30.dp)) },
+                zoomLevelDisplay = { Box(modifier = Modifier.size(20.dp)) },
+                elapsedTimeDisplay = { Box(modifier = Modifier.size(20.dp)) },
+                quickSettingsButton = { Box(modifier = Modifier.size(30.dp)) },
+                indicatorRow = { Box(modifier = Modifier.size(20.dp)) },
+                captureModeToggle = { Box(modifier = Modifier.size(20.dp)) },
+                quickSettingsOverlay = { Box(modifier = Modifier.size(200.dp)) },
+                debugOverlay = {},
+                debugVisibilityWrapper = { it() },
+                screenFlashOverlay = {},
+                snackBar = { _, _ -> }
+            )
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
+            .assertIsDisplayed()
+            .performClick()
+
+        assertThat(onDismissCalled).isTrue()
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun previewLayout_scrim_doesNotExistWhenHidden() {
+        composeTestRule.setContent {
+            val scaffoldState = rememberBottomSheetScaffoldState(
+                bottomSheetState = rememberStandardBottomSheetState(
+                    initialValue = SheetValue.Hidden,
+                    skipHiddenState = false
+                )
+            )
+            PreviewLayout(
+                scaffoldState = scaffoldState,
+                onDismissQuickSettings = {},
+                viewfinder = { Box(modifier = Modifier.size(100.dp)) },
+                captureButton = { Box(modifier = Modifier.size(50.dp)) },
+                imageWell = { Box(modifier = Modifier.size(30.dp)) },
+                flipCameraButton = { Box(modifier = Modifier.size(30.dp)) },
+                zoomLevelDisplay = { Box(modifier = Modifier.size(20.dp)) },
+                elapsedTimeDisplay = { Box(modifier = Modifier.size(20.dp)) },
+                quickSettingsButton = { Box(modifier = Modifier.size(30.dp)) },
+                indicatorRow = { Box(modifier = Modifier.size(20.dp)) },
+                captureModeToggle = { Box(modifier = Modifier.size(20.dp)) },
+                quickSettingsOverlay = { Box(modifier = Modifier.size(200.dp)) },
+                debugOverlay = {},
+                debugVisibilityWrapper = { it() },
+                screenFlashOverlay = {},
+                snackBar = { _, _ -> }
+            )
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
+            .assertDoesNotExist()
     }
 }

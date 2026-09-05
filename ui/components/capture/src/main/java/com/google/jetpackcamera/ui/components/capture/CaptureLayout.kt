@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -164,6 +165,19 @@ fun PreviewLayout(
                     screenFlashOverlay(Modifier)
                 }
                 debugOverlay(Modifier)
+
+                if (scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .testTag(QUICK_SETTINGS_SCRIM)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onDismissQuickSettings
+                            )
+                    )
+                }
             }
         }
     }

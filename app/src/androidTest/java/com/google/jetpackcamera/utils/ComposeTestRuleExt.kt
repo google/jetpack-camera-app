@@ -193,15 +193,7 @@ fun ComposeTestRule.waitForNodeWithTagToDisappear(
 ) {
     waitUntil(timeoutMillis = timeoutMillis) {
         val nodes = onAllNodesWithTag(tag).fetchSemanticsNodes()
-        if (nodes.isEmpty()) {
-            true
-        } else {
-            try {
-                onNodeWithTag(tag).isNotDisplayed()
-            } catch (_: AssertionError) {
-                true
-            }
-        }
+        nodes.isEmpty() || onNodeWithTag(tag).isNotDisplayed()
     }
 }
 
