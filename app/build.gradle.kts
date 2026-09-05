@@ -150,6 +150,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Hilt
+    implementation(libs.hilt.navigation.compose)
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
@@ -185,13 +186,14 @@ dependencies {
     implementation(project(":ui:components:capture"))
     implementation(project(":ui:debug"))
 
+    implementation(project(":core:camera"))
+
     // Low Light implementations
     implementation(project(":core:camera:low-light:low-light-di"))
     implementation(project(":core:camera:low-light-playservices-di"))
 
     // Postprocess implementations
     implementation(project(":core:camera:postprocess:postprocess-di"))
-
     implementation(project(":core:camera:low-light-playservices"))
     implementation(project(":core:camera:effects:single-stream"))
 }
