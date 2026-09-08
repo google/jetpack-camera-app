@@ -72,6 +72,8 @@ import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DRAG_HANDLE
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCRIM
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
@@ -664,25 +666,10 @@ fun ComposeTestRule.isQuickSettingsSheetOpen(): Boolean {
 fun ComposeTestRule.closeQuickSettings(timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS) {
     if (!isQuickSettingsSheetOpen()) return
 
-    val dragHandleNodes = onAllNodesWithTag(QUICK_SETTINGS_DRAG_HANDLE).fetchSemanticsNodes()
-    if (dragHandleNodes.isNotEmpty()) {
-        try {
-            if (onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).isDisplayed()) {
-                onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
-            }
-        } catch (_: AssertionError) {
-            // Drag handle not displayed
-        }
-    } else {
-        try {
-            val openToggle =
-                onNodeWithContentDescription(CaptureR.string.quick_settings_toggle_open_description)
-            if (openToggle.isDisplayed()) {
-                openToggle.performClick()
-            }
-        } catch (_: AssertionError) {
-            // Open toggle not displayed
-        }
+    try {
+        onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
+    } catch (_: AssertionError) {
+        onNodeWithTag(QUICK_SETTINGS_SCRIM).performClick()
     }
 
     waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET, timeoutMillis)
@@ -699,18 +686,8 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
 ): T {
     var needReturnFromQuickSettings = false
     if (!isQuickSettingsSheetOpen()) {
-        try {
-            val closedToggle =
-                onNodeWithContentDescription(
-                    CaptureR.string.quick_settings_toggle_closed_description
-                )
-            if (closedToggle.isDisplayed()) {
-                closedToggle.performClick()
-                needReturnFromQuickSettings = true
-            }
-        } catch (_: AssertionError) {
-            // Closed toggle not displayed
-        }
+        onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).performClick()
+        needReturnFromQuickSettings = true
     }
 
     waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {

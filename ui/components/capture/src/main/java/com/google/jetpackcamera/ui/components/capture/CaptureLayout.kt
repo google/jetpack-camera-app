@@ -166,12 +166,17 @@ fun PreviewLayout(
                 }
                 debugOverlay(Modifier)
 
-                if (scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded) {
+                val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
+                    scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+                if (isSheetVisible) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .testTag(QUICK_SETTINGS_SCRIM)
                             .clickable(
+                                onClickLabel = stringResource(
+                                    R.string.quick_settings_btn_close_expanded_settings_description
+                                ),
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
                                 onClick = onDismissQuickSettings

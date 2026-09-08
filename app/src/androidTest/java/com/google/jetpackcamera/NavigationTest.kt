@@ -15,11 +15,15 @@
  */
 package com.google.jetpackcamera
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -29,11 +33,12 @@ import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DRAG_HANDLE
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCRIM
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
-import com.google.jetpackcamera.utils.closeQuickSettings
 import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.searchForQuickSetting
@@ -155,8 +160,50 @@ class NavigationTest {
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
         composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
 
-        // close quick settings via drag handle
-        composeTestRule.closeQuickSettings()
+        // close quick settings directly via drag handle
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
+
+        // Assert we're on PreviewScreen and bottom sheet is closed
+        composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
+    }
+
+    @Test
+    fun dismissQuickSettings_viaScrim_returnsToPreview() = runMainActivityScenarioTest {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitForCaptureButton()
+
+        // open quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+
+        // Tap the scrim in the upper quadrant (20% from the top) to ensure the touch lands
+        // safely within the visible scrim area above the bottom sheet and avoids system
+        // status bar/notch insets.
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_SCRIM)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).performTouchInput {
+            click(Offset(centerX, height * 0.2f))
+        }
+
+        // Assert we're on PreviewScreen and bottom sheet is closed
+        composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
+    }
+
+    @Test
+    fun dismissQuickSettings_viaSwipeDown_returnsToPreview() = runMainActivityScenarioTest {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitForCaptureButton()
+
+        // open quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+
+        // swipe down to dismiss
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).performTouchInput {
+            swipeDown()
+        }
 
         // Assert we're on PreviewScreen and bottom sheet is closed
         composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
