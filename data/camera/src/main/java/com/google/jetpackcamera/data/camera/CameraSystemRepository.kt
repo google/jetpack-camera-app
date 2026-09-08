@@ -28,10 +28,29 @@ import kotlinx.coroutines.flow.StateFlow
 interface CameraSystemRepository {
     val cameraSystem: CameraSystem
 
+    /**
+     * A [StateFlow] emitting the current [SurfaceRequest] when the camera is active.
+     */
     val surfaceRequest: StateFlow<SurfaceRequest?>
+
+    /**
+     * A [StateFlow] emitting the current [CameraSystemConstraints] supported by the device.
+     */
     val systemConstraints: StateFlow<CameraSystemConstraints?>
+
+    /**
+     * A [StateFlow] emitting the current [CameraAppSettings].
+     */
     val currentSettings: StateFlow<CameraAppSettings?>
+
+    /**
+     * A [StateFlow] emitting the current [CameraState].
+     */
     val currentCameraState: StateFlow<CameraState>
+
+    /**
+     * A [StateFlow] emitting a JSON string representation of the camera properties.
+     */
     val cameraPropertiesJSON: StateFlow<String?>
 
     /**

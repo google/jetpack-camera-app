@@ -30,8 +30,11 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(JUnit4::class)
 class CameraXCameraSystemRepositoryTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()

@@ -80,8 +80,15 @@ fun Intent.toDebugSettings(): DebugSettings = DebugSettings(
 @ActivityRetainedScoped
 class CameraLaunchConfigProvider @Inject constructor() {
     private val _config = MutableStateFlow(CameraLaunchConfig())
+
+    /**
+     * The current [CameraLaunchConfig] state flow.
+     */
     val config: StateFlow<CameraLaunchConfig> = _config.asStateFlow()
 
+    /**
+     * Updates the configuration by parsing the provided [intent].
+     */
     fun setIntent(intent: Intent?) {
         if (intent == null) return
         _config.value = CameraLaunchConfig(
@@ -90,6 +97,9 @@ class CameraLaunchConfigProvider @Inject constructor() {
         )
     }
 
+    /**
+     * Directly sets a new [config] value.
+     */
     fun setConfig(config: CameraLaunchConfig) {
         _config.value = config
     }

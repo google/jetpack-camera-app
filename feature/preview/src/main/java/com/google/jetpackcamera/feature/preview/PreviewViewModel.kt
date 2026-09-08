@@ -179,7 +179,8 @@ class PreviewViewModel @Inject constructor(
      */
     val zoomController: ZoomController = ZoomControllerImpl(
         cameraSystemProvider = cameraSystemRepository::getCameraSystem,
-        trackedCaptureUiState = trackedCaptureUiState
+        trackedCaptureUiState = trackedCaptureUiState,
+        coroutineContext = viewModelScope.coroutineContext
     )
 
     val imageWellController: ImageWellController = ImageWellControllerImpl(
