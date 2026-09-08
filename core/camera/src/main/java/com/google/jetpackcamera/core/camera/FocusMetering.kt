@@ -27,11 +27,8 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.SurfaceRequest
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,7 +42,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 private const val TAG = "FocusMetering"
 private const val SCENE_CHANGE_POST_LOCK_DELAY_MILLIS = 3000L
 private const val REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES = 3
@@ -172,50 +169,38 @@ private fun SurfaceRequest.createTransformationInfoFlow(
 
 @RequiresApi(Build.VERSION_CODES.P)
 internal suspend fun awaitClearFocusLock(sceneChangeStatusFlow: Flow<Int?>) {
-    class FallbackTimeoutException(
-        message: String
-    ) : CancellationException(message)
+    // Phase 1: Wait up to 15s for the first non-null metadata frame to verify hardware capability
+    val initialStatus = withTimeoutOrNull(FOCUS_LOCK_FALLBACK_TIMEOUT_MILLIS) {
+        sceneChangeStatusFlow.filterNotNull().first()
+    }
 
-    try {
-        coroutineScope {
-            val fallbackTimeoutJob = launch {
-                delay(FOCUS_LOCK_FALLBACK_TIMEOUT_MILLIS)
-                this@coroutineScope.cancel(
-                    FallbackTimeoutException("SceneChange fallback triggered")
-                )
-            }
-
-            var consecutiveFrames = 0
-            sceneChangeStatusFlow.first { sceneChangeStatus ->
-                if (sceneChangeStatus != null) {
-                    // Supported! Cancel the fallback timer immediately.
-                    fallbackTimeoutJob.cancel()
-
-                    val isSceneChange =
-                        sceneChangeStatus == CameraMetadata.CONTROL_AF_SCENE_CHANGE_DETECTED
-                    if (isSceneChange) {
-                        consecutiveFrames++
-                    } else {
-                        consecutiveFrames = 0
-                    }
-                    consecutiveFrames >= REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES
-                } else {
-                    false
-                }
-            }
-
-            Log.i(
-                TAG,
-                "*** AF SCENE CHANGE DETECTED " +
-                    "($REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES consecutive frames)!" +
-                    " Cancelling focus lock ***"
-            )
-        }
-    } catch (e: FallbackTimeoutException) {
+    if (initialStatus == null) {
         Log.i(
             TAG,
             "Device did not produce AF_SCENE_CHANGE metadata within 15s timeout. " +
                 "Cancelling focus lock ***"
         )
+        return
     }
+
+    // Phase 2: Hardware capability confirmed. Monitor indefinitely until 3 consecutive frames detect scene change
+    var consecutiveFrames =
+        if (initialStatus == CameraMetadata.CONTROL_AF_SCENE_CHANGE_DETECTED) 1 else 0
+    if (consecutiveFrames < REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES) {
+        sceneChangeStatusFlow.filterNotNull().first { status ->
+            if (status == CameraMetadata.CONTROL_AF_SCENE_CHANGE_DETECTED) {
+                consecutiveFrames++
+            } else {
+                consecutiveFrames = 0
+            }
+            consecutiveFrames >= REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES
+        }
+    }
+
+    Log.i(
+        TAG,
+        "*** AF SCENE CHANGE DETECTED " +
+            "($REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES consecutive frames)!" +
+            " Cancelling focus lock ***"
+    )
 }

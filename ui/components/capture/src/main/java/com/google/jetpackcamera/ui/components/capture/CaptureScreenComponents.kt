@@ -78,6 +78,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -954,8 +955,10 @@ internal fun FocusMeteringIndicator(
     coordinateTransformer: CoordinateTransformer
 ) {
     val lastSpecifiedState = remember { arrayOfNulls<FocusMeteringUiState.Specified>(1) }
-    if (focusMeteringUiState is FocusMeteringUiState.Specified) {
-        lastSpecifiedState[0] = focusMeteringUiState
+    SideEffect {
+        if (focusMeteringUiState is FocusMeteringUiState.Specified) {
+            lastSpecifiedState[0] = focusMeteringUiState
+        }
     }
 
     val activeState =
