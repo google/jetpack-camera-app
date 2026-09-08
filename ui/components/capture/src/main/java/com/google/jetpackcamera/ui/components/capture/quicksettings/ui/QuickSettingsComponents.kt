@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -382,7 +383,7 @@ private fun <T> QuickSettingsListRow(
             val enabled = isItemEnabled(selectableItem)
 
             val shapes = when {
-                items.size == 1 -> ToggleButtonDefaults.shapes()
+                items.size == 1 -> ToggleButtonDefaults.shapesFor(ButtonDefaults.MinHeight)
                 index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                 index == items.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
                 else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
@@ -449,7 +450,7 @@ private fun QuickSettingToggleSelectorButton(
     onClick: () -> Unit,
     isSelected: Boolean = false,
     enabled: Boolean = true,
-    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapes()
+    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapesFor(ButtonDefaults.MinHeight)
 ) {
     QuickSettingToggleSelectorButton(
         modifier = modifier,
@@ -481,7 +482,7 @@ private fun QuickSettingToggleSelectorButton(
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
     enabled: Boolean = true,
-    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapes()
+    shapes: ToggleButtonShapes = ToggleButtonDefaults.shapesFor(ButtonDefaults.MinHeight)
 ) {
     ToggleButton(
         modifier = modifier
@@ -490,7 +491,7 @@ private fun QuickSettingToggleSelectorButton(
         enabled = enabled,
         onCheckedChange = { _ -> onClick() },
         shapes = shapes,
-        colors = ToggleButtonDefaults.toggleButtonColors(
+        colors = ToggleButtonDefaults.colors(
             containerColor = MaterialTheme.colorScheme.onSecondaryFixedVariant,
             checkedContainerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onSurface,
