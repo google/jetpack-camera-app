@@ -15,11 +15,32 @@
  */
 package com.google.jetpackcamera.data.camera
 
+import androidx.camera.core.SurfaceRequest
+import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Repository that holds an instance of [CameraSystem].
+ * Repository that manages camera system lifecycle, lazy initialization, and proxies camera data streams.
  */
 interface CameraSystemRepository {
     val cameraSystem: CameraSystem
+
+    val surfaceRequest: StateFlow<SurfaceRequest?>
+    val systemConstraints: StateFlow<CameraSystemConstraints?>
+    val currentSettings: StateFlow<CameraAppSettings?>
+    val currentCameraState: StateFlow<CameraState>
+    val cameraPropertiesJSON: StateFlow<String?>
+
+    /**
+     * Returns the initialized [CameraSystem], suspending until initialization completes.
+     */
+    suspend fun getCameraSystem(): CameraSystem
+
+    /**
+     * Returns supported MIME types once initialized.
+     */
+    suspend fun getSupportedMimeTypes(): List<String>
 }

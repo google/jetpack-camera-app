@@ -63,7 +63,7 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
  */
 class CaptureControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    private val cameraSystem: CameraSystem,
+    private val cameraSystemProvider: suspend () -> CameraSystem,
     private val saveMode: SaveMode,
     private val externalCaptureMode: ExternalCaptureMode,
     private val externalCapturesCallback: () -> Pair<SaveLocation, IntProgress?>,
@@ -95,7 +95,7 @@ class CaptureControllerImpl(
             captureImageInternal(
                 saveLocation = saveLocation,
                 doTakePicture = {
-                    cameraSystem.takePicture(contentResolver, saveLocation) {
+                    cameraSystemProvider().takePicture(contentResolver, saveLocation) {
                         trackedCaptureUiState.update { old ->
                             old.copy(lastBlinkTimeStamp = System.currentTimeMillis())
                         }
@@ -147,7 +147,7 @@ class CaptureControllerImpl(
                 externalCapturesCallback
             )
             try {
-                cameraSystem.startVideoRecording(saveLocation) {
+                cameraSystemProvider().startVideoRecording(saveLocation) {
                     when (it) {
                         is OnVideoRecordEvent.OnVideoRecorded -> {
                             Log.d(TAG, "cameraSystem.startRecording OnVideoRecorded")
@@ -184,7 +184,7 @@ class CaptureControllerImpl(
         recordingJob?.cancel()
         recordingJob = null
         scope.launch {
-            cameraSystem.stopVideoRecording()
+            cameraSystemProvider().stopVideoRecording()
         }
     }
 
@@ -216,16 +216,16 @@ class CaptureControllerImpl(
     override fun setPaused(shouldBePaused: Boolean) {
         scope.launch {
             if (shouldBePaused) {
-                cameraSystem.pauseVideoRecording()
+                cameraSystemProvider().pauseVideoRecording()
             } else {
-                cameraSystem.resumeVideoRecording()
+                cameraSystemProvider().resumeVideoRecording()
             }
         }
     }
 
     override fun setAudioEnabled(shouldEnableAudio: Boolean) {
         scope.launch {
-            cameraSystem.setAudioEnabled(shouldEnableAudio)
+            cameraSystemProvider().setAudioEnabled(shouldEnableAudio)
         }
 
         Log.d(
