@@ -51,7 +51,7 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
  * Implementation of [CaptureController] that interacts with [CameraSystem].
  *
  * @param trackedCaptureUiState State for tracking UI changes during capture.
- * @param cameraSystem The camera system to perform capture operations.
+ * @param cameraSystemProvider Provider for the initialized [CameraSystem].
  * @param saveMode Mode for saving captured media.
  * @param externalCaptureMode Mode for external capture requests.
  * @param externalCapturesCallback Callback for getting external capture information.

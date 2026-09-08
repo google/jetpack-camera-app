@@ -28,8 +28,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 private const val TAG = "CameraLaunchConfig"
-const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
-const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
+internal const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
+internal const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
 
 /**
  * Retained configuration options supplied at launch (such as from intent extras).
@@ -42,7 +42,7 @@ data class CameraLaunchConfig(
 /**
  * Parses [ExternalCaptureMode] from an [Intent].
  */
-fun Intent.toExternalCaptureMode(): ExternalCaptureMode = when (action) {
+internal fun Intent.toExternalCaptureMode(): ExternalCaptureMode = when (action) {
     MediaStore.ACTION_IMAGE_CAPTURE -> ExternalCaptureMode.ImageCapture
     MediaStore.ACTION_VIDEO_CAPTURE -> ExternalCaptureMode.VideoCapture
     MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA -> ExternalCaptureMode.MultipleImageCapture
@@ -57,7 +57,7 @@ fun Intent.toExternalCaptureMode(): ExternalCaptureMode = when (action) {
 /**
  * Parses [DebugSettings] from an [Intent].
  */
-fun Intent.toDebugSettings(): DebugSettings = DebugSettings(
+internal fun Intent.toDebugSettings(): DebugSettings = DebugSettings(
     isDebugModeEnabled = getBooleanExtra(KEY_DEBUG_MODE, false),
     singleLensMode = getStringExtra(KEY_DEBUG_SINGLE_LENS_MODE)?.let {
         when (it.lowercase()) {

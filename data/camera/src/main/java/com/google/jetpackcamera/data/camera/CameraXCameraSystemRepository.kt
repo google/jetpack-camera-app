@@ -24,7 +24,6 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
 import com.google.jetpackcamera.settings.model.getSupportedMimeTypes
-import dagger.hilt.android.scopes.ActivityRetainedScoped
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -42,7 +41,6 @@ import kotlinx.coroutines.flow.first
  * Implementation of [CameraSystemRepository] that manages [CameraXCameraSystem] initialization
  * and exposes camera streams.
  */
-@ActivityRetainedScoped
 class CameraXCameraSystemRepository(
     private val cameraXCameraSystemProvider: Provider<out CameraSystem>,
     private val settingsRepository: SettingsRepository,
@@ -62,7 +60,7 @@ class CameraXCameraSystemRepository(
         scope = scope
     )
 
-    override val cameraSystem: CameraSystem by lazy {
+    private val cameraSystem: CameraSystem by lazy {
         cameraXCameraSystemProvider.get()
     }
 

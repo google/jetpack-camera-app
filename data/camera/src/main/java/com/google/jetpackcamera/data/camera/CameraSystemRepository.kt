@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.StateFlow
  * Repository that manages camera system lifecycle, lazy initialization, and proxies camera data streams.
  */
 interface CameraSystemRepository {
-    val cameraSystem: CameraSystem
 
     /**
      * A [StateFlow] emitting the current [SurfaceRequest] when the camera is active.

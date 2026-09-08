@@ -289,7 +289,6 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val KEY_REVIEW_AFTER_CAPTURE = "KEY_REVIEW_AFTER_CAPTURE"
 
-        private const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
         const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
         const val KEY_DISABLE_ANIMATIONS = "KEY_DISABLE_ANIMATIONS"
     }

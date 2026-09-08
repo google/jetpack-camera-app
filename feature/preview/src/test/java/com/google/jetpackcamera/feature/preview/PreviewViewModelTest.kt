@@ -55,7 +55,6 @@ class PreviewViewModelTest {
 
     private val cameraSystem = FakeCameraSystem()
     private val cameraSystemRepository = object : CameraSystemRepository {
-        override val cameraSystem = this@PreviewViewModelTest.cameraSystem
         override val surfaceRequest = cameraSystem.getSurfaceRequest()
         override val systemConstraints = cameraSystem.getSystemConstraints()
         override val currentSettings = cameraSystem.getCurrentSettings()
