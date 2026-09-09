@@ -38,16 +38,17 @@ import kotlinx.coroutines.launch
  * [trackedCaptureUiState].
  *
  * @param trackedCaptureUiState The state flow to update with quick settings information.
- * @param cameraSystem The camera system to control.
+ * @param cameraSystemProvider The suspending provider for the [CameraSystem].
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class QuickSettingsControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    private val cameraSystem: CameraSystem,
+    private val cameraSystemProvider: suspend () -> CameraSystem,
     coroutineContext: CoroutineContext
 ) : QuickSettingsController {
     private val job = Job(parent = coroutineContext[Job.Key])
     private val scope = CoroutineScope(coroutineContext + job)
+
     override fun toggleQuickSettings() {
         trackedCaptureUiState.update { old ->
             old.copy(isQuickSettingsOpen = !old.isQuickSettingsOpen)
@@ -57,38 +58,38 @@ class QuickSettingsControllerImpl(
     override fun setLensFacing(lensFace: LensFacing) {
         scope.launch {
             // apply to cameraSystem
-            cameraSystem.setLensFacing(lensFace)
+            cameraSystemProvider().setLensFacing(lensFace)
         }
     }
 
     override fun setFlash(flashMode: FlashMode) {
         scope.launch {
             // apply to cameraSystem
-            cameraSystem.setFlashMode(flashMode)
+            cameraSystemProvider().setFlashMode(flashMode)
         }
     }
 
     override fun setAspectRatio(aspectRatio: AspectRatio) {
         scope.launch {
-            cameraSystem.setAspectRatio(aspectRatio)
+            cameraSystemProvider().setAspectRatio(aspectRatio)
         }
     }
 
     override fun setDynamicRange(dynamicRange: DynamicRange) {
         scope.launch {
-            cameraSystem.setDynamicRange(dynamicRange)
+            cameraSystemProvider().setDynamicRange(dynamicRange)
         }
     }
 
     override fun setImageFormat(imageOutputFormat: ImageOutputFormat) {
         scope.launch {
-            cameraSystem.setImageFormat(imageOutputFormat)
+            cameraSystemProvider().setImageFormat(imageOutputFormat)
         }
     }
 
     override fun setCaptureMode(captureMode: CaptureMode) {
         scope.launch {
-            cameraSystem.setCaptureMode(captureMode)
+            cameraSystemProvider().setCaptureMode(captureMode)
         }
     }
 
