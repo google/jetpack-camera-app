@@ -16,7 +16,6 @@
 package com.google.jetpackcamera
 
 import androidx.compose.ui.test.doubleClick
-import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -31,7 +30,7 @@ import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
-import com.google.jetpackcamera.utils.assume
+import com.google.jetpackcamera.utils.assumeFlipCameraAvailable
 import com.google.jetpackcamera.utils.getCurrentLensFacing
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.waitForNodeWithTag
@@ -111,9 +110,7 @@ inline fun runFlipCameraTest(
     composeTestRule.waitForNodeWithTag(PREVIEW_DISPLAY, APP_START_TIMEOUT_MILLIS)
 
     // If flipping the camera is available, flip it. Otherwise skip test.
-    composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
-        "Device does not have multiple cameras to flip between."
-    }
+    composeTestRule.assumeFlipCameraAvailable()
 
     block()
 }

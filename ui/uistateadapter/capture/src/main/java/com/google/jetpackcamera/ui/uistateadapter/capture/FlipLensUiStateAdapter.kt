@@ -52,6 +52,10 @@ fun FlipLensUiState.Companion.from(
             ORDERED_UI_SUPPORTED_LENS_FACINGS
         )
 
+    if (availableLensFacings.size <= 1) {
+        return FlipLensUiState.Unavailable
+    }
+
     return FlipLensUiState.Available(
         selectedLensFacing = cameraAppSettings.cameraLensFacing,
         availableLensFacings = availableLensFacings

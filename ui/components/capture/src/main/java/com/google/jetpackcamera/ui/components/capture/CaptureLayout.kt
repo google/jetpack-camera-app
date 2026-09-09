@@ -183,7 +183,11 @@ private fun VerticalMaterialControls(
                                 .height(120.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            flipCameraButton(Modifier)
+                            OverlapAwareStyleProvider(
+                                overlapThreshold = 0.5f
+                            ) {
+                                flipCameraButton(Modifier)
+                            }
                         }
                     }
                 }
