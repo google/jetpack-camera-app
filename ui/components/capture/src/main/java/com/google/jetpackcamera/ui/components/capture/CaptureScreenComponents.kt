@@ -1012,17 +1012,16 @@ internal fun FocusMeteringIndicator(
 
     // Accessibility: announce focus state transitions to TalkBack
     val view = LocalView.current
-    val context = LocalContext.current
     LaunchedEffect(currentStatus) {
         when (currentStatus) {
             FocusMeteringUiState.Status.RUNNING ->
-                view.announceForAccessibility(context.getString(R.string.focus_scanning))
+                view.announceForAccessibility(focusScanningDescription)
             FocusMeteringUiState.Status.SUCCESS ->
-                view.announceForAccessibility(context.getString(R.string.focus_locked))
+                view.announceForAccessibility(focusLockedDescription)
             FocusMeteringUiState.Status.FAILURE ->
-                view.announceForAccessibility(context.getString(R.string.focus_failed))
+                view.announceForAccessibility(focusFailedDescription)
             FocusMeteringUiState.Status.CANCELLED ->
-                view.announceForAccessibility(context.getString(R.string.focus_released))
+                view.announceForAccessibility(focusReleasedDescription)
             null -> {}
         }
     }
