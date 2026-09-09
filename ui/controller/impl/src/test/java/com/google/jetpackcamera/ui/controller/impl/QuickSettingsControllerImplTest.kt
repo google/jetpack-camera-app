@@ -49,7 +49,7 @@ internal class QuickSettingsControllerImplTest {
     fun setup() {
         controller = QuickSettingsControllerImpl(
             trackedCaptureUiState = trackedCaptureUiState,
-            cameraSystem = cameraSystem,
+            cameraSystemProvider = { cameraSystem },
             coroutineContext = testDispatcher
         )
     }
