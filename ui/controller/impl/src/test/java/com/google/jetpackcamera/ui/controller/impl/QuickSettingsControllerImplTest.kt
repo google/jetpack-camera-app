@@ -45,7 +45,7 @@ internal class QuickSettingsControllerImplTest {
     @Before
     fun setup() {
         controller = QuickSettingsControllerImpl(
-            cameraSystem = cameraSystem,
+            cameraSystemProvider = { cameraSystem },
             coroutineContext = testDispatcher
         )
     }

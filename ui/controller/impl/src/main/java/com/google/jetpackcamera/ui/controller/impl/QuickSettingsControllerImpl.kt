@@ -33,11 +33,11 @@ import kotlinx.coroutines.launch
 /**
  * Implementation of [QuickSettingsController] that interacts with [CameraSystem].
  *
- * @param cameraSystem The camera system to control.
+ * @param cameraSystemProvider The suspending provider for the [CameraSystem].
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class QuickSettingsControllerImpl(
-    private val cameraSystem: CameraSystem,
+    private val cameraSystemProvider: suspend () -> CameraSystem,
     coroutineContext: CoroutineContext
 ) : QuickSettingsController {
     private val job = Job(parent = coroutineContext[Job.Key])
@@ -46,38 +46,38 @@ class QuickSettingsControllerImpl(
     override fun setLensFacing(lensFace: LensFacing) {
         scope.launch {
             // apply to cameraSystem
-            cameraSystem.setLensFacing(lensFace)
+            cameraSystemProvider().setLensFacing(lensFace)
         }
     }
 
     override fun setFlash(flashMode: FlashMode) {
         scope.launch {
             // apply to cameraSystem
-            cameraSystem.setFlashMode(flashMode)
+            cameraSystemProvider().setFlashMode(flashMode)
         }
     }
 
     override fun setAspectRatio(aspectRatio: AspectRatio) {
         scope.launch {
-            cameraSystem.setAspectRatio(aspectRatio)
+            cameraSystemProvider().setAspectRatio(aspectRatio)
         }
     }
 
     override fun setDynamicRange(dynamicRange: DynamicRange) {
         scope.launch {
-            cameraSystem.setDynamicRange(dynamicRange)
+            cameraSystemProvider().setDynamicRange(dynamicRange)
         }
     }
 
     override fun setImageFormat(imageOutputFormat: ImageOutputFormat) {
         scope.launch {
-            cameraSystem.setImageFormat(imageOutputFormat)
+            cameraSystemProvider().setImageFormat(imageOutputFormat)
         }
     }
 
     override fun setCaptureMode(captureMode: CaptureMode) {
         scope.launch {
-            cameraSystem.setCaptureMode(captureMode)
+            cameraSystemProvider().setCaptureMode(captureMode)
         }
     }
 
