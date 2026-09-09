@@ -22,7 +22,6 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -35,14 +34,6 @@ class FakeQuickSettingsControllerTest {
         val controller = FakeQuickSettingsController(toggleQuickSettingsAction = { called = true })
         controller.toggleQuickSettings()
         assertThat(called).isTrue()
-    }
-
-    @Test
-    fun setFocusedSetting_invokesAction() {
-        var calledValue: FocusedQuickSetting? = null
-        val controller = FakeQuickSettingsController(setFocusedSettingAction = { calledValue = it })
-        controller.setFocusedSetting(FocusedQuickSetting.ASPECT_RATIO)
-        assertThat(calledValue).isEqualTo(FocusedQuickSetting.ASPECT_RATIO)
     }
 
     @Test

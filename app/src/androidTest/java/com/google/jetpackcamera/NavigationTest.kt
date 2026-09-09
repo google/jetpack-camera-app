@@ -29,10 +29,7 @@ import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
-import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.onNodeWithText
@@ -40,7 +37,6 @@ import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.searchForQuickSetting
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
-import com.google.jetpackcamera.utils.waitForNodeWithTagToDisappear
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -135,42 +131,12 @@ class NavigationTest {
             .performClick()
 
         // Wait for the quick settings to be displayed
-        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON)
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
 
         // Press the device's back button
         uiDevice.pressBack()
 
         // Assert we're on PreviewScreen by finding the flip camera button
         composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
-    }
-
-    @Test
-    fun backFromQuickSettingsExpended_returnToQuickSettings() = runMainActivityScenarioTest {
-        // Wait for the capture button to be displayed
-        composeTestRule.waitForCaptureButton()
-
-        // Navigate to the quick settings screen
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
-
-        composeTestRule.searchForQuickSetting(QUICK_SETTINGS_RATIO_BUTTON)
-
-        // Navigate to the expanded quick settings ratio screen
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON)
-            .assertExists()
-            .performClick()
-
-        // Wait for the 1:1 ratio button to be displayed
-        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON)
-
-        // Press the device's back button
-        uiDevice.pressBack()
-
-        // Assert bottom sheet closed
-        composeTestRule.waitForNodeWithTagToDisappear(
-            QUICK_SETTINGS_BOTTOM_SHEET,
-            DEFAULT_TIMEOUT_MILLIS
-        )
     }
 }

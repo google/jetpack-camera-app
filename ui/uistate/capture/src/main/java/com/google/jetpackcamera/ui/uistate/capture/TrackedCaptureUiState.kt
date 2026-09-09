@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.ui.uistate.capture
 
 import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 
 /**
  * Data class to track UI-specific states within the PreviewViewModel.
@@ -29,7 +28,6 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
  */
 data class TrackedCaptureUiState(
     val isQuickSettingsOpen: Boolean = false,
-    val focusedQuickSetting: FocusedQuickSetting = FocusedQuickSetting.NONE,
     val isDebugOverlayOpen: Boolean = false,
     val isRecordingLocked: Boolean = false,
     val zoomAnimationTarget: Float? = null,
