@@ -18,6 +18,8 @@ package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.settings.api.DeveloperAppConfig
+import com.google.jetpackcamera.settings.api.OptionAvailabilityConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -54,6 +56,7 @@ import kotlinx.coroutines.flow.filterNotNull
  * comprehensive [CaptureUiState] that the UI can directly observe and react to.
  *
  * @param currentSettings A [Flow] of the current camera app settings.
+ * @param appConfig The optional [DeveloperAppConfig] providing session restrictions, or null for default behavior.
  * @param systemConstraints A [StateFlow] of the current camera system constraints.
  * @param currentCameraState A [StateFlow] of the current camera state.
  * @param trackedCaptureUiState A [StateFlow] representing the user-interacted UI state that
@@ -67,6 +70,7 @@ import kotlinx.coroutines.flow.filterNotNull
  */
 fun captureUiState(
     currentSettings: Flow<CameraAppSettings?>,
+    appConfig: DeveloperAppConfig? = null,
     systemConstraints: StateFlow<CameraSystemConstraints?>,
     currentCameraState: StateFlow<CameraState>,
     trackedCaptureUiState: StateFlow<TrackedCaptureUiState>,
@@ -87,8 +91,11 @@ fun captureUiState(
             roundVideoRecordingState(videoRecordingState, timePrecision)
         val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
 
+        val captureModeRestriction =
+            appConfig?.captureMode?.uiVisibility ?: OptionAvailabilityConfig.NotRestricted
         val captureModeUiState = CaptureModeUiState.from(
             systemConstraints,
+            captureModeRestriction,
             cameraAppSettings,
             externalCaptureMode
         )
@@ -166,7 +173,8 @@ fun captureUiState(
                 systemConstraints,
                 cameraAppSettings,
                 roundedCameraState,
-                externalCaptureMode
+                externalCaptureMode,
+                captureModeRestriction
             ),
             hdrUiState = hdrUiState,
             focusMeteringUiState = focusMeteringUiState,
@@ -195,6 +203,7 @@ internal fun roundVideoRecordingState(
         is VideoRecordingState.Active.Recording -> videoRecordingState.copy(
             elapsedTimeNanos = roundedNanos
         )
+
         is VideoRecordingState.Active.Paused -> videoRecordingState.copy(
             elapsedTimeNanos = roundedNanos
         )

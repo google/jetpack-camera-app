@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.android.legacy.kapt)
-    alias(libs.plugins.compose.compiler)
 }
 
 android {
-    namespace = "com.google.jetpackcamera.ui.uistateadapter.capture"
+    namespace = "com.google.jetpackcamera.settings.api"
     compileSdk {
         version = release(libs.versions.compileSdk.get().toInt()) {
             minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
@@ -34,59 +31,32 @@ android {
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
     }
 
-    flavorDimensions += "flavor"
-    productFlavors {
-        create("stable") {
-            dimension = "flavor"
-            isDefault = true
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlin {
         jvmToolchain(17)
-        compilerOptions {
-            freeCompilerArgs.add("-Xcontext-receivers")
-        }
-    }
-    buildFeatures {
-        buildConfig = true
-        compose = true
     }
 }
 
 dependencies {
-    // Compose
-    val composeBom = platform(libs.compose.bom)
-    implementation(composeBom)
-
-    // Compose - Material Design 3
-    implementation(libs.compose.material3)
-
-    implementation(project(":data:settings"))
-    implementation(project(":core:settings"))
-    implementation(project(":data:settings:api"))
+    // Access Model data
     implementation(project(":core:model"))
-    implementation(project(":data:media"))
-    implementation(project(":core:camera"))
-    implementation(project(":ui:uistate"))
-    implementation(project(":ui:uistateadapter"))
-    implementation(project(":ui:uistate:capture"))
+    implementation(project(":core:settings"))
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.androidx.test.core)
-    testImplementation(project(":core:camera:testing"))
-    testImplementation(libs.kotlinx.coroutines.test)
-}
-
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
 }
