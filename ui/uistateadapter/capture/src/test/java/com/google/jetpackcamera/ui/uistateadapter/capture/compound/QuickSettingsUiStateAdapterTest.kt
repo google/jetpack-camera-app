@@ -36,15 +36,12 @@ internal class QuickSettingsUiStateAdapterTest {
         val flipLensUiState = FlipLensUiState.Unavailable
         val aspectRatioUiState = AspectRatioUiState.Unavailable
         val hdrUiState = HdrUiState.Unavailable
-        val quickSettingsIsOpen = true
-
         val quickSettingsUiState = QuickSettingsUiState.from(
             captureModeUiState = captureModeUiState,
             flashModeUiState = flashModeUiState,
             flipLensUiState = flipLensUiState,
             aspectRatioUiState = aspectRatioUiState,
-            hdrUiState = hdrUiState,
-            quickSettingsIsOpen = quickSettingsIsOpen
+            hdrUiState = hdrUiState
         )
 
         assertThat(quickSettingsUiState).isInstanceOf(QuickSettingsUiState.Available::class.java)
@@ -54,6 +51,5 @@ internal class QuickSettingsUiStateAdapterTest {
         assertThat(availableState.flipLensUiState).isEqualTo(flipLensUiState)
         assertThat(availableState.aspectRatioUiState).isEqualTo(aspectRatioUiState)
         assertThat(availableState.hdrUiState).isEqualTo(hdrUiState)
-        assertThat(availableState.quickSettingsIsOpen).isEqualTo(quickSettingsIsOpen)
     }
 }

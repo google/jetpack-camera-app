@@ -41,15 +41,13 @@ sealed interface QuickSettingsUiState {
      * @param flashModeUiState The UI state for the flash mode setting.
      * @param flipLensUiState The UI state for the flip lens (front/back camera) button.
      * @param hdrUiState The UI state for the HDR (High Dynamic Range) setting.
-     * @param quickSettingsIsOpen Indicates whether the quick settings panel is currently open.
      */
     data class Available(
         val aspectRatioUiState: AspectRatioUiState,
         val captureModeUiState: CaptureModeUiState,
         val flashModeUiState: FlashModeUiState,
         val flipLensUiState: FlipLensUiState,
-        val hdrUiState: HdrUiState,
-        val quickSettingsIsOpen: Boolean = false
+        val hdrUiState: HdrUiState
     ) : QuickSettingsUiState
 
     companion object

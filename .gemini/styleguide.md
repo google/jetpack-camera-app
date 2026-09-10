@@ -41,6 +41,7 @@ When reviewing a pull request, focus on the following key areas:
     * Verify that Compose and CameraX APIs are used correctly and effectively.
     * Suggest more idiomatic or updated API usages where applicable.
     * Ensure state management in Compose is handled correctly (e.g., using `remember`, `derivedStateOf`, etc.).
+    * **Avoid Window-Spawning Overlays (`ModalBottomSheet`):** Do NOT use `ModalBottomSheet` on the camera capture screen. Modal bottom sheets spawn a separate Android `DialogWindow` above the main window, which can disrupt hardware-accelerated zero-copy rendering over the CameraX `SurfaceView` and create window lifecycle/gesture conflicts. Instead, use in-hierarchy containers like `BottomSheetScaffold` with `sheetPeekHeight = 0.dp`.
 
 5.  **Testing Coverage**
     * **When Tests are Missing:** If a PR introduces a significant feature or modifies logic without corresponding tests, flag this omission. Suggest a name for a new test class (e.g., `NewFeatureViewModelTest`) and outline what it should verify (e.g., "This test should check that the UI state updates correctly when the user performs X action").

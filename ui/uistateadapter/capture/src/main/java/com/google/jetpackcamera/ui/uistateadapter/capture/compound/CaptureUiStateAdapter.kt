@@ -132,8 +132,7 @@ fun captureUiState(
                 flashModeUiState,
                 flipLensUiState,
                 aspectRatioUiState,
-                hdrUiState,
-                trackedUiState.isQuickSettingsOpen
+                hdrUiState
             ),
             sessionFirstFrameTimestamp = roundedCameraState.sessionFirstFrameTimestamp,
             stabilizationUiState = StabilizationUiState.from(

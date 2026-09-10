@@ -33,15 +33,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
@@ -62,7 +59,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
-import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
@@ -81,7 +77,6 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
@@ -166,47 +161,6 @@ internal fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifi
             onClick = onNavigateToSettings,
             content = { Text(text = stringResource(R.string.quick_settings_more_text)) }
         )
-    }
-}
-
-// ////////////////////////////////////////////////////
-//
-// complete quick settings screen components
-//
-// ////////////////////////////////////////////////////
-
-/**
- * A modal bottom sheet composable used to display a collection of quick setting buttons.
- *
- * @param modifier The [Modifier] to be applied to this composable.
- * @param onDismiss The lambda function to be invoked when the bottom sheet is dismissed.
- * @param sheetState The [SheetState] controlling the visibility and behavior of the bottom sheet.
- * @param content The composable content to display inside the bottom sheet.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun QuickSettingsModalBottomSheet(
-    onDismiss: () -> Unit,
-    sheetState: SheetState,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
-
-    ModalBottomSheet(
-        modifier = modifier
-            .semantics {
-                // since Modal Bottom Sheet is placed above ALL other composables in the hierarchy,
-                // it doesn't inherit the "testTagsAsResourceId" property.
-                testTagsAsResourceId = true
-                testTag = QUICK_SETTINGS_BOTTOM_SHEET
-                contentDescription = openDescription
-            },
-
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
-    ) {
-        content()
     }
 }
 
