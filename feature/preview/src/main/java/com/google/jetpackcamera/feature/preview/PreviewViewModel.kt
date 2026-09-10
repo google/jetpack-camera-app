@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import android.content.ContentResolver
-import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.camera.core.SurfaceRequest
