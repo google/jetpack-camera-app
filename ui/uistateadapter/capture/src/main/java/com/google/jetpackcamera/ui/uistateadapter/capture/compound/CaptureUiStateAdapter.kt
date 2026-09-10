@@ -15,12 +15,13 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 
-import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.ExternalCaptureMode
-import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.api.DeveloperAppConfig
 import com.google.jetpackcamera.settings.api.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -44,7 +45,7 @@ import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import com.google.jetpackcamera.ui.uistateadapter.capture.updateFrom
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 
@@ -54,10 +55,11 @@ import kotlinx.coroutines.flow.filterNotNull
  * This function acts as a central adapter to transform low-level camera and UI states into a
  * comprehensive [CaptureUiState] that the UI can directly observe and react to.
  *
- * @param cameraSystem The [CameraSystem] providing real-time camera state and settings.
+ * @param currentSettings A [Flow] of the current camera app settings.
  * @param appConfig The optional [DeveloperAppConfig] providing session restrictions, or null for default behavior.
- * @param constraintsRepository The [ConstraintsRepository] for accessing system-wide constraints.
- * @param trackedCaptureUiState A [MutableStateFlow] representing the user-interacted UI state that
+ * @param systemConstraints A [StateFlow] of the current camera system constraints.
+ * @param currentCameraState A [StateFlow] of the current camera state.
+ * @param trackedCaptureUiState A [StateFlow] representing the user-interacted UI state that
  * needs to be tracked across recompositions (e.g., whether quick settings is open).
  * @param externalCaptureMode The [ExternalCaptureMode] influencing UI behavior based on how the
  * camera is launched (e.g., from an external intent).
@@ -67,10 +69,11 @@ import kotlinx.coroutines.flow.filterNotNull
  * data sources change.
  */
 fun captureUiState(
-    cameraSystem: CameraSystem,
+    currentSettings: Flow<CameraAppSettings?>,
     appConfig: DeveloperAppConfig? = null,
-    constraintsRepository: ConstraintsRepository,
-    trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
+    systemConstraints: StateFlow<CameraSystemConstraints?>,
+    currentCameraState: StateFlow<CameraState>,
+    trackedCaptureUiState: StateFlow<TrackedCaptureUiState>,
     externalCaptureMode: ExternalCaptureMode,
     timePrecision: TimeUnit = TimeUnit.SECONDS
 ): Flow<CaptureUiState> {
@@ -78,9 +81,9 @@ fun captureUiState(
     var focusMeteringUiState: FocusMeteringUiState? = null
 
     return combine(
-        cameraSystem.getCurrentSettings().filterNotNull(),
-        constraintsRepository.systemConstraints.filterNotNull(),
-        cameraSystem.getCurrentCameraState(),
+        currentSettings.filterNotNull(),
+        systemConstraints.filterNotNull(),
+        currentCameraState,
         trackedCaptureUiState
     ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
         val videoRecordingState = cameraState.videoRecordingState
@@ -136,8 +139,7 @@ fun captureUiState(
                 flashModeUiState,
                 flipLensUiState,
                 aspectRatioUiState,
-                hdrUiState,
-                trackedUiState.isQuickSettingsOpen
+                hdrUiState
             ),
             sessionFirstFrameTimestamp = roundedCameraState.sessionFirstFrameTimestamp,
             stabilizationUiState = StabilizationUiState.from(

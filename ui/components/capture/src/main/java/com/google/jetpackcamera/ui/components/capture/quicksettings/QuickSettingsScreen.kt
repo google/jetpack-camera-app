@@ -15,16 +15,15 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -34,13 +33,13 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureModeRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
-import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickSettingsModalBottomSheet
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -51,25 +50,29 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
 /**
- * The UI bottom sheet component for quick settings.
+ * Agnostic content for the Quick Settings panel wrapped for a BottomSheetScaffold sheet.
+ *
+ * @param quickSettingsUiState The current [QuickSettingsUiState].
+ * @param onNavigateToSettings Callback when the user navigates to full settings.
+ * @param quickSettingsController The [QuickSettingsController] to handle setting changes.
+ * @param modifier The [Modifier] to apply to the content column.
+ * @param showMoreSettingsButton Whether to show the "More settings" navigation button.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuickSettingsBottomSheet(
-    modifier: Modifier = Modifier,
+fun QuickSettingsScaffoldContent(
     quickSettingsUiState: QuickSettingsUiState,
     onNavigateToSettings: () -> Unit,
     quickSettingsController: QuickSettingsController,
+    modifier: Modifier = Modifier,
     showMoreSettingsButton: Boolean = true
 ) {
-    if (quickSettingsUiState is QuickSettingsUiState.Available &&
-        quickSettingsUiState.quickSettingsIsOpen
-    ) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        QuickSettingsModalBottomSheet(
-            modifier = modifier,
-            onDismiss = quickSettingsController::toggleQuickSettings,
-            sheetState = sheetState
+    if (quickSettingsUiState is QuickSettingsUiState.Available) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(bottom = 24.dp)
+                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
         ) {
             QuickSettingsContent(
                 quickSettingsUiState = quickSettingsUiState,
@@ -81,32 +84,23 @@ fun QuickSettingsBottomSheet(
     }
 }
 
+/**
+ * Agnostic content for the Quick Settings panel containing the title header, option rows
+ * (Flash, Capture Mode, Aspect Ratio, HDR), and an optional navigation button to full settings.
+ *
+ * @param quickSettingsUiState The current [QuickSettingsUiState.Available].
+ * @param quickSettingsController The [QuickSettingsController] to handle setting changes.
+ * @param onNavigateToSettings Callback when the user navigates to full settings.
+ * @param modifier The [Modifier] to apply to the content column.
+ * @param showMoreSettingsButton Whether to show the "More settings" navigation button.
+ */
 @Composable
-private fun QuickSettingsLayout(
-    @StringRes titleRes: Int,
-    showMoreSettingsButton: Boolean,
-    onNavigateToSettings: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Column {
-        Text(
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-            text = stringResource(id = titleRes),
-            style = MaterialTheme.typography.titleLarge
-        )
-        content()
-    }
-    if (showMoreSettingsButton) {
-        QuickNavSettings(onNavigateToSettings = onNavigateToSettings)
-    }
-}
-
-@Composable
-private fun QuickSettingsContent(
+internal fun QuickSettingsContent(
     quickSettingsUiState: QuickSettingsUiState.Available,
     quickSettingsController: QuickSettingsController,
     onNavigateToSettings: () -> Unit,
-    showMoreSettingsButton: Boolean
+    modifier: Modifier = Modifier,
+    showMoreSettingsButton: Boolean = true
 ) {
     val captureMode = (quickSettingsUiState.captureModeUiState as? CaptureModeUiState.Available)
         ?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
@@ -117,11 +111,13 @@ private fun QuickSettingsContent(
         CaptureMode.STANDARD -> R.string.quick_settings_title_photo_and_video_settings
     }
 
-    QuickSettingsLayout(
-        titleRes = titleRes,
-        showMoreSettingsButton = showMoreSettingsButton,
-        onNavigateToSettings = onNavigateToSettings
-    ) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            text = stringResource(id = titleRes),
+            style = MaterialTheme.typography.titleLarge
+        )
+
         // Flash Mode settings
         if (quickSettingsUiState.flashModeUiState is FlashModeUiState.Available) {
             FlashRow(
@@ -131,8 +127,7 @@ private fun QuickSettingsContent(
         }
 
         // Capture Mode settings (Standard only)
-        if (captureMode == CaptureMode.STANDARD &&
-            quickSettingsUiState.captureModeUiState is CaptureModeUiState.Available
+        if (captureMode == CaptureMode.STANDARD
         ) {
             CaptureModeRow(
                 onSetCaptureMode = quickSettingsController::setCaptureMode,
@@ -167,15 +162,20 @@ private fun QuickSettingsContent(
                 hdrUiState = quickSettingsUiState.hdrUiState
             )
         }
+
+        if (showMoreSettingsButton) {
+            QuickNavSettings(
+                onNavigateToSettings = onNavigateToSettings,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        }
     }
 }
 
 /**
  * A no-op implementation of [QuickSettingsController] for use in Compose previews and tests.
  */
-class NoOpQuickSettingsController : QuickSettingsController {
-    override fun toggleQuickSettings() {}
-
+internal class NoOpQuickSettingsController : QuickSettingsController {
     override fun setLensFacing(lensFace: LensFacing) {}
 
     override fun setFlash(flashMode: FlashMode) {}
@@ -191,9 +191,9 @@ class NoOpQuickSettingsController : QuickSettingsController {
 
 @Preview
 @Composable
-fun ExpandedQuickSettingsUiPreview() {
+private fun ExpandedQuickSettingsUiPreview() {
     MaterialTheme {
-        QuickSettingsBottomSheet(
+        QuickSettingsScaffoldContent(
             quickSettingsUiState = QuickSettingsUiState.Available(
                 aspectRatioUiState = AspectRatioUiState.Available(
                     selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
@@ -227,8 +227,7 @@ fun ExpandedQuickSettingsUiPreview() {
                         SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
                     )
                 ),
-                hdrUiState = HdrUiState.Unavailable,
-                quickSettingsIsOpen = true
+                hdrUiState = HdrUiState.Unavailable
             ),
             onNavigateToSettings = {},
             quickSettingsController = NoOpQuickSettingsController()

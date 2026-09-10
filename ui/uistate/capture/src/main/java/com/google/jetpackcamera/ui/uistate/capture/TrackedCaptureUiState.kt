@@ -27,7 +27,6 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
  * directly observes.
  */
 data class TrackedCaptureUiState(
-    val isQuickSettingsOpen: Boolean = false,
     val isDebugOverlayOpen: Boolean = false,
     val isRecordingLocked: Boolean = false,
     val zoomAnimationTarget: Float? = null,

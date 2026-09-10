@@ -61,17 +61,18 @@ import androidx.tracing.Trace
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
 import com.google.jetpackcamera.core.common.traceFirstFrameMainActivity
+import com.google.jetpackcamera.data.camera.CameraLaunchConfigProvider
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
-import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.JcaApp
 import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlin.collections.emptyList
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.collect
@@ -85,6 +86,7 @@ private const val TAG = "MainActivity"
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var cameraLaunchConfigProvider: CameraLaunchConfigProvider
     private val viewModel: MainActivityViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -92,6 +94,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        cameraLaunchConfigProvider.setIntent(intent)
         var uiState: MainActivityUiState by mutableStateOf(Loading)
 
         lifecycleScope.launch {
@@ -179,38 +182,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private val debugSettings: DebugSettings
-        get() = DebugSettings(
-            isDebugModeEnabled = intent?.getBooleanExtra(KEY_DEBUG_MODE, false) ?: false,
-            singleLensMode = intent?.getStringExtra(KEY_DEBUG_SINGLE_LENS_MODE)
-                ?.let {
-                    when (it.lowercase()) {
-                        "back" -> LensFacing.BACK
-                        "front" -> LensFacing.FRONT
-                        else -> {
-                            Log.e(
-                                TAG,
-                                "Invalid debug single lens mode argument: \"$it\". Valid values are \"FRONT\" or \"BACK\""
-                            )
-                            null
-                        }
-                    }
-                }
-        )
+        get() = cameraLaunchConfigProvider.config.value.debugSettings
 
     private val externalCaptureMode: ExternalCaptureMode
-        get() = intent?.action?.let { action ->
-            when (action) {
-                MediaStore.ACTION_IMAGE_CAPTURE -> ExternalCaptureMode.ImageCapture
-                MediaStore.ACTION_VIDEO_CAPTURE -> ExternalCaptureMode.VideoCapture
-                MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA ->
-                    ExternalCaptureMode.MultipleImageCapture
-
-                else -> {
-                    Log.w(TAG, "Ignoring external intent with unknown action: $action")
-                    ExternalCaptureMode.Standard
-                }
-            }
-        } ?: ExternalCaptureMode.Standard
+        get() = cameraLaunchConfigProvider.config.value.externalCaptureMode
 
     private val Intent.shouldReviewAfterCapture: Boolean
         get() = this.getBooleanExtra(KEY_REVIEW_AFTER_CAPTURE, false)
@@ -318,7 +293,6 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val KEY_REVIEW_AFTER_CAPTURE = "KEY_REVIEW_AFTER_CAPTURE"
 
-        private const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
         const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
         const val KEY_DISABLE_ANIMATIONS = "KEY_DISABLE_ANIMATIONS"
         const val KEY_USE_DEVELOPER_CONFIG = "KEY_USE_DEVELOPER_CONFIG"

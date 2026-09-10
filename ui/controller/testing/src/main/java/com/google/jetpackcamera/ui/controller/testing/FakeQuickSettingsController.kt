@@ -26,7 +26,6 @@ import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsControl
 /**
  * A fake implementation of [QuickSettingsController] that allows for configuring actions for its methods.
  *
- * @param toggleQuickSettingsAction The action to perform when [toggleQuickSettings] is called.
  * @param setLensFacingAction The action to perform when [setLensFacing] is called.
  * @param setFlashAction The action to perform when [setFlash] is called.
  * @param setAspectRatioAction The action to perform when [setAspectRatio] is called.
@@ -35,7 +34,6 @@ import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsControl
  * @param setCaptureModeAction The action to perform when [setCaptureMode] is called.
  */
 class FakeQuickSettingsController(
-    var toggleQuickSettingsAction: () -> Unit = {},
     var setLensFacingAction: (LensFacing) -> Unit = {},
     var setFlashAction: (FlashMode) -> Unit = {},
     var setAspectRatioAction: (AspectRatio) -> Unit = {},
@@ -43,9 +41,6 @@ class FakeQuickSettingsController(
     var setImageFormatAction: (ImageOutputFormat) -> Unit = {},
     var setCaptureModeAction: (CaptureMode) -> Unit = {}
 ) : QuickSettingsController {
-    override fun toggleQuickSettings() {
-        toggleQuickSettingsAction()
-    }
 
     override fun setLensFacing(lensFace: LensFacing) {
         setLensFacingAction(lensFace)

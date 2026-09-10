@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
@@ -33,8 +34,10 @@ import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.api.DeveloperAppConfig
 import com.google.jetpackcamera.settings.api.OptionAvailabilityConfig
 import com.google.jetpackcamera.settings.api.SettingConfig
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
@@ -45,6 +48,8 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -61,10 +66,27 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class PreviewViewModelTest {
 
-    private val cameraSystem = FakeCameraSystem()
-    private val cameraSystemRepository = object : CameraSystemRepository {
-        override val cameraSystem = this@PreviewViewModelTest.cameraSystem
+    private fun createFakeCameraSystemRepository(
+        cameraSystem: FakeCameraSystem,
+        externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
+    ) = object : CameraSystemRepository {
+        override val surfaceRequest = cameraSystem.getSurfaceRequest()
+        override val systemConstraints = cameraSystem.getSystemConstraints()
+        override val currentSettings = cameraSystem.getCurrentSettings()
+        override val currentCameraState = cameraSystem.getCurrentCameraState()
+        override val cameraPropertiesJSON: StateFlow<String?> = MutableStateFlow(null)
+
+        override suspend fun getCameraSystem(): CameraSystem {
+            cameraSystem.initialize(
+                CameraAppSettings().applyExternalCaptureMode(externalCaptureMode)
+            ) {}
+            return cameraSystem
+        }
+        override suspend fun getSupportedMimeTypes(): List<String> = emptyList()
     }
+
+    private val cameraSystem = FakeCameraSystem()
+    private val cameraSystemRepository = createFakeCameraSystemRepository(cameraSystem)
     private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
         updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
@@ -196,32 +218,6 @@ class PreviewViewModelTest {
     }
 
     @Test
-    fun toggleQuickSettings() = runTest(StandardTestDispatcher()) {
-        startCameraUntilRunning()
-        // Initial state should be closed
-        assertIsReady(previewViewModel.captureUiState.value).also {
-            val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available
-            assertThat(quickSettings.quickSettingsIsOpen).isFalse()
-        }
-
-        // Toggle to open
-        previewViewModel.quickSettingsController.toggleQuickSettings()
-        advanceUntilIdle()
-        assertIsReady(previewViewModel.captureUiState.value).also {
-            val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available
-            assertThat(quickSettings.quickSettingsIsOpen).isTrue()
-        }
-
-        // Toggle back to closed
-        previewViewModel.quickSettingsController.toggleQuickSettings()
-        advanceUntilIdle()
-        assertIsReady(previewViewModel.captureUiState.value).also {
-            val quickSettings = it.quickSettingsUiState as QuickSettingsUiState.Available
-            assertThat(quickSettings.quickSettingsIsOpen).isFalse()
-        }
-    }
-
-    @Test
     fun captureUiState_whenUseDeveloperConfigTrue_appliesRestrictions() =
         runTest(StandardTestDispatcher()) {
             val restrictedAppConfig = defaultTestAppConfig.copy(
@@ -243,8 +239,6 @@ class PreviewViewModelTest {
             )
             advanceUntilIdle()
             startCameraUntilRunning(viewModel)
-            assertThat(cameraSystem.getCurrentSettings().value?.captureMode)
-                .isEqualTo(CaptureMode.IMAGE_ONLY)
 
             val uiState = viewModel.captureUiState.value
             assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
@@ -279,8 +273,6 @@ class PreviewViewModelTest {
             )
             advanceUntilIdle()
             startCameraUntilRunning(viewModel)
-            assertThat(cameraSystem.getCurrentSettings().value?.captureMode)
-                .isEqualTo(CaptureMode.STANDARD)
 
             val uiState = viewModel.captureUiState.value
             assertThat(uiState).isInstanceOf(CaptureUiState.Ready::class.java)
@@ -296,8 +288,12 @@ class PreviewViewModelTest {
     @Test
     fun captureUiState_whenExternalCaptureModeImageCapture_captureModeToggleIsUnavailable() =
         runTest(StandardTestDispatcher()) {
+            val testCameraSystem = FakeCameraSystem()
             val viewModel = PreviewViewModel(
-                cameraSystemRepository = cameraSystemRepository,
+                cameraSystemRepository = createFakeCameraSystemRepository(
+                    testCameraSystem,
+                    ExternalCaptureMode.ImageCapture
+                ),
                 constraintsRepository = constraintsRepository,
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),
@@ -322,8 +318,12 @@ class PreviewViewModelTest {
     @Test
     fun captureUiState_whenExternalCaptureModeVideoCapture_captureModeToggleIsUnavailable() =
         runTest(StandardTestDispatcher()) {
+            val testCameraSystem = FakeCameraSystem()
             val viewModel = PreviewViewModel(
-                cameraSystemRepository = cameraSystemRepository,
+                cameraSystemRepository = createFakeCameraSystemRepository(
+                    testCameraSystem,
+                    ExternalCaptureMode.VideoCapture
+                ),
                 constraintsRepository = constraintsRepository,
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),

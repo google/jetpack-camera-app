@@ -29,14 +29,6 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class FakeQuickSettingsControllerTest {
     @Test
-    fun toggleQuickSettings_invokesAction() {
-        var called = false
-        val controller = FakeQuickSettingsController(toggleQuickSettingsAction = { called = true })
-        controller.toggleQuickSettings()
-        assertThat(called).isTrue()
-    }
-
-    @Test
     fun setLensFacing_invokesAction() {
         var calledValue: LensFacing? = null
         val controller = FakeQuickSettingsController(setLensFacingAction = { calledValue = it })
