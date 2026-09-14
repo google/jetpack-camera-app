@@ -153,7 +153,6 @@ class MainActivity : ComponentActivity() {
                                 JcaApp(
                                     externalCaptureMode = externalCaptureMode,
                                     shouldReviewAfterCapture = shouldReviewAfterCapture,
-                                    useDeveloperConfig = useDeveloperConfig,
                                     captureUris = captureUris,
                                     debugSettings = debugSettings,
                                     openAppSettings = ::openAppSettings,
@@ -192,9 +191,6 @@ class MainActivity : ComponentActivity() {
 
     private val shouldReviewAfterCapture: Boolean
         get() = intent?.shouldReviewAfterCapture == true
-
-    private val useDeveloperConfig: Boolean
-        get() = intent?.getBooleanExtra(KEY_USE_DEVELOPER_CONFIG, false) ?: false
 
     private val Intent.externalCaptureUri: Uri?
         get() = IntentCompat.getParcelableExtra(
@@ -295,7 +291,6 @@ class MainActivity : ComponentActivity() {
 
         const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
         const val KEY_DISABLE_ANIMATIONS = "KEY_DISABLE_ANIMATIONS"
-        const val KEY_USE_DEVELOPER_CONFIG = "KEY_USE_DEVELOPER_CONFIG"
     }
 }
 

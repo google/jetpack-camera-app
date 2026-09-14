@@ -218,7 +218,7 @@ class PreviewViewModelTest {
     }
 
     @Test
-    fun captureUiState_whenUseDeveloperConfigTrue_appliesRestrictions() =
+    fun captureUiState_withRestrictedAppConfig_appliesRestrictions() =
         runTest(StandardTestDispatcher()) {
             val restrictedAppConfig = defaultTestAppConfig.copy(
                 captureMode = SettingConfig(
@@ -231,9 +231,7 @@ class PreviewViewModelTest {
                 constraintsRepository = constraintsRepository,
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),
-                savedStateHandle = SavedStateHandle(
-                    mapOf(PreviewRoute.ARG_USE_DEVELOPER_CONFIG to true)
-                ),
+                savedStateHandle = SavedStateHandle(),
                 defaultSaveMode = SaveMode.Immediate,
                 appConfig = restrictedAppConfig
             )
@@ -252,24 +250,16 @@ class PreviewViewModelTest {
         }
 
     @Test
-    fun captureUiState_whenUseDeveloperConfigFalse_ignoresRestrictions() =
+    fun captureUiState_withDefaultAppConfig_doesNotApplyRestrictions() =
         runTest(StandardTestDispatcher()) {
-            val restrictedAppConfig = defaultTestAppConfig.copy(
-                captureMode = SettingConfig(
-                    defaultValue = CaptureMode.IMAGE_ONLY,
-                    uiVisibility = OptionAvailabilityConfig.Hidden
-                )
-            )
             val viewModel = PreviewViewModel(
                 cameraSystemRepository = cameraSystemRepository,
                 constraintsRepository = constraintsRepository,
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),
-                savedStateHandle = SavedStateHandle(
-                    mapOf(PreviewRoute.ARG_USE_DEVELOPER_CONFIG to false)
-                ),
+                savedStateHandle = SavedStateHandle(),
                 defaultSaveMode = SaveMode.Immediate,
-                appConfig = restrictedAppConfig
+                appConfig = defaultTestAppConfig
             )
             advanceUntilIdle()
             startCameraUntilRunning(viewModel)

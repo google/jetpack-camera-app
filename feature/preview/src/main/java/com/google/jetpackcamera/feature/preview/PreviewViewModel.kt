@@ -29,7 +29,6 @@ import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
 import com.google.jetpackcamera.feature.preview.navigation.getExternalCaptureMode
 import com.google.jetpackcamera.feature.preview.navigation.getRequestedSaveMode
-import com.google.jetpackcamera.feature.preview.navigation.getUseDeveloperConfig
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -117,8 +116,6 @@ class PreviewViewModel @Inject constructor(
     private val externalUris: List<Uri> = savedStateHandle.getCaptureUris()
     private lateinit var externalUriProgress: IntProgress
 
-    private val useDeveloperConfig: Boolean = savedStateHandle.getUseDeveloperConfig()
-
     private val debugSettings: DebugSettings = savedStateHandle.getDebugSettings()
 
     val screenFlashController: ScreenFlashController = ScreenFlashControllerImpl(
@@ -129,7 +126,7 @@ class PreviewViewModel @Inject constructor(
 
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         currentSettings = cameraSystemRepository.currentSettings,
-        appConfig = if (useDeveloperConfig) appConfig else null,
+        appConfig = appConfig,
         systemConstraints = constraintsRepository.systemConstraints,
         currentCameraState = cameraSystemRepository.currentCameraState,
         trackedCaptureUiState = trackedCaptureUiState,
