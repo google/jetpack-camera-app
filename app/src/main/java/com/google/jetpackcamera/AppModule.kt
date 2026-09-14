@@ -36,7 +36,7 @@ object AppModule {
      */
     @Provides
     @Singleton
-    fun providesDeveloperAppConfig(): CameraAppConfig = CameraAppConfig()
+    fun providesCameraAppConfig(): CameraAppConfig = CameraAppConfig()
 
     /**
      * provides the default [CaptureMode] to override by the app

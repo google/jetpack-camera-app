@@ -39,7 +39,7 @@ class CaptureModeUiStateAdapterTest {
     fun from_notRestricted_enablesSupportedModes() {
         val uiState = CaptureModeUiState.from(
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            restrictionConfig = OptionAvailabilityConfig.NotRestricted,
+            visibilityConfig = OptionAvailabilityConfig.NotRestricted,
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
             externalCaptureMode = ExternalCaptureMode.Standard
         )
@@ -56,7 +56,7 @@ class CaptureModeUiStateAdapterTest {
     fun from_hidden_returnsUnavailable() {
         val uiState = CaptureModeUiState.from(
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            restrictionConfig = OptionAvailabilityConfig.Hidden,
+            visibilityConfig = OptionAvailabilityConfig.Hidden,
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
             externalCaptureMode = ExternalCaptureMode.Standard
         )
@@ -68,7 +68,7 @@ class CaptureModeUiStateAdapterTest {
     fun from_optionsEnabled_enablesOnlySpecifiedModes() {
         val uiState = CaptureModeUiState.from(
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            restrictionConfig = OptionAvailabilityConfig.OptionsEnabled(
+            visibilityConfig = OptionAvailabilityConfig.OptionsEnabled(
                 setOf(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
             ),
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
@@ -98,7 +98,7 @@ class CaptureModeUiStateAdapterTest {
     fun from_optionsEnabledExcludingImageMode_disablesImageModeWithRestrictedReason() {
         val uiState = CaptureModeUiState.from(
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            restrictionConfig = OptionAvailabilityConfig.OptionsEnabled(
+            visibilityConfig = OptionAvailabilityConfig.OptionsEnabled(
                 setOf(CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY)
             ),
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
@@ -125,7 +125,7 @@ class CaptureModeUiStateAdapterTest {
     fun from_optionsEnabledExcludingVideoMode_disablesVideoModeWithRestrictedReason() {
         val uiState = CaptureModeUiState.from(
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            restrictionConfig = OptionAvailabilityConfig.OptionsEnabled(
+            visibilityConfig = OptionAvailabilityConfig.OptionsEnabled(
                 setOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY)
             ),
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
@@ -158,7 +158,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            restrictionConfig = OptionAvailabilityConfig.NotRestricted
+            visibilityConfig = OptionAvailabilityConfig.NotRestricted
         )
 
         assertThat(uiState).isInstanceOf(CaptureModeToggleUiState.Available::class.java)
@@ -175,7 +175,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            restrictionConfig = OptionAvailabilityConfig.OptionsEnabled(
+            visibilityConfig = OptionAvailabilityConfig.OptionsEnabled(
                 setOf(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
             )
         )
@@ -198,7 +198,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = activeState,
             externalCaptureMode = ExternalCaptureMode.Standard,
-            restrictionConfig = OptionAvailabilityConfig.NotRestricted
+            visibilityConfig = OptionAvailabilityConfig.NotRestricted
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -213,7 +213,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            restrictionConfig = OptionAvailabilityConfig.NotRestricted
+            visibilityConfig = OptionAvailabilityConfig.NotRestricted
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -228,7 +228,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            restrictionConfig = OptionAvailabilityConfig.Hidden
+            visibilityConfig = OptionAvailabilityConfig.Hidden
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -243,7 +243,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.ImageCapture,
-            restrictionConfig = OptionAvailabilityConfig.NotRestricted
+            visibilityConfig = OptionAvailabilityConfig.NotRestricted
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -258,7 +258,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.MultipleImageCapture,
-            restrictionConfig = OptionAvailabilityConfig.NotRestricted
+            visibilityConfig = OptionAvailabilityConfig.NotRestricted
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -273,7 +273,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.VideoCapture,
-            restrictionConfig = OptionAvailabilityConfig.NotRestricted
+            visibilityConfig = OptionAvailabilityConfig.NotRestricted
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -288,7 +288,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            restrictionConfig = OptionAvailabilityConfig.OptionsEnabled(
+            visibilityConfig = OptionAvailabilityConfig.OptionsEnabled(
                 setOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY)
             )
         )
@@ -305,7 +305,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            restrictionConfig = OptionAvailabilityConfig.OptionsEnabled(
+            visibilityConfig = OptionAvailabilityConfig.OptionsEnabled(
                 setOf(CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY)
             )
         )
@@ -317,7 +317,7 @@ class CaptureModeUiStateAdapterTest {
     fun from_externalCaptureModeImageCapture_disablesVideoAndHybrid() {
         val uiState = CaptureModeUiState.from(
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            restrictionConfig = OptionAvailabilityConfig.NotRestricted,
+            visibilityConfig = OptionAvailabilityConfig.NotRestricted,
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
                 captureMode = CaptureMode.IMAGE_ONLY
             ),
@@ -350,7 +350,7 @@ class CaptureModeUiStateAdapterTest {
     fun from_externalCaptureModeVideoCapture_disablesImageAndHybrid() {
         val uiState = CaptureModeUiState.from(
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            restrictionConfig = OptionAvailabilityConfig.NotRestricted,
+            visibilityConfig = OptionAvailabilityConfig.NotRestricted,
             cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
                 captureMode = CaptureMode.VIDEO_ONLY
             ),

@@ -91,13 +91,11 @@ fun captureUiState(
             roundVideoRecordingState(videoRecordingState, timePrecision)
         val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
 
-        val captureModeRestriction =
-            appConfig?.captureMode?.uiVisibility ?: OptionAvailabilityConfig.NotRestricted
         val captureModeUiState = CaptureModeUiState.from(
-            systemConstraints,
-            captureModeRestriction,
-            cameraAppSettings,
-            externalCaptureMode
+            systemConstraints = systemConstraints,
+            cameraAppSettings = cameraAppSettings,
+            externalCaptureMode = externalCaptureMode,
+            visibilityConfig = appConfig?.captureMode?.uiVisibility
         )
         val flipLensUiState = FlipLensUiState.from(
             cameraAppSettings,
@@ -170,11 +168,11 @@ fun captureUiState(
                 roundedCameraState
             ),
             captureModeToggleUiState = CaptureModeToggleUiState.from(
-                systemConstraints,
-                cameraAppSettings,
-                roundedCameraState,
-                externalCaptureMode,
-                captureModeRestriction
+                systemConstraints = systemConstraints,
+                cameraAppSettings = cameraAppSettings,
+                cameraState = roundedCameraState,
+                externalCaptureMode = externalCaptureMode,
+                visibilityConfig = appConfig?.captureMode?.uiVisibility
             ),
             hdrUiState = hdrUiState,
             focusMeteringUiState = focusMeteringUiState,

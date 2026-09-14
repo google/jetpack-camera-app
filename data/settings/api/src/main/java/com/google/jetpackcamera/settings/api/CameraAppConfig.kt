@@ -29,10 +29,10 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
  */
 data class CameraAppConfig(
     val captureMode: SettingConfig<CaptureMode>? = null,
-    val aspectRatio: SettingConfig<AspectRatio> ? = null,
-    val flashMode: SettingConfig<FlashMode> ? = null,
-    val imageFormat: SettingConfig<ImageOutputFormat> ? = null,
-    val dynamicRange: SettingConfig<DynamicRange> ? = null,
+    val aspectRatio: SettingConfig<AspectRatio>? = null,
+    val flashMode: SettingConfig<FlashMode>? = null,
+    val imageFormat: SettingConfig<ImageOutputFormat>? = null,
+    val dynamicRange: SettingConfig<DynamicRange>? = null
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
