@@ -28,7 +28,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
-class RestrictionConfigTest {
+class CameraAppConfigTest {
 
     @Test
     fun settingConfig_whenOptionsEnabledMissingDefaultValue_throwsException() {
@@ -65,30 +65,19 @@ class RestrictionConfigTest {
     }
 
     @Test
-    fun developerAppConfig_defaultConstructor_usesDefaultSettings() {
-        val config = DeveloperAppConfig()
-        assertThat(
-            config.aspectRatio.defaultValue
-        ).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio)
-        assertThat(config.flashMode.defaultValue).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.flashMode)
-        assertThat(
-            config.captureMode.defaultValue
-        ).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.captureMode)
-        assertThat(
-            config.imageOutputFormat.defaultValue
-        ).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.imageFormat)
-        assertThat(
-            config.videoDynamicRange.defaultValue
-        ).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
-        assertThat(
-            config.aspectRatio.uiVisibility
-        ).isEqualTo(OptionAvailabilityConfig.NotRestricted)
+    fun cameraAppConfig_defaultConstructor_allPropertiesNull() {
+        val config = CameraAppConfig()
+        assertThat(config.aspectRatio).isNull()
+        assertThat(config.flashMode).isNull()
+        assertThat(config.captureMode).isNull()
+        assertThat(config.imageFormat).isNull()
+        assertThat(config.dynamicRange).isNull()
     }
 
     @Test
     fun developerAppConfig_whenFlashModeExcludesOff_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
-            DeveloperAppConfig(
+            CameraAppConfig(
                 flashMode = SettingConfig(
                     defaultValue = FlashMode.ON,
                     uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
@@ -102,7 +91,7 @@ class RestrictionConfigTest {
     @Test
     fun developerAppConfig_whenFlashModeHiddenAndNotOff_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
-            DeveloperAppConfig(
+            CameraAppConfig(
                 flashMode = SettingConfig(
                     defaultValue = FlashMode.ON,
                     uiVisibility = OptionAvailabilityConfig.Hidden
@@ -113,14 +102,14 @@ class RestrictionConfigTest {
 
     @Test
     fun developerAppConfig_whenFlashModeHiddenAndOff_succeeds() {
-        val config = DeveloperAppConfig(
+        val config = CameraAppConfig(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
                 uiVisibility = OptionAvailabilityConfig.Hidden
             )
         )
-        assertThat(config.flashMode.defaultValue).isEqualTo(FlashMode.OFF)
-        assertThat(config.flashMode.uiVisibility).isEqualTo(OptionAvailabilityConfig.Hidden)
+        assertThat(config.flashMode?.defaultValue).isEqualTo(FlashMode.OFF)
+        assertThat(config.flashMode?.uiVisibility).isEqualTo(OptionAvailabilityConfig.Hidden)
     }
 
     @Test
@@ -129,42 +118,50 @@ class RestrictionConfigTest {
         val config2 = SettingConfig(FlashMode.OFF, OptionAvailabilityConfig.NotRestricted)
         assertThat(config1).isEqualTo(config2)
 
-        val appConfig1 = DeveloperAppConfig()
-        val appConfig2 = DeveloperAppConfig()
+        val appConfig1 = CameraAppConfig()
+        val appConfig2 = CameraAppConfig()
         assertThat(appConfig1).isEqualTo(appConfig2)
     }
 
     @Test
     fun toCameraAppSettings_overridesDefaults() {
-        val developerConfig = DeveloperAppConfig(
-            aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN),
+        val developerConfig = CameraAppConfig(
+            aspectRatio = SettingConfig(AspectRatio.THREE_FOUR),
             flashMode = SettingConfig(FlashMode.ON),
             captureMode = SettingConfig(CaptureMode.VIDEO_ONLY),
-            imageOutputFormat = SettingConfig(ImageOutputFormat.JPEG),
-            videoDynamicRange = SettingConfig(DynamicRange.SDR)
+            imageFormat = SettingConfig(ImageOutputFormat.JPEG_ULTRA_HDR),
+            dynamicRange = SettingConfig(DynamicRange.HLG10)
         )
 
         val appSettings = developerConfig.toCameraAppSettings()
 
-        assertThat(appSettings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        assertThat(appSettings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
         assertThat(appSettings.flashMode).isEqualTo(FlashMode.ON)
         assertThat(appSettings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
-        assertThat(appSettings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
-        assertThat(appSettings.dynamicRange).isEqualTo(DynamicRange.SDR)
+        assertThat(appSettings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+        assertThat(appSettings.dynamicRange).isEqualTo(DynamicRange.HLG10)
     }
 
     @Test
     fun toCameraAppSettings_withCustomDefaults_preservesUnoverriddenSettings() {
         val customDefaults = DEFAULT_CAMERA_APP_SETTINGS.copy(
+            aspectRatio = AspectRatio.ONE_ONE,
+            flashMode = FlashMode.AUTO,
+            imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
+            dynamicRange = DynamicRange.HLG10,
             maxVideoDurationMillis = 60_000L
         )
-        val developerConfig = DeveloperAppConfig(
+        val developerConfig = CameraAppConfig(
             captureMode = SettingConfig(CaptureMode.VIDEO_ONLY)
         )
 
         val appSettings = developerConfig.toCameraAppSettings(customDefaults)
 
         assertThat(appSettings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        assertThat(appSettings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+        assertThat(appSettings.flashMode).isEqualTo(FlashMode.AUTO)
+        assertThat(appSettings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+        assertThat(appSettings.dynamicRange).isEqualTo(DynamicRange.HLG10)
         assertThat(appSettings.maxVideoDurationMillis).isEqualTo(60_000L)
     }
 }

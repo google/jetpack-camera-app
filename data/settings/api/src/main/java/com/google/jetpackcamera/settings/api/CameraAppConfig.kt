@@ -27,34 +27,32 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
  * Defines a configuration for the Jetpack Camera App that can be used by developers
  * to override the default app settings.
  */
-data class DeveloperAppConfig(
-    val captureMode: SettingConfig<CaptureMode> =
-        SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
-    val aspectRatio: SettingConfig<AspectRatio> =
-        SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
-    val flashMode: SettingConfig<FlashMode> = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
-    val imageOutputFormat: SettingConfig<ImageOutputFormat> =
-        SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
-    val videoDynamicRange: SettingConfig<DynamicRange> =
-        SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
+data class CameraAppConfig(
+    val captureMode: SettingConfig<CaptureMode>? = null,
+    val aspectRatio: SettingConfig<AspectRatio> ? = null,
+    val flashMode: SettingConfig<FlashMode> ? = null,
+    val imageFormat: SettingConfig<ImageOutputFormat> ? = null,
+    val dynamicRange: SettingConfig<DynamicRange> ? = null,
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
-        when (val visibility = flashMode.uiVisibility) {
-            is OptionAvailabilityConfig.OptionsEnabled -> require(
-                FlashMode.OFF in visibility.enabledOptions
-            ) {
-                "FlashMode.OFF must always be included in enabledOptions for flashMode."
+        flashMode?.let { config ->
+            when (val visibility = config.uiVisibility) {
+                is OptionAvailabilityConfig.OptionsEnabled -> require(
+                    FlashMode.OFF in visibility.enabledOptions
+                ) {
+                    "FlashMode.OFF must always be included in enabledOptions for flashMode."
+                }
+                is OptionAvailabilityConfig.Hidden -> require(config.defaultValue == FlashMode.OFF) {
+                    "When flashMode is Hidden, defaultValue must be FlashMode.OFF."
+                }
+                is OptionAvailabilityConfig.NotRestricted -> Unit
             }
-            is OptionAvailabilityConfig.Hidden -> require(flashMode.defaultValue == FlashMode.OFF) {
-                "When flashMode is Hidden, defaultValue must be FlashMode.OFF."
-            }
-            is OptionAvailabilityConfig.NotRestricted -> Unit
         }
     }
 
     /**
-     * Converts this [DeveloperAppConfig] into a [CameraAppSettings] object.
+     * Converts this [CameraAppConfig] into a [CameraAppSettings] object.
      *
      * This function maps the developer-defined settings to the internal camera app settings model.
      */
@@ -62,11 +60,11 @@ data class DeveloperAppConfig(
         defaultSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
     ): CameraAppSettings {
         return defaultSettings.copy(
-            aspectRatio = this.aspectRatio.defaultValue,
-            flashMode = this.flashMode.defaultValue,
-            captureMode = this.captureMode.defaultValue,
-            imageFormat = this.imageOutputFormat.defaultValue,
-            dynamicRange = this.videoDynamicRange.defaultValue
+            aspectRatio = this.aspectRatio?.defaultValue ?: defaultSettings.aspectRatio,
+            flashMode = this.flashMode?.defaultValue ?: defaultSettings.flashMode,
+            captureMode = this.captureMode?.defaultValue ?: defaultSettings.captureMode,
+            imageFormat = this.imageFormat?.defaultValue ?: defaultSettings.imageFormat,
+            dynamicRange = this.dynamicRange?.defaultValue ?: defaultSettings.dynamicRange
         )
     }
 }
@@ -87,7 +85,8 @@ data class SettingConfig<T>(
         // is always included in the set of enabled options.
         if (uiVisibility is OptionAvailabilityConfig.OptionsEnabled) {
             require(defaultValue in uiVisibility.enabledOptions) {
-                "The defaultValue ('$defaultValue') must be one of the enabledOptions: ${uiVisibility.enabledOptions}"
+                "The defaultValue ('$defaultValue') must be one of the enabledOptions: " +
+                        "${uiVisibility.enabledOptions}"
             }
         }
     }

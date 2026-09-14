@@ -20,7 +20,7 @@ import com.google.jetpackcamera.di.DefaultCaptureModeOverride
 import com.google.jetpackcamera.di.DefaultFilePathGenerator
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.SaveMode
-import com.google.jetpackcamera.settings.api.DeveloperAppConfig
+import com.google.jetpackcamera.settings.api.CameraAppConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,11 +32,11 @@ import javax.inject.Singleton
 object AppModule {
 
     /**
-     * Provides the default [DeveloperAppConfig] configuration.
+     * Provides the default [CameraAppConfig] configuration.
      */
     @Provides
     @Singleton
-    fun providesDeveloperAppConfig(): DeveloperAppConfig = DeveloperAppConfig()
+    fun providesDeveloperAppConfig(): CameraAppConfig = CameraAppConfig()
 
     /**
      * provides the default [CaptureMode] to override by the app

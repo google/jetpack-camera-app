@@ -31,7 +31,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
-import com.google.jetpackcamera.settings.api.DeveloperAppConfig
+import com.google.jetpackcamera.settings.api.CameraAppConfig
 import com.google.jetpackcamera.settings.api.OptionAvailabilityConfig
 import com.google.jetpackcamera.settings.api.SettingConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -90,12 +90,12 @@ class PreviewViewModelTest {
     private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
         updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
-    private val defaultTestAppConfig = DeveloperAppConfig(
+    private val defaultTestAppConfig = CameraAppConfig(
         aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
         flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
         captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
-        imageOutputFormat = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
-        videoDynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
+        imageFormat = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
+        dynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
     )
     private lateinit var previewViewModel: PreviewViewModel
 
