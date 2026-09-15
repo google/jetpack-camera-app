@@ -20,7 +20,7 @@ import com.google.jetpackcamera.di.DefaultCaptureModeOverride
 import com.google.jetpackcamera.di.DefaultFilePathGenerator
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.SaveMode
-import com.google.jetpackcamera.settings.api.CameraAppConfig
+import com.google.jetpackcamera.settings.model.CameraAppConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

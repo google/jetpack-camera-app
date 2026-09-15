@@ -18,8 +18,8 @@ package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.ExternalCaptureMode
-import com.google.jetpackcamera.settings.api.CameraAppConfig
-import com.google.jetpackcamera.settings.api.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.model.CameraAppConfig
+import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
