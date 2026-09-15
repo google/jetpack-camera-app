@@ -20,19 +20,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -68,6 +69,59 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.takeOrElse
 
 /**
+ * Height of the shutter row (capture button, image well and flip camera button) as specified by
+ * the design spec.
+ */
+private val SHUTTER_STACK_HEIGHT = 86.dp
+
+/**
+ * Height of the slot reserved between the shutter row and the lower controls row. The design spec
+ * reserves this space unconditionally so that optional content can appear there without shifting
+ * any of the surrounding controls.
+ */
+private val MIDDLE_SLOT_HEIGHT = 32.dp
+
+/**
+ * Height of the lower controls row (quick settings and capture mode toggles).
+ *
+ * This is a hard height, and it currently has no slack: it is exactly the default height of the
+ * toggle switch it contains. Keep it greater than or equal to that default, otherwise the row
+ * will silently clip its contents.
+ */
+private val LOWER_SECTION_HEIGHT = 64.dp
+
+/** Vertical gap between the zoom bar and the shutter row. */
+private val ZOOM_TO_SHUTTER_GAP = 32.dp
+
+/** Vertical gap above and below the reserved middle slot. */
+private val CONTROL_STACK_GAP = 24.dp
+
+/**
+ * Target clearance from the bottom of the display to the lower controls row, keeping the
+ * controls at a consistent thumb resting position across navigation bar modes (gesture vs
+ * 3-button navigation).
+ */
+private val TARGET_BOTTOM_CLEARANCE = 56.dp
+
+/** Minimum safety margin between the lower controls row and the navigation bar. */
+private val MIN_NAV_MARGIN = 8.dp
+
+/** Compressed [ZOOM_TO_SHUTTER_GAP] used on short screens. */
+private val COMPACT_ZOOM_TO_SHUTTER_GAP = 16.dp
+
+/** Compressed [CONTROL_STACK_GAP] used on short screens. */
+private val COMPACT_CONTROL_STACK_GAP = 12.dp
+
+/** Compressed bottom padding used on short screens. */
+private val COMPACT_CONTROLS_BOTTOM_PADDING = 12.dp
+
+/** Available height below which the control stack compresses its gaps. */
+private val SHORT_SCREEN_THRESHOLD = 600.dp
+
+/** Horizontal inset of the lower controls row. */
+private val LOWER_SECTION_HORIZONTAL_PADDING = 16.dp
+
+/**
  * The base layout for the camera capture screen.
  *
  * @param modifier the modifier for this component
@@ -82,6 +136,9 @@ import androidx.compose.ui.unit.takeOrElse
  * @param quickSettingsButton the quick settings button composable
  * @param indicatorRow the indicator row composable
  * @param captureModeToggle the capture mode toggle composable
+ * @param captureModeCarousel content for the fixed-height slot reserved between the shutter row
+ * and the lower controls row. The slot is always reserved, so supplying or omitting content here
+ * never moves the surrounding controls.
  * @param quickSettingsOverlay the quick settings overlay composable
  * @param debugOverlay the debug overlay composable
  * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug settings
@@ -108,6 +165,7 @@ fun PreviewLayout(
     quickSettingsButton: @Composable (Modifier) -> Unit,
     indicatorRow: @Composable (Modifier) -> Unit,
     captureModeToggle: @Composable (Modifier) -> Unit,
+    captureModeCarousel: @Composable (Modifier) -> Unit = {},
     quickSettingsOverlay: @Composable (Modifier) -> Unit,
     debugOverlay: @Composable (Modifier) -> Unit,
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
@@ -188,6 +246,7 @@ fun PreviewLayout(
                             flipCameraButton = flipCameraButton,
                             quickSettingsToggleButton = quickSettingsButton,
                             captureModeToggleSwitch = captureModeToggle,
+                            captureModeCarousel = captureModeCarousel,
                             zoomControls = zoomLevelDisplay,
                             elapsedTimeDisplay = elapsedTimeDisplay
                         )
@@ -220,6 +279,7 @@ fun PreviewLayout(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
@@ -229,21 +289,68 @@ private fun VerticalMaterialControls(
     flipCameraButton: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
+    captureModeCarousel: @Composable (Modifier) -> Unit,
     elapsedTimeDisplay: @Composable (Modifier) -> Unit
 ) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        // On short screens only the gaps and the bottom padding compress; the fixed element
+        // heights are preserved so the stack keeps the proportions of the design spec.
+        val isPortrait = maxHeight > maxWidth
+        val compact = maxHeight < SHORT_SCREEN_THRESHOLD
+        val stackGap = if (compact) COMPACT_CONTROL_STACK_GAP else CONTROL_STACK_GAP
+        val navBarBottom = WindowInsets.navigationBarsIgnoringVisibility
+            .asPaddingValues()
+            .calculateBottomPadding()
+        val bottomPad = if (compact) {
+            COMPACT_CONTROLS_BOTTOM_PADDING
+        } else {
+            max(TARGET_BOTTOM_CLEARANCE - navBarBottom, MIN_NAV_MARGIN)
+        }
+
+        // Shutter top measured up from the bottom of this controls Box
+        val shutterTopFromBottom = bottomPad + LOWER_SECTION_HEIGHT + stackGap +
+            MIDDLE_SLOT_HEIGHT + stackGap + SHUTTER_STACK_HEIGHT
+
+        val zoomGap = if (compact) {
+            COMPACT_ZOOM_TO_SHUTTER_GAP
+        } else if (isPortrait) {
+            // In standard portrait orientation, anchor the zoom bar to the 3:4 viewfinder
+            // bottom baseline (matching reference camera app behavior).
+            // This places the zoom bar cleanly inside the 3:4 preview, keeps it locked at the
+            // same physical coordinate when switching between 3:4 and 9:16 aspect ratios,
+            // and adapts across device screen heights.
+            val topInset = max(
+                WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding(),
+                WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+            )
+            val topBarHeight = max(topInset, 48.dp)
+            val viewfinder34Height = maxWidth * 4f / 3f
+            val viewfinder34BottomFromTop = topBarHeight + viewfinder34Height
+            val viewfinder34BottomFromBoxBottom = maxHeight - (viewfinder34BottomFromTop - topInset)
+            val targetGap = viewfinder34BottomFromBoxBottom - shutterTopFromBottom
+            max(targetGap, ZOOM_TO_SHUTTER_GAP)
+        } else {
+            ZOOM_TO_SHUTTER_GAP
+        }
+
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
                 elapsedTimeDisplay(Modifier)
 
                 // zoom controls row
                 zoomControls(Modifier)
+
+                Spacer(modifier = Modifier.height(zoomGap))
+
                 // capture button row
                 Column {
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .height(IntrinsicSize.Max),
+                            .height(SHUTTER_STACK_HEIGHT),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Row that holds flip camera, capture button, and audio
@@ -252,7 +359,7 @@ private fun VerticalMaterialControls(
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(120.dp),
+                                    .fillMaxHeight(),
                                 contentAlignment = Alignment.Center
                             ) {
                                 imageWell(Modifier)
@@ -269,7 +376,7 @@ private fun VerticalMaterialControls(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(120.dp),
+                                .fillMaxHeight(),
                             contentAlignment = Alignment.Center
                         ) {
                             flipCameraButton(Modifier)
@@ -277,19 +384,28 @@ private fun VerticalMaterialControls(
                     }
                 }
 
-                Spacer(
+                Spacer(modifier = Modifier.height(stackGap))
+
+                // Slot reserved by the design spec between the shutter row and the lower controls
+                // row. Its height is fixed whether or not it has content, so the shutter row never
+                // moves when content appears here.
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        // todo(kc): tune padding
-                        .padding(bottom = 50.dp)
-                )
+                        .height(MIDDLE_SLOT_HEIGHT),
+                    contentAlignment = Alignment.Center
+                ) {
+                    captureModeCarousel(Modifier)
+                }
+
+                Spacer(modifier = Modifier.height(stackGap))
 
                 // bottom controls row
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .defaultMinSize(minHeight = 64.dp)
-                        .padding(horizontal = 16.dp),
+                        .height(LOWER_SECTION_HEIGHT)
+                        .padding(horizontal = LOWER_SECTION_HORIZONTAL_PADDING),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
@@ -316,6 +432,8 @@ private fun VerticalMaterialControls(
                         contentAlignment = Alignment.CenterEnd
                     ) {}
                 }
+
+                Spacer(modifier = Modifier.height(bottomPad))
             }
         }
     }
