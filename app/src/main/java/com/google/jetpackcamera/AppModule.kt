@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import androidx.annotation.VisibleForTesting
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.di.DefaultCaptureModeOverride
 import com.google.jetpackcamera.di.DefaultFilePathGenerator
@@ -25,18 +26,19 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    @VisibleForTesting
+    var testCameraAppConfig: CameraAppConfig? = null
+
     /**
-     * Provides the default [CameraAppConfig] configuration.
+     * Provides the [CameraAppConfig] configuration.
      */
     @Provides
-    @Singleton
-    fun providesCameraAppConfig(): CameraAppConfig = CameraAppConfig()
+    fun providesCameraAppConfig(): CameraAppConfig = testCameraAppConfig ?: CameraAppConfig()
 
     /**
      * provides the default [CaptureMode] to override by the app

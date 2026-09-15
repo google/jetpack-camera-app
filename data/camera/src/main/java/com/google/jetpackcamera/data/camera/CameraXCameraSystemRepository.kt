@@ -20,6 +20,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.CameraXCameraSystem
 import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.CameraAppConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
@@ -45,6 +46,7 @@ class CameraXCameraSystemRepository(
     private val cameraXCameraSystemProvider: Provider<out CameraSystem>,
     private val settingsRepository: SettingsRepository,
     private val launchConfigProvider: CameraLaunchConfigProvider,
+    private val cameraAppConfig: CameraAppConfig = CameraAppConfig(),
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) : CameraSystemRepository {
 
@@ -52,11 +54,13 @@ class CameraXCameraSystemRepository(
         cameraXCameraSystemProvider: Provider<out CameraSystem>,
         settingsRepository: SettingsRepository,
         launchConfig: CameraLaunchConfig = CameraLaunchConfig(),
+        cameraAppConfig: CameraAppConfig = CameraAppConfig(),
         scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     ) : this(
         cameraXCameraSystemProvider = cameraXCameraSystemProvider,
         settingsRepository = settingsRepository,
         launchConfigProvider = CameraLaunchConfigProvider().apply { setConfig(launchConfig) },
+        cameraAppConfig = cameraAppConfig,
         scope = scope
     )
 
@@ -86,7 +90,9 @@ class CameraXCameraSystemRepository(
     private val initializationDeferred: Deferred<Unit> =
         scope.async(start = CoroutineStart.LAZY) {
             val launchConfig = launchConfigProvider.config.value
-            val initialSettings = settingsRepository.getCurrentDefaultCameraAppSettings()
+            val initialSettings = cameraAppConfig.toCameraAppSettings(
+                settingsRepository.getCurrentDefaultCameraAppSettings()
+            )
                 .applyExternalCaptureMode(launchConfig.externalCaptureMode)
                 .copy(debugSettings = launchConfig.debugSettings)
             cameraSystem.initialize(initialSettings) { properties ->

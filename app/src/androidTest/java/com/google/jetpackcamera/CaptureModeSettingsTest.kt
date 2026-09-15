@@ -158,7 +158,7 @@ internal class CaptureModeSettingsTest {
                 onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertDoesNotExist()
             }
             // verify switch is removed when mode switching is not supported
-            onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
 
             // set concurrent camera mode back to off in settings
             composeTestRule.setConcurrentCameraModeInSettings(ConcurrentCameraMode.OFF)
