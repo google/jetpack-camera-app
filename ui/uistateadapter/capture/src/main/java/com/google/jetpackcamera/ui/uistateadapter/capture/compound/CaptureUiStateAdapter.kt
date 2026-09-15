@@ -19,7 +19,6 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.CameraAppConfig
-import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -101,19 +100,28 @@ fun captureUiState(
             cameraAppSettings,
             systemConstraints
         )
+        // TODO: Connect visibility / option availability restrictions for aspectRatio from appConfig in
+        // a follow-up PR (deferring avoids conflicting with the video capture 9:16 constraint).
         val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
         val hdrUiState = HdrUiState.from(
-            cameraAppSettings,
-            systemConstraints
+            cameraAppSettings = cameraAppSettings,
+            systemConstraints = systemConstraints,
+            imageFormatVisibilityConfig = appConfig?.imageFormat?.uiVisibility,
+            dynamicRangeVisibilityConfig = appConfig?.dynamicRange?.uiVisibility
         )
 
         flashModeUiState = flashModeUiState.let {
             it?.updateFrom(
                 cameraAppSettings = cameraAppSettings,
                 systemConstraints = systemConstraints,
-                cameraState = roundedCameraState
+                cameraState = roundedCameraState,
+                visibilityConfig = appConfig?.flashMode?.uiVisibility
             )
-                ?: FlashModeUiState.from(cameraAppSettings, systemConstraints)
+                ?: FlashModeUiState.from(
+                    cameraAppSettings = cameraAppSettings,
+                    systemConstraints = systemConstraints,
+                    visibilityConfig = appConfig?.flashMode?.uiVisibility
+                )
         }
         focusMeteringUiState = focusMeteringUiState.let {
             it?.updateFrom(

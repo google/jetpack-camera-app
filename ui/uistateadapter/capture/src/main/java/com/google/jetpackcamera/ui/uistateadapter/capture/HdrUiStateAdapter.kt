@@ -23,6 +23,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 
@@ -44,13 +45,17 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  *
  * @param cameraAppSettings The current application and camera settings.
  * @param systemConstraints The capabilities and limitations of the device's camera hardware.
+ * @param imageFormatVisibilityConfig Optional developer visibility configuration for image format.
+ * @param dynamicRangeVisibilityConfig Optional developer visibility configuration for dynamic range.
  *
  * @return [HdrUiState.Available] if the feature is supported and not blocked by other settings,
  * otherwise returns [HdrUiState.Unavailable].
  */
 internal fun HdrUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
-    systemConstraints: CameraSystemConstraints
+    systemConstraints: CameraSystemConstraints,
+    imageFormatVisibilityConfig: OptionAvailabilityConfig<ImageOutputFormat>? = null,
+    dynamicRangeVisibilityConfig: OptionAvailabilityConfig<DynamicRange>? = null
 ): HdrUiState {
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
@@ -61,6 +66,13 @@ internal fun HdrUiState.Companion.from(
 
     return when (cameraAppSettings.captureMode) {
         CaptureMode.IMAGE_ONLY -> {
+            if (imageFormatVisibilityConfig is OptionAvailabilityConfig.Hidden ||
+                (imageFormatVisibilityConfig is OptionAvailabilityConfig.OptionsEnabled &&
+                    ImageOutputFormat.JPEG_ULTRA_HDR !in imageFormatVisibilityConfig.enabledOptions)
+            ) {
+                return HdrUiState.Unavailable
+            }
+
             val supportsHdrImage = cameraConstraints
                 ?.supportedImageFormatsMap?.get(affectsImageCapture)
                 ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
@@ -78,6 +90,13 @@ internal fun HdrUiState.Companion.from(
         }
 
         CaptureMode.VIDEO_ONLY -> {
+            if (dynamicRangeVisibilityConfig is OptionAvailabilityConfig.Hidden ||
+                (dynamicRangeVisibilityConfig is OptionAvailabilityConfig.OptionsEnabled &&
+                    DynamicRange.HLG10 !in dynamicRangeVisibilityConfig.enabledOptions)
+            ) {
+                return HdrUiState.Unavailable
+            }
+
             val supportsHdrVideo =
                 cameraConstraints
                     ?.supportedDynamicRanges

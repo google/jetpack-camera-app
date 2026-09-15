@@ -27,6 +27,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -378,5 +379,105 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState = HdrUiState.from(appSettings, systemConstraints)
 
         assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
+    }
+
+    @Test
+    fun from_imageOnlyMode_hiddenImageFormat_hdrUnavailable() {
+        val appSettings = defaultCameraAppSettings.copy(
+            captureMode = CaptureMode.IMAGE_ONLY,
+            imageFormat = ImageOutputFormat.JPEG
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedImageFormatsMap = mapOf(
+                        false to setOf(ImageOutputFormat.JPEG, ImageOutputFormat.JPEG_ULTRA_HDR)
+                    )
+                )
+            )
+        )
+
+        val hdrUiState = HdrUiState.from(
+            cameraAppSettings = appSettings,
+            systemConstraints = systemConstraints,
+            imageFormatVisibilityConfig = OptionAvailabilityConfig.Hidden
+        )
+
+        assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
+    }
+
+    @Test
+    fun from_imageOnlyMode_optionsEnabledWithUltraHdr_hdrAvailable() {
+        val appSettings = defaultCameraAppSettings.copy(
+            captureMode = CaptureMode.IMAGE_ONLY,
+            imageFormat = ImageOutputFormat.JPEG
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedImageFormatsMap = mapOf(
+                        false to setOf(ImageOutputFormat.JPEG, ImageOutputFormat.JPEG_ULTRA_HDR)
+                    )
+                )
+            )
+        )
+
+        val hdrUiState = HdrUiState.from(
+            cameraAppSettings = appSettings,
+            systemConstraints = systemConstraints,
+            imageFormatVisibilityConfig = OptionAvailabilityConfig.OptionsEnabled(
+                setOf(ImageOutputFormat.JPEG, ImageOutputFormat.JPEG_ULTRA_HDR)
+            )
+        )
+
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
+    }
+
+    @Test
+    fun from_videoOnlyMode_hiddenDynamicRange_hdrUnavailable() {
+        val appSettings = defaultCameraAppSettings.copy(
+            captureMode = CaptureMode.VIDEO_ONLY,
+            dynamicRange = DynamicRange.SDR
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
+                )
+            )
+        )
+
+        val hdrUiState = HdrUiState.from(
+            cameraAppSettings = appSettings,
+            systemConstraints = systemConstraints,
+            dynamicRangeVisibilityConfig = OptionAvailabilityConfig.Hidden
+        )
+
+        assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
+    }
+
+    @Test
+    fun from_videoOnlyMode_optionsEnabledWithHlg10_hdrAvailable() {
+        val appSettings = defaultCameraAppSettings.copy(
+            captureMode = CaptureMode.VIDEO_ONLY,
+            dynamicRange = DynamicRange.SDR
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
+                )
+            )
+        )
+
+        val hdrUiState = HdrUiState.from(
+            cameraAppSettings = appSettings,
+            systemConstraints = systemConstraints,
+            dynamicRangeVisibilityConfig = OptionAvailabilityConfig.OptionsEnabled(
+                setOf(DynamicRange.SDR, DynamicRange.HLG10)
+            )
+        )
+
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
     }
 }

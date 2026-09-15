@@ -24,6 +24,8 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 /**
  * Defines a configuration for the Jetpack Camera App that can be used by developers
  * to override the default app settings.
+ *
+ * TODO (kc): Defer audioEnabled configuration to a follow-up PR, pending design for visual UX.
  */
 data class CameraAppConfig(
     val captureMode: SettingConfig<CaptureMode>? = null,
@@ -41,9 +43,11 @@ data class CameraAppConfig(
                 ) {
                     "FlashMode.OFF must always be included in enabledOptions for flashMode."
                 }
+
                 is OptionAvailabilityConfig.Hidden -> require(config.defaultValue == FlashMode.OFF) {
                     "When flashMode is Hidden, defaultValue must be FlashMode.OFF."
                 }
+
                 is OptionAvailabilityConfig.NotRestricted -> Unit
             }
         }
