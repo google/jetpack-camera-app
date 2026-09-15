@@ -67,8 +67,11 @@ internal fun HdrUiState.Companion.from(
     return when (cameraAppSettings.captureMode) {
         CaptureMode.IMAGE_ONLY -> {
             if (imageFormatVisibilityConfig is OptionAvailabilityConfig.Hidden ||
-                (imageFormatVisibilityConfig is OptionAvailabilityConfig.OptionsEnabled &&
-                    ImageOutputFormat.JPEG_ULTRA_HDR !in imageFormatVisibilityConfig.enabledOptions)
+                (
+                    imageFormatVisibilityConfig is OptionAvailabilityConfig.OptionsEnabled &&
+                        ImageOutputFormat.JPEG_ULTRA_HDR !in
+                        imageFormatVisibilityConfig.enabledOptions
+                    )
             ) {
                 return HdrUiState.Unavailable
             }
@@ -91,8 +94,10 @@ internal fun HdrUiState.Companion.from(
 
         CaptureMode.VIDEO_ONLY -> {
             if (dynamicRangeVisibilityConfig is OptionAvailabilityConfig.Hidden ||
-                (dynamicRangeVisibilityConfig is OptionAvailabilityConfig.OptionsEnabled &&
-                    DynamicRange.HLG10 !in dynamicRangeVisibilityConfig.enabledOptions)
+                (
+                    dynamicRangeVisibilityConfig is OptionAvailabilityConfig.OptionsEnabled &&
+                        DynamicRange.HLG10 !in dynamicRangeVisibilityConfig.enabledOptions
+                    )
             ) {
                 return HdrUiState.Unavailable
             }
@@ -115,6 +120,7 @@ internal fun HdrUiState.Companion.from(
                 HdrUiState.Unavailable
             }
         }
+
         CaptureMode.STANDARD -> {
             HdrUiState.Unavailable
         }

@@ -44,7 +44,9 @@ data class CameraAppConfig(
                     "FlashMode.OFF must always be included in enabledOptions for flashMode."
                 }
 
-                is OptionAvailabilityConfig.Hidden -> require(config.defaultValue == FlashMode.OFF) {
+                is OptionAvailabilityConfig.Hidden -> require(
+                    config.defaultValue == FlashMode.OFF
+                ) {
                     "When flashMode is Hidden, defaultValue must be FlashMode.OFF."
                 }
 
@@ -88,7 +90,7 @@ data class SettingConfig<T>(
         if (uiVisibility is OptionAvailabilityConfig.OptionsEnabled) {
             require(defaultValue in uiVisibility.enabledOptions) {
                 "The defaultValue ('$defaultValue') must be one of the enabledOptions: " +
-                        "${uiVisibility.enabledOptions}"
+                    "${uiVisibility.enabledOptions}"
             }
         }
     }
