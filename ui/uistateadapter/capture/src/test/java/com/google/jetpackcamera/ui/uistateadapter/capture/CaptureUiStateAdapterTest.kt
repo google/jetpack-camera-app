@@ -21,9 +21,11 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppConfig
@@ -37,6 +39,7 @@ import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
@@ -226,6 +229,58 @@ internal class CaptureUiStateAdapterTest {
         val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
         assertThat(quickSettings.captureModeUiState).isEqualTo(CaptureModeUiState.Unavailable)
         assertThat(state.captureModeToggleUiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
+    }
+
+    @Test
+    fun captureUiState_withNullAppConfig_defaultsCleanly() = runTest {
+        val uiStateFlow = createCaptureUiStateFlow(appConfig = null)
+        val state = assertIsReady(uiStateFlow.first())
+        assertThat(state).isInstanceOf(CaptureUiState.Ready::class.java)
+    }
+
+    @Test
+    fun captureUiState_withFlashModeAndHdrHidden_emitsUnavailableUiStates() = runTest {
+        constraintsRepository.updateSystemConstraints(
+            CameraSystemConstraints(
+                availableLenses = listOf(LensFacing.BACK),
+                perLensConstraints = mapOf(
+                    LensFacing.BACK to CameraConstraints(
+                        supportedFixedFrameRates = emptySet(),
+                        supportedStabilizationModes = emptySet(),
+                        supportedDynamicRanges = emptySet(),
+                        supportedVideoQualitiesMap = emptyMap(),
+                        supportedImageFormatsMap = emptyMap(),
+                        supportedIlluminants = setOf(Illuminant.FLASH_UNIT),
+                        supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON),
+                        supportedZoomRange = null,
+                        unsupportedStabilizationFpsMap = emptyMap(),
+                        supportedTestPatterns = emptySet()
+                    )
+                )
+            )
+        )
+
+        val restrictedConfig = defaultAppConfig.copy(
+            flashMode = SettingConfig(
+                defaultValue = FlashMode.OFF,
+                visibility = OptionVisibility.Hidden
+            ),
+            imageFormat = SettingConfig(
+                defaultValue = ImageOutputFormat.JPEG,
+                visibility = OptionVisibility.Hidden
+            ),
+            dynamicRange = SettingConfig(
+                defaultValue = DynamicRange.SDR,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+
+        val uiStateFlow = createCaptureUiStateFlow(appConfig = restrictedConfig)
+        val state = assertIsReady(uiStateFlow.first())
+        assertThat(state.flashModeUiState).isEqualTo(FlashModeUiState.Unavailable)
+        val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
+        assertThat(quickSettings.flashModeUiState).isEqualTo(FlashModeUiState.Unavailable)
+        assertThat(quickSettings.hdrUiState).isEqualTo(HdrUiState.Unavailable)
     }
 
     private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready = when (uiState) {

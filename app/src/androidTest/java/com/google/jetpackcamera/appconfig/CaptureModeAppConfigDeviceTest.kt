@@ -15,10 +15,12 @@
  */
 package com.google.jetpackcamera.appconfig
 
+import android.provider.MediaStore
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
@@ -30,13 +32,16 @@ import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
+import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.getCaptureModeToggleState
 import com.google.jetpackcamera.utils.getCurrentCaptureMode
 import com.google.jetpackcamera.utils.isCaptureModeToggleEnabled
+import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
 import com.google.jetpackcamera.utils.visitQuickSettings
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.After
@@ -225,6 +230,41 @@ internal class CaptureModeAppConfigDeviceTest {
             composeTestRule.visitQuickSettings {
                 onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertDoesNotExist()
             }
+        }
+    }
+
+    // /////////////////////////////////////////////////////////////////////////
+    //
+    // Section D: Media Capture Execution
+    //
+    // /////////////////////////////////////////////////////////////////////////
+
+    @Test
+    fun defaultCaptureMode_imageOnly_executesImageCaptureOnCaptureButtonClick() {
+        AppModule.testCameraAppConfig = CameraAppConfig(
+            captureMode = SettingConfig(defaultValue = CaptureMode.IMAGE_ONLY)
+        )
+
+        runMainActivityMediaStoreAutoDeleteScenarioTest(
+            mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        ) {
+            composeTestRule.waitForCaptureButton()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+        }
+    }
+
+    @Test
+    fun defaultCaptureMode_videoOnly_executesVideoCaptureOnCaptureButtonClick() {
+        AppModule.testCameraAppConfig = CameraAppConfig(
+            captureMode = SettingConfig(defaultValue = CaptureMode.VIDEO_ONLY)
+        )
+
+        runMainActivityMediaStoreAutoDeleteScenarioTest(
+            mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        ) {
+            composeTestRule.waitForCaptureButton()
+            composeTestRule.tapStartLockedVideoRecording()
+            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
         }
     }
 }

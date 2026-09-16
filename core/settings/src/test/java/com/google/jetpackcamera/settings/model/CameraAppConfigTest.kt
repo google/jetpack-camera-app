@@ -211,4 +211,24 @@ class CameraAppConfigTest {
         assertThat(appSettings.dynamicRange).isEqualTo(DynamicRange.HLG10)
         assertThat(appSettings.maxVideoDurationMillis).isEqualTo(60_000L)
     }
+
+    @Test
+    fun cameraAppConfig_whenFlashModeOnlyIncludesOff_succeeds() {
+        val config = CameraAppConfig(
+            flashMode = SettingConfig(
+                defaultValue = FlashMode.OFF,
+                visibility = OptionVisibility.Only(FlashMode.OFF, FlashMode.ON)
+            )
+        )
+        assertThat(config.flashMode?.defaultValue).isEqualTo(FlashMode.OFF)
+        assertThat(config.flashMode?.visibility).isEqualTo(
+            OptionVisibility.Only(setOf(FlashMode.OFF, FlashMode.ON))
+        )
+    }
+
+    @Test
+    fun toCameraAppSettings_withDefaultConfig_returnsDefaultSettings() {
+        val config = CameraAppConfig()
+        assertThat(config.toCameraAppSettings()).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS)
+    }
 }

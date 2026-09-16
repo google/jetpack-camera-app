@@ -243,6 +243,8 @@ internal class FlashModeAppConfigDeviceTest(
                 if (onExists) {
                     onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertExists()
                     onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
+                } else {
+                    onNodeWithTag(ROW_QUICK_SETTINGS_FLASH).assertDoesNotExist()
                 }
             }
         }
@@ -271,6 +273,8 @@ internal class FlashModeAppConfigDeviceTest(
                 if (autoExists) {
                     onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertExists()
                     onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
+                } else {
+                    onNodeWithTag(ROW_QUICK_SETTINGS_FLASH).assertDoesNotExist()
                 }
             }
         }
@@ -299,6 +303,8 @@ internal class FlashModeAppConfigDeviceTest(
                 if (llbExists) {
                     onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertExists()
                     onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
+                } else {
+                    onNodeWithTag(ROW_QUICK_SETTINGS_FLASH).assertDoesNotExist()
                 }
             }
         }

@@ -120,7 +120,7 @@ class CameraXCameraSystemRepositoryTest {
         val appConfig = CameraAppConfig(
             flashMode = SettingConfig(defaultValue = FlashMode.ON),
             aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE),
-            captureMode = SettingConfig(defaultValue = CaptureMode.VIDEO_ONLY)
+            captureMode = SettingConfig(defaultValue = CaptureMode.STANDARD)
         )
         val repository = CameraXCameraSystemRepository(
             cameraXCameraSystemProvider = Provider { testCamera },
@@ -133,6 +133,30 @@ class CameraXCameraSystemRepositoryTest {
         repository.getCameraSystem()
         assertThat(testCamera.initializedSettings?.flashMode).isEqualTo(FlashMode.ON)
         assertThat(testCamera.initializedSettings?.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
-        assertThat(testCamera.initializedSettings?.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        assertThat(testCamera.initializedSettings?.captureMode).isEqualTo(CaptureMode.STANDARD)
     }
+
+    @Test
+    fun getCameraSystem_withVideoOnlyCaptureMode_initializesWithNineSixteenAspectRatio() =
+        testScope.runTest {
+            val testCamera = TestCameraSystem()
+            val appConfig = CameraAppConfig(
+                captureMode = SettingConfig(defaultValue = CaptureMode.VIDEO_ONLY)
+            )
+            val repository = CameraXCameraSystemRepository(
+                cameraXCameraSystemProvider = Provider { testCamera },
+                settingsRepository = FakeSettingsRepository(),
+                launchConfig = CameraLaunchConfig(),
+                cameraAppConfig = appConfig,
+                scope = testScope
+            )
+
+            repository.getCameraSystem()
+            assertThat(
+                testCamera.initializedSettings?.captureMode
+            ).isEqualTo(CaptureMode.VIDEO_ONLY)
+            assertThat(
+                testCamera.initializedSettings?.aspectRatio
+            ).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        }
 }

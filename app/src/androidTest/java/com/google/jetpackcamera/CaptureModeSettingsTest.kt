@@ -32,6 +32,10 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.settings.model.CameraAppConfig
+import com.google.jetpackcamera.settings.model.OptionVisibility
+import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
@@ -58,6 +62,7 @@ import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForCaptureModeToggleState
 import com.google.jetpackcamera.utils.waitForNodeWithTag
 import com.google.jetpackcamera.utils.waitForNodeWithTagToDisappear
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -73,6 +78,12 @@ internal class CaptureModeSettingsTest {
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiDevice = UiDevice.getInstance(instrumentation)
+
+    @After
+    fun tearDown() {
+        AppModule.testCameraAppConfig = null
+    }
+
     private fun ComposeTestRule.checkCaptureModeSettingState(captureMode: CaptureMode? = null) =
         visitQuickSettings {
             captureMode?.let {
@@ -225,26 +236,36 @@ internal class CaptureModeSettingsTest {
 
     @Test
     fun hdr_supports_video_only() {
-        runMainActivityScenarioTest {
-            composeTestRule.waitForCaptureButton()
+        AppModule.testCameraAppConfig = CameraAppConfig(
+            imageFormat = SettingConfig(
+                defaultValue = ImageOutputFormat.JPEG,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+        try {
+            runMainActivityScenarioTest {
+                composeTestRule.waitForCaptureButton()
 
-            // Switch to VIDEO_ONLY first since STANDARD doesn't support HDR
-            composeTestRule.setCaptureMode(CaptureMode.VIDEO_ONLY)
-            composeTestRule.setHdrEnabled(true)
+                // Switch to VIDEO_ONLY first since STANDARD doesn't support HDR
+                composeTestRule.setCaptureMode(CaptureMode.VIDEO_ONLY)
+                composeTestRule.setHdrEnabled(true)
 
-            // check that switch is removed when mode switching is not supported
-            composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
+                // check that switch is removed when mode switching is not supported
+                composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
 
-            composeTestRule.visitQuickSettings {
-                // capture mode should be video only
-                assertThat(getCurrentCaptureMode()).isEqualTo(CaptureMode.VIDEO_ONLY)
-                onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertDoesNotExist()
+                composeTestRule.visitQuickSettings {
+                    // capture mode should be video only
+                    assertThat(getCurrentCaptureMode()).isEqualTo(CaptureMode.VIDEO_ONLY)
+                    onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertDoesNotExist()
+                }
+                composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
+
+                composeTestRule.setHdrEnabled(false)
+                // Remains VIDEO_ONLY since we explicitly switched to it
+                composeTestRule.checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
             }
-            composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
-
-            composeTestRule.setHdrEnabled(false)
-            // Remains VIDEO_ONLY since we explicitly switched to it
-            composeTestRule.checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
+        } finally {
+            AppModule.testCameraAppConfig = null
         }
     }
 
