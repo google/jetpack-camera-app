@@ -502,7 +502,7 @@ private fun CaptureButton(
                         } finally {
                             isTapping = false
                             isCaptureButtonPressed = false // Manually unset pressed state
-                            interactionSource.emit(PressInteraction.Release(press))
+                            interactionSource.tryEmit(PressInteraction.Release(press))
                         }
                         if (shouldBeLocked()) {
                             onLockVideoRecording(true)
