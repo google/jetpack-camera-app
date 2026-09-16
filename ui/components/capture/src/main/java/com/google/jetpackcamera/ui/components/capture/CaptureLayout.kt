@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -63,7 +64,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.takeOrElse
@@ -447,7 +447,7 @@ private fun VerticalMaterialControls(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview
+@PreviewPortraitDevices
 @Composable
 private fun CaptureLayoutPreview() {
     PreviewLayout(
@@ -456,7 +456,7 @@ private fun CaptureLayoutPreview() {
             Box(
                 modifier = modifier
                     .fillMaxWidth()
-                    .height(600.dp)
+                    .aspectRatio(3f / 4f)
                     .background(Color.DarkGray)
             )
         },
