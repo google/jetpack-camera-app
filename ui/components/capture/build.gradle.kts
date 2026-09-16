@@ -23,7 +23,11 @@ plugins {
 
 android {
     namespace = "com.google.jetpackcamera.ui.components.capture"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
@@ -71,6 +75,7 @@ dependencies {
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
+    implementation(libs.androidx.foundation.layout)
 
     // AndroidX Core KTX
     implementation(libs.androidx.core.ktx)
@@ -122,6 +127,9 @@ dependencies {
     testImplementation(project(":core:camera:testing"))
     testImplementation(project(":data:settings"))
     testImplementation(project(":core:settings"))
+    testImplementation(project(":ui:controller:testing"))
+    androidTestImplementation(project(":ui:controller:testing"))
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 
 }
 
@@ -131,7 +139,7 @@ kapt {
 }
 configurations.all {
     resolutionStrategy {
-        // Exclude protobuf-lite to prevent DuplicateClassException conflicts with protobuf-javalite 
+        // Exclude protobuf-lite to prevent DuplicateClassException conflicts with protobuf-javalite
         // that is brought in by androidx.datastore, since the accessibility-test-framework brings in protobuf-lite.
         exclude(group = "com.google.protobuf", module = "protobuf-lite")
     }

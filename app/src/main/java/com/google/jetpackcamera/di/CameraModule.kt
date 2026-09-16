@@ -26,9 +26,10 @@ import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.data.camera.CameraLaunchConfigProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.camera.CameraXCameraSystemRepository
-import dagger.Binds
+import com.google.jetpackcamera.settings.SettingsRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,55 +38,62 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ActivityRetainedScoped
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Dagger [Module] for camera dependencies.
  */
 @Module
 @InstallIn(ActivityRetainedComponent::class)
-internal interface CameraModule {
+internal object CameraModule {
 
-    @Binds
+    @Provides
     @ActivityRetainedScoped
-    fun bindsCameraSystemRepository(
-        repository: CameraXCameraSystemRepository
-    ): CameraSystemRepository
+    fun providesCameraSystemRepository(
+        cameraXCameraSystemProvider: Provider<CameraXCameraSystem>,
+        settingsRepository: SettingsRepository,
+        launchConfigProvider: CameraLaunchConfigProvider,
+        @DefaultCoroutineScope scope: CoroutineScope
+    ): CameraSystemRepository = CameraXCameraSystemRepository(
+        cameraXCameraSystemProvider = cameraXCameraSystemProvider,
+        settingsRepository = settingsRepository,
+        launchConfigProvider = launchConfigProvider,
+        scope = scope
+    )
 
-    companion object {
-        @Provides
-        @ActivityRetainedScoped
-        fun providesCameraXCameraSystem(
-            @ApplicationContext context: Context,
-            @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
-            @IODispatcher ioDispatcher: CoroutineDispatcher,
-            @DefaultFilePathGenerator filePathGenerator: FilePathGenerator,
-            availabilityCheckers: Map<
-                LowLightBoostFeatureKey,
-                @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>
-                >,
-            effectProviders: Map<
-                LowLightBoostFeatureKey,
-                @JvmSuppressWildcards Provider<LowLightBoostEffectProvider>
-                >,
-            imagePostProcessors: Map<
-                ImagePostProcessorFeatureKey,
-                @JvmSuppressWildcards Provider<ImagePostProcessor>
-                >,
-            cameraEffectProviders: Map<
-                CameraEffectFeatureKey,
-                @JvmSuppressWildcards Provider<CameraEffectProvider>
-                >
-        ): CameraXCameraSystem {
-            return CameraXCameraSystem(
-                context as Application,
-                defaultDispatcher,
-                ioDispatcher,
-                filePathGenerator,
-                availabilityCheckers,
-                effectProviders,
-                imagePostProcessors,
-                cameraEffectProviders
-            )
-        }
+    @Provides
+    @ActivityRetainedScoped
+    fun providesCameraXCameraSystem(
+        @ApplicationContext context: Context,
+        @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
+        @IODispatcher ioDispatcher: CoroutineDispatcher,
+        @DefaultFilePathGenerator filePathGenerator: FilePathGenerator,
+        availabilityCheckers: Map<
+            LowLightBoostFeatureKey,
+            @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>
+            >,
+        effectProviders: Map<
+            LowLightBoostFeatureKey,
+            @JvmSuppressWildcards Provider<LowLightBoostEffectProvider>
+            >,
+        imagePostProcessors: Map<
+            ImagePostProcessorFeatureKey,
+            @JvmSuppressWildcards Provider<ImagePostProcessor>
+            >,
+        cameraEffectProviders: Map<
+            CameraEffectFeatureKey,
+            @JvmSuppressWildcards Provider<CameraEffectProvider>
+            >
+    ): CameraXCameraSystem {
+        return CameraXCameraSystem(
+            context as Application,
+            defaultDispatcher,
+            ioDispatcher,
+            filePathGenerator,
+            availabilityCheckers,
+            effectProviders,
+            imagePostProcessors,
+            cameraEffectProviders
+        )
     }
 }

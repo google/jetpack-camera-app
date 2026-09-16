@@ -22,7 +22,11 @@ plugins {
 
 android {
     namespace = "com.google.jetpackcamera.data.camera"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -65,6 +69,7 @@ android {
 dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
+    implementation(libs.camera.core)
     implementation(project(":core:camera"))
     implementation(project(":core:camera:low-light"))
     implementation(project(":core:camera:postprocess"))
@@ -72,6 +77,13 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":data:settings"))
     implementation(project(":core:settings"))
+
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(project(":core:camera:testing"))
+    testImplementation(project(":data:settings:testing"))
 }
 
 // Allow references to generated code

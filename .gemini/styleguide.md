@@ -42,6 +42,7 @@ When reviewing a pull request, focus on the following key areas:
     * Verify that Compose and CameraX APIs are used correctly and effectively.
     * Suggest more idiomatic or updated API usages where applicable.
     * Ensure state management in Compose is handled correctly (e.g., using `remember`, `derivedStateOf`, etc.).
+    * **Avoid Window-Spawning Overlays (`ModalBottomSheet`):** Do NOT use `ModalBottomSheet` on the camera capture screen. Modal bottom sheets spawn a separate Android `DialogWindow` above the main window, which can disrupt hardware-accelerated zero-copy rendering over the CameraX `SurfaceView` and create window lifecycle/gesture conflicts. Instead, use in-hierarchy containers like `BottomSheetScaffold` with `sheetPeekHeight = 0.dp`.
 
 5.  **Testing Coverage**
     * **When Tests are Missing:** If a PR introduces a significant feature or modifies logic without corresponding tests, flag this omission. Suggest a name for a new test class (e.g., `NewFeatureViewModelTest`) and outline what it should verify (e.g., "This test should check that the UI state updates correctly when the user performs X action").
@@ -70,6 +71,7 @@ When reviewing a pull request, focus on the following key areas:
 8.  **Resource Management**
     * **No Hardcoded Strings:** Forbid hardcoded user-facing strings in composables. All text should be extracted into `strings.xml` to support localization and make updates easier.
     * **Prefer Vector Drawables:** For icons and simple graphics, vector drawables (SVGs) should be preferred over raster images (PNGs) to reduce APK size and ensure sharp rendering on all screen densities.
+    * **Delete Unused Resources:** When refactoring or removing components, ensure that any associated resources (such as strings in `strings.xml` or icons/drawables in the `res/drawable` directory) that are no longer used anywhere in the project are deleted to reduce the final file size and maintain codebase cleanliness.
 
 9.  **Readability, Logging, and Documentation**
     *   **Code Clarity:** Is the code clear, concise, and easy to understand? Are function and variable names descriptive?
