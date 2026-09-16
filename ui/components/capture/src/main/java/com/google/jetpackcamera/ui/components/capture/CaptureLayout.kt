@@ -21,17 +21,25 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
@@ -56,6 +64,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 
 /**
  * The base layout for the camera capture screen.
@@ -78,7 +87,7 @@ import androidx.compose.ui.unit.dp
  * @param screenFlashOverlay the screen flash overlay composable
  * @param snackBar the snack bar composable for showing messages
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
@@ -135,18 +144,46 @@ fun PreviewLayout(
                     modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
                 )
             }
-        ) { paddingValues ->
+        ) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
                 Column {
-                    indicatorRow(Modifier.statusBarsPadding())
+                    // The *IgnoringVisibility insets report a bar's size whether or not the bar is
+                    // currently shown. The regular inset APIs collapse to zero while a bar is
+                    // hidden, which would make this layout jump whenever the status bar is hidden
+                    // or transiently revealed.
+                    // The indicator row occupies the top bar real estate under the cutout / status
+                    // bar area (matching reference camera app behavior). We size the top bar to
+                    // accommodate the cutout or status bar height (at least 48dp for touch
+                    // targets), horizontally inset from the display edges, and center the indicator
+                    // controls within it.
+                    val topInset = max(
+                        WindowInsets.statusBarsIgnoringVisibility.asPaddingValues()
+                            .calculateTopPadding(),
+                        WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+                    )
+                    val topBarHeight = max(topInset, 48.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(topBarHeight)
+                            .windowInsetsPadding(
+                                WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
+                            )
+                            .padding(horizontal = 16.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        indicatorRow(Modifier)
+                    }
                     viewfinder(Modifier)
                 }
 
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
-                        .safeDrawingPadding()
+                        .windowInsetsPadding(
+                            WindowInsets.systemBarsIgnoringVisibility
+                                .union(WindowInsets.displayCutout)
+                        )
 
                 ) {
                     debugVisibilityWrapper {
