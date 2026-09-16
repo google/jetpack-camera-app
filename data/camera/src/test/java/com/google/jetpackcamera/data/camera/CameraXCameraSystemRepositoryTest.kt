@@ -18,11 +18,15 @@ package com.google.jetpackcamera.data.camera
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.settings.model.CameraAppConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
 import javax.inject.Provider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -108,5 +112,27 @@ class CameraXCameraSystemRepositoryTest {
         val mimeTypes = repository.getSupportedMimeTypes()
         assertThat(mimeTypes).isNotNull()
         assertThat(testCamera.initializedSettings).isNotNull()
+    }
+
+    @Test
+    fun getCameraSystem_withCameraAppConfig_appliesDefaultValues() = testScope.runTest {
+        val testCamera = TestCameraSystem()
+        val appConfig = CameraAppConfig(
+            flashMode = SettingConfig(defaultValue = FlashMode.ON),
+            aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE),
+            captureMode = SettingConfig(defaultValue = CaptureMode.VIDEO_ONLY)
+        )
+        val repository = CameraXCameraSystemRepository(
+            cameraXCameraSystemProvider = Provider { testCamera },
+            settingsRepository = FakeSettingsRepository(),
+            launchConfig = CameraLaunchConfig(),
+            cameraAppConfig = appConfig,
+            scope = testScope
+        )
+
+        repository.getCameraSystem()
+        assertThat(testCamera.initializedSettings?.flashMode).isEqualTo(FlashMode.ON)
+        assertThat(testCamera.initializedSettings?.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+        assertThat(testCamera.initializedSettings?.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
     }
 }
