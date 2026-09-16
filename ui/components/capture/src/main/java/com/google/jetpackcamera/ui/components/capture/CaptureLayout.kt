@@ -93,6 +93,12 @@ private val LOWER_SECTION_HEIGHT = 64.dp
 /** Vertical gap between the zoom bar and the shutter row. */
 private val ZOOM_TO_SHUTTER_GAP = 32.dp
 
+/**
+ * Vertical clearance between the zoom bar and the bottom edge of the 3:4 viewfinder,
+ * providing comfortable breathing room inside the preview.
+ */
+private val ZOOM_VIEWFINDER_BOTTOM_PADDING = 20.dp
+
 /** Vertical gap above and below the reserved middle slot. */
 private val CONTROL_STACK_GAP = 24.dp
 
@@ -330,7 +336,8 @@ private fun VerticalMaterialControls(
             val viewfinder34Height = maxWidth * 4f / 3f
             val viewfinder34BottomFromTop = topBarHeight + viewfinder34Height
             val viewfinder34BottomFromBoxBottom = maxHeight - (viewfinder34BottomFromTop - topInset)
-            val targetGap = viewfinder34BottomFromBoxBottom - shutterTopFromBottom
+            val targetGap = (viewfinder34BottomFromBoxBottom + ZOOM_VIEWFINDER_BOTTOM_PADDING) -
+                shutterTopFromBottom
             max(targetGap, ZOOM_TO_SHUTTER_GAP)
         } else {
             ZOOM_TO_SHUTTER_GAP
