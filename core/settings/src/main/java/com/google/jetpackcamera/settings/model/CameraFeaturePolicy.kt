@@ -39,7 +39,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  *
  * ### Example:
  * ```kotlin
- * val appConfig = CameraAppConfig(
+ * val featurePolicy = CameraFeaturePolicy(
  *     flashMode = SettingConfig(
  *         defaultValue = FlashMode.OFF,
  *         visibility = OptionVisibility.Hidden
@@ -59,7 +59,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  *
  * TODO (kc): Defer audioEnabled configuration to a follow-up PR, pending design for visual UX.
  */
-data class CameraAppConfig(
+data class CameraFeaturePolicy(
     val captureMode: SettingConfig<CaptureMode>? = null,
     val aspectRatio: SettingConfig<AspectRatio>? = null,
     val flashMode: SettingConfig<FlashMode>? = null,
@@ -124,7 +124,7 @@ data class CameraAppConfig(
     }
 
     /**
-     * Maps developer-defined overrides from this [CameraAppConfig] onto a baseline [CameraAppSettings].
+     * Maps developer-defined overrides from this [CameraFeaturePolicy] onto a baseline [CameraAppSettings].
      *
      * Unspecified settings in this config retain their values from [defaultSettings].
      *

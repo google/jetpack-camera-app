@@ -33,7 +33,7 @@ import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.ImageOutputFormat
-import com.google.jetpackcamera.settings.model.CameraAppConfig
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
@@ -81,7 +81,7 @@ internal class CaptureModeSettingsTest {
 
     @After
     fun tearDown() {
-        AppModule.testCameraAppConfig = null
+        AppModule.testCameraFeaturePolicy = null
     }
 
     private fun ComposeTestRule.checkCaptureModeSettingState(captureMode: CaptureMode? = null) =
@@ -236,7 +236,7 @@ internal class CaptureModeSettingsTest {
 
     @Test
     fun hdr_supports_video_only() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             imageFormat = SettingConfig(
                 defaultValue = ImageOutputFormat.JPEG,
                 visibility = OptionVisibility.Hidden
@@ -265,7 +265,7 @@ internal class CaptureModeSettingsTest {
                 composeTestRule.checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
             }
         } finally {
-            AppModule.testCameraAppConfig = null
+            AppModule.testCameraFeaturePolicy = null
         }
     }
 

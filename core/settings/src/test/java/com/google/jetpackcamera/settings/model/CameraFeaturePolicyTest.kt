@@ -27,7 +27,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
-class CameraAppConfigTest {
+class CameraFeaturePolicyTest {
 
     @Test
     fun settingConfig_whenOptionVisibilityOnlyMissingDefaultValue_throwsException() {
@@ -65,7 +65,7 @@ class CameraAppConfigTest {
 
     @Test
     fun cameraAppConfig_defaultConstructor_allPropertiesNull() {
-        val config = CameraAppConfig()
+        val config = CameraFeaturePolicy()
         assertThat(config.aspectRatio).isNull()
         assertThat(config.flashMode).isNull()
         assertThat(config.captureMode).isNull()
@@ -76,7 +76,7 @@ class CameraAppConfigTest {
     @Test
     fun cameraAppConfig_whenFlashModeExcludesOff_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
-            CameraAppConfig(
+            CameraFeaturePolicy(
                 flashMode = SettingConfig(
                     defaultValue = FlashMode.ON,
                     visibility = OptionVisibility.Only(
@@ -90,7 +90,7 @@ class CameraAppConfigTest {
     @Test
     fun cameraAppConfig_whenFlashModeHiddenAndNotOff_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
-            CameraAppConfig(
+            CameraFeaturePolicy(
                 flashMode = SettingConfig(
                     defaultValue = FlashMode.ON,
                     visibility = OptionVisibility.Hidden
@@ -101,7 +101,7 @@ class CameraAppConfigTest {
 
     @Test
     fun cameraAppConfig_whenFlashModeHiddenAndOff_succeeds() {
-        val config = CameraAppConfig(
+        val config = CameraFeaturePolicy(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
                 visibility = OptionVisibility.Hidden
@@ -114,7 +114,7 @@ class CameraAppConfigTest {
     @Test
     fun cameraAppConfig_whenImageFormatHiddenAndNotJpeg_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
-            CameraAppConfig(
+            CameraFeaturePolicy(
                 imageFormat = SettingConfig(
                     defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR,
                     visibility = OptionVisibility.Hidden
@@ -125,7 +125,7 @@ class CameraAppConfigTest {
 
     @Test
     fun cameraAppConfig_whenImageFormatHiddenAndJpeg_succeeds() {
-        val config = CameraAppConfig(
+        val config = CameraFeaturePolicy(
             imageFormat = SettingConfig(
                 defaultValue = ImageOutputFormat.JPEG,
                 visibility = OptionVisibility.Hidden
@@ -138,7 +138,7 @@ class CameraAppConfigTest {
     @Test
     fun cameraAppConfig_whenDynamicRangeHiddenAndNotSdr_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
-            CameraAppConfig(
+            CameraFeaturePolicy(
                 dynamicRange = SettingConfig(
                     defaultValue = DynamicRange.HLG10,
                     visibility = OptionVisibility.Hidden
@@ -149,7 +149,7 @@ class CameraAppConfigTest {
 
     @Test
     fun cameraAppConfig_whenDynamicRangeHiddenAndSdr_succeeds() {
-        val config = CameraAppConfig(
+        val config = CameraFeaturePolicy(
             dynamicRange = SettingConfig(
                 defaultValue = DynamicRange.SDR,
                 visibility = OptionVisibility.Hidden
@@ -165,14 +165,14 @@ class CameraAppConfigTest {
         val config2 = SettingConfig(FlashMode.OFF, OptionVisibility.Visible)
         assertThat(config1).isEqualTo(config2)
 
-        val appConfig1 = CameraAppConfig()
-        val appConfig2 = CameraAppConfig()
+        val appConfig1 = CameraFeaturePolicy()
+        val appConfig2 = CameraFeaturePolicy()
         assertThat(appConfig1).isEqualTo(appConfig2)
     }
 
     @Test
     fun toCameraAppSettings_overridesDefaults() {
-        val developerConfig = CameraAppConfig(
+        val developerConfig = CameraFeaturePolicy(
             aspectRatio = SettingConfig(AspectRatio.THREE_FOUR),
             flashMode = SettingConfig(FlashMode.ON),
             captureMode = SettingConfig(CaptureMode.VIDEO_ONLY),
@@ -198,7 +198,7 @@ class CameraAppConfigTest {
             dynamicRange = DynamicRange.HLG10,
             maxVideoDurationMillis = 60_000L
         )
-        val developerConfig = CameraAppConfig(
+        val developerConfig = CameraFeaturePolicy(
             captureMode = SettingConfig(CaptureMode.VIDEO_ONLY)
         )
 
@@ -214,7 +214,7 @@ class CameraAppConfigTest {
 
     @Test
     fun cameraAppConfig_whenFlashModeOnlyIncludesOff_succeeds() {
-        val config = CameraAppConfig(
+        val config = CameraFeaturePolicy(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
                 visibility = OptionVisibility.Only(FlashMode.OFF, FlashMode.ON)
@@ -228,7 +228,7 @@ class CameraAppConfigTest {
 
     @Test
     fun toCameraAppSettings_withDefaultConfig_returnsDefaultSettings() {
-        val config = CameraAppConfig()
+        val config = CameraFeaturePolicy()
         assertThat(config.toCameraAppSettings()).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS)
     }
 }

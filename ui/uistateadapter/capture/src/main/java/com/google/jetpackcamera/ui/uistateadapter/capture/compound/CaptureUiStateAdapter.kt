@@ -18,8 +18,8 @@ package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.ExternalCaptureMode
-import com.google.jetpackcamera.settings.model.CameraAppConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
@@ -62,7 +62,7 @@ import kotlinx.coroutines.flow.filterNotNull
  * @param externalCaptureMode The [ExternalCaptureMode] influencing UI behavior based on how the
  * camera is launched (e.g., from an external intent).
  * @param timePrecision The precision to use for rounding the elapsed time of video recording.
- * @param appConfig The optional [CameraAppConfig] providing session restrictions, or null for default behavior.
+ * @param appConfig The optional [CameraFeaturePolicy] providing session restrictions, or null for default behavior.
  *
  * @return A [Flow] that emits a new [CaptureUiState] whenever any of its underlying
  * data sources change.
@@ -74,7 +74,7 @@ fun captureUiState(
     trackedCaptureUiState: StateFlow<TrackedCaptureUiState>,
     externalCaptureMode: ExternalCaptureMode,
     timePrecision: TimeUnit = TimeUnit.SECONDS,
-    appConfig: CameraAppConfig? = null
+    appConfig: CameraFeaturePolicy? = null
 ): Flow<CaptureUiState> {
     var flashModeUiState: FlashModeUiState? = null
     var focusMeteringUiState: FocusMeteringUiState? = null

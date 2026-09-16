@@ -31,7 +31,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.settings.model.CameraAppConfig
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
@@ -80,7 +80,7 @@ internal class HdrAppConfigDeviceTest(
 
     @After
     fun tearDown() {
-        AppModule.testCameraAppConfig = null
+        AppModule.testCameraFeaturePolicy = null
     }
 
     private fun ComposeTestRule.prepareLens() {
@@ -102,7 +102,7 @@ internal class HdrAppConfigDeviceTest(
 
     @Test
     fun defaultImageFormat_ultraHdr_startsHdrOnIfSupportedInImageOnly() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(defaultValue = CaptureMode.IMAGE_ONLY),
             imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR)
         )
@@ -123,7 +123,7 @@ internal class HdrAppConfigDeviceTest(
 
     @Test
     fun defaultDynamicRange_hlg10_startsHdrOnIfSupportedInVideoOnly() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(defaultValue = CaptureMode.VIDEO_ONLY),
             dynamicRange = SettingConfig(defaultValue = DynamicRange.HLG10)
         )
@@ -150,7 +150,7 @@ internal class HdrAppConfigDeviceTest(
 
     @Test
     fun hiddenImageFormat_removesHdrControlInImageOnly() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(defaultValue = CaptureMode.IMAGE_ONLY),
             imageFormat = SettingConfig(
                 defaultValue = ImageOutputFormat.JPEG,
@@ -168,7 +168,7 @@ internal class HdrAppConfigDeviceTest(
 
     @Test
     fun hiddenDynamicRange_removesHdrControlInVideoOnly() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(defaultValue = CaptureMode.VIDEO_ONLY),
             dynamicRange = SettingConfig(
                 defaultValue = DynamicRange.SDR,

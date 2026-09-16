@@ -22,7 +22,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.google.jetpackcamera.AppModule
 import com.google.jetpackcamera.model.AspectRatio
-import com.google.jetpackcamera.settings.model.CameraAppConfig
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
@@ -48,7 +48,7 @@ internal class AspectRatioAppConfigDeviceTest {
 
     @After
     fun tearDown() {
-        AppModule.testCameraAppConfig = null
+        AppModule.testCameraFeaturePolicy = null
     }
 
     // /////////////////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@ internal class AspectRatioAppConfigDeviceTest {
 
     @Test
     fun defaultAspectRatio_oneOne_startsInOneOne() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE)
         )
 
@@ -73,7 +73,7 @@ internal class AspectRatioAppConfigDeviceTest {
 
     @Test
     fun defaultAspectRatio_threeFour_startsInThreeFour() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             aspectRatio = SettingConfig(defaultValue = AspectRatio.THREE_FOUR)
         )
 
@@ -87,7 +87,7 @@ internal class AspectRatioAppConfigDeviceTest {
 
     @Test
     fun defaultAspectRatio_nineSixteen_startsInNineSixteen() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             aspectRatio = SettingConfig(defaultValue = AspectRatio.NINE_SIXTEEN)
         )
 

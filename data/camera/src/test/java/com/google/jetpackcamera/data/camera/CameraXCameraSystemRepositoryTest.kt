@@ -23,8 +23,8 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
-import com.google.jetpackcamera.settings.model.CameraAppConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
@@ -117,7 +117,7 @@ class CameraXCameraSystemRepositoryTest {
     @Test
     fun getCameraSystem_withCameraAppConfig_appliesDefaultValues() = testScope.runTest {
         val testCamera = TestCameraSystem()
-        val appConfig = CameraAppConfig(
+        val appConfig = CameraFeaturePolicy(
             flashMode = SettingConfig(defaultValue = FlashMode.ON),
             aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE),
             captureMode = SettingConfig(defaultValue = CaptureMode.STANDARD)
@@ -126,7 +126,7 @@ class CameraXCameraSystemRepositoryTest {
             cameraXCameraSystemProvider = Provider { testCamera },
             settingsRepository = FakeSettingsRepository(),
             launchConfig = CameraLaunchConfig(),
-            cameraAppConfig = appConfig,
+            cameraFeaturePolicy = appConfig,
             scope = testScope
         )
 
@@ -140,14 +140,14 @@ class CameraXCameraSystemRepositoryTest {
     fun getCameraSystem_withVideoOnlyCaptureMode_initializesWithNineSixteenAspectRatio() =
         testScope.runTest {
             val testCamera = TestCameraSystem()
-            val appConfig = CameraAppConfig(
+            val appConfig = CameraFeaturePolicy(
                 captureMode = SettingConfig(defaultValue = CaptureMode.VIDEO_ONLY)
             )
             val repository = CameraXCameraSystemRepository(
                 cameraXCameraSystemProvider = Provider { testCamera },
                 settingsRepository = FakeSettingsRepository(),
                 launchConfig = CameraLaunchConfig(),
-                cameraAppConfig = appConfig,
+                cameraFeaturePolicy = appConfig,
                 scope = testScope
             )
 

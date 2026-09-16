@@ -21,7 +21,7 @@ import com.google.jetpackcamera.di.DefaultCaptureModeOverride
 import com.google.jetpackcamera.di.DefaultFilePathGenerator
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.SaveMode
-import com.google.jetpackcamera.settings.model.CameraAppConfig
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,13 +33,14 @@ object AppModule {
 
     @Volatile
     @VisibleForTesting
-    var testCameraAppConfig: CameraAppConfig? = null
+    var testCameraFeaturePolicy: CameraFeaturePolicy? = null
 
     /**
-     * Provides the [CameraAppConfig] configuration.
+     * Provides the [CameraFeaturePolicy] configuration.
      */
     @Provides
-    fun providesCameraAppConfig(): CameraAppConfig = testCameraAppConfig ?: CameraAppConfig()
+    fun providesCameraAppConfig(): CameraFeaturePolicy =
+        testCameraFeaturePolicy ?: CameraFeaturePolicy()
 
     /**
      * provides the default [CaptureMode] to override by the app

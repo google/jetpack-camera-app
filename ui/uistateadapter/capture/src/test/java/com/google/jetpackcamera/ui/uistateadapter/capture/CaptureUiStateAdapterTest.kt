@@ -28,8 +28,8 @@ import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
-import com.google.jetpackcamera.settings.model.CameraAppConfig
 import com.google.jetpackcamera.settings.model.CameraConstraints
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.OptionVisibility
@@ -67,7 +67,7 @@ internal class CaptureUiStateAdapterTest {
     private val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
     private val externalCaptureMode = ExternalCaptureMode.Standard
 
-    private val defaultAppConfig = CameraAppConfig(
+    private val defaultAppConfig = CameraFeaturePolicy(
         aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
         flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
         captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
@@ -75,7 +75,7 @@ internal class CaptureUiStateAdapterTest {
         dynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
     )
 
-    private fun createCaptureUiStateFlow(appConfig: CameraAppConfig? = defaultAppConfig) =
+    private fun createCaptureUiStateFlow(appConfig: CameraFeaturePolicy? = defaultAppConfig) =
         captureUiState(
             currentSettings = cameraSystem.getCurrentSettings(),
             appConfig = appConfig,

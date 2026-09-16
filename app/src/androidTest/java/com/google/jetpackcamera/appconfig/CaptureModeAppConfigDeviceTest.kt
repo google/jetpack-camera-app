@@ -26,7 +26,7 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.AppModule
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.settings.model.CameraAppConfig
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
@@ -61,7 +61,7 @@ internal class CaptureModeAppConfigDeviceTest {
 
     @After
     fun tearDown() {
-        AppModule.testCameraAppConfig = null
+        AppModule.testCameraFeaturePolicy = null
     }
 
     // /////////////////////////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ internal class CaptureModeAppConfigDeviceTest {
 
     @Test
     fun defaultCaptureMode_videoOnly_startsInVideoOnly() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(defaultValue = CaptureMode.VIDEO_ONLY)
         )
 
@@ -89,7 +89,7 @@ internal class CaptureModeAppConfigDeviceTest {
 
     @Test
     fun defaultCaptureMode_imageOnly_startsInImageOnly() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(defaultValue = CaptureMode.IMAGE_ONLY)
         )
 
@@ -106,7 +106,7 @@ internal class CaptureModeAppConfigDeviceTest {
 
     @Test
     fun defaultCaptureMode_standard_startsInStandard() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(defaultValue = CaptureMode.STANDARD)
         )
 
@@ -127,7 +127,7 @@ internal class CaptureModeAppConfigDeviceTest {
 
     @Test
     fun hiddenCaptureMode_standard_removesToggleAndQuickSettingsControl() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.STANDARD,
                 visibility = OptionVisibility.Hidden
@@ -145,7 +145,7 @@ internal class CaptureModeAppConfigDeviceTest {
 
     @Test
     fun hiddenCaptureMode_imageOnly_removesToggleAndQuickSettingsControl() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.IMAGE_ONLY,
                 visibility = OptionVisibility.Hidden
@@ -169,7 +169,7 @@ internal class CaptureModeAppConfigDeviceTest {
 
     @Test
     fun optionsEnabled_standardAndImageOnly_disablesVideoOnlyAndHidesToggle() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.STANDARD,
                 visibility = OptionVisibility.Only(
@@ -192,7 +192,7 @@ internal class CaptureModeAppConfigDeviceTest {
 
     @Test
     fun optionsEnabled_standardAndVideoOnly_disablesImageOnlyAndHidesToggle() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.STANDARD,
                 visibility = OptionVisibility.Only(
@@ -215,7 +215,7 @@ internal class CaptureModeAppConfigDeviceTest {
 
     @Test
     fun optionsEnabled_imageOnlyAndVideoOnly_disablesStandardInQuickSettingsAndShowsToggle() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.IMAGE_ONLY,
                 visibility = OptionVisibility.Only(
@@ -241,7 +241,7 @@ internal class CaptureModeAppConfigDeviceTest {
 
     @Test
     fun defaultCaptureMode_imageOnly_executesImageCaptureOnCaptureButtonClick() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(defaultValue = CaptureMode.IMAGE_ONLY)
         )
 
@@ -255,7 +255,7 @@ internal class CaptureModeAppConfigDeviceTest {
 
     @Test
     fun defaultCaptureMode_videoOnly_executesVideoCaptureOnCaptureButtonClick() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             captureMode = SettingConfig(defaultValue = CaptureMode.VIDEO_ONLY)
         )
 

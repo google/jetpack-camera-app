@@ -30,7 +30,7 @@ import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.AppModule
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.settings.model.CameraAppConfig
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
@@ -83,7 +83,7 @@ internal class FlashModeAppConfigDeviceTest(
 
     @After
     fun tearDown() {
-        AppModule.testCameraAppConfig = null
+        AppModule.testCameraFeaturePolicy = null
     }
 
     private fun ComposeTestRule.prepareLens() {
@@ -105,7 +105,7 @@ internal class FlashModeAppConfigDeviceTest(
 
     @Test
     fun defaultFlashMode_on_startsInFlashOn() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             flashMode = SettingConfig(defaultValue = FlashMode.ON)
         )
 
@@ -133,7 +133,7 @@ internal class FlashModeAppConfigDeviceTest(
 
     @Test
     fun defaultFlashMode_auto_startsInAutoOrFallsBackToOff() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             flashMode = SettingConfig(defaultValue = FlashMode.AUTO)
         )
 
@@ -162,7 +162,7 @@ internal class FlashModeAppConfigDeviceTest(
 
     @Test
     fun defaultFlashMode_lowLightBoost_startsInLowLightBoostOrFallsBackToOff() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             flashMode = SettingConfig(defaultValue = FlashMode.LOW_LIGHT_BOOST)
         )
 
@@ -199,7 +199,7 @@ internal class FlashModeAppConfigDeviceTest(
 
     @Test
     fun hiddenFlashMode_removesFlashControlFromQuickSettings() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
                 visibility = OptionVisibility.Hidden
@@ -222,7 +222,7 @@ internal class FlashModeAppConfigDeviceTest(
 
     @Test
     fun optionsEnabled_offAndOn_displaysOnlyOffAndOnInQuickSettings() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
                 visibility = OptionVisibility.Only(
@@ -252,7 +252,7 @@ internal class FlashModeAppConfigDeviceTest(
 
     @Test
     fun optionsEnabled_offAndAuto_displaysOnlyAllowedOptionsInQuickSettings() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
                 visibility = OptionVisibility.Only(
@@ -282,7 +282,7 @@ internal class FlashModeAppConfigDeviceTest(
 
     @Test
     fun optionsEnabled_offAndLowLightBoost_displaysOnlyAllowedOptionsInQuickSettings() {
-        AppModule.testCameraAppConfig = CameraAppConfig(
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
                 visibility = OptionVisibility.Only(
