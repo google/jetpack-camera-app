@@ -32,7 +32,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraAppConfig
-import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
@@ -154,7 +154,7 @@ internal class HdrAppConfigDeviceTest(
             captureMode = SettingConfig(defaultValue = CaptureMode.IMAGE_ONLY),
             imageFormat = SettingConfig(
                 defaultValue = ImageOutputFormat.JPEG,
-                uiVisibility = OptionAvailabilityConfig.Hidden
+                visibility = OptionVisibility.Hidden
             )
         )
 
@@ -172,7 +172,7 @@ internal class HdrAppConfigDeviceTest(
             captureMode = SettingConfig(defaultValue = CaptureMode.VIDEO_ONLY),
             dynamicRange = SettingConfig(
                 defaultValue = DynamicRange.SDR,
-                uiVisibility = OptionAvailabilityConfig.Hidden
+                visibility = OptionVisibility.Hidden
             )
         )
 

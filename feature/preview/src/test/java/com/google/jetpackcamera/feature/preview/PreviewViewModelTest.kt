@@ -34,7 +34,7 @@ import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppConfig
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
-import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
@@ -223,7 +223,7 @@ class PreviewViewModelTest {
             val restrictedAppConfig = defaultTestAppConfig.copy(
                 captureMode = SettingConfig(
                     defaultValue = CaptureMode.IMAGE_ONLY,
-                    uiVisibility = OptionAvailabilityConfig.Hidden
+                    visibility = OptionVisibility.Hidden
                 )
             )
             val viewModel = PreviewViewModel(

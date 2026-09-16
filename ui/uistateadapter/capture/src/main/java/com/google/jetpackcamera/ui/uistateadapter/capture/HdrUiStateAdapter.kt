@@ -23,7 +23,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
-import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 
@@ -54,8 +54,8 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 internal fun HdrUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
-    imageFormatVisibilityConfig: OptionAvailabilityConfig<ImageOutputFormat>? = null,
-    dynamicRangeVisibilityConfig: OptionAvailabilityConfig<DynamicRange>? = null
+    imageFormatVisibilityConfig: OptionVisibility<ImageOutputFormat>? = null,
+    dynamicRangeVisibilityConfig: OptionVisibility<DynamicRange>? = null
 ): HdrUiState {
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
@@ -66,9 +66,9 @@ internal fun HdrUiState.Companion.from(
 
     return when (cameraAppSettings.captureMode) {
         CaptureMode.IMAGE_ONLY -> {
-            if (imageFormatVisibilityConfig is OptionAvailabilityConfig.Hidden ||
+            if (imageFormatVisibilityConfig is OptionVisibility.Hidden ||
                 (
-                    imageFormatVisibilityConfig is OptionAvailabilityConfig.OptionsEnabled &&
+                    imageFormatVisibilityConfig is OptionVisibility.Only &&
                         ImageOutputFormat.JPEG_ULTRA_HDR !in
                         imageFormatVisibilityConfig.enabledOptions
                     )
@@ -93,9 +93,9 @@ internal fun HdrUiState.Companion.from(
         }
 
         CaptureMode.VIDEO_ONLY -> {
-            if (dynamicRangeVisibilityConfig is OptionAvailabilityConfig.Hidden ||
+            if (dynamicRangeVisibilityConfig is OptionVisibility.Hidden ||
                 (
-                    dynamicRangeVisibilityConfig is OptionAvailabilityConfig.OptionsEnabled &&
+                    dynamicRangeVisibilityConfig is OptionVisibility.Only &&
                         DynamicRange.HLG10 !in dynamicRangeVisibilityConfig.enabledOptions
                     )
             ) {

@@ -37,56 +37,56 @@ data class CameraAppConfig(
     // Ensures that all individual setting configurations are valid.
     init {
         flashMode?.let { config ->
-            when (val visibility = config.uiVisibility) {
-                is OptionAvailabilityConfig.OptionsEnabled -> require(
+            when (val visibility = config.visibility) {
+                is OptionVisibility.Only -> require(
                     FlashMode.OFF in visibility.enabledOptions
                 ) {
                     "FlashMode.OFF must always be included in enabledOptions for flashMode."
                 }
 
-                is OptionAvailabilityConfig.Hidden -> require(
+                is OptionVisibility.Hidden -> require(
                     config.defaultValue == FlashMode.OFF
                 ) {
                     "When flashMode is Hidden, defaultValue must be FlashMode.OFF."
                 }
 
-                is OptionAvailabilityConfig.NotRestricted -> Unit
+                is OptionVisibility.Visible -> Unit
             }
         }
 
         imageFormat?.let { config ->
-            when (val visibility = config.uiVisibility) {
-                is OptionAvailabilityConfig.OptionsEnabled -> require(
+            when (val visibility = config.visibility) {
+                is OptionVisibility.Only -> require(
                     ImageOutputFormat.JPEG in visibility.enabledOptions
                 ) {
                     "ImageOutputFormat.JPEG must always be included in enabledOptions for imageFormat."
                 }
 
-                is OptionAvailabilityConfig.Hidden -> require(
+                is OptionVisibility.Hidden -> require(
                     config.defaultValue == ImageOutputFormat.JPEG
                 ) {
                     "When imageFormat is Hidden, defaultValue must be ImageOutputFormat.JPEG."
                 }
 
-                is OptionAvailabilityConfig.NotRestricted -> Unit
+                is OptionVisibility.Visible -> Unit
             }
         }
 
         dynamicRange?.let { config ->
-            when (val visibility = config.uiVisibility) {
-                is OptionAvailabilityConfig.OptionsEnabled -> require(
+            when (val visibility = config.visibility) {
+                is OptionVisibility.Only -> require(
                     DynamicRange.SDR in visibility.enabledOptions
                 ) {
                     "DynamicRange.SDR must always be included in enabledOptions for dynamicRange."
                 }
 
-                is OptionAvailabilityConfig.Hidden -> require(
+                is OptionVisibility.Hidden -> require(
                     config.defaultValue == DynamicRange.SDR
                 ) {
                     "When dynamicRange is Hidden, defaultValue must be DynamicRange.SDR."
                 }
 
-                is OptionAvailabilityConfig.NotRestricted -> Unit
+                is OptionVisibility.Visible -> Unit
             }
         }
     }
@@ -114,19 +114,19 @@ data class CameraAppConfig(
  * default value and UI visibility / option availability.
  *
  * @param defaultValue The initial value for this setting.
- * @param uiVisibility The UI visibility and option availability configuration for this setting.
+ * @param visibility The UI visibility and option availability configuration for this setting.
  */
 data class SettingConfig<T>(
     val defaultValue: T,
-    val uiVisibility: OptionAvailabilityConfig<T> = OptionAvailabilityConfig.NotRestricted
+    val visibility: OptionVisibility<T> = OptionVisibility.Visible
 ) {
     init {
         // Validate that if options are enabled for this setting, the default value
         // is always included in the set of enabled options.
-        if (uiVisibility is OptionAvailabilityConfig.OptionsEnabled) {
-            require(defaultValue in uiVisibility.enabledOptions) {
+        if (visibility is OptionVisibility.Only) {
+            require(defaultValue in visibility.enabledOptions) {
                 "The defaultValue ('$defaultValue') must be one of the enabledOptions: " +
-                    "${uiVisibility.enabledOptions}"
+                    "${visibility.enabledOptions}"
             }
         }
     }
@@ -135,15 +135,15 @@ data class SettingConfig<T>(
 /**
  * Represents UI option availability applied to a setting.
  */
-sealed interface OptionAvailabilityConfig<out T> {
+sealed interface OptionVisibility<out T> {
     /** All device-supported options are available. */
-    data object NotRestricted : OptionAvailabilityConfig<Nothing>
+    data object Visible : OptionVisibility<Nothing>
 
     /** The entire setting is unavailable and hidden from the UI. */
-    data object Hidden : OptionAvailabilityConfig<Nothing>
+    data object Hidden : OptionVisibility<Nothing>
 
     /** ONLY the options in this set are allowed, if supported by the device. */
-    data class OptionsEnabled<T>(val enabledOptions: Set<T>) : OptionAvailabilityConfig<T> {
+    data class Only<T>(val enabledOptions: Set<T>) : OptionVisibility<T> {
         init {
             require(enabledOptions.size >= 2) {
                 "enabledOptions must contain at least 2 options. Use Hidden to lock a single option and hide the control."

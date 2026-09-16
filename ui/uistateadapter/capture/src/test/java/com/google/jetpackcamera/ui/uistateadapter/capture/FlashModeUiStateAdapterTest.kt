@@ -27,7 +27,7 @@ import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
-import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import org.junit.Assume.assumeTrue
@@ -528,7 +528,7 @@ class FlashModeUiStateAdapterTest {
         val uiState = FlashModeUiState.from(
             cameraAppSettings = defaultCameraAppSettings,
             systemConstraints = systemConstraints,
-            visibilityConfig = OptionAvailabilityConfig.Hidden
+            visibilityConfig = OptionVisibility.Hidden
         )
 
         assertThat(uiState).isEqualTo(FlashModeUiState.Unavailable)
@@ -547,7 +547,7 @@ class FlashModeUiStateAdapterTest {
         val uiState = FlashModeUiState.from(
             cameraAppSettings = defaultCameraAppSettings,
             systemConstraints = systemConstraints,
-            visibilityConfig = OptionAvailabilityConfig.OptionsEnabled(
+            visibilityConfig = OptionVisibility.Only(
                 setOf(FlashMode.OFF, FlashMode.ON)
             )
         )

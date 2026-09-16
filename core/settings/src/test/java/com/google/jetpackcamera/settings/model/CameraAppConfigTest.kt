@@ -34,7 +34,7 @@ class CameraAppConfigTest {
         assertThrows(IllegalArgumentException::class.java) {
             SettingConfig(
                 defaultValue = FlashMode.OFF,
-                uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
+                visibility = OptionVisibility.Only(
                     setOf(FlashMode.ON, FlashMode.AUTO)
                 )
             )
@@ -46,7 +46,7 @@ class CameraAppConfigTest {
         assertThrows(IllegalArgumentException::class.java) {
             SettingConfig(
                 defaultValue = FlashMode.OFF,
-                uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
+                visibility = OptionVisibility.Only(
                     setOf(FlashMode.OFF)
                 )
             )
@@ -56,10 +56,10 @@ class CameraAppConfigTest {
     @Test
     fun optionsEnabled_whenLessThanTwoOptions_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
-            OptionAvailabilityConfig.OptionsEnabled<FlashMode>(emptySet())
+            OptionVisibility.Only<FlashMode>(emptySet())
         }
         assertThrows(IllegalArgumentException::class.java) {
-            OptionAvailabilityConfig.OptionsEnabled(setOf(FlashMode.OFF))
+            OptionVisibility.Only(setOf(FlashMode.OFF))
         }
     }
 
@@ -79,7 +79,7 @@ class CameraAppConfigTest {
             CameraAppConfig(
                 flashMode = SettingConfig(
                     defaultValue = FlashMode.ON,
-                    uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
+                    visibility = OptionVisibility.Only(
                         setOf(FlashMode.ON, FlashMode.AUTO)
                     )
                 )
@@ -93,7 +93,7 @@ class CameraAppConfigTest {
             CameraAppConfig(
                 flashMode = SettingConfig(
                     defaultValue = FlashMode.ON,
-                    uiVisibility = OptionAvailabilityConfig.Hidden
+                    visibility = OptionVisibility.Hidden
                 )
             )
         }
@@ -104,11 +104,11 @@ class CameraAppConfigTest {
         val config = CameraAppConfig(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
-                uiVisibility = OptionAvailabilityConfig.Hidden
+                visibility = OptionVisibility.Hidden
             )
         )
         assertThat(config.flashMode?.defaultValue).isEqualTo(FlashMode.OFF)
-        assertThat(config.flashMode?.uiVisibility).isEqualTo(OptionAvailabilityConfig.Hidden)
+        assertThat(config.flashMode?.visibility).isEqualTo(OptionVisibility.Hidden)
     }
 
     @Test
@@ -117,7 +117,7 @@ class CameraAppConfigTest {
             CameraAppConfig(
                 imageFormat = SettingConfig(
                     defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR,
-                    uiVisibility = OptionAvailabilityConfig.Hidden
+                    visibility = OptionVisibility.Hidden
                 )
             )
         }
@@ -128,11 +128,11 @@ class CameraAppConfigTest {
         val config = CameraAppConfig(
             imageFormat = SettingConfig(
                 defaultValue = ImageOutputFormat.JPEG,
-                uiVisibility = OptionAvailabilityConfig.Hidden
+                visibility = OptionVisibility.Hidden
             )
         )
         assertThat(config.imageFormat?.defaultValue).isEqualTo(ImageOutputFormat.JPEG)
-        assertThat(config.imageFormat?.uiVisibility).isEqualTo(OptionAvailabilityConfig.Hidden)
+        assertThat(config.imageFormat?.visibility).isEqualTo(OptionVisibility.Hidden)
     }
 
     @Test
@@ -141,7 +141,7 @@ class CameraAppConfigTest {
             CameraAppConfig(
                 dynamicRange = SettingConfig(
                     defaultValue = DynamicRange.HLG10,
-                    uiVisibility = OptionAvailabilityConfig.Hidden
+                    visibility = OptionVisibility.Hidden
                 )
             )
         }
@@ -152,17 +152,17 @@ class CameraAppConfigTest {
         val config = CameraAppConfig(
             dynamicRange = SettingConfig(
                 defaultValue = DynamicRange.SDR,
-                uiVisibility = OptionAvailabilityConfig.Hidden
+                visibility = OptionVisibility.Hidden
             )
         )
         assertThat(config.dynamicRange?.defaultValue).isEqualTo(DynamicRange.SDR)
-        assertThat(config.dynamicRange?.uiVisibility).isEqualTo(OptionAvailabilityConfig.Hidden)
+        assertThat(config.dynamicRange?.visibility).isEqualTo(OptionVisibility.Hidden)
     }
 
     @Test
     fun settingConfig_structuralEquality_matches() {
-        val config1 = SettingConfig(FlashMode.OFF, OptionAvailabilityConfig.NotRestricted)
-        val config2 = SettingConfig(FlashMode.OFF, OptionAvailabilityConfig.NotRestricted)
+        val config1 = SettingConfig(FlashMode.OFF, OptionVisibility.Visible)
+        val config2 = SettingConfig(FlashMode.OFF, OptionVisibility.Visible)
         assertThat(config1).isEqualTo(config2)
 
         val appConfig1 = CameraAppConfig()

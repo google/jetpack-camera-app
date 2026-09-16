@@ -31,7 +31,7 @@ import com.google.jetpackcamera.AppModule
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraAppConfig
-import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
@@ -202,7 +202,7 @@ internal class FlashModeAppConfigDeviceTest(
         AppModule.testCameraAppConfig = CameraAppConfig(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
-                uiVisibility = OptionAvailabilityConfig.Hidden
+                visibility = OptionVisibility.Hidden
             )
         )
 
@@ -225,7 +225,7 @@ internal class FlashModeAppConfigDeviceTest(
         AppModule.testCameraAppConfig = CameraAppConfig(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
-                uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
+                visibility = OptionVisibility.Only(
                     setOf(FlashMode.OFF, FlashMode.ON)
                 )
             )
@@ -253,7 +253,7 @@ internal class FlashModeAppConfigDeviceTest(
         AppModule.testCameraAppConfig = CameraAppConfig(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
-                uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
+                visibility = OptionVisibility.Only(
                     setOf(FlashMode.OFF, FlashMode.AUTO)
                 )
             )
@@ -281,7 +281,7 @@ internal class FlashModeAppConfigDeviceTest(
         AppModule.testCameraAppConfig = CameraAppConfig(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
-                uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
+                visibility = OptionVisibility.Only(
                     setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
                 )
             )

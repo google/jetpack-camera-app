@@ -25,7 +25,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.AppModule
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.model.CameraAppConfig
-import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
@@ -125,7 +125,7 @@ internal class CaptureModeAppConfigDeviceTest {
         AppModule.testCameraAppConfig = CameraAppConfig(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.STANDARD,
-                uiVisibility = OptionAvailabilityConfig.Hidden
+                visibility = OptionVisibility.Hidden
             )
         )
 
@@ -143,7 +143,7 @@ internal class CaptureModeAppConfigDeviceTest {
         AppModule.testCameraAppConfig = CameraAppConfig(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.IMAGE_ONLY,
-                uiVisibility = OptionAvailabilityConfig.Hidden
+                visibility = OptionVisibility.Hidden
             )
         )
 
@@ -167,7 +167,7 @@ internal class CaptureModeAppConfigDeviceTest {
         AppModule.testCameraAppConfig = CameraAppConfig(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.STANDARD,
-                uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
+                visibility = OptionVisibility.Only(
                     setOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY)
                 )
             )
@@ -190,7 +190,7 @@ internal class CaptureModeAppConfigDeviceTest {
         AppModule.testCameraAppConfig = CameraAppConfig(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.STANDARD,
-                uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
+                visibility = OptionVisibility.Only(
                     setOf(CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY)
                 )
             )
@@ -213,7 +213,7 @@ internal class CaptureModeAppConfigDeviceTest {
         AppModule.testCameraAppConfig = CameraAppConfig(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.IMAGE_ONLY,
-                uiVisibility = OptionAvailabilityConfig.OptionsEnabled(
+                visibility = OptionVisibility.Only(
                     setOf(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
                 )
             )

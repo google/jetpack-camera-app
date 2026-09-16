@@ -94,7 +94,7 @@ fun captureUiState(
             systemConstraints = systemConstraints,
             cameraAppSettings = cameraAppSettings,
             externalCaptureMode = externalCaptureMode,
-            visibilityConfig = appConfig?.captureMode?.uiVisibility
+            visibilityConfig = appConfig?.captureMode?.visibility
         )
         val flipLensUiState = FlipLensUiState.from(
             cameraAppSettings,
@@ -106,8 +106,8 @@ fun captureUiState(
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = cameraAppSettings,
             systemConstraints = systemConstraints,
-            imageFormatVisibilityConfig = appConfig?.imageFormat?.uiVisibility,
-            dynamicRangeVisibilityConfig = appConfig?.dynamicRange?.uiVisibility
+            imageFormatVisibilityConfig = appConfig?.imageFormat?.visibility,
+            dynamicRangeVisibilityConfig = appConfig?.dynamicRange?.visibility
         )
 
         flashModeUiState = flashModeUiState.let {
@@ -115,12 +115,12 @@ fun captureUiState(
                 cameraAppSettings = cameraAppSettings,
                 systemConstraints = systemConstraints,
                 cameraState = roundedCameraState,
-                visibilityConfig = appConfig?.flashMode?.uiVisibility
+                visibilityConfig = appConfig?.flashMode?.visibility
             )
                 ?: FlashModeUiState.from(
                     cameraAppSettings = cameraAppSettings,
                     systemConstraints = systemConstraints,
-                    visibilityConfig = appConfig?.flashMode?.uiVisibility
+                    visibilityConfig = appConfig?.flashMode?.visibility
                 )
         }
         focusMeteringUiState = focusMeteringUiState.let {
@@ -180,7 +180,7 @@ fun captureUiState(
                 cameraAppSettings = cameraAppSettings,
                 cameraState = roundedCameraState,
                 externalCaptureMode = externalCaptureMode,
-                visibilityConfig = appConfig?.captureMode?.uiVisibility
+                visibilityConfig = appConfig?.captureMode?.visibility
             ),
             hdrUiState = hdrUiState,
             focusMeteringUiState = focusMeteringUiState,

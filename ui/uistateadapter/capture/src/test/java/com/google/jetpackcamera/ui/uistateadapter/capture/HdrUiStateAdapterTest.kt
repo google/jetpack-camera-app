@@ -27,7 +27,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
-import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -400,7 +400,7 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = appSettings,
             systemConstraints = systemConstraints,
-            imageFormatVisibilityConfig = OptionAvailabilityConfig.Hidden
+            imageFormatVisibilityConfig = OptionVisibility.Hidden
         )
 
         assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
@@ -425,7 +425,7 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = appSettings,
             systemConstraints = systemConstraints,
-            imageFormatVisibilityConfig = OptionAvailabilityConfig.OptionsEnabled(
+            imageFormatVisibilityConfig = OptionVisibility.Only(
                 setOf(ImageOutputFormat.JPEG, ImageOutputFormat.JPEG_ULTRA_HDR)
             )
         )
@@ -450,7 +450,7 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = appSettings,
             systemConstraints = systemConstraints,
-            dynamicRangeVisibilityConfig = OptionAvailabilityConfig.Hidden
+            dynamicRangeVisibilityConfig = OptionVisibility.Hidden
         )
 
         assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
@@ -473,7 +473,7 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = appSettings,
             systemConstraints = systemConstraints,
-            dynamicRangeVisibilityConfig = OptionAvailabilityConfig.OptionsEnabled(
+            dynamicRangeVisibilityConfig = OptionVisibility.Only(
                 setOf(DynamicRange.SDR, DynamicRange.HLG10)
             )
         )

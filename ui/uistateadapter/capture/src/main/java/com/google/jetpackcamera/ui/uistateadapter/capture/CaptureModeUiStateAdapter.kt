@@ -26,7 +26,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
-import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
@@ -58,12 +58,12 @@ fun CaptureModeToggleUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     cameraState: CameraState,
     externalCaptureMode: ExternalCaptureMode,
-    visibilityConfig: OptionAvailabilityConfig<CaptureMode>? = null
+    visibilityConfig: OptionVisibility<CaptureMode>? = null
 ): CaptureModeToggleUiState {
-    val config = visibilityConfig ?: OptionAvailabilityConfig.NotRestricted
+    val config = visibilityConfig ?: OptionVisibility.Visible
     return if (cameraState.videoRecordingState !is VideoRecordingState.Inactive ||
         cameraAppSettings.captureMode == CaptureMode.STANDARD ||
-        config is OptionAvailabilityConfig.Hidden
+        config is OptionVisibility.Hidden
     ) {
         CaptureModeToggleUiState.Unavailable
     } else {
@@ -100,7 +100,7 @@ fun CaptureModeToggleUiState.Companion.from(
  * @param systemConstraints The constraints of the entire camera system.
  * @param cameraAppSettings The current settings of the camera.
  * @param externalCaptureMode The mode influencing UI based on how the camera was launched.
- * @param visibilityConfig The optional [OptionAvailabilityConfig] defining developer restrictions.
+ * @param visibilityConfig The optional [OptionVisibility] defining developer restrictions.
  * @return A [CaptureModeUiState.Available] object containing the currently selected capture mode
  * and a list of all available modes, each represented as a [SingleSelectableUiState], or
  * [CaptureModeUiState.Unavailable] if capture mode selection is disabled or hidden.
@@ -109,10 +109,10 @@ fun CaptureModeUiState.Companion.from(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     externalCaptureMode: ExternalCaptureMode,
-    visibilityConfig: OptionAvailabilityConfig<CaptureMode>? = null
+    visibilityConfig: OptionVisibility<CaptureMode>? = null
 ): CaptureModeUiState {
-    val config = visibilityConfig ?: OptionAvailabilityConfig.NotRestricted
-    if (config is OptionAvailabilityConfig.Hidden) {
+    val config = visibilityConfig ?: OptionVisibility.Visible
+    if (config is OptionVisibility.Hidden) {
         return CaptureModeUiState.Unavailable
     }
     val availableCaptureModes = getAvailableCaptureModes(
@@ -136,16 +136,16 @@ fun CaptureModeUiState.Companion.from(
 
 private fun getSupportedCaptureModes(
     cameraAppSettings: CameraAppSettings,
-    config: OptionAvailabilityConfig<CaptureMode>,
+    config: OptionVisibility<CaptureMode>,
     isHdrOn: Boolean,
     currentHdrDynamicRangeSupported: Boolean,
     currentHdrImageFormatSupported: Boolean,
     externalCaptureMode: ExternalCaptureMode
 ): List<CaptureMode> {
     return when (config) {
-        is OptionAvailabilityConfig.NotRestricted -> ORDERED_UI_SUPPORTED_CAPTURE_MODES
-        is OptionAvailabilityConfig.Hidden -> emptyList()
-        is OptionAvailabilityConfig.OptionsEnabled ->
+        is OptionVisibility.Visible -> ORDERED_UI_SUPPORTED_CAPTURE_MODES
+        is OptionVisibility.Hidden -> emptyList()
+        is OptionVisibility.Only ->
             ORDERED_UI_SUPPORTED_CAPTURE_MODES
                 .filter { it in config.enabledOptions }
     }.filter { captureMode ->
@@ -177,7 +177,7 @@ private fun getAvailableCaptureModes(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     externalCaptureMode: ExternalCaptureMode,
-    config: OptionAvailabilityConfig<CaptureMode>
+    config: OptionVisibility<CaptureMode>
 ): List<SingleSelectableUiState<CaptureMode>> {
     // 1. start with all UI supported modes
     // 2. filter out modes that are restricted by config
@@ -245,7 +245,7 @@ private fun getCaptureModeDisabledReason(
     hdrDynamicRangeSupported: Boolean,
     hdrImageFormatSupported: Boolean,
     systemConstraints: CameraSystemConstraints,
-    visibilityConfig: OptionAvailabilityConfig<CaptureMode>,
+    visibilityConfig: OptionVisibility<CaptureMode>,
     currentLensFacing: LensFacing,
     affectsImageCapture: Boolean,
     concurrentCameraMode: ConcurrentCameraMode,
@@ -259,15 +259,15 @@ private fun getCaptureModeDisabledReason(
                     .IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED
             }
             when (visibilityConfig) {
-                is OptionAvailabilityConfig.Hidden ->
+                is OptionVisibility.Hidden ->
                     return DisabledReason.IMAGE_CAPTURE_RESTRICTED
-                is OptionAvailabilityConfig.OptionsEnabled -> {
+                is OptionVisibility.Only -> {
                     if (!visibilityConfig.enabledOptions.contains(disabledCaptureMode)) {
                         return DisabledReason.IMAGE_CAPTURE_RESTRICTED
                     }
                 }
 
-                is OptionAvailabilityConfig.NotRestricted -> {}
+                is OptionVisibility.Visible -> {}
             }
 
             if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
@@ -310,16 +310,16 @@ private fun getCaptureModeDisabledReason(
             }
 
             when (visibilityConfig) {
-                is OptionAvailabilityConfig.Hidden -> {
+                is OptionVisibility.Hidden -> {
                     return DisabledReason.VIDEO_CAPTURE_RESTRICTED
                 }
-                is OptionAvailabilityConfig.OptionsEnabled -> {
+                is OptionVisibility.Only -> {
                     if (!visibilityConfig.enabledOptions.contains(disabledCaptureMode)) {
                         return DisabledReason.VIDEO_CAPTURE_RESTRICTED
                     }
                 }
 
-                is OptionAvailabilityConfig.NotRestricted -> {}
+                is OptionVisibility.Visible -> {}
             }
 
             if (!hdrDynamicRangeSupported) {
@@ -341,16 +341,16 @@ private fun getCaptureModeDisabledReason(
                 return DisabledReason.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED
             }
             when (visibilityConfig) {
-                is OptionAvailabilityConfig.Hidden -> {
+                is OptionVisibility.Hidden -> {
                     return DisabledReason.HYBRID_CAPTURE_RESTRICTED
                 }
-                is OptionAvailabilityConfig.OptionsEnabled -> {
+                is OptionVisibility.Only -> {
                     if (!visibilityConfig.enabledOptions.contains(disabledCaptureMode)) {
                         return DisabledReason.HYBRID_CAPTURE_RESTRICTED
                     }
                 }
 
-                is OptionAvailabilityConfig.NotRestricted -> {}
+                is OptionVisibility.Visible -> {}
             }
             if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
                 return DisabledReason.IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA

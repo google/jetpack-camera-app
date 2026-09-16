@@ -24,7 +24,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
-import com.google.jetpackcamera.settings.model.OptionAvailabilityConfig
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
@@ -60,9 +60,9 @@ private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
 internal fun FlashModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
-    visibilityConfig: OptionAvailabilityConfig<FlashMode>? = null
+    visibilityConfig: OptionVisibility<FlashMode>? = null
 ): FlashModeUiState {
-    if (visibilityConfig is OptionAvailabilityConfig.Hidden) {
+    if (visibilityConfig is OptionVisibility.Hidden) {
         return Unavailable
     }
 
@@ -96,7 +96,7 @@ internal fun FlashModeUiState.Companion.from(
             }
 
             // 2. Hide if restricted by developer visibility configuration.
-            if (visibilityConfig is OptionAvailabilityConfig.OptionsEnabled &&
+            if (visibilityConfig is OptionVisibility.Only &&
                 !visibilityConfig.enabledOptions.contains(mode)
             ) {
                 continue
@@ -185,7 +185,7 @@ internal fun FlashModeUiState.updateFrom(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
     cameraState: CameraState,
-    visibilityConfig: OptionAvailabilityConfig<FlashMode>? = null
+    visibilityConfig: OptionVisibility<FlashMode>? = null
 ): FlashModeUiState {
     return when (this) {
         is Unavailable -> {
