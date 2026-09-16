@@ -22,8 +22,40 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 
 /**
- * Defines a configuration for the Jetpack Camera App that can be used by developers
- * to override the default app settings.
+ * Configuration for the Jetpack Camera App that allows developers and host applications
+ * to customize the default camera experience and constrain user-facing controls.
+ *
+ * Each configured setting can specify:
+ * 1. An initial [SettingConfig.defaultValue] applied on startup (overriding stored preferences).
+ * 2. A [SettingConfig.visibility] policy ([OptionVisibility]) restricting or hiding the control.
+ *
+ * ### Invariants & Safety Rules:
+ * - **Flash Mode:** Cannot be [OptionVisibility.Hidden] unless its default value is [FlashMode.OFF].
+ *   If [OptionVisibility.Only] is used, [FlashMode.OFF] must always be included.
+ * - **HDR Image Format:** Cannot be [OptionVisibility.Hidden] unless defaulted to SDR ([ImageOutputFormat.JPEG]).
+ *   If [OptionVisibility.Only] is used, [ImageOutputFormat.JPEG] must always be included.
+ * - **HDR Video Dynamic Range:** Cannot be [OptionVisibility.Hidden] unless defaulted to SDR ([DynamicRange.SDR]).
+ *   If [OptionVisibility.Only] is used, [DynamicRange.SDR] must always be included.
+ *
+ * ### Example:
+ * ```kotlin
+ * val appConfig = CameraAppConfig(
+ *     flashMode = SettingConfig(
+ *         defaultValue = FlashMode.OFF,
+ *         visibility = OptionVisibility.Hidden
+ *     ),
+ *     captureMode = SettingConfig(
+ *         defaultValue = CaptureMode.IMAGE_ONLY,
+ *         visibility = OptionVisibility.Only(setOf(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY))
+ *     )
+ * )
+ * ```
+ *
+ * @property captureMode Configuration for camera capture mode (e.g. Standard, Image-only, Video-only).
+ * @property aspectRatio Configuration for preview and capture aspect ratio.
+ * @property flashMode Configuration for camera flash mode.
+ * @property imageFormat Configuration for captured photo format (e.g. JPEG, Ultra HDR).
+ * @property dynamicRange Configuration for captured video dynamic range (e.g. SDR, HLG10).
  *
  * TODO (kc): Defer audioEnabled configuration to a follow-up PR, pending design for visual UX.
  */
@@ -92,9 +124,12 @@ data class CameraAppConfig(
     }
 
     /**
-     * Converts this [CameraAppConfig] into a [CameraAppSettings] object.
+     * Maps developer-defined overrides from this [CameraAppConfig] onto a baseline [CameraAppSettings].
      *
-     * This function maps the developer-defined settings to the internal camera app settings model.
+     * Unspecified settings in this config retain their values from [defaultSettings].
+     *
+     * @param defaultSettings The baseline settings to apply overrides onto. Defaults to [DEFAULT_CAMERA_APP_SETTINGS].
+     * @return A merged [CameraAppSettings] with developer-specified default values applied.
      */
     fun toCameraAppSettings(
         defaultSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
@@ -111,10 +146,14 @@ data class CameraAppConfig(
 
 /**
  * Represents a single configurable setting in the application, including its
- * default value and UI visibility / option availability.
+ * default value and UI visibility policy.
  *
- * @param defaultValue The initial value for this setting.
- * @param visibility The UI visibility and option availability configuration for this setting.
+ * @param T The enum or model type representing the setting's values (e.g. [FlashMode], [CaptureMode]).
+ * @property defaultValue The initial value for this setting applied on launch.
+ * @property visibility The UI visibility and option restriction policy for this setting.
+ *   Defaults to [OptionVisibility.Visible].
+ * @throws IllegalArgumentException if [visibility] is [OptionVisibility.Only] and [defaultValue]
+ *   is not present in [OptionVisibility.Only.enabledOptions].
  */
 data class SettingConfig<T>(
     val defaultValue: T,
@@ -133,16 +172,30 @@ data class SettingConfig<T>(
 }
 
 /**
- * Represents UI option availability applied to a setting.
+ * Defines the UI visibility and option availability policy applied to a camera setting.
+ *
+ * @param T The type of setting options governed by this policy.
  */
 sealed interface OptionVisibility<out T> {
-    /** All device-supported options are available. */
+    /** All device-supported options are visible and selectable in the UI. */
     data object Visible : OptionVisibility<Nothing>
 
-    /** The entire setting is unavailable and hidden from the UI. */
+    /**
+     * The setting is completely hidden and inaccessible in the user interface.
+     *
+     * Note: The setting remains active and locked to its configured [SettingConfig.defaultValue].
+     */
     data object Hidden : OptionVisibility<Nothing>
 
-    /** ONLY the options in this set are allowed, if supported by the device. */
+    /**
+     * Restricts the user interface to display only the specified subset of [enabledOptions],
+     * provided they are supported by the current device hardware.
+     *
+     * @property enabledOptions The permitted options. Must contain at least 2 options and must
+     *   include the setting's [SettingConfig.defaultValue]. If only a single option is desired,
+     *   use [Hidden] with that default value instead.
+     * @throws IllegalArgumentException if [enabledOptions] contains fewer than 2 items.
+     */
     data class Only<T>(val enabledOptions: Set<T>) : OptionVisibility<T> {
         init {
             require(enabledOptions.size >= 2) {
