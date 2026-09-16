@@ -22,7 +22,6 @@ import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageOutputFormat
-import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -225,12 +224,7 @@ private fun getAvailableCaptureModes(
                 value = mode,
                 disabledReason = getCaptureModeDisabledReason(
                     disabledCaptureMode = mode,
-                    hdrDynamicRangeSupported = currentHdrDynamicRangeSupported,
-                    hdrImageFormatSupported = currentHdrImageFormatSupported,
-                    systemConstraints = systemConstraints,
                     visibilityConfig = config,
-                    currentLensFacing = cameraAppSettings.cameraLensFacing,
-                    affectsImageCapture = affectsImageCapture,
                     concurrentCameraMode = cameraAppSettings.concurrentCameraMode,
                     externalCaptureMode = externalCaptureMode,
                     isHdrOn = isHdrOn
@@ -242,12 +236,7 @@ private fun getAvailableCaptureModes(
 
 private fun getCaptureModeDisabledReason(
     disabledCaptureMode: CaptureMode,
-    hdrDynamicRangeSupported: Boolean,
-    hdrImageFormatSupported: Boolean,
-    systemConstraints: CameraSystemConstraints,
     visibilityConfig: OptionVisibility<CaptureMode>,
-    currentLensFacing: LensFacing,
-    affectsImageCapture: Boolean,
     concurrentCameraMode: ConcurrentCameraMode,
     externalCaptureMode: ExternalCaptureMode,
     isHdrOn: Boolean
@@ -262,7 +251,7 @@ private fun getCaptureModeDisabledReason(
                 is OptionVisibility.Hidden ->
                     return DisabledReason.IMAGE_CAPTURE_RESTRICTED
                 is OptionVisibility.Only -> {
-                    if (!visibilityConfig.enabledOptions.contains(disabledCaptureMode)) {
+                    if (disabledCaptureMode !in visibilityConfig.enabledOptions) {
                         return DisabledReason.IMAGE_CAPTURE_RESTRICTED
                     }
                 }
@@ -273,29 +262,6 @@ private fun getCaptureModeDisabledReason(
             if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
                 return DisabledReason
                     .IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA
-            }
-
-            if (!hdrImageFormatSupported) {
-                // First check if Ultra HDR image is supported on other capture modes
-                if (systemConstraints
-                        .perLensConstraints[currentLensFacing]
-                        ?.supportedImageFormatsMap
-                        ?.anySupportsUltraHdr { it != affectsImageCapture } == true
-                ) {
-                    return if (affectsImageCapture) {
-                        DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM
-                    } else {
-                        DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM
-                    }
-                }
-
-                // Check if any other lens supports HDR image
-                if (systemConstraints.anySupportsUltraHdr { it != currentLensFacing }) {
-                    return DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_LENS
-                }
-
-                // No lenses support HDR image on device
-                return DisabledReason.HDR_IMAGE_UNSUPPORTED_ON_DEVICE
             }
 
             return DisabledReason.UNKNOWN
@@ -314,7 +280,7 @@ private fun getCaptureModeDisabledReason(
                     return DisabledReason.VIDEO_CAPTURE_RESTRICTED
                 }
                 is OptionVisibility.Only -> {
-                    if (!visibilityConfig.enabledOptions.contains(disabledCaptureMode)) {
+                    if (disabledCaptureMode !in visibilityConfig.enabledOptions) {
                         return DisabledReason.VIDEO_CAPTURE_RESTRICTED
                     }
                 }
@@ -322,12 +288,6 @@ private fun getCaptureModeDisabledReason(
                 is OptionVisibility.Visible -> {}
             }
 
-            if (!hdrDynamicRangeSupported) {
-                if (systemConstraints.anySupportsHdrDynamicRange { it != currentLensFacing }) {
-                    return DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_LENS
-                }
-                return DisabledReason.HDR_VIDEO_UNSUPPORTED_ON_DEVICE
-            }
             return DisabledReason.UNKNOWN
         }
 
@@ -345,7 +305,7 @@ private fun getCaptureModeDisabledReason(
                     return DisabledReason.HYBRID_CAPTURE_RESTRICTED
                 }
                 is OptionVisibility.Only -> {
-                    if (!visibilityConfig.enabledOptions.contains(disabledCaptureMode)) {
+                    if (disabledCaptureMode !in visibilityConfig.enabledOptions) {
                         return DisabledReason.HYBRID_CAPTURE_RESTRICTED
                     }
                 }
@@ -362,25 +322,3 @@ private fun getCaptureModeDisabledReason(
         }
     }
 }
-
-private fun CameraSystemConstraints.anySupportsHdrDynamicRange(
-    lensFilter: (LensFacing) -> Boolean
-): Boolean = perLensConstraints.asSequence().firstOrNull {
-    lensFilter(it.key) && it.value.supportedDynamicRanges.size > 1
-} != null
-
-private fun Map<Boolean, Set<ImageOutputFormat>>.anySupportsUltraHdr(
-    captureModeFilter: (Boolean) -> Boolean
-): Boolean = asSequence().firstOrNull {
-    captureModeFilter(it.key) && it.value.contains(ImageOutputFormat.JPEG_ULTRA_HDR)
-} != null
-
-private fun CameraSystemConstraints.anySupportsUltraHdr(
-    captureModeFilter: (Boolean) -> Boolean = { true },
-    lensFilter: (LensFacing) -> Boolean
-): Boolean = perLensConstraints.asSequence().firstOrNull { lensConstraints ->
-    lensFilter(lensConstraints.key) &&
-        lensConstraints.value.supportedImageFormatsMap.anySupportsUltraHdr {
-            captureModeFilter(it)
-        }
-} != null

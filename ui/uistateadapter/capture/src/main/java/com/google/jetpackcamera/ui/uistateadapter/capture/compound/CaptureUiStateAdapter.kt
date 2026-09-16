@@ -110,25 +110,19 @@ fun captureUiState(
             dynamicRangeVisibilityConfig = appConfig?.dynamicRange?.visibility
         )
 
-        flashModeUiState = flashModeUiState.let {
-            it?.updateFrom(
-                cameraAppSettings = cameraAppSettings,
-                systemConstraints = systemConstraints,
-                cameraState = roundedCameraState,
-                visibilityConfig = appConfig?.flashMode?.visibility
-            )
-                ?: FlashModeUiState.from(
-                    cameraAppSettings = cameraAppSettings,
-                    systemConstraints = systemConstraints,
-                    visibilityConfig = appConfig?.flashMode?.visibility
-                )
-        }
-        focusMeteringUiState = focusMeteringUiState.let {
-            it?.updateFrom(
-                cameraState = roundedCameraState
-            )
-                ?: FocusMeteringUiState.from(roundedCameraState)
-        }
+        flashModeUiState = flashModeUiState?.updateFrom(
+            cameraAppSettings = cameraAppSettings,
+            systemConstraints = systemConstraints,
+            cameraState = roundedCameraState,
+            visibilityConfig = appConfig?.flashMode?.visibility
+        ) ?: FlashModeUiState.from(
+            cameraAppSettings = cameraAppSettings,
+            systemConstraints = systemConstraints,
+            visibilityConfig = appConfig?.flashMode?.visibility
+        )
+        focusMeteringUiState = focusMeteringUiState?.updateFrom(
+            cameraState = roundedCameraState
+        ) ?: FocusMeteringUiState.from(roundedCameraState)
         CaptureUiState.Ready(
             externalCaptureMode = externalCaptureMode,
             videoRecordingState = roundedVideoRecordingState,

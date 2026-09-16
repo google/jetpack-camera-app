@@ -30,7 +30,7 @@ import org.junit.runners.JUnit4
 class CameraAppConfigTest {
 
     @Test
-    fun settingConfig_whenOptionsEnabledMissingDefaultValue_throwsException() {
+    fun settingConfig_whenOptionVisibilityOnlyMissingDefaultValue_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             SettingConfig(
                 defaultValue = FlashMode.OFF,
@@ -42,7 +42,7 @@ class CameraAppConfigTest {
     }
 
     @Test
-    fun settingConfig_whenOptionsEnabledHasSingleOption_throwsException() {
+    fun settingConfig_whenOptionVisibilityOnlyHasSingleOption_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             SettingConfig(
                 defaultValue = FlashMode.OFF,
@@ -54,7 +54,7 @@ class CameraAppConfigTest {
     }
 
     @Test
-    fun optionsEnabled_whenLessThanTwoOptions_throwsException() {
+    fun optionVisibilityOnly_whenLessThanTwoOptions_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             OptionVisibility.Only<FlashMode>(emptySet())
         }
@@ -74,7 +74,7 @@ class CameraAppConfigTest {
     }
 
     @Test
-    fun developerAppConfig_whenFlashModeExcludesOff_throwsException() {
+    fun cameraAppConfig_whenFlashModeExcludesOff_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             CameraAppConfig(
                 flashMode = SettingConfig(
@@ -88,7 +88,7 @@ class CameraAppConfigTest {
     }
 
     @Test
-    fun developerAppConfig_whenFlashModeHiddenAndNotOff_throwsException() {
+    fun cameraAppConfig_whenFlashModeHiddenAndNotOff_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             CameraAppConfig(
                 flashMode = SettingConfig(
@@ -100,7 +100,7 @@ class CameraAppConfigTest {
     }
 
     @Test
-    fun developerAppConfig_whenFlashModeHiddenAndOff_succeeds() {
+    fun cameraAppConfig_whenFlashModeHiddenAndOff_succeeds() {
         val config = CameraAppConfig(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
@@ -112,7 +112,7 @@ class CameraAppConfigTest {
     }
 
     @Test
-    fun developerAppConfig_whenImageFormatHiddenAndNotJpeg_throwsException() {
+    fun cameraAppConfig_whenImageFormatHiddenAndNotJpeg_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             CameraAppConfig(
                 imageFormat = SettingConfig(
@@ -124,7 +124,7 @@ class CameraAppConfigTest {
     }
 
     @Test
-    fun developerAppConfig_whenImageFormatHiddenAndJpeg_succeeds() {
+    fun cameraAppConfig_whenImageFormatHiddenAndJpeg_succeeds() {
         val config = CameraAppConfig(
             imageFormat = SettingConfig(
                 defaultValue = ImageOutputFormat.JPEG,
@@ -136,7 +136,7 @@ class CameraAppConfigTest {
     }
 
     @Test
-    fun developerAppConfig_whenDynamicRangeHiddenAndNotSdr_throwsException() {
+    fun cameraAppConfig_whenDynamicRangeHiddenAndNotSdr_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             CameraAppConfig(
                 dynamicRange = SettingConfig(
@@ -148,7 +148,7 @@ class CameraAppConfigTest {
     }
 
     @Test
-    fun developerAppConfig_whenDynamicRangeHiddenAndSdr_succeeds() {
+    fun cameraAppConfig_whenDynamicRangeHiddenAndSdr_succeeds() {
         val config = CameraAppConfig(
             dynamicRange = SettingConfig(
                 defaultValue = DynamicRange.SDR,

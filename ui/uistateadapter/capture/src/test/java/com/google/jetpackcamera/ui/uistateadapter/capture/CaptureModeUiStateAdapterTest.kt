@@ -111,10 +111,7 @@ class CaptureModeUiStateAdapterTest {
         val available = uiState as CaptureModeUiState.Available
 
         val imageState = available.availableCaptureModes.find {
-            when (it) {
-                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.IMAGE_ONLY
-                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.IMAGE_ONLY
-            }
+            it.value == CaptureMode.IMAGE_ONLY
         }
         assertThat(imageState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
         assertThat((imageState as SingleSelectableUiState.Disabled).disabledReason)
@@ -138,10 +135,7 @@ class CaptureModeUiStateAdapterTest {
         val available = uiState as CaptureModeUiState.Available
 
         val videoState = available.availableCaptureModes.find {
-            when (it) {
-                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.VIDEO_ONLY
-                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.VIDEO_ONLY
-            }
+            it.value == CaptureMode.VIDEO_ONLY
         }
         assertThat(videoState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
         assertThat((videoState as SingleSelectableUiState.Disabled).disabledReason)
@@ -328,18 +322,12 @@ class CaptureModeUiStateAdapterTest {
         val available = uiState as CaptureModeUiState.Available
 
         val imageMode = available.availableCaptureModes.find {
-            when (it) {
-                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.IMAGE_ONLY
-                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.IMAGE_ONLY
-            }
+            it.value == CaptureMode.IMAGE_ONLY
         }
         assertThat(imageMode).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
 
         val videoMode = available.availableCaptureModes.find {
-            when (it) {
-                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.VIDEO_ONLY
-                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.VIDEO_ONLY
-            }
+            it.value == CaptureMode.VIDEO_ONLY
         }
         assertThat(videoMode).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
         assertThat((videoMode as SingleSelectableUiState.Disabled).disabledReason)
@@ -361,18 +349,12 @@ class CaptureModeUiStateAdapterTest {
         val available = uiState as CaptureModeUiState.Available
 
         val videoMode = available.availableCaptureModes.find {
-            when (it) {
-                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.VIDEO_ONLY
-                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.VIDEO_ONLY
-            }
+            it.value == CaptureMode.VIDEO_ONLY
         }
         assertThat(videoMode).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
 
         val imageMode = available.availableCaptureModes.find {
-            when (it) {
-                is SingleSelectableUiState.SelectableUi -> it.value == CaptureMode.IMAGE_ONLY
-                is SingleSelectableUiState.Disabled -> it.value == CaptureMode.IMAGE_ONLY
-            }
+            it.value == CaptureMode.IMAGE_ONLY
         }
         assertThat(imageMode).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
         assertThat((imageMode as SingleSelectableUiState.Disabled).disabledReason)
