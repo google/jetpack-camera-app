@@ -155,7 +155,7 @@ data class CameraAppConfig(
  * @throws IllegalArgumentException if [visibility] is [OptionVisibility.Only] and [defaultValue]
  *   is not present in [OptionVisibility.Only.enabledOptions].
  */
-data class SettingConfig<T>(
+data class SettingConfig<T : Any>(
     val defaultValue: T,
     val visibility: OptionVisibility<T> = OptionVisibility.Visible
 ) {
@@ -176,7 +176,7 @@ data class SettingConfig<T>(
  *
  * @param T The type of setting options governed by this policy.
  */
-sealed interface OptionVisibility<out T> {
+sealed interface OptionVisibility<out T : Any> {
     /** All device-supported options are visible and selectable in the UI. */
     data object Visible : OptionVisibility<Nothing>
 
@@ -196,7 +196,9 @@ sealed interface OptionVisibility<out T> {
      *   use [Hidden] with that default value instead.
      * @throws IllegalArgumentException if [enabledOptions] contains fewer than 2 items.
      */
-    data class Only<T>(val enabledOptions: Set<T>) : OptionVisibility<T> {
+    data class Only<T : Any>(val enabledOptions: Set<T>) : OptionVisibility<T> {
+        constructor(vararg options: T) : this(options.toSet())
+
         init {
             require(enabledOptions.size >= 2) {
                 "enabledOptions must contain at least 2 options. Use Hidden to lock a single option and hide the control."

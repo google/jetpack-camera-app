@@ -55,7 +55,6 @@ import kotlinx.coroutines.flow.filterNotNull
  * comprehensive [CaptureUiState] that the UI can directly observe and react to.
  *
  * @param currentSettings A [Flow] of the current camera app settings.
- * @param appConfig The optional [CameraAppConfig] providing session restrictions, or null for default behavior.
  * @param systemConstraints A [StateFlow] of the current camera system constraints.
  * @param currentCameraState A [StateFlow] of the current camera state.
  * @param trackedCaptureUiState A [StateFlow] representing the user-interacted UI state that
@@ -63,18 +62,19 @@ import kotlinx.coroutines.flow.filterNotNull
  * @param externalCaptureMode The [ExternalCaptureMode] influencing UI behavior based on how the
  * camera is launched (e.g., from an external intent).
  * @param timePrecision The precision to use for rounding the elapsed time of video recording.
+ * @param appConfig The optional [CameraAppConfig] providing session restrictions, or null for default behavior.
  *
  * @return A [Flow] that emits a new [CaptureUiState] whenever any of its underlying
  * data sources change.
  */
 fun captureUiState(
     currentSettings: Flow<CameraAppSettings?>,
-    appConfig: CameraAppConfig? = null,
     systemConstraints: StateFlow<CameraSystemConstraints?>,
     currentCameraState: StateFlow<CameraState>,
     trackedCaptureUiState: StateFlow<TrackedCaptureUiState>,
     externalCaptureMode: ExternalCaptureMode,
-    timePrecision: TimeUnit = TimeUnit.SECONDS
+    timePrecision: TimeUnit = TimeUnit.SECONDS,
+    appConfig: CameraAppConfig? = null
 ): Flow<CaptureUiState> {
     var flashModeUiState: FlashModeUiState? = null
     var focusMeteringUiState: FocusMeteringUiState? = null

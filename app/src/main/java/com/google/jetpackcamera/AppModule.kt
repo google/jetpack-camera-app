@@ -31,6 +31,7 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    @Volatile
     @VisibleForTesting
     var testCameraAppConfig: CameraAppConfig? = null
 
