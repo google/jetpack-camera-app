@@ -64,6 +64,26 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
+    fun optionVisibility_from_withTwoOrMoreOptions_returnsOnly() {
+        val visibility = OptionVisibility.from(FlashMode.OFF, FlashMode.ON)
+        assertThat(visibility).isEqualTo(
+            OptionVisibility.Only(setOf(FlashMode.OFF, FlashMode.ON))
+        )
+    }
+
+    @Test
+    fun optionVisibility_from_withSingleOption_returnsHidden() {
+        val visibility = OptionVisibility.from(FlashMode.OFF)
+        assertThat(visibility).isEqualTo(OptionVisibility.Hidden)
+    }
+
+    @Test
+    fun optionVisibility_from_withEmptySet_returnsHidden() {
+        val visibility = OptionVisibility.from<FlashMode>(emptySet())
+        assertThat(visibility).isEqualTo(OptionVisibility.Hidden)
+    }
+
+    @Test
     fun cameraAppConfig_defaultConstructor_allPropertiesNull() {
         val config = CameraFeaturePolicy()
         assertThat(config.aspectRatio).isNull()

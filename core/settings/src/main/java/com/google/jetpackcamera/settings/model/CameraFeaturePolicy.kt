@@ -193,7 +193,8 @@ sealed interface OptionVisibility<out T : Any> {
      *
      * @property enabledOptions The permitted options. Must contain at least 2 options and must
      *   include the setting's [SettingConfig.defaultValue]. If only a single option is desired,
-     *   use [Hidden] with that default value instead.
+     *   use [Hidden] with that default value instead, or use [OptionVisibility.from] to safely
+     *   fall back to [Hidden] when options are computed dynamically.
      * @throws IllegalArgumentException if [enabledOptions] contains fewer than 2 items.
      */
     data class Only<T : Any>(val enabledOptions: Set<T>) : OptionVisibility<T> {
@@ -204,5 +205,29 @@ sealed interface OptionVisibility<out T : Any> {
                 "enabledOptions must contain at least 2 options. Use Hidden to lock a single option and hide the control."
             }
         }
+    }
+
+    companion object {
+        /**
+         * Safely creates an [OptionVisibility] policy from the specified [options].
+         *
+         * - **2 or more options (`size >= 2`):** Returns [OptionVisibility.Only] containing the specified options.
+         * - **Single option or empty set (`size < 2`):** Always resolves to [OptionVisibility.Hidden] rather than
+         *   throwing an [IllegalArgumentException]. When resolved to [Hidden], the control is hidden from
+         *   the user interface and locked to the setting's configured [SettingConfig.defaultValue].
+         *
+         * This factory function is recommended when options are filtered or resolved dynamically at runtime
+         * (e.g. against remote flags or device capabilities) to avoid runtime crash traps.
+         */
+        fun <T : Any> from(options: Set<T>): OptionVisibility<T> =
+            if (options.size >= 2) Only(options) else Hidden
+
+        /**
+         * Safely creates an [OptionVisibility] policy from vararg [options].
+         *
+         * Resolves to [OptionVisibility.Only] if 2 or more options are provided, or [OptionVisibility.Hidden]
+         * if 0 or 1 option is provided.
+         */
+        fun <T : Any> from(vararg options: T): OptionVisibility<T> = from(options.toSet())
     }
 }
