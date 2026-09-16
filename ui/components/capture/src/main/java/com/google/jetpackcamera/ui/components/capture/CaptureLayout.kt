@@ -65,7 +65,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.takeOrElse
 
 /**
@@ -90,8 +92,11 @@ private val MIDDLE_SLOT_HEIGHT = 32.dp
  */
 private val LOWER_SECTION_HEIGHT = 64.dp
 
-/** Vertical gap between the zoom bar and the shutter row. */
+/** Vertical gap between the zoom bar and the shutter row on large screens. */
 private val ZOOM_TO_SHUTTER_GAP = 32.dp
+
+/** Minimum safety gap between the zoom bar and the shutter row. */
+private val MIN_ZOOM_TO_SHUTTER_GAP = 16.dp
 
 /**
  * Vertical clearance between the zoom bar and the bottom edge of the 3:4 viewfinder,
@@ -99,8 +104,11 @@ private val ZOOM_TO_SHUTTER_GAP = 32.dp
  */
 private val ZOOM_VIEWFINDER_BOTTOM_PADDING = 20.dp
 
-/** Vertical gap above and below the reserved middle slot. */
-private val CONTROL_STACK_GAP = 24.dp
+/** Maximum target vertical gap above and below the reserved middle slot. */
+private val CONTROL_STACK_MAX_GAP = 24.dp
+
+/** Minimum compressed vertical gap above and below the reserved middle slot. */
+private val CONTROL_STACK_MIN_GAP = 12.dp
 
 /**
  * Target clearance from the bottom of the display to the lower controls row, keeping the
@@ -112,16 +120,10 @@ private val TARGET_BOTTOM_CLEARANCE = 56.dp
 /** Minimum safety margin between the lower controls row and the navigation bar. */
 private val MIN_NAV_MARGIN = 8.dp
 
-/** Compressed [ZOOM_TO_SHUTTER_GAP] used on short screens. */
-private val COMPACT_ZOOM_TO_SHUTTER_GAP = 16.dp
+/** Minimum compressed bottom padding used on short screens. */
+private val MIN_CONTROLS_BOTTOM_PADDING = 12.dp
 
-/** Compressed [CONTROL_STACK_GAP] used on short screens. */
-private val COMPACT_CONTROL_STACK_GAP = 12.dp
-
-/** Compressed bottom padding used on short screens. */
-private val COMPACT_CONTROLS_BOTTOM_PADDING = 12.dp
-
-/** Available height below which the control stack compresses its gaps. */
+/** Available height below which the control stack compresses its gaps in landscape. */
 private val SHORT_SCREEN_THRESHOLD = 600.dp
 
 /** Horizontal inset of the lower controls row. */
@@ -302,45 +304,72 @@ private fun VerticalMaterialControls(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomCenter
     ) {
-        // On short screens only the gaps and the bottom padding compress; the fixed element
-        // heights are preserved so the stack keeps the proportions of the design spec.
         val isPortrait = maxHeight > maxWidth
-        val compact = maxHeight < SHORT_SCREEN_THRESHOLD
-        val stackGap = if (compact) COMPACT_CONTROL_STACK_GAP else CONTROL_STACK_GAP
         val navBarBottom = WindowInsets.navigationBarsIgnoringVisibility
             .asPaddingValues()
             .calculateBottomPadding()
-        val bottomPad = if (compact) {
-            COMPACT_CONTROLS_BOTTOM_PADDING
+
+        val topInset = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+        val minTouchTarget = LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
+        val topBarHeight = max(topInset, minTouchTarget)
+        val viewfinder34Height = maxWidth * 4f / 3f
+        val viewfinder34BottomFromTop = topBarHeight + viewfinder34Height
+        // Available space below the 3:4 viewfinder baseline
+        val spaceBelowViewfinder34 = maxHeight - (viewfinder34BottomFromTop - topInset)
+
+        // Dynamic bounds computed on the fly from constituent element constraints
+        val maxBottomPad = max(TARGET_BOTTOM_CLEARANCE - navBarBottom, MIN_NAV_MARGIN)
+        val minBottomPad = min(MIN_CONTROLS_BOTTOM_PADDING, maxBottomPad)
+
+        val minStackHeight = SHUTTER_STACK_HEIGHT +
+            MIDDLE_SLOT_HEIGHT +
+            LOWER_SECTION_HEIGHT +
+            (CONTROL_STACK_MIN_GAP * 2) +
+            minBottomPad
+
+        val maxStackHeight = SHUTTER_STACK_HEIGHT +
+            MIDDLE_SLOT_HEIGHT +
+            LOWER_SECTION_HEIGHT +
+            (CONTROL_STACK_MAX_GAP * 2) +
+            maxBottomPad
+
+        // In portrait, distribute the padding space linearly with the available space below the
+        // 3:4 viewfinder so the shutter button never overlaps the live preview while smoothly
+        // expanding to the target design spec spacing on taller screens.
+        val fraction = if (isPortrait) {
+            if (maxStackHeight > minStackHeight) {
+                ((spaceBelowViewfinder34 - minStackHeight) / (maxStackHeight - minStackHeight))
+                    .coerceIn(0f, 1f)
+            } else {
+                1f
+            }
         } else {
-            max(TARGET_BOTTOM_CLEARANCE - navBarBottom, MIN_NAV_MARGIN)
+            if (maxHeight < SHORT_SCREEN_THRESHOLD) 0f else 1f
         }
+
+        val stackGap = lerp(CONTROL_STACK_MIN_GAP, CONTROL_STACK_MAX_GAP, fraction)
+        val bottomPad = lerp(minBottomPad, maxBottomPad, fraction)
 
         // Shutter top measured up from the bottom of this controls Box
         val shutterTopFromBottom = bottomPad + LOWER_SECTION_HEIGHT + stackGap +
             MIDDLE_SLOT_HEIGHT + stackGap + SHUTTER_STACK_HEIGHT
 
-        val zoomGap = if (compact) {
-            COMPACT_ZOOM_TO_SHUTTER_GAP
-        } else if (isPortrait) {
+        val zoomGap = if (isPortrait) {
             // In standard portrait orientation, anchor the zoom bar to the 3:4 viewfinder
             // bottom baseline (matching reference camera app behavior).
             // This places the zoom bar cleanly inside the 3:4 preview, keeps it locked at the
             // same physical coordinate when switching between 3:4 and 9:16 aspect ratios,
-            // and adapts across device screen heights.
-            val topInset = max(
-                WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding(),
-                WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
-            )
-            val topBarHeight = max(topInset, 48.dp)
-            val viewfinder34Height = maxWidth * 4f / 3f
-            val viewfinder34BottomFromTop = topBarHeight + viewfinder34Height
-            val viewfinder34BottomFromBoxBottom = maxHeight - (viewfinder34BottomFromTop - topInset)
-            val targetGap = (viewfinder34BottomFromBoxBottom + ZOOM_VIEWFINDER_BOTTOM_PADDING) -
+            // and adapts across device screen heights while respecting a minimum safety gap
+            // above the shutter button.
+            val targetGap = (spaceBelowViewfinder34 + ZOOM_VIEWFINDER_BOTTOM_PADDING) -
                 shutterTopFromBottom
-            max(targetGap, ZOOM_TO_SHUTTER_GAP)
+            max(targetGap, MIN_ZOOM_TO_SHUTTER_GAP)
         } else {
-            ZOOM_TO_SHUTTER_GAP
+            if (maxHeight < SHORT_SCREEN_THRESHOLD) {
+                MIN_ZOOM_TO_SHUTTER_GAP
+            } else {
+                ZOOM_TO_SHUTTER_GAP
+            }
         }
 
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {

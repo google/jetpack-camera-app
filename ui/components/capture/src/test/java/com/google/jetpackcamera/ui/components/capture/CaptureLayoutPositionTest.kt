@@ -166,14 +166,14 @@ class CaptureLayoutPositionTest {
         val SHORT_SCREEN_HEIGHT = 500.dp
 
         /**
-         * Regular spacing, measured up from the bottom of the window:
-         * In this test environment without navigation bar insets, the 56dp target bottom
-         * clearance applies directly:
-         * 56 (bottom clearance) + 64 (lower row) + 24 + 32 (middle slot) + 24 + 86 (shutter row)
-         * puts the top of the shutter row at 800 - 286 = 514dp, and the 80dp capture button is
-         * centred in the 86dp row, so its top is 3dp lower (517dp).
+         * Dynamic linear spacing, measured down from the top of the window:
+         * In this test environment without insets (360x800dp), the 3:4 viewfinder ends at
+         * 48dp (top bar) + 480dp (3:4 height) = 528dp.
+         * The linear fraction distributes available space below the 3:4 preview so the top of
+         * the 86dp shutter row aligns to the viewfinder boundary (528dp), placing the centered
+         * 80dp capture button at 530dp.
          */
-        const val EXPECTED_TALL_BUTTON_TOP = 517f
+        const val EXPECTED_TALL_BUTTON_TOP = 530f
 
         /**
          * Compressed spacing: 12 + 64 + 12 + 32 + 12 + 86 puts the top of the shutter row at
