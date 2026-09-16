@@ -53,6 +53,42 @@ data class CameraAppConfig(
                 is OptionAvailabilityConfig.NotRestricted -> Unit
             }
         }
+
+        imageFormat?.let { config ->
+            when (val visibility = config.uiVisibility) {
+                is OptionAvailabilityConfig.OptionsEnabled -> require(
+                    ImageOutputFormat.JPEG in visibility.enabledOptions
+                ) {
+                    "ImageOutputFormat.JPEG must always be included in enabledOptions for imageFormat."
+                }
+
+                is OptionAvailabilityConfig.Hidden -> require(
+                    config.defaultValue == ImageOutputFormat.JPEG
+                ) {
+                    "When imageFormat is Hidden, defaultValue must be ImageOutputFormat.JPEG."
+                }
+
+                is OptionAvailabilityConfig.NotRestricted -> Unit
+            }
+        }
+
+        dynamicRange?.let { config ->
+            when (val visibility = config.uiVisibility) {
+                is OptionAvailabilityConfig.OptionsEnabled -> require(
+                    DynamicRange.SDR in visibility.enabledOptions
+                ) {
+                    "DynamicRange.SDR must always be included in enabledOptions for dynamicRange."
+                }
+
+                is OptionAvailabilityConfig.Hidden -> require(
+                    config.defaultValue == DynamicRange.SDR
+                ) {
+                    "When dynamicRange is Hidden, defaultValue must be DynamicRange.SDR."
+                }
+
+                is OptionAvailabilityConfig.NotRestricted -> Unit
+            }
+        }
     }
 
     /**

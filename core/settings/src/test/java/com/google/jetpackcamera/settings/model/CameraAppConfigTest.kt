@@ -112,6 +112,54 @@ class CameraAppConfigTest {
     }
 
     @Test
+    fun developerAppConfig_whenImageFormatHiddenAndNotJpeg_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) {
+            CameraAppConfig(
+                imageFormat = SettingConfig(
+                    defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR,
+                    uiVisibility = OptionAvailabilityConfig.Hidden
+                )
+            )
+        }
+    }
+
+    @Test
+    fun developerAppConfig_whenImageFormatHiddenAndJpeg_succeeds() {
+        val config = CameraAppConfig(
+            imageFormat = SettingConfig(
+                defaultValue = ImageOutputFormat.JPEG,
+                uiVisibility = OptionAvailabilityConfig.Hidden
+            )
+        )
+        assertThat(config.imageFormat?.defaultValue).isEqualTo(ImageOutputFormat.JPEG)
+        assertThat(config.imageFormat?.uiVisibility).isEqualTo(OptionAvailabilityConfig.Hidden)
+    }
+
+    @Test
+    fun developerAppConfig_whenDynamicRangeHiddenAndNotSdr_throwsException() {
+        assertThrows(IllegalArgumentException::class.java) {
+            CameraAppConfig(
+                dynamicRange = SettingConfig(
+                    defaultValue = DynamicRange.HLG10,
+                    uiVisibility = OptionAvailabilityConfig.Hidden
+                )
+            )
+        }
+    }
+
+    @Test
+    fun developerAppConfig_whenDynamicRangeHiddenAndSdr_succeeds() {
+        val config = CameraAppConfig(
+            dynamicRange = SettingConfig(
+                defaultValue = DynamicRange.SDR,
+                uiVisibility = OptionAvailabilityConfig.Hidden
+            )
+        )
+        assertThat(config.dynamicRange?.defaultValue).isEqualTo(DynamicRange.SDR)
+        assertThat(config.dynamicRange?.uiVisibility).isEqualTo(OptionAvailabilityConfig.Hidden)
+    }
+
+    @Test
     fun settingConfig_structuralEquality_matches() {
         val config1 = SettingConfig(FlashMode.OFF, OptionAvailabilityConfig.NotRestricted)
         val config2 = SettingConfig(FlashMode.OFF, OptionAvailabilityConfig.NotRestricted)
