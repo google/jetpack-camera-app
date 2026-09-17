@@ -35,6 +35,7 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -281,6 +282,30 @@ internal class CaptureUiStateAdapterTest {
         val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
         assertThat(quickSettings.flashModeUiState).isEqualTo(FlashModeUiState.Unavailable)
         assertThat(quickSettings.hdrUiState).isEqualTo(HdrUiState.Unavailable)
+    }
+
+    @Test
+    fun captureUiState_withAspectRatioHidden_emitsUnavailableQuickSettingsAndPreservesPreviewAspectRatio() = runTest {
+        val restrictedConfig = defaultAppConfig.copy(
+            aspectRatio = SettingConfig(
+                defaultValue = AspectRatio.ONE_ONE,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+
+        val uiStateFlow = createCaptureUiStateFlow(appConfig = restrictedConfig)
+        val state = assertIsReady(uiStateFlow.first())
+        assertThat(state.aspectRatioUiState).isEqualTo(AspectRatioUiState.Unavailable)
+        val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
+        assertThat(quickSettings.aspectRatioUiState).isEqualTo(AspectRatioUiState.Unavailable)
+        assertThat(state.previewDisplayUiState.aspectRatioUiState).isEqualTo(
+            AspectRatioUiState.Available(
+                selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
+                availableAspectRatios = listOf(
+                    SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN)
+                )
+            )
+        )
     }
 
     private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready = when (uiState) {

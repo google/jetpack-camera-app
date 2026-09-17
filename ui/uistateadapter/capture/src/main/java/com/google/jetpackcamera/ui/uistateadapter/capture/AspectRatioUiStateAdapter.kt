@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistateadapter.Utils
 
@@ -30,25 +31,41 @@ private val ORDERED_UI_SUPPORTED_ASPECT_RATIOS = listOf(
  * Creates an [AspectRatioUiState] from [CameraAppSettings].
  *
  * @param cameraAppSettings The current camera application settings.
+ * @param visibilityConfig Optional developer visibility configuration for aspect ratio.
  *
  * @return An [AspectRatioUiState] representing the available aspect ratios and the currently
- * selected one. If only one or no aspect ratios are supported, it returns
+ * selected one. If only one or no aspect ratios are supported or allowed, it returns
  * [AspectRatioUiState.Unavailable].
  */
-fun AspectRatioUiState.Companion.from(cameraAppSettings: CameraAppSettings): AspectRatioUiState {
-    val supportedAspectRatios = ORDERED_UI_SUPPORTED_ASPECT_RATIOS.toSet()
-    val availableAspectRatios =
-        Utils.getSelectableListFromValues(
-            supportedAspectRatios,
-            ORDERED_UI_SUPPORTED_ASPECT_RATIOS
-        )
+fun AspectRatioUiState.Companion.from(
+    cameraAppSettings: CameraAppSettings,
+    visibilityConfig: OptionVisibility<AspectRatio>? = null
+): AspectRatioUiState {
+    if (visibilityConfig is OptionVisibility.Hidden) {
+        return AspectRatioUiState.Unavailable
+    }
+
+    val supportedAspectRatios = if (visibilityConfig is OptionVisibility.Only) {
+        ORDERED_UI_SUPPORTED_ASPECT_RATIOS.filter { it in visibilityConfig.enabledOptions }.toSet()
+    } else {
+        ORDERED_UI_SUPPORTED_ASPECT_RATIOS.toSet()
+    }
 
     return if (supportedAspectRatios.size <= 1) {
-        // If we only support one lens, then return "Unavailable".
         AspectRatioUiState.Unavailable
     } else {
+        val availableAspectRatios =
+            Utils.getSelectableListFromValues(
+                supportedAspectRatios,
+                ORDERED_UI_SUPPORTED_ASPECT_RATIOS
+            )
+        val selectedAspectRatio = if (cameraAppSettings.aspectRatio in supportedAspectRatios) {
+            cameraAppSettings.aspectRatio
+        } else {
+            supportedAspectRatios.first()
+        }
         AspectRatioUiState.Available(
-            selectedAspectRatio = cameraAppSettings.aspectRatio,
+            selectedAspectRatio = selectedAspectRatio,
             availableAspectRatios = availableAspectRatios
         )
     }

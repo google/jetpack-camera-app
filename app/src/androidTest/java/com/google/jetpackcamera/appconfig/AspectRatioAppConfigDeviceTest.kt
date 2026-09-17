@@ -23,10 +23,12 @@ import androidx.test.rule.GrantPermissionRule
 import com.google.jetpackcamera.AppModule
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_9_16_BUTTON
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.visitQuickSettings
@@ -95,6 +97,74 @@ internal class AspectRatioAppConfigDeviceTest {
             composeTestRule.waitForCaptureButton()
             composeTestRule.visitQuickSettings {
                 onNodeWithTag(QUICK_SETTINGS_RATIO_9_16_BUTTON).assertIsOn()
+            }
+        }
+    }
+
+    // /////////////////////////////////////////////////////////////////////////
+    //
+    // Section B: Hidden
+    //
+    // /////////////////////////////////////////////////////////////////////////
+
+    @Test
+    fun hiddenAspectRatio_removesAspectRatioControlFromQuickSettings() {
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
+            aspectRatio = SettingConfig(
+                defaultValue = AspectRatio.ONE_ONE,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+
+        runMainActivityScenarioTest {
+            composeTestRule.waitForCaptureButton()
+            composeTestRule.visitQuickSettings {
+                onNodeWithTag(ROW_QUICK_SETTINGS_ASPECT_RATIO).assertDoesNotExist()
+            }
+        }
+    }
+
+    // /////////////////////////////////////////////////////////////////////////
+    //
+    // Section C: OptionsEnabled / Filtering
+    //
+    // /////////////////////////////////////////////////////////////////////////
+
+    @Test
+    fun optionsEnabled_oneOneAndThreeFour_displaysOnlyThoseInQuickSettings() {
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
+            aspectRatio = SettingConfig(
+                defaultValue = AspectRatio.ONE_ONE,
+                visibility = OptionVisibility.Only(
+                    setOf(AspectRatio.ONE_ONE, AspectRatio.THREE_FOUR)
+                )
+            )
+        )
+
+        runMainActivityScenarioTest {
+            composeTestRule.waitForCaptureButton()
+            composeTestRule.visitQuickSettings {
+                onNodeWithTag(ROW_QUICK_SETTINGS_ASPECT_RATIO).assertExists()
+                onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON).assertExists()
+                onNodeWithTag(QUICK_SETTINGS_RATIO_3_4_BUTTON).assertExists()
+                onNodeWithTag(QUICK_SETTINGS_RATIO_9_16_BUTTON).assertDoesNotExist()
+            }
+        }
+    }
+
+    @Test
+    fun optionsEnabled_singleOptionViaFactory_removesAspectRatioControlFromQuickSettings() {
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
+            aspectRatio = SettingConfig(
+                defaultValue = AspectRatio.ONE_ONE,
+                visibility = OptionVisibility.from(setOf(AspectRatio.ONE_ONE))
+            )
+        )
+
+        runMainActivityScenarioTest {
+            composeTestRule.waitForCaptureButton()
+            composeTestRule.visitQuickSettings {
+                onNodeWithTag(ROW_QUICK_SETTINGS_ASPECT_RATIO).assertDoesNotExist()
             }
         }
     }

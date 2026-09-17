@@ -19,13 +19,9 @@ import androidx.annotation.VisibleForTesting
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.di.DefaultCaptureModeOverride
 import com.google.jetpackcamera.di.DefaultFilePathGenerator
-import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
-import com.google.jetpackcamera.settings.model.OptionVisibility
-import com.google.jetpackcamera.settings.model.SettingConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -43,12 +39,8 @@ object AppModule {
      * Provides the [CameraFeaturePolicy] configuration.
      */
     @Provides
-    fun providesCameraAppConfig(): CameraFeaturePolicy =
-        testCameraFeaturePolicy ?: CameraFeaturePolicy(
-            flashMode = SettingConfig(FlashMode.OFF, OptionVisibility.Hidden),
-            captureMode = SettingConfig(defaultValue = CaptureMode.IMAGE_ONLY, visibility = OptionVisibility.Hidden),
-            aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE, visibility = OptionVisibility.Hidden),
-        )
+    fun providesCameraFeaturePolicy(): CameraFeaturePolicy =
+        testCameraFeaturePolicy ?: CameraFeaturePolicy()
 
     /**
      * provides the default [CaptureMode] to override by the app

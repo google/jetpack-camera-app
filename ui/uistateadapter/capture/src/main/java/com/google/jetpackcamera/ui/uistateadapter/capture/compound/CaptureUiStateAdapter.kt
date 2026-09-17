@@ -21,6 +21,7 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -100,9 +101,19 @@ fun captureUiState(
             cameraAppSettings,
             systemConstraints
         )
-        // TODO: Connect visibility / option availability restrictions for aspectRatio from appConfig in
-        // a follow-up PR (deferring avoids conflicting with the video capture 9:16 constraint).
-        val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
+        val aspectRatioUiState = AspectRatioUiState.from(
+            cameraAppSettings = cameraAppSettings,
+            visibilityConfig = appConfig?.aspectRatio?.visibility
+        )
+        val previewAspectRatioUiState = when (aspectRatioUiState) {
+            is AspectRatioUiState.Available -> aspectRatioUiState
+            is AspectRatioUiState.Unavailable -> AspectRatioUiState.Available(
+                selectedAspectRatio = cameraAppSettings.aspectRatio,
+                availableAspectRatios = listOf(
+                    SingleSelectableUiState.SelectableUi(cameraAppSettings.aspectRatio)
+                )
+            )
+        }
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = cameraAppSettings,
             systemConstraints = systemConstraints,
@@ -130,7 +141,7 @@ fun captureUiState(
             aspectRatioUiState = aspectRatioUiState,
             previewDisplayUiState = PreviewDisplayUiState(
                 trackedUiState.lastBlinkTimeStamp,
-                aspectRatioUiState
+                previewAspectRatioUiState
             ),
             // TODO: add updateFrom() for all ui states to prevent re-updating if
             // values are the same
