@@ -78,7 +78,8 @@ class PrefsDataStoreSettingsDataSource(
             audioEnabled = prefs[PreferenceKeys.KEY_AUDIO_ENABLED] ?: true,
             concurrentCameraMode = prefs[PreferenceKeys.KEY_CONCURRENT_CAMERA_MODE]
                 .toEnumOrDefault(ConcurrentCameraMode.OFF),
-            captureMode = cameraFeaturePolicy.captureMode?.defaultValue ?: defaultCaptureModeOverride
+            captureMode = cameraFeaturePolicy.captureMode?.defaultValue
+                ?: defaultCaptureModeOverride
         )
     }
 

@@ -76,15 +76,16 @@ internal class CaptureUiStateAdapterTest {
         dynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
     )
 
-    private fun createCaptureUiStateFlow(cameraFeaturePolicy: CameraFeaturePolicy? = defaultPolicy) =
-        captureUiState(
-            currentSettings = cameraSystem.getCurrentSettings(),
-            cameraFeaturePolicy = cameraFeaturePolicy,
-            systemConstraints = constraintsRepository.systemConstraints,
-            currentCameraState = cameraSystem.getCurrentCameraState(),
-            trackedCaptureUiState = trackedCaptureUiState,
-            externalCaptureMode = externalCaptureMode
-        )
+    private fun createCaptureUiStateFlow(
+        cameraFeaturePolicy: CameraFeaturePolicy? = defaultPolicy
+    ) = captureUiState(
+        currentSettings = cameraSystem.getCurrentSettings(),
+        cameraFeaturePolicy = cameraFeaturePolicy,
+        systemConstraints = constraintsRepository.systemConstraints,
+        currentCameraState = cameraSystem.getCurrentCameraState(),
+        trackedCaptureUiState = trackedCaptureUiState,
+        externalCaptureMode = externalCaptureMode
+    )
 
     @Test
     fun roundVideoRecordingState_nanoseconds_noRounding() {
@@ -285,7 +286,7 @@ internal class CaptureUiStateAdapterTest {
     }
 
     @Test
-    fun captureUiState_withAspectRatioHidden_emitsUnavailableQuickSettingsAndPreservesPreviewAspectRatio() = runTest {
+    fun captureUiState_withARHidden_emitsUnavailableAndPreservesPreviewAspectRatio() = runTest {
         val restrictedConfig = defaultPolicy.copy(
             aspectRatio = SettingConfig(
                 defaultValue = AspectRatio.ONE_ONE,

@@ -18,7 +18,6 @@ package com.google.jetpackcamera.settings
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.FlashMode
-import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.OptionVisibility
@@ -161,7 +160,9 @@ class LocalSettingsRepositoryTest {
         val policy = CameraFeaturePolicy(
             aspectRatio = SettingConfig(
                 defaultValue = AspectRatio.ONE_ONE,
-                visibility = OptionVisibility.Only(setOf(AspectRatio.ONE_ONE, AspectRatio.NINE_SIXTEEN))
+                visibility = OptionVisibility.Only(
+                    setOf(AspectRatio.ONE_ONE, AspectRatio.NINE_SIXTEEN)
+                )
             )
         )
         val repository = LocalSettingsRepository(dataSource, policy)
