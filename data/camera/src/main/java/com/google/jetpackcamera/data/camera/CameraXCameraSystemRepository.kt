@@ -69,6 +69,7 @@ class CameraXCameraSystemRepository(
     }
 
     override val systemConstraints: StateFlow<CameraSystemConstraints?> by lazy {
+        initializationDeferred.start()
         cameraSystem.getSystemConstraints()
     }
 

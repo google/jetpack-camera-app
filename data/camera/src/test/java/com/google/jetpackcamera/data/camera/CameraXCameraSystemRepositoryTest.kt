@@ -26,6 +26,8 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
 import javax.inject.Provider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -92,6 +94,24 @@ class CameraXCameraSystemRepositoryTest {
         assertThat(testCamera.initializedSettings?.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
         assertThat(testCamera.initializedSettings?.debugSettings?.isDebugModeEnabled).isTrue()
         assertThat(repository.cameraPropertiesJSON.value).isEqualTo("{\"test\": true}")
+    }
+
+    @Test
+    fun systemConstraints_lazilyInitializesCameraSystem() = testScope.runTest {
+        val testCamera = TestCameraSystem()
+
+        val repository = CameraXCameraSystemRepository(
+            cameraXCameraSystemProvider = Provider { testCamera },
+            settingsRepository = FakeSettingsRepository(),
+            launchConfig = CameraLaunchConfig(),
+            scope = testScope
+        )
+
+        assertThat(testCamera.initializedSettings).isNull()
+
+        val constraints = repository.systemConstraints.filterNotNull().first()
+        assertThat(testCamera.initializedSettings).isNotNull()
+        assertThat(constraints).isEqualTo(testCamera.getSystemConstraints().value)
     }
 
     @Test
