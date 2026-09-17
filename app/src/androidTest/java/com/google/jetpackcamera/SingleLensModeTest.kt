@@ -17,7 +17,6 @@ package com.google.jetpackcamera
 
 import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.platform.app.InstrumentationRegistry
@@ -83,8 +82,8 @@ class SingleLensModeTest(private val lensFacing: String) {
             // Wait for the capture button to be visible
             composeTestRule.waitForCaptureButton()
 
-            // Assert that the flip camera button is disabled
-            composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsNotEnabled()
+            // Assert that the flip camera button does not exist
+            composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
         }
     }
 }
