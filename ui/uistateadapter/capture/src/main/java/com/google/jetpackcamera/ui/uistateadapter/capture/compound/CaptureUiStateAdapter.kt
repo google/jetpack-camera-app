@@ -95,7 +95,7 @@ fun captureUiState(
             systemConstraints = systemConstraints,
             cameraAppSettings = cameraAppSettings,
             externalCaptureMode = externalCaptureMode,
-            visibilityConfig = cameraFeaturePolicy?.captureMode?.visibility
+            optionVisibility = cameraFeaturePolicy?.captureMode?.visibility
         )
         val flipLensUiState = FlipLensUiState.from(
             cameraAppSettings,

@@ -99,7 +99,7 @@ fun CaptureModeToggleUiState.Companion.from(
  * @param systemConstraints The constraints of the entire camera system.
  * @param cameraAppSettings The current settings of the camera.
  * @param externalCaptureMode The mode influencing UI based on how the camera was launched.
- * @param visibilityConfig The optional [OptionVisibility] defining developer restrictions.
+ * @param optionVisibility The optional [OptionVisibility] defining developer restrictions.
  * @return A [CaptureModeUiState.Available] object containing the currently selected capture mode
  * and a list of all available modes, each represented as a [SingleSelectableUiState], or
  * [CaptureModeUiState.Unavailable] if capture mode selection is disabled or hidden.
@@ -108,9 +108,9 @@ fun CaptureModeUiState.Companion.from(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     externalCaptureMode: ExternalCaptureMode,
-    visibilityConfig: OptionVisibility<CaptureMode>? = null
+    optionVisibility: OptionVisibility<CaptureMode>? = null
 ): CaptureModeUiState {
-    val config = visibilityConfig ?: OptionVisibility.Visible
+    val config = optionVisibility ?: OptionVisibility.Visible
     if (config is OptionVisibility.Hidden) {
         return CaptureModeUiState.Unavailable
     }
