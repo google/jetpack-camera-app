@@ -35,6 +35,8 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
+import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
+import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.getCaptureModeToggleState
 import com.google.jetpackcamera.utils.getCurrentCaptureMode
@@ -44,6 +46,7 @@ import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
 import com.google.jetpackcamera.utils.visitQuickSettings
 import com.google.jetpackcamera.utils.waitForCaptureButton
+import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -250,6 +253,10 @@ internal class CaptureModeFeaturePolicyDeviceTest {
         ) {
             composeTestRule.waitForCaptureButton()
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists().performClick()
+            composeTestRule.waitForSnackbarWithText(
+                StateR.string.toast_image_capture_success,
+                IMAGE_CAPTURE_TIMEOUT_MILLIS
+            )
         }
     }
 
