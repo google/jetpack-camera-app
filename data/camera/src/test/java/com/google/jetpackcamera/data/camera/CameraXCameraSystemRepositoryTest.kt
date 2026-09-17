@@ -124,9 +124,8 @@ class CameraXCameraSystemRepositoryTest {
         )
         val repository = CameraXCameraSystemRepository(
             cameraXCameraSystemProvider = Provider { testCamera },
-            settingsRepository = FakeSettingsRepository(),
+            settingsRepository = FakeSettingsRepository(cameraFeaturePolicy = appConfig),
             launchConfig = CameraLaunchConfig(),
-            cameraFeaturePolicy = appConfig,
             scope = testScope
         )
 
@@ -145,9 +144,8 @@ class CameraXCameraSystemRepositoryTest {
             )
             val repository = CameraXCameraSystemRepository(
                 cameraXCameraSystemProvider = Provider { testCamera },
-                settingsRepository = FakeSettingsRepository(),
+                settingsRepository = FakeSettingsRepository(cameraFeaturePolicy = appConfig),
                 launchConfig = CameraLaunchConfig(),
-                cameraFeaturePolicy = appConfig,
                 scope = testScope
             )
 

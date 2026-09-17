@@ -30,7 +30,6 @@ import com.google.jetpackcamera.data.camera.CameraLaunchConfigProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.camera.CameraXCameraSystemRepository
 import com.google.jetpackcamera.settings.SettingsRepository
-import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -54,13 +53,11 @@ internal object CameraModule {
         cameraXCameraSystemProvider: Provider<CameraXCameraSystem>,
         settingsRepository: SettingsRepository,
         launchConfigProvider: CameraLaunchConfigProvider,
-        cameraFeaturePolicy: CameraFeaturePolicy,
         @DefaultCoroutineScope scope: CoroutineScope
     ): CameraSystemRepository = CameraXCameraSystemRepository(
         cameraXCameraSystemProvider = cameraXCameraSystemProvider,
         settingsRepository = settingsRepository,
         launchConfigProvider = launchConfigProvider,
-        cameraFeaturePolicy = cameraFeaturePolicy,
         scope = scope
     )
 

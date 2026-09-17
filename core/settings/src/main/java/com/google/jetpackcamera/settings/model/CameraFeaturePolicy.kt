@@ -124,9 +124,10 @@ data class CameraFeaturePolicy(
     }
 
     /**
-     * Maps developer-defined overrides from this [CameraFeaturePolicy] onto a baseline [CameraAppSettings].
+     * Generates a baseline [CameraAppSettings] with developer-defined default values applied.
      *
-     * Unspecified settings in this config retain their values from [defaultSettings].
+     * Used by the settings storage layer to establish baseline defaults when preferences are unconfigured,
+     * and in testing environments.
      *
      * @param defaultSettings The baseline settings to apply overrides onto. Defaults to [DEFAULT_CAMERA_APP_SETTINGS].
      * @return A merged [CameraAppSettings] with developer-specified default values applied.

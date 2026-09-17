@@ -35,6 +35,7 @@ import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.SettingsDataSource
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -44,17 +45,20 @@ import kotlinx.coroutines.flow.map
  */
 class PrefsDataStoreSettingsDataSource(
     private val dataStore: DataStore<Preferences>,
-    private val defaultCaptureModeOverride: CaptureMode
+    private val defaultCaptureModeOverride: CaptureMode = CaptureMode.STANDARD,
+    private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy()
 ) : SettingsDataSource {
 
     override val defaultCameraAppSettings: Flow<CameraAppSettings> = dataStore.data.map { prefs ->
+        val baselineDefaults = cameraFeaturePolicy.toCameraAppSettings()
         CameraAppSettings(
             cameraLensFacing = prefs[PreferenceKeys.KEY_LENS_FACING]
                 .toEnumOrDefault(LensFacing.BACK),
             darkMode = prefs[PreferenceKeys.KEY_DARK_MODE].toEnumOrDefault(DarkMode.DARK),
-            flashMode = prefs[PreferenceKeys.KEY_FLASH_MODE].toEnumOrDefault(FlashMode.OFF),
+            flashMode = prefs[PreferenceKeys.KEY_FLASH_MODE]
+                .toEnumOrDefault(baselineDefaults.flashMode),
             aspectRatio = prefs[PreferenceKeys.KEY_ASPECT_RATIO]
-                .toEnumOrDefault(AspectRatio.NINE_SIXTEEN),
+                .toEnumOrDefault(baselineDefaults.aspectRatio),
             stabilizationMode = prefs[PreferenceKeys.KEY_STABILIZATION_MODE]
                 .toEnumOrDefault(StabilizationMode.AUTO),
             targetFrameRate = prefs[PreferenceKeys.KEY_TARGET_FRAME_RATE] ?: TARGET_FPS_AUTO,
@@ -64,9 +68,9 @@ class PrefsDataStoreSettingsDataSource(
             lowLightBoostPriority = prefs[PreferenceKeys.KEY_LOW_LIGHT_BOOST_PRIORITY]
                 .toEnumOrDefault(LowLightBoostPriority.PRIORITIZE_AE_MODE),
             dynamicRange = prefs[PreferenceKeys.KEY_DYNAMIC_RANGE]
-                .toEnumOrDefault(DynamicRange.SDR),
+                .toEnumOrDefault(baselineDefaults.dynamicRange),
             imageFormat = prefs[PreferenceKeys.KEY_IMAGE_FORMAT]
-                .toEnumOrDefault(ImageOutputFormat.JPEG),
+                .toEnumOrDefault(baselineDefaults.imageFormat),
             maxVideoDurationMillis = prefs[PreferenceKeys.KEY_MAX_VIDEO_DURATION]
                 ?: UNLIMITED_VIDEO_DURATION,
             videoQuality = prefs[PreferenceKeys.KEY_VIDEO_QUALITY]
@@ -74,7 +78,7 @@ class PrefsDataStoreSettingsDataSource(
             audioEnabled = prefs[PreferenceKeys.KEY_AUDIO_ENABLED] ?: true,
             concurrentCameraMode = prefs[PreferenceKeys.KEY_CONCURRENT_CAMERA_MODE]
                 .toEnumOrDefault(ConcurrentCameraMode.OFF),
-            captureMode = defaultCaptureModeOverride
+            captureMode = cameraFeaturePolicy.captureMode?.defaultValue ?: defaultCaptureModeOverride
         )
     }
 
