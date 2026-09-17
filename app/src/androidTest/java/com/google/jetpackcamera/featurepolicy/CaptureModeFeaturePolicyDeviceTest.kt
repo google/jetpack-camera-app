@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.appconfig
+package com.google.jetpackcamera.featurepolicy
 
 import android.provider.MediaStore
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -50,7 +50,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-internal class CaptureModeAppConfigDeviceTest {
+internal class CaptureModeFeaturePolicyDeviceTest {
 
     @get:Rule
     val permissionsRule: GrantPermissionRule =

@@ -115,16 +115,16 @@ class CameraXCameraSystemRepositoryTest {
     }
 
     @Test
-    fun getCameraSystem_withCameraAppConfig_appliesDefaultValues() = testScope.runTest {
+    fun getCameraSystem_withCameraFeaturePolicy_appliesDefaultValues() = testScope.runTest {
         val testCamera = TestCameraSystem()
-        val appConfig = CameraFeaturePolicy(
+        val policy = CameraFeaturePolicy(
             flashMode = SettingConfig(defaultValue = FlashMode.ON),
             aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE),
             captureMode = SettingConfig(defaultValue = CaptureMode.STANDARD)
         )
         val repository = CameraXCameraSystemRepository(
             cameraXCameraSystemProvider = Provider { testCamera },
-            settingsRepository = FakeSettingsRepository(cameraFeaturePolicy = appConfig),
+            settingsRepository = FakeSettingsRepository(cameraFeaturePolicy = policy),
             launchConfig = CameraLaunchConfig(),
             scope = testScope
         )
@@ -139,12 +139,12 @@ class CameraXCameraSystemRepositoryTest {
     fun getCameraSystem_withVideoOnlyCaptureMode_initializesWithNineSixteenAspectRatio() =
         testScope.runTest {
             val testCamera = TestCameraSystem()
-            val appConfig = CameraFeaturePolicy(
+            val policy = CameraFeaturePolicy(
                 captureMode = SettingConfig(defaultValue = CaptureMode.VIDEO_ONLY)
             )
             val repository = CameraXCameraSystemRepository(
                 cameraXCameraSystemProvider = Provider { testCamera },
-                settingsRepository = FakeSettingsRepository(cameraFeaturePolicy = appConfig),
+                settingsRepository = FakeSettingsRepository(cameraFeaturePolicy = policy),
                 launchConfig = CameraLaunchConfig(),
                 scope = testScope
             )

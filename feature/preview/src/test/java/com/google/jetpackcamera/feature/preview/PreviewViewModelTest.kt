@@ -90,7 +90,7 @@ class PreviewViewModelTest {
     private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
         updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
-    private val defaultTestAppConfig = CameraFeaturePolicy(
+    private val defaultTestPolicy = CameraFeaturePolicy(
         aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
         flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
         captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
@@ -109,7 +109,7 @@ class PreviewViewModelTest {
             mediaRepository = FakeMediaRepository(),
             savedStateHandle = SavedStateHandle(),
             defaultSaveMode = SaveMode.Immediate,
-            appConfig = defaultTestAppConfig
+            cameraFeaturePolicy = defaultTestPolicy
         )
         advanceUntilIdle()
     }
@@ -218,9 +218,9 @@ class PreviewViewModelTest {
     }
 
     @Test
-    fun captureUiState_withRestrictedAppConfig_appliesRestrictions() =
+    fun captureUiState_withRestrictedPolicy_appliesRestrictions() =
         runTest(StandardTestDispatcher()) {
-            val restrictedAppConfig = defaultTestAppConfig.copy(
+            val restrictedPolicy = defaultTestPolicy.copy(
                 captureMode = SettingConfig(
                     defaultValue = CaptureMode.IMAGE_ONLY,
                     visibility = OptionVisibility.Hidden
@@ -233,7 +233,7 @@ class PreviewViewModelTest {
                 mediaRepository = FakeMediaRepository(),
                 savedStateHandle = SavedStateHandle(),
                 defaultSaveMode = SaveMode.Immediate,
-                appConfig = restrictedAppConfig
+                cameraFeaturePolicy = restrictedPolicy
             )
             advanceUntilIdle()
             startCameraUntilRunning(viewModel)
@@ -250,7 +250,7 @@ class PreviewViewModelTest {
         }
 
     @Test
-    fun captureUiState_withDefaultAppConfig_doesNotApplyRestrictions() =
+    fun captureUiState_withDefaultPolicy_doesNotApplyRestrictions() =
         runTest(StandardTestDispatcher()) {
             val viewModel = PreviewViewModel(
                 cameraSystemRepository = cameraSystemRepository,
@@ -259,7 +259,7 @@ class PreviewViewModelTest {
                 mediaRepository = FakeMediaRepository(),
                 savedStateHandle = SavedStateHandle(),
                 defaultSaveMode = SaveMode.Immediate,
-                appConfig = defaultTestAppConfig
+                cameraFeaturePolicy = defaultTestPolicy
             )
             advanceUntilIdle()
             startCameraUntilRunning(viewModel)
@@ -293,7 +293,7 @@ class PreviewViewModelTest {
                     )
                 ),
                 defaultSaveMode = SaveMode.Immediate,
-                appConfig = defaultTestAppConfig
+                cameraFeaturePolicy = defaultTestPolicy
             )
             advanceUntilIdle()
             startCameraUntilRunning(viewModel)
@@ -323,7 +323,7 @@ class PreviewViewModelTest {
                     )
                 ),
                 defaultSaveMode = SaveMode.Immediate,
-                appConfig = defaultTestAppConfig
+                cameraFeaturePolicy = defaultTestPolicy
             )
             advanceUntilIdle()
             startCameraUntilRunning(viewModel)

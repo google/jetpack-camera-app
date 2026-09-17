@@ -63,7 +63,7 @@ import kotlinx.coroutines.flow.filterNotNull
  * @param externalCaptureMode The [ExternalCaptureMode] influencing UI behavior based on how the
  * camera is launched (e.g., from an external intent).
  * @param timePrecision The precision to use for rounding the elapsed time of video recording.
- * @param appConfig The optional [CameraFeaturePolicy] providing session restrictions, or null for default behavior.
+ * @param cameraFeaturePolicy The optional [CameraFeaturePolicy] providing session restrictions, or null for default behavior.
  *
  * @return A [Flow] that emits a new [CaptureUiState] whenever any of its underlying
  * data sources change.
@@ -75,7 +75,7 @@ fun captureUiState(
     trackedCaptureUiState: StateFlow<TrackedCaptureUiState>,
     externalCaptureMode: ExternalCaptureMode,
     timePrecision: TimeUnit = TimeUnit.SECONDS,
-    appConfig: CameraFeaturePolicy? = null
+    cameraFeaturePolicy: CameraFeaturePolicy? = null
 ): Flow<CaptureUiState> {
     var flashModeUiState: FlashModeUiState? = null
     var focusMeteringUiState: FocusMeteringUiState? = null
@@ -95,7 +95,7 @@ fun captureUiState(
             systemConstraints = systemConstraints,
             cameraAppSettings = cameraAppSettings,
             externalCaptureMode = externalCaptureMode,
-            visibilityConfig = appConfig?.captureMode?.visibility
+            visibilityConfig = cameraFeaturePolicy?.captureMode?.visibility
         )
         val flipLensUiState = FlipLensUiState.from(
             cameraAppSettings,
@@ -103,7 +103,7 @@ fun captureUiState(
         )
         val aspectRatioUiState = AspectRatioUiState.from(
             cameraAppSettings = cameraAppSettings,
-            visibilityConfig = appConfig?.aspectRatio?.visibility
+            visibilityConfig = cameraFeaturePolicy?.aspectRatio?.visibility
         )
         val previewAspectRatioUiState = when (aspectRatioUiState) {
             is AspectRatioUiState.Available -> aspectRatioUiState
@@ -117,19 +117,19 @@ fun captureUiState(
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = cameraAppSettings,
             systemConstraints = systemConstraints,
-            imageFormatVisibilityConfig = appConfig?.imageFormat?.visibility,
-            dynamicRangeVisibilityConfig = appConfig?.dynamicRange?.visibility
+            imageFormatVisibilityConfig = cameraFeaturePolicy?.imageFormat?.visibility,
+            dynamicRangeVisibilityConfig = cameraFeaturePolicy?.dynamicRange?.visibility
         )
 
         flashModeUiState = flashModeUiState?.updateFrom(
             cameraAppSettings = cameraAppSettings,
             systemConstraints = systemConstraints,
             cameraState = roundedCameraState,
-            visibilityConfig = appConfig?.flashMode?.visibility
+            visibilityConfig = cameraFeaturePolicy?.flashMode?.visibility
         ) ?: FlashModeUiState.from(
             cameraAppSettings = cameraAppSettings,
             systemConstraints = systemConstraints,
-            visibilityConfig = appConfig?.flashMode?.visibility
+            visibilityConfig = cameraFeaturePolicy?.flashMode?.visibility
         )
         focusMeteringUiState = focusMeteringUiState?.updateFrom(
             cameraState = roundedCameraState
@@ -185,7 +185,7 @@ fun captureUiState(
                 cameraAppSettings = cameraAppSettings,
                 cameraState = roundedCameraState,
                 externalCaptureMode = externalCaptureMode,
-                visibilityConfig = appConfig?.captureMode?.visibility
+                visibilityConfig = cameraFeaturePolicy?.captureMode?.visibility
             ),
             hdrUiState = hdrUiState,
             focusMeteringUiState = focusMeteringUiState,

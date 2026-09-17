@@ -84,7 +84,7 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun cameraAppConfig_defaultConstructor_allPropertiesNull() {
+    fun cameraFeaturePolicy_defaultConstructor_allPropertiesNull() {
         val config = CameraFeaturePolicy()
         assertThat(config.aspectRatio).isNull()
         assertThat(config.flashMode).isNull()
@@ -94,7 +94,7 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun cameraAppConfig_whenFlashModeExcludesOff_throwsException() {
+    fun cameraFeaturePolicy_whenFlashModeExcludesOff_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             CameraFeaturePolicy(
                 flashMode = SettingConfig(
@@ -108,7 +108,7 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun cameraAppConfig_whenFlashModeHiddenAndNotOff_throwsException() {
+    fun cameraFeaturePolicy_whenFlashModeHiddenAndNotOff_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             CameraFeaturePolicy(
                 flashMode = SettingConfig(
@@ -120,7 +120,7 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun cameraAppConfig_whenFlashModeHiddenAndOff_succeeds() {
+    fun cameraFeaturePolicy_whenFlashModeHiddenAndOff_succeeds() {
         val config = CameraFeaturePolicy(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
@@ -132,7 +132,7 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun cameraAppConfig_whenImageFormatHiddenAndNotJpeg_throwsException() {
+    fun cameraFeaturePolicy_whenImageFormatHiddenAndNotJpeg_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             CameraFeaturePolicy(
                 imageFormat = SettingConfig(
@@ -144,7 +144,7 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun cameraAppConfig_whenImageFormatHiddenAndJpeg_succeeds() {
+    fun cameraFeaturePolicy_whenImageFormatHiddenAndJpeg_succeeds() {
         val config = CameraFeaturePolicy(
             imageFormat = SettingConfig(
                 defaultValue = ImageOutputFormat.JPEG,
@@ -156,7 +156,7 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun cameraAppConfig_whenDynamicRangeHiddenAndNotSdr_throwsException() {
+    fun cameraFeaturePolicy_whenDynamicRangeHiddenAndNotSdr_throwsException() {
         assertThrows(IllegalArgumentException::class.java) {
             CameraFeaturePolicy(
                 dynamicRange = SettingConfig(
@@ -168,7 +168,7 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun cameraAppConfig_whenDynamicRangeHiddenAndSdr_succeeds() {
+    fun cameraFeaturePolicy_whenDynamicRangeHiddenAndSdr_succeeds() {
         val config = CameraFeaturePolicy(
             dynamicRange = SettingConfig(
                 defaultValue = DynamicRange.SDR,
@@ -185,9 +185,9 @@ class CameraFeaturePolicyTest {
         val config2 = SettingConfig(FlashMode.OFF, OptionVisibility.Visible)
         assertThat(config1).isEqualTo(config2)
 
-        val appConfig1 = CameraFeaturePolicy()
-        val appConfig2 = CameraFeaturePolicy()
-        assertThat(appConfig1).isEqualTo(appConfig2)
+        val policy1 = CameraFeaturePolicy()
+        val policy2 = CameraFeaturePolicy()
+        assertThat(policy1).isEqualTo(policy2)
     }
 
     @Test
@@ -233,7 +233,7 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun cameraAppConfig_whenFlashModeOnlyIncludesOff_succeeds() {
+    fun cameraFeaturePolicy_whenFlashModeOnlyIncludesOff_succeeds() {
         val config = CameraFeaturePolicy(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.appconfig
+package com.google.jetpackcamera.featurepolicy
 
 import android.content.pm.PackageManager
 import androidx.compose.ui.test.assertIsOn
@@ -55,7 +55,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-internal class FlashModeAppConfigDeviceTest(
+internal class FlashModeFeaturePolicyDeviceTest(
     private val lensFacing: LensFacing
 ) {
     @get:Rule

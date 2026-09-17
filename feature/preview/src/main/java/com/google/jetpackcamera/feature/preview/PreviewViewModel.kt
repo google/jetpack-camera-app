@@ -92,7 +92,7 @@ class PreviewViewModel @Inject constructor(
     private val cameraSystemRepository: CameraSystemRepository,
     private val savedStateHandle: SavedStateHandle,
     private val defaultSaveMode: SaveMode,
-    private val appConfig: CameraFeaturePolicy = CameraFeaturePolicy(),
+    private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy(),
     private val settingsRepository: SettingsRepository,
     private val constraintsRepository: SettableConstraintsRepository,
     private val mediaRepository: MediaRepository
@@ -126,7 +126,7 @@ class PreviewViewModel @Inject constructor(
 
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         currentSettings = cameraSystemRepository.currentSettings,
-        appConfig = appConfig,
+        cameraFeaturePolicy = cameraFeaturePolicy,
         systemConstraints = constraintsRepository.systemConstraints,
         currentCameraState = cameraSystemRepository.currentCameraState,
         trackedCaptureUiState = trackedCaptureUiState,

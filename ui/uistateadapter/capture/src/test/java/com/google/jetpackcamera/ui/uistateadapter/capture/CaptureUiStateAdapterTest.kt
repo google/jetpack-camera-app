@@ -68,7 +68,7 @@ internal class CaptureUiStateAdapterTest {
     private val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
     private val externalCaptureMode = ExternalCaptureMode.Standard
 
-    private val defaultAppConfig = CameraFeaturePolicy(
+    private val defaultPolicy = CameraFeaturePolicy(
         aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
         flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
         captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
@@ -76,10 +76,10 @@ internal class CaptureUiStateAdapterTest {
         dynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
     )
 
-    private fun createCaptureUiStateFlow(appConfig: CameraFeaturePolicy? = defaultAppConfig) =
+    private fun createCaptureUiStateFlow(cameraFeaturePolicy: CameraFeaturePolicy? = defaultPolicy) =
         captureUiState(
             currentSettings = cameraSystem.getCurrentSettings(),
-            appConfig = appConfig,
+            cameraFeaturePolicy = cameraFeaturePolicy,
             systemConstraints = constraintsRepository.systemConstraints,
             currentCameraState = cameraSystem.getCurrentCameraState(),
             trackedCaptureUiState = trackedCaptureUiState,
@@ -215,14 +215,14 @@ internal class CaptureUiStateAdapterTest {
     }
 
     @Test
-    fun captureUiState_withRestrictedAppConfig_emitsRestrictedUiStates() = runTest {
-        val restrictedConfig = defaultAppConfig.copy(
+    fun captureUiState_withRestrictedPolicy_emitsRestrictedUiStates() = runTest {
+        val restrictedConfig = defaultPolicy.copy(
             captureMode = SettingConfig(
                 defaultValue = CaptureMode.IMAGE_ONLY,
                 visibility = OptionVisibility.Hidden
             )
         )
-        val uiStateFlow = createCaptureUiStateFlow(appConfig = restrictedConfig)
+        val uiStateFlow = createCaptureUiStateFlow(cameraFeaturePolicy = restrictedConfig)
         val state = assertIsReady(uiStateFlow.first())
         assertThat(
             state.quickSettingsUiState
@@ -233,8 +233,8 @@ internal class CaptureUiStateAdapterTest {
     }
 
     @Test
-    fun captureUiState_withNullAppConfig_defaultsCleanly() = runTest {
-        val uiStateFlow = createCaptureUiStateFlow(appConfig = null)
+    fun captureUiState_withNullPolicy_defaultsCleanly() = runTest {
+        val uiStateFlow = createCaptureUiStateFlow(cameraFeaturePolicy = null)
         val state = assertIsReady(uiStateFlow.first())
         assertThat(state).isInstanceOf(CaptureUiState.Ready::class.java)
     }
@@ -261,7 +261,7 @@ internal class CaptureUiStateAdapterTest {
             )
         )
 
-        val restrictedConfig = defaultAppConfig.copy(
+        val restrictedConfig = defaultPolicy.copy(
             flashMode = SettingConfig(
                 defaultValue = FlashMode.OFF,
                 visibility = OptionVisibility.Hidden
@@ -276,7 +276,7 @@ internal class CaptureUiStateAdapterTest {
             )
         )
 
-        val uiStateFlow = createCaptureUiStateFlow(appConfig = restrictedConfig)
+        val uiStateFlow = createCaptureUiStateFlow(cameraFeaturePolicy = restrictedConfig)
         val state = assertIsReady(uiStateFlow.first())
         assertThat(state.flashModeUiState).isEqualTo(FlashModeUiState.Unavailable)
         val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
@@ -286,14 +286,14 @@ internal class CaptureUiStateAdapterTest {
 
     @Test
     fun captureUiState_withAspectRatioHidden_emitsUnavailableQuickSettingsAndPreservesPreviewAspectRatio() = runTest {
-        val restrictedConfig = defaultAppConfig.copy(
+        val restrictedConfig = defaultPolicy.copy(
             aspectRatio = SettingConfig(
                 defaultValue = AspectRatio.ONE_ONE,
                 visibility = OptionVisibility.Hidden
             )
         )
 
-        val uiStateFlow = createCaptureUiStateFlow(appConfig = restrictedConfig)
+        val uiStateFlow = createCaptureUiStateFlow(cameraFeaturePolicy = restrictedConfig)
         val state = assertIsReady(uiStateFlow.first())
         assertThat(state.aspectRatioUiState).isEqualTo(AspectRatioUiState.Unavailable)
         val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available

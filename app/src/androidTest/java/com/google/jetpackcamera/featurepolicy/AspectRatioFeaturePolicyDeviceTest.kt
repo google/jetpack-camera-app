@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.appconfig
+package com.google.jetpackcamera.featurepolicy
 
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -39,7 +39,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-internal class AspectRatioAppConfigDeviceTest {
+internal class AspectRatioFeaturePolicyDeviceTest {
 
     @get:Rule
     val permissionsRule: GrantPermissionRule =
