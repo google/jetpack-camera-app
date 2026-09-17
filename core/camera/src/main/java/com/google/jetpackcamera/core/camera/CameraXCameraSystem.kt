@@ -799,6 +799,8 @@ class CameraXCameraSystem(
     ): CameraAppSettings = when (captureMode) {
         CaptureMode.STANDARD -> this
         CaptureMode.IMAGE_ONLY ->
+            // TODO: Consider preserving user preference or initial CameraFeaturePolicy aspect ratio
+            //  when switching back from VIDEO_ONLY mode instead of hardcoding 3:4.
             this.copy(aspectRatio = AspectRatio.THREE_FOUR)
 
         CaptureMode.VIDEO_ONLY ->

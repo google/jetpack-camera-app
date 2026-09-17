@@ -35,6 +35,9 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
  * @param hdrUiState The UI state for the HDR setting.
  * @return A [QuickSettingsUiState.Available] instance containing the consolidated states.
  */
+// TODO: Consider returning QuickSettingsUiState.Unavailable if all option rows (aspectRatio,
+//       captureMode, flashMode, hdr) are Unavailable due to policy restrictions or device constraints,
+//       preventing an empty bottom sheet from being presented to the user.
 fun QuickSettingsUiState.Companion.from(
     captureModeUiState: CaptureModeUiState,
     flashModeUiState: FlashModeUiState,

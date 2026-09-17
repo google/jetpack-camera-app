@@ -34,7 +34,9 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.SettingConfig
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -246,5 +248,45 @@ class PrefsDataStoreSettingsDataSourceInstrumentedTest {
         val newAudioEnabled = dataSource.getCurrentDefaultCameraAppSettings().audioEnabled
         assertThat(initialAudioEnabled).isTrue()
         assertThat(newAudioEnabled).isFalse()
+    }
+
+    @Test
+    fun unconfiguredKeys_fallBackToCameraFeaturePolicyDefaults() = runTest {
+        val policy = CameraFeaturePolicy(
+            aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE),
+            flashMode = SettingConfig(defaultValue = FlashMode.ON),
+            dynamicRange = SettingConfig(defaultValue = DynamicRange.HLG10),
+            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR)
+        )
+        val customSource = PrefsDataStoreSettingsDataSource(
+            dataStore = testDataStore,
+            cameraFeaturePolicy = policy
+        )
+        val settings = customSource.getCurrentDefaultCameraAppSettings()
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+        assertThat(settings.flashMode).isEqualTo(FlashMode.ON)
+        assertThat(settings.dynamicRange).isEqualTo(DynamicRange.HLG10)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
+
+    @Test
+    fun configuredKeys_preserveStoredUserPreferences() = runTest {
+        // User sets aspectRatio to 3:4
+        dataSource.updateAspectRatio(AspectRatio.THREE_FOUR)
+        advanceUntilIdle()
+
+        // Policy configures flashMode to ON, but leaves aspectRatio unconfigured
+        val policy = CameraFeaturePolicy(
+            flashMode = SettingConfig(defaultValue = FlashMode.ON)
+        )
+        val customSource = PrefsDataStoreSettingsDataSource(
+            dataStore = testDataStore,
+            cameraFeaturePolicy = policy
+        )
+        val settings = customSource.getCurrentDefaultCameraAppSettings()
+        // Stored user preference is preserved
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+        // Baseline default for unconfigured key is used
+        assertThat(settings.flashMode).isEqualTo(FlashMode.ON)
     }
 }

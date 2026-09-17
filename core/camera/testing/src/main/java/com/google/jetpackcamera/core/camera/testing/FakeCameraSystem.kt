@@ -71,6 +71,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         cameraAppSettings: CameraAppSettings,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
+        currentSettings.value = cameraAppSettings
         initialized = true
     }
 

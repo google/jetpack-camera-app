@@ -600,6 +600,8 @@ private fun ContentScreen(
         }
     }
 
+    // TODO: Consider checking quickSettingsState.value is QuickSettingsUiState.Available in
+    //       isQuickSettingsVisible to hide the button when all Quick Settings rows are unavailable.
     val quickSettingsButtonLambda = remember(
         isVideoRecordingActive,
         isQuickSettingsOpen,

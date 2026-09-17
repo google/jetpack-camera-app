@@ -27,6 +27,7 @@ import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import org.junit.Assume.assumeTrue
@@ -511,6 +512,51 @@ class FlashModeUiStateAdapterTest {
             FlashMode.OFF,
             FlashMode.AUTO,
             FlashMode.LOW_LIGHT_BOOST
+        )
+    }
+
+    @Test
+    fun from_withHiddenVisibilityConfig_returnsUnavailable() {
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                defaultCameraAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO)
+                )
+            )
+        )
+
+        val uiState = FlashModeUiState.from(
+            cameraAppSettings = defaultCameraAppSettings,
+            systemConstraints = systemConstraints,
+            visibilityConfig = OptionVisibility.Hidden
+        )
+
+        assertThat(uiState).isEqualTo(FlashModeUiState.Unavailable)
+    }
+
+    @Test
+    fun from_withOptionsEnabled_filtersAvailableFlashModes() {
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                defaultCameraAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO)
+                )
+            )
+        )
+
+        val uiState = FlashModeUiState.from(
+            cameraAppSettings = defaultCameraAppSettings,
+            systemConstraints = systemConstraints,
+            visibilityConfig = OptionVisibility.Only(
+                setOf(FlashMode.OFF, FlashMode.ON)
+            )
+        )
+
+        assertThat(uiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val available = uiState as FlashModeUiState.Available
+        assertThat(available.availableFlashModes.map { it.value }).containsExactly(
+            FlashMode.OFF,
+            FlashMode.ON
         )
     }
 }

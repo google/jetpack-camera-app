@@ -24,6 +24,7 @@ import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSetti
 import com.google.jetpackcamera.di.DefaultCaptureModeOverride
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.SettingsDataSource
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -47,8 +48,13 @@ object AppSettingsModule {
     @Singleton
     fun provideSettingsDataSource(
         dataStore: DataStore<Preferences>,
-        @DefaultCaptureModeOverride defaultCaptureMode: CaptureMode
+        @DefaultCaptureModeOverride defaultCaptureMode: CaptureMode,
+        cameraFeaturePolicy: CameraFeaturePolicy
     ): SettingsDataSource {
-        return PrefsDataStoreSettingsDataSource(dataStore, defaultCaptureMode)
+        return PrefsDataStoreSettingsDataSource(
+            dataStore = dataStore,
+            defaultCaptureModeOverride = defaultCaptureMode,
+            cameraFeaturePolicy = cameraFeaturePolicy
+        )
     }
 }

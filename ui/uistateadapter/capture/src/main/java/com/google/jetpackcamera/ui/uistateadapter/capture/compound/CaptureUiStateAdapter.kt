@@ -19,7 +19,9 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -61,6 +63,7 @@ import kotlinx.coroutines.flow.filterNotNull
  * @param externalCaptureMode The [ExternalCaptureMode] influencing UI behavior based on how the
  * camera is launched (e.g., from an external intent).
  * @param timePrecision The precision to use for rounding the elapsed time of video recording.
+ * @param cameraFeaturePolicy The optional [CameraFeaturePolicy] providing session restrictions, or null for default behavior.
  *
  * @return A [Flow] that emits a new [CaptureUiState] whenever any of its underlying
  * data sources change.
@@ -71,7 +74,8 @@ fun captureUiState(
     currentCameraState: StateFlow<CameraState>,
     trackedCaptureUiState: StateFlow<TrackedCaptureUiState>,
     externalCaptureMode: ExternalCaptureMode,
-    timePrecision: TimeUnit = TimeUnit.SECONDS
+    timePrecision: TimeUnit = TimeUnit.SECONDS,
+    cameraFeaturePolicy: CameraFeaturePolicy? = null
 ): Flow<CaptureUiState> {
     var flashModeUiState: FlashModeUiState? = null
     var focusMeteringUiState: FocusMeteringUiState? = null
@@ -88,34 +92,48 @@ fun captureUiState(
         val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
 
         val captureModeUiState = CaptureModeUiState.from(
-            systemConstraints,
-            cameraAppSettings,
-            externalCaptureMode
+            systemConstraints = systemConstraints,
+            cameraAppSettings = cameraAppSettings,
+            externalCaptureMode = externalCaptureMode,
+            optionVisibility = cameraFeaturePolicy?.captureMode?.visibility
         )
         val flipLensUiState = FlipLensUiState.from(
             cameraAppSettings,
             systemConstraints
         )
-        val aspectRatioUiState = AspectRatioUiState.from(cameraAppSettings)
+        val aspectRatioUiState = AspectRatioUiState.from(
+            cameraAppSettings = cameraAppSettings,
+            visibilityConfig = cameraFeaturePolicy?.aspectRatio?.visibility
+        )
+        val previewAspectRatioUiState = when (aspectRatioUiState) {
+            is AspectRatioUiState.Available -> aspectRatioUiState
+            is AspectRatioUiState.Unavailable -> AspectRatioUiState.Available(
+                selectedAspectRatio = cameraAppSettings.aspectRatio,
+                availableAspectRatios = listOf(
+                    SingleSelectableUiState.SelectableUi(cameraAppSettings.aspectRatio)
+                )
+            )
+        }
         val hdrUiState = HdrUiState.from(
-            cameraAppSettings,
-            systemConstraints
+            cameraAppSettings = cameraAppSettings,
+            systemConstraints = systemConstraints,
+            imageFormatVisibilityConfig = cameraFeaturePolicy?.imageFormat?.visibility,
+            dynamicRangeVisibilityConfig = cameraFeaturePolicy?.dynamicRange?.visibility
         )
 
-        flashModeUiState = flashModeUiState.let {
-            it?.updateFrom(
-                cameraAppSettings = cameraAppSettings,
-                systemConstraints = systemConstraints,
-                cameraState = roundedCameraState
-            )
-                ?: FlashModeUiState.from(cameraAppSettings, systemConstraints)
-        }
-        focusMeteringUiState = focusMeteringUiState.let {
-            it?.updateFrom(
-                cameraState = roundedCameraState
-            )
-                ?: FocusMeteringUiState.from(roundedCameraState)
-        }
+        flashModeUiState = flashModeUiState?.updateFrom(
+            cameraAppSettings = cameraAppSettings,
+            systemConstraints = systemConstraints,
+            cameraState = roundedCameraState,
+            visibilityConfig = cameraFeaturePolicy?.flashMode?.visibility
+        ) ?: FlashModeUiState.from(
+            cameraAppSettings = cameraAppSettings,
+            systemConstraints = systemConstraints,
+            visibilityConfig = cameraFeaturePolicy?.flashMode?.visibility
+        )
+        focusMeteringUiState = focusMeteringUiState?.updateFrom(
+            cameraState = roundedCameraState
+        ) ?: FocusMeteringUiState.from(roundedCameraState)
         CaptureUiState.Ready(
             externalCaptureMode = externalCaptureMode,
             videoRecordingState = roundedVideoRecordingState,
@@ -123,7 +141,7 @@ fun captureUiState(
             aspectRatioUiState = aspectRatioUiState,
             previewDisplayUiState = PreviewDisplayUiState(
                 trackedUiState.lastBlinkTimeStamp,
-                aspectRatioUiState
+                previewAspectRatioUiState
             ),
             // TODO: add updateFrom() for all ui states to prevent re-updating if
             // values are the same
@@ -163,10 +181,11 @@ fun captureUiState(
                 roundedCameraState
             ),
             captureModeToggleUiState = CaptureModeToggleUiState.from(
-                systemConstraints,
-                cameraAppSettings,
-                roundedCameraState,
-                externalCaptureMode
+                systemConstraints = systemConstraints,
+                cameraAppSettings = cameraAppSettings,
+                cameraState = roundedCameraState,
+                externalCaptureMode = externalCaptureMode,
+                visibilityConfig = cameraFeaturePolicy?.captureMode?.visibility
             ),
             hdrUiState = hdrUiState,
             focusMeteringUiState = focusMeteringUiState,
@@ -195,6 +214,7 @@ internal fun roundVideoRecordingState(
         is VideoRecordingState.Active.Recording -> videoRecordingState.copy(
             elapsedTimeNanos = roundedNanos
         )
+
         is VideoRecordingState.Active.Paused -> videoRecordingState.copy(
             elapsedTimeNanos = roundedNanos
         )
