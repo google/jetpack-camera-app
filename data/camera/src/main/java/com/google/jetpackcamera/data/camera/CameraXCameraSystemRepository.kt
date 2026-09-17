@@ -19,6 +19,7 @@ import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.CameraXCameraSystem
+import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -46,7 +47,7 @@ class CameraXCameraSystemRepository(
     private val settingsRepository: SettingsRepository,
     private val launchConfigProvider: CameraLaunchConfigProvider,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-) : CameraSystemRepository {
+) : CameraSystemRepository, ConstraintsRepository {
 
     constructor(
         cameraXCameraSystemProvider: Provider<out CameraSystem>,

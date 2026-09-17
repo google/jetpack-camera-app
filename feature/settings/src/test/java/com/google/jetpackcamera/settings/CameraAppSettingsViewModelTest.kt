@@ -118,9 +118,7 @@ internal class CameraAppSettingsViewModelTest {
         val settingsRepository = LocalSettingsRepository(
             settingsDataSource = settingsDataSource
         )
-        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-            updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
-        }
+        val constraintsRepository = FakeConstraintsRepository(TYPICAL_SYSTEM_CONSTRAINTS)
         settingsViewModel = SettingsViewModel(
             settingsRepository,
             constraintsRepository
@@ -273,9 +271,7 @@ internal class CameraAppSettingsViewModelTest {
         val settingsRepository = LocalSettingsRepository(
             settingsDataSource = settingsDataSource
         )
-        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-            updateSystemConstraints(systemConstraints)
-        }
+        val constraintsRepository = FakeConstraintsRepository(systemConstraints)
         return SettingsViewModel(settingsRepository, constraintsRepository).apply {
             setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
         }
