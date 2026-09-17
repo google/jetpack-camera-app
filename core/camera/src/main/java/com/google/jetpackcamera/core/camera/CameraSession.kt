@@ -184,14 +184,13 @@ internal suspend fun runSingleCameraSession(
                 val cameraId = camera2Info.cameraId
 
                 var cameraEffect: CameraEffect? = null
-                var captureResults: MutableStateFlow<TotalCaptureResult?>? = null
+                val captureResults = MutableStateFlow<TotalCaptureResult?>(null)
                 if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                         cameraConstraints?.supportedIlluminants?.contains(
                             Illuminant.LOW_LIGHT_BOOST_CAMERA_EFFECT
                         ) == true && lowLightBoostEffectProvider != null
                     ) {
-                        captureResults = MutableStateFlow(null)
                         cameraEffect = lowLightBoostEffectProvider.create(
                             cameraId = cameraId,
                             captureResults = captureResults,
@@ -243,7 +242,8 @@ internal suspend fun runSingleCameraSession(
                     launch {
                         processFocusMeteringEvents(
                             camera.cameraInfo,
-                            camera.cameraControl
+                            camera.cameraControl,
+                            captureResults = captureResults
                         )
                     }
 

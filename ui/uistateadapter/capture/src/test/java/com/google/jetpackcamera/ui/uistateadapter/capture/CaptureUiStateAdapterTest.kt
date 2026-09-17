@@ -57,8 +57,9 @@ internal class CaptureUiStateAdapterTest {
     private val externalCaptureMode = ExternalCaptureMode.Standard
 
     private fun createCaptureUiStateFlow() = captureUiState(
-        cameraSystem = cameraSystem,
-        constraintsRepository = constraintsRepository,
+        currentSettings = cameraSystem.getCurrentSettings(),
+        systemConstraints = constraintsRepository.systemConstraints,
+        currentCameraState = cameraSystem.getCurrentCameraState(),
         trackedCaptureUiState = trackedCaptureUiState,
         externalCaptureMode = externalCaptureMode
     )

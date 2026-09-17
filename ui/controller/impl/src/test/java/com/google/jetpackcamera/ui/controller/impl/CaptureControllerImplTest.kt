@@ -90,7 +90,7 @@ class CaptureControllerImplTest {
     ): CaptureControllerImpl {
         return CaptureControllerImpl(
             trackedCaptureUiState = trackedCaptureUiState,
-            cameraSystem = testCameraSystem,
+            cameraSystemProvider = { testCameraSystem },
             saveMode = saveMode,
             externalCaptureMode = externalCaptureMode,
             externalCapturesCallback = externalCapturesCallback,

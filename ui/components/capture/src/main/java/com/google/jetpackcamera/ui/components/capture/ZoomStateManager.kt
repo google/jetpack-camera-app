@@ -36,8 +36,7 @@ import com.google.jetpackcamera.ui.controller.ZoomController
  *
  * @param initialZoomLevel The starting zoom level when the camera is initialized.
  * @param zoomRange The supported zoom range of the current camera lens.
- * @param onChangeZoomLevel A callback function that is invoked when the zoom level changes.
- * @param onAnimateStateChanged A callback function to indicate whether a zoom animation is in progress.
+ * @param zoomController The [ZoomController] used to update zoom animation and state.
  */
 class ZoomStateManager(
     initialZoomLevel: Float,

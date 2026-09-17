@@ -69,6 +69,7 @@ android {
 dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
+    implementation(libs.camera.core)
     implementation(project(":core:camera"))
     implementation(project(":core:camera:low-light"))
     implementation(project(":core:camera:postprocess"))
@@ -76,6 +77,13 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":data:settings"))
     implementation(project(":core:settings"))
+
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(project(":core:camera:testing"))
+    testImplementation(project(":data:settings:testing"))
 }
 
 // Allow references to generated code
