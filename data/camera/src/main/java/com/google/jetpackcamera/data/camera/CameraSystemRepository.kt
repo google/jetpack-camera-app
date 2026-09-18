@@ -58,8 +58,8 @@ interface CameraSystemRepository {
     suspend fun getCameraSystem(): CameraSystem
 
     /**
-     * Returns the default [CameraAppSettings] the camera system was initialized with, suspending
-     * until initialization completes.
+     * Returns the default [CameraAppSettings] read when the camera system was initialized,
+     * suspending until initialization completes.
      */
     suspend fun getInitialDefaultCameraAppSettings(): CameraAppSettings
 

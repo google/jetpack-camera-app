@@ -39,8 +39,8 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 
 /**
- * Implementation of [CameraSystemRepository] that manages [CameraXCameraSystem] initialization
- * and exposes camera streams.
+ * Implementation of [CameraSystemRepository] and [ConstraintsRepository] that manages
+ * [CameraXCameraSystem] initialization and exposes camera streams.
  */
 class CameraXCameraSystemRepository(
     private val cameraXCameraSystemProvider: Provider<out CameraSystem>,
