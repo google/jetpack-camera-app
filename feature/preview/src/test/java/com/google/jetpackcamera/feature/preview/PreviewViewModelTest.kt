@@ -65,6 +65,8 @@ class PreviewViewModelTest {
             cameraSystem.initialize(CameraAppSettings()) {}
             return cameraSystem
         }
+        override suspend fun getInitialDefaultCameraAppSettings(): CameraAppSettings =
+            CameraAppSettings()
         override suspend fun getSupportedMimeTypes(): List<String> = emptyList()
     }
     private lateinit var previewViewModel: PreviewViewModel
@@ -179,6 +181,23 @@ class PreviewViewModelTest {
         }
         assertThat(cameraSystem.isLensFacingFront).isTrue()
     }
+
+    @Test
+    fun defaultSettingsChangedBeforeCreation_propagatesToCameraSystem() =
+        runTest(StandardTestDispatcher()) {
+            previewViewModel = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(cameraLensFacing = LensFacing.FRONT)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            startCameraUntilRunning()
+
+            assertThat(cameraSystem.isLensFacingFront).isTrue()
+        }
 
     private fun TestScope.startCameraUntilRunning() {
         previewViewModel.cameraController.startCamera()

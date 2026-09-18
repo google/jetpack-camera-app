@@ -85,21 +85,26 @@ class CameraXCameraSystemRepository(
     private val _cameraPropertiesJSON = MutableStateFlow<String?>(null)
     override val cameraPropertiesJSON: StateFlow<String?> = _cameraPropertiesJSON.asStateFlow()
 
-    private val initializationDeferred: Deferred<Unit> =
+    private val initializationDeferred: Deferred<CameraAppSettings> =
         scope.async(start = CoroutineStart.LAZY) {
             val launchConfig = launchConfigProvider.config.value
-            val initialSettings = settingsRepository.getCurrentDefaultCameraAppSettings()
+            val defaultSettings = settingsRepository.getCurrentDefaultCameraAppSettings()
+            val initialSettings = defaultSettings
                 .applyExternalCaptureMode(launchConfig.externalCaptureMode)
                 .copy(debugSettings = launchConfig.debugSettings)
             cameraSystem.initialize(initialSettings) { properties ->
                 _cameraPropertiesJSON.value = properties
             }
+            defaultSettings
         }
 
     override suspend fun getCameraSystem(): CameraSystem {
         initializationDeferred.await()
         return cameraSystem
     }
+
+    override suspend fun getInitialDefaultCameraAppSettings(): CameraAppSettings =
+        initializationDeferred.await()
 
     override suspend fun getSupportedMimeTypes(): List<String> {
         initializationDeferred.await()

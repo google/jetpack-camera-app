@@ -115,6 +115,25 @@ class CameraXCameraSystemRepositoryTest {
     }
 
     @Test
+    fun getInitialDefaultCameraAppSettings_returnsDefaultSettings() = testScope.runTest {
+        val testCamera = TestCameraSystem()
+        val settingsRepository = FakeSettingsRepository()
+
+        val repository = CameraXCameraSystemRepository(
+            cameraXCameraSystemProvider = Provider { testCamera },
+            settingsRepository = settingsRepository,
+            launchConfig = CameraLaunchConfig(
+                externalCaptureMode = ExternalCaptureMode.ImageCapture
+            ),
+            scope = testScope
+        )
+
+        assertThat(repository.getInitialDefaultCameraAppSettings())
+            .isEqualTo(settingsRepository.getCurrentDefaultCameraAppSettings())
+        assertThat(testCamera.initializedSettings?.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
+    }
+
+    @Test
     fun getSupportedMimeTypes_initializesAndReturnsMimeTypes() = testScope.runTest {
         val testCamera = TestCameraSystem()
 

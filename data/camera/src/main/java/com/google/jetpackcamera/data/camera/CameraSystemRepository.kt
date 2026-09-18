@@ -58,6 +58,12 @@ interface CameraSystemRepository {
     suspend fun getCameraSystem(): CameraSystem
 
     /**
+     * Returns the default [CameraAppSettings] the camera system was initialized with, suspending
+     * until initialization completes.
+     */
+    suspend fun getInitialDefaultCameraAppSettings(): CameraAppSettings
+
+    /**
      * Returns supported MIME types once initialized.
      */
     suspend fun getSupportedMimeTypes(): List<String>

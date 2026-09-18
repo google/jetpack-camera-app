@@ -239,10 +239,11 @@ class PreviewViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             launch {
-                var oldCameraAppSettings: CameraAppSettings? = null
+                var oldCameraAppSettings: CameraAppSettings =
+                    cameraSystemRepository.getInitialDefaultCameraAppSettings()
                 settingsRepository.defaultCameraAppSettings
                     .collect { new ->
-                        oldCameraAppSettings?.apply {
+                        oldCameraAppSettings.apply {
                             applyDiffs(new, cameraSystemRepository.getCameraSystem())
                         }
                         oldCameraAppSettings = new
