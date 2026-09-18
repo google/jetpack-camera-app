@@ -129,6 +129,8 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         screenFlashEvents.trySend(event)
     }
 
+    var numVideoRecordingStarts = 0
+
     override suspend fun startVideoRecording(
         saveLocation: SaveLocation,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
@@ -136,6 +138,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
+        numVideoRecordingStarts++
         recordingInProgress = true
     }
 

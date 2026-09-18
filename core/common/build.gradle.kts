@@ -16,13 +16,15 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.android.legacy.kapt)
-    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
     namespace = "com.google.jetpackcamera.core.common"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -76,11 +78,4 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Hilt
-    implementation(libs.dagger.hilt.android)
-    kapt(libs.dagger.hilt.compiler)
-}
-
-kapt {
-    correctErrorTypes = true
 }

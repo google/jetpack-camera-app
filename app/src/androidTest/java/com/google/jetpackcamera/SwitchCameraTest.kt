@@ -29,8 +29,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
@@ -93,37 +91,6 @@ class SwitchCameraTest {
         // Double click display to flip camera again
         composeTestRule.onNodeWithTag(PREVIEW_DISPLAY)
             .performTouchInput { doubleClick() }
-
-        // Get lens facing after second flip
-        lensFacingStates.add(composeTestRule.getCurrentLensFacing())
-
-        assertThat(lensFacingStates).containsExactly(
-            initialLensFacing,
-            initialLensFacing.flip(),
-            initialLensFacing.flip().flip()
-        ).inOrder()
-    }
-
-    @Test
-    fun canFlipCamera_fromQuickSettings() = runFlipCameraTest(composeTestRule) {
-        // Navigate to quick settings
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
-
-        val lensFacingStates = mutableListOf<LensFacing>()
-        // Get initial lens facing
-        val initialLensFacing = composeTestRule.getCurrentLensFacing()
-        lensFacingStates.add(initialLensFacing)
-
-        // Double click quick settings button to flip camera
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).performClick()
-
-        // Get lens facing after first flip
-        lensFacingStates.add(composeTestRule.getCurrentLensFacing())
-
-        // Double click quick settings button to flip camera again
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_FLIP_CAMERA_BUTTON).performClick()
 
         // Get lens facing after second flip
         lensFacingStates.add(composeTestRule.getCurrentLensFacing())

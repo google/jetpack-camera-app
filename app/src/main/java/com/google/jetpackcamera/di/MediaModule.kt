@@ -13,22 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.data.media
+package com.google.jetpackcamera.di
 
-import dagger.Binds
+import android.content.Context
+import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.data.media.LocalMediaRepository
+import com.google.jetpackcamera.data.media.MediaRepository
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
 
 /**
  * Dagger [Module] for Media dependencies.
  */
 @Module
 @InstallIn(SingletonComponent::class)
-interface MediaModule {
+internal object MediaModule {
 
-    @Binds
+    @Provides
     @Singleton
-    fun bindsMediaRepository(localMediaRepository: LocalMediaRepository): MediaRepository
+    fun provideMediaRepository(
+        @ApplicationContext context: Context,
+        @IODispatcher ioDispatcher: CoroutineDispatcher,
+        @DefaultFilePathGenerator filePathGenerator: FilePathGenerator
+    ): MediaRepository {
+        return LocalMediaRepository(context, ioDispatcher, filePathGenerator)
+    }
 }

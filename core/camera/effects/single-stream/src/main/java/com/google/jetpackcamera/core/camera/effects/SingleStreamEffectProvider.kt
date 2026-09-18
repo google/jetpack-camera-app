@@ -18,20 +18,15 @@ package com.google.jetpackcamera.core.camera.effects
 import androidx.camera.core.CameraEffect
 import com.google.jetpackcamera.core.camera.CameraEffectProvider
 import com.google.jetpackcamera.model.CameraEffectTarget
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 
-/**
- * Implementation of [CameraEffectProvider] that provides [SingleSurfaceForcingEffect].
- */
-internal class SingleStreamEffectProvider @Inject constructor() : CameraEffectProvider {
+internal class SingleStreamEffectProvider : CameraEffectProvider {
 
     override val targets: Set<CameraEffectTarget> = setOf(
         CameraEffectTarget.PREVIEW,
         CameraEffectTarget.VIDEO_CAPTURE
     )
 
-    override fun create(coroutineScope: CoroutineScope): CameraEffect {
-        return SingleSurfaceForcingEffect(coroutineScope)
-    }
+    override fun create(coroutineScope: CoroutineScope): CameraEffect =
+        SingleSurfaceForcingEffect(coroutineScope)
 }

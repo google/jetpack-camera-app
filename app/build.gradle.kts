@@ -22,7 +22,11 @@ plugins {
 }
 
 android {
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     namespace = "com.google.jetpackcamera"
 
@@ -100,6 +104,11 @@ android {
 dependencies {
     implementation(libs.androidx.tracing)
     implementation(project(":core:common"))
+    implementation(project(":core:camera"))
+    implementation(project(":core:camera:low-light"))
+    implementation(project(":core:camera:postprocess"))
+    implementation(project(":data:camera"))
+    implementation(project(":data:media"))
     implementation(project(":feature:postcapture"))
     // Compose
     val composeBom = platform(libs.compose.bom)
@@ -175,6 +184,13 @@ dependencies {
     implementation(project(":ui:uistate"))
     implementation(project(":ui:components:capture"))
     implementation(project(":ui:debug"))
+
+    // Low Light implementations
+    implementation(project(":core:camera:low-light:low-light-di"))
+    implementation(project(":core:camera:low-light-playservices-di"))
+
+    // Postprocess implementations
+    implementation(project(":core:camera:postprocess:postprocess-di"))
 
     implementation(project(":core:camera:low-light-playservices"))
     implementation(project(":core:camera:effects:single-stream"))

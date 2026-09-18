@@ -22,7 +22,11 @@ plugins {
 
 android {
     namespace = "com.google.jetpackcamera.ui.components.capture"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -30,6 +34,13 @@ android {
         lint.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+            isIncludeAndroidResources = true
+        }
     }
 
     flavorDimensions += "flavor"
@@ -57,6 +68,10 @@ dependencies {
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
+    implementation(libs.androidx.foundation.layout)
+
+    // AndroidX Core KTX
+    implementation(libs.androidx.core.ktx)
 
     // Accompanist - Permissions
     implementation(libs.accompanist.permissions)
@@ -67,9 +82,6 @@ dependencies {
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
-
-    // Compose - Integration with ViewModels with Navigation and Hilt
-    implementation(libs.hilt.navigation.compose)
 
     // CameraX
     implementation(libs.camera.core)
@@ -91,6 +103,9 @@ dependencies {
     testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.accessibility)
+    androidTestImplementation(libs.compose.accessibility)
+    androidTestImplementation(libs.accessibility.test.framework)
 
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
@@ -103,10 +118,20 @@ dependencies {
     testImplementation(project(":core:camera:testing"))
     testImplementation(project(":data:settings"))
     testImplementation(project(":core:settings"))
+    testImplementation(project(":ui:controller:testing"))
+    androidTestImplementation(project(":ui:controller:testing"))
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 
 }
 
 // Allow references to generated code
 kapt {
     correctErrorTypes = true
+}
+configurations.all {
+    resolutionStrategy {
+        // Exclude protobuf-lite to prevent DuplicateClassException conflicts with protobuf-javalite
+        // that is brought in by androidx.datastore, since the accessibility-test-framework brings in protobuf-lite.
+        exclude(group = "com.google.protobuf", module = "protobuf-lite")
+    }
 }

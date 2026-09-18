@@ -16,9 +16,11 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -27,69 +29,132 @@ import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState.Available
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState.Unavailable
-import com.google.jetpackcamera.ui.uistateadapter.Utils
 
 private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
     FlashMode.OFF,
-    FlashMode.ON,
     FlashMode.AUTO,
+    FlashMode.ON,
     FlashMode.LOW_LIGHT_BOOST
 )
 
 /**
- * Creates the initial [FlashModeUiState] from the given camera settings and system constraints.
+ * Creates the initial [FlashModeUiState] from the given camera settings, system constraints,
+ * and a set of flash modes designated to be visible.
  *
- * This factory function determines the set of available flash modes based on hardware support
- * and current camera settings (like HDR or concurrent mode). If only [FlashMode.OFF] is available,
- * or no modes are supported, it returns [FlashModeUiState.Unavailable].
+ * This factory function determines the set of displayable flash modes based on:
+ * 1.  Overall device support.
+ * 2.  Developer-defined visibility (via `visibleFlashModes`).
+ * 3.  Support by the currently active lens.
+ * 4.  Interactions with other settings (e.g., HDR, Concurrent Camera).
  *
- * @param cameraAppSettings The current settings of the camera, used to determine which flash modes
- * might be disabled due to other active settings (e.g., HDR).
- * @param systemConstraints The hardware capabilities of the camera system, used to get the list
- * of supported flash modes for the current lens.
- * @return A [FlashModeUiState] which is either [Available] if multiple flash modes can be shown,
- * or [Unavailable] if the flash controls should be hidden.
+ * Modes not supported by the device or not in `visibleFlashModes` are hidden.
+ * Modes not supported by the current lens are hidden.
+ * Modes supported by the current lens are shown as enabled, or disabled if in conflict.
+ *
+ * @param cameraAppSettings The current settings of the camera.
+ * @param systemConstraints The hardware capabilities of the camera system.
+ * @return A [FlashModeUiState] which is either [Available] or [Unavailable].
  */
-fun FlashModeUiState.Companion.from(
+internal fun FlashModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints
+    // todo(kc): supply visible flash modes from developer options
+    // visibleFlashModes: Set<FlashMode> = ORDERED_UI_SUPPORTED_FLASH_MODES.toSet()
 ): FlashModeUiState {
     val selectedFlashMode = cameraAppSettings.flashMode
-    val supportedFlashModes = (
-        systemConstraints.forCurrentLens(cameraAppSettings)
-            ?.supportedFlashModes
-            ?: setOf(FlashMode.OFF)
-        ).toMutableSet()
 
-    if (cameraAppSettings.dynamicRange != DynamicRange.SDR) {
-        supportedFlashModes.remove(FlashMode.LOW_LIGHT_BOOST)
+    // All modes potentially supported by the device
+    val allDeviceSupportedFlashModes = systemConstraints.perLensConstraints.values
+        .flatMap { it.supportedFlashModes }
+        .toSet()
+
+    // Modes supported by the CURRENT lens
+    val currentLensSupportedFlashModes = systemConstraints.forCurrentLens(cameraAppSettings)
+        ?.supportedFlashModes ?: setOf(FlashMode.OFF)
+
+    val isHdrOn = with(cameraAppSettings) {
+        (
+            captureMode == CaptureMode.IMAGE_ONLY &&
+                imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR
+            ) ||
+            (
+                captureMode == CaptureMode.VIDEO_ONLY &&
+                    dynamicRange == DynamicRange.HLG10
+                )
     }
 
-    if (cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL) {
-        supportedFlashModes.remove(FlashMode.LOW_LIGHT_BOOST)
+    val displayableModes = buildList {
+        for (mode in ORDERED_UI_SUPPORTED_FLASH_MODES) {
+            // 1. Hide if not supported by the device at all.
+            if (!allDeviceSupportedFlashModes.contains(mode)) {
+                continue
+            }
+
+            // 3. Check if supported on the current lens
+            if (!currentLensSupportedFlashModes.contains(mode)) {
+                continue
+            }
+
+            // 4. Special handling for LOW_LIGHT_BOOST based on other settings.
+            if (mode == FlashMode.LOW_LIGHT_BOOST &&
+                cameraAppSettings.concurrentCameraMode == ConcurrentCameraMode.DUAL
+            ) {
+                // Hide LLB if Dual Camera is active
+                continue
+            }
+
+            // 5. Determine if Enabled or Disabled
+            val isLlbHdrConflict = mode == FlashMode.LOW_LIGHT_BOOST && isHdrOn
+
+            if (!isLlbHdrConflict) {
+                // Enabled
+                add(SingleSelectableUiState.SelectableUi(mode))
+            } else {
+                // Disabled
+                add(
+                    SingleSelectableUiState.Disabled(
+                        value = mode,
+                        disabledReason = DisabledReason.LLB_DISABLED_BY_HDR
+                    )
+                )
+            }
+        }
     }
 
-    // Ensure we at least support one flash mode
-    check(supportedFlashModes.isNotEmpty()) {
-        "No flash modes supported. Should at least support OFF."
+    // Verify if selected mode is selectable, and fallback if not
+    val isSelectedSelectable = displayableModes.any { state ->
+        state is SingleSelectableUiState.SelectableUi && state.value == selectedFlashMode
+    }
+    val finalSelectedFlashMode = if (isSelectedSelectable) {
+        selectedFlashMode
+    } else {
+        if (displayableModes.any {
+                it.value == FlashMode.OFF &&
+                    it is SingleSelectableUiState.SelectableUi
+            }
+        ) {
+            FlashMode.OFF
+        } else {
+            displayableModes.firstOrNull {
+                it is SingleSelectableUiState.SelectableUi
+            }?.value ?: FlashMode.OFF
+        }
     }
 
-    // Convert available flash modes to list we support in the UI in our desired order
-    val availableModes =
-        Utils.getSelectableListFromValues(
-            supportedFlashModes,
-            ORDERED_UI_SUPPORTED_FLASH_MODES
-        )
+    val hasSelectableModes = displayableModes.any { it is SingleSelectableUiState.SelectableUi }
 
-    return if (availableModes.isEmpty() ||
-        availableModes == listOf(SingleSelectableUiState.SelectableUi(FlashMode.OFF))
-    ) {
-        // If we only support OFF, then return "Unavailable".
+    // UiState should be Unavailable if no modes are displayable,
+    // or if only OFF is displayable and it's selectable.
+    val onlyOffSelectable = displayableModes.singleOrNull()?.let {
+        it.value == FlashMode.OFF && it is SingleSelectableUiState.SelectableUi
+    } ?: false
+
+    return if (displayableModes.isEmpty() || onlyOffSelectable || !hasSelectableModes) {
         Unavailable
     } else {
         Available(
-            selectedFlashMode = selectedFlashMode,
-            availableFlashModes = availableModes,
+            selectedFlashMode = finalSelectedFlashMode,
+            availableFlashModes = displayableModes,
             isLowLightBoostActive = false
         )
     }
@@ -98,18 +163,12 @@ fun FlashModeUiState.Companion.from(
 /**
  * Updates an existing [FlashModeUiState] based on new camera settings and state.
  *
- * This function efficiently updates the flash UI state without recreating it from scratch if
- * possible. It checks for changes in supported modes, selected mode, and the real-time status
- * of Low Light Boost.
- *
  * @param cameraAppSettings The current application settings for the camera.
  * @param systemConstraints The hardware capabilities of the camera system.
  * @param cameraState The real-time state from the camera, used to check [LowLightBoostState].
- * @return An updated [FlashModeUiState]. This may be the same instance if no relevant
- * state has changed, a copied instance with minor updates, or a completely new instance if
- * supported flash modes have changed.
+ * @return An updated [FlashModeUiState].
  */
-fun FlashModeUiState.updateFrom(
+internal fun FlashModeUiState.updateFrom(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
     cameraState: CameraState
@@ -117,39 +176,38 @@ fun FlashModeUiState.updateFrom(
     return when (this) {
         is Unavailable -> {
             // When previous state was "Unavailable", we'll try to create a new FlashModeUiState
-            FlashModeUiState.Companion.from(cameraAppSettings, systemConstraints)
+            FlashModeUiState.from(cameraAppSettings, systemConstraints)
         }
 
         is Available -> {
-            val supportedFlashModes =
-                systemConstraints.forCurrentLens(cameraAppSettings)?.supportedFlashModes
-                    ?: setOf(FlashMode.OFF)
+            // Regenerate the potential new state based on the latest settings
+            when (val newUiState = FlashModeUiState.from(cameraAppSettings, systemConstraints)) {
+                is Unavailable -> newUiState
+                is Available -> {
+                    val currentLlbActive =
+                        cameraState.isLowLightBoostActive(newUiState.selectedFlashMode)
+                    val updatedNewUiState =
+                        newUiState.copy(isLowLightBoostActive = currentLlbActive)
 
-            // check if supported flash modes have changed without allocating a new list/set
-            val availableModesChanged =
-                this.availableFlashModes.size != supportedFlashModes.size ||
-                    this.availableFlashModes.any { !supportedFlashModes.contains(it.value) }
-
-            if (availableModesChanged) {
-                // Supported flash modes have changed, generate a new FlashModeUiState
-                FlashModeUiState.Companion.from(cameraAppSettings, systemConstraints)
-            } else if (this.selectedFlashMode != cameraAppSettings.flashMode) {
-                // Only the selected flash mode has changed, just update the flash mode
-                copy(selectedFlashMode = cameraAppSettings.flashMode)
-            } else {
-                if (cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
-                    val strength = when (val llbState = cameraState.lowLightBoostState) {
-                        is LowLightBoostState.Active -> llbState.strength
-                        else -> LowLightBoostState.MINIMUM_STRENGTH
+                    if (this.availableFlashModes == updatedNewUiState.availableFlashModes &&
+                        this.selectedFlashMode == updatedNewUiState.selectedFlashMode &&
+                        this.isLowLightBoostActive == updatedNewUiState.isLowLightBoostActive
+                    ) {
+                        this
+                    } else {
+                        updatedNewUiState
                     }
-                    copy(
-                        isLowLightBoostActive = strength > 0.5
-                    )
-                } else {
-                    // Nothing has changed
-                    this
                 }
             }
         }
     }
+}
+
+private fun CameraState.isLowLightBoostActive(selectedFlashMode: FlashMode): Boolean {
+    if (selectedFlashMode != FlashMode.LOW_LIGHT_BOOST) return false
+    val strength = when (val llbState = this.lowLightBoostState) {
+        is LowLightBoostState.Active -> llbState.strength
+        else -> LowLightBoostState.MINIMUM_STRENGTH
+    }
+    return strength > 0.5
 }

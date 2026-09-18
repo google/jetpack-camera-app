@@ -20,7 +20,11 @@ plugins {
 
 android {
     namespace = "com.google.jetpackcamera.core.camera"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -108,6 +112,7 @@ dependencies {
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.truth)
     androidTestImplementation(project(":core:common:testing"))
+    androidTestImplementation(project(":core:camera:postprocess:postprocess-di"))
     testImplementation(project(":core:camera:testing"))
 
     // Futures
@@ -134,6 +139,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:camera:low-light"))
     implementation(project(":core:camera:postprocess"))
+
 
 }
 

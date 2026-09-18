@@ -26,7 +26,6 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
@@ -39,20 +38,19 @@ private const val TAG = "CameraControllerImpl"
 /**
  * Implementation of [CameraController] that manages the camera lifecycle.
  *
- * @param initializationDeferred A [Deferred] that completes when the camera system is initialized.
+ * @param cameraSystemProvider Provider for the initialized [CameraSystem].
  * @param captureUiState The [StateFlow] of the capture UI state.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
- * @param cameraSystem The [com.google.jetpackcamera.core.camera.CameraSystem] to interact with.
  */
 class CameraControllerImpl(
-    private val initializationDeferred: Deferred<Unit>,
+    private val cameraSystemProvider: suspend () -> CameraSystem,
     private val captureUiState: StateFlow<CaptureUiState>,
-    private val cameraSystem: CameraSystem,
     coroutineContext: CoroutineContext
 ) : CameraController {
     private var runningCameraJob: Job? = null
     private val job = Job(parent = coroutineContext[Job])
     private val scope = CoroutineScope(coroutineContext + job)
+
     override fun startCamera() {
         Log.d(TAG, "startCamera")
         stopCamera()
@@ -75,7 +73,7 @@ class CameraControllerImpl(
                 }
             }
             // Ensure CameraSystem is initialized before starting camera
-            initializationDeferred.await()
+            val cameraSystem = cameraSystemProvider()
             // TODO(yasith): Handle Exceptions from binding use cases
             cameraSystem.runCamera()
         }
@@ -93,13 +91,13 @@ class CameraControllerImpl(
     override fun tapToFocus(x: Float, y: Float) {
         Log.d(TAG, "tapToFocus")
         scope.launch {
-            cameraSystem.tapToFocus(x, y)
+            cameraSystemProvider().tapToFocus(x, y)
         }
     }
 
     override fun setDisplayRotation(deviceRotation: DeviceRotation) {
         scope.launch {
-            cameraSystem.setDeviceRotation(deviceRotation)
+            cameraSystemProvider().setDeviceRotation(deviceRotation)
         }
     }
 

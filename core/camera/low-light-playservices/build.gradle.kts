@@ -17,12 +17,15 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.android.legacy.kapt)
-    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
     namespace = "com.google.jetpackcamera.core.camera.lowlight.playservices"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -43,12 +46,5 @@ dependencies {
     implementation(libs.androidx.annotation)
     implementation(libs.camera.camera2)
     implementation(libs.camera.core)
-    implementation(libs.dagger.hilt.android)
-    kapt(libs.dagger.hilt.compiler)
     implementation(libs.kotlinx.coroutines.play.services)
-}
-
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
 }

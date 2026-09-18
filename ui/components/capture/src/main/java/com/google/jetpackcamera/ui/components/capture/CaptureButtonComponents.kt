@@ -250,8 +250,12 @@ internal fun CaptureButton(
         if (firstKeyPressed.value == captureSource) {
             if (isLongPressing.value) {
                 if (!isLocked &&
-                    currentUiState.value is
-                        CaptureButtonUiState.Enabled.Recording.PressedRecording
+                    (
+                        currentUiState.value is
+                            CaptureButtonUiState.Enabled.Recording.PressedRecording ||
+                            currentUiState.value is
+                                CaptureButtonUiState.Enabled.Recording.Starting
+                        )
                 ) {
                     Log.d(TAG, "Stopping recording")
                     onStopRecording()
@@ -272,6 +276,7 @@ internal fun CaptureButton(
                     }
 
                     CaptureButtonUiState.Enabled.Recording.LockedRecording -> onStopRecording()
+                    CaptureButtonUiState.Enabled.Recording.Starting,
                     CaptureButtonUiState.Enabled.Recording.PressedRecording,
                     CaptureButtonUiState.Unavailable -> {
                     }
@@ -668,6 +673,7 @@ private fun CaptureButtonNucleus(
             // inner circle fills white ring when locked
             CaptureButtonUiState.Enabled.Recording.LockedRecording -> captureButtonSize.dp
 
+            CaptureButtonUiState.Enabled.Recording.Starting,
             CaptureButtonUiState.Enabled.Recording.PressedRecording ->
                 (captureButtonSize * pressedVideoCaptureScale).dp
 

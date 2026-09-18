@@ -31,12 +31,12 @@ import kotlinx.coroutines.launch
 /**
  * Implementation of [ScreenFlashController] that handles screen flash actions.
  *
- * @param cameraSystem The [CameraSystem] for accessing camera events.
+ * @param cameraSystemProvider Provider for the initialized [CameraSystem].
  * @param trackedCaptureUiState The [MutableStateFlow] of [TrackedCaptureUiState] to update the flash state.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class ScreenFlashControllerImpl(
-    private val cameraSystem: CameraSystem,
+    private val cameraSystemProvider: suspend () -> CameraSystem,
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
     coroutineContext: CoroutineContext
 ) : ScreenFlashController {
@@ -45,7 +45,7 @@ class ScreenFlashControllerImpl(
 
     init {
         scope.launch {
-            for (event in cameraSystem.getScreenFlashEvents()) {
+            for (event in cameraSystemProvider().getScreenFlashEvents()) {
                 trackedCaptureUiState.update { old ->
                     val oldFlashState = old.screenFlashUiState
                     old.copy(
