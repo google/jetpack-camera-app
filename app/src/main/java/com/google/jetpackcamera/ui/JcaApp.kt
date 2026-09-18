@@ -24,21 +24,25 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.BuildConfig
 import com.google.jetpackcamera.feature.postcapture.PostCaptureScreen
 import com.google.jetpackcamera.feature.preview.navigation.navigateToPreview
-import com.google.jetpackcamera.feature.preview.navigation.popUpToPreview
 import com.google.jetpackcamera.feature.preview.navigation.previewScreen
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.permissions.navigation.PermissionsRoute
+import com.google.jetpackcamera.permissions.navigation.isPermissionsRoute
 import com.google.jetpackcamera.permissions.navigation.navigateToPermissions
 import com.google.jetpackcamera.permissions.navigation.permissionsScreen
 import com.google.jetpackcamera.permissions.navigation.popUpToPermissions
@@ -86,6 +90,8 @@ private fun JetpackCameraNavHost(
     onCaptureEvent: (CaptureEvent) -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
+    CameraPermissionGuard(navController)
+
     NavHost(
         navController = navController,
         startDestination = PermissionsRoute.toString(),
@@ -119,11 +125,6 @@ private fun JetpackCameraNavHost(
             onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
             onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
             onNavigateToPostCapture = { navController.navigate(POST_CAPTURE_ROUTE) },
-            onNavigateToPermissions = {
-                navController.navigateToPermissions {
-                    popUpToPreview()
-                }
-            },
             onCaptureEvent = onCaptureEvent
         )
 
@@ -157,6 +158,26 @@ private fun JetpackCameraNavHost(
             POST_CAPTURE_ROUTE
         ) {
             PostCaptureScreen(onNavigateBack = { navController.popBackStack() })
+        }
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+private fun CameraPermissionGuard(navController: NavHostController) {
+    val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
+    val currentDestination = navController.currentBackStackEntryAsState().value?.destination
+
+    // Automatically navigate to permissions screen when camera permission revoked
+    LaunchedEffect(cameraPermissionState.status, currentDestination) {
+        if (currentDestination?.isPermissionsRoute() == false &&
+            !cameraPermissionState.status.isGranted
+        ) {
+            navController.navigateToPermissions {
+                popUpTo(navController.graph.id) {
+                    inclusive = true
+                }
+            }
         }
     }
 }
