@@ -34,6 +34,7 @@ interface CameraSystemRepository {
 
     /**
      * A [StateFlow] emitting the current [CameraSystemConstraints] supported by the device.
+     * Accessing it starts initialization if it hasn't started yet.
      */
     val systemConstraints: StateFlow<CameraSystemConstraints?>
 
