@@ -152,7 +152,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            visibilityConfig = OptionVisibility.Visible
+            optionVisibility = OptionVisibility.Visible
         )
 
         assertThat(uiState).isInstanceOf(CaptureModeToggleUiState.Available::class.java)
@@ -169,7 +169,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            visibilityConfig = OptionVisibility.Only(
+            optionVisibility = OptionVisibility.Only(
                 setOf(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
             )
         )
@@ -192,7 +192,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = activeState,
             externalCaptureMode = ExternalCaptureMode.Standard,
-            visibilityConfig = OptionVisibility.Visible
+            optionVisibility = OptionVisibility.Visible
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -207,7 +207,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            visibilityConfig = OptionVisibility.Visible
+            optionVisibility = OptionVisibility.Visible
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -222,7 +222,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            visibilityConfig = OptionVisibility.Hidden
+            optionVisibility = OptionVisibility.Hidden
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -237,7 +237,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.ImageCapture,
-            visibilityConfig = OptionVisibility.Visible
+            optionVisibility = OptionVisibility.Visible
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -252,7 +252,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.MultipleImageCapture,
-            visibilityConfig = OptionVisibility.Visible
+            optionVisibility = OptionVisibility.Visible
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -267,7 +267,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.VideoCapture,
-            visibilityConfig = OptionVisibility.Visible
+            optionVisibility = OptionVisibility.Visible
         )
 
         assertThat(uiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
@@ -282,7 +282,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            visibilityConfig = OptionVisibility.Only(
+            optionVisibility = OptionVisibility.Only(
                 setOf(CaptureMode.STANDARD, CaptureMode.IMAGE_ONLY)
             )
         )
@@ -299,7 +299,7 @@ class CaptureModeUiStateAdapterTest {
             ),
             cameraState = CameraState(),
             externalCaptureMode = ExternalCaptureMode.Standard,
-            visibilityConfig = OptionVisibility.Only(
+            optionVisibility = OptionVisibility.Only(
                 setOf(CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY)
             )
         )

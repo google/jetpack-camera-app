@@ -116,7 +116,7 @@ class LocalSettingsRepository @Inject constructor(
             flashMode = enforceRestrictions(storedSettings.flashMode, policy.flashMode),
             imageFormat = enforceRestrictions(storedSettings.imageFormat, policy.imageFormat),
             dynamicRange = enforceRestrictions(storedSettings.dynamicRange, policy.dynamicRange),
-            captureMode = policy.captureMode?.defaultValue ?: storedSettings.captureMode
+            captureMode = enforceRestrictions(storedSettings.captureMode, policy.captureMode)
         )
     }
 

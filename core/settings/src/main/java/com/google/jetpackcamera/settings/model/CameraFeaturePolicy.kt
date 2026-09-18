@@ -32,10 +32,9 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  * ### Invariants & Safety Rules:
  * - **Flash Mode:** Cannot be [OptionVisibility.Hidden] unless its default value is [FlashMode.OFF].
  *   If [OptionVisibility.Only] is used, [FlashMode.OFF] must always be included.
- * - **HDR Image Format:** Cannot be [OptionVisibility.Hidden] unless defaulted to SDR ([ImageOutputFormat.JPEG]).
- *   If [OptionVisibility.Only] is used, [ImageOutputFormat.JPEG] must always be included.
- * - **HDR Video Dynamic Range:** Cannot be [OptionVisibility.Hidden] unless defaulted to SDR ([DynamicRange.SDR]).
- *   If [OptionVisibility.Only] is used, [DynamicRange.SDR] must always be included.
+ * - **HDR Image Format & Video Dynamic Range:** When [OptionVisibility.Hidden] is used, developers may
+ *   default or lock capture to Ultra HDR ([ImageOutputFormat.JPEG_ULTRA_HDR]) or HDR video ([DynamicRange.HLG10]).
+ *   Hardware fallbacks to SDR will be handled at runtime if the active camera does not support HDR.
  *
  * ### Example:
  * ```kotlin
@@ -51,11 +50,12 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  * )
  * ```
  *
- * @property captureMode Configuration for camera capture mode (e.g. Standard, Image-only, Video-only).
- * @property aspectRatio Configuration for preview and capture aspect ratio.
- * @property flashMode Configuration for camera flash mode.
- * @property imageFormat Configuration for captured photo format (e.g. JPEG, Ultra HDR).
- * @property dynamicRange Configuration for captured video dynamic range (e.g. SDR, HLG10).
+ * @param captureMode Configuration for camera capture mode (e.g. Standard, Image-only, Video-only).
+ * @param aspectRatio Configuration for preview and capture aspect ratio.
+ * @param flashMode Configuration for camera flash mode. Must have defaultValue of [FlashMode.OFF]
+ *   if [OptionVisibility.Hidden].
+ * @param imageFormat Configuration for captured photo format (e.g. JPEG, Ultra HDR).
+ * @param dynamicRange Configuration for captured video dynamic range (e.g. SDR, HLG10).
  *
  * TODO (kc): Defer audioEnabled configuration to a follow-up PR, pending design for visual UX.
  */
@@ -80,42 +80,6 @@ data class CameraFeaturePolicy(
                     config.defaultValue == FlashMode.OFF
                 ) {
                     "When flashMode is Hidden, defaultValue must be FlashMode.OFF."
-                }
-
-                is OptionVisibility.Visible -> Unit
-            }
-        }
-
-        imageFormat?.let { config ->
-            when (val visibility = config.visibility) {
-                is OptionVisibility.Only -> require(
-                    ImageOutputFormat.JPEG in visibility.enabledOptions
-                ) {
-                    "ImageOutputFormat.JPEG must always be included in enabledOptions for imageFormat."
-                }
-
-                is OptionVisibility.Hidden -> require(
-                    config.defaultValue == ImageOutputFormat.JPEG
-                ) {
-                    "When imageFormat is Hidden, defaultValue must be ImageOutputFormat.JPEG."
-                }
-
-                is OptionVisibility.Visible -> Unit
-            }
-        }
-
-        dynamicRange?.let { config ->
-            when (val visibility = config.visibility) {
-                is OptionVisibility.Only -> require(
-                    DynamicRange.SDR in visibility.enabledOptions
-                ) {
-                    "DynamicRange.SDR must always be included in enabledOptions for dynamicRange."
-                }
-
-                is OptionVisibility.Hidden -> require(
-                    config.defaultValue == DynamicRange.SDR
-                ) {
-                    "When dynamicRange is Hidden, defaultValue must be DynamicRange.SDR."
                 }
 
                 is OptionVisibility.Visible -> Unit

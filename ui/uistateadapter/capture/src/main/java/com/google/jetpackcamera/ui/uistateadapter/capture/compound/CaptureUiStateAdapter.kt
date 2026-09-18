@@ -185,7 +185,7 @@ fun captureUiState(
                 cameraAppSettings = cameraAppSettings,
                 cameraState = roundedCameraState,
                 externalCaptureMode = externalCaptureMode,
-                visibilityConfig = cameraFeaturePolicy?.captureMode?.visibility
+                optionVisibility = cameraFeaturePolicy?.captureMode?.visibility
             ),
             hdrUiState = hdrUiState,
             focusMeteringUiState = focusMeteringUiState,

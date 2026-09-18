@@ -132,15 +132,15 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun cameraFeaturePolicy_whenImageFormatHiddenAndNotJpeg_throwsException() {
-        assertThrows(IllegalArgumentException::class.java) {
-            CameraFeaturePolicy(
-                imageFormat = SettingConfig(
-                    defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR,
-                    visibility = OptionVisibility.Hidden
-                )
+    fun cameraFeaturePolicy_whenImageFormatHiddenAndNotJpeg_succeeds() {
+        val config = CameraFeaturePolicy(
+            imageFormat = SettingConfig(
+                defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR,
+                visibility = OptionVisibility.Hidden
             )
-        }
+        )
+        assertThat(config.imageFormat?.defaultValue).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+        assertThat(config.imageFormat?.visibility).isEqualTo(OptionVisibility.Hidden)
     }
 
     @Test
@@ -156,15 +156,15 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun cameraFeaturePolicy_whenDynamicRangeHiddenAndNotSdr_throwsException() {
-        assertThrows(IllegalArgumentException::class.java) {
-            CameraFeaturePolicy(
-                dynamicRange = SettingConfig(
-                    defaultValue = DynamicRange.HLG10,
-                    visibility = OptionVisibility.Hidden
-                )
+    fun cameraFeaturePolicy_whenDynamicRangeHiddenAndNotSdr_succeeds() {
+        val config = CameraFeaturePolicy(
+            dynamicRange = SettingConfig(
+                defaultValue = DynamicRange.HLG10,
+                visibility = OptionVisibility.Hidden
             )
-        }
+        )
+        assertThat(config.dynamicRange?.defaultValue).isEqualTo(DynamicRange.HLG10)
+        assertThat(config.dynamicRange?.visibility).isEqualTo(OptionVisibility.Hidden)
     }
 
     @Test
