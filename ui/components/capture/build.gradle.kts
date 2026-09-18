@@ -43,7 +43,6 @@ android {
         }
     }
 
-
     flavorDimensions += "flavor"
     productFlavors {
         create("stable") {
@@ -58,9 +57,6 @@ android {
     }
     kotlin {
         jvmToolchain(17)
-        compilerOptions {
-            freeCompilerArgs.add("-Xcontext-receivers")
-        }
     }
     buildFeatures {
         buildConfig = true

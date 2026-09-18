@@ -30,8 +30,7 @@ import kotlinx.coroutines.tasks.await
 
 private const val TAG = "PsLlbAvailChecker"
 
-class PlayServicesLowLightBoostAvailabilityChecker :
-    LowLightBoostAvailabilityChecker {
+class PlayServicesLowLightBoostAvailabilityChecker : LowLightBoostAvailabilityChecker {
     @OptIn(ExperimentalCamera2Interop::class)
     override suspend fun isImplementationAvailable(
         cameraInfo: CameraInfo,

@@ -38,10 +38,7 @@ sealed interface AudioUiState {
          * @param amplitude The current amplitude of the microphone.
          * @param isAudioStreamActive Whether the audio stream is actively capturing sound.
          */
-        data class On(
-            override val amplitude: Double,
-            val isAudioStreamActive: Boolean
-        ) : Enabled
+        data class On(override val amplitude: Double, val isAudioStreamActive: Boolean) : Enabled
 
         /**
          * Audio recording is enabled but currently muted by the user. The amplitude is always 0.0.

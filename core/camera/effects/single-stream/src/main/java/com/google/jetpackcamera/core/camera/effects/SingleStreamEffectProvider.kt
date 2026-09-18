@@ -27,7 +27,6 @@ internal class SingleStreamEffectProvider : CameraEffectProvider {
         CameraEffectTarget.VIDEO_CAPTURE
     )
 
-    override fun create(coroutineScope: CoroutineScope): CameraEffect {
-        return SingleSurfaceForcingEffect(coroutineScope)
-    }
+    override fun create(coroutineScope: CoroutineScope): CameraEffect =
+        SingleSurfaceForcingEffect(coroutineScope)
 }
