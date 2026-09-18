@@ -19,6 +19,7 @@ import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.CameraXCameraSystem
+import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -38,15 +39,15 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 
 /**
- * Implementation of [CameraSystemRepository] that manages [CameraXCameraSystem] initialization
- * and exposes camera streams.
+ * Implementation of [CameraSystemRepository] and [ConstraintsRepository] that manages
+ * [CameraXCameraSystem] initialization and exposes camera streams.
  */
 class CameraXCameraSystemRepository(
     private val cameraXCameraSystemProvider: Provider<out CameraSystem>,
     private val settingsRepository: SettingsRepository,
     private val launchConfigProvider: CameraLaunchConfigProvider,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-) : CameraSystemRepository {
+) : CameraSystemRepository, ConstraintsRepository {
 
     constructor(
         cameraXCameraSystemProvider: Provider<out CameraSystem>,
@@ -69,6 +70,7 @@ class CameraXCameraSystemRepository(
     }
 
     override val systemConstraints: StateFlow<CameraSystemConstraints?> by lazy {
+        initializationDeferred.start()
         cameraSystem.getSystemConstraints()
     }
 
@@ -83,21 +85,26 @@ class CameraXCameraSystemRepository(
     private val _cameraPropertiesJSON = MutableStateFlow<String?>(null)
     override val cameraPropertiesJSON: StateFlow<String?> = _cameraPropertiesJSON.asStateFlow()
 
-    private val initializationDeferred: Deferred<Unit> =
+    private val initializationDeferred: Deferred<CameraAppSettings> =
         scope.async(start = CoroutineStart.LAZY) {
             val launchConfig = launchConfigProvider.config.value
-            val initialSettings = settingsRepository.getCurrentDefaultCameraAppSettings()
+            val defaultSettings = settingsRepository.getCurrentDefaultCameraAppSettings()
+            val initialSettings = defaultSettings
                 .applyExternalCaptureMode(launchConfig.externalCaptureMode)
                 .copy(debugSettings = launchConfig.debugSettings)
             cameraSystem.initialize(initialSettings) { properties ->
                 _cameraPropertiesJSON.value = properties
             }
+            defaultSettings
         }
 
     override suspend fun getCameraSystem(): CameraSystem {
         initializationDeferred.await()
         return cameraSystem
     }
+
+    override suspend fun getInitialDefaultCameraAppSettings(): CameraAppSettings =
+        initializationDeferred.await()
 
     override suspend fun getSupportedMimeTypes(): List<String> {
         initializationDeferred.await()

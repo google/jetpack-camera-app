@@ -45,7 +45,7 @@ internal const val SIXTY_SECONDS_DURATION = 60_000L
  * Defines the current state of the [SettingsScreen].
  */
 sealed interface SettingsUiState {
-    data object Disabled : SettingsUiState
+    data object Loading : SettingsUiState
     data class Enabled(
         val aspectRatioUiState: AspectRatioUiState,
         val cameraEffectUiState: CameraEffectUiState,
