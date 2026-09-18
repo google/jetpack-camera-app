@@ -111,4 +111,9 @@ class FakeSettingsRepository(
         _defaultCameraAppSettings.value =
             _defaultCameraAppSettings.value.copy(concurrentCameraMode = concurrentCameraMode)
     }
+    override suspend fun updateLocationEnabled(locationEnabled: Boolean) {
+        _defaultCameraAppSettings.value = _defaultCameraAppSettings.value.copy(
+            locationEnabled = locationEnabled
+        )
+    }
 }
