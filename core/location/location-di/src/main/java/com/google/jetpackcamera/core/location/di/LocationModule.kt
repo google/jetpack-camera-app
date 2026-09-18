@@ -29,7 +29,7 @@ import dagger.hilt.components.SingletonComponent
  */
 @Module
 @InstallIn(SingletonComponent::class)
-interface LocationModule {
+internal interface LocationModule {
 
     /**
      * Declares an optional binding for [LocationProvider].

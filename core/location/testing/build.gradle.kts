@@ -44,5 +44,4 @@ android {
 dependencies {
     implementation(project(":core:location"))
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.androidx.core.ktx)
 }

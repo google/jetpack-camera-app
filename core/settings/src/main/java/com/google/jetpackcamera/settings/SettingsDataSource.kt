@@ -119,5 +119,5 @@ interface SettingsDataSource {
      *
      * @param locationEnabled `true` to record geographic coordinates with captured media, `false` otherwise.
      */
-    suspend fun updateLocationEnabled(locationEnabled: Boolean) {}
+    suspend fun updateLocationEnabled(locationEnabled: Boolean)
 }

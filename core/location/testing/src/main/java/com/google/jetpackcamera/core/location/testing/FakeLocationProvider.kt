@@ -18,6 +18,8 @@ package com.google.jetpackcamera.core.location.testing
 import android.location.Location
 import android.os.SystemClock
 import com.google.jetpackcamera.core.location.LocationProvider
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Fake implementation of [LocationProvider] for unit and integration testing.
@@ -25,15 +27,30 @@ import com.google.jetpackcamera.core.location.LocationProvider
  * Allows test suites to simulate location updates, control cache values, and toggle
  * location availability.
  *
- * @property mockLocation The current location fix returned by this fake, or `null`.
  * @property isUpdatesRunning Whether location updates are currently marked as active.
  * @property locationEnabled Whether location reporting is enabled; when `false`, all calls return `null`.
  */
 class FakeLocationProvider(
-    private var mockLocation: Location? = null,
-    var isUpdatesRunning: Boolean = false,
-    var locationEnabled: Boolean = true
+    initialMockLocation: Location? = null,
+    initialIsUpdatesRunning: Boolean = false,
+    initialLocationEnabled: Boolean = true
 ) : LocationProvider {
+
+    private val mockLocation = AtomicReference<Location?>(initialMockLocation)
+    private val _isUpdatesRunning = AtomicBoolean(initialIsUpdatesRunning)
+    private val _locationEnabled = AtomicBoolean(initialLocationEnabled)
+
+    var isUpdatesRunning: Boolean
+        get() = _isUpdatesRunning.get()
+        set(value) {
+            _isUpdatesRunning.set(value)
+        }
+
+    var locationEnabled: Boolean
+        get() = _locationEnabled.get()
+        set(value) {
+            _locationEnabled.set(value)
+        }
 
     /**
      * Sets the simulated location coordinates and accuracy with current timestamps.
@@ -43,30 +60,34 @@ class FakeLocationProvider(
      * @param accuracy The horizontal accuracy radius in meters (defaults to 5.0m).
      */
     fun setLocation(latitude: Double, longitude: Double, accuracy: Float = 5.0f) {
-        mockLocation = Location("test").apply {
+        val loc = Location("test").apply {
             this.latitude = latitude
             this.longitude = longitude
             this.accuracy = accuracy
             this.time = System.currentTimeMillis()
             this.elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
         }
+        mockLocation.set(loc)
     }
 
     /**
      * Clears any configured mock location fix.
      */
     fun clearLocation() {
-        mockLocation = null
+        mockLocation.set(null)
     }
 
-    override fun getCachedLocation(): Location? = if (locationEnabled) mockLocation else null
+    override fun getCachedLocation(): Location? = if (locationEnabled) mockLocation.get() else null
+
     override suspend fun getCurrentLocation(): Location? =
-        if (locationEnabled) mockLocation else null
+        if (locationEnabled) mockLocation.get() else null
+
     override fun startLocationUpdates() {
         if (!locationEnabled) return
-        isUpdatesRunning = true
+        _isUpdatesRunning.set(true)
     }
+
     override fun stopLocationUpdates() {
-        isUpdatesRunning = false
+        _isUpdatesRunning.set(false)
     }
 }
