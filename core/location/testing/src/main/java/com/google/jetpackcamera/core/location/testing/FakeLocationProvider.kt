@@ -18,8 +18,6 @@ package com.google.jetpackcamera.core.location.testing
 import android.location.Location
 import android.os.SystemClock
 import com.google.jetpackcamera.core.location.LocationProvider
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Fake implementation of [LocationProvider] for unit and integration testing.
@@ -36,21 +34,14 @@ class FakeLocationProvider(
     initialLocationEnabled: Boolean = true
 ) : LocationProvider {
 
-    private val mockLocation = AtomicReference<Location?>(initialMockLocation)
-    private val _isUpdatesRunning = AtomicBoolean(initialIsUpdatesRunning)
-    private val _locationEnabled = AtomicBoolean(initialLocationEnabled)
+    @Volatile
+    private var mockLocation: Location? = initialMockLocation
 
-    var isUpdatesRunning: Boolean
-        get() = _isUpdatesRunning.get()
-        set(value) {
-            _isUpdatesRunning.set(value)
-        }
+    @Volatile
+    var isUpdatesRunning: Boolean = initialIsUpdatesRunning
 
-    var locationEnabled: Boolean
-        get() = _locationEnabled.get()
-        set(value) {
-            _locationEnabled.set(value)
-        }
+    @Volatile
+    var locationEnabled: Boolean = initialLocationEnabled
 
     /**
      * Sets the simulated location coordinates and accuracy with current timestamps.
@@ -67,27 +58,27 @@ class FakeLocationProvider(
             this.time = System.currentTimeMillis()
             this.elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
         }
-        mockLocation.set(loc)
+        mockLocation = loc
     }
 
     /**
      * Clears any configured mock location fix.
      */
     fun clearLocation() {
-        mockLocation.set(null)
+        mockLocation = null
     }
 
-    override fun getCachedLocation(): Location? = if (locationEnabled) mockLocation.get() else null
+    override fun getCachedLocation(): Location? = if (locationEnabled) mockLocation else null
 
     override suspend fun getCurrentLocation(): Location? =
-        if (locationEnabled) mockLocation.get() else null
+        if (locationEnabled) mockLocation else null
 
     override fun startLocationUpdates() {
         if (!locationEnabled) return
-        _isUpdatesRunning.set(true)
+        isUpdatesRunning = true
     }
 
     override fun stopLocationUpdates() {
-        _isUpdatesRunning.set(false)
+        isUpdatesRunning = false
     }
 }
