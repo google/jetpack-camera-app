@@ -45,7 +45,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  *     ),
  *     captureMode = SettingConfig(
  *         defaultValue = CaptureMode.IMAGE_ONLY,
- *         visibility = OptionVisibility.Only(setOf(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY))
+ *         visibility = OptionVisibility.from(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
  *     )
  * )
  * ```
@@ -139,7 +139,14 @@ data class SettingConfig<T : Any>(
 /**
  * Defines the UI visibility and option availability policy applied to a camera setting.
  *
+ * Use [Visible] to permit all device-supported options, [Hidden] to lock a setting to its default
+ * value and hide the control, or [Only] to restrict the UI to a subset of options.
+ *
+ * When creating option restrictions, prefer using [OptionVisibility.from] for safe instantiation
+ * that automatically falls back to [Hidden] if fewer than 2 options are available.
+ *
  * @param T The type of setting options governed by this policy.
+ * @see OptionVisibility.from
  */
 sealed interface OptionVisibility<out T : Any> {
     /** All device-supported options are visible and selectable in the UI. */
@@ -149,6 +156,8 @@ sealed interface OptionVisibility<out T : Any> {
      * The setting is completely hidden and inaccessible in the user interface.
      *
      * Note: The setting remains active and locked to its configured [SettingConfig.defaultValue].
+     *
+     * @see OptionVisibility.Only
      */
     data object Hidden : OptionVisibility<Nothing>
 
@@ -161,8 +170,19 @@ sealed interface OptionVisibility<out T : Any> {
      *   use [Hidden] with that default value instead, or use [OptionVisibility.from] to safely
      *   fall back to [Hidden] when options are computed dynamically.
      * @throws IllegalArgumentException if [enabledOptions] contains fewer than 2 items.
+     * @see OptionVisibility.from
+     * @see OptionVisibility.Hidden
      */
     data class Only<T : Any>(val enabledOptions: Set<T>) : OptionVisibility<T> {
+        /**
+         * Creates an [Only] policy from vararg [options].
+         *
+         * Note: Prefer [OptionVisibility.from] if [options] may contain fewer than 2 items at runtime.
+         *
+         * @param options The permitted options. Must contain at least 2 unique items.
+         * @throws IllegalArgumentException if fewer than 2 unique options are provided.
+         * @see OptionVisibility.from
+         */
         constructor(vararg options: T) : this(options.toSet())
 
         init {
@@ -183,6 +203,9 @@ sealed interface OptionVisibility<out T : Any> {
          *
          * This factory function is recommended when options are filtered or resolved dynamically at runtime
          * (e.g. against remote flags or device capabilities) to avoid runtime crash traps.
+         *
+         * @see OptionVisibility.Only
+         * @see OptionVisibility.Hidden
          */
         fun <T : Any> from(options: Set<T>): OptionVisibility<T> =
             if (options.size >= 2) Only(options) else Hidden
@@ -192,6 +215,9 @@ sealed interface OptionVisibility<out T : Any> {
          *
          * Resolves to [OptionVisibility.Only] if 2 or more options are provided, or [OptionVisibility.Hidden]
          * if 0 or 1 option is provided.
+         *
+         * @see OptionVisibility.Only
+         * @see OptionVisibility.Hidden
          */
         fun <T : Any> from(vararg options: T): OptionVisibility<T> = from(options.toSet())
     }

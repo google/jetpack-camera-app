@@ -92,9 +92,6 @@ class AspectRatioUiStateAdapterTest {
 
         assertThat(state).isInstanceOf(AspectRatioUiState.Available::class.java)
         val available = state as AspectRatioUiState.Available
-        assertThat(available.selectedAspectRatio).isAnyOf(
-            AspectRatio.ONE_ONE,
-            AspectRatio.THREE_FOUR
-        )
+        assertThat(available.selectedAspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
     }
 }
