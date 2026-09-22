@@ -77,22 +77,8 @@ object CameraLayoutSolver {
     /** Weight of the "stay near the preferred position" term. */
     private const val PREFERENCE_WEIGHT = 1e-3f
 
-    /** Smallest inter-row gap the repair sweep will consider. */
-    private const val MIN_SWEEP_GAP = 8
-
     /** Step between candidate gap values in the repair sweep. */
     private const val GAP_SWEEP_STEP = 2
-
-    /**
-     * Band of black-bar heights, in dp, that is too short for a full-height toolbar but tall enough
-     * to hold a compacted one. Below this the toolbar sits inside the frame naturally; above it the
-     * full-height toolbar fits below the frame with room to spare.
-     */
-    private const val COMPACT_BAND_MIN = 52f
-    private const val COMPACT_BAND_MAX = 76f
-
-    /** Smallest drawn toolbar height the compaction strategy will produce. */
-    private const val COMPACT_TOOLBAR_MIN_HEIGHT = 44f
 
     /** Extra lift allowed when the tall frame already clears everything. */
     private const val INCIDENTAL_LIFT_BUDGET = 16
@@ -172,34 +158,36 @@ object CameraLayoutSolver {
 
         val blackBarBelowTallest = navTop - tallest
         val useCompaction = spec.toolbarCompaction == ToolbarCompaction.COMPACT_TOOLBAR
-        val inCompactBandRange = useCompaction && !requiresImmersive &&
-            blackBarBelowTallest >= COMPACT_BAND_MIN && blackBarBelowTallest < COMPACT_BAND_MAX
 
         val bottomRow = spec.rows.first()
         val nominalToolbarHeight = bottomRow.height.value
+        // The smallest drawn height whose interactive touch target still stays inside the
+        // clearance margin above the toolbar.
+        val minToolbarHeight = max(0f, spec.minInteractiveTouchTarget.value - clearance)
 
-        val gestureDemand = max(24f, max(navInset, window.gestureInset.value)) - navInset
+        val effectiveBottomZone = max(navInset, window.gestureInset.value)
+        val gestureDemand = effectiveBottomZone - navInset
         val normalMinPadding =
             max(spec.bottomPadding.min.value, gestureDemand.roundToJsFloat()).roundToJs()
-        // The compact band trades bottom padding for toolbar height, which is only safe to do when
-        // a navigation bar is already providing the separation from the edge of the screen.
-        val compactBandMinPadding = if (navInset >= 40f) 4 else normalMinPadding
+        // When a visible navigation bar already extends above the bottom gesture zone, only the
+        // control clearance margin is required between the toolbar and the navigation bar.
+        val compactBandMinPadding =
+            if (navInset > window.gestureInset.value) clearance.roundToJs() else normalMinPadding
 
-        // Entering the compact band pins the stack lift to zero, on the premise that compacting the
-        // toolbar will absorb the shortfall. Compaction has a floor, so that premise does not
-        // always hold: when the band is shorter than the smallest toolbar we are willing to draw,
-        // staying
-        // here would guarantee an overlap *and* discard the only remaining way out of it. Check the
-        // premise before committing to it.
-        val compactedToolbarFits =
-            blackBarBelowTallest - clearance - compactBandMinPadding >= COMPACT_TOOLBAR_MIN_HEIGHT
-        val isCompactBand = inCompactBandRange && compactedToolbarFits
+        // Derived bounds for the toolbar-compaction band:
+        // - compactBandMin: smallest black bar that can fit minToolbarHeight + clearance + padding.
+        // - compactBandMax: black bar where the full nominalToolbarHeight already fits with normal
+        //   bottom padding, so no compaction is needed.
+        val compactBandMin = minToolbarHeight + clearance + compactBandMinPadding
+        val compactBandMax = nominalToolbarHeight + clearance + normalMinPadding
+        val isCompactBand = useCompaction && !requiresImmersive &&
+            blackBarBelowTallest >= compactBandMin && blackBarBelowTallest < compactBandMax
 
         val minBottomPadding: Int = if (isCompactBand) compactBandMinPadding else normalMinPadding
 
         val toolbarHeight: Float = if (isCompactBand) {
             max(
-                COMPACT_TOOLBAR_MIN_HEIGHT,
+                minToolbarHeight,
                 min(
                     nominalToolbarHeight,
                     floor(blackBarBelowTallest - clearance - minBottomPadding)
@@ -663,9 +651,10 @@ object CameraLayoutSolver {
          */
         private fun gapGrid(index: Int, preferred: Int): List<Int> {
             if (index == preferredGaps.lastIndex) return listOf(preferred)
+            val minGap = rows[index].gapAbove.min.value.roundToJs()
             val values = linkedSetOf(preferred)
-            var v = MIN_SWEEP_GAP
-            val ceiling = max(preferred, MIN_SWEEP_GAP)
+            var v = minGap
+            val ceiling = max(preferred, minGap)
             while (v <= ceiling) {
                 values += v
                 v += GAP_SWEEP_STEP

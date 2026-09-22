@@ -198,6 +198,7 @@ data class CameraLayoutSpec(
     val rows: List<ControlRow>,
     val viewfinders: List<ViewfinderSlot>,
     val minControlClearance: Dp = 4.dp,
+    val minInteractiveTouchTarget: Dp = 48.dp,
     val bottomPadding: GapRange = GapRange(8.dp, 30.dp),
     val maxStackLift: Dp = 72.dp,
     val enforceTopWeighting: Boolean = true,
