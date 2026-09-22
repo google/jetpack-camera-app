@@ -42,6 +42,7 @@ import com.google.jetpackcamera.permissions.navigation.PermissionsRoute
 import com.google.jetpackcamera.permissions.navigation.navigateToPermissions
 import com.google.jetpackcamera.permissions.navigation.permissionsScreen
 import com.google.jetpackcamera.permissions.navigation.popUpToPermissions
+import com.google.jetpackcamera.settings.DefaultCameraSettings
 import com.google.jetpackcamera.settings.SettingsScreen
 import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
@@ -150,8 +151,12 @@ private fun JetpackCameraNavHost(
                     buildType = BuildConfig.BUILD_TYPE
                 ),
                 onNavigateBack = { navController.popBackStack() },
-                customEffectSlot = {
-                    JcaEffectsSetting()
+                cameraSettingsSlot = {
+                    DefaultCameraSettings(
+                        customEffectSlot = {
+                            JcaEffectsSetting()
+                        }
+                    )
                 }
             )
         }

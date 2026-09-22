@@ -16,6 +16,9 @@
 package com.google.jetpackcamera.settings
 
 import android.Manifest
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -34,6 +37,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +47,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -90,6 +95,9 @@ private val LLB_SUPPORTED_CONSTRAINTS = TYPICAL_SYSTEM_CONSTRAINTS.copy(
 internal class CameraAppSettingsViewModelTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
 
     private lateinit var testFile: File
     private lateinit var testDataStore: DataStore<Preferences>
@@ -551,6 +559,19 @@ internal class CameraAppSettingsViewModelTest {
             (cameraEffectUiState as CameraEffectUiState.Disabled).disabledRationale
         assertThat(disabledRationale)
             .isInstanceOf(DisabledRationale.UltraHdrUnsupportedRationale::class.java)
+    }
+
+    @Test
+    fun settingsScreen_defaultSlots_rendersDefaultSections() {
+        Dispatchers.resetMain()
+        composeTestRule.setContent {
+            SettingsScreen(
+                versionInfo = VersionInfoHolder(versionName = "1.0.0", buildType = "debug"),
+                onNavigateBack = {},
+                viewModel = settingsViewModel
+            )
+        }
+        composeTestRule.onNodeWithTag(BTN_OPEN_DIALOG_SETTING_FLASH_TAG).assertIsDisplayed()
     }
 }
 
