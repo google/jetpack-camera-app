@@ -62,14 +62,23 @@ import com.google.jetpackcamera.settings.ui.VideoQualitySetting
 
 /**
  * Screen used for the Settings feature.
+ *
+ * @param versionInfo Holder for application version and build type information.
+ * @param onNavigateBack Callback when the user navigates back from settings.
+ * @param customEffectSlot A slot for injecting custom camera effects into camera settings.
+ * @param cameraSettingsSlot Slot for the camera settings section.
+ * @param recordingSettingsSlot Slot for the recording settings section.
+ * @param appSettingsSlot Slot for the general application settings section.
  */
-
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     versionInfo: VersionInfoHolder,
     onNavigateBack: () -> Unit,
-    cameraSettingsSlot: @Composable () -> Unit = { DefaultCameraSettings() },
+    customEffectSlot: @Composable () -> Unit = {},
+    cameraSettingsSlot: @Composable () -> Unit = {
+        DefaultCameraSettings(customEffectSlot = customEffectSlot)
+    },
     recordingSettingsSlot: @Composable () -> Unit = { DefaultRecordingSettings() },
     appSettingsSlot: @Composable () -> Unit = { DefaultAppSettings(versionInfo = versionInfo) }
 ) {
