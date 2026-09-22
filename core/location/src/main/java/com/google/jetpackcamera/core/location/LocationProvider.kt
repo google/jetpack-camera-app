@@ -52,9 +52,8 @@ interface LocationProvider {
      * populate the cache prior to photo capture or video recording. Has no effect if location
      * permissions have not been granted.
      *
-     * Implementations should ensure this method is idempotent or reference-counted across
-     * multiple concurrent callers so that overlapping lifecycles do not prematurely stop or
-     * duplicate hardware listener registrations.
+     * Implementations should ensure this method is idempotent; calling this when updates are
+     * already active should be a no-op without creating duplicate listener registrations.
      */
     fun startLocationUpdates()
 
@@ -63,8 +62,8 @@ interface LocationProvider {
      *
      * Should be called when the camera preview is paused or stopped to conserve battery power.
      *
-     * Implementations should ensure this method is idempotent or reference-counted, releasing
-     * underlying hardware listeners only when all active callers have stopped requesting updates.
+     * Implementations should ensure this method is idempotent; calling this when updates are
+     * already stopped should be a no-op.
      */
     fun stopLocationUpdates()
 }
