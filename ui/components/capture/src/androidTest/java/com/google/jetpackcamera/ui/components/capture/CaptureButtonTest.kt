@@ -19,6 +19,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -28,10 +29,12 @@ import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import org.junit.Before
@@ -55,33 +58,46 @@ class CaptureButtonTest {
 
     @Test
     fun captureButton_standard_exists() {
+        var imageCaptured = false
+        var recordingStarted = false
+        var recordingLocked = false
         composeTestRule.setContent {
             CaptureButton(
-                modifier = Modifier.testTag("CaptureButtonTestTag"),
-                onImageCapture = {},
-                onStartRecording = {},
+                modifier = Modifier.testTag(CAPTURE_BUTTON),
+                onImageCapture = { imageCaptured = true },
+                onStartRecording = { recordingStarted = true },
                 onStopRecording = {},
-                onLockVideoRecording = {},
+                onLockVideoRecording = { recordingLocked = it },
                 onIncrementZoom = {},
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
             )
         }
 
-        composeTestRule.onNodeWithTag("CaptureButtonTestTag").assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
         composeTestRule.onNodeWithTag(
-            "CaptureButtonTestTag"
+            CAPTURE_BUTTON
         ).assertContentDescriptionEquals("Capture Photo")
-        composeTestRule.onNodeWithTag("CaptureButtonTestTag", useUnmergedTree = true)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON, useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
+
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .performSemanticsAction(SemanticsActions.OnClick)
+        assertThat(imageCaptured).isTrue()
+
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .performSemanticsAction(SemanticsActions.OnLongClick)
+        assertThat(recordingLocked).isTrue()
+        assertThat(recordingStarted).isTrue()
     }
 
     @Test
     fun captureButton_imageOnly_exists() {
+        var imageCaptured = false
         composeTestRule.setContent {
             CaptureButton(
-                modifier = Modifier.testTag("CaptureButtonImageOnly"),
-                onImageCapture = {},
+                modifier = Modifier.testTag(CAPTURE_BUTTON),
+                onImageCapture = { imageCaptured = true },
                 onStartRecording = {},
                 onStopRecording = {},
                 onLockVideoRecording = {},
@@ -90,63 +106,76 @@ class CaptureButtonTest {
             )
         }
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
-        composeTestRule.onNodeWithTag("CaptureButtonImageOnly").assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
         composeTestRule.onNodeWithTag(
-            "CaptureButtonImageOnly"
+            CAPTURE_BUTTON
         ).assertContentDescriptionEquals("Capture Photo")
-        composeTestRule.onNodeWithTag("CaptureButtonImageOnly", useUnmergedTree = true)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON, useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .performSemanticsAction(SemanticsActions.OnClick)
+        assertThat(imageCaptured).isTrue()
     }
 
     @Test
     fun captureButton_videoOnly_exists() {
+        var recordingStarted = false
+        var recordingLocked = false
         composeTestRule.setContent {
             CaptureButton(
-                modifier = Modifier.testTag("CaptureButtonVideoOnly"),
+                modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},
-                onStartRecording = {},
+                onStartRecording = { recordingStarted = true },
                 onStopRecording = {},
-                onLockVideoRecording = {},
+                onLockVideoRecording = { recordingLocked = it },
                 onIncrementZoom = {},
                 captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
             )
         }
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
-        composeTestRule.onNodeWithTag("CaptureButtonVideoOnly").assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
         composeTestRule.onNodeWithTag(
-            "CaptureButtonVideoOnly"
+            CAPTURE_BUTTON
         ).assertContentDescriptionEquals("Start Video Recording")
-        composeTestRule.onNodeWithTag("CaptureButtonVideoOnly", useUnmergedTree = true)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON, useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .performSemanticsAction(SemanticsActions.OnClick)
+        assertThat(recordingLocked).isTrue()
+        assertThat(recordingStarted).isTrue()
     }
 
     @Test
     fun captureButton_lockedRecording_exists() {
+        var recordingStopped = false
         composeTestRule.setContent {
             CaptureButton(
-                modifier = Modifier.testTag("CaptureButtonLocked"),
+                modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},
                 onStartRecording = {},
-                onStopRecording = {},
+                onStopRecording = { recordingStopped = true },
                 onLockVideoRecording = {},
                 onIncrementZoom = {},
                 captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording
             )
         }
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
-        composeTestRule.onNodeWithTag("CaptureButtonLocked").assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
         composeTestRule.onNodeWithTag(
-            "CaptureButtonLocked"
+            CAPTURE_BUTTON
         ).assertContentDescriptionEquals("Stop Video Recording")
-        composeTestRule.onNodeWithTag("CaptureButtonLocked", useUnmergedTree = true)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON, useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .performSemanticsAction(SemanticsActions.OnClick)
+        assertThat(recordingStopped).isTrue()
     }
 
     @Test
     fun captureButton_pressedRecording_exists() {
         composeTestRule.setContent {
             CaptureButton(
-                modifier = Modifier.testTag("CaptureButtonPressedRecording"),
+                modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},
                 onStartRecording = {},
                 onStopRecording = {},
@@ -156,11 +185,11 @@ class CaptureButtonTest {
             )
         }
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
-        composeTestRule.onNodeWithTag("CaptureButtonPressedRecording").assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
         composeTestRule.onNodeWithTag(
-            "CaptureButtonPressedRecording"
+            CAPTURE_BUTTON
         ).assertContentDescriptionEquals("Recording Video")
-        composeTestRule.onNodeWithTag("CaptureButtonPressedRecording", useUnmergedTree = true)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON, useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
     }
 
@@ -168,7 +197,7 @@ class CaptureButtonTest {
     fun captureButton_disabled_exists() {
         composeTestRule.setContent {
             CaptureButton(
-                modifier = Modifier.testTag("CaptureButtonDisabled"),
+                modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},
                 onStartRecording = {},
                 onStopRecording = {},
@@ -181,9 +210,9 @@ class CaptureButtonTest {
             )
         }
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
-        composeTestRule.onNodeWithTag("CaptureButtonDisabled").assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
         composeTestRule.onNodeWithTag(
-            "CaptureButtonDisabled"
-        ).assert(androidx.compose.ui.test.isNotEnabled())
+            CAPTURE_BUTTON
+        ).assert(isNotEnabled())
     }
 }

@@ -118,7 +118,7 @@
     <!-- Accessibility label for the control that locks video recording, so the user can keep recording without holding down the capture button. [CHAR LIMIT=NONE] -->
     <string name="capture_button_lock_video_recording">Lock Video Recording</string>
     <!-- Accessibility label for the capture button when it is disabled, for example while the camera is busy, and cannot be activated. [CHAR LIMIT=NONE] -->
-    <string name="capture_button_unavailable">Capture Button Unavailable</string>
+    <string name="capture_button_unavailable">Capture</string>
 
     <string name="camera_viewfinder_content_description">Camera viewfinder</string>
 

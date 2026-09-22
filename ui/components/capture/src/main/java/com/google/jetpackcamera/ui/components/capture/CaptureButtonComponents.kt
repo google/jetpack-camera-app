@@ -80,6 +80,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
@@ -350,6 +352,7 @@ internal fun CaptureButton(
         modifier = modifier,
         onPress = { onPress(CaptureSource.CAPTURE_BUTTON) },
         onRelease = { onKeyUp(CaptureSource.CAPTURE_BUTTON, it) },
+        onStartRecording = onStartRecording,
         onLockVideoRecording = onLockVideoRecording,
         onDragZoom = onIncrementZoom,
         captureButtonUiState = captureButtonUiState,
@@ -397,6 +400,7 @@ private fun CaptureButton(
     onDragZoom: (Float) -> Unit,
     onLockVideoRecording: (Boolean) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
+    onStartRecording: () -> Unit = {},
     useLockSwitch: Boolean = true,
     captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
@@ -575,6 +579,21 @@ private fun CaptureButton(
                 role = Role.Button
                 if (!captureButtonUiState.isEnabled) {
                     disabled()
+                } else {
+                    onClick {
+                        onPress()
+                        onRelease(false)
+                        true
+                    }
+                    if (captureButtonUiState is CaptureButtonUiState.Enabled.Idle &&
+                        captureButtonUiState.captureMode == CaptureMode.STANDARD
+                    ) {
+                        onLongClick(label = startVideoDesc) {
+                            onLockVideoRecording(true)
+                            onStartRecording()
+                            true
+                        }
+                    }
                 }
                 contentDescription = when (val uiState = captureButtonUiState) {
                     is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
@@ -751,7 +770,12 @@ private fun LockSwitchCaptureButtonNucleus(
                     .semantics {
                         contentDescription = lockVideoRecordingDesc
                         role = Role.Button
+                        onClick {
+                            onToggleSwitchPosition()
+                            true
+                        }
                     }
+                    .focusable()
                     .pointerInput(Unit) {
                         detectTapGestures {
                             onToggleSwitchPosition()
