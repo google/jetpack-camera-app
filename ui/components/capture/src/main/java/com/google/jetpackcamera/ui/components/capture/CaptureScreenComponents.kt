@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
@@ -30,6 +31,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -76,6 +78,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -91,10 +94,12 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -113,7 +118,6 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.controller.SnackBarController
-import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
@@ -139,7 +143,16 @@ import kotlinx.coroutines.flow.onCompletion
 private const val TAG = "PreviewScreen"
 private const val BLINK_TIME = 100L
 private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
-private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
+private const val FOCUS_INDICATOR_FAILURE_DELAY = 500L
+private val FOCUS_INDICATOR_BORDER_WIDTH = 2.dp
+
+private const val FOCUS_PULSE_DURATION_MILLIS = 400
+private const val FOCUS_ANIMATION_DURATION_MILLIS = 300
+private const val FOCUS_PULSE_MIN_ALPHA = 0.75f
+private const val FOCUS_LOCKED_ALPHA = 0.5f
+private const val FOCUS_FAILURE_ALPHA = 1.0f
+private const val FOCUS_LOCKED_SCALE = 0.8f
+private const val FOCUS_BURST_SCALE = 1.5f
 
 /**
  * A composable that displays the elapsed time of a video recording formatted as minutes and seconds.
@@ -615,9 +628,12 @@ fun PreviewDisplay(
                 )
 
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
+                val viewfinderDescription =
+                    stringResource(R.string.camera_viewfinder_content_description)
                 CameraXViewfinder(
                     modifier = Modifier
                         .fillMaxSize()
+                        .semantics { contentDescription = viewfinderDescription }
                         .pointerInput(onFlipCamera) {
                             detectTapGestures(
                                 onDoubleTap = { offset ->
@@ -664,8 +680,6 @@ fun PreviewDisplay(
  *
  * @param modifier the modifier for this component.
  * @param captureButtonUiState the [CaptureButtonUiState] that dictates the button's behavior.
- * @param isQuickSettingsOpen true if the quick settings panel is open.
- * @param onToggleQuickSettings callback to open or close the quick settings.
  * @param onIncrementZoom callback to adjust the camera's zoom level.
  * @param onCaptureImage callback to trigger image capture.
  * @param onStartVideoRecording callback to start video recording.
@@ -676,13 +690,11 @@ fun PreviewDisplay(
 fun CaptureButton(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
-    isQuickSettingsOpen: Boolean,
     onIncrementZoom: (Float) -> Unit = {},
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onLockVideoRecording: (Boolean) -> Unit = {},
-    quickSettingsController: QuickSettingsController? = null
+    onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -694,9 +706,6 @@ fun CaptureButton(
                 captureButtonUiState.isEnabled
             ) {
                 onCaptureImage(context.contentResolver)
-            }
-            if (isQuickSettingsOpen) {
-                quickSettingsController?.toggleQuickSettings()
             }
         },
         onStartRecording = {
@@ -931,95 +940,178 @@ fun FlipCameraButton(
  * @param coordinateTransformer The coordinate transformer to use to map the surface coordinates
  * to screen coordinates. This should come from [CameraXViewfinder].
  */
+@VisibleForTesting
 @Composable
-private fun FocusMeteringIndicator(
+internal fun FocusMeteringIndicator(
     focusMeteringUiState: FocusMeteringUiState,
     coordinateTransformer: CoordinateTransformer
 ) {
-    if (focusMeteringUiState is FocusMeteringUiState.Specified) {
-        val disableAnimations = LocalDisableAnimations.current
-        val alpha = if (disableAnimations) {
-            1f
+    val lastSpecifiedState = remember { arrayOfNulls<FocusMeteringUiState.Specified>(1) }
+    SideEffect {
+        if (focusMeteringUiState is FocusMeteringUiState.Specified) {
+            lastSpecifiedState[0] = focusMeteringUiState
+        }
+    }
+
+    val activeState =
+        (focusMeteringUiState as? FocusMeteringUiState.Specified)
+            ?: lastSpecifiedState[0]
+            ?: return
+
+    val disableAnimations = LocalDisableAnimations.current
+    val pulseAlphaProvider: () -> Float = if (disableAnimations) {
+        { 1f }
+    } else {
+        val transition = rememberInfiniteTransition(label = "FocusPulse")
+        val alphaState = transition.animateFloat(
+            initialValue = 1f,
+            targetValue = FOCUS_PULSE_MIN_ALPHA,
+            animationSpec = infiniteRepeatable(
+                animation = tween(FOCUS_PULSE_DURATION_MILLIS),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "FocusPulseAlpha"
+        )
+        val provider: () -> Float = { alphaState.value }
+        provider
+    }
+
+    val currentStatus = (focusMeteringUiState as? FocusMeteringUiState.Specified)?.status
+    var showFailureIndicator by remember { mutableStateOf(false) }
+    LaunchedEffect(currentStatus) {
+        if (currentStatus == FocusMeteringUiState.Status.FAILURE) {
+            showFailureIndicator = true
+            delay(FOCUS_INDICATOR_FAILURE_DELAY)
+            showFailureIndicator = false
         } else {
-            val transition = rememberInfiniteTransition(label = "FocusPulse")
-            val a by transition.animateFloat(
-                initialValue = 1f,
-                targetValue = 0.5f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(500),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "FocusPulseAlpha"
-            )
-            a
+            showFailureIndicator = false
+        }
+    }
+
+    // Accessibility: resolve focus status strings for semantics and TalkBack
+    val focusScanningDescription = stringResource(R.string.focus_scanning)
+    val focusLockedDescription = stringResource(R.string.focus_locked)
+    val focusFailedDescription = stringResource(R.string.focus_failed)
+    val focusReleasedDescription = stringResource(R.string.focus_released)
+
+    val focusStatusDescription = when (currentStatus) {
+        FocusMeteringUiState.Status.RUNNING -> focusScanningDescription
+        FocusMeteringUiState.Status.SUCCESS -> focusLockedDescription
+        FocusMeteringUiState.Status.FAILURE -> focusFailedDescription
+        FocusMeteringUiState.Status.CANCELLED -> focusReleasedDescription
+        null -> ""
+    }
+
+    // Accessibility: announce focus state transitions to TalkBack
+    val view = LocalView.current
+    LaunchedEffect(currentStatus) {
+        when (currentStatus) {
+            FocusMeteringUiState.Status.RUNNING ->
+                view.announceForAccessibility(focusScanningDescription)
+            FocusMeteringUiState.Status.SUCCESS ->
+                view.announceForAccessibility(focusLockedDescription)
+            FocusMeteringUiState.Status.FAILURE ->
+                view.announceForAccessibility(focusFailedDescription)
+            FocusMeteringUiState.Status.CANCELLED ->
+                view.announceForAccessibility(focusReleasedDescription)
+            null -> {}
+        }
+    }
+
+    val isVisible = currentStatus == FocusMeteringUiState.Status.RUNNING ||
+        currentStatus == FocusMeteringUiState.Status.SUCCESS ||
+        showFailureIndicator
+
+    val animatedScale by animateFloatAsState(
+        targetValue = if (currentStatus == FocusMeteringUiState.Status.SUCCESS) {
+            FOCUS_LOCKED_SCALE
+        } else {
+            1.0f
+        },
+        animationSpec =
+        if (disableAnimations) {
+            snap()
+        } else {
+            tween(FOCUS_ANIMATION_DURATION_MILLIS, easing = FastOutSlowInEasing)
+        },
+        label = "FocusIndicatorScale"
+    )
+
+    val reticleAlphaProvider = {
+        when (currentStatus) {
+            FocusMeteringUiState.Status.RUNNING -> pulseAlphaProvider()
+            FocusMeteringUiState.Status.SUCCESS -> FOCUS_LOCKED_ALPHA
+            FocusMeteringUiState.Status.FAILURE -> FOCUS_FAILURE_ALPHA
+            FocusMeteringUiState.Status.CANCELLED, null -> {
+                when (lastSpecifiedState[0]?.status) {
+                    FocusMeteringUiState.Status.SUCCESS -> FOCUS_LOCKED_ALPHA
+                    FocusMeteringUiState.Status.FAILURE -> FOCUS_FAILURE_ALPHA
+                    FocusMeteringUiState.Status.RUNNING -> pulseAlphaProvider()
+                    else -> FOCUS_LOCKED_ALPHA
+                }
+            }
+        }
+    }
+
+    // Map coordinates from surface coordinates back to screen coordinates
+    val tapCoords =
+        remember(
+            coordinateTransformer.transformMatrix,
+            activeState.surfaceCoordinates
+        ) {
+            Matrix().run {
+                setFrom(coordinateTransformer.transformMatrix)
+                invert()
+                map(activeState.surfaceCoordinates)
+            }
         }
 
-        // The indicator for SUCCESS/FAILURE is shown for a short duration
-        var showResultIndicator by remember { mutableStateOf(false) }
-        val status = focusMeteringUiState.status
-        LaunchedEffect(status) {
-            if (status == FocusMeteringUiState.Status.SUCCESS ||
-                status == FocusMeteringUiState.Status.FAILURE
-            ) {
-                showResultIndicator = true
-                delay(FOCUS_INDICATOR_RESULT_DELAY)
-                showResultIndicator = false
-            } else {
-                showResultIndicator = false
-            }
-        }
-        // Map coordinates from surface coordinates back to screen coordinates
-        val tapCoords =
-            remember(
-                coordinateTransformer.transformMatrix,
-                focusMeteringUiState.surfaceCoordinates
-            ) {
-                Matrix().run {
-                    setFrom(coordinateTransformer.transformMatrix)
-                    invert()
-                    map(focusMeteringUiState.surfaceCoordinates)
-                }
-            }
-        val showFocusMeteringIndicator = status == FocusMeteringUiState.Status.RUNNING
-        val isVisible = showFocusMeteringIndicator || showResultIndicator
-        AnimatedVisibility(
-            visible = isVisible,
-            enter = if (disableAnimations) {
-                EnterTransition.None
-            } else {
-                fadeIn() + scaleIn(
-                    initialScale = 1.5f
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = if (disableAnimations) {
+            EnterTransition.None
+        } else {
+            fadeIn() + scaleIn(
+                initialScale = FOCUS_BURST_SCALE
+            )
+        },
+        exit = if (disableAnimations) {
+            ExitTransition.None
+        } else {
+            fadeOut(tween(FOCUS_ANIMATION_DURATION_MILLIS, easing = FastOutSlowInEasing)) +
+                scaleOut(
+                    targetScale = FOCUS_BURST_SCALE,
+                    animationSpec = tween(
+                        FOCUS_ANIMATION_DURATION_MILLIS,
+                        easing = FastOutSlowInEasing
+                    )
                 )
-            },
-            exit = if (disableAnimations) {
-                ExitTransition.None
-            } else {
-                fadeOut() + when (focusMeteringUiState.status) {
-                    FocusMeteringUiState.Status.SUCCESS -> scaleOut(targetScale = 0.5f)
-                    FocusMeteringUiState.Status.FAILURE -> scaleOut(targetScale = 1.5f)
-                    else -> fadeOut()
-                }
-            },
-            modifier = Modifier
-                .offset { tapCoords.round() }
-                .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
+        },
+        modifier = Modifier
+            .offset { tapCoords.round() }
+            .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
+    ) {
+        Box(
+            modifier = Modifier.size(TAP_TO_FOCUS_INDICATOR_SIZE),
+            contentAlignment = Alignment.Center
         ) {
             Box(
                 Modifier
                     .testTag(FOCUS_METERING_INDICATOR_TAG)
-                    .alpha(
-                        if (focusMeteringUiState.status == FocusMeteringUiState.Status.SUCCESS) {
-                            1f
-                        } else {
-                            alpha
+                    .semantics {
+                        if (focusStatusDescription.isNotEmpty()) {
+                            contentDescription = focusStatusDescription
                         }
-                    )
+                    }
+                    .graphicsLayer {
+                        alpha = reticleAlphaProvider()
+                    }
                     .border(
-                        1.dp,
+                        FOCUS_INDICATOR_BORDER_WIDTH,
                         Color.White,
                         CircleShape
                     )
-                    .size(TAP_TO_FOCUS_INDICATOR_SIZE)
+                    .size(TAP_TO_FOCUS_INDICATOR_SIZE * animatedScale)
             )
         }
     }

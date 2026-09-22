@@ -27,11 +27,6 @@ import com.google.jetpackcamera.model.LensFacing
  */
 interface QuickSettingsController {
     /**
-     * Toggles the visibility of the quick settings menu.
-     */
-    fun toggleQuickSettings()
-
-    /**
      * Sets the lens facing (e.g., front or back camera).
      *
      * @param lensFace The lens facing to set.

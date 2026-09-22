@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.utils
 
 import android.content.Context
-import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -46,10 +45,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.action.ViewActions.swipeDown
 import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
-import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.FlashMode
@@ -74,6 +71,9 @@ import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DRAG_HANDLE
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCRIM
 import com.google.jetpackcamera.ui.components.capture.R as CaptureR
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
@@ -194,7 +194,8 @@ fun ComposeTestRule.waitForNodeWithTagToDisappear(
     timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
 ) {
     waitUntil(timeoutMillis = timeoutMillis) {
-        onNodeWithTag(tag).isNotDisplayed()
+        val nodes = onAllNodesWithTag(tag).fetchSemanticsNodes()
+        nodes.isEmpty() || onNodeWithTag(tag).isNotDisplayed()
     }
 }
 
@@ -647,6 +648,34 @@ inline fun <T> SettingsScreenScope.visitSettingDialog(
 // ////////////////////////////
 
 /**
+ * Checks whether the quick settings bottom sheet is currently displayed without throwing.
+ */
+fun ComposeTestRule.isQuickSettingsSheetOpen(): Boolean {
+    val nodes = onAllNodesWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNodes()
+    if (nodes.isEmpty()) return false
+    return try {
+        onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isDisplayed()
+    } catch (_: AssertionError) {
+        false
+    }
+}
+
+/**
+ * Closes the quick settings bottom sheet if it is open.
+ */
+fun ComposeTestRule.closeQuickSettings(timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS) {
+    if (!isQuickSettingsSheetOpen()) return
+
+    try {
+        onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
+    } catch (_: AssertionError) {
+        onNodeWithTag(QUICK_SETTINGS_SCRIM).performClick()
+    }
+
+    waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET, timeoutMillis)
+}
+
+/**
  * Navigates to quick settings if not already there and perform action from provided block.
  * This will return from quick settings if not already there, or remain on quick settings if there.
  */
@@ -656,23 +685,13 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
     crossinline block: ComposeTestRule.() -> T
 ): T {
     var needReturnFromQuickSettings = false
-    onNodeWithContentDescription(CaptureR.string.quick_settings_toggle_closed_description).apply {
-        if (isDisplayed()) {
-            performClick()
-            needReturnFromQuickSettings = true
-        }
+    if (!isQuickSettingsSheetOpen()) {
+        onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).performClick()
+        needReturnFromQuickSettings = true
     }
 
     waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-        try {
-            onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isDisplayed()
-        } catch (e: AssertionError) {
-            Log.e(
-                "ComposeTestRuleExt",
-                "Quick settings can only be entered from PreviewScreen or QuickSettings screen"
-            )
-            throw e
-        }
+        isQuickSettingsSheetOpen()
     }
     // if we opened quick settings and want to immediately search for a setting
     settingTagToFind?.let { searchForQuickSetting(it) }
@@ -680,31 +699,7 @@ inline fun <T> ComposeTestRule.visitQuickSettings(
         return block()
     } finally {
         if (needReturnFromQuickSettings) {
-            val bottomSheetNode = onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
-            // Check if the bottom sheet content exists and is visible
-
-            if (bottomSheetNode.isDisplayed()) {
-                // It's visible, so perform the swipe down
-                bottomSheetNode.performTouchInput {
-                    down(center)
-                    swipeDown().ignoreResult()
-                    up()
-                }
-
-                // Assert that the sheet is no longer visible (e.g., the text disappears)
-                waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                    onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
-                }
-            } else {
-                Log.d(
-                    "ComposeTestRuleExt",
-                    "Bottom sheet with tag $QUICK_SETTINGS_BOTTOM_SHEET is not visible. Skipping quick settings closure."
-                )
-            }
-
-            waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).isNotDisplayed()
-            }
+            closeQuickSettings()
         }
     }
 }
