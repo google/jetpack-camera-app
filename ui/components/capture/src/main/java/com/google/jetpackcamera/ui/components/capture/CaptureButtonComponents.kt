@@ -23,7 +23,7 @@ import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDp
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
@@ -107,7 +107,7 @@ private const val MORPH_INTERMEDIATE_SCALE = 0.58f
 private const val BORDER_WIDTH = 3f
 private const val ANIMATION_DURATION_SIZE = 250
 private const val ANIMATION_DURATION_COLOR = 150
-private const val ANIMATION_DURATION_NUCLEUS_RELEASE = 100
+private const val ANIMATION_DURATION_NUCLEUS_RELEASE = 50
 private const val ANIMATION_DURATION_DISABLED = 500
 private const val ANIMATION_DURATION_NUCLEUS_PRESSED = 50
 private const val ALPHA_DISABLED_NUCLEUS = 0.6f
@@ -803,6 +803,16 @@ private enum class NucleusState {
     Pressed
 }
 
+private enum class NucleusSizeState {
+    Unavailable,
+    IdleStandard,
+    IdleImageOnly,
+    IdleVideoOnly,
+    PressedImage,
+    RecordingPressed,
+    RecordingLocked
+}
+
 /**
  * The animated center of the capture button. It serves as a visual indicator of the current capture and recording states.
  *
@@ -838,77 +848,85 @@ internal fun CaptureButtonNucleus(
     val currentUiState = rememberUpdatedState(captureButtonUiState)
     val disableAnimations = LocalDisableAnimations.current
 
-    // smoothly animate between the size changes of the capture button center
-    val standardShapeSize by animateDpAsState(
-        targetValue = when (val uiState = currentUiState.value) {
-            // inner circle becomes a square when locked
-            CaptureButtonUiState.Enabled.Recording.LockedRecording ->
-                (captureButtonSize * LOCKED_RECORDING_NUCLEUS_SCALE).dp
-
-            CaptureButtonUiState.Enabled.Recording.Starting,
-            CaptureButtonUiState.Enabled.Recording.PressedRecording ->
-                (captureButtonSize * pressedVideoCaptureScale).dp
-
-            CaptureButtonUiState.Unavailable -> 0.dp
-            is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
-                // no inner circle will be visible on STANDARD
-                CaptureMode.STANDARD -> 0.dp
-                // large white circle will be visible on IMAGE_ONLY
-                CaptureMode.IMAGE_ONLY -> (captureButtonSize * idleImageCaptureScale).dp
-                // small red circle will be visible on VIDEO_ONLY
-                CaptureMode.VIDEO_ONLY -> (captureButtonSize * idleVideoCaptureScale).dp
-            }
-        },
-        animationSpec = if (disableAnimations) {
-            snap()
-        } else {
-            tween(durationMillis = ANIMATION_DURATION_SIZE, easing = FastOutSlowInEasing)
+    val nucleusSizeState = when (val uiState = currentUiState.value) {
+        CaptureButtonUiState.Enabled.Recording.LockedRecording -> NucleusSizeState.RecordingLocked
+        CaptureButtonUiState.Enabled.Recording.Starting,
+        CaptureButtonUiState.Enabled.Recording.PressedRecording -> NucleusSizeState.RecordingPressed
+        CaptureButtonUiState.Unavailable -> NucleusSizeState.Unavailable
+        is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
+            CaptureMode.STANDARD ->
+                if (isTapping) NucleusSizeState.PressedImage else NucleusSizeState.IdleStandard
+            CaptureMode.IMAGE_ONLY ->
+                if (isTapping) NucleusSizeState.PressedImage else NucleusSizeState.IdleImageOnly
+            CaptureMode.VIDEO_ONLY -> NucleusSizeState.IdleVideoOnly
         }
+    }
+
+    val sizeTransition = updateTransition(
+        targetState = nucleusSizeState,
+        label = "Nucleus Size Transition"
     )
 
-    val pressTransition = updateTransition(
-        targetState = isTapping &&
-            currentUiState.value.let {
-                it is CaptureButtonUiState.Enabled.Idle &&
-                    (
-                        it.captureMode == CaptureMode.IMAGE_ONLY ||
-                            it.captureMode == CaptureMode.STANDARD
-                        )
-            },
-        label = "Press Size Transition"
-    )
-
-    val centerShapeSize by pressTransition.animateDp(
+    val rawCenterShapeSize by sizeTransition.animateDp(
         transitionSpec = {
-            if (targetState) {
+            if (disableAnimations || targetState == NucleusSizeState.PressedImage) {
                 snap()
-            } else {
+            } else if (
+                NucleusSizeState.PressedImage isTransitioningTo NucleusSizeState.IdleImageOnly
+            ) {
                 tween(durationMillis = ANIMATION_DURATION_NUCLEUS_RELEASE)
+            } else if (
+                NucleusSizeState.PressedImage isTransitioningTo NucleusSizeState.IdleStandard
+            ) {
+                keyframes {
+                    durationMillis = ANIMATION_DURATION_NUCLEUS_RELEASE
+                    (captureButtonSize * PRESSED_IMAGE_CAPTURE_SCALE).dp at
+                        ANIMATION_DURATION_NUCLEUS_RELEASE
+                }
+            } else {
+                tween(durationMillis = ANIMATION_DURATION_SIZE, easing = FastOutSlowInEasing)
             }
         },
         label = "Nucleus Size"
-    ) { isPressedImage ->
-        if (isPressedImage) {
-            (captureButtonSize * PRESSED_IMAGE_CAPTURE_SCALE).dp
-        } else {
-            standardShapeSize
+    ) { state ->
+        when (state) {
+            // inner circle becomes a square when locked
+            NucleusSizeState.RecordingLocked ->
+                (captureButtonSize * LOCKED_RECORDING_NUCLEUS_SCALE).dp
+            NucleusSizeState.RecordingPressed ->
+                (captureButtonSize * pressedVideoCaptureScale).dp
+            // no inner circle will be visible on Unavailable or idle STANDARD
+            NucleusSizeState.Unavailable,
+            NucleusSizeState.IdleStandard -> 0.dp
+            // large white circle will be visible on IMAGE_ONLY
+            NucleusSizeState.IdleImageOnly ->
+                (captureButtonSize * idleImageCaptureScale).dp
+            // small red circle will be visible on VIDEO_ONLY
+            NucleusSizeState.IdleVideoOnly ->
+                (captureButtonSize * idleVideoCaptureScale).dp
+            NucleusSizeState.PressedImage ->
+                (captureButtonSize * PRESSED_IMAGE_CAPTURE_SCALE).dp
         }
     }
+    val centerShapeSize = rawCenterShapeSize.coerceAtLeast(0.dp)
 
     val sizeFinal = (captureButtonSize * LOCKED_RECORDING_NUCLEUS_SCALE).dp
     val sizeInter = (captureButtonSize * MORPH_INTERMEDIATE_SCALE).dp
     val isLocked = currentUiState.value is CaptureButtonUiState.Enabled.Recording.LockedRecording
-    val cornerRadius = if (isLocked) {
-        if (centerShapeSize <= sizeInter) {
-            val fraction = (centerShapeSize - sizeFinal) / (sizeInter - sizeFinal)
-            val coercedFraction = fraction.coerceIn(0f, 1f)
-            LOCKED_CORNER_RADIUS + (centerShapeSize / 2 - LOCKED_CORNER_RADIUS) * coercedFraction
+    val cornerRadius = (
+        if (isLocked) {
+            if (centerShapeSize <= sizeInter) {
+                val fraction = (centerShapeSize - sizeFinal) / (sizeInter - sizeFinal)
+                val coercedFraction = fraction.coerceIn(0f, 1f)
+                LOCKED_CORNER_RADIUS +
+                    (centerShapeSize / 2 - LOCKED_CORNER_RADIUS) * coercedFraction
+            } else {
+                centerShapeSize / 2
+            }
         } else {
             centerShapeSize / 2
         }
-    } else {
-        centerShapeSize / 2
-    }
+        ).coerceAtLeast(0.dp)
 
     // used to fade between red/white in the center of the capture button
     val isPressableImageMode = currentUiState.value.let {
@@ -950,7 +968,15 @@ internal fun CaptureButtonNucleus(
             NucleusState.Idle -> {
                 when (val uiState = currentUiState.value) {
                     is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
-                        CaptureMode.STANDARD -> imageCaptureModeColor
+                        CaptureMode.STANDARD ->
+                            if (
+                                sizeTransition.currentState == NucleusSizeState.RecordingPressed ||
+                                sizeTransition.currentState == NucleusSizeState.RecordingLocked
+                            ) {
+                                imageCaptureModeColor
+                            } else {
+                                imageCaptureModeColor.copy(alpha = 0f)
+                            }
                         CaptureMode.IMAGE_ONLY -> imageCaptureModeColor
                         CaptureMode.VIDEO_ONLY ->
                             if (isTapping) recordingColor else imageCaptureModeColor
