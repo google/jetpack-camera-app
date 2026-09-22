@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture.layout
 
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -119,28 +120,33 @@ object CameraLayoutDefaults {
      * video mode, but its slot is not released, so the shutter button stays exactly where the
      * user's thumb left it when they switch modes.
      */
-    fun rows(): List<ControlRow> = listOf(
+    fun rows(
+        bottomToolbarHeight: Dp = BottomToolbarHeight,
+        modeSwitcherHeight: Dp = ModeSwitcherHeight,
+        captureRowHeight: Dp = CaptureRowHeight,
+        zoomBarHeight: Dp = ZoomBarHeight
+    ): List<ControlRow> = listOf(
         ControlRow(
             id = CameraRowIds.BOTTOM_TOOLBAR,
-            height = BottomToolbarHeight,
+            height = bottomToolbarHeight,
             collisionWeight = BOTTOM_TOOLBAR_WEIGHT,
             gapAbove = GapRange(MinGap, StandardGap)
         ),
         ControlRow(
             id = CameraRowIds.MODE_SWITCHER,
-            height = ModeSwitcherHeight,
+            height = modeSwitcherHeight,
             collisionWeight = MODE_SWITCHER_WEIGHT,
             gapAbove = GapRange(MinGap, StandardGap)
         ),
         ControlRow(
             id = CameraRowIds.CAPTURE_ROW,
-            height = CaptureRowHeight,
+            height = captureRowHeight,
             collisionWeight = CAPTURE_ROW_WEIGHT,
             gapAbove = GapRange(MinGap, ZoomToCaptureGap)
         ),
         ControlRow(
             id = CameraRowIds.ZOOM_BAR,
-            height = ZoomBarHeight,
+            height = zoomBarHeight,
             collisionWeight = ZOOM_BAR_WEIGHT,
             gapAbove = GapRange(MinGap, StandardGap)
         )
@@ -177,11 +183,22 @@ object CameraLayoutDefaults {
      *   frame is slightly too short for a full-height toolbar.
      */
     fun spec(
-        toolbarCompaction: ToolbarCompaction = ToolbarCompaction.COMPACT_TOOLBAR
+        toolbarCompaction: ToolbarCompaction = ToolbarCompaction.COMPACT_TOOLBAR,
+        bottomToolbarHeight: Dp = BottomToolbarHeight,
+        modeSwitcherHeight: Dp = ModeSwitcherHeight,
+        captureRowHeight: Dp = CaptureRowHeight,
+        zoomBarHeight: Dp = ZoomBarHeight,
+        minInteractiveTouchTarget: Dp = 48.dp
     ): CameraLayoutSpec = CameraLayoutSpec(
-        rows = rows(),
+        rows = rows(
+            bottomToolbarHeight = bottomToolbarHeight,
+            modeSwitcherHeight = modeSwitcherHeight,
+            captureRowHeight = captureRowHeight,
+            zoomBarHeight = zoomBarHeight
+        ),
         viewfinders = viewfinders(),
         minControlClearance = MinControlClearance,
+        minInteractiveTouchTarget = minInteractiveTouchTarget,
         bottomPadding = GapRange(MinBottomPadding, BottomPadding),
         maxStackLift = MaxStackLift,
         enforceTopWeighting = true,

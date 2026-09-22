@@ -249,4 +249,24 @@ data class CameraLayoutSolution(
 ) {
     /** True when every viewfinder edge clears every control row by the required margin. */
     val isCollisionFree: Boolean get() = collisions.isEmpty()
+
+    /**
+     * Returns the solved vertical band for the viewfinder whose aspect ratio (`width / height`) is
+     * closest to [aspectRatio], or `null` if [viewfinders] is empty.
+     */
+    fun viewfinderBandFor(
+        aspectRatio: Float,
+        slots: List<ViewfinderSlot> = CameraLayoutDefaults.viewfinders()
+    ): DpRange? {
+        val closestSlot = slots.minByOrNull { kotlin.math.abs(it.aspectRatio - aspectRatio) }
+            ?: return null
+        return viewfinders[closestSlot.id]
+    }
+}
+
+/**
+ * Provides the active [CameraLayoutSolution] to descendants such as the viewfinder display.
+ */
+val LocalCameraLayoutSolution = androidx.compose.runtime.compositionLocalOf<CameraLayoutSolution?> {
+    null
 }

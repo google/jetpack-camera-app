@@ -81,26 +81,41 @@ fun CameraSystemBarsEffect(
     }
 
     val shouldHideStatusBar = enabled && !isInMultiWindowMode && hideStatusBar
+    val shouldHideNavigationBar = enabled && !isInMultiWindowMode && !keepNavigationBar
 
-    LifecycleResumeEffect(activity, view, shouldHideStatusBar, isDarkTheme, keepNavigationBar) {
+    LifecycleResumeEffect(
+        activity,
+        view,
+        shouldHideStatusBar,
+        shouldHideNavigationBar,
+        isDarkTheme
+    ) {
         applySystemBars(
             window = activity.window,
             view = view,
             hideStatusBar = shouldHideStatusBar,
-            keepNavigationBar = keepNavigationBar,
+            keepNavigationBar = !shouldHideNavigationBar,
             isDarkTheme = isDarkTheme
         )
         onPauseOrDispose {}
     }
 
-    DisposableEffect(activity, view, shouldHideStatusBar, isDarkTheme, keepNavigationBar) {
+    // Window focus is acquired after onResume on initial launch and after keyguard unlock;
+    // re-asserting on focus gain ensures the InsetsController request is not dropped before attachment.
+    DisposableEffect(
+        activity,
+        view,
+        shouldHideStatusBar,
+        shouldHideNavigationBar,
+        isDarkTheme
+    ) {
         val focusListener = ViewTreeObserver.OnWindowFocusChangeListener { hasFocus ->
             if (hasFocus) {
                 applySystemBars(
                     window = activity.window,
                     view = view,
                     hideStatusBar = shouldHideStatusBar,
-                    keepNavigationBar = keepNavigationBar,
+                    keepNavigationBar = !shouldHideNavigationBar,
                     isDarkTheme = isDarkTheme
                 )
             }
@@ -111,7 +126,7 @@ fun CameraSystemBarsEffect(
         }
     }
 
-    DisposableEffect(activity, view, isDarkTheme, keepNavigationBar) {
+    DisposableEffect(activity, view, isDarkTheme) {
         onDispose {
             // Skip the restore when the activity is going away or being recreated: the bars would
             // visibly blink during a configuration change, and a finishing activity's window state
@@ -121,9 +136,52 @@ fun CameraSystemBarsEffect(
                     window = activity.window,
                     view = view,
                     hideStatusBar = false,
-                    keepNavigationBar = keepNavigationBar,
+                    keepNavigationBar = true,
                     isDarkTheme = isDarkTheme
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Hides the navigation bar when [requiresImmersive] is true (on short screens where the tallest
+ * viewfinder cannot clear a persistent navigation bar) and restores it when leaving the screen.
+ */
+@Composable
+internal fun ImmersiveNavigationBarEffect(requiresImmersive: Boolean) {
+    if (!requiresImmersive) return
+    val activity = LocalActivity.current as? ComponentActivity
+    val view = LocalView.current
+    if (activity == null || view.isInEditMode) return
+
+    var isInMultiWindowMode by remember(activity) { mutableStateOf(activity.isInMultiWindowMode) }
+    DisposableEffect(activity) {
+        val listener = Consumer<MultiWindowModeChangedInfo> {
+            isInMultiWindowMode = it.isInMultiWindowMode
+        }
+        activity.addOnMultiWindowModeChangedListener(listener)
+        onDispose { activity.removeOnMultiWindowModeChangedListener(listener) }
+    }
+
+    val shouldHideNav = !isInMultiWindowMode
+    LifecycleResumeEffect(activity, view, shouldHideNav) {
+        val controller = WindowCompat.getInsetsController(activity.window, view)
+        if (shouldHideNav) {
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(WindowInsetsCompat.Type.navigationBars())
+        } else {
+            controller.show(WindowInsetsCompat.Type.navigationBars())
+        }
+        onPauseOrDispose {}
+    }
+
+    DisposableEffect(activity, view) {
+        onDispose {
+            if (!activity.isFinishing && !activity.isChangingConfigurations) {
+                val controller = WindowCompat.getInsetsController(activity.window, view)
+                controller.show(WindowInsetsCompat.Type.navigationBars())
             }
         }
     }
@@ -148,7 +206,7 @@ internal fun applySystemBars(
     // Only request transient bars while a bar is actually hidden. Leaving this behavior installed
     // for destinations that show all bars would let edge swipes be consumed as "reveal the bars"
     // gestures instead of reaching scrollable content.
-    val desiredBehavior = if (hideStatusBar) {
+    val desiredBehavior = if (hideStatusBar || !keepNavigationBar) {
         WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     } else {
         WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
@@ -174,5 +232,7 @@ internal fun applySystemBars(
 
     if (keepNavigationBar) {
         controller.show(WindowInsetsCompat.Type.navigationBars())
+    } else {
+        controller.hide(WindowInsetsCompat.Type.navigationBars())
     }
 }
