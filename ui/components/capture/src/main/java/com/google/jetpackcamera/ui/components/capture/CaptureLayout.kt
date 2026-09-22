@@ -39,7 +39,6 @@ import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -131,12 +130,7 @@ fun PreviewLayout(
             sheetContent = {
                 quickSettingsOverlay(Modifier)
             },
-            snackbarHost = {
-                SnackbarHost(
-                    hostState = scaffoldState.snackbarHostState,
-                    modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
-                )
-            }
+            snackbarHost = {}
         ) { paddingValues ->
             Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
                 Column {
@@ -168,6 +162,11 @@ fun PreviewLayout(
                     // controls overlay
                     snackBar(Modifier, scaffoldState.snackbarHostState)
                     screenFlashOverlay(Modifier)
+
+                    JcaSnackbarHost(
+                        snackbarHostState = scaffoldState.snackbarHostState,
+                        modifier = Modifier.align(Alignment.TopCenter)
+                    )
                 }
                 debugOverlay(Modifier)
 
