@@ -42,6 +42,12 @@ class FakeLocationProvider(
 
     @Volatile
     var locationEnabled: Boolean = initialLocationEnabled
+        set(value) {
+            field = value
+            if (!value) {
+                isUpdatesRunning = false
+            }
+        }
 
     /**
      * Sets the simulated location coordinates and accuracy with current timestamps.
