@@ -31,7 +31,7 @@ private val ORDERED_UI_SUPPORTED_ASPECT_RATIOS = listOf(
  * Creates an [AspectRatioUiState] from [CameraAppSettings].
  *
  * @param cameraAppSettings The current camera application settings.
- * @param visibilityConfig Optional developer visibility configuration for aspect ratio.
+ * @param optionVisibility Optional developer visibility policy for aspect ratio.
  *
  * @return An [AspectRatioUiState] representing the available aspect ratios and the currently
  * selected one. If only one or no aspect ratios are supported or allowed, it returns
@@ -39,14 +39,14 @@ private val ORDERED_UI_SUPPORTED_ASPECT_RATIOS = listOf(
  */
 fun AspectRatioUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
-    visibilityConfig: OptionVisibility<AspectRatio>? = null
+    optionVisibility: OptionVisibility<AspectRatio>? = null
 ): AspectRatioUiState {
-    if (visibilityConfig is OptionVisibility.Hidden) {
+    if (optionVisibility is OptionVisibility.Hidden) {
         return AspectRatioUiState.Unavailable
     }
 
-    val supportedAspectRatios = if (visibilityConfig is OptionVisibility.Only) {
-        ORDERED_UI_SUPPORTED_ASPECT_RATIOS.filter { it in visibilityConfig.enabledOptions }.toSet()
+    val supportedAspectRatios = if (optionVisibility is OptionVisibility.Only) {
+        ORDERED_UI_SUPPORTED_ASPECT_RATIOS.filter { it in optionVisibility.enabledOptions }.toSet()
     } else {
         ORDERED_UI_SUPPORTED_ASPECT_RATIOS.toSet()
     }

@@ -516,7 +516,7 @@ class FlashModeUiStateAdapterTest {
     }
 
     @Test
-    fun from_withHiddenVisibilityConfig_returnsUnavailable() {
+    fun from_withHiddenOptionVisibility_returnsUnavailable() {
         val systemConstraints = CameraSystemConstraints(
             perLensConstraints = mapOf(
                 defaultCameraAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
@@ -528,7 +528,7 @@ class FlashModeUiStateAdapterTest {
         val uiState = FlashModeUiState.from(
             cameraAppSettings = defaultCameraAppSettings,
             systemConstraints = systemConstraints,
-            visibilityConfig = OptionVisibility.Hidden
+            optionVisibility = OptionVisibility.Hidden
         )
 
         assertThat(uiState).isEqualTo(FlashModeUiState.Unavailable)
@@ -547,7 +547,7 @@ class FlashModeUiStateAdapterTest {
         val uiState = FlashModeUiState.from(
             cameraAppSettings = defaultCameraAppSettings,
             systemConstraints = systemConstraints,
-            visibilityConfig = OptionVisibility.Only(
+            optionVisibility = OptionVisibility.Only(
                 setOf(FlashMode.OFF, FlashMode.ON)
             )
         )

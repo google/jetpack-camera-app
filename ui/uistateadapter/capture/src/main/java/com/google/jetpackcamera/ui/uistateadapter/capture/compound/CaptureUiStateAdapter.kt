@@ -103,7 +103,7 @@ fun captureUiState(
         )
         val aspectRatioUiState = AspectRatioUiState.from(
             cameraAppSettings = cameraAppSettings,
-            visibilityConfig = cameraFeaturePolicy?.aspectRatio?.visibility
+            optionVisibility = cameraFeaturePolicy?.aspectRatio?.visibility
         )
         val previewAspectRatioUiState = when (aspectRatioUiState) {
             is AspectRatioUiState.Available -> aspectRatioUiState
@@ -117,19 +117,19 @@ fun captureUiState(
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = cameraAppSettings,
             systemConstraints = systemConstraints,
-            imageFormatVisibilityConfig = cameraFeaturePolicy?.imageFormat?.visibility,
-            dynamicRangeVisibilityConfig = cameraFeaturePolicy?.dynamicRange?.visibility
+            imageFormatOptionVisibility = cameraFeaturePolicy?.imageFormat?.visibility,
+            dynamicRangeOptionVisibility = cameraFeaturePolicy?.dynamicRange?.visibility
         )
 
         flashModeUiState = flashModeUiState?.updateFrom(
             cameraAppSettings = cameraAppSettings,
             systemConstraints = systemConstraints,
             cameraState = roundedCameraState,
-            visibilityConfig = cameraFeaturePolicy?.flashMode?.visibility
+            optionVisibility = cameraFeaturePolicy?.flashMode?.visibility
         ) ?: FlashModeUiState.from(
             cameraAppSettings = cameraAppSettings,
             systemConstraints = systemConstraints,
-            visibilityConfig = cameraFeaturePolicy?.flashMode?.visibility
+            optionVisibility = cameraFeaturePolicy?.flashMode?.visibility
         )
         focusMeteringUiState = focusMeteringUiState?.updateFrom(
             cameraState = roundedCameraState

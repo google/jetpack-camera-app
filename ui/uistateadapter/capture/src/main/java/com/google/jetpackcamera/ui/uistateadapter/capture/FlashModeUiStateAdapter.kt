@@ -44,25 +44,25 @@ private val ORDERED_UI_SUPPORTED_FLASH_MODES = listOf(
  *
  * This factory function determines the set of displayable flash modes based on:
  * 1.  Overall device support.
- * 2.  Developer-defined visibility (via [visibilityConfig]).
+ * 2.  Developer-defined visibility (via [optionVisibility]).
  * 3.  Support by the currently active lens.
  * 4.  Interactions with other settings (e.g., HDR, Concurrent Camera).
  *
- * Modes not supported by the device or not allowed by [visibilityConfig] are hidden.
+ * Modes not supported by the device or not allowed by [optionVisibility] are hidden.
  * Modes not supported by the current lens are hidden.
  * Modes supported by the current lens are shown as enabled, or disabled if in conflict.
  *
  * @param cameraAppSettings The current settings of the camera.
  * @param systemConstraints The hardware capabilities of the camera system.
- * @param visibilityConfig Optional developer visibility configuration for flash mode.
+ * @param optionVisibility Optional developer visibility policy for flash mode.
  * @return A [FlashModeUiState] which is either [Available] or [Unavailable].
  */
 internal fun FlashModeUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
-    visibilityConfig: OptionVisibility<FlashMode>? = null
+    optionVisibility: OptionVisibility<FlashMode>? = null
 ): FlashModeUiState {
-    if (visibilityConfig is OptionVisibility.Hidden) {
+    if (optionVisibility is OptionVisibility.Hidden) {
         return Unavailable
     }
 
@@ -96,8 +96,8 @@ internal fun FlashModeUiState.Companion.from(
             }
 
             // 2. Hide if restricted by developer visibility configuration.
-            if (visibilityConfig is OptionVisibility.Only &&
-                !visibilityConfig.enabledOptions.contains(mode)
+            if (optionVisibility is OptionVisibility.Only &&
+                !optionVisibility.enabledOptions.contains(mode)
             ) {
                 continue
             }
@@ -178,26 +178,26 @@ internal fun FlashModeUiState.Companion.from(
  * @param cameraAppSettings The current application settings for the camera.
  * @param systemConstraints The hardware capabilities of the camera system.
  * @param cameraState The real-time state from the camera, used to check [LowLightBoostState].
- * @param visibilityConfig Optional developer visibility configuration for flash mode.
+ * @param optionVisibility Optional developer visibility policy for flash mode.
  * @return An updated [FlashModeUiState].
  */
 internal fun FlashModeUiState.updateFrom(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
     cameraState: CameraState,
-    visibilityConfig: OptionVisibility<FlashMode>? = null
+    optionVisibility: OptionVisibility<FlashMode>? = null
 ): FlashModeUiState {
     return when (this) {
         is Unavailable -> {
             // When previous state was "Unavailable", we'll try to create a new FlashModeUiState
-            FlashModeUiState.from(cameraAppSettings, systemConstraints, visibilityConfig)
+            FlashModeUiState.from(cameraAppSettings, systemConstraints, optionVisibility)
         }
 
         is Available -> {
             // Regenerate the potential new state based on the latest settings
             when (
                 val newUiState =
-                    FlashModeUiState.from(cameraAppSettings, systemConstraints, visibilityConfig)
+                    FlashModeUiState.from(cameraAppSettings, systemConstraints, optionVisibility)
             ) {
                 is Unavailable -> newUiState
                 is Available -> {

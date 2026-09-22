@@ -45,8 +45,8 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  *
  * @param cameraAppSettings The current application and camera settings.
  * @param systemConstraints The capabilities and limitations of the device's camera hardware.
- * @param imageFormatVisibilityConfig Optional developer visibility configuration for image format.
- * @param dynamicRangeVisibilityConfig Optional developer visibility configuration for dynamic range.
+ * @param imageFormatOptionVisibility Optional developer visibility configuration for image format.
+ * @param dynamicRangeOptionVisibility Optional developer visibility configuration for dynamic range.
  *
  * @return [HdrUiState.Available] if the feature is supported and not blocked by other settings,
  * otherwise returns [HdrUiState.Unavailable].
@@ -54,8 +54,8 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 internal fun HdrUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
     systemConstraints: CameraSystemConstraints,
-    imageFormatVisibilityConfig: OptionVisibility<ImageOutputFormat>? = null,
-    dynamicRangeVisibilityConfig: OptionVisibility<DynamicRange>? = null
+    imageFormatOptionVisibility: OptionVisibility<ImageOutputFormat>? = null,
+    dynamicRangeOptionVisibility: OptionVisibility<DynamicRange>? = null
 ): HdrUiState {
     val cameraConstraints: CameraConstraints? = systemConstraints.forCurrentLens(
         cameraAppSettings
@@ -66,11 +66,11 @@ internal fun HdrUiState.Companion.from(
 
     return when (cameraAppSettings.captureMode) {
         CaptureMode.IMAGE_ONLY -> {
-            if (imageFormatVisibilityConfig is OptionVisibility.Hidden ||
+            if (imageFormatOptionVisibility is OptionVisibility.Hidden ||
                 (
-                    imageFormatVisibilityConfig is OptionVisibility.Only &&
+                    imageFormatOptionVisibility is OptionVisibility.Only &&
                         ImageOutputFormat.JPEG_ULTRA_HDR !in
-                        imageFormatVisibilityConfig.enabledOptions
+                        imageFormatOptionVisibility.enabledOptions
                     )
             ) {
                 return HdrUiState.Unavailable
@@ -93,10 +93,10 @@ internal fun HdrUiState.Companion.from(
         }
 
         CaptureMode.VIDEO_ONLY -> {
-            if (dynamicRangeVisibilityConfig is OptionVisibility.Hidden ||
+            if (dynamicRangeOptionVisibility is OptionVisibility.Hidden ||
                 (
-                    dynamicRangeVisibilityConfig is OptionVisibility.Only &&
-                        DynamicRange.HLG10 !in dynamicRangeVisibilityConfig.enabledOptions
+                    dynamicRangeOptionVisibility is OptionVisibility.Only &&
+                        DynamicRange.HLG10 !in dynamicRangeOptionVisibility.enabledOptions
                     )
             ) {
                 return HdrUiState.Unavailable

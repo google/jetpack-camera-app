@@ -400,7 +400,7 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = appSettings,
             systemConstraints = systemConstraints,
-            imageFormatVisibilityConfig = OptionVisibility.Hidden
+            imageFormatOptionVisibility = OptionVisibility.Hidden
         )
 
         assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
@@ -425,7 +425,7 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = appSettings,
             systemConstraints = systemConstraints,
-            imageFormatVisibilityConfig = OptionVisibility.Only(
+            imageFormatOptionVisibility = OptionVisibility.Only(
                 setOf(ImageOutputFormat.JPEG, ImageOutputFormat.JPEG_ULTRA_HDR)
             )
         )
@@ -450,7 +450,7 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = appSettings,
             systemConstraints = systemConstraints,
-            dynamicRangeVisibilityConfig = OptionVisibility.Hidden
+            dynamicRangeOptionVisibility = OptionVisibility.Hidden
         )
 
         assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
@@ -473,7 +473,7 @@ internal class HdrUiStateAdapterTest {
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = appSettings,
             systemConstraints = systemConstraints,
-            dynamicRangeVisibilityConfig = OptionVisibility.Only(
+            dynamicRangeOptionVisibility = OptionVisibility.Only(
                 setOf(DynamicRange.SDR, DynamicRange.HLG10)
             )
         )
