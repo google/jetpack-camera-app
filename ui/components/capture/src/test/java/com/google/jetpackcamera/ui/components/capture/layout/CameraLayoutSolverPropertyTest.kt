@@ -174,22 +174,22 @@ class CameraLayoutSolverPropertyTest {
     }
 
     /**
-     * Candidate positions are quantized to 0.1 dp, so a frame solved to exactly the 4 dp target can
-     * settle one quantum below it. The guarantee the layout actually makes is therefore "4 dp,
-     * within one quantum", and this is the honest bound to assert.
+     * The layout advertises 4 dp of daylight between any viewfinder edge and any control, and this
+     * holds it to exactly that.
      *
-     * The bound also carries a slack for float representation. A clearance is the difference of two
-     * coordinates of order several hundred dp, and at that magnitude a `Float` resolves to roughly
-     * 6e-5 dp, so a clearance sitting exactly on the quantum boundary can read a few
-     * hundred-thousandths below it. That is a property of binary floating point, not of the layout:
-     * the worst observed case is 3.8999634 dp against a 3.9 dp boundary, a discrepancy far smaller
-     * than a single display pixel on any device.
+     * An earlier revision asserted only 3.9 dp, one quantum less. That was not a real property of
+     * the layout: the collision test carried 0.12 dp of slack, so the search stopped as soon as it
+     * was within a quantum of the target instead of taking the one extra dp of bottom padding that
+     * would have cleared it properly. The slack is now float noise and the bound is the real one.
+     *
+     * The only tolerance left is float representation. A clearance is the difference of two
+     * coordinates of order several hundred dp, where a `Float` resolves to roughly 6e-5 dp, so an
+     * exact hit can read a few hundred-thousandths low.
      */
     @Test
     fun everyInScopeWindowKeepsAtLeastTheRequiredClearance() {
-        val quantum = 0.1f
         val floatSlack = 1e-3f
-        val floor = CameraLayoutDefaults.MinControlClearance.value - quantum - floatSlack
+        val floor = CameraLayoutDefaults.MinControlClearance.value - floatSlack
 
         var worst = Float.MAX_VALUE
         var worstWindow: CameraWindow? = null

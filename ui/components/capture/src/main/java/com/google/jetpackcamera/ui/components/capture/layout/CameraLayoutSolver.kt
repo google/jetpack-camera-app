@@ -55,11 +55,18 @@ object CameraLayoutSolver {
     /**
      * Slack subtracted from the clearance when *testing* for a collision.
      *
-     * Candidate positions are quantized to [QUANTUM] dp, so a position solved to exactly the
-     * required clearance can land a fraction below it after rounding. Without this tolerance the
-     * solver would reject its own correct answers and escalate unnecessarily.
+     * This exists only to absorb float representation error. Clearances are differences of
+     * coordinates of order several hundred dp, where a `Float` resolves to roughly 6e-5 dp, so an
+     * exact hit can read a hair below the target and must not be rejected as a collision.
+     *
+     * It is deliberately far smaller than [QUANTUM]. The reference used 0.12 dp, a full quantum
+     * plus change, which meant the search accepted any layout within 3.88 dp and stopped looking.
+     * On devices where the tall frame's edge is immovable, that is why the tightest clearance came
+     * out at 3.9 dp rather than the 4.0 dp the layout advertises: the stack could have dropped one
+     * more dp to reach 4.9, but 3.92 already passed the test so nothing made it look. Tightening
+     * this to noise costs 1 dp of bottom padding on two device families and regresses nothing.
      */
-    private const val COLLISION_TEST_SLACK = 0.12f
+    private const val COLLISION_TEST_SLACK = 1e-4f
 
     /** Candidate positions are rounded to this many dp. */
     private const val QUANTUM = 0.1f
@@ -95,15 +102,27 @@ object CameraLayoutSolver {
      *
      * The repair search is a cartesian sweep, so its cost depends on the window it is handed, and
      * we do not control that: an app can be launched into a split-screen pane or a foldable posture
-     * of any shape. Measured over a sweep of 1,568 portrait handheld geometries the search costs 1
-     * evaluation at the median and 1,055 in the worst case, so this leaves roughly nineteen times
-     * the observed headroom while bounding the worst case to a few milliseconds.
+     * of any shape. Without a ceiling the worst window measured cost 677,000 evaluations, which is
+     * roughly a second of a stalled UI thread.
+     *
+     * Measured on a desktop JVM, an evaluation costs about 1.5 us:
+     *
+     * | case                                      | evaluations | wall clock |
+     * |-------------------------------------------|-------------|------------|
+     * | typical phone, solves on the first attempt | 1           | 26 us      |
+     * | worst supported window in the sweep        | 1,055       | 1.6 ms     |
+     * | this budget                                | 5,000       | ~6 ms      |
+     *
+     * 5,000 leaves nearly five times the headroom over the worst supported window while capping a
+     * pathological one below a single frame at 60 Hz. An earlier revision used 20,000, which
+     * measured at 25 ms: still bounded, but a frame and a half of jank for geometry we do not
+     * support anyway.
      *
      * Tripping the budget is not an error, and no supported geometry comes close to it. The search
      * keeps the best layout it has found, and [CameraLayoutSolution.collisions] reports whether
      * that layout is actually clean.
      */
-    private const val EVALUATION_BUDGET = 20_000
+    private const val EVALUATION_BUDGET = 5_000
 
     /** An obstacle the solver must keep viewfinder edges away from. */
     private data class Obstacle(

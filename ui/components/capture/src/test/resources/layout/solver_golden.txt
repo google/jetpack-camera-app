@@ -1,5 +1,9 @@
 # Golden layout solutions captured from the reference prototype.
-# Regenerate with scratch/solver_extract/gen_golden.js then emit_fixture.js. Do not hand-edit.
+# Regenerate with the solver_extract scripts, then emit_fixture.js. Do not hand-edit.
+#
+# Two deliberate corrections are baked in: the compact-toolbar band is only entered when the
+# compacted toolbar fits, and the collision test is held to the full clearance rather than to
+# a quantum less. The first changes nothing here; the second moves six cases by 1 dp.
 #
 # One line per device window. The control stack and all three viewfinder placements are shared
 # across aspect ratios by design, so there is nothing per-ratio to record.
@@ -12,9 +16,9 @@ pixel9|threeButton|412.0|925.0|60.0|48.0|24.0|bars|64.0|16.0|24.0|24.0|32.0|551.
 pixel9_xl|gesture|448.0|997.0|54.0|24.0|24.0|bars|64.0|30.0|24.0|24.0|32.0|633.0:681.0|713.0:799.0|823.0:855.0|879.0:943.0|87.7:685.0|162.3:610.3|62.6:859.0|4.0
 pixel9_xl|threeButton|448.0|997.0|54.0|48.0|24.0|bars|64.0|30.0|24.0|24.0|32.0|609.0:657.0|689.0:775.0|799.0:831.0|855.0:919.0|63.7:661.0|138.3:586.3|54.0:850.4|4.0
 pixel8|gesture|411.4|914.3|48.0|24.0|24.0|bars|64.0|30.0|24.0|24.0|32.0|550.3:598.3|630.3:716.3|740.3:772.3|796.3:860.3|53.8:602.3|122.3:533.7|48.0:779.4|4.0
-pixel8|threeButton|411.4|914.3|48.0|48.0|24.0|bars|64.0|19.0|24.0|24.0|32.0|537.3:585.3|617.3:703.3|727.3:759.3|783.3:847.3|48.0:596.5|116.5:527.9|48.0:779.4|3.9
+pixel8|threeButton|411.4|914.3|48.0|48.0|24.0|bars|64.0|18.0|24.0|24.0|32.0|538.3:586.3|618.3:704.3|728.3:760.3|784.3:848.3|48.0:596.5|116.5:527.9|48.0:779.4|4.9
 pixel7|gesture|411.4|914.3|48.0|24.0|24.0|bars|64.0|30.0|24.0|24.0|32.0|550.3:598.3|630.3:716.3|740.3:772.3|796.3:860.3|53.8:602.3|122.3:533.7|48.0:779.4|4.0
-pixel7|threeButton|411.4|914.3|48.0|48.0|24.0|bars|64.0|19.0|24.0|24.0|32.0|537.3:585.3|617.3:703.3|727.3:759.3|783.3:847.3|48.0:596.5|116.5:527.9|48.0:779.4|3.9
+pixel7|threeButton|411.4|914.3|48.0|48.0|24.0|bars|64.0|18.0|24.0|24.0|32.0|538.3:586.3|618.3:704.3|728.3:760.3|784.3:848.3|48.0:596.5|116.5:527.9|48.0:779.4|4.9
 s23|gesture|384.0|824.0|48.0|24.0|16.0|bars|64.0|49.0|24.0|24.0|32.0|441.0:489.0|521.0:607.0|631.0:663.0|687.0:751.0|99.0:611.0|133.0:517.0|0.0:682.7|4.0
 s23|threeButton|384.0|824.0|48.0|48.0|16.0|bars|64.0|102.0|24.0|24.0|32.0|364.0:412.0|444.0:530.0|554.0:586.0|610.0:674.0|78.0:590.0|150.0:534.0|0.0:682.7|4.0
 s10|gesture|360.0|760.0|48.0|24.0|16.0|bars|64.0|102.0|24.0|24.0|32.0|324.0:372.0|404.0:490.0|514.0:546.0|570.0:634.0|70.0:550.0|134.0:494.0|0.0:640.0|4.0
