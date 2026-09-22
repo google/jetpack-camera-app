@@ -26,44 +26,17 @@ import android.location.Location
 interface LocationProvider {
 
     /**
-     * Returns the most recent cached [Location] fix if available and not stale.
+     * Starts location updates to acquire and maintain geographic coordinates.
      *
-     * This call does not perform hardware I/O or wait for satellite/network acquisition, making
-     * it suitable for synchronous access during shutter capture without introducing latency.
-     *
-     * @return The cached [Location], or `null` if no valid non-stale fix is available.
+     * Runs until the calling coroutine is cancelled.
      */
-    fun getCachedLocation(): Location?
+    suspend fun runLocationUpdates()
 
     /**
-     * Queries the active location provider for a current [Location] fix.
+     * Returns the current [Location] fix for media geotagging, or `null` if disabled,
+     * unpermitted, or unavailable.
      *
-     * Suspends until a location fix is retrieved or an internal timeout occurs. If permissions are
-     * missing or all providers are disabled, returns `null` immediately.
-     *
-     * @return The fresh [Location], or `null` if unavailable.
+     * @return The most recent valid [Location] fix, or `null`.
      */
-    suspend fun getCurrentLocation(): Location?
-
-    /**
-     * Initiates active location updates from available location providers.
-     *
-     * Should be called when the camera preview becomes active to warm up location hardware and
-     * populate the cache prior to photo capture or video recording. Has no effect if location
-     * permissions have not been granted.
-     *
-     * Implementations should ensure this method is idempotent; calling this when updates are
-     * already active should be a no-op without creating duplicate listener registrations.
-     */
-    fun startLocationUpdates()
-
-    /**
-     * Stops active location updates and releases hardware resources.
-     *
-     * Should be called when the camera preview is paused or stopped to conserve battery power.
-     *
-     * Implementations should ensure this method is idempotent; calling this when updates are
-     * already stopped should be a no-op.
-     */
-    fun stopLocationUpdates()
+    fun getCurrentLocation(): Location?
 }

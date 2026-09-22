@@ -18,6 +18,7 @@ package com.google.jetpackcamera.core.location.testing
 import android.location.Location
 import android.os.SystemClock
 import com.google.jetpackcamera.core.location.LocationProvider
+import kotlinx.coroutines.awaitCancellation
 
 /**
  * Fake implementation of [LocationProvider] for unit and integration testing.
@@ -74,17 +75,15 @@ class FakeLocationProvider(
         mockLocation = null
     }
 
-    override fun getCachedLocation(): Location? = if (locationEnabled) mockLocation else null
+    override fun getCurrentLocation(): Location? = if (locationEnabled) mockLocation else null
 
-    override suspend fun getCurrentLocation(): Location? =
-        if (locationEnabled) mockLocation else null
-
-    override fun startLocationUpdates() {
+    override suspend fun runLocationUpdates() {
         if (!locationEnabled) return
         isUpdatesRunning = true
-    }
-
-    override fun stopLocationUpdates() {
-        isUpdatesRunning = false
+        try {
+            awaitCancellation()
+        } finally {
+            isUpdatesRunning = false
+        }
     }
 }
