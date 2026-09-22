@@ -16,6 +16,7 @@
 package com.google.jetpackcamera
 
 import android.os.Build
+import androidx.activity.compose.setContent
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
@@ -23,6 +24,7 @@ import androidx.compose.ui.test.isNotSelected
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.rule.GrantPermissionRule
@@ -30,6 +32,8 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.settings.SettingsScreen
+import com.google.jetpackcamera.settings.VersionInfoHolder
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_ASPECT_RATIO_OPTION_1_1_TAG
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_ASPECT_RATIO_OPTION_3_4_TAG
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG
@@ -69,6 +73,7 @@ import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFI
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_DURATION_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG
+import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
@@ -291,5 +296,31 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
                 )
             )
         }
+    }
+
+    @Test
+    fun settingsScreen_defaultSlots_rendersCameraSettingsSection() = runMainActivityScenarioTest {
+        // Wait for camera to be initialized so constraints and settings are available
+        composeTestRule.waitForCaptureButton()
+
+        onActivity { activity ->
+            activity.setContent {
+                SettingsScreen(
+                    versionInfo = VersionInfoHolder(
+                        versionName = "1.0",
+                        buildType = "debug"
+                    ),
+                    onNavigateBack = {}
+                )
+            }
+        }
+        composeTestRule.waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+            composeTestRule
+                .onAllNodesWithTag(BTN_OPEN_DIALOG_SETTING_FLASH_TAG)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithTag(BTN_OPEN_DIALOG_SETTING_FLASH_TAG).assertExists()
+        composeTestRule.onNodeWithTag(BTN_SWITCH_SETTING_LENS_FACING_TAG).assertExists()
     }
 }
