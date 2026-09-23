@@ -1441,6 +1441,12 @@ private fun AudioStats.toAudioStreamState(): AudioStreamState = when (this.audio
 private fun Provider<CameraEffectProvider>.createEffect(scope: CoroutineScope): CameraEffect =
     get().create(scope)
 
+/**
+ * Maps a CameraX [CXCameraState.StateError] to a domain-specific [CameraError].
+ *
+ * @param context The [Context] used to retrieve system services.
+ * @return The mapped [CameraError].
+ */
 internal fun CXCameraState.StateError.toCameraError(context: Context): CameraError =
     when (this.code) {
         CXCameraState.ERROR_CAMERA_IN_USE -> CameraError.CameraInUse

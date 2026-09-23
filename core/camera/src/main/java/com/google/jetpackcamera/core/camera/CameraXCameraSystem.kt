@@ -439,6 +439,17 @@ class CameraXCameraSystem(
             monitorThermalStatus()
         }
 
+        if (!this@CameraXCameraSystem::cameraProvider.isInitialized) {
+            Log.e(TAG, "CameraProvider is not initialized; emitting FatalCameraError.")
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.FatalCameraError
+                )
+            }
+            kotlinx.coroutines.awaitCancellation()
+        }
+
         if (systemConstraints.availableLenses.isEmpty()) {
             Log.e(TAG, "No available cameras on device; emitting CameraRemoved error.")
             currentCameraState.update { old ->
@@ -599,17 +610,29 @@ class CameraXCameraSystem(
                 currentCameraState.update { old ->
                     old.copy(cameraError = CameraError.ThermalOverheat)
                 }
-            } else if (currentCameraState.value.cameraError == CameraError.ThermalOverheat) {
+            } else {
                 currentCameraState.update { old ->
-                    old.copy(cameraError = null)
+                    if (old.cameraError == CameraError.ThermalOverheat) {
+                        old.copy(cameraError = null)
+                    } else {
+                        old
+                    }
                 }
             }
         }
     }
 
-    private fun hasSufficientStorage(): Boolean {
+    private fun hasSufficientStorage(saveLocation: SaveLocation): Boolean {
         return try {
-            val stat = StatFs(Environment.getDataDirectory().path)
+            val targetDir = when (saveLocation) {
+                is SaveLocation.Cache -> saveLocation.cacheDir?.toFile() ?: application.cacheDir
+                is SaveLocation.Default,
+                is SaveLocation.Explicit ->
+                    application.getExternalFilesDir(null)
+                        ?: application.filesDir
+                        ?: Environment.getDataDirectory()
+            }
+            val stat = StatFs(targetDir.path)
             stat.availableBytes >= MIN_REQUIRED_STORAGE_BYTES
         } catch (e: Exception) {
             true
@@ -674,7 +697,7 @@ class CameraXCameraSystem(
         saveLocation: SaveLocation,
         onCaptureStarted: (() -> Unit)
     ): ImageCapture.OutputFileResults {
-        if (!hasSufficientStorage()) {
+        if (!hasSufficientStorage(saveLocation)) {
             currentCameraState.update { old ->
                 old.copy(cameraError = CameraError.InsufficientStorage)
             }
@@ -769,7 +792,7 @@ class CameraXCameraSystem(
         saveLocation: SaveLocation,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) {
-        if (!hasSufficientStorage()) {
+        if (!hasSufficientStorage(saveLocation)) {
             currentCameraState.update { old ->
                 old.copy(cameraError = CameraError.InsufficientStorage)
             }
