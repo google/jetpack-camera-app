@@ -120,7 +120,7 @@ data class CameraFeaturePolicy(
  * @throws IllegalArgumentException if [visibility] is [OptionVisibility.Only] and [defaultValue]
  *   is not present in [OptionVisibility.Only.enabledOptions].
  */
-data class SettingConfig<T : Any>(
+data class SettingConfig<T : Any> @JvmOverloads constructor(
     val defaultValue: T,
     val visibility: OptionVisibility<T> = OptionVisibility.Visible
 ) {
