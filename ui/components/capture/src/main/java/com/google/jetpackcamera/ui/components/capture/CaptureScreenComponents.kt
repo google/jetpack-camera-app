@@ -193,7 +193,7 @@ fun ElapsedTimeText(
                     contentDescription = accessibilityText
                 }
                 .defaultMinSize(minWidth = 72.dp, minHeight = 32.dp)
-                .background(color = Color(0xFFED0000), shape = CircleShape)
+                .background(color = CaptureTokens.RecordingRed, shape = CircleShape)
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center
         ) {

@@ -112,8 +112,6 @@ private const val ALPHA_PRESSED_STANDARD = 0.9f
 private const val ALPHA_WHITE_20 = 0.2f
 private const val ALPHA_BLACK_60 = 0.6f
 
-private val RECORDING_RED = Color(0xFFED0000)
-
 private val LOCKED_CORNER_RADIUS = 8.dp
 
 // scales against the size of the capture button
@@ -847,7 +845,7 @@ internal fun CaptureButtonNucleus(
     captureButtonUiState: CaptureButtonUiState,
     isTapping: Boolean,
     captureButtonSize: Float,
-    recordingColor: Color = RECORDING_RED,
+    recordingColor: Color = CaptureTokens.RecordingRed,
     imageCaptureModeColor: Color = Color.White,
     idleImageCaptureScale: Float = IDLE_IMAGE_CAPTURE_SCALE,
     idleVideoCaptureScale: Float = IDLE_VIDEO_CAPTURE_SCALE,
