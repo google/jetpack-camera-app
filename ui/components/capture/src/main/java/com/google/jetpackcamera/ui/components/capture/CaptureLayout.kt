@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -57,15 +56,14 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -77,15 +75,11 @@ import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.takeOrElse
-<<<<<<< HEAD
-=======
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
 import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
 import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
-import kotlin.math.max as mathMax
->>>>>>> 386c3f0f (Wire PreviewLayout and PreviewDisplay to CameraLayoutSolver)
 
 /**
  * Height of the shutter row (capture button, image well and flip camera button) as specified by
@@ -359,14 +353,7 @@ private fun AdaptivePortraitCaptureLayout(
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit)
 ) {
-    // The indicator row occupies the top bar real estate in the hidden status bar region.
-    // Rather than reserving the full status bar inset height (which can be 66dp+ on devices with
-    // deep punch-hole cutouts), size the top bar to accommodate any top display cutout or the
-    // minimum interactive touch target (defaulting to 48dp), while CutoutAwareRow shifts
-    // individual indicator icons around any intersecting cutout bounds.
     val cutoutTopInset = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
-    val minTouchTarget = LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
-    val topBarHeight = max(cutoutTopInset, minTouchTarget)
     val navInset = WindowInsets.navigationBarsIgnoringVisibility
         .asPaddingValues()
         .calculateBottomPadding()
@@ -374,6 +361,8 @@ private fun AdaptivePortraitCaptureLayout(
         .asPaddingValues()
         .calculateBottomPadding()
     val effectiveGestureInset = max(24.dp, rawGestureInset)
+    val minTouchTarget = LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
+    val topBarHeight = max(cutoutTopInset, minTouchTarget)
 
     val window = remember(
         windowWidth,
@@ -391,17 +380,19 @@ private fun AdaptivePortraitCaptureLayout(
         )
     }
 
-    val defaultSpec = remember(minTouchTarget) {
+    // The solve depends only on the window geometry, the insets, and the accessibility touch
+    // target. Row heights are deliberately *not* measured and fed back in: ControlRow.height is
+    // contractually the row's *reserved* height, so that showing or hiding a row's content never
+    // moves the rows around it. Measuring the children and re-solving would both break that
+    // guarantee and turn the solve into a per-measure-pass cost.
+    val spec = remember(minTouchTarget) {
         CameraLayoutDefaults.spec(minInteractiveTouchTarget = minTouchTarget)
     }
-    val initialSolution = remember(defaultSpec, window) {
-        CameraLayoutSolver.solve(defaultSpec, window)
-    }
-    var activeSolution by remember(window, minTouchTarget) { mutableStateOf(initialSolution) }
+    val solution = remember(spec, window) { CameraLayoutSolver.solve(spec, window) }
 
-    ImmersiveNavigationBarEffect(requiresImmersive = activeSolution.requiresImmersive)
+    ImmersiveNavigationBarEffect(requiresImmersive = solution.requiresImmersive)
 
-    CompositionLocalProvider(LocalCameraLayoutSolution provides activeSolution) {
+    CompositionLocalProvider(LocalCameraLayoutSolution provides solution) {
         Layout(
             modifier = Modifier.fillMaxSize(),
             content = {
@@ -432,9 +423,7 @@ private fun AdaptivePortraitCaptureLayout(
                     }
 
                     Box(
-                        modifier = Modifier
-                            .layoutId(CaptureSlotId.ZoomBar)
-                            .heightIn(min = CameraLayoutDefaults.ZoomBarHeight),
+                        modifier = Modifier.layoutId(CaptureSlotId.ZoomBar),
                         contentAlignment = Alignment.Center
                     ) {
                         zoomControls(Modifier)
@@ -443,8 +432,7 @@ private fun AdaptivePortraitCaptureLayout(
                     Row(
                         modifier = Modifier
                             .layoutId(CaptureSlotId.CaptureRow)
-                            .fillMaxWidth()
-                            .heightIn(min = SHUTTER_STACK_HEIGHT),
+                            .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
@@ -478,8 +466,7 @@ private fun AdaptivePortraitCaptureLayout(
                     Box(
                         modifier = Modifier
                             .layoutId(CaptureSlotId.ModeSwitcher)
-                            .fillMaxWidth()
-                            .heightIn(min = MIDDLE_SLOT_HEIGHT),
+                            .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         captureModeCarousel(Modifier)
@@ -518,74 +505,33 @@ private fun AdaptivePortraitCaptureLayout(
             val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
             val fullWidthLooseHeight = constraints.copy(minHeight = 0)
 
+            // Each control row is measured against the band the solver reserved for it, so a row's
+            // content can never push its neighbours around. The solver has already accounted for
+            // toolbar compaction, so BOTTOM_TOOLBAR's band is the compacted height where that
+            // applies.
+            fun bandOf(rowId: String) = solution.rowBands.getValue(rowId)
+
+            fun measureInBand(slot: CaptureSlotId, rowId: String): Pair<Placeable, Int>? {
+                val measurable = measurables.firstOrNull { it.layoutId == slot } ?: return null
+                val band = bandOf(rowId)
+                val placeable = measurable.measure(
+                    Constraints.fixed(constraints.maxWidth, band.height.roundToPx())
+                )
+                return placeable to band.top.roundToPx()
+            }
+
             val topBarPlaceable = measurables
                 .firstOrNull { it.layoutId == CaptureSlotId.TopBar }
                 ?.measure(fullWidthLooseHeight)
             val elapsedTimePlaceable = measurables
                 .firstOrNull { it.layoutId == CaptureSlotId.ElapsedTime }
                 ?.measure(looseConstraints)
-            val zoomBarPlaceable = measurables
-                .firstOrNull { it.layoutId == CaptureSlotId.ZoomBar }
-                ?.measure(looseConstraints)
-            val captureRowMeasurable = measurables
-                .firstOrNull { it.layoutId == CaptureSlotId.CaptureRow }
-            val captureRowHeightPx = captureRowMeasurable?.let {
-                mathMax(
-                    SHUTTER_STACK_HEIGHT.roundToPx(),
-                    it.minIntrinsicHeight(constraints.maxWidth)
-                )
-            } ?: SHUTTER_STACK_HEIGHT.roundToPx()
-            val captureRowPlaceable = captureRowMeasurable?.measure(
-                Constraints.fixed(constraints.maxWidth, captureRowHeightPx)
-            )
-            val modeSwitcherPlaceable = measurables
-                .firstOrNull { it.layoutId == CaptureSlotId.ModeSwitcher }
-                ?.measure(
-                    constraints.copy(
-                        minHeight = MIDDLE_SLOT_HEIGHT.roundToPx(),
-                        maxHeight = mathMax(
-                            MIDDLE_SLOT_HEIGHT.roundToPx(),
-                            constraints.maxHeight
-                        )
-                    )
-                )
-            val bottomToolbarMeasurable = measurables
-                .firstOrNull { it.layoutId == CaptureSlotId.BottomToolbar }
 
-            val measuredZoomHeight = zoomBarPlaceable?.height?.toDp()
-                ?: CameraLayoutDefaults.ZoomBarHeight
-            val measuredCaptureHeight = captureRowPlaceable?.height?.toDp()
-                ?: CameraLayoutDefaults.CaptureRowHeight
-            val measuredModeSwitcherHeight = modeSwitcherPlaceable?.height?.toDp()
-                ?: CameraLayoutDefaults.ModeSwitcherHeight
-            val nominalToolbarHeight = bottomToolbarMeasurable?.let {
-                max(
-                    LOWER_SECTION_HEIGHT,
-                    it.minIntrinsicHeight(constraints.maxWidth).toDp()
-                )
-            } ?: CameraLayoutDefaults.BottomToolbarHeight
-
-            val measuredSpec = CameraLayoutDefaults.spec(
-                bottomToolbarHeight = nominalToolbarHeight,
-                modeSwitcherHeight = measuredModeSwitcherHeight,
-                captureRowHeight = measuredCaptureHeight,
-                zoomBarHeight = measuredZoomHeight,
-                minInteractiveTouchTarget = minTouchTarget
-            )
-
-            val solution = if (measuredSpec == defaultSpec) {
-                initialSolution
-            } else {
-                CameraLayoutSolver.solve(measuredSpec, window)
-            }
-            if (activeSolution != solution) {
-                activeSolution = solution
-            }
-
-            val toolbarHeightPx = solution.toolbarHeight.roundToPx()
-            val bottomToolbarPlaceable = bottomToolbarMeasurable?.measure(
-                Constraints.fixed(constraints.maxWidth, toolbarHeightPx)
-            )
+            val zoomBar = measureInBand(CaptureSlotId.ZoomBar, CameraRowIds.ZOOM_BAR)
+            val captureRow = measureInBand(CaptureSlotId.CaptureRow, CameraRowIds.CAPTURE_ROW)
+            val modeSwitcher = measureInBand(CaptureSlotId.ModeSwitcher, CameraRowIds.MODE_SWITCHER)
+            val bottomToolbar =
+                measureInBand(CaptureSlotId.BottomToolbar, CameraRowIds.BOTTOM_TOOLBAR)
 
             val viewfinderPlaceable = measurables
                 .firstOrNull { it.layoutId == CaptureSlotId.Viewfinder }
@@ -595,8 +541,7 @@ private fun AdaptivePortraitCaptureLayout(
                 viewfinderPlaceable?.let { vf ->
                     val vfY = if (vf.height in 1 until constraints.maxHeight) {
                         val ratio = vf.width.toFloat() / vf.height.toFloat()
-                        solution.viewfinderBandFor(ratio, measuredSpec.viewfinders)
-                            ?.top?.roundToPx() ?: 0
+                        solution.viewfinderBandFor(ratio, spec.viewfinders)?.top?.roundToPx() ?: 0
                     } else {
                         0
                     }
@@ -606,36 +551,20 @@ private fun AdaptivePortraitCaptureLayout(
 
                 topBarPlaceable?.placeRelative(0, 0)
 
-                val zoomBand = solution.rowBands.getValue(CameraRowIds.ZOOM_BAR)
-                val zoomTopPx = zoomBand.top.roundToPx()
-                val zoomHeightPx = zoomBand.height.roundToPx()
-
-                elapsedTimePlaceable?.let { elapsed ->
-                    val elapsedX = (constraints.maxWidth - elapsed.width) / 2
-                    val elapsedY = zoomTopPx - elapsed.height
-                    elapsed.placeRelative(elapsedX, elapsedY)
+                // The elapsed time readout is not a solver row: it is an optional caption that
+                // hangs above the zoom bar, so it is placed relative to that band rather than
+                // reserving a band of its own.
+                zoomBar?.let { (_, zoomTop) ->
+                    elapsedTimePlaceable?.let { elapsed ->
+                        val elapsedX = (constraints.maxWidth - elapsed.width) / 2
+                        elapsed.placeRelative(elapsedX, zoomTop - elapsed.height)
+                    }
                 }
 
-                zoomBarPlaceable?.let { zoom ->
-                    val zoomX = (constraints.maxWidth - zoom.width) / 2
-                    val zoomY = zoomTopPx + (zoomHeightPx - zoom.height) / 2
-                    zoom.placeRelative(zoomX, zoomY)
-                }
-
-                captureRowPlaceable?.placeRelative(
-                    0,
-                    solution.rowBands.getValue(CameraRowIds.CAPTURE_ROW).top.roundToPx()
-                )
-
-                modeSwitcherPlaceable?.placeRelative(
-                    0,
-                    solution.rowBands.getValue(CameraRowIds.MODE_SWITCHER).top.roundToPx()
-                )
-
-                bottomToolbarPlaceable?.placeRelative(
-                    0,
-                    solution.rowBands.getValue(CameraRowIds.BOTTOM_TOOLBAR).top.roundToPx()
-                )
+                zoomBar?.let { (placeable, top) -> placeable.placeRelative(0, top) }
+                captureRow?.let { (placeable, top) -> placeable.placeRelative(0, top) }
+                modeSwitcher?.let { (placeable, top) -> placeable.placeRelative(0, top) }
+                bottomToolbar?.let { (placeable, top) -> placeable.placeRelative(0, top) }
             }
         }
     }
