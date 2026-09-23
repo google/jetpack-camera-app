@@ -74,6 +74,7 @@ import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.CameraErrorDialog
 import com.google.jetpackcamera.ui.components.capture.CaptureButton
 import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CutoutAwareRow
@@ -752,6 +753,24 @@ private fun ContentScreen(
         }
     }
 
+    val cameraErrorState = remember {
+        derivedStateOf { currentCaptureUiStateProvider().cameraErrorUiState }
+    }
+    val activity = LocalContext.current as? android.app.Activity
+    val errorDialogLambda = remember(cameraErrorState, cameraController, activity) {
+        @Composable { modifier: Modifier ->
+            CameraErrorDialog(
+                modifier = modifier,
+                cameraErrorUiState = cameraErrorState.value,
+                onDismissError = { cameraController?.dismissCameraError() },
+                onExitApp = {
+                    cameraController?.dismissCameraError()
+                    activity?.finish()
+                }
+            )
+        }
+    }
+
     LayoutWrapper(
         modifier = modifier,
         scaffoldState = scaffoldState,
@@ -775,7 +794,8 @@ private fun ContentScreen(
         screenFlashOverlay = screenFlashOverlayLambda,
         snackBar = snackBarLambda,
         pauseToggleButton = pauseToggleButtonLambda,
-        imageWell = imageWellLambda
+        imageWell = imageWellLambda,
+        errorDialog = errorDialogLambda
     )
 }
 
@@ -820,7 +840,8 @@ private fun LayoutWrapper(
     ) -> Unit,
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
-    snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit
+    snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    errorDialog: @Composable (modifier: Modifier) -> Unit = {}
 ) {
     PreviewLayout(
         modifier = modifier,
@@ -859,7 +880,8 @@ private fun LayoutWrapper(
         },
         debugVisibilityWrapper = debugVisibilityWrapper,
         screenFlashOverlay = screenFlashOverlay,
-        snackBar = snackBar
+        snackBar = snackBar,
+        errorDialog = errorDialog
     )
 }
 
