@@ -83,3 +83,8 @@ const val ROW_QUICK_SETTINGS_CAPTURE_MODE = "row_quick_settings_capture_mode"
 const val ROW_QUICK_SETTINGS_HDR = "row_quick_settings_hdr"
 const val ROW_QUICK_SETTINGS_ASPECT_RATIO = "row_quick_settings_aspect_ratio"
 const val ROW_QUICK_SETTINGS_FLASH = "row_quick_settings_flash"
+
+const val CAMERA_ERROR_DIALOG_TAG = "CameraErrorDialogTag"
+const val CAMERA_ERROR_DIALOG_TITLE_TAG = "CameraErrorDialogTitleTag"
+const val CAMERA_ERROR_DIALOG_BODY_TAG = "CameraErrorDialogBodyTag"
+const val CAMERA_ERROR_DIALOG_CONFIRM_BUTTON_TAG = "CameraErrorDialogConfirmButtonTag"

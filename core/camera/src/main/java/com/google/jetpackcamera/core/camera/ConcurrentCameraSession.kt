@@ -103,98 +103,116 @@ internal suspend fun runConcurrentCameraSession(
         )
     )
 
-    cameraProvider.runWithConcurrent(cameraConfigs, useCaseGroup) { concurrentCamera ->
-        Log.d(TAG, "Concurrent camera session started")
-        // todo: concurrent camera only ever lists one camera
-        val primaryCamera = concurrentCamera.cameras.first {
-            it.cameraInfo.appLensFacing == sessionSettings.primaryCameraInfo.appLensFacing
-        }
+    try {
+        cameraProvider.runWithConcurrent(cameraConfigs, useCaseGroup) { concurrentCamera ->
+            Log.d(TAG, "Concurrent camera session started")
+            // todo: concurrent camera only ever lists one camera
+            val primaryCamera = concurrentCamera.cameras.first {
+                it.cameraInfo.appLensFacing == sessionSettings.primaryCameraInfo.appLensFacing
+            }
 
-        launch {
-            processFocusMeteringEvents(
-                primaryCamera.cameraInfo,
-                primaryCamera.cameraControl
-            )
-        }
+            launch {
+                processFocusMeteringEvents(
+                    primaryCamera.cameraInfo,
+                    primaryCamera.cameraControl
+                )
+            }
 
-        launch {
-            processVideoControlEvents(
-                useCaseGroup.getVideoCapture(),
-                captureTypeSuffix = "DualCam"
-            )
-        }
+            launch {
+                processVideoControlEvents(
+                    useCaseGroup.getVideoCapture(),
+                    captureTypeSuffix = "DualCam"
+                )
+            }
 
-        launch {
-            sessionSettings.primaryCameraInfo.torchState.asFlow().collectLatest { torchState ->
-                currentCameraState.update { old ->
-                    old.copy(isTorchEnabled = torchState == TorchState.ON)
+            launch {
+                sessionSettings.primaryCameraInfo.torchState.asFlow().collectLatest { torchState ->
+                    currentCameraState.update { old ->
+                        old.copy(isTorchEnabled = torchState == TorchState.ON)
+                    }
                 }
             }
-        }
 
-        // Update CameraState to reflect when camera is running
-        launch {
-            primaryCamera.cameraInfo.cameraState
-                .asFlow()
-                .filterNotNull()
-                .distinctUntilChanged()
-                .onCompletion {
-                    currentCameraState.update { old ->
-                        old.copy(
-                            isCameraRunning = false
-                        )
+            // Update CameraState to reflect when camera is running and any camera errors
+            launch {
+                primaryCamera.cameraInfo.cameraState
+                    .asFlow()
+                    .filterNotNull()
+                    .distinctUntilChanged()
+                    .onCompletion {
+                        currentCameraState.update { old ->
+                            old.copy(
+                                isCameraRunning = false
+                            )
+                        }
                     }
-                }
-                .collectLatest { cameraState ->
-                    currentCameraState.update { old ->
-                        old.copy(
-                            isCameraRunning = cameraState.type == CXCameraState.Type.OPEN
-                        )
+                    .collectLatest { cameraState ->
+                        val mappedError = cameraState.error?.toCameraError(context)
+                        currentCameraState.update { old ->
+                            old.copy(
+                                isCameraRunning = cameraState.type == CXCameraState.Type.OPEN,
+                                cameraError = when {
+                                    mappedError != null -> mappedError
+                                    cameraState.type == CXCameraState.Type.OPEN -> null
+                                    else -> old.cameraError
+                                }
+                            )
+                        }
                     }
-                }
-        }
+            }
 
-        // update cameraState to mirror the current zoomState
-        launch {
-            primaryCamera.cameraInfo.zoomState.asFlow().filterNotNull().distinctUntilChanged()
-                .collectLatest { zoomState ->
-                    val settings = transientSettings.value
-                    // TODO(b/405987189): remove checks after buggy zoomState is fixed
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                        if (zoomState.zoomRatio != 1.0f ||
-                            settings == null ||
-                            zoomState.zoomRatio ==
-                            settings.zoomRatios[primaryCamera.cameraInfo.appLensFacing]
-                        ) {
-                            currentCameraState.update { old ->
-                                old.copy(
-                                    zoomRatios = old.zoomRatios.toMutableMap().apply {
-                                        put(
-                                            primaryCamera.cameraInfo.appLensFacing,
-                                            zoomState.zoomRatio
-                                        )
-                                    }.toMap(),
-                                    linearZoomScales = old.linearZoomScales.toMutableMap().apply {
-                                        put(
-                                            primaryCamera.cameraInfo.appLensFacing,
-                                            zoomState.linearZoom
-                                        )
-                                    }.toMap()
-                                )
+            // update cameraState to mirror the current zoomState
+            launch {
+                primaryCamera.cameraInfo.zoomState.asFlow().filterNotNull().distinctUntilChanged()
+                    .collectLatest { zoomState ->
+                        val settings = transientSettings.value
+                        // TODO(b/405987189): remove checks after buggy zoomState is fixed
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                            if (zoomState.zoomRatio != 1.0f ||
+                                settings == null ||
+                                zoomState.zoomRatio ==
+                                settings.zoomRatios[primaryCamera.cameraInfo.appLensFacing]
+                            ) {
+                                currentCameraState.update { old ->
+                                    old.copy(
+                                        zoomRatios = old.zoomRatios.toMutableMap().apply {
+                                            put(
+                                                primaryCamera.cameraInfo.appLensFacing,
+                                                zoomState.zoomRatio
+                                            )
+                                        }.toMap(),
+                                        linearZoomScales = old.linearZoomScales.toMutableMap()
+                                            .apply {
+                                                put(
+                                                    primaryCamera.cameraInfo.appLensFacing,
+                                                    zoomState.linearZoom
+                                                )
+                                            }.toMap()
+                                    )
+                                }
                             }
                         }
                     }
-                }
-        }
+            }
 
-        applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
-        processTransientSettingEvents(
-            primaryCamera,
-            cameraConstraints,
-            useCaseGroup,
-            initialTransientSettings,
-            transientSettings,
-            null
-        )
+            applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
+            processTransientSettingEvents(
+                primaryCamera,
+                cameraConstraints,
+                useCaseGroup,
+                initialTransientSettings,
+                transientSettings,
+                null
+            )
+        }
+    } catch (e: IllegalArgumentException) {
+        Log.e(TAG, "Failed to bind concurrent use cases to lifecycle (stream config error)", e)
+        currentCameraState.update { old ->
+            old.copy(
+                isCameraRunning = false,
+                cameraError = com.google.jetpackcamera.model.CameraError.StreamConfigError
+            )
+        }
+        kotlinx.coroutines.awaitCancellation()
     }
 }

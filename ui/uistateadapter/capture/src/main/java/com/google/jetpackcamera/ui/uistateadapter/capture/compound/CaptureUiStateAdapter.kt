@@ -22,6 +22,7 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -174,7 +175,11 @@ fun captureUiState(
                 trackedUiState.recentCapturedMedia,
                 roundedVideoRecordingState
             ),
-            screenFlashUiState = ScreenFlashUiState.from(trackedUiState)
+            screenFlashUiState = ScreenFlashUiState.from(trackedUiState),
+            cameraErrorUiState = CameraErrorUiState.from(
+                roundedCameraState,
+                trackedUiState.acknowledgedCameraError
+            )
         )
     }
 }

@@ -30,4 +30,28 @@
     <string name="toast_hdr_video_unsupported_on_lens">HDR video not supported by current lens</string>
     <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be bound simultaneously</string>
     <string name="toast_llb_disabled_by_hdr">Low Light Boost is disabled when HDR is active</string>
+
+    <!-- Camera Error Dialog Strings (Photo Picker Spec) -->
+    <string name="picker_camera_error_dialog_ok">OK</string>
+    <string name="picker_camera_error_in_use_title">Camera is busy</string>
+    <string name="picker_camera_error_in_use_body">Close other apps that are using the camera and try again</string>
+    <string name="picker_camera_error_max_in_use_title">Too many cameras in use</string>
+    <string name="picker_camera_error_max_in_use_body">Close other apps that are using the camera and try again</string>
+    <string name="picker_camera_error_recoverable_title">Camera temporarily unavailable</string>
+    <string name="picker_camera_error_recoverable_body">Wait a moment or close other apps and try again</string>
+    <string name="picker_camera_error_stream_config_title">Something went wrong</string>
+    <string name="picker_camera_error_stream_config_body">Camera can\u2019t be opened right now. Close the app and try again.</string>
+    <string name="picker_camera_error_disabled_title">Camera blocked by your IT admin</string>
+    <string name="picker_camera_error_sensor_privacy_title">Can\u2019t use camera</string>
+    <string name="picker_camera_error_sensor_privacy_body">Try again later</string>
+    <string name="picker_camera_error_fatal_title">Camera isn\u2019t working</string>
+    <string name="picker_camera_error_fatal_body">Restart your device and try again</string>
+    <string name="picker_camera_error_dnd_title">Camera paused by Do Not Disturb</string>
+    <string name="picker_camera_error_dnd_body">To use the camera, turn off Do Not Disturb in Settings</string>
+    <string name="picker_camera_error_removed_title">Camera disconnected</string>
+    <string name="picker_camera_error_removed_body">Make sure your camera is connected and try again</string>
+    <string name="picker_camera_error_thermal_title">Phone is too warm</string>
+    <string name="picker_camera_error_thermal_body">Camera can\u2019t be opened right now. Wait for your phone to cool down and try again.</string>
+    <string name="picker_camera_error_storage_title">Out of storage</string>
+    <string name="picker_camera_error_storage_body">Free up space on your device to take photos or videos</string>
 </resources>

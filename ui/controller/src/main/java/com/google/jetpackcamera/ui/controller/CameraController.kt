@@ -45,4 +45,9 @@ interface CameraController {
      * @param deviceRotation The device rotation to set.
      */
     fun setDisplayRotation(deviceRotation: DeviceRotation)
+
+    /**
+     * Acknowledges and dismisses the currently active camera error dialog.
+     */
+    fun dismissCameraError() {}
 }
