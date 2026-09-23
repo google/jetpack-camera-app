@@ -640,6 +640,15 @@ private fun CaptureButton(
  */
 internal val LocalInitialPressedState = compositionLocalOf { false }
 
+/**
+ * The outer ring and translucent background container of the capture button.
+ *
+ * @param modifier [Modifier] to be applied to the outer container.
+ * @param captureButtonSize Diameter of the capture button ring in dp.
+ * @param color Border stroke color of the outer ring.
+ * @param borderWidth Border stroke width in dp.
+ * @param contents Optional composable content rendered inside the ring (such as the nucleus).
+ */
 @Composable
 internal fun CaptureButtonRing(
     modifier: Modifier = Modifier,
@@ -648,6 +657,7 @@ internal fun CaptureButtonRing(
     borderWidth: Float = BORDER_WIDTH,
     contents: (@Composable () -> Unit)? = null
 ) {
+    val disableAnimations = LocalDisableAnimations.current
     val backgroundStyle = LocalCameraControlBackgroundStyle.current
     val targetBackgroundColor = when (backgroundStyle) {
         CameraControlBackgroundStyle.WHITE_20 -> Color.White.copy(alpha = ALPHA_WHITE_20)
@@ -655,9 +665,11 @@ internal fun CaptureButtonRing(
     }
     val backgroundColor by animateColorAsState(
         targetValue = targetBackgroundColor,
-        animationSpec = androidx.compose.animation.core.tween(
-            durationMillis = ANIMATION_DURATION_COLOR
-        ),
+        animationSpec = if (disableAnimations) {
+            snap()
+        } else {
+            tween(durationMillis = ANIMATION_DURATION_COLOR)
+        },
         label = "backgroundColor"
     )
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
