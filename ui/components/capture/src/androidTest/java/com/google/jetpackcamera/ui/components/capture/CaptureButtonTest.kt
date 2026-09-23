@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -254,7 +255,7 @@ class CaptureButtonTest {
     fun captureButton_standard_disableAnimations_capturesImageImmediately() {
         var imageCaptured = false
         composeTestRule.setContent {
-            androidx.compose.runtime.CompositionLocalProvider(
+            CompositionLocalProvider(
                 LocalDisableAnimations provides true
             ) {
                 CaptureButton(
@@ -338,8 +339,8 @@ class CaptureButtonTest {
         composeTestRule.setContent {
             CaptureButtonRing(
                 captureButtonSize = 86f,
-                color = Color.White,
-                borderWidth = 0f
+                color = { Color.White },
+                borderWidth = { 0f }
             )
         }
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
@@ -350,8 +351,8 @@ class CaptureButtonTest {
         composeTestRule.setContent {
             CaptureButtonRing(
                 captureButtonSize = 86f,
-                color = Color.White,
-                borderWidth = 3f
+                color = { Color.White },
+                borderWidth = { 3f }
             )
         }
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertExists()

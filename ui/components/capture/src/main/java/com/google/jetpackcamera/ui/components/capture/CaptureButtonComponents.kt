@@ -436,13 +436,13 @@ private fun CaptureButton(
         it is CaptureButtonUiState.Enabled.Idle && it.captureMode == CaptureMode.STANDARD
     }
 
-    val animatedBorderWidth by animateDpAsState(
+    val animatedBorderWidth = animateDpAsState(
         targetValue = if (isStandardIdle) BORDER_WIDTH.dp else 0.dp,
         animationSpec = if (disableAnimations) snap() else fastSpatialSpec,
         label = "Capture Button Ring Border Width"
     )
 
-    val animatedColor by animateColorAsState(
+    val animatedColor = animateColorAsState(
         targetValue = when {
             !isStandardIdle -> Color.Transparent
             isVisuallyDisabled -> LocalContentColor.current.copy(alpha = 0.2f)
@@ -613,8 +613,8 @@ private fun CaptureButton(
             .focusable()
             .then(gestureModifier),
         captureButtonSize = captureButtonSize,
-        color = animatedColor,
-        borderWidth = animatedBorderWidth.value
+        color = { animatedColor.value },
+        borderWidth = { animatedBorderWidth.value.value }
     ) {
         if (useLockSwitch) {
             LockSwitchCaptureButtonNucleus(
@@ -649,8 +649,8 @@ internal val LocalInitialPressedState = compositionLocalOf { false }
  *
  * @param modifier [Modifier] to be applied to the outer container.
  * @param captureButtonSize Diameter of the capture button ring in dp.
- * @param color Border stroke color of the outer ring.
- * @param borderWidth Border stroke width in dp.
+ * @param color Lambda provider for the border stroke color of the outer ring.
+ * @param borderWidth Lambda provider for the border stroke width in dp.
  * @param contents Optional composable content rendered inside the ring (such as the nucleus).
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -658,8 +658,8 @@ internal val LocalInitialPressedState = compositionLocalOf { false }
 internal fun CaptureButtonRing(
     modifier: Modifier = Modifier,
     captureButtonSize: Float,
-    color: Color,
-    borderWidth: Float = BORDER_WIDTH,
+    color: () -> Color,
+    borderWidth: () -> Float = { BORDER_WIDTH },
     contents: (@Composable () -> Unit)? = null
 ) {
     val disableAnimations = LocalDisableAnimations.current
@@ -685,7 +685,8 @@ internal fun CaptureButtonRing(
                 .background(backgroundColor, CircleShape)
         )
         contents?.invoke()
-        if (borderWidth > 0f) {
+        val currentBorderWidth = borderWidth()
+        if (currentBorderWidth > 0f) {
             // todo(): use a canvas instead of a box.
             //  the sizing gets funny so the scales need to be completely readjusted
             Box(
@@ -694,7 +695,7 @@ internal fun CaptureButtonRing(
                     .size(
                         captureButtonSize.dp
                     )
-                    .border(borderWidth.dp, color, CircleShape)
+                    .border(currentBorderWidth.dp, color(), CircleShape)
             )
         }
     }
@@ -1131,7 +1132,7 @@ internal fun LockSwitchLockedAtThresholdPressedRecordingPreview() {
     ) {
         CaptureButtonRing(
             captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
-            color = Color.Transparent
+            color = { Color.Transparent }
         ) {
             LockSwitchCaptureButtonNucleus(
                 captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
@@ -1162,7 +1163,7 @@ internal fun LockSwitchLockedPressedRecordingPreview() {
     ) {
         CaptureButtonRing(
             captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
-            color = Color.Transparent
+            color = { Color.Transparent }
         ) {
             LockSwitchCaptureButtonNucleus(
                 captureButtonSize = DEFAULT_CAPTURE_BUTTON_SIZE,
