@@ -19,13 +19,11 @@ import android.view.KeyEvent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDp
-import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Canvas
@@ -45,9 +43,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -75,6 +75,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -97,22 +98,21 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val TAG = "CaptureButton"
-private const val DEFAULT_CAPTURE_BUTTON_SIZE = 76f
+private const val DEFAULT_CAPTURE_BUTTON_SIZE = 86f
 
+private const val IDLE_STANDARD_LATENT_SCALE = 0.80f
 private const val IDLE_IMAGE_CAPTURE_SCALE = 0.86f
 private const val IDLE_VIDEO_CAPTURE_SCALE = 0.64f
 private const val PRESSED_IMAGE_CAPTURE_SCALE = 0.93f
 private const val LOCKED_RECORDING_NUCLEUS_SCALE = 0.51f
-private const val MORPH_INTERMEDIATE_SCALE = 0.58f
 private const val BORDER_WIDTH = 3f
-private const val ANIMATION_DURATION_SIZE = 250
-private const val ANIMATION_DURATION_COLOR = 150
-private const val ANIMATION_DURATION_NUCLEUS_RELEASE = 50
-private const val ANIMATION_DURATION_DISABLED = 500
-private const val ANIMATION_DURATION_NUCLEUS_PRESSED = 50
 private const val ALPHA_DISABLED_NUCLEUS = 0.6f
+private const val ALPHA_PRESSED_IMAGE_ONLY = 0.8f
+private const val ALPHA_PRESSED_STANDARD = 0.9f
 private const val ALPHA_WHITE_20 = 0.2f
 private const val ALPHA_BLACK_60 = 0.6f
+
+private val RECORDING_RED = Color(0xFFED0000)
 
 private val LOCKED_CORNER_RADIUS = 8.dp
 
@@ -392,6 +392,7 @@ private fun rememberDebouncedVisuallyDisabled(
     return isVisuallyDisabled
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun CaptureButton(
     modifier: Modifier = Modifier,
@@ -426,34 +427,33 @@ private fun CaptureButton(
         captureButtonUiState = captureButtonUiState
     )
 
+    val scope = rememberCoroutineScope()
     val disableAnimations = LocalDisableAnimations.current
     val isPressedInteraction by interactionSource.collectIsPressedAsState()
+    val fastSpatialSpec = remember { MotionScheme.expressive().fastSpatialSpec<Dp>() }
+    val fastEffectsSpec = remember { MotionScheme.expressive().fastEffectsSpec<Color>() }
+    val defaultEffectsSpec = remember { MotionScheme.expressive().defaultEffectsSpec<Color>() }
+
+    val isStandardIdle = currentUiState.value.let {
+        it is CaptureButtonUiState.Enabled.Idle && it.captureMode == CaptureMode.STANDARD
+    }
+
+    val animatedBorderWidth by animateDpAsState(
+        targetValue = if (isStandardIdle) BORDER_WIDTH.dp else 0.dp,
+        animationSpec = if (disableAnimations) snap() else fastSpatialSpec,
+        label = "Capture Button Ring Border Width"
+    )
+
     val animatedColor by animateColorAsState(
         targetValue = when {
-            isVisuallyDisabled -> {
-                if (currentUiState.value.let {
-                        it is CaptureButtonUiState.Enabled.Idle &&
-                            it.captureMode == CaptureMode.STANDARD
-                    }
-                ) {
-                    LocalContentColor.current.copy(alpha = 0.2f)
-                } else {
-                    Color.Transparent
-                }
-            }
-            currentUiState.value.let {
-                it is CaptureButtonUiState.Enabled.Idle &&
-                    it.captureMode == CaptureMode.STANDARD
-            } -> LocalContentColor.current
-            else -> Color.Transparent
+            !isStandardIdle -> Color.Transparent
+            isVisuallyDisabled -> LocalContentColor.current.copy(alpha = 0.2f)
+            else -> LocalContentColor.current
         },
-        animationSpec = if (disableAnimations) {
-            snap()
-        } else {
-            tween(
-                durationMillis =
-                if (isVisuallyDisabled) ANIMATION_DURATION_DISABLED else ANIMATION_DURATION_COLOR
-            )
+        animationSpec = when {
+            disableAnimations -> snap()
+            isStandardIdle -> fastEffectsSpec
+            else -> defaultEffectsSpec
         },
         label = "Capture Button Color"
     )
@@ -506,7 +506,12 @@ private fun CaptureButton(
                         } finally {
                             isTapping = false
                             isCaptureButtonPressed = false // Manually unset pressed state
-                            interactionSource.tryEmit(PressInteraction.Release(press))
+                            scope.launch {
+                                if (!disableAnimations) {
+                                    delay(50) // Ensure visible press state for fast taps
+                                }
+                                interactionSource.emit(PressInteraction.Release(press))
+                            }
                         }
                         if (shouldBeLocked()) {
                             onLockVideoRecording(true)
@@ -610,7 +615,8 @@ private fun CaptureButton(
             .focusable()
             .then(gestureModifier),
         captureButtonSize = captureButtonSize,
-        color = animatedColor
+        color = animatedColor,
+        borderWidth = animatedBorderWidth.value
     ) {
         if (useLockSwitch) {
             LockSwitchCaptureButtonNucleus(
@@ -649,6 +655,7 @@ internal val LocalInitialPressedState = compositionLocalOf { false }
  * @param borderWidth Border stroke width in dp.
  * @param contents Optional composable content rendered inside the ring (such as the nucleus).
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun CaptureButtonRing(
     modifier: Modifier = Modifier,
@@ -663,12 +670,13 @@ internal fun CaptureButtonRing(
         CameraControlBackgroundStyle.WHITE_20 -> Color.White.copy(alpha = ALPHA_WHITE_20)
         CameraControlBackgroundStyle.BLACK_60 -> Color.Black.copy(alpha = ALPHA_BLACK_60)
     }
+    val fastEffectsSpec = remember { MotionScheme.expressive().fastEffectsSpec<Color>() }
     val backgroundColor by animateColorAsState(
         targetValue = targetBackgroundColor,
         animationSpec = if (disableAnimations) {
             snap()
         } else {
-            tween(durationMillis = ANIMATION_DURATION_COLOR)
+            fastEffectsSpec
         },
         label = "backgroundColor"
     )
@@ -679,15 +687,18 @@ internal fun CaptureButtonRing(
                 .background(backgroundColor, CircleShape)
         )
         contents?.invoke()
-        // todo(): use a canvas instead of a box.
-        //  the sizing gets funny so the scales need to be completely readjusted
-        Box(
-            modifier = Modifier
-                .size(
-                    captureButtonSize.dp
-                )
-                .border(borderWidth.dp, color, CircleShape)
-        )
+        if (borderWidth > 0f) {
+            // todo(): use a canvas instead of a box.
+            //  the sizing gets funny so the scales need to be completely readjusted
+            Box(
+                modifier = Modifier
+                    .testTag(CAPTURE_BUTTON_RING_BORDER)
+                    .size(
+                        captureButtonSize.dp
+                    )
+                    .border(borderWidth.dp, color, CircleShape)
+            )
+        }
     }
 }
 
@@ -809,15 +820,10 @@ private fun LockSwitchCaptureButtonNucleus(
     }
 }
 
-private enum class NucleusState {
-    Disabled,
-    Idle,
-    Pressed
-}
-
 private enum class NucleusSizeState {
     Unavailable,
     IdleStandard,
+    PressedStandard,
     IdleImageOnly,
     IdleVideoOnly,
     PressedImage,
@@ -834,13 +840,14 @@ private enum class NucleusSizeState {
  * @param idleVideoCaptureScale the scale factor for the idle size of the video-only nucleus. Must be between 0 and 1.
  * @param pressedVideoCaptureScale the scale factor for the pressed size of the video-only nucleus. Must be between 0 and 1.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun CaptureButtonNucleus(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
     isTapping: Boolean,
     captureButtonSize: Float,
-    recordingColor: Color = Color.Red,
+    recordingColor: Color = RECORDING_RED,
     imageCaptureModeColor: Color = Color.White,
     idleImageCaptureScale: Float = IDLE_IMAGE_CAPTURE_SCALE,
     idleVideoCaptureScale: Float = IDLE_VIDEO_CAPTURE_SCALE,
@@ -859,6 +866,11 @@ internal fun CaptureButtonNucleus(
 
     val currentUiState = rememberUpdatedState(captureButtonUiState)
     val disableAnimations = LocalDisableAnimations.current
+    val fastSpatialSpec = remember { MotionScheme.expressive().fastSpatialSpec<Dp>() }
+    val snappyStandardTapSpatialSpec = remember {
+        spring<Dp>(dampingRatio = 0.65f, stiffness = 1800f)
+    }
+    val fastEffectsSpec = remember { MotionScheme.expressive().fastEffectsSpec<Color>() }
 
     val nucleusSizeState = when (val uiState = currentUiState.value) {
         CaptureButtonUiState.Enabled.Recording.LockedRecording -> NucleusSizeState.RecordingLocked
@@ -867,9 +879,17 @@ internal fun CaptureButtonNucleus(
         CaptureButtonUiState.Unavailable -> NucleusSizeState.Unavailable
         is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
             CaptureMode.STANDARD ->
-                if (isTapping) NucleusSizeState.PressedImage else NucleusSizeState.IdleStandard
+                if (isTapping) {
+                    NucleusSizeState.PressedStandard
+                } else {
+                    NucleusSizeState.IdleStandard
+                }
             CaptureMode.IMAGE_ONLY ->
-                if (isTapping) NucleusSizeState.PressedImage else NucleusSizeState.IdleImageOnly
+                if (isTapping) {
+                    NucleusSizeState.PressedImage
+                } else {
+                    NucleusSizeState.IdleImageOnly
+                }
             CaptureMode.VIDEO_ONLY -> NucleusSizeState.IdleVideoOnly
         }
     }
@@ -881,22 +901,11 @@ internal fun CaptureButtonNucleus(
 
     val rawCenterShapeSize by sizeTransition.animateDp(
         transitionSpec = {
-            if (disableAnimations || targetState == NucleusSizeState.PressedImage) {
-                snap()
-            } else if (
-                NucleusSizeState.PressedImage isTransitioningTo NucleusSizeState.IdleImageOnly
-            ) {
-                tween(durationMillis = ANIMATION_DURATION_NUCLEUS_RELEASE)
-            } else if (
-                NucleusSizeState.PressedImage isTransitioningTo NucleusSizeState.IdleStandard
-            ) {
-                keyframes {
-                    durationMillis = ANIMATION_DURATION_NUCLEUS_RELEASE
-                    (captureButtonSize * PRESSED_IMAGE_CAPTURE_SCALE).dp at
-                        ANIMATION_DURATION_NUCLEUS_RELEASE
-                }
-            } else {
-                tween(durationMillis = ANIMATION_DURATION_SIZE, easing = FastOutSlowInEasing)
+            when {
+                disableAnimations -> snap()
+                NucleusSizeState.PressedStandard in setOf(initialState, targetState) ->
+                    snappyStandardTapSpatialSpec
+                else -> fastSpatialSpec
             }
         },
         label = "Nucleus Size"
@@ -907,10 +916,11 @@ internal fun CaptureButtonNucleus(
                 (captureButtonSize * LOCKED_RECORDING_NUCLEUS_SCALE).dp
             NucleusSizeState.RecordingPressed ->
                 (captureButtonSize * pressedVideoCaptureScale).dp
-            // no inner circle will be visible on Unavailable or idle STANDARD
-            NucleusSizeState.Unavailable,
-            NucleusSizeState.IdleStandard -> 0.dp
-            // large white circle will be visible on IMAGE_ONLY
+            NucleusSizeState.Unavailable -> 0.dp
+            NucleusSizeState.IdleStandard ->
+                (captureButtonSize * IDLE_STANDARD_LATENT_SCALE).dp
+            // large white circle will be visible on IMAGE_ONLY and when STANDARD is pressed
+            NucleusSizeState.PressedStandard,
             NucleusSizeState.IdleImageOnly ->
                 (captureButtonSize * idleImageCaptureScale).dp
             // small red circle will be visible on VIDEO_ONLY
@@ -922,84 +932,46 @@ internal fun CaptureButtonNucleus(
     }
     val centerShapeSize = rawCenterShapeSize.coerceAtLeast(0.dp)
 
-    val sizeFinal = (captureButtonSize * LOCKED_RECORDING_NUCLEUS_SCALE).dp
-    val sizeInter = (captureButtonSize * MORPH_INTERMEDIATE_SCALE).dp
-    val isLocked = currentUiState.value is CaptureButtonUiState.Enabled.Recording.LockedRecording
-    val cornerRadius = (
-        if (isLocked) {
-            if (centerShapeSize <= sizeInter) {
-                val fraction = (centerShapeSize - sizeFinal) / (sizeInter - sizeFinal)
-                val coercedFraction = fraction.coerceIn(0f, 1f)
-                LOCKED_CORNER_RADIUS +
-                    (centerShapeSize / 2 - LOCKED_CORNER_RADIUS) * coercedFraction
-            } else {
-                centerShapeSize / 2
-            }
+    val rawCornerRadius by animateDpAsState(
+        targetValue = if (nucleusSizeState == NucleusSizeState.RecordingLocked) {
+            LOCKED_CORNER_RADIUS
         } else {
-            centerShapeSize / 2
-        }
-        ).coerceAtLeast(0.dp)
+            ((captureButtonSize * PRESSED_IMAGE_CAPTURE_SCALE) / 2f).dp
+        },
+        animationSpec = if (disableAnimations) snap() else fastSpatialSpec,
+        label = "Nucleus Corner Radius"
+    )
+    val cornerRadius = rawCornerRadius.coerceIn(0.dp, (centerShapeSize / 2).coerceAtLeast(0.dp))
 
-    // used to fade between red/white in the center of the capture button
-    val isPressableImageMode = currentUiState.value.let {
-        it is CaptureButtonUiState.Enabled.Idle &&
-            (it.captureMode == CaptureMode.IMAGE_ONLY || it.captureMode == CaptureMode.STANDARD)
-    }
-    val nucleusState = when {
-        isVisuallyDisabled -> NucleusState.Disabled
-        isTapping && isPressableImageMode -> NucleusState.Pressed
-        else -> NucleusState.Idle
-    }
-
-    val transition =
-        updateTransition(targetState = nucleusState, label = "Nucleus Color Transition")
-    val animatedColor by transition.animateColor(
-        label = "Nucleus Color",
-        transitionSpec = {
-            if (disableAnimations) {
-                snap()
-            } else {
-                when {
-                    NucleusState.Disabled isTransitioningTo NucleusState.Idle -> tween(
-                        durationMillis = ANIMATION_DURATION_COLOR
-                    )
-                    NucleusState.Idle isTransitioningTo NucleusState.Disabled -> tween(
-                        durationMillis = ANIMATION_DURATION_DISABLED
-                    )
-                    NucleusState.Pressed isTransitioningTo NucleusState.Idle -> tween(
-                        durationMillis = ANIMATION_DURATION_NUCLEUS_PRESSED
-                    )
-                    else -> snap()
-                }
-            }
-        }
-    ) { state ->
-        when (state) {
-            NucleusState.Disabled -> Color.Black.copy(alpha = ALPHA_DISABLED_NUCLEUS)
-            NucleusState.Pressed -> imageCaptureModeColor
-            NucleusState.Idle -> {
-                when (val uiState = currentUiState.value) {
-                    is CaptureButtonUiState.Enabled.Idle -> when (uiState.captureMode) {
-                        CaptureMode.STANDARD ->
-                            if (
-                                sizeTransition.currentState == NucleusSizeState.RecordingPressed ||
-                                sizeTransition.currentState == NucleusSizeState.RecordingLocked
-                            ) {
-                                imageCaptureModeColor
-                            } else {
-                                imageCaptureModeColor.copy(alpha = 0f)
-                            }
-                        CaptureMode.IMAGE_ONLY -> imageCaptureModeColor
-                        CaptureMode.VIDEO_ONLY ->
-                            if (isTapping) recordingColor else imageCaptureModeColor
-                    }
-
-                    is CaptureButtonUiState.Enabled.Recording -> recordingColor
-                    is CaptureButtonUiState.Unavailable -> Color.Transparent
-                }
-            }
+    val targetNucleusColor = if (isVisuallyDisabled) {
+        Color.Black.copy(alpha = ALPHA_DISABLED_NUCLEUS)
+    } else {
+        when (nucleusSizeState) {
+            NucleusSizeState.IdleStandard,
+            NucleusSizeState.Unavailable -> imageCaptureModeColor.copy(alpha = 0f)
+            NucleusSizeState.PressedStandard ->
+                imageCaptureModeColor.copy(alpha = ALPHA_PRESSED_STANDARD)
+            NucleusSizeState.IdleImageOnly -> imageCaptureModeColor
+            NucleusSizeState.PressedImage ->
+                imageCaptureModeColor.copy(alpha = ALPHA_PRESSED_IMAGE_ONLY)
+            NucleusSizeState.IdleVideoOnly ->
+                if (isTapping) recordingColor else imageCaptureModeColor
+            NucleusSizeState.RecordingPressed,
+            NucleusSizeState.RecordingLocked -> recordingColor
         }
     }
+
+    val animatedColor by animateColorAsState(
+        targetValue = targetNucleusColor,
+        animationSpec = if (
+            disableAnimations || nucleusSizeState == NucleusSizeState.PressedStandard
+        ) {
+            snap()
+        } else {
+            fastEffectsSpec
+        },
+        label = "Nucleus Color"
+    )
 
     // this box contains and centers everything
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -1010,16 +982,6 @@ internal fun CaptureButtonNucleus(
                 modifier = Modifier
                     .size(centerShapeSize)
                     .clip(RoundedCornerShape(cornerRadius))
-                    .alpha(
-                        if (isTapping &&
-                            currentUiState.value ==
-                            CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
-                        ) {
-                            .5f // transparency to indicate click ONLY on IMAGE_ONLY
-                        } else {
-                            1f // solid alpha the rest of the time
-                        }
-                    )
                     .background(animatedColor)
             ) {}
         }
