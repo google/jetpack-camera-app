@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
@@ -173,6 +174,7 @@ class CaptureButtonTest {
         }
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
         composeTestRule.onNodeWithTag(
             CAPTURE_BUTTON
         ).assertContentDescriptionEquals("Stop Video Recording")
@@ -198,6 +200,7 @@ class CaptureButtonTest {
         }
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
         composeTestRule.onNodeWithTag(
             CAPTURE_BUTTON
         ).assertContentDescriptionEquals("Recording Video")
@@ -243,6 +246,7 @@ class CaptureButtonTest {
         }
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(isNotEnabled())
     }
 
@@ -302,6 +306,55 @@ class CaptureButtonTest {
         isTapping = false
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_NUCLEUS).assertWidthIsEqualTo(80.dp)
+    }
+
+    @Test
+    fun captureButtonNucleus_imageOnlyTap_scales() {
+        var isTapping by mutableStateOf(false)
+        composeTestRule.setContent {
+            CaptureButtonNucleus(
+                modifier = Modifier.testTag(CAPTURE_BUTTON_NUCLEUS),
+                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY),
+                captureButtonSize = 100f,
+                isTapping = isTapping
+            )
+        }
+
+        // Idle IMAGE_ONLY is 86.dp (IDLE_IMAGE_CAPTURE_SCALE 0.86f * 100f)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_NUCLEUS).assertWidthIsEqualTo(86.dp)
+
+        isTapping = true
+        composeTestRule.waitForIdle()
+        // Pressed IMAGE_ONLY is PRESSED_IMAGE_CAPTURE_SCALE (0.93f -> 93.dp)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_NUCLEUS).assertWidthIsEqualTo(93.dp)
+
+        isTapping = false
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_NUCLEUS).assertWidthIsEqualTo(86.dp)
+    }
+
+    @Test
+    fun captureButtonRing_borderWidthZero_doesNotComposeBorder() {
+        composeTestRule.setContent {
+            CaptureButtonRing(
+                captureButtonSize = 86f,
+                color = Color.White,
+                borderWidth = 0f
+            )
+        }
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
+    }
+
+    @Test
+    fun captureButtonRing_borderWidthGreaterThanZero_composesBorder() {
+        composeTestRule.setContent {
+            CaptureButtonRing(
+                captureButtonSize = 86f,
+                color = Color.White,
+                borderWidth = 3f
+            )
+        }
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertExists()
     }
 }
 
