@@ -20,6 +20,7 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
@@ -70,6 +71,7 @@ sealed interface CaptureUiState {
      * @property zoomControlUiState The UI state for the zoom control buttons.
      * @property hdrUiState The UI state for the HDR setting.
      * @property focusMeteringUiState The UI state for focus and metering.
+     * @property cameraErrorUiState The UI state for the camera error alert dialog.
      */
     data class Ready(
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
@@ -94,7 +96,8 @@ sealed interface CaptureUiState {
         val zoomControlUiState: ZoomControlUiState = ZoomControlUiState.Unavailable,
         val hdrUiState: HdrUiState = HdrUiState.Unavailable,
         val focusMeteringUiState: FocusMeteringUiState = FocusMeteringUiState.Unspecified,
-        val screenFlashUiState: ScreenFlashUiState = ScreenFlashUiState()
+        val screenFlashUiState: ScreenFlashUiState = ScreenFlashUiState(),
+        val cameraErrorUiState: CameraErrorUiState = CameraErrorUiState.Hidden
     ) : CaptureUiState
 
     companion object

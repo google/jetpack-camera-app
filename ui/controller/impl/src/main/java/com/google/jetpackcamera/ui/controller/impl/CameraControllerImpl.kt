@@ -22,14 +22,17 @@ import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.common.traceFirstFramePreview
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.controller.CameraController
+import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.transformWhile
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
@@ -41,11 +44,13 @@ private const val TAG = "CameraControllerImpl"
  * @param cameraSystemProvider Provider for the initialized [CameraSystem].
  * @param captureUiState The [StateFlow] of the capture UI state.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
+ * @param trackedCaptureUiState Optional [MutableStateFlow] of [TrackedCaptureUiState] for acknowledging errors.
  */
 class CameraControllerImpl(
     private val cameraSystemProvider: suspend () -> CameraSystem,
     private val captureUiState: StateFlow<CaptureUiState>,
-    coroutineContext: CoroutineContext
+    coroutineContext: CoroutineContext,
+    private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>? = null
 ) : CameraController {
     private var runningCameraJob: Job? = null
     private val job = Job(parent = coroutineContext[Job])
@@ -98,6 +103,17 @@ class CameraControllerImpl(
     override fun setDisplayRotation(deviceRotation: DeviceRotation) {
         scope.launch {
             cameraSystemProvider().setDeviceRotation(deviceRotation)
+        }
+    }
+
+    override fun dismissCameraError() {
+        scope.launch {
+            val cameraSystem = cameraSystemProvider()
+            val currentError = cameraSystem.getCurrentCameraState().value.cameraError
+            trackedCaptureUiState?.update { old ->
+                old.copy(acknowledgedCameraError = currentError)
+            }
+            cameraSystem.clearCameraError()
         }
     }
 

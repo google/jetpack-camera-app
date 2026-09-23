@@ -20,6 +20,9 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.os.Build
+import android.os.Environment
+import android.os.PowerManager
+import android.os.StatFs
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
@@ -31,6 +34,7 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
+import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
@@ -50,6 +54,7 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraEffectTarget
+import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -82,10 +87,12 @@ import java.io.FileNotFoundException
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -163,10 +170,28 @@ class CameraXCameraSystem(
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
         val debugSettings = cameraAppSettings.debugSettings
-        cameraProvider = configureAndGetCameraProvider(
-            context = application,
-            singleLensMode = debugSettings.singleLensMode
-        )
+        cameraProvider = try {
+            configureAndGetCameraProvider(
+                context = application,
+                singleLensMode = debugSettings.singleLensMode
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize CameraProvider", e)
+            systemConstraints = CameraSystemConstraints(
+                availableLenses = emptyList(),
+                concurrentCamerasSupported = false,
+                perLensConstraints = emptyMap()
+            )
+            _systemConstraints.value = systemConstraints
+            currentSettings.value = cameraAppSettings
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.FatalCameraError
+                )
+            }
+            return
+        }
 
         // updates values for available cameras
         val availableCameraLenses =
@@ -176,6 +201,16 @@ class CameraXCameraSystem(
             ).filter {
                 cameraProvider.hasCamera(it.toCameraSelector())
             }
+
+        if (availableCameraLenses.isEmpty()) {
+            Log.w(TAG, "No available cameras detected during initialization")
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.CameraRemoved
+                )
+            }
+        }
 
         // verify the initial camera exists
         val settingsWithVerifiedLens =
@@ -400,6 +435,32 @@ class CameraXCameraSystem(
             handleLowLightBoostErrors()
         }
 
+        launch {
+            monitorThermalStatus()
+        }
+
+        if (!this@CameraXCameraSystem::cameraProvider.isInitialized) {
+            Log.e(TAG, "CameraProvider is not initialized; emitting FatalCameraError.")
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.FatalCameraError
+                )
+            }
+            kotlinx.coroutines.awaitCancellation()
+        }
+
+        if (systemConstraints.availableLenses.isEmpty()) {
+            Log.e(TAG, "No available cameras on device; emitting CameraRemoved error.")
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.CameraRemoved
+                )
+            }
+            kotlinx.coroutines.awaitCancellation()
+        }
+
         val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
         currentSettings
             .filterNotNull()
@@ -415,11 +476,21 @@ class CameraXCameraSystem(
 
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
-                        val cameraConstraints = checkNotNull(
+                        val cameraConstraints =
                             systemConstraints.forCurrentLens(currentCameraSettings)
-                        ) {
-                            "Could not retrieve constraints for " +
-                                "${currentCameraSettings.cameraLensFacing}"
+                        if (cameraConstraints == null) {
+                            Log.e(
+                                TAG,
+                                "Could not retrieve constraints for " +
+                                    "${currentCameraSettings.cameraLensFacing}"
+                            )
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    isCameraRunning = false,
+                                    cameraError = CameraError.CameraRemoved
+                                )
+                            }
+                            return@map null
                         }
 
                         val resolvedStabilizationMode = resolveStabilizationMode(
@@ -472,7 +543,9 @@ class CameraXCameraSystem(
                         }
                     }
                 }
-            }.distinctUntilChanged()
+            }
+            .filterNotNull()
+            .distinctUntilChanged()
             .collectLatest { sessionSettings ->
                 coroutineScope {
                     with(
@@ -516,6 +589,60 @@ class CameraXCameraSystem(
                     }
                 }
             }
+    }
+
+    private suspend fun monitorThermalStatus() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        val powerManager = application.getSystemService(Context.POWER_SERVICE) as? PowerManager
+            ?: return
+
+        callbackFlow {
+            val listener = PowerManager.OnThermalStatusChangedListener { status ->
+                trySend(status)
+            }
+            trySend(powerManager.currentThermalStatus)
+            powerManager.addThermalStatusListener(application.mainExecutor, listener)
+            awaitClose {
+                powerManager.removeThermalStatusListener(listener)
+            }
+        }.collectLatest { status ->
+            if (status >= PowerManager.THERMAL_STATUS_CRITICAL) {
+                currentCameraState.update { old ->
+                    old.copy(cameraError = CameraError.ThermalOverheat)
+                }
+            } else {
+                currentCameraState.update { old ->
+                    if (old.cameraError == CameraError.ThermalOverheat) {
+                        old.copy(cameraError = null)
+                    } else {
+                        old
+                    }
+                }
+            }
+        }
+    }
+
+    private fun hasSufficientStorage(saveLocation: SaveLocation): Boolean {
+        return try {
+            val targetDir = when (saveLocation) {
+                is SaveLocation.Cache -> saveLocation.cacheDir?.toFile() ?: application.cacheDir
+                is SaveLocation.Default,
+                is SaveLocation.Explicit ->
+                    application.getExternalFilesDir(null)
+                        ?: application.filesDir
+                        ?: Environment.getDataDirectory()
+            }
+            val stat = StatFs(targetDir.path)
+            stat.availableBytes >= MIN_REQUIRED_STORAGE_BYTES
+        } catch (e: Exception) {
+            true
+        }
+    }
+
+    override fun clearCameraError() {
+        currentCameraState.update { old ->
+            old.copy(cameraError = null)
+        }
     }
 
     private fun resolveStabilizationMode(
@@ -569,83 +696,113 @@ class CameraXCameraSystem(
         contentResolver: ContentResolver,
         saveLocation: SaveLocation,
         onCaptureStarted: (() -> Unit)
-    ): ImageCapture.OutputFileResults = imageCaptureUseCase?.let { imageCaptureUseCase ->
-        val (outputFileOptions, closeable) = when (saveLocation) {
-            is SaveLocation.Default -> {
-                val filename = filePathGenerator.generateImageFilename()
-                val contentValues = ContentValues()
-                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
-                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-                val relativePath = filePathGenerator.relativeImageOutputPath
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
-                    contentValues.put(
-                        MediaStore.Images.Media.RELATIVE_PATH,
-                        relativePath
-                    )
-                }
-                val options = OutputFileOptions.Builder(
-                    contentResolver,
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    contentValues
-                ).build()
-                options to null
+    ): ImageCapture.OutputFileResults {
+        if (!hasSufficientStorage(saveLocation)) {
+            currentCameraState.update { old ->
+                old.copy(cameraError = CameraError.InsufficientStorage)
             }
-
-            is SaveLocation.Explicit -> {
-                try {
-                    val imageCaptureUri = saveLocation.locationUri
-                    val outputStream = contentResolver.openOutputStream(imageCaptureUri)
-                        ?: throw RuntimeException("Provider recently crashed.")
-                    val options = OutputFileOptions.Builder(outputStream).build()
-                    options to outputStream
-                } catch (e: FileNotFoundException) {
-                    Log.d(TAG, "takePicture onError: $e")
-                    throw e
-                }
-            }
-
-            is SaveLocation.Cache -> {
-                // 1. Get the app's cache directory
-                val cacheDir = saveLocation.cacheDir?.toFile() ?: application.cacheDir
-
-                // 2. Create a unique temporary file
-                val tempFile = File.createTempFile(
-                    "JCA_IMG_CAPTURE_TEMP_",
-                    ".jpg", // Use .jpg to support Ultra HDR
-                    cacheDir
-                )
-                Log.d(TAG, "cached image location: ${tempFile.absolutePath}")
-
-                // 3. Build OutputFileOptions directly with the File object
-                val options = OutputFileOptions.Builder(tempFile).build()
-
-                // 4. Return options. Since CameraX manages the stream, we return null for the 'closeable'.
-                options to null
-            }
-        }
-
-        try {
-            imageCaptureUseCase.takePicture(
-                outputFileOptions,
-                onCaptureStarted
+            throw ImageCaptureException(
+                ImageCapture.ERROR_FILE_IO,
+                "Insufficient storage to capture photo",
+                null
             )
-        } finally {
-            closeable?.close()
-        }.also { outputFileResults ->
-            outputFileResults.savedUri?.let {
-                for ((key, value) in imagePostProcessors) {
-                    value.get().postProcessImage(it)
-                    Log.d(TAG, "Post processed image with $key")
-                }
-                Log.d(TAG, "Saved image to $it")
-            }
         }
-    } ?: throw RuntimeException("Attempted take picture with null imageCapture use case")
+        return imageCaptureUseCase?.let { imageCaptureUseCase ->
+            val (outputFileOptions, closeable) = when (saveLocation) {
+                is SaveLocation.Default -> {
+                    val filename = filePathGenerator.generateImageFilename()
+                    val contentValues = ContentValues()
+                    contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                    contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                    val relativePath = filePathGenerator.relativeImageOutputPath
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+                        contentValues.put(
+                            MediaStore.Images.Media.RELATIVE_PATH,
+                            relativePath
+                        )
+                    }
+                    val options = OutputFileOptions.Builder(
+                        contentResolver,
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        contentValues
+                    ).build()
+                    options to null
+                }
+
+                is SaveLocation.Explicit -> {
+                    try {
+                        val imageCaptureUri = saveLocation.locationUri
+                        val outputStream = contentResolver.openOutputStream(imageCaptureUri)
+                            ?: throw RuntimeException("Provider recently crashed.")
+                        val options = OutputFileOptions.Builder(outputStream).build()
+                        options to outputStream
+                    } catch (e: FileNotFoundException) {
+                        Log.d(TAG, "takePicture onError: $e")
+                        throw e
+                    }
+                }
+
+                is SaveLocation.Cache -> {
+                    // 1. Get the app's cache directory
+                    val cacheDir = saveLocation.cacheDir?.toFile() ?: application.cacheDir
+
+                    // 2. Create a unique temporary file
+                    val tempFile = File.createTempFile(
+                        "JCA_IMG_CAPTURE_TEMP_",
+                        ".jpg", // Use .jpg to support Ultra HDR
+                        cacheDir
+                    )
+                    Log.d(TAG, "cached image location: ${tempFile.absolutePath}")
+
+                    // 3. Build OutputFileOptions directly with the File object
+                    val options = OutputFileOptions.Builder(tempFile).build()
+
+                    // 4. Return options. Since CameraX manages the stream, we return null for the 'closeable'.
+                    options to null
+                }
+            }
+
+            try {
+                imageCaptureUseCase.takePicture(
+                    outputFileOptions,
+                    onCaptureStarted
+                )
+            } catch (e: ImageCaptureException) {
+                if (e.imageCaptureError == ImageCapture.ERROR_FILE_IO) {
+                    currentCameraState.update { old ->
+                        old.copy(cameraError = CameraError.InsufficientStorage)
+                    }
+                }
+                throw e
+            } finally {
+                closeable?.close()
+            }.also { outputFileResults ->
+                outputFileResults.savedUri?.let {
+                    for ((key, value) in imagePostProcessors) {
+                        value.get().postProcessImage(it)
+                        Log.d(TAG, "Post processed image with $key")
+                    }
+                    Log.d(TAG, "Saved image to $it")
+                }
+            }
+        } ?: throw RuntimeException("Attempted take picture with null imageCapture use case")
+    }
 
     override suspend fun startVideoRecording(
         saveLocation: SaveLocation,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) {
+        if (!hasSufficientStorage(saveLocation)) {
+            currentCameraState.update { old ->
+                old.copy(cameraError = CameraError.InsufficientStorage)
+            }
+            onVideoRecord(
+                OnVideoRecordEvent.OnVideoRecordError(
+                    RuntimeException("Insufficient storage to record video")
+                )
+            )
+            return
+        }
         videoCaptureControlEvents.send(
             VideoCaptureControlEvent.StartRecordingEvent(
                 saveLocation,
@@ -1076,5 +1233,6 @@ class CameraXCameraSystem(
         }
 
         private val FIXED_FRAME_RATES = setOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60)
+        private const val MIN_REQUIRED_STORAGE_BYTES = 10L * 1024L * 1024L
     }
 }
