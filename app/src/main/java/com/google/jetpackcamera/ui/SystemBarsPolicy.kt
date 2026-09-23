@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui
 
 import android.view.View
+import android.view.ViewTreeObserver
 import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
@@ -28,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalView
 import androidx.core.app.MultiWindowModeChangedInfo
 import androidx.core.util.Consumer
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -69,9 +69,9 @@ internal fun systemBarsPolicyFor(route: String?): SystemBarsPolicy =
 /**
  * Applies the requested system bar configuration to [window].
  *
- * This is idempotent: it diffs the request against the current window state and only writes what
- * actually differs, so it is safe (and cheap) to call it repeatedly, which is what makes the
- * "re-assert liberally" strategy in [SystemBarsPolicyEffect] viable.
+ * The platform [WindowInsetsControllerCompat] internally tracks `requestedVisibleTypes` and no-ops
+ * redundant `hide`/`show` calls, while calling them unconditionally avoids stale reads from
+ * `ViewCompat.getRootWindowInsets(view)` during activity launch or keyguard transitions.
  */
 private fun applySystemBars(
     window: Window,
@@ -93,15 +93,10 @@ private fun applySystemBars(
         controller.systemBarsBehavior = desiredBehavior
     }
 
-    // Read the real window state rather than tracking our own, so that changes made by the system
-    // (transient reveal timeouts, multi-window, returning from another app) are picked up. A null
-    // insets object means the view is not attached yet; assume the default, which is "visible".
-    val rootInsets = ViewCompat.getRootWindowInsets(view)
-    val statusBarVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.statusBars()) != false
     if (hideStatusBar) {
-        if (statusBarVisible) controller.hide(WindowInsetsCompat.Type.statusBars())
+        controller.hide(WindowInsetsCompat.Type.statusBars())
     } else {
-        if (!statusBarVisible) controller.show(WindowInsetsCompat.Type.statusBars())
+        controller.show(WindowInsetsCompat.Type.statusBars())
     }
 
     // When the status bar is visible on a non-capture surface (such as Settings), its icon
@@ -113,11 +108,7 @@ private fun applySystemBars(
         controller.isAppearanceLightStatusBars = lightStatusBars
     }
 
-    val navigationBarVisible =
-        rootInsets?.isVisible(WindowInsetsCompat.Type.navigationBars()) != false
-    if (!navigationBarVisible) {
-        controller.show(WindowInsetsCompat.Type.navigationBars())
-    }
+    controller.show(WindowInsetsCompat.Type.navigationBars())
 }
 
 /**
@@ -128,9 +119,9 @@ private fun applySystemBars(
  * per-screen effect would have the *outgoing* screen's cleanup run last and overwrite the policy
  * the incoming screen just applied.
  *
- * The policy is re-asserted on every resume because the system can reset bar visibility underneath
- * the app (a transient reveal timing out, entering multi-window, returning from another task).
- * [applySystemBars] is idempotent, so over-applying costs nothing.
+ * The policy is re-asserted on every resume and window focus gain because the system can reset bar
+ * visibility underneath the app (a transient reveal timing out, keyguard dismissal, entering
+ * multi-window, returning from another task).
  */
 @Composable
 internal fun SystemBarsPolicyEffect(policy: SystemBarsPolicy, isDarkTheme: Boolean = true) {
@@ -154,6 +145,18 @@ internal fun SystemBarsPolicyEffect(policy: SystemBarsPolicy, isDarkTheme: Boole
     LifecycleResumeEffect(activity, view, hideStatusBar, isDarkTheme) {
         applySystemBars(activity.window, view, hideStatusBar, isDarkTheme)
         onPauseOrDispose {}
+    }
+
+    DisposableEffect(activity, view, hideStatusBar, isDarkTheme) {
+        val focusListener = ViewTreeObserver.OnWindowFocusChangeListener { hasFocus ->
+            if (hasFocus) {
+                applySystemBars(activity.window, view, hideStatusBar, isDarkTheme)
+            }
+        }
+        view.viewTreeObserver.addOnWindowFocusChangeListener(focusListener)
+        onDispose {
+            view.viewTreeObserver.removeOnWindowFocusChangeListener(focusListener)
+        }
     }
 
     DisposableEffect(activity, view, isDarkTheme) {

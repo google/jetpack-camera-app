@@ -36,7 +36,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -45,6 +44,7 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
@@ -65,6 +65,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.takeOrElse
 
 /**
  * The base layout for the camera capture screen.
@@ -147,21 +148,15 @@ fun PreviewLayout(
         ) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
                 Column {
-                    // The *IgnoringVisibility insets report a bar's size whether or not the bar is
-                    // currently shown. The regular inset APIs collapse to zero while a bar is
-                    // hidden, which would make this layout jump whenever the status bar is hidden
-                    // or transiently revealed.
-                    // The indicator row occupies the top bar real estate under the cutout / status
-                    // bar area (matching reference camera app behavior). We size the top bar to
-                    // accommodate the cutout or status bar height (at least 48dp for touch
-                    // targets), horizontally inset from the display edges, and center the indicator
-                    // controls within it.
-                    val topInset = max(
-                        WindowInsets.statusBarsIgnoringVisibility.asPaddingValues()
-                            .calculateTopPadding(),
+                    // The indicator row occupies the top bar real estate in the hidden status bar
+                    // region. We size the top bar to accommodate any top display cutout or the
+                    // minimum interactive touch target (defaulting to 48dp), while CutoutAwareRow
+                    // shifts individual indicator icons around any intersecting cutout bounds.
+                    val cutoutTopInset =
                         WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
-                    )
-                    val topBarHeight = max(topInset, 48.dp)
+                    val minTouchTarget =
+                        LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
+                    val topBarHeight = max(cutoutTopInset, minTouchTarget)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()

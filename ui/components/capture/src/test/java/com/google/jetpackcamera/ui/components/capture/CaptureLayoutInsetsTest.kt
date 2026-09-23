@@ -125,6 +125,22 @@ class CaptureLayoutInsetsTest {
         assertThat(withoutStatusBar).isEqualTo(withStatusBar)
     }
 
+    @Test
+    fun indicatorRow_occupiesStatusBarSpace_whenNoDisplayCutout() {
+        lateinit var view: View
+        composeTestRule.setContent {
+            view = LocalView.current
+            TestPreviewLayout()
+        }
+
+        // Even though statusBarsIgnoringVisibility is 100dp (STATUS_BAR_HEIGHT_PX = 100 at 1x
+        // density), when displayCutout is 0dp the top bar height is minTouchTarget (48dp), so the
+        // 40dp indicatorRow is vertically centered in [0dp, 48dp] -> [4dp, 44dp].
+        val bounds = boundsOf(INDICATOR_ROW_TAG, view, statusBarVisible = false)
+        assertThat(bounds.top).isEqualTo(4.dp)
+        assertThat(bounds.bottom).isEqualTo(44.dp)
+    }
+
     private fun boundsOf(
         tag: String,
         view: View,
