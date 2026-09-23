@@ -16,12 +16,15 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "com.google.jetpackcamera.core.camera"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -93,10 +96,9 @@ android {
     }
     kotlin {
         jvmToolchain(17)
-    }
-
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
+        compilerOptions {
+            freeCompilerArgs.add("-Xcontext-receivers")
+        }
     }
 }
 
@@ -113,6 +115,7 @@ dependencies {
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.truth)
     androidTestImplementation(project(":core:common:testing"))
+    androidTestImplementation(project(":core:camera:postprocess:postprocess-di"))
     testImplementation(project(":core:camera:testing"))
 
     // Futures
@@ -127,7 +130,6 @@ dependencies {
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.video)
 
-
     // Tracing
     implementation(libs.androidx.tracing)
     implementation(libs.kotlinx.atomicfu)
@@ -141,6 +143,6 @@ dependencies {
     implementation(project(":core:camera:low-light"))
     implementation(project(":core:camera:postprocess"))
 
-}
 
+}
 

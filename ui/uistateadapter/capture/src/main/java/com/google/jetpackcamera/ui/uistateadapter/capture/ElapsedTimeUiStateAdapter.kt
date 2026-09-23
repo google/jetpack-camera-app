@@ -38,7 +38,10 @@ fun ElapsedTimeUiState.Companion.from(cameraState: CameraState): ElapsedTimeUiSt
     val videoRecordingState = cameraState.videoRecordingState
     return when (videoRecordingState) {
         is VideoRecordingState.Active ->
-            ElapsedTimeUiState.Enabled(videoRecordingState.elapsedTimeNanos)
+            ElapsedTimeUiState.Enabled(
+                elapsedTimeNanos = videoRecordingState.elapsedTimeNanos,
+                isPaused = videoRecordingState is VideoRecordingState.Active.Paused
+            )
 
         is VideoRecordingState.Inactive ->
             ElapsedTimeUiState.Enabled(videoRecordingState.finalElapsedTimeNanos)

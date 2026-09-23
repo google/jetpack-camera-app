@@ -17,19 +17,18 @@ package com.google.jetpackcamera.ui.debug
 
 import android.util.Size
 import com.google.jetpackcamera.core.camera.CameraState
-import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.TestPattern
-import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Creates a [Flow] of [DebugUiState] for the debug overlay.
@@ -38,29 +37,32 @@ import kotlinx.coroutines.flow.filterNotNull
  * that drives the UI of the debug information overlay. It reacts to changes in camera settings,
  * system constraints, camera state, and user interactions with the debug UI.
  *
- * @param cameraSystem The [CameraSystem] providing real-time camera state and settings.
- * @param constraintsRepository The [ConstraintsRepository] for accessing system-wide constraints.
+ * @param currentSettings A [Flow] of the current camera app settings.
+ * @param systemConstraints A [StateFlow] of the current camera system constraints.
+ * @param currentCameraState A [StateFlow] of the current camera state.
  * @param debugSettings The current debug-specific settings.
- * @param cameraPropertiesJSON A JSON string containing detailed camera properties for display.
- * @param trackedCaptureUiState A [MutableStateFlow] representing user-interacted UI state,
+ * @param cameraPropertiesJSON A [Flow] of JSON string containing detailed camera properties for display.
+ * @param trackedCaptureUiState A [StateFlow] representing user-interacted UI state,
  * such as whether the debug overlay is open.
  *
  * @return A [Flow] that emits a new [DebugUiState] whenever any of its underlying data
  * sources change.
  */
 fun debugUiState(
-    cameraSystem: CameraSystem,
-    constraintsRepository: ConstraintsRepository,
+    currentSettings: Flow<CameraAppSettings?>,
+    systemConstraints: StateFlow<CameraSystemConstraints?>,
+    currentCameraState: StateFlow<CameraState>,
     debugSettings: DebugSettings,
-    cameraPropertiesJSON: String,
-    trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>
+    cameraPropertiesJSON: Flow<String?> = flowOf(null),
+    trackedCaptureUiState: StateFlow<TrackedCaptureUiState>
 ): Flow<DebugUiState> {
     return combine(
-        cameraSystem.getCurrentSettings().filterNotNull(),
-        constraintsRepository.systemConstraints.filterNotNull(),
-        cameraSystem.getCurrentCameraState(),
+        currentSettings.filterNotNull(),
+        systemConstraints.filterNotNull(),
+        currentCameraState,
+        cameraPropertiesJSON,
         trackedCaptureUiState
-    ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
+    ) { cameraAppSettings, systemConstraints, cameraState, propertiesJSON, trackedUiState ->
         DebugUiState.from(
             systemConstraints,
             cameraAppSettings,
@@ -68,7 +70,7 @@ fun debugUiState(
             trackedUiState.isDebugOverlayOpen,
             trackedUiState.debugHidingComponents,
             debugSettings,
-            cameraPropertiesJSON
+            propertiesJSON ?: ""
         )
     }
 }

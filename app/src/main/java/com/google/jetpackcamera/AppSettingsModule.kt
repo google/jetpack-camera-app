@@ -16,8 +16,8 @@
 package com.google.jetpackcamera
 
 import android.content.Context
-import com.google.jetpackcamera.core.common.DefaultCaptureModeOverride
-import com.google.jetpackcamera.core.common.IODispatcher
+import com.google.jetpackcamera.di.DefaultCaptureModeOverride
+import com.google.jetpackcamera.di.IODispatcher
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.ProtoDataStoreSettingsDataSource
 import com.google.jetpackcamera.settings.SettingsDataSource
