@@ -33,6 +33,8 @@ import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth
 import com.google.jetpackcamera.feature.postcapture.ui.VIEWER_POST_CAPTURE_IMAGE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.CacheParam
 import com.google.jetpackcamera.utils.FILE_PREFIX
@@ -127,6 +129,32 @@ internal class ImageCaptureDeviceTest {
 
         verifyImageCaptureSuccess()
     }
+
+    @Test
+    fun image_capture_volumeKey_ignoredWhenQuickSettingsOpen() =
+        runMainActivityMediaStoreAutoDeleteScenarioTest(
+            mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            filePrefix = FILE_PREFIX,
+            expectedNumFiles = 0,
+            extras = cacheParam.extras
+        ) {
+            // Wait for the capture button to be displayed
+            composeTestRule.waitForCaptureButton()
+
+            // Open Quick Settings bottom sheet
+            composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
+                .assertExists()
+                .performClick()
+            composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+
+            // Send volume key presses
+            uiDevice.pressKeyCode(KeyEvent.KEYCODE_VOLUME_DOWN)
+            uiDevice.pressKeyCode(KeyEvent.KEYCODE_VOLUME_UP)
+
+            // Quick settings sheet should still be displayed
+            composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                .assertExists()
+        }
 
     @Test
     fun image_capture_external() {

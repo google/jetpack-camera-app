@@ -46,6 +46,7 @@ import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
@@ -60,6 +61,7 @@ import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.setConcurrentCameraModeInSettings
 import com.google.jetpackcamera.utils.visitSettingsScreen
 import com.google.jetpackcamera.utils.waitForCaptureButton
+import com.google.jetpackcamera.utils.waitForNodeWithTag
 import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.Rule
 import org.junit.Test
@@ -134,6 +136,7 @@ class ConcurrentCameraTest {
                 onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
                     .assertExists()
                     .performClick()
+                waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
 
                 // Assert the HDR button is disabled (if the row exists)
                 val hdrExists = onAllNodesWithTag(
