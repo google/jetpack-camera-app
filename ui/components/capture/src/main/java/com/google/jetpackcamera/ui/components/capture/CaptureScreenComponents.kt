@@ -685,6 +685,7 @@ fun PreviewDisplay(
  * @param onStartVideoRecording callback to start video recording.
  * @param onStopVideoRecording callback to stop video recording.
  * @param onLockVideoRecording callback to lock the video recording for hands-free operation.
+ * @param isVolumeCaptureEnabled whether volume key hardware events trigger capture. Defaults to false if quick settings is open or visible.
  */
 @Composable
 fun CaptureButton(
@@ -694,7 +695,9 @@ fun CaptureButton(
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onLockVideoRecording: (Boolean) -> Unit = {}
+    onLockVideoRecording: (Boolean) -> Unit = {},
+    isVolumeCaptureEnabled: Boolean =
+        LocalCameraBottomSheetState.current?.let { !it.isOpen && !it.isVisible } ?: true
 ) {
     val context = LocalContext.current
 
@@ -719,7 +722,8 @@ fun CaptureButton(
             onStopVideoRecording()
         },
         captureButtonUiState = captureButtonUiState,
-        onLockVideoRecording = onLockVideoRecording
+        onLockVideoRecording = onLockVideoRecording,
+        isVolumeCaptureEnabled = isVolumeCaptureEnabled
     )
 }
 

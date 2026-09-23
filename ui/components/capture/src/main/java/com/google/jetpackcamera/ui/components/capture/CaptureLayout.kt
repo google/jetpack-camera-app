@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -38,11 +39,8 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
@@ -61,8 +59,9 @@ import androidx.compose.ui.unit.dp
  * The base layout for the camera capture screen.
  *
  * @param modifier the modifier for this component
- * @param scaffoldState the bottom sheet scaffold state
+ * @param sheetState the [CameraBottomSheetState] controlling the quick settings bottom sheet
  * @param onDismissQuickSettings callback to dismiss quick settings when clicking the drag handle
+ * @param enableBackHandler whether to intercept system back navigation to close quick settings when open
  * @param viewfinder the viewfinder composable
  * @param captureButton the capture button composable
  * @param imageWell the image well composable
@@ -82,13 +81,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
-    scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            skipHiddenState = false
-        )
-    ),
+    sheetState: CameraBottomSheetState = rememberCameraBottomSheetState(),
     onDismissQuickSettings: () -> Unit = {},
+    enableBackHandler: Boolean = true,
     viewfinder: @Composable (Modifier) -> Unit,
     captureButton: @Composable (Modifier) -> Unit,
     imageWell: @Composable (Modifier) -> Unit,
@@ -106,10 +101,26 @@ fun PreviewLayout(
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
-    CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
+    val handleDismiss = remember(sheetState, onDismissQuickSettings) {
+        {
+            sheetState.hide()
+            onDismissQuickSettings()
+        }
+    }
+
+    if (enableBackHandler) {
+        BackHandler(enabled = sheetState.isOpen || sheetState.isVisible) {
+            handleDismiss()
+        }
+    }
+
+    CompositionLocalProvider(
+        LocalOverlapTargetBounds provides overlapTargetBounds,
+        LocalCameraBottomSheetState provides sheetState
+    ) {
         BottomSheetScaffold(
             modifier = modifier.fillMaxSize(),
-            scaffoldState = scaffoldState,
+            scaffoldState = sheetState.scaffoldState,
             sheetPeekHeight = 0.dp,
             sheetDragHandle = {
                 BottomSheetDefaults.DragHandle(
@@ -120,7 +131,7 @@ fun PreviewLayout(
                             onClickLabel = stringResource(
                                 R.string.quick_settings_btn_close_expanded_settings_description
                             ),
-                            onClick = onDismissQuickSettings
+                            onClick = handleDismiss
                         )
                 )
             },
@@ -131,7 +142,7 @@ fun PreviewLayout(
             },
             snackbarHost = {
                 SnackbarHost(
-                    hostState = scaffoldState.snackbarHostState,
+                    hostState = sheetState.scaffoldState.snackbarHostState,
                     modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
                 )
             }
@@ -161,13 +172,12 @@ fun PreviewLayout(
                         )
                     }
                     // controls overlay
-                    snackBar(Modifier, scaffoldState.snackbarHostState)
+                    snackBar(Modifier, sheetState.scaffoldState.snackbarHostState)
                     screenFlashOverlay(Modifier)
                 }
                 debugOverlay(Modifier)
 
-                val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
-                    scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+                val isSheetVisible = sheetState.isVisible || sheetState.isOpen
                 if (isSheetVisible) {
                     Box(
                         modifier = Modifier
@@ -179,7 +189,7 @@ fun PreviewLayout(
                                 ),
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
-                                onClick = onDismissQuickSettings
+                                onClick = handleDismiss
                             )
                     )
                 }
@@ -287,6 +297,63 @@ private fun VerticalMaterialControls(
             }
         }
     }
+}
+
+/**
+ * Legacy overload for [PreviewLayout] accepting [BottomSheetScaffoldState].
+ *
+ * @deprecated Use the PreviewLayout overload that accepts [CameraBottomSheetState] instead.
+ */
+@Deprecated(
+    message = "Use the PreviewLayout overload that accepts CameraBottomSheetState instead.",
+    replaceWith = ReplaceWith(
+        "PreviewLayout(modifier = modifier, sheetState = rememberCameraBottomSheetState(scaffoldState = scaffoldState), ...)"
+    ),
+    level = DeprecationLevel.WARNING
+)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PreviewLayout(
+    modifier: Modifier = Modifier,
+    scaffoldState: BottomSheetScaffoldState,
+    onDismissQuickSettings: () -> Unit = {},
+    enableBackHandler: Boolean = true,
+    viewfinder: @Composable (Modifier) -> Unit,
+    captureButton: @Composable (Modifier) -> Unit,
+    imageWell: @Composable (Modifier) -> Unit,
+    flipCameraButton: @Composable (Modifier) -> Unit,
+    zoomLevelDisplay: @Composable (Modifier) -> Unit,
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    quickSettingsButton: @Composable (Modifier) -> Unit,
+    indicatorRow: @Composable (Modifier) -> Unit,
+    captureModeToggle: @Composable (Modifier) -> Unit,
+    quickSettingsOverlay: @Composable (Modifier) -> Unit,
+    debugOverlay: @Composable (Modifier) -> Unit,
+    debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
+    screenFlashOverlay: @Composable (Modifier) -> Unit,
+    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit
+) {
+    val sheetState = rememberCameraBottomSheetState(scaffoldState = scaffoldState)
+    PreviewLayout(
+        modifier = modifier,
+        sheetState = sheetState,
+        onDismissQuickSettings = onDismissQuickSettings,
+        enableBackHandler = enableBackHandler,
+        viewfinder = viewfinder,
+        captureButton = captureButton,
+        imageWell = imageWell,
+        flipCameraButton = flipCameraButton,
+        zoomLevelDisplay = zoomLevelDisplay,
+        elapsedTimeDisplay = elapsedTimeDisplay,
+        quickSettingsButton = quickSettingsButton,
+        indicatorRow = indicatorRow,
+        captureModeToggle = captureModeToggle,
+        quickSettingsOverlay = quickSettingsOverlay,
+        debugOverlay = debugOverlay,
+        debugVisibilityWrapper = debugVisibilityWrapper,
+        screenFlashOverlay = screenFlashOverlay,
+        snackBar = snackBar
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

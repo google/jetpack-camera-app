@@ -33,6 +33,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.ui.components.capture.LocalCameraBottomSheetState
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
@@ -66,6 +67,7 @@ fun QuickSettingsScaffoldContent(
     modifier: Modifier = Modifier,
     showMoreSettingsButton: Boolean = true
 ) {
+    val sheetState = LocalCameraBottomSheetState.current
     if (quickSettingsUiState is QuickSettingsUiState.Available) {
         Column(
             modifier = modifier
@@ -77,7 +79,10 @@ fun QuickSettingsScaffoldContent(
             QuickSettingsContent(
                 quickSettingsUiState = quickSettingsUiState,
                 quickSettingsController = quickSettingsController,
-                onNavigateToSettings = onNavigateToSettings,
+                onNavigateToSettings = {
+                    sheetState?.hide()
+                    onNavigateToSettings()
+                },
                 showMoreSettingsButton = showMoreSettingsButton
             )
         }

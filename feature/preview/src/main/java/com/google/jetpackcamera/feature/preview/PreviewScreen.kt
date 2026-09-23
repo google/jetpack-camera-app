@@ -19,7 +19,6 @@ import android.Manifest
 import android.os.Build
 import android.util.Log
 import android.util.Range
-import androidx.activity.compose.BackHandler
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -34,16 +33,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -81,6 +75,7 @@ import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
+import com.google.jetpackcamera.ui.components.capture.CameraBottomSheetState
 import com.google.jetpackcamera.ui.components.capture.CaptureButton
 import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
@@ -105,6 +100,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSetting
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
+import com.google.jetpackcamera.ui.components.capture.rememberCameraBottomSheetState
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
 import com.google.jetpackcamera.ui.controller.ImageWellController
@@ -242,7 +238,6 @@ fun PreviewScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ContentScreen(
     captureUiStateProvider: () -> CaptureUiState.Ready,
@@ -302,33 +297,6 @@ private fun ContentScreen(
             newZoomRange = (zoomUiState.value as? ZoomUiState.Enabled)
                 ?.primaryZoomRange ?: Range(1f, 1f)
         )
-    }
-
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            skipHiddenState = false
-        )
-    )
-
-    // Derive whether quick settings is open directly from the sheet state's target value.
-    // This provides a single source of truth without bidirectional synchronization loops.
-    val isQuickSettingsOpen by remember(scaffoldState.bottomSheetState) {
-        derivedStateOf {
-            scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
-        }
-    }
-
-    // Intercept back navigation only while Quick Settings is actively open.
-    BackHandler(enabled = isQuickSettingsOpen) {
-        scope.launch { scaffoldState.bottomSheetState.hide() }
-    }
-
-    val onDismissQuickSettings: () -> Unit = remember(scope, scaffoldState.bottomSheetState) {
-        {
-            scope.launch { scaffoldState.bottomSheetState.hide() }
-            Unit
-        }
     }
 
     var initialRecordingSettings by remember { mutableStateOf<InitialRecordingSettings?>(null) }
@@ -477,7 +445,6 @@ private fun ContentScreen(
         captureButtonState,
         captureController,
         zoomStateManager,
-        scaffoldState.bottomSheetState,
         scope
     ) {
         @Composable { modifier: Modifier ->
@@ -485,18 +452,12 @@ private fun ContentScreen(
                 modifier = modifier,
                 captureButtonUiState = captureButtonState.value,
                 onCaptureImage = {
-                    if (scaffoldState.bottomSheetState.isVisible) {
-                        scope.launch { scaffoldState.bottomSheetState.hide() }
-                    }
                     captureController?.captureImage(it)
                 },
                 onIncrementZoom = { targetZoom ->
                     scope.launch { zoomStateManager.incrementZoom(targetZoom, LensToZoom.PRIMARY) }
                 },
                 onStartVideoRecording = {
-                    if (scaffoldState.bottomSheetState.isVisible) {
-                        scope.launch { scaffoldState.bottomSheetState.hide() }
-                    }
                     captureController?.startVideoRecording()
                 },
                 onStopVideoRecording = { captureController?.stopVideoRecording() },
@@ -601,10 +562,7 @@ private fun ContentScreen(
     }
 
     val quickSettingsButtonLambda = remember(
-        isVideoRecordingActive,
-        isQuickSettingsOpen,
-        scaffoldState.bottomSheetState,
-        scope
+        isVideoRecordingActive
     ) {
         @Composable { modifier: Modifier ->
             val isQuickSettingsVisible = !isVideoRecordingActive.value
@@ -621,16 +579,6 @@ private fun ContentScreen(
                 }
             ) {
                 ToggleQuickSettingsButton(
-                    isOpen = isQuickSettingsOpen,
-                    onClick = {
-                        scope.launch {
-                            if (scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded) {
-                                scaffoldState.bottomSheetState.hide()
-                            } else {
-                                scaffoldState.bottomSheetState.expand()
-                            }
-                        }
-                    },
                     modifier = modifier
                 )
             }
@@ -640,19 +588,14 @@ private fun ContentScreen(
     val quickSettingsOverlayLambda = remember(
         quickSettingsState,
         quickSettingsController,
-        onNavigateToSettings,
-        scaffoldState.bottomSheetState,
-        scope
+        onNavigateToSettings
     ) {
         @Composable { modifier: Modifier ->
             quickSettingsController?.let { controller ->
                 QuickSettingsScaffoldContent(
                     modifier = modifier,
                     quickSettingsUiState = quickSettingsState.value,
-                    onNavigateToSettings = {
-                        scope.launch { scaffoldState.bottomSheetState.hide() }
-                        onNavigateToSettings()
-                    },
+                    onNavigateToSettings = onNavigateToSettings,
                     quickSettingsController = controller
                 )
             }
@@ -766,8 +709,6 @@ private fun ContentScreen(
 
     LayoutWrapper(
         modifier = modifier,
-        scaffoldState = scaffoldState,
-        onDismissQuickSettings = onDismissQuickSettings,
         hdrIndicator = hdrIndicatorLambda,
         flashModeIndicator = flashModeIndicatorLambda,
         videoQualityIndicator = videoQualityIndicatorLambda,
@@ -805,11 +746,10 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LayoutWrapper(
     modifier: Modifier = Modifier,
-    scaffoldState: BottomSheetScaffoldState,
+    sheetState: CameraBottomSheetState = rememberCameraBottomSheetState(),
     onDismissQuickSettings: () -> Unit = {},
     viewfinder: @Composable (modifier: Modifier) -> Unit,
     captureButton: @Composable (modifier: Modifier) -> Unit,
@@ -836,7 +776,7 @@ private fun LayoutWrapper(
 ) {
     PreviewLayout(
         modifier = modifier,
-        scaffoldState = scaffoldState,
+        sheetState = sheetState,
         onDismissQuickSettings = onDismissQuickSettings,
         viewfinder = viewfinder,
         captureButton = captureButton,

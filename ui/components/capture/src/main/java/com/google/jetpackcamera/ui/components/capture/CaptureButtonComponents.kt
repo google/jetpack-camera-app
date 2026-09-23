@@ -17,6 +17,8 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.util.Log
 import android.view.KeyEvent
+import android.view.View
+import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -100,10 +102,63 @@ private const val MINIMUM_LOCK_THRESHOLD = .65F
 
 private const val LOCK_SWITCH_ALPHA = .37f
 
-private enum class CaptureSource {
+/**
+ * Represents the input source triggering a capture action.
+ */
+@VisibleForTesting
+internal enum class CaptureSource {
     CAPTURE_BUTTON,
     VOLUME_UP,
     VOLUME_DOWN
+}
+
+/**
+ * Listener for handling hardware key events (such as volume keys) as capture triggers.
+ */
+@VisibleForTesting
+internal class CaptureKeyEventListener(
+    private val isKeyEventsEnabled: () -> Boolean,
+    private val onPress: (CaptureSource) -> Unit,
+    private val onRelease: (CaptureSource) -> Unit
+) : ViewCompat.OnUnhandledKeyEventListenerCompat {
+    private var keyActionDown: Int? = null
+
+    override fun onUnhandledKeyEvent(view: View, event: KeyEvent): Boolean {
+        return when (event.keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                // Volume captures are not used or consumed while Quick Settings is open.
+                if (!isKeyEventsEnabled()) {
+                    if (event.action == KeyEvent.ACTION_UP && keyActionDown == event.keyCode) {
+                        keyActionDown = null
+                    }
+                    return false
+                }
+
+                val captureSource = when (event.keyCode) {
+                    KeyEvent.KEYCODE_VOLUME_UP -> CaptureSource.VOLUME_UP
+                    KeyEvent.KEYCODE_VOLUME_DOWN -> CaptureSource.VOLUME_DOWN
+                    else -> error("Keycode not assigned to CaptureSource")
+                }
+
+                // pressed down
+                if (event.action == KeyEvent.ACTION_DOWN && keyActionDown == null) {
+                    keyActionDown = event.keyCode
+                    onPress(captureSource)
+                }
+
+                // released
+                if (event.action == KeyEvent.ACTION_UP && keyActionDown == event.keyCode) {
+                    keyActionDown = null
+                    onRelease(captureSource)
+                }
+
+                // consume the event
+                true
+            }
+
+            else -> false
+        }
+    }
 }
 
 /**
@@ -111,50 +166,26 @@ private enum class CaptureSource {
  */
 @Composable
 private fun CaptureKeyHandler(
+    isKeyEventsEnabled: Boolean = true,
     onPress: (CaptureSource) -> Unit,
     onRelease: (CaptureSource) -> Unit
 ) {
     val view = LocalView.current
     val currentOnPress by rememberUpdatedState(onPress)
     val currentOnRelease by rememberUpdatedState(onRelease)
-
-    fun keyCodeToCaptureSource(keyCode: Int): CaptureSource = when (keyCode) {
-        KeyEvent.KEYCODE_VOLUME_UP -> CaptureSource.VOLUME_UP
-        KeyEvent.KEYCODE_VOLUME_DOWN -> CaptureSource.VOLUME_DOWN
-        else -> TODO("Keycode not assigned to CaptureSource")
-    }
+    val currentIsKeyEventsEnabled by rememberUpdatedState(isKeyEventsEnabled)
 
     DisposableEffect(view) {
-        // todo call once per keydown
-        var keyActionDown: Int? = null
-        val keyEventDispatcher = ViewCompat.OnUnhandledKeyEventListenerCompat { _, event ->
-            when (event.keyCode) {
-                KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                    val captureSource = keyCodeToCaptureSource(event.keyCode)
-                    // pressed down
-                    if (event.action == KeyEvent.ACTION_DOWN && keyActionDown == null) {
-                        keyActionDown = event.keyCode
-                        currentOnPress(captureSource)
-                    }
-                    // released
-                    if (event.action == KeyEvent.ACTION_UP && keyActionDown == event.keyCode) {
-                        keyActionDown = null
-                        currentOnRelease(captureSource)
-                    }
-                    // consume the event
-                    true
-                }
+        val listener = CaptureKeyEventListener(
+            isKeyEventsEnabled = { currentIsKeyEventsEnabled },
+            onPress = { currentOnPress(it) },
+            onRelease = { currentOnRelease(it) }
+        )
 
-                else -> {
-                    false
-                }
-            }
-        }
-
-        ViewCompat.addOnUnhandledKeyEventListener(view, keyEventDispatcher)
+        ViewCompat.addOnUnhandledKeyEventListener(view, listener)
 
         onDispose {
-            ViewCompat.removeOnUnhandledKeyEventListener(view, keyEventDispatcher)
+            ViewCompat.removeOnUnhandledKeyEventListener(view, listener)
         }
     }
 }
@@ -183,6 +214,7 @@ private fun CaptureKeyHandler(
  * @param onIncrementZoom The callback for a zoom increment event, providing the zoom increment value.
  * @param captureButtonUiState the [CaptureButtonUiState] for this component
  * @param captureButtonSize the size of the capture button
+ * @param isVolumeCaptureEnabled whether hardware volume keys trigger capture actions.
  */
 @Composable
 internal fun CaptureButton(
@@ -193,7 +225,8 @@ internal fun CaptureButton(
     onLockVideoRecording: (Boolean) -> Unit,
     onIncrementZoom: (Float) -> Unit,
     captureButtonUiState: CaptureButtonUiState,
-    captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE
+    captureButtonSize: Float = DEFAULT_CAPTURE_BUTTON_SIZE,
+    isVolumeCaptureEnabled: Boolean = true
 ) {
     val currentUiState = rememberUpdatedState(captureButtonUiState)
     val firstKeyPressed = remember { mutableStateOf<CaptureSource?>(null) }
@@ -290,6 +323,7 @@ internal fun CaptureButton(
     }
 
     CaptureKeyHandler(
+        isKeyEventsEnabled = isVolumeCaptureEnabled,
         onPress = { captureSource -> onPress(captureSource) },
         onRelease = { captureSource -> onKeyUp(captureSource) }
     )

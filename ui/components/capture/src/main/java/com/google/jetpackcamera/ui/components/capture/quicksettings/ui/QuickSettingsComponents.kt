@@ -77,6 +77,8 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.CameraBottomSheetState
+import com.google.jetpackcamera.ui.components.capture.LocalCameraBottomSheetState
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
@@ -104,13 +106,30 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 //
 // ////////////////////////////////////////////////////
 /**
+ * Button to toggle open quick settings, automatically connecting to [LocalCameraBottomSheetState].
+ *
+ * @param modifier The modifier for this component.
+ * @param sheetState The [CameraBottomSheetState] to control. Defaults to [LocalCameraBottomSheetState.current].
+ */
+@Composable
+fun ToggleQuickSettingsButton(
+    modifier: Modifier = Modifier,
+    sheetState: CameraBottomSheetState? = LocalCameraBottomSheetState.current
+) {
+    ToggleQuickSettingsButton(
+        isOpen = sheetState?.isOpen == true,
+        onClick = { sheetState?.toggle() },
+        modifier = modifier
+    )
+}
+
+/**
  * Button to toggle open quick settings.
  *
  * @param isOpen Whether the quick settings panel is currently open.
  * @param modifier The modifier for this component.
  * @param onClick The behavior for when this button is clicked.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ToggleQuickSettingsButton(isOpen: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val buttonSize = IconButtonDefaults.mediumContainerSize(
@@ -123,7 +142,6 @@ fun ToggleQuickSettingsButton(isOpen: Boolean, onClick: () -> Unit, modifier: Mo
             .size(buttonSize)
             .testTag(QUICK_SETTINGS_DROP_DOWN)
             .semantics {
-                testTag = QUICK_SETTINGS_DROP_DOWN
                 contentDescription = if (isOpen) {
                     openDescription
                 } else {
@@ -142,6 +160,34 @@ fun ToggleQuickSettingsButton(isOpen: Boolean, onClick: () -> Unit, modifier: Mo
             painter = painterResource(R.drawable.settings_photo_camera_icon),
             contentDescription = null
         )
+    }
+}
+
+@Preview(
+    name = "Toggle Quick Settings Button - Closed",
+    showBackground = true,
+    backgroundColor = 0xFF000000
+)
+@Composable
+private fun PreviewToggleQuickSettingsButtonClosed() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Surface(color = Color.Black) {
+            ToggleQuickSettingsButton(isOpen = false, onClick = {})
+        }
+    }
+}
+
+@Preview(
+    name = "Toggle Quick Settings Button - Open",
+    showBackground = true,
+    backgroundColor = 0xFF000000
+)
+@Composable
+private fun PreviewToggleQuickSettingsButtonOpen() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Surface(color = Color.Black) {
+            ToggleQuickSettingsButton(isOpen = true, onClick = {})
+        }
     }
 }
 
