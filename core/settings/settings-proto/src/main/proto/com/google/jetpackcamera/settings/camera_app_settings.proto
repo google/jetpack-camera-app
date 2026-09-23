@@ -16,6 +16,8 @@
 
 syntax = "proto3";
 
+package com.google.jetpackcamera.settings.proto;
+
 import "com/google/jetpackcamera/model/proto/aspect_ratio.proto";
 import "com/google/jetpackcamera/model/proto/dark_mode.proto";
 import "com/google/jetpackcamera/model/proto/dynamic_range.proto";
@@ -33,20 +35,20 @@ option java_multiple_files = true;
 
 message CameraAppSettings {
   // Camera settings
-  LensFacing default_lens_facing = 1;
-  FlashMode flash_mode_status = 2;
+  com.google.jetpackcamera.model.proto.LensFacing default_lens_facing = 1;
+  com.google.jetpackcamera.model.proto.FlashMode flash_mode_status = 2;
   int32 target_frame_rate = 3;
-  AspectRatio aspect_ratio_status = 4;
-  StabilizationMode stabilization_mode = 6;
-  DynamicRange dynamic_range_status = 8;
-  ImageOutputFormat image_format_status = 10;
+  com.google.jetpackcamera.model.proto.AspectRatio aspect_ratio_status = 4;
+  com.google.jetpackcamera.model.proto.StabilizationMode stabilization_mode = 6;
+  com.google.jetpackcamera.model.proto.DynamicRange dynamic_range_status = 8;
+  com.google.jetpackcamera.model.proto.ImageOutputFormat image_format_status = 10;
   uint64 max_video_duration_millis = 11;
-  VideoQuality video_quality = 12;
+  com.google.jetpackcamera.model.proto.VideoQuality video_quality = 12;
   bool audio_enabled_status = 13;
-  LowLightBoostPriority low_light_boost_priority = 14;
+  com.google.jetpackcamera.model.proto.LowLightBoostPriority low_light_boost_priority = 14;
 
   // Non-camera app settings
-  DarkMode dark_mode_status = 9;
-  ConcurrentCameraMode concurrent_camera_mode_status = 15;
+  com.google.jetpackcamera.model.proto.DarkMode dark_mode_status = 9;
+  com.google.jetpackcamera.model.proto.ConcurrentCameraMode concurrent_camera_mode_status = 15;
   string selected_camera_effect = 16;
 }

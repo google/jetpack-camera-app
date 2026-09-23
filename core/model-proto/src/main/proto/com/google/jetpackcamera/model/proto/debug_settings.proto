@@ -16,6 +16,8 @@
 
 syntax = "proto3";
 
+package com.google.jetpackcamera.model.proto;
+
 import "com/google/jetpackcamera/model/proto/lens_facing.proto";
 import "com/google/jetpackcamera/model/proto/test_pattern.proto";
 
@@ -24,6 +26,6 @@ option java_multiple_files = true;
 
 message DebugSettings {
   bool is_debug_mode_enabled = 1;
-  optional LensFacing single_lens_mode = 2;
-  TestPattern test_pattern = 3;
+  optional com.google.jetpackcamera.model.proto.LensFacing single_lens_mode = 2;
+  com.google.jetpackcamera.model.proto.TestPattern test_pattern = 3;
 }
