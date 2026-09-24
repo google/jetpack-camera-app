@@ -15,22 +15,27 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.content.ContextWrapper
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
+import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -58,6 +63,7 @@ class ProtoDataStoreSettingsDataSourceTest {
 
     @get:Rule
     val tempFolder = TemporaryFolder()
+    private lateinit var testFile: File
 
     private lateinit var testDataStore: DataStore<CameraAppSettingsProto>
     private lateinit var datastoreScope: CoroutineScope
@@ -66,13 +72,14 @@ class ProtoDataStoreSettingsDataSourceTest {
     @Before
     fun setup() {
         Dispatchers.setMain(StandardTestDispatcher())
+        testFile = File(tempFolder.root, "test_jca_settings.pb")
         datastoreScope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
 
         testDataStore = DataStoreFactory.create(
             serializer = ProtoCameraAppSettingsSerializer,
             scope = datastoreScope
         ) {
-            java.io.File(tempFolder.root, "test_jca_settings.pb")
+            testFile
         }
         repository = ProtoDataStoreSettingsDataSource(
             jcaSettings = testDataStore,
@@ -162,6 +169,17 @@ class ProtoDataStoreSettingsDataSourceTest {
     }
 
     @Test
+    fun can_update_selected_camera_effect() = runTest {
+        val initial = repository.getCurrentDefaultCameraAppSettings().selectedCameraEffect
+        repository.updateSelectedCameraEffect(CameraEffectId("test_effect"))
+        advanceUntilIdle()
+        val new = repository.getCurrentDefaultCameraAppSettings().selectedCameraEffect
+
+        assertThat(initial).isEqualTo(NONE_EFFECT_ID)
+        assertThat(new).isEqualTo(CameraEffectId("test_effect"))
+    }
+
+    @Test
     fun can_update_low_light_boost_priority() = runTest {
         val initial = repository.getCurrentDefaultCameraAppSettings().lowLightBoostPriority
         repository.updateLowLightBoostPriority(
@@ -232,14 +250,48 @@ class ProtoDataStoreSettingsDataSourceTest {
     @Test
     fun can_update_concurrent_camera_mode() = runTest {
         val initial = repository.getCurrentDefaultCameraAppSettings().concurrentCameraMode
-        repository.updateConcurrentCameraMode(
-            com.google.jetpackcamera.model.ConcurrentCameraMode.DUAL
-        )
+        repository.updateConcurrentCameraMode(ConcurrentCameraMode.DUAL)
         advanceUntilIdle()
         val new = repository.getCurrentDefaultCameraAppSettings().concurrentCameraMode
 
-        assertThat(initial).isEqualTo(com.google.jetpackcamera.model.ConcurrentCameraMode.OFF)
-        assertThat(new).isEqualTo(com.google.jetpackcamera.model.ConcurrentCameraMode.DUAL)
+        assertThat(initial).isEqualTo(ConcurrentCameraMode.OFF)
+        assertThat(new).isEqualTo(ConcurrentCameraMode.DUAL)
+    }
+
+    @Test
+    fun persisted_settings_survive_new_datastore_instance() = runTest {
+        repository.updateDarkModeStatus(DarkMode.LIGHT)
+        repository.updateTargetFrameRate(60)
+        advanceUntilIdle()
+        datastoreScope.cancel()
+
+        val secondScope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
+        try {
+            val rehydratedDataStore = DataStoreFactory.create(
+                serializer = ProtoCameraAppSettingsSerializer,
+                scope = secondScope
+            ) { testFile }
+            val rehydratedRepository = ProtoDataStoreSettingsDataSource(
+                jcaSettings = rehydratedDataStore,
+                defaultCaptureModeOverride = CaptureMode.STANDARD
+            )
+
+            val restoredSettings = rehydratedRepository.getCurrentDefaultCameraAppSettings()
+            assertThat(restoredSettings.darkMode).isEqualTo(DarkMode.LIGHT)
+            assertThat(restoredSettings.targetFrameRate).isEqualTo(60)
+        } finally {
+            secondScope.cancel()
+        }
+    }
+
+    @Test
+    fun corrupted_proto_file_falls_back_to_default_settings() = runTest {
+        testFile.writeBytes(byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()))
+
+        val cameraAppSettings = repository.getCurrentDefaultCameraAppSettings()
+
+        advanceUntilIdle()
+        assertThat(cameraAppSettings).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS)
     }
 
     @Test
@@ -261,5 +313,42 @@ class ProtoDataStoreSettingsDataSourceTest {
 
         advanceUntilIdle()
         assertThat(cameraAppSettings).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS)
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun non_io_exception_is_rethrown() = runTest {
+        val failingDataStore = object : DataStore<CameraAppSettingsProto> {
+            override val data: Flow<CameraAppSettingsProto> =
+                flow { throw IllegalStateException("Unexpected failure.") }
+
+            override suspend fun updateData(
+                transform: suspend (t: CameraAppSettingsProto) -> CameraAppSettingsProto
+            ): CameraAppSettingsProto = throw UnsupportedOperationException()
+        }
+        val failingRepository = ProtoDataStoreSettingsDataSource(
+            jcaSettings = failingDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD
+        )
+
+        failingRepository.getCurrentDefaultCameraAppSettings()
+    }
+
+    @Test
+    fun create_initializes_datastore_with_capture_mode_override() = runTest {
+        val fakeContext = object : ContextWrapper(null) {
+            override fun getFilesDir(): File = tempFolder.root
+        }
+        val createdDataSource = ProtoDataStoreSettingsDataSource.create(
+            context = fakeContext,
+            defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY,
+            ioDispatcher = Dispatchers.Unconfined
+        )
+
+        createdDataSource.updateAudioEnabled(false)
+        val settings = createdDataSource.getCurrentDefaultCameraAppSettings()
+
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        assertThat(settings.audioEnabled).isFalse()
+        assertThat(File(tempFolder.root, "datastore/CameraAppSettings.pb").exists()).isTrue()
     }
 }
