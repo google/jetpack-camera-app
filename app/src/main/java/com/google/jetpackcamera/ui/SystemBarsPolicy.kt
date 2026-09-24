@@ -15,26 +15,10 @@
  */
 package com.google.jetpackcamera.ui
 
-import android.view.View
-import android.view.ViewTreeObserver
-import android.view.Window
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalView
-import androidx.core.app.MultiWindowModeChangedInfo
-import androidx.core.util.Consumer
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
+import com.google.jetpackcamera.ui.components.capture.CameraSystemBarsEffect
 
 /**
  * Describes how the system bars should be configured for a given destination.
@@ -67,111 +51,12 @@ internal fun systemBarsPolicyFor(route: String?): SystemBarsPolicy =
     }
 
 /**
- * Applies the requested system bar configuration to [window].
- *
- * The platform [WindowInsetsControllerCompat] internally tracks `requestedVisibleTypes` and no-ops
- * redundant `hide`/`show` calls, while calling them unconditionally avoids stale reads from
- * `ViewCompat.getRootWindowInsets(view)` during activity launch or keyguard transitions.
- */
-private fun applySystemBars(
-    window: Window,
-    view: View,
-    hideStatusBar: Boolean,
-    isDarkTheme: Boolean = true
-) {
-    val controller = WindowCompat.getInsetsController(window, view)
-
-    // Only request transient bars while a bar is actually hidden. Leaving this behavior installed
-    // for destinations that show all bars would let edge swipes be consumed as "reveal the bars"
-    // gestures instead of reaching scrollable content.
-    val desiredBehavior = if (hideStatusBar) {
-        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    } else {
-        WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
-    }
-    if (controller.systemBarsBehavior != desiredBehavior) {
-        controller.systemBarsBehavior = desiredBehavior
-    }
-
-    if (hideStatusBar) {
-        controller.hide(WindowInsetsCompat.Type.statusBars())
-    } else {
-        controller.show(WindowInsetsCompat.Type.statusBars())
-    }
-
-    // When the status bar is visible on a non-capture surface (such as Settings), its icon
-    // appearance should match the surface contrast: dark icons on a light surface, light icons on
-    // a dark surface. On capture surfaces where the status bar is hidden, any transient reveal
-    // overlays the black viewfinder background, so icons should always remain light (white).
-    val lightStatusBars = !hideStatusBar && !isDarkTheme
-    if (controller.isAppearanceLightStatusBars != lightStatusBars) {
-        controller.isAppearanceLightStatusBars = lightStatusBars
-    }
-
-    controller.show(WindowInsetsCompat.Type.navigationBars())
-}
-
-/**
- * The single owner of system bar visibility for the app.
- *
- * This deliberately lives above the `NavHost` rather than inside each screen. Navigation keeps both
- * the outgoing and the incoming destination composed for the duration of a transition, so a
- * per-screen effect would have the *outgoing* screen's cleanup run last and overwrite the policy
- * the incoming screen just applied.
- *
- * The policy is re-asserted on every resume and window focus gain because the system can reset bar
- * visibility underneath the app (a transient reveal timing out, keyguard dismissal, entering
- * multi-window, returning from another task).
+ * Connects the app navigation route policy to [CameraSystemBarsEffect].
  */
 @Composable
 internal fun SystemBarsPolicyEffect(policy: SystemBarsPolicy, isDarkTheme: Boolean = true) {
-    val activity = LocalActivity.current as? ComponentActivity
-    val view = LocalView.current
-    if (activity == null || view.isInEditMode) return
-
-    // Hiding bars in multi-window would affect the whole screen, not just this app's partition, so
-    // never hide anything while sharing the screen.
-    var isInMultiWindowMode by remember(activity) { mutableStateOf(activity.isInMultiWindowMode) }
-    DisposableEffect(activity) {
-        val listener = Consumer<MultiWindowModeChangedInfo> {
-            isInMultiWindowMode = it.isInMultiWindowMode
-        }
-        activity.addOnMultiWindowModeChangedListener(listener)
-        onDispose { activity.removeOnMultiWindowModeChangedListener(listener) }
-    }
-
-    val hideStatusBar = !isInMultiWindowMode && policy == SystemBarsPolicy.HideStatusBar
-
-    LifecycleResumeEffect(activity, view, hideStatusBar, isDarkTheme) {
-        applySystemBars(activity.window, view, hideStatusBar, isDarkTheme)
-        onPauseOrDispose {}
-    }
-
-    DisposableEffect(activity, view, hideStatusBar, isDarkTheme) {
-        val focusListener = ViewTreeObserver.OnWindowFocusChangeListener { hasFocus ->
-            if (hasFocus) {
-                applySystemBars(activity.window, view, hideStatusBar, isDarkTheme)
-            }
-        }
-        view.viewTreeObserver.addOnWindowFocusChangeListener(focusListener)
-        onDispose {
-            view.viewTreeObserver.removeOnWindowFocusChangeListener(focusListener)
-        }
-    }
-
-    DisposableEffect(activity, view, isDarkTheme) {
-        onDispose {
-            // Skip the restore when the activity is going away or being recreated: the bars would
-            // visibly blink during a configuration change, and a finishing activity's window state
-            // is irrelevant.
-            if (!activity.isFinishing && !activity.isChangingConfigurations) {
-                applySystemBars(
-                    activity.window,
-                    view,
-                    hideStatusBar = false,
-                    isDarkTheme = isDarkTheme
-                )
-            }
-        }
-    }
+    CameraSystemBarsEffect(
+        enabled = policy == SystemBarsPolicy.HideStatusBar,
+        isDarkTheme = isDarkTheme
+    )
 }

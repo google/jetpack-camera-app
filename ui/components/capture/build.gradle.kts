@@ -83,6 +83,10 @@ dependencies {
     // Compose - Material Design 3
     implementation(libs.compose.material3)
 
+    // Activity & Lifecycle Compose
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
