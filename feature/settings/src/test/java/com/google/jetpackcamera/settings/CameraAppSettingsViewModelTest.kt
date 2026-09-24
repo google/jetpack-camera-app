@@ -562,6 +562,33 @@ internal class CameraAppSettingsViewModelTest {
     }
 
     @Test
+    fun createDataSource_initializesWithCaptureModeOverrideAndPersistsChanges() =
+        runTest(StandardTestDispatcher()) {
+            val fakeContext = object : android.content.ContextWrapper(null) {
+                override fun getFilesDir(): File = tempFolder.root
+            }
+            val createdDataSource = PrefsDataStoreSettingsDataSource.create(
+                context = fakeContext,
+                defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY,
+                ioDispatcher = Dispatchers.Unconfined
+            )
+            val repository = LocalSettingsRepository(settingsDataSource = createdDataSource)
+            val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
+                updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+            }
+            val viewModel = SettingsViewModel(repository, constraintsRepository)
+            viewModel.setDarkMode(DarkMode.LIGHT)
+            advanceUntilIdle()
+
+            val settings = createdDataSource.getCurrentDefaultCameraAppSettings()
+            assertThat(settings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+            assertThat(settings.darkMode).isEqualTo(DarkMode.LIGHT)
+            assertThat(
+                File(tempFolder.root, "datastore/app_settings.preferences_pb").exists()
+            ).isTrue()
+        }
+
+    @Test
     fun settingsScreen_defaultSlots_rendersDefaultSections() {
         Dispatchers.resetMain()
         composeTestRule.setContent {
