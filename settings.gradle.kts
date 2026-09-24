@@ -31,7 +31,7 @@ dependencyResolutionManagement {
                 snapshotsOnly()
             }
             content {
-                includeGroupByRegex("androidx\\..*")
+                includeGroupAndSubgroups("androidx")
             }
         }
         google()
