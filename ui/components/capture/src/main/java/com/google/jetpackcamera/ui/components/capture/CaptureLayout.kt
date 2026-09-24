@@ -87,6 +87,7 @@ import androidx.compose.ui.unit.takeOrElse
  * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug settings
  * @param screenFlashOverlay the screen flash overlay composable
  * @param snackBar the snack bar composable for showing messages
+ * @param topStartContent optional composable content aligned to the top-start of the viewfinder
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -112,7 +113,8 @@ fun PreviewLayout(
     debugOverlay: @Composable (Modifier) -> Unit,
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (Modifier) -> Unit,
-    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit
+    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    topStartContent: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
@@ -169,7 +171,10 @@ fun PreviewLayout(
                     ) {
                         indicatorRow(Modifier)
                     }
-                    viewfinder(Modifier)
+                    Box {
+                        viewfinder(Modifier)
+                        topStartContent(Modifier.align(Alignment.TopStart))
+                    }
                 }
 
                 Box(

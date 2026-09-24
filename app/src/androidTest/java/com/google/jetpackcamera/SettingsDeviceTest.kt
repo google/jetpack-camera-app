@@ -28,6 +28,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.truth.TruthJUnit.assume
+import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_ASPECT_RATIO_OPTION_1_1_TAG
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_ASPECT_RATIO_OPTION_3_4_TAG
@@ -117,7 +118,7 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
                 disabledMessage = componentDisabledMessage,
                 block = action
             )
-        }
+        }.ignoreResult()
     }
 
     private fun ComposeTestRule.selectFirstNonSelected(settingOptions: List<String>) {
