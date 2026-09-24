@@ -62,6 +62,9 @@ class ModelMappersTest {
             AspectRatioProto.ASPECT_RATIO_THREE_FOUR.toModel()
         ).isEqualTo(AspectRatio.THREE_FOUR)
 
+        assertThat(
+            AspectRatioProto.ASPECT_RATIO_UNSPECIFIED.toModel()
+        ).isEqualTo(AspectRatio.THREE_FOUR)
         assertThat(AspectRatioProto.UNRECOGNIZED.toModel()).isEqualTo(AspectRatio.THREE_FOUR)
     }
 
@@ -76,6 +79,7 @@ class ModelMappersTest {
         assertThat(DarkMode.SYSTEM.toProto()).isEqualTo(DarkModeProto.DARK_MODE_SYSTEM)
         assertThat(DarkModeProto.DARK_MODE_SYSTEM.toModel()).isEqualTo(DarkMode.SYSTEM)
 
+        assertThat(DarkModeProto.DARK_MODE_UNSPECIFIED.toModel()).isEqualTo(DarkMode.SYSTEM)
         assertThat(DarkModeProto.UNRECOGNIZED.toModel()).isEqualTo(DarkMode.SYSTEM)
     }
 
@@ -87,6 +91,9 @@ class ModelMappersTest {
         assertThat(DynamicRange.SDR.toProto()).isEqualTo(DynamicRangeProto.DYNAMIC_RANGE_SDR)
         assertThat(DynamicRangeProto.DYNAMIC_RANGE_SDR.toModel()).isEqualTo(DynamicRange.SDR)
 
+        assertThat(
+            DynamicRangeProto.DYNAMIC_RANGE_UNSPECIFIED.toModel()
+        ).isEqualTo(DynamicRange.SDR)
         assertThat(DynamicRangeProto.UNRECOGNIZED.toModel()).isEqualTo(DynamicRange.SDR)
     }
 
@@ -108,6 +115,7 @@ class ModelMappersTest {
             FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST.toModel()
         ).isEqualTo(FlashMode.LOW_LIGHT_BOOST)
 
+        assertThat(FlashModeProto.FLASH_MODE_UNSPECIFIED.toModel()).isEqualTo(FlashMode.OFF)
         assertThat(FlashModeProto.UNRECOGNIZED.toModel()).isEqualTo(FlashMode.OFF)
     }
 
@@ -127,6 +135,9 @@ class ModelMappersTest {
             ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_JPEG_ULTRA_HDR.toModel()
         ).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
 
+        assertThat(
+            ImageOutputFormatProto.IMAGE_OUTPUT_FORMAT_UNSPECIFIED.toModel()
+        ).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(ImageOutputFormatProto.UNRECOGNIZED.toModel()).isEqualTo(ImageOutputFormat.JPEG)
     }
 
@@ -138,6 +149,7 @@ class ModelMappersTest {
         assertThat(LensFacing.BACK.toProto()).isEqualTo(LensFacingProto.LENS_FACING_BACK)
         assertThat(LensFacingProto.LENS_FACING_BACK.toModel()).isEqualTo(LensFacing.BACK)
 
+        assertThat(LensFacingProto.LENS_FACING_UNSPECIFIED.toModel()).isEqualTo(LensFacing.BACK)
         assertThat(LensFacingProto.UNRECOGNIZED.toModel()).isEqualTo(LensFacing.BACK)
     }
 
@@ -157,6 +169,9 @@ class ModelMappersTest {
             LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_AE_MODE.toModel()
         ).isEqualTo(LowLightBoostPriority.PRIORITIZE_AE_MODE)
 
+        assertThat(
+            LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_UNSPECIFIED.toModel()
+        ).isEqualTo(LowLightBoostPriority.PRIORITIZE_AE_MODE)
         assertThat(
             LowLightBoostPriorityProto.UNRECOGNIZED.toModel()
         ).isEqualTo(LowLightBoostPriority.PRIORITIZE_AE_MODE)
@@ -199,6 +214,9 @@ class ModelMappersTest {
             StabilizationModeProto.STABILIZATION_MODE_AUTO.toModel()
         ).isEqualTo(StabilizationMode.AUTO)
 
+        assertThat(
+            StabilizationModeProto.STABILIZATION_MODE_UNSPECIFIED.toModel()
+        ).isEqualTo(StabilizationMode.AUTO)
         assertThat(StabilizationModeProto.UNRECOGNIZED.toModel()).isEqualTo(StabilizationMode.AUTO)
     }
 
@@ -242,6 +260,9 @@ class ModelMappersTest {
             ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF.toModel()
         ).isEqualTo(ConcurrentCameraMode.OFF)
 
+        assertThat(
+            ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_UNSPECIFIED.toModel()
+        ).isEqualTo(ConcurrentCameraMode.OFF)
         assertThat(
             ConcurrentCameraModeProto.UNRECOGNIZED.toModel()
         ).isEqualTo(ConcurrentCameraMode.OFF)

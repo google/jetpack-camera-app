@@ -34,6 +34,7 @@ import com.google.jetpackcamera.model.proto.toProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
 import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -52,8 +53,11 @@ class ProtoDataStoreSettingsDataSource(
 
     private val jcaSettingsFlow: Flow<CameraAppSettingsProto> =
         jcaSettings.data.catch { exception ->
-            if (exception is java.io.IOException) {
-                emit(CameraAppSettingsProto.getDefaultInstance())
+            if (exception is IOException) {
+                // Fall back to the serializer's default value rather than the proto3 zero-value
+                // instance, which would otherwise resolve to unintended defaults (e.g. audio
+                // disabled, 3:4 aspect ratio, and system dark mode).
+                emit(ProtoCameraAppSettingsSerializer.defaultValue)
             } else {
                 throw exception
             }

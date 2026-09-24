@@ -31,11 +31,14 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -237,5 +240,26 @@ class ProtoDataStoreSettingsDataSourceTest {
 
         assertThat(initial).isEqualTo(com.google.jetpackcamera.model.ConcurrentCameraMode.OFF)
         assertThat(new).isEqualTo(com.google.jetpackcamera.model.ConcurrentCameraMode.DUAL)
+    }
+
+    @Test
+    fun read_failure_falls_back_to_default_settings() = runTest {
+        val failingDataStore = object : DataStore<CameraAppSettingsProto> {
+            override val data: Flow<CameraAppSettingsProto> =
+                flow { throw IOException("Unable to read settings.") }
+
+            override suspend fun updateData(
+                transform: suspend (t: CameraAppSettingsProto) -> CameraAppSettingsProto
+            ): CameraAppSettingsProto = throw UnsupportedOperationException()
+        }
+        val failingRepository = ProtoDataStoreSettingsDataSource(
+            jcaSettings = failingDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD
+        )
+
+        val cameraAppSettings = failingRepository.getCurrentDefaultCameraAppSettings()
+
+        advanceUntilIdle()
+        assertThat(cameraAppSettings).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS)
     }
 }
