@@ -330,7 +330,8 @@ class ProtoDataStoreSettingsDataSourceTest {
             defaultCaptureModeOverride = CaptureMode.STANDARD
         )
 
-        failingRepository.getCurrentDefaultCameraAppSettings()
+        val unused = failingRepository.getCurrentDefaultCameraAppSettings()
+        assertThat(unused).isNotNull()
     }
 
     @Test
