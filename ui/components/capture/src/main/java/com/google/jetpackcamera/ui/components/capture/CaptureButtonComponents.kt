@@ -1103,7 +1103,7 @@ internal fun LockSwitchUnlockedPressedRecordingPreview() {
     // box is here to account for the offset lock switch
     PreviewCaptureButton(
         captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording,
-        modifier = Modifier.width(150.dp),
+        modifier = Modifier.width(172.dp),
         contentAlignment = Alignment.CenterEnd
     )
 }
@@ -1122,7 +1122,7 @@ internal fun LockSwitchLockedAtThresholdPressedRecordingPreview() {
     // box is here to account for the offset lock switch
     Box(
         modifier = Modifier
-            .width(150.dp)
+            .width(172.dp)
             .background(
                 Brush.verticalGradient(
                     colors = listOf(Color.Gray, Color.DarkGray)
@@ -1153,7 +1153,7 @@ internal fun LockSwitchLockedPressedRecordingPreview() {
     // box is here to account for the offset lock switch
     Box(
         modifier = Modifier
-            .width(150.dp)
+            .width(172.dp)
             .background(
                 Brush.verticalGradient(
                     colors = listOf(Color.Gray, Color.DarkGray)

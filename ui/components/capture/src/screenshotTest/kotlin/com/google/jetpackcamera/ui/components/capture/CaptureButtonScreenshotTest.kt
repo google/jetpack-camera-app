@@ -196,7 +196,7 @@ fun DisabledVideoOnlyCaptureButtonBlack60ScreenshotPreview() {
 @Composable
 fun PressedRecordingScreenshotPreview() {
     PreviewCaptureButton(
-        modifier = Modifier.width(150.dp),
+        modifier = Modifier.width(172.dp),
         captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording
     )
 }
@@ -216,7 +216,7 @@ fun PressedRecordingBlack60ScreenshotPreview() {
         LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
     ) {
         PreviewCaptureButton(
-            modifier = Modifier.width(150.dp),
+            modifier = Modifier.width(172.dp),
             captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording
         )
     }
