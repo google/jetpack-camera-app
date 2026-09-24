@@ -32,9 +32,10 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.robolectric.RobolectricTestRunner
 
-@RunWith(JUnit4::class)
+
+@RunWith(RobolectricTestRunner::class)
 class CaptureModeUiStateAdapterTest {
 
     @Test
