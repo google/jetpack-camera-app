@@ -28,6 +28,7 @@ import com.google.jetpackcamera.model.proto.LowLightBoostPriority
 import com.google.jetpackcamera.model.proto.StabilizationMode
 import com.google.jetpackcamera.model.proto.VideoQuality
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
+import com.google.jetpackcamera.settings.proto.cameraAppSettings
 
 /**
  * The default [CameraAppSettingsProto] instance.
@@ -39,18 +40,18 @@ import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSet
  * message must seed their storage with this instance so that a first read produces the documented
  * application defaults rather than the proto3 zero-values.
  */
-val DEFAULT_CAMERA_APP_SETTINGS_PROTO: CameraAppSettingsProto = CameraAppSettingsProto.newBuilder()
-    .setDarkMode(DarkMode.DARK_MODE_DARK)
-    .setDefaultLensFacing(LensFacing.LENS_FACING_BACK)
-    .setFlashMode(FlashMode.FLASH_MODE_OFF)
-    .setAspectRatio(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
-    .setStabilizationMode(StabilizationMode.STABILIZATION_MODE_AUTO)
-    .setDynamicRange(DynamicRange.DYNAMIC_RANGE_UNSPECIFIED)
-    .setImageFormat(ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG)
-    .setMaxVideoDurationMillis(UNLIMITED_VIDEO_DURATION)
-    .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
-    .setAudioEnabled(true)
-    .setConcurrentCameraMode(ConcurrentCameraMode.CONCURRENT_CAMERA_MODE_OFF)
-    .setTargetFrameRate(TARGET_FPS_AUTO)
-    .setLowLightBoostPriority(LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_UNSPECIFIED)
-    .build()
+val DEFAULT_CAMERA_APP_SETTINGS_PROTO: CameraAppSettingsProto = cameraAppSettings {
+    darkMode = DarkMode.DARK_MODE_DARK
+    defaultLensFacing = LensFacing.LENS_FACING_BACK
+    flashMode = FlashMode.FLASH_MODE_OFF
+    aspectRatio = AspectRatio.ASPECT_RATIO_NINE_SIXTEEN
+    stabilizationMode = StabilizationMode.STABILIZATION_MODE_AUTO
+    dynamicRange = DynamicRange.DYNAMIC_RANGE_UNSPECIFIED
+    imageFormat = ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG
+    maxVideoDurationMillis = UNLIMITED_VIDEO_DURATION
+    videoQuality = VideoQuality.VIDEO_QUALITY_UNSPECIFIED
+    audioEnabled = true
+    concurrentCameraMode = ConcurrentCameraMode.CONCURRENT_CAMERA_MODE_OFF
+    targetFrameRate = TARGET_FPS_AUTO
+    lowLightBoostPriority = LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_UNSPECIFIED
+}

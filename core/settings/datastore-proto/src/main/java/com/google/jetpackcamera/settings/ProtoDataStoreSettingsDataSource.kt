@@ -33,6 +33,7 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.toProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
+import com.google.jetpackcamera.settings.proto.copy
 import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -72,113 +73,85 @@ class ProtoDataStoreSettingsDataSource(
 
     override suspend fun updateDefaultLensFacing(lensFacing: LensFacing) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setDefaultLensFacing(lensFacing.toProto())
-                .build()
+            currentSettings.copy { this.defaultLensFacing = lensFacing.toProto() }
         }
     }
 
     override suspend fun updateDarkModeStatus(darkMode: DarkMode) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setDarkMode(darkMode.toProto())
-                .build()
+            currentSettings.copy { this.darkMode = darkMode.toProto() }
         }
     }
 
     override suspend fun updateFlashModeStatus(flashMode: FlashMode) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setFlashMode(flashMode.toProto())
-                .build()
+            currentSettings.copy { this.flashMode = flashMode.toProto() }
         }
     }
 
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setAspectRatio(aspectRatio.toProto())
-                .build()
+            currentSettings.copy { this.aspectRatio = aspectRatio.toProto() }
         }
     }
 
     override suspend fun updateSelectedCameraEffect(selectedCameraEffect: CameraEffectId) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setSelectedCameraEffect(selectedCameraEffect.value)
-                .build()
+            currentSettings.copy { this.selectedCameraEffect = selectedCameraEffect.value }
         }
     }
 
     override suspend fun updateLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setLowLightBoostPriority(lowLightBoostPriority.toProto())
-                .build()
+            currentSettings.copy { this.lowLightBoostPriority = lowLightBoostPriority.toProto() }
         }
     }
 
     override suspend fun updateStabilizationMode(stabilizationMode: StabilizationMode) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setStabilizationMode(stabilizationMode.toProto())
-                .build()
+            currentSettings.copy { this.stabilizationMode = stabilizationMode.toProto() }
         }
     }
 
     override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setDynamicRange(dynamicRange.toProto())
-                .build()
+            currentSettings.copy { this.dynamicRange = dynamicRange.toProto() }
         }
     }
 
     override suspend fun updateTargetFrameRate(targetFrameRate: Int) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setTargetFrameRate(targetFrameRate)
-                .build()
+            currentSettings.copy { this.targetFrameRate = targetFrameRate }
         }
     }
 
     override suspend fun updateImageFormat(imageFormat: ImageOutputFormat) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setImageFormat(imageFormat.toProto())
-                .build()
+            currentSettings.copy { this.imageFormat = imageFormat.toProto() }
         }
     }
 
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setMaxVideoDurationMillis(durationMillis)
-                .build()
+            currentSettings.copy { this.maxVideoDurationMillis = durationMillis }
         }
     }
 
     override suspend fun updateVideoQuality(videoQuality: VideoQuality) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setVideoQuality(videoQuality.toProto())
-                .build()
+            currentSettings.copy { this.videoQuality = videoQuality.toProto() }
         }
     }
 
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setAudioEnabled(isAudioEnabled)
-                .build()
+            currentSettings.copy { this.audioEnabled = isAudioEnabled }
         }
     }
 
     override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
         jcaSettings.updateData { currentSettings ->
-            currentSettings.toBuilder()
-                .setConcurrentCameraMode(concurrentCameraMode.toProto())
-                .build()
+            currentSettings.copy { this.concurrentCameraMode = concurrentCameraMode.toProto() }
         }
     }
 
