@@ -107,6 +107,10 @@ object CameraLayoutSolver {
      * Tripping the budget is not an error, and no supported geometry comes close to it. The search
      * keeps the best layout it has found, and [CameraLayoutSolution.collisions] reports whether
      * that layout is actually clean.
+     *
+     * The figures above are not left to drift: every solve reports its own cost through
+     * [CameraLayoutSolution.evaluationCount], and the property tests assert the worst supported
+     * window against the number in this table.
      */
     private const val EVALUATION_BUDGET = 5_000
 
@@ -219,6 +223,7 @@ object CameraLayoutSolver {
 
         var best = context.evaluate(preferredPadding, preferredGaps)
         var lifted = false
+        var evaluations = 1
 
         // --- Escalating repair, cheapest and least invasive first -----------------------------
 
@@ -268,6 +273,7 @@ object CameraLayoutSolver {
                 }
             }
 
+            evaluations += search.evaluations
             val repaired = search.best
             if (repaired != null) {
                 lifted = repaired.bottomPadding > preferredPadding
@@ -292,7 +298,8 @@ object CameraLayoutSolver {
             resolvedGaps = solution.gaps.map { it.dp },
             minClearance = (if (solution.minClearance.isFinite()) solution.minClearance else 0f).dp,
             collisions = solution.collisions,
-            liftedStack = lifted
+            liftedStack = lifted,
+            evaluationCount = evaluations
         )
     }
 
@@ -592,7 +599,8 @@ object CameraLayoutSolver {
         private var bestScore: List<Float>? = null
 
         /** Evaluations spent so far, across every rung. */
-        private var evaluations = 0
+        var evaluations = 0
+            private set
 
         /** True when the budget ran out before the search finished. */
         var exhaustedBudget: Boolean = false

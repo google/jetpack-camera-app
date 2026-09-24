@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,14 +62,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.takeOrElse
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
+import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
+import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 
 /**
  * Height of the shutter row (capture button, image well and flip camera button) as specified by
@@ -212,56 +223,84 @@ fun PreviewLayout(
                 )
             }
         ) {
-            Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-                Column {
-                    // The indicator row occupies the top bar real estate in the hidden status bar
-                    // region. We size the top bar to accommodate any top display cutout or the
-                    // minimum interactive touch target (defaulting to 48dp), while CutoutAwareRow
-                    // shifts individual indicator icons around any intersecting cutout bounds.
-                    val cutoutTopInset =
-                        WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
-                    val minTouchTarget =
-                        LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
-                    val topBarHeight = max(cutoutTopInset, minTouchTarget)
+            BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                // The adaptive portrait solver targets portrait handhelds (16:9 and taller, where
+                // a full-width 9:16 frame fits inside the window). Squarer windows (landscape,
+                // foldable inner displays, or short split-screen panes like 360x500) fall back to
+                // VerticalMaterialControls, which compresses below SHORT_SCREEN_THRESHOLD.
+                val isHandheldPortrait = (maxHeight / maxWidth) >= (16f / 9f - 0.01f)
+                if (isHandheldPortrait) {
+                    AdaptivePortraitCaptureLayout(
+                        windowWidth = maxWidth,
+                        windowHeight = maxHeight,
+                        viewfinder = viewfinder,
+                        indicatorRow = indicatorRow,
+                        elapsedTimeDisplay = elapsedTimeDisplay,
+                        zoomControls = zoomLevelDisplay,
+                        imageWell = imageWell,
+                        captureButton = captureButton,
+                        flipCameraButton = flipCameraButton,
+                        captureModeCarousel = captureModeCarousel,
+                        quickSettingsToggleButton = quickSettingsButton,
+                        captureModeToggleSwitch = captureModeToggle,
+                        debugVisibilityWrapper = debugVisibilityWrapper
+                    )
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(topBarHeight)
+                            .fillMaxSize()
                             .windowInsetsPadding(
-                                WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
+                                WindowInsets.systemBarsIgnoringVisibility
+                                    .union(WindowInsets.displayCutout)
                             )
-                            .padding(horizontal = 16.dp),
-                        contentAlignment = Alignment.CenterStart
                     ) {
-                        indicatorRow(Modifier)
+                        snackBar(Modifier, scaffoldState.snackbarHostState)
+                        screenFlashOverlay(Modifier)
                     }
-                    viewfinder(Modifier)
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .windowInsetsPadding(
-                            WindowInsets.systemBarsIgnoringVisibility
-                                .union(WindowInsets.displayCutout)
-                        )
-
-                ) {
-                    debugVisibilityWrapper {
-                        VerticalMaterialControls(
-                            captureButton = captureButton,
-                            imageWell = imageWell,
-                            flipCameraButton = flipCameraButton,
-                            quickSettingsToggleButton = quickSettingsButton,
-                            captureModeToggleSwitch = captureModeToggle,
-                            captureModeCarousel = captureModeCarousel,
-                            zoomControls = zoomLevelDisplay,
-                            elapsedTimeDisplay = elapsedTimeDisplay
-                        )
+                } else {
+                    Column {
+                        val cutoutTopInset =
+                            WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+                        val minTouchTarget =
+                            LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
+                        val topBarHeight = max(cutoutTopInset, minTouchTarget)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(topBarHeight)
+                                .windowInsetsPadding(
+                                    WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
+                                )
+                                .padding(horizontal = 16.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            indicatorRow(Modifier)
+                        }
+                        viewfinder(Modifier)
                     }
-                    // controls overlay
-                    snackBar(Modifier, scaffoldState.snackbarHostState)
-                    screenFlashOverlay(Modifier)
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .windowInsetsPadding(
+                                WindowInsets.systemBarsIgnoringVisibility
+                                    .union(WindowInsets.displayCutout)
+                            )
+                    ) {
+                        debugVisibilityWrapper {
+                            VerticalMaterialControls(
+                                captureButton = captureButton,
+                                imageWell = imageWell,
+                                flipCameraButton = flipCameraButton,
+                                quickSettingsToggleButton = quickSettingsButton,
+                                captureModeToggleSwitch = captureModeToggle,
+                                captureModeCarousel = captureModeCarousel,
+                                zoomControls = zoomLevelDisplay,
+                                elapsedTimeDisplay = elapsedTimeDisplay
+                            )
+                        }
+                        snackBar(Modifier, scaffoldState.snackbarHostState)
+                        screenFlashOverlay(Modifier)
+                    }
                 }
                 debugOverlay(Modifier)
 
@@ -287,6 +326,250 @@ fun PreviewLayout(
     }
 }
 
+private enum class CaptureSlotId {
+    Viewfinder,
+    TopBar,
+    ElapsedTime,
+    ZoomBar,
+    CaptureRow,
+    ModeSwitcher,
+    BottomToolbar
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AdaptivePortraitCaptureLayout(
+    windowWidth: Dp,
+    windowHeight: Dp,
+    viewfinder: @Composable (Modifier) -> Unit,
+    indicatorRow: @Composable (Modifier) -> Unit,
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    zoomControls: @Composable (Modifier) -> Unit,
+    imageWell: @Composable (Modifier) -> Unit,
+    captureButton: @Composable (Modifier) -> Unit,
+    flipCameraButton: @Composable (Modifier) -> Unit,
+    captureModeCarousel: @Composable (Modifier) -> Unit,
+    quickSettingsToggleButton: @Composable (Modifier) -> Unit,
+    captureModeToggleSwitch: @Composable (Modifier) -> Unit,
+    debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit)
+) {
+    val cutoutTopInset = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+    val navInset = WindowInsets.navigationBarsIgnoringVisibility
+        .asPaddingValues()
+        .calculateBottomPadding()
+    val rawGestureInset = WindowInsets.systemGestures
+        .asPaddingValues()
+        .calculateBottomPadding()
+    val effectiveGestureInset = max(24.dp, rawGestureInset)
+    val minTouchTarget = LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
+    val topBarHeight = max(cutoutTopInset, minTouchTarget)
+
+    val window = remember(
+        windowWidth,
+        windowHeight,
+        topBarHeight,
+        navInset,
+        effectiveGestureInset
+    ) {
+        CameraWindow(
+            width = windowWidth,
+            height = windowHeight,
+            topInset = topBarHeight,
+            navInset = navInset,
+            gestureInset = effectiveGestureInset
+        )
+    }
+
+    // The solve depends only on the window geometry, the insets, and the accessibility touch
+    // target. Row heights are deliberately *not* measured and fed back in: ControlRow.height is
+    // contractually the row's *reserved* height, so that showing or hiding a row's content never
+    // moves the rows around it. Measuring the children and re-solving would both break that
+    // guarantee and turn the solve into a per-measure-pass cost.
+    val spec = remember(minTouchTarget) {
+        CameraLayoutDefaults.spec(minInteractiveTouchTarget = minTouchTarget)
+    }
+    val solution = remember(spec, window) { CameraLayoutSolver.solve(spec, window) }
+
+    ImmersiveNavigationBarEffect(requiresImmersive = solution.requiresImmersive)
+
+    CompositionLocalProvider(LocalCameraLayoutSolution provides solution) {
+        Layout(
+            modifier = Modifier.fillMaxSize(),
+            content = {
+                Box(modifier = Modifier.layoutId(CaptureSlotId.Viewfinder)) {
+                    viewfinder(Modifier)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .layoutId(CaptureSlotId.TopBar)
+                        .fillMaxWidth()
+                        .height(topBarHeight)
+                        .windowInsetsPadding(
+                            WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
+                        )
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    indicatorRow(Modifier)
+                }
+
+                debugVisibilityWrapper {
+                    Box(
+                        modifier = Modifier.layoutId(CaptureSlotId.ElapsedTime),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        elapsedTimeDisplay(Modifier)
+                    }
+
+                    Box(
+                        modifier = Modifier.layoutId(CaptureSlotId.ZoomBar),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        zoomControls(Modifier)
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .layoutId(CaptureSlotId.CaptureRow)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                imageWell(Modifier)
+                            }
+                        }
+
+                        OverlapAwareStyleProvider(overlapThreshold = 0.5f) {
+                            captureButton(Modifier)
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            flipCameraButton(Modifier)
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .layoutId(CaptureSlotId.ModeSwitcher)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        captureModeCarousel(Modifier)
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .layoutId(CaptureSlotId.BottomToolbar)
+                            .fillMaxWidth()
+                            .padding(horizontal = LOWER_SECTION_HORIZONTAL_PADDING),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            quickSettingsToggleButton(Modifier)
+                        }
+
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            captureModeToggleSwitch(Modifier)
+                        }
+
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {}
+                    }
+                }
+            }
+        ) { measurables, constraints ->
+            val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+            val fullWidthLooseHeight = constraints.copy(minHeight = 0)
+
+            // Each control row is measured against the band the solver reserved for it, so a row's
+            // content can never push its neighbours around. The solver has already accounted for
+            // toolbar compaction, so BOTTOM_TOOLBAR's band is the compacted height where that
+            // applies.
+            fun bandOf(rowId: String) = solution.rowBands.getValue(rowId)
+
+            fun measureInBand(slot: CaptureSlotId, rowId: String): Pair<Placeable, Int>? {
+                val measurable = measurables.firstOrNull { it.layoutId == slot } ?: return null
+                val band = bandOf(rowId)
+                val placeable = measurable.measure(
+                    Constraints.fixed(constraints.maxWidth, band.height.roundToPx())
+                )
+                return placeable to band.top.roundToPx()
+            }
+
+            val topBarPlaceable = measurables
+                .firstOrNull { it.layoutId == CaptureSlotId.TopBar }
+                ?.measure(fullWidthLooseHeight)
+            val elapsedTimePlaceable = measurables
+                .firstOrNull { it.layoutId == CaptureSlotId.ElapsedTime }
+                ?.measure(looseConstraints)
+
+            val zoomBar = measureInBand(CaptureSlotId.ZoomBar, CameraRowIds.ZOOM_BAR)
+            val captureRow = measureInBand(CaptureSlotId.CaptureRow, CameraRowIds.CAPTURE_ROW)
+            val modeSwitcher = measureInBand(CaptureSlotId.ModeSwitcher, CameraRowIds.MODE_SWITCHER)
+            val bottomToolbar =
+                measureInBand(CaptureSlotId.BottomToolbar, CameraRowIds.BOTTOM_TOOLBAR)
+
+            val viewfinderPlaceable = measurables
+                .firstOrNull { it.layoutId == CaptureSlotId.Viewfinder }
+                ?.measure(looseConstraints)
+
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                viewfinderPlaceable?.let { vf ->
+                    val vfY = if (vf.height in 1 until constraints.maxHeight) {
+                        val ratio = vf.width.toFloat() / vf.height.toFloat()
+                        solution.viewfinderBandFor(ratio, spec.viewfinders)?.top?.roundToPx() ?: 0
+                    } else {
+                        0
+                    }
+                    val vfX = (constraints.maxWidth - vf.width) / 2
+                    vf.placeRelative(vfX, vfY)
+                }
+
+                topBarPlaceable?.placeRelative(0, 0)
+
+                // The elapsed time readout is not a solver row: it is an optional caption that
+                // hangs above the zoom bar, so it is placed relative to that band rather than
+                // reserving a band of its own.
+                zoomBar?.let { (_, zoomTop) ->
+                    elapsedTimePlaceable?.let { elapsed ->
+                        val elapsedX = (constraints.maxWidth - elapsed.width) / 2
+                        elapsed.placeRelative(elapsedX, zoomTop - elapsed.height)
+                    }
+                }
+
+                zoomBar?.let { (placeable, top) -> placeable.placeRelative(0, top) }
+                captureRow?.let { (placeable, top) -> placeable.placeRelative(0, top) }
+                modeSwitcher?.let { (placeable, top) -> placeable.placeRelative(0, top) }
+                bottomToolbar?.let { (placeable, top) -> placeable.placeRelative(0, top) }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun VerticalMaterialControls(
@@ -304,7 +587,7 @@ private fun VerticalMaterialControls(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomCenter
     ) {
-        val isPortrait = maxHeight > maxWidth
+        val isPortrait = (maxHeight / maxWidth) >= (16f / 9f - 0.01f)
         val navBarBottom = WindowInsets.navigationBarsIgnoringVisibility
             .asPaddingValues()
             .calculateBottomPadding()

@@ -457,6 +457,7 @@ private fun ContentScreen(
     ) {
         @Composable { modifier: Modifier ->
             PreviewDisplay(
+                modifier = modifier,
                 previewDisplayUiState = previewDisplayState.value,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocusLambda,

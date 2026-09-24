@@ -156,9 +156,98 @@ class CaptureLayoutPositionTest {
         assertThat(topOf(ZOOM_BAR_TAG)).isAtLeast(0f)
     }
 
+    /**
+     * Switching between 3:4, 1:1, and 9:16 viewfinders must place each viewfinder at the solver's
+     * target band while keeping the capture button completely stationary.
+     */
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Config(qualifiers = "w412dp-h915dp")
+    @Test
+    fun viewfinderAndControlStack_matchSolverAndRemainStationaryAcrossAspectRatios() {
+        var aspectRatio by mutableStateOf(3f / 4f)
+
+        composeTestRule.setContent {
+            PreviewLayout(
+                viewfinder = { vfModifier ->
+                    Box(
+                        vfModifier
+                            .testTag(VIEWFINDER_TAG)
+                            .fillMaxWidth()
+                            .height(412.dp / aspectRatio)
+                    )
+                },
+                captureButton = {
+                    Box(
+                        Modifier
+                            .testTag(CAPTURE_BUTTON_TAG)
+                            .size(CAPTURE_BUTTON_SIZE)
+                    )
+                },
+                imageWell = {},
+                flipCameraButton = {},
+                zoomLevelDisplay = {
+                    Box(
+                        Modifier
+                            .testTag(ZOOM_BAR_TAG)
+                            .fillMaxWidth()
+                            .height(ZOOM_BAR_HEIGHT)
+                    )
+                },
+                elapsedTimeDisplay = {},
+                quickSettingsButton = {},
+                indicatorRow = {},
+                captureModeToggle = {},
+                quickSettingsOverlay = {},
+                debugOverlay = {},
+                debugVisibilityWrapper = { it() },
+                screenFlashOverlay = {},
+                snackBar = { _, _ -> }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        val buttonTop34 = topOf(CAPTURE_BUTTON_TAG)
+        val vfTop34 = topOf(VIEWFINDER_TAG)
+
+        aspectRatio = 1f
+        composeTestRule.waitForIdle()
+        val buttonTop11 = topOf(CAPTURE_BUTTON_TAG)
+        val vfTop11 = topOf(VIEWFINDER_TAG)
+
+        aspectRatio = 9f / 16f
+        composeTestRule.waitForIdle()
+        val buttonTop916 = topOf(CAPTURE_BUTTON_TAG)
+        val vfTop916 = topOf(VIEWFINDER_TAG)
+
+        // Control stack must not move by a single pixel across aspect ratios.
+        assertThat(buttonTop11).isEqualTo(buttonTop34)
+        assertThat(buttonTop916).isEqualTo(buttonTop34)
+
+        // 1:1 viewfinder is centered within the 3:4 frame area rather than pinned to the top bar.
+        assertThat(vfTop11).isGreaterThan(vfTop34)
+        assertThat(vfTop916).isAtLeast(0f)
+    }
+
+    /**
+     * On a short 16:9 portrait handheld (360x640dp), the adaptive solver enters immersive mode
+     * and places the control stack at the golden reference coordinates (captureRow = 380..466dp,
+     * centered 80dp button at 383dp) while keeping the zoom bar on screen.
+     */
+    @Config(qualifiers = "w360dp-h640dp")
+    @Test
+    fun controlStack_onShort16By9Phone_matchesGoldenSolverPlacement() {
+        composeTestRule.setContent { TestCaptureLayout() }
+        composeTestRule.waitForIdle()
+
+        assertThat(rootHeight()).isWithin(TOLERANCE).of(640f)
+        assertThat(topOf(CAPTURE_BUTTON_TAG)).isWithin(TOLERANCE).of(EXPECTED_16_9_BUTTON_TOP)
+        assertThat(topOf(ZOOM_BAR_TAG)).isAtLeast(0f)
+    }
+
     private companion object {
         const val CAPTURE_BUTTON_TAG = "test_capture_button"
         const val ZOOM_BAR_TAG = "test_zoom_bar"
+        const val VIEWFINDER_TAG = "test_viewfinder"
         val CAPTURE_BUTTON_SIZE = 80.dp
         val ZOOM_BAR_HEIGHT = 48.dp
         val CAROUSEL_HEIGHT = 32.dp
@@ -166,18 +255,24 @@ class CaptureLayoutPositionTest {
         val SHORT_SCREEN_HEIGHT = 500.dp
 
         /**
-         * Dynamic linear spacing, measured down from the top of the window:
-         * In this test environment without insets (360x800dp), the 3:4 viewfinder ends at
-         * 48dp (top bar) + 480dp (3:4 height) = 528dp.
-         * The linear fraction distributes available space below the 3:4 preview so the top of
-         * the 86dp shutter row aligns to the viewfinder boundary (528dp), placing the centered
-         * 80dp capture button at 530dp.
+         * Solver preferred spacing on 360x800dp:
+         * 800 - 30 (bottom padding) - 64 (toolbar) - 24 - 32 (mode switcher) - 24 - 86 (capture row)
+         * places the top of the 86dp shutter row at 540dp, and the centered 80dp capture button at
+         * 543dp.
          */
-        const val EXPECTED_TALL_BUTTON_TOP = 530f
+        const val EXPECTED_TALL_BUTTON_TOP = 543f
 
         /**
-         * Compressed spacing: 12 + 64 + 12 + 32 + 12 + 86 puts the top of the shutter row at
-         * 500 - 218 = 282dp, plus the same 3dp of centring.
+         * Golden solver placement on compact_16_9 (360x640dp):
+         * Immersive mode frees the navigation bar so the stack sits at captureRow = 380..466dp,
+         * placing the centered 80dp capture button at 383dp.
+         */
+        const val EXPECTED_16_9_BUTTON_TOP = 383f
+
+        /**
+         * Compressed spacing on 360x500dp (wider than 16:9 split-screen fallback):
+         * 12 + 64 + 12 + 32 + 12 + 86 puts the top of the shutter row at 500 - 218 = 282dp, plus
+         * 3dp of centering = 285dp.
          */
         const val EXPECTED_SHORT_BUTTON_TOP = 285f
 

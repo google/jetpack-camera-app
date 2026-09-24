@@ -296,15 +296,77 @@ class CameraLayoutSolverPropertyTest {
         }
     }
 
+    /**
+     * The real cost guard: how many candidate layouts the solver has to look at.
+     *
+     * Wall clock is the thing we care about, but it is the wrong thing to assert on. It varies with
+     * the machine, the JIT and whatever else shares the CI box, so a bound loose enough to be
+     * reliable is too loose to catch anything. Evaluation count is exactly proportional to the work
+     * done and is completely deterministic, so it can be bounded tightly.
+     *
+     * The numbers below are measured, not estimated. Across the in-scope sweep:
+     *
+     * | evaluations | windows |
+     * |-------------|---------|
+     * | 1           | 897     |
+     * | 2 to 10     | 120     |
+     * | 11 to 100   | 545     |
+     * | over 1000   | 6       |
+     *
+     * So the designed layout already fits on 57% of supported windows with no search at all, and
+     * only 6 windows in 1,568 ever pay for a full gap sweep. That is worth stating explicitly,
+     * because the shape of this distribution is the reason the search is not worth optimising
+     * further: the expensive path is rare and already bounded.
+     */
+    @Test
+    fun supportedGeometryIsSolvedWithinAKnownEvaluationBound() {
+        var worst = 0
+        var worstWindow: CameraWindow? = null
+        var total = 0L
+        Grid.inScope().forEach { window ->
+            val n = solutionFor(window).evaluationCount
+            total += n
+            if (n > worst) {
+                worst = n
+                worstWindow = window
+            }
+        }
+
+        // One full gap sweep is 9 x 9 x 13 = 1,053 candidates, and the worst supported window costs
+        // exactly one of those plus the padding sweep that preceded it. The bound is the measured
+        // worst case with a little headroom, not a target: it is here so that a change which makes
+        // the search enter the gap sweep at more than one padding fails loudly.
+        assertWithMessage("worst window %s cost %s evaluations", worstWindow?.describe(), worst)
+            .that(worst)
+            .isAtMost(1_100)
+
+        // Well under EVALUATION_BUDGET, which matters for correctness and not just speed: a solve
+        // that exhausts the budget returns the best layout found so far rather than the best one
+        // that exists. No supported window may come close to that cliff.
+        assertThat(worst).isLessThan(5_000 / 4)
+
+        assertWithMessage("in-scope sweep cost %s evaluations", total).that(total).isAtMost(60_000)
+    }
+
+    @Test
+    fun unsupportedGeometryNeverExceedsTheEvaluationBudget() {
+        // The budget is what stops an unsupported shape from pinning a core. It is a cap on work,
+        // so it has to hold for every window, including the ones that reach it.
+        Grid.everyWindow().forEach { window ->
+            val n = solutionFor(window).evaluationCount
+            assertWithMessage("%s cost %s evaluations", window.describe(), n)
+                .that(n)
+                .isAtMost(5_001)
+        }
+    }
+
     @Test
     fun supportedGeometrySolvesQuickly() {
-        // The solve runs once per window geometry on device, not per frame, so this is a guard
-        // against an accidental blow-up in the search space rather than a latency requirement.
+        // Complements the evaluation-count bound above, which pins how many candidates are looked
+        // at but says nothing about the cost of looking at one. This is the guard against an
+        // evaluation itself becoming expensive, so a loose bound is the right kind of bound here.
         //
-        // The bound is deliberately tight. Supported windows cost at most ~1,055 candidate
-        // evaluations each, so the whole in-scope sweep is a fraction of a second; a loose bound
-        // here would let a large regression through unnoticed. An earlier revision of this solver
-        // took over two minutes on this sweep.
+        // The solve runs once per window geometry on device, not per frame.
         val elapsed = measureTimeMillis {
             Grid.inScope().forEach { CameraLayoutSolver.solve(spec, it) }
         }
