@@ -81,7 +81,7 @@ class ProtoDataStoreSettingsDataSource(
     override suspend fun updateDarkModeStatus(darkMode: DarkMode) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setDarkModeStatus(darkMode.toProto())
+                .setDarkMode(darkMode.toProto())
                 .build()
         }
     }
@@ -89,7 +89,7 @@ class ProtoDataStoreSettingsDataSource(
     override suspend fun updateFlashModeStatus(flashMode: FlashMode) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setFlashModeStatus(flashMode.toProto())
+                .setFlashMode(flashMode.toProto())
                 .build()
         }
     }
@@ -97,7 +97,7 @@ class ProtoDataStoreSettingsDataSource(
     override suspend fun updateAspectRatio(aspectRatio: AspectRatio) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setAspectRatioStatus(aspectRatio.toProto())
+                .setAspectRatio(aspectRatio.toProto())
                 .build()
         }
     }
@@ -129,7 +129,7 @@ class ProtoDataStoreSettingsDataSource(
     override suspend fun updateDynamicRange(dynamicRange: DynamicRange) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setDynamicRangeStatus(dynamicRange.toProto())
+                .setDynamicRange(dynamicRange.toProto())
                 .build()
         }
     }
@@ -145,7 +145,7 @@ class ProtoDataStoreSettingsDataSource(
     override suspend fun updateImageFormat(imageFormat: ImageOutputFormat) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setImageFormatStatus(imageFormat.toProto())
+                .setImageFormat(imageFormat.toProto())
                 .build()
         }
     }
@@ -169,7 +169,7 @@ class ProtoDataStoreSettingsDataSource(
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setAudioEnabledStatus(isAudioEnabled)
+                .setAudioEnabled(isAudioEnabled)
                 .build()
         }
     }
@@ -177,7 +177,7 @@ class ProtoDataStoreSettingsDataSource(
     override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.toBuilder()
-                .setConcurrentCameraModeStatus(concurrentCameraMode.toProto())
+                .setConcurrentCameraMode(concurrentCameraMode.toProto())
                 .build()
         }
     }

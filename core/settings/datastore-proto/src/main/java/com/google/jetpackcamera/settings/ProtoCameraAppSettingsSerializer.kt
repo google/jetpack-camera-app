@@ -17,18 +17,6 @@ package com.google.jetpackcamera.settings
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
-import com.google.jetpackcamera.model.TARGET_FPS_AUTO
-import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
-import com.google.jetpackcamera.model.proto.AspectRatio
-import com.google.jetpackcamera.model.proto.ConcurrentCameraMode
-import com.google.jetpackcamera.model.proto.DarkMode
-import com.google.jetpackcamera.model.proto.DynamicRange
-import com.google.jetpackcamera.model.proto.FlashMode
-import com.google.jetpackcamera.model.proto.ImageOutputFormat
-import com.google.jetpackcamera.model.proto.LensFacing
-import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoostPriorityProto
-import com.google.jetpackcamera.model.proto.StabilizationMode
-import com.google.jetpackcamera.model.proto.VideoQuality
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
@@ -39,23 +27,7 @@ import java.io.OutputStream
  */
 internal object ProtoCameraAppSettingsSerializer : Serializer<CameraAppSettingsProto> {
 
-    override val defaultValue: CameraAppSettingsProto = CameraAppSettingsProto.newBuilder()
-        .setDarkModeStatus(DarkMode.DARK_MODE_DARK)
-        .setDefaultLensFacing(LensFacing.LENS_FACING_BACK)
-        .setFlashModeStatus(FlashMode.FLASH_MODE_OFF)
-        .setAspectRatioStatus(AspectRatio.ASPECT_RATIO_NINE_SIXTEEN)
-        .setStabilizationMode(StabilizationMode.STABILIZATION_MODE_AUTO)
-        .setDynamicRangeStatus(DynamicRange.DYNAMIC_RANGE_UNSPECIFIED)
-        .setImageFormatStatus(ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG)
-        .setMaxVideoDurationMillis(UNLIMITED_VIDEO_DURATION)
-        .setVideoQuality(VideoQuality.VIDEO_QUALITY_UNSPECIFIED)
-        .setAudioEnabledStatus(true)
-        .setConcurrentCameraModeStatus(ConcurrentCameraMode.CONCURRENT_CAMERA_MODE_OFF)
-        .setTargetFrameRate(TARGET_FPS_AUTO)
-        .setLowLightBoostPriority(
-            LowLightBoostPriorityProto.LOW_LIGHT_BOOST_PRIORITY_UNSPECIFIED
-        )
-        .build()
+    override val defaultValue: CameraAppSettingsProto = DEFAULT_CAMERA_APP_SETTINGS_PROTO
 
     override suspend fun readFrom(input: InputStream): CameraAppSettingsProto {
         try {

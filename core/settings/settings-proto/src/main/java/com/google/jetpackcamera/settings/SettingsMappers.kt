@@ -35,17 +35,17 @@ fun CameraAppSettingsProto.toModel(defaultCaptureModeOverride: CaptureMode): Cam
         },
 
         cameraLensFacing = this.defaultLensFacing.toModel(),
-        flashMode = this.flashModeStatus.toModel(),
+        flashMode = this.flashMode.toModel(),
         targetFrameRate = this.targetFrameRate,
-        aspectRatio = this.aspectRatioStatus.toModel(),
+        aspectRatio = this.aspectRatio.toModel(),
         stabilizationMode = this.stabilizationMode.toModel(),
-        dynamicRange = this.dynamicRangeStatus.toModel(),
-        imageFormat = this.imageFormatStatus.toModel(),
+        dynamicRange = this.dynamicRange.toModel(),
+        imageFormat = this.imageFormat.toModel(),
         maxVideoDurationMillis = this.maxVideoDurationMillis,
         videoQuality = this.videoQuality.toModel(),
-        audioEnabled = this.audioEnabledStatus,
+        audioEnabled = this.audioEnabled,
         lowLightBoostPriority = this.lowLightBoostPriority.toModel(),
-        darkMode = this.darkModeStatus.toModel(),
-        concurrentCameraMode = this.concurrentCameraModeStatus.toModel()
+        darkMode = this.darkMode.toModel(),
+        concurrentCameraMode = this.concurrentCameraMode.toModel()
     )
 }
