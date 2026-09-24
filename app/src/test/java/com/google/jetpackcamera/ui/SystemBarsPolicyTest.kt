@@ -15,10 +15,13 @@
  */
 package com.google.jetpackcamera.ui
 
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute
 import com.google.jetpackcamera.permissions.navigation.PermissionsRoute
-import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 /**
  * Tests for [systemBarsPolicyFor].
@@ -27,6 +30,7 @@ import org.junit.Test
  * `NavDestination.route` is the route *pattern*, so it still contains unresolved `{placeholder}`
  * query parameters. Matching on the raw string would silently fall through to the default policy.
  */
+@RunWith(JUnit4::class)
 class SystemBarsPolicyTest {
 
     private val previewRouteWithArgs = "$PreviewRoute" +
@@ -55,19 +59,15 @@ class SystemBarsPolicyTest {
         )
 
         cases.forEach { (route, expected) ->
-            assertEquals(
-                "Unexpected policy for route: $route",
-                expected,
-                systemBarsPolicyFor(route)
-            )
+            assertWithMessage("Unexpected policy for route: %s", route)
+                .that(systemBarsPolicyFor(route))
+                .isEqualTo(expected)
         }
     }
 
     @Test
     fun systemBarsPolicyFor_doesNotMatchRoutesThatMerelyStartWithACaptureRoute() {
-        assertEquals(
-            SystemBarsPolicy.ShowAll,
-            systemBarsPolicyFor("${PreviewRoute}Something")
-        )
+        assertThat(systemBarsPolicyFor("${PreviewRoute}Something"))
+            .isEqualTo(SystemBarsPolicy.ShowAll)
     }
 }

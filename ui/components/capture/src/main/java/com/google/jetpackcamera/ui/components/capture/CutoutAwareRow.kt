@@ -97,13 +97,9 @@ fun CutoutAwareRow(
             }
         ) { measurables, constraints ->
             // Read WindowInsets.displayCutout inside measure to subscribe to inset updates.
-            val unusedInsetObservation =
-                cutoutInsets.getTop(this) +
-                    cutoutInsets.getLeft(this, layoutDirection) +
-                    cutoutInsets.getRight(this, layoutDirection)
-
-            @Suppress("UNUSED_VARIABLE")
-            val observed = unusedInsetObservation
+            cutoutInsets.getTop(this)
+            cutoutInsets.getLeft(this, layoutDirection)
+            cutoutInsets.getRight(this, layoutDirection)
 
             val spacingPx = horizontalSpacing.roundToPx()
             val clearancePx = cutoutClearance.roundToPx()
@@ -126,7 +122,15 @@ fun CutoutAwareRow(
             } else {
                 val windowCutoutRects =
                     ViewCompat.getRootWindowInsets(view)?.displayCutout?.boundingRects
-                        ?: view.rootWindowInsets?.displayCutout?.boundingRects
+                        ?: (
+                            if (android.os.Build.VERSION.SDK_INT >=
+                                android.os.Build.VERSION_CODES.P
+                            ) {
+                                view.rootWindowInsets?.displayCutout?.boundingRects
+                            } else {
+                                null
+                            }
+                            )
                         ?: emptyList()
                 val bounds = rowBoundsInWindow
                 val offsetX = bounds?.left ?: 0

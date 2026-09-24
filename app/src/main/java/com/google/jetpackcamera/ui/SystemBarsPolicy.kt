@@ -25,6 +25,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalView
 import androidx.core.app.MultiWindowModeChangedInfo
@@ -159,7 +160,8 @@ internal fun SystemBarsPolicyEffect(policy: SystemBarsPolicy, isDarkTheme: Boole
         }
     }
 
-    DisposableEffect(activity, view, isDarkTheme) {
+    val currentIsDarkTheme by rememberUpdatedState(isDarkTheme)
+    DisposableEffect(activity, view) {
         onDispose {
             // Skip the restore when the activity is going away or being recreated: the bars would
             // visibly blink during a configuration change, and a finishing activity's window state
@@ -169,7 +171,7 @@ internal fun SystemBarsPolicyEffect(policy: SystemBarsPolicy, isDarkTheme: Boole
                     activity.window,
                     view,
                     hideStatusBar = false,
-                    isDarkTheme = isDarkTheme
+                    isDarkTheme = currentIsDarkTheme
                 )
             }
         }

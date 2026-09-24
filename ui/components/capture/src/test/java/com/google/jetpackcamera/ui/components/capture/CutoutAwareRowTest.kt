@@ -44,6 +44,10 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+/**
+ * Tests for [CutoutAwareRow] verifying layout positioning around display cutouts
+ * and horizontal animation stability.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "w360dp-h800dp")
 class CutoutAwareRowTest {
