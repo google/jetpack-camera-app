@@ -20,18 +20,30 @@ import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraConstraints
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.OptionVisibility
+import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.roundVideoRecordingState
 import java.util.concurrent.TimeUnit
@@ -56,8 +68,19 @@ internal class CaptureUiStateAdapterTest {
     private val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
     private val externalCaptureMode = ExternalCaptureMode.Standard
 
-    private fun createCaptureUiStateFlow() = captureUiState(
+    private val defaultPolicy = CameraFeaturePolicy(
+        aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
+        flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
+        captureMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.captureMode),
+        imageFormat = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.imageFormat),
+        dynamicRange = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.dynamicRange)
+    )
+
+    private fun createCaptureUiStateFlow(
+        cameraFeaturePolicy: CameraFeaturePolicy? = defaultPolicy
+    ) = captureUiState(
         currentSettings = cameraSystem.getCurrentSettings(),
+        cameraFeaturePolicy = cameraFeaturePolicy,
         systemConstraints = constraintsRepository.systemConstraints,
         currentCameraState = cameraSystem.getCurrentCameraState(),
         trackedCaptureUiState = trackedCaptureUiState,
@@ -190,6 +213,100 @@ internal class CaptureUiStateAdapterTest {
         val updatedFlash =
             (updatedState.flashModeUiState as FlashModeUiState.Available).selectedFlashMode
         assertThat(updatedFlash).isEqualTo(FlashMode.ON)
+    }
+
+    @Test
+    fun captureUiState_withRestrictedPolicy_emitsRestrictedUiStates() = runTest {
+        val restrictedConfig = defaultPolicy.copy(
+            captureMode = SettingConfig(
+                defaultValue = CaptureMode.IMAGE_ONLY,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+        val uiStateFlow = createCaptureUiStateFlow(cameraFeaturePolicy = restrictedConfig)
+        val state = assertIsReady(uiStateFlow.first())
+        assertThat(
+            state.quickSettingsUiState
+        ).isInstanceOf(QuickSettingsUiState.Available::class.java)
+        val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
+        assertThat(quickSettings.captureModeUiState).isEqualTo(CaptureModeUiState.Unavailable)
+        assertThat(state.captureModeToggleUiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
+    }
+
+    @Test
+    fun captureUiState_withNullPolicy_defaultsCleanly() = runTest {
+        val uiStateFlow = createCaptureUiStateFlow(cameraFeaturePolicy = null)
+        val state = assertIsReady(uiStateFlow.first())
+        assertThat(state).isInstanceOf(CaptureUiState.Ready::class.java)
+    }
+
+    @Test
+    fun captureUiState_withFlashModeAndHdrHidden_emitsUnavailableUiStates() = runTest {
+        constraintsRepository.updateSystemConstraints(
+            CameraSystemConstraints(
+                availableLenses = listOf(LensFacing.BACK),
+                perLensConstraints = mapOf(
+                    LensFacing.BACK to CameraConstraints(
+                        supportedFixedFrameRates = emptySet(),
+                        supportedStabilizationModes = emptySet(),
+                        supportedDynamicRanges = emptySet(),
+                        supportedVideoQualitiesMap = emptyMap(),
+                        supportedImageFormatsMap = emptyMap(),
+                        supportedIlluminants = setOf(Illuminant.FLASH_UNIT),
+                        supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON),
+                        supportedZoomRange = null,
+                        unsupportedStabilizationFpsMap = emptyMap(),
+                        supportedTestPatterns = emptySet()
+                    )
+                )
+            )
+        )
+
+        val restrictedConfig = defaultPolicy.copy(
+            flashMode = SettingConfig(
+                defaultValue = FlashMode.OFF,
+                visibility = OptionVisibility.Hidden
+            ),
+            imageFormat = SettingConfig(
+                defaultValue = ImageOutputFormat.JPEG,
+                visibility = OptionVisibility.Hidden
+            ),
+            dynamicRange = SettingConfig(
+                defaultValue = DynamicRange.SDR,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+
+        val uiStateFlow = createCaptureUiStateFlow(cameraFeaturePolicy = restrictedConfig)
+        val state = assertIsReady(uiStateFlow.first())
+        assertThat(state.flashModeUiState).isEqualTo(FlashModeUiState.Unavailable)
+        val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
+        assertThat(quickSettings.flashModeUiState).isEqualTo(FlashModeUiState.Unavailable)
+        assertThat(quickSettings.hdrUiState).isEqualTo(HdrUiState.Unavailable)
+    }
+
+    @Test
+    fun captureUiState_withARHidden_emitsUnavailableAndPreservesPreviewAspectRatio() = runTest {
+        val restrictedConfig = defaultPolicy.copy(
+            aspectRatio = SettingConfig(
+                defaultValue = AspectRatio.ONE_ONE,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+
+        val uiStateFlow = createCaptureUiStateFlow(cameraFeaturePolicy = restrictedConfig)
+        val state = assertIsReady(uiStateFlow.first())
+        assertThat(state.aspectRatioUiState).isEqualTo(AspectRatioUiState.Unavailable)
+        val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
+        assertThat(quickSettings.aspectRatioUiState).isEqualTo(AspectRatioUiState.Unavailable)
+        assertThat(state.previewDisplayUiState.aspectRatioUiState).isEqualTo(
+            AspectRatioUiState.Available(
+                selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
+                availableAspectRatios = listOf(
+                    SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN)
+                )
+            )
+        )
     }
 
     private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready = when (uiState) {

@@ -26,22 +26,16 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
-import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.SettingsDataSource
 import com.google.jetpackcamera.settings.model.CameraAppSettings
-import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class FakeSettingsRepository(
+class FakeSettingsDataSource(
     initialSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
-) : SettingsRepository {
-
-    constructor(
-        cameraFeaturePolicy: CameraFeaturePolicy,
-        initialSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
-    ) : this(cameraFeaturePolicy.toCameraAppSettings(initialSettings))
+) : SettingsDataSource {
     private val _defaultCameraAppSettings = MutableStateFlow(initialSettings)
     override val defaultCameraAppSettings: Flow<CameraAppSettings> =
         _defaultCameraAppSettings.asStateFlow()
