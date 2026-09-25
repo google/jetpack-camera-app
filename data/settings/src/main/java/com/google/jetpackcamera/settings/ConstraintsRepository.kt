@@ -18,6 +18,14 @@ package com.google.jetpackcamera.settings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import kotlinx.coroutines.flow.StateFlow
 
+/**
+ * Data layer for camera system constraints.
+ */
 interface ConstraintsRepository {
+
+    /**
+     * A [StateFlow] emitting the [CameraSystemConstraints] supported by the device, or null until
+     * they are available.
+     */
     val systemConstraints: StateFlow<CameraSystemConstraints?>
 }
