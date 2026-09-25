@@ -69,14 +69,14 @@ import kotlin.math.roundToInt
  *   the host window's [android.view.DisplayCutout] and mapped into the row's local coordinates.
  * @param content the row children, scoped to [RowScope].
  */
-@SuppressLint("NullableCollection")
+@SuppressLint("AvoidNullableCollections", "NullableCollection")
 @Composable
 fun CutoutAwareRow(
     modifier: Modifier = Modifier,
     horizontalSpacing: Dp = 8.dp,
     cutoutClearance: Dp = 8.dp,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    @SuppressLint("NullableCollection") cutoutRectsOverride: List<IntRect>? = null,
+    cutoutRectsOverride: List<IntRect>? = null,
     content: @Composable RowScope.() -> Unit
 ) {
     val view = LocalView.current

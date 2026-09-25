@@ -90,6 +90,7 @@ import androidx.compose.ui.unit.takeOrElse
  * @param topStartContent optional composable content aligned to the top-start of the viewfinder
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Suppress("DEPRECATION")
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
