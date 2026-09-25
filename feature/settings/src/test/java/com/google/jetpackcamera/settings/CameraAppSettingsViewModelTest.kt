@@ -37,6 +37,8 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
+import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -45,6 +47,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -122,9 +125,7 @@ internal class CameraAppSettingsViewModelTest {
         val settingsRepository = LocalSettingsRepository(
             settingsDataSource = settingsDataSource
         )
-        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-            updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
-        }
+        val constraintsRepository = FakeConstraintsRepository(TYPICAL_SYSTEM_CONSTRAINTS)
         settingsViewModel = SettingsViewModel(
             settingsRepository,
             constraintsRepository
@@ -149,6 +150,26 @@ internal class CameraAppSettingsViewModelTest {
         assertThat(uiState).isEqualTo(
             TYPICAL_SETTINGS_UISTATE
         )
+    }
+
+    /**
+     * Verifies that the settings UI state stays loading, rather than showing an empty screen,
+     * until the camera system constraints become available.
+     */
+    @Test
+    fun settingsUiState_whenConstraintsUnavailable_isLoading() = runTest(StandardTestDispatcher()) {
+        val constraintsRepository = FakeConstraintsRepository()
+        val customViewModel = SettingsViewModel(FakeSettingsRepository(), constraintsRepository)
+        backgroundScope.launch { customViewModel.settingsUiState.collect {} }
+        advanceUntilIdle()
+
+        assertThat(customViewModel.settingsUiState.value).isEqualTo(SettingsUiState.Loading)
+
+        constraintsRepository.setSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+        advanceUntilIdle()
+
+        assertThat(customViewModel.settingsUiState.value)
+            .isInstanceOf(SettingsUiState.Enabled::class.java)
     }
 
     @Test
@@ -257,9 +278,7 @@ internal class CameraAppSettingsViewModelTest {
         val settingsRepository = LocalSettingsRepository(
             settingsDataSource = settingsDataSource
         )
-        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-            updateSystemConstraints(systemConstraints)
-        }
+        val constraintsRepository = FakeConstraintsRepository(systemConstraints)
         return SettingsViewModel(settingsRepository, constraintsRepository).apply {
             setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
         }
