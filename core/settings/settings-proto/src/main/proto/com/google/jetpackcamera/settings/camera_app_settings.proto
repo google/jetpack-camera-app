@@ -51,4 +51,5 @@ message CameraAppSettings {
   com.google.jetpackcamera.model.proto.DarkMode dark_mode = 9;
   com.google.jetpackcamera.model.proto.ConcurrentCameraMode concurrent_camera_mode = 15;
   string selected_camera_effect = 16;
+  bool location_enabled = 17;
 }
