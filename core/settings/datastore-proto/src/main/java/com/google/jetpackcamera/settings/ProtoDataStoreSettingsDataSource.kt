@@ -36,8 +36,11 @@ import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSet
 import com.google.jetpackcamera.settings.proto.copy
 import java.io.File
 import java.io.IOException
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -166,15 +169,23 @@ class ProtoDataStoreSettingsDataSource(
          * instance as a Singleton via dependency injection).
          *
          * @param context The application context.
-         * @param ioDispatcher The coroutine dispatcher for IO operations.
+         * @param defaultCaptureModeOverride The [CaptureMode] reported by every [CameraAppSettings]
+         * emitted by the returned data source.
+         * @param coroutineContext An optional [CoroutineContext] for the DataStore's background
+         * work. The work runs on [Dispatchers.IO] unless this context contains a
+         * [kotlinx.coroutines.CoroutineDispatcher]. If this context contains a [Job], the
+         * DataStore stops when that [Job] is cancelled; otherwise, it remains active for the
+         * lifetime of the process.
          * @return A [SettingsDataSource] instance.
          */
         fun create(
             context: Context,
             defaultCaptureModeOverride: CaptureMode,
-            ioDispatcher: CoroutineDispatcher
+            coroutineContext: CoroutineContext = EmptyCoroutineContext
         ): SettingsDataSource {
-            val scope = CoroutineScope(ioDispatcher + SupervisorJob())
+            val scope = CoroutineScope(
+                Dispatchers.IO + coroutineContext + SupervisorJob(coroutineContext[Job])
+            )
             val dataStore = DataStoreFactory.create(
                 serializer = ProtoCameraAppSettingsSerializer,
                 scope = scope,

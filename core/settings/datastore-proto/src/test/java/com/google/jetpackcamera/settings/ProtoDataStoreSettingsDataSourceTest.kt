@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings
 
+import android.content.Context
 import android.content.ContextWrapper
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
@@ -37,9 +38,13 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
 import java.io.File
 import java.io.IOException
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
@@ -336,13 +341,9 @@ class ProtoDataStoreSettingsDataSourceTest {
 
     @Test
     fun create_initializes_datastore_with_capture_mode_override() = runTest {
-        val fakeContext = object : ContextWrapper(null) {
-            override fun getFilesDir(): File = tempFolder.root
-        }
         val createdDataSource = ProtoDataStoreSettingsDataSource.create(
-            context = fakeContext,
-            defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY,
-            ioDispatcher = Dispatchers.Unconfined
+            context = fakeContext(),
+            defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY
         )
 
         createdDataSource.updateAudioEnabled(false)
@@ -351,5 +352,47 @@ class ProtoDataStoreSettingsDataSourceTest {
         assertThat(settings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
         assertThat(settings.audioEnabled).isFalse()
         assertThat(File(tempFolder.root, "datastore/CameraAppSettings.pb").exists()).isTrue()
+    }
+
+    @Test
+    fun create_runs_datastore_work_on_provided_dispatcher() = runTest {
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        var dispatchCount = 0
+        val countingDispatcher = object : CoroutineDispatcher() {
+            override fun dispatch(context: CoroutineContext, block: Runnable) {
+                dispatchCount++
+                testDispatcher.dispatch(context, block)
+            }
+        }
+        val createdDataSource = ProtoDataStoreSettingsDataSource.create(
+            context = fakeContext(),
+            defaultCaptureModeOverride = CaptureMode.STANDARD,
+            coroutineContext = backgroundScope.coroutineContext + countingDispatcher
+        )
+
+        createdDataSource.updateAudioEnabled(false)
+
+        assertThat(dispatchCount).isGreaterThan(0)
+        assertThat(createdDataSource.getCurrentDefaultCameraAppSettings().audioEnabled).isFalse()
+    }
+
+    @Test
+    fun create_stops_datastore_when_provided_job_is_cancelled() = runTest {
+        val parentJob = Job()
+        val createdDataSource = ProtoDataStoreSettingsDataSource.create(
+            context = fakeContext(),
+            defaultCaptureModeOverride = CaptureMode.STANDARD,
+            coroutineContext = StandardTestDispatcher(testScheduler) + parentJob
+        )
+        createdDataSource.updateAudioEnabled(false)
+
+        parentJob.cancel()
+        val result = runCatching { createdDataSource.updateAudioEnabled(true) }
+
+        assertThat(result.exceptionOrNull()).isInstanceOf(CancellationException::class.java)
+    }
+
+    private fun fakeContext(): Context = object : ContextWrapper(null) {
+        override fun getFilesDir(): File = tempFolder.root
     }
 }
