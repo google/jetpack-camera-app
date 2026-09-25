@@ -209,7 +209,7 @@ class LocalMediaRepositoryTest {
         assertThat(cursor.count).isEqualTo(1)
 
         // 3. When
-        repository.deleteMedia(mediaToDelete)
+        assertThat(repository.deleteMedia(mediaToDelete)).isTrue()
 
         // 4. Then
         // Query using the correct, inserted URI
@@ -239,7 +239,7 @@ class LocalMediaRepositoryTest {
         )
 
         // 3. Act: Call deleteMedia
-        repository.deleteMedia(mediaToDelete)
+        assertThat(repository.deleteMedia(mediaToDelete)).isTrue()
 
         // 4. Assert: Verify the file is physically gone
         assertThat(tempFile.exists()).isFalse()
@@ -261,7 +261,7 @@ class LocalMediaRepositoryTest {
         assertThat(repository.currentMedia.value).isEqualTo(mediaToDelete)
 
         // When
-        repository.deleteMedia(mediaToDelete)
+        assertThat(repository.deleteMedia(mediaToDelete)).isTrue()
 
         // Then
         assertThat(repository.currentMedia.value).isEqualTo(MediaDescriptor.None)
@@ -404,8 +404,8 @@ class LocalMediaRepositoryTest {
             isCached = false
         )
 
-        // When & Then (The test passes if no exception is thrown)
-        repository.deleteMedia(mediaToDelete)
+        // When & Then (no exception is thrown, and the delete reports no rows removed)
+        assertThat(repository.deleteMedia(mediaToDelete)).isFalse()
     }
 
     @Test
