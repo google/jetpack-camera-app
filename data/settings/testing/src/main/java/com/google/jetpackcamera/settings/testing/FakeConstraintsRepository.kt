@@ -21,6 +21,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+/**
+ * A fake implementation of [ConstraintsRepository] whose constraints can be set during a test.
+ *
+ * @param initialConstraints The constraints [systemConstraints] starts with.
+ */
 class FakeConstraintsRepository(
     initialConstraints: CameraSystemConstraints? = null
 ) : ConstraintsRepository {
@@ -28,6 +33,9 @@ class FakeConstraintsRepository(
     override val systemConstraints: StateFlow<CameraSystemConstraints?> =
         _systemConstraints.asStateFlow()
 
+    /**
+     * Sets the [CameraSystemConstraints] emitted by [systemConstraints].
+     */
     fun setSystemConstraints(systemConstraints: CameraSystemConstraints?) {
         _systemConstraints.value = systemConstraints
     }
