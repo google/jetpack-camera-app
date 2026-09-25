@@ -131,4 +131,53 @@ class SystemBarsPolicyTest {
         assertThat(controller.isAppearanceLightStatusBars).isFalse()
         assertThat(controller.isAppearanceLightNavigationBars).isFalse()
     }
+
+    @Test
+    fun systemBarsPolicyEffect_appliesPolicy_clampsInMultiWindow_andRestoresOnDispose() {
+        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+        val view = activity.window.decorView
+        var composed = androidx.compose.runtime.mutableStateOf(true)
+
+        activity.setContentView(
+            androidx.compose.ui.platform.ComposeView(activity).apply {
+                setContent {
+                    if (composed.value) {
+                        SystemBarsPolicyEffect(
+                            policy = SystemBarsPolicy.HideStatusBar,
+                            isDarkTheme = false
+                        )
+                    }
+                }
+            }
+        )
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
+
+        // Entering multi-window mode clamps policy to ShowAll.
+        activity.onMultiWindowModeChanged(true, android.content.res.Configuration())
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(0)
+
+        // Exiting multi-window mode re-hides the status bar.
+        activity.onMultiWindowModeChanged(false, android.content.res.Configuration())
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
+
+        // Disposing the effect when not finishing/changing configurations restores the status bar.
+        composed.value = false
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(0)
+    }
 }

@@ -242,4 +242,45 @@ class CutoutAwareRowTest {
         assertThat(rtl1Bounds.left).isEqualTo(214.dp)
         assertThat(rtl1Bounds.right).isEqualTo(244.dp)
     }
+
+    @Test
+    fun cutoutAwareRow_nullOverride_laysOutChildrenInLtrAndRtl() {
+        var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
+        var hostView: android.view.View? = null
+        composeTestRule.setContent {
+            hostView = androidx.compose.ui.platform.LocalView.current
+            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                CutoutAwareRow(
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    horizontalSpacing = 8.dp,
+                    cutoutClearance = 8.dp,
+                    cutoutRectsOverride = null
+                ) {
+                    Box(modifier = Modifier.size(30.dp, 24.dp).testTag("live0"))
+                    Box(modifier = Modifier.size(30.dp, 24.dp).testTag("live1"))
+                }
+            }
+        }
+
+        val cutout = androidx.core.view.DisplayCutoutCompat(
+            android.graphics.Rect(0, 48, 0, 0),
+            listOf(android.graphics.Rect(10, 0, 50, 48))
+        )
+        val insets = androidx.core.view.WindowInsetsCompat.Builder()
+            .setDisplayCutout(cutout)
+            .build()
+        composeTestRule.runOnUiThread {
+            androidx.core.view.ViewCompat.dispatchApplyWindowInsets(checkNotNull(hostView), insets)
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(composeTestRule.onNodeWithTag("live0").getUnclippedBoundsInRoot().left)
+            .isAtLeast(0.dp)
+
+        layoutDirection = LayoutDirection.Rtl
+        composeTestRule.waitForIdle()
+
+        assertThat(composeTestRule.onNodeWithTag("live0").getUnclippedBoundsInRoot().right)
+            .isAtMost(360.dp)
+    }
 }
