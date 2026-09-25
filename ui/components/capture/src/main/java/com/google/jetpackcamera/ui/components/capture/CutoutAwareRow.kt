@@ -76,7 +76,7 @@ fun CutoutAwareRow(
     horizontalSpacing: Dp = 8.dp,
     cutoutClearance: Dp = 8.dp,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    cutoutRectsOverride: List<IntRect>? = null,
+    @SuppressLint("NullableCollection") cutoutRectsOverride: List<IntRect>? = null,
     content: @Composable RowScope.() -> Unit
 ) {
     val view = LocalView.current

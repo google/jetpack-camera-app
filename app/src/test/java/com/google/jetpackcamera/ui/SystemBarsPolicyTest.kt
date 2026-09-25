@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui
 
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -86,6 +87,9 @@ class SystemBarsPolicyTest {
 
         applySystemBars(window = window, view = view, hideStatusBar = true, isDarkTheme = false)
 
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
         assertThat(controller.systemBarsBehavior)
             .isEqualTo(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
         assertThat(controller.isAppearanceLightStatusBars).isFalse()
@@ -99,8 +103,12 @@ class SystemBarsPolicyTest {
         val view = window.decorView
         val controller = WindowCompat.getInsetsController(window, view)
 
+        applySystemBars(window = window, view = view, hideStatusBar = true, isDarkTheme = false)
         applySystemBars(window = window, view = view, hideStatusBar = false, isDarkTheme = false)
 
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(0)
         assertThat(controller.systemBarsBehavior)
             .isEqualTo(WindowInsetsControllerCompat.BEHAVIOR_DEFAULT)
         assertThat(controller.isAppearanceLightStatusBars).isTrue()
