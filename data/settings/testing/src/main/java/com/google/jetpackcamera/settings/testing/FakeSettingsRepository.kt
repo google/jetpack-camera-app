@@ -32,6 +32,7 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class FakeSettingsRepository(
     initialSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
@@ -110,5 +111,11 @@ class FakeSettingsRepository(
     override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
         _defaultCameraAppSettings.value =
             _defaultCameraAppSettings.value.copy(concurrentCameraMode = concurrentCameraMode)
+    }
+
+    override suspend fun updateLocationEnabled(locationEnabled: Boolean) {
+        _defaultCameraAppSettings.update {
+            it.copy(locationEnabled = locationEnabled)
+        }
     }
 }

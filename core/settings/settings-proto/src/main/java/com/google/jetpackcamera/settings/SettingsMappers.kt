@@ -46,6 +46,7 @@ fun CameraAppSettingsProto.toModel(defaultCaptureModeOverride: CaptureMode): Cam
         audioEnabled = this.audioEnabled,
         lowLightBoostPriority = this.lowLightBoostPriority.toModel(),
         darkMode = this.darkMode.toModel(),
-        concurrentCameraMode = this.concurrentCameraMode.toModel()
+        concurrentCameraMode = this.concurrentCameraMode.toModel(),
+        locationEnabled = this.locationEnabled
     )
 }

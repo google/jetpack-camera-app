@@ -98,4 +98,8 @@ class LocalSettingsRepository @Inject constructor(
     override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
         settingsDataSource.updateConcurrentCameraMode(concurrentCameraMode)
     }
+
+    override suspend fun updateLocationEnabled(locationEnabled: Boolean) {
+        settingsDataSource.updateLocationEnabled(locationEnabled)
+    }
 }
