@@ -102,11 +102,6 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // The navigation bar stays visible on top of app content, so opt out of the system's
-            // automatic scrim behind it.
-            window.isNavigationBarContrastEnforced = false
-        }
         super.onCreate(savedInstanceState)
         cameraLaunchConfigProvider.setIntent(intent)
         var uiState: MainActivityUiState by mutableStateOf(Loading)

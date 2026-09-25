@@ -136,7 +136,7 @@ class SystemBarsPolicyTest {
     fun systemBarsPolicyEffect_appliesPolicy_clampsInMultiWindow_andRestoresOnDispose() {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         val view = activity.window.decorView
-        var composed = androidx.compose.runtime.mutableStateOf(true)
+        val composed = androidx.compose.runtime.mutableStateOf(true)
 
         activity.setContentView(
             androidx.compose.ui.platform.ComposeView(activity).apply {

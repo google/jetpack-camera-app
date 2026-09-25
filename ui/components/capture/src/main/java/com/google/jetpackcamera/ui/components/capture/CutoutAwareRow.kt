@@ -128,56 +128,14 @@ fun CutoutAwareRow(
             } else {
                 placeables.sumOf { it.width }
             }
-            val localCutoutRects: List<IntRect> = if (cutoutRectsOverride != null) {
-                if (isRtl) {
-                    cutoutRectsOverride.map { rect ->
-                        IntRect(
-                            left = rtlReferenceWidth - rect.right,
-                            top = rect.top,
-                            right = rtlReferenceWidth - rect.left,
-                            bottom = rect.bottom
-                        )
-                    }
-                } else {
-                    cutoutRectsOverride
-                }
-            } else {
-                val windowCutoutRects =
-                    ViewCompat.getRootWindowInsets(view)?.displayCutout?.boundingRects
-                        ?: (
-                            if (android.os.Build.VERSION.SDK_INT >=
-                                android.os.Build.VERSION_CODES.P
-                            ) {
-                                view.rootWindowInsets?.displayCutout?.boundingRects
-                            } else {
-                                null
-                            }
-                            )
-                        ?: emptyList()
-                val bounds = rowBoundsInWindow
-                val offsetY = bounds?.top ?: 0
-                if (isRtl) {
-                    val startEdgeX = bounds?.right ?: rtlReferenceWidth
-                    windowCutoutRects.map { rect ->
-                        IntRect(
-                            left = startEdgeX - rect.right,
-                            top = rect.top - offsetY,
-                            right = startEdgeX - rect.left,
-                            bottom = rect.bottom - offsetY
-                        )
-                    }
-                } else {
-                    val offsetX = bounds?.left ?: 0
-                    windowCutoutRects.map { rect ->
-                        IntRect(
-                            left = rect.left - offsetX,
-                            top = rect.top - offsetY,
-                            right = rect.right - offsetX,
-                            bottom = rect.bottom - offsetY
-                        )
-                    }
-                }
-            }
+            val localCutoutRects = resolveLocalCutoutRects(
+                cutoutRectsOverride = cutoutRectsOverride,
+                windowCutoutRects = ViewCompat.getRootWindowInsets(view)
+                    ?.displayCutout?.boundingRects.orEmpty(),
+                rowBoundsInWindow = rowBoundsInWindow,
+                isRtl = isRtl,
+                rtlReferenceWidth = rtlReferenceWidth
+            )
 
             // Convert vertically overlapping cutout rects into sorted horizontal keep-out ranges.
             val horizontalCutouts = localCutoutRects
@@ -259,6 +217,45 @@ fun CutoutAwareRow(
                 }
             }
         }
+    }
+}
+
+@SuppressLint("AvoidNullableCollections", "NullableCollection")
+internal fun resolveLocalCutoutRects(
+    cutoutRectsOverride: List<IntRect>?,
+    windowCutoutRects: List<android.graphics.Rect>,
+    rowBoundsInWindow: IntRect?,
+    isRtl: Boolean,
+    rtlReferenceWidth: Int
+): List<IntRect> {
+    val ltrRects = cutoutRectsOverride ?: run {
+        val offsetX = rowBoundsInWindow?.left ?: 0
+        val offsetY = rowBoundsInWindow?.top ?: 0
+        windowCutoutRects.map { rect ->
+            IntRect(
+                left = rect.left - offsetX,
+                top = rect.top - offsetY,
+                right = rect.right - offsetX,
+                bottom = rect.bottom - offsetY
+            )
+        }
+    }
+    return if (isRtl) {
+        val startEdgeX = if (cutoutRectsOverride == null && rowBoundsInWindow != null) {
+            rowBoundsInWindow.width
+        } else {
+            rtlReferenceWidth
+        }
+        ltrRects.map { rect ->
+            IntRect(
+                left = startEdgeX - rect.right,
+                top = rect.top,
+                right = startEdgeX - rect.left,
+                bottom = rect.bottom
+            )
+        }
+    } else {
+        ltrRects
     }
 }
 

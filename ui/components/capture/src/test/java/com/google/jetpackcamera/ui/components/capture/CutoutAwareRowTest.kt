@@ -282,5 +282,27 @@ class CutoutAwareRowTest {
 
         assertThat(composeTestRule.onNodeWithTag("live0").getUnclippedBoundsInRoot().right)
             .isAtMost(360.dp)
+
+        val windowRects = listOf(android.graphics.Rect(20, 4, 60, 44))
+        val rowBounds = IntRect(left = 10, top = 4, right = 370, bottom = 52)
+        assertThat(
+            resolveLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = windowRects,
+                rowBoundsInWindow = rowBounds,
+                isRtl = false,
+                rtlReferenceWidth = 360
+            )
+        ).containsExactly(IntRect(left = 10, top = 0, right = 50, bottom = 40))
+
+        assertThat(
+            resolveLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = windowRects,
+                rowBoundsInWindow = rowBounds,
+                isRtl = true,
+                rtlReferenceWidth = 360
+            )
+        ).containsExactly(IntRect(left = 310, top = 0, right = 350, bottom = 40))
     }
 }
