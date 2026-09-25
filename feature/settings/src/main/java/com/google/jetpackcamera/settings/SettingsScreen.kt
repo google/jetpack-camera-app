@@ -66,6 +66,8 @@ import com.google.jetpackcamera.settings.ui.TargetFpsSetting
 import com.google.jetpackcamera.settings.ui.VersionInfo
 import com.google.jetpackcamera.settings.ui.VideoQualitySetting
 
+private val LOADING_INDICATOR_SIZE = 50.dp
+
 /**
  * Screen used for the Settings feature.
  *
@@ -126,7 +128,7 @@ fun SettingsScreen(
                     .background(color = MaterialTheme.colorScheme.background),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(modifier = Modifier.size(50.dp))
+                CircularProgressIndicator(modifier = Modifier.size(LOADING_INDICATOR_SIZE))
             }
 
             is SettingsUiState.Enabled -> Column(
