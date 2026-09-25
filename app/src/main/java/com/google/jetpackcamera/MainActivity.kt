@@ -26,6 +26,7 @@ import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -89,10 +90,18 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var cameraLaunchConfigProvider: CameraLaunchConfigProvider
     private val viewModel: MainActivityViewModel by viewModels()
 
-    @RequiresApi(Build.VERSION_CODES.M)
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+        // Force light content (white icons) on transparent bars instead of the default "auto"
+        // styles. "auto" picks its light/dark variant from the system-wide configuration, which is
+        // unrelated to this app's own theme, so on a light system the status bar icons would be
+        // drawn dark on top of the black viewfinder and become invisible. Explicit styles also
+        // avoid the translucent scrim "auto" applies below API 29.
+        @Suppress("DEPRECATION")
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        )
         super.onCreate(savedInstanceState)
         cameraLaunchConfigProvider.setIntent(intent)
         var uiState: MainActivityUiState by mutableStateOf(Loading)
@@ -138,8 +147,9 @@ class MainActivity : ComponentActivity() {
                     }
 
                     is Success -> {
+                        val isDarkTheme = isInDarkMode(uiState = uiState)
                         JetpackCameraTheme(
-                            darkTheme = isInDarkMode(uiState = uiState),
+                            darkTheme = isDarkTheme,
                             dynamicColor = false
                         ) {
                             Surface(
@@ -170,7 +180,8 @@ class MainActivity : ComponentActivity() {
                                     onFirstFrameCaptureCompleted = {
                                         firstFrameComplete?.complete(Unit)
                                     },
-                                    onCaptureEvent = captureEventCallback
+                                    onCaptureEvent = captureEventCallback,
+                                    isDarkTheme = isDarkTheme
                                 )
                             }
                         }

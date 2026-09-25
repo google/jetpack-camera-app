@@ -24,10 +24,12 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.jetpackcamera.BuildConfig
@@ -58,6 +60,7 @@ fun JcaApp(
     onFirstFrameCaptureCompleted: () -> Unit,
     openAppSettings: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
+    isDarkTheme: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     JetpackCameraNavHost(
@@ -69,7 +72,8 @@ fun JcaApp(
         onOpenAppSettings = openAppSettings,
         onRequestWindowColorMode = onRequestWindowColorMode,
         onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-        onCaptureEvent = onCaptureEvent
+        onCaptureEvent = onCaptureEvent,
+        isDarkTheme = isDarkTheme
     )
 }
 
@@ -85,8 +89,19 @@ private fun JetpackCameraNavHost(
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
+    isDarkTheme: Boolean = true,
     navController: NavHostController = rememberNavController()
 ) {
+    // A single owner for system bar visibility, driven by the destination that is currently on top
+    // of the back stack. This must live above the NavHost: during a transition both the outgoing
+    // and the incoming destination are composed, so a per-screen effect would let the outgoing
+    // screen's cleanup run last and undo the incoming screen's request.
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    SystemBarsPolicyEffect(
+        systemBarsPolicyFor(backStackEntry?.destination?.route),
+        isDarkTheme = isDarkTheme
+    )
+
     NavHost(
         navController = navController,
         startDestination = PermissionsRoute.toString(),

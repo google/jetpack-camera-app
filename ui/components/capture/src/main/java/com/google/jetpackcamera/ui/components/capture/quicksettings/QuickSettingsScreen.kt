@@ -16,9 +16,12 @@
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,6 +61,7 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
  * @param modifier The [Modifier] to apply to the content column.
  * @param showMoreSettingsButton Whether to show the "More settings" navigation button.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuickSettingsScaffoldContent(
     quickSettingsUiState: QuickSettingsUiState,
@@ -70,7 +74,7 @@ fun QuickSettingsScaffoldContent(
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
+                .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
                 .padding(bottom = 24.dp)
                 .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
         ) {
