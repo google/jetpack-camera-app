@@ -97,9 +97,10 @@ fun CutoutAwareRow(
             }
         ) { measurables, constraints ->
             // Read WindowInsets.displayCutout inside measure to subscribe to inset updates.
-            cutoutInsets.getTop(this)
-            cutoutInsets.getLeft(this, layoutDirection)
-            cutoutInsets.getRight(this, layoutDirection)
+            // Assigned to `unused` to satisfy the @CheckReturnValue lint check on WindowInsets.
+            val unused = cutoutInsets.getTop(this) +
+                cutoutInsets.getLeft(this, layoutDirection) +
+                cutoutInsets.getRight(this, layoutDirection)
 
             val spacingPx = horizontalSpacing.roundToPx()
             val clearancePx = cutoutClearance.roundToPx()
