@@ -18,7 +18,6 @@ package com.google.jetpackcamera
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
-import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -38,7 +37,7 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCRIM
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
-import com.google.jetpackcamera.utils.assume
+import com.google.jetpackcamera.utils.assumeFlipCameraAvailable
 import com.google.jetpackcamera.utils.onNodeWithText
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.searchForQuickSetting
@@ -102,10 +101,8 @@ class NavigationTest {
         composeTestRule.waitForCaptureButton()
 
         // If flipping the camera is available, flip it. Otherwise skip test.
-        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON)
-            .assume(isEnabled()) {
-                "Device does not have multiple cameras to flip between."
-            }.performClick()
+        composeTestRule.assumeFlipCameraAvailable()
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
 
         // open quick settings
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
@@ -146,7 +143,7 @@ class NavigationTest {
         // Press the device's back button
         uiDevice.pressBack()
 
-        // Assert we're on PreviewScreen and bottom sheet is closed
+        // Assert we're on PreviewScreen by verifying bottom sheet is closed and finding the capture button
         composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
     }

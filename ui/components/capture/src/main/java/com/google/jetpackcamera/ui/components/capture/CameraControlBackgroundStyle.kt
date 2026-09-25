@@ -19,6 +19,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 
 /**
  * Defines the background style variants for camera controls to maintain visual
@@ -29,6 +30,17 @@ internal enum class CameraControlBackgroundStyle {
     WHITE_20
 }
 
+internal val CameraControlBackgroundStyle.containerColor: Color
+    get() = when (this) {
+        CameraControlBackgroundStyle.BLACK_60 -> Color.Black.copy(alpha = 0.6f)
+        CameraControlBackgroundStyle.WHITE_20 -> Color.White.copy(alpha = 0.2f)
+    }
+
+internal val CameraControlBackgroundStyle.disabledContainerColor: Color
+    get() = when (this) {
+        CameraControlBackgroundStyle.BLACK_60 -> Color.Black.copy(alpha = 0.2f)
+        CameraControlBackgroundStyle.WHITE_20 -> Color.White.copy(alpha = 0.05f)
+    }
 private val DefaultOverlapTargetBounds = mutableStateOf(Rect.Zero)
 
 /**
