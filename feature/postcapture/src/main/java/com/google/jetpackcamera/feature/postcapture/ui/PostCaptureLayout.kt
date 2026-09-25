@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.feature.postcapture.ui
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,9 +24,9 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -38,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PostCaptureLayout(
@@ -52,24 +50,28 @@ fun PostCaptureLayout(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // The *IgnoringVisibility insets keep reporting the bar sizes while the status bar is hidden on
+    // this screen, so the controls do not move when it is hidden or transiently revealed.
+    // safeContent is deliberately avoided: it includes the gesture insets, which would pull the
+    // left/right buttons inward.
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility
+            .union(WindowInsets.displayCutout),
         snackbarHost = {
             SnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
             )
         }
-    ) {
-        // Note: the Scaffold's content padding is intentionally not applied here. Scaffold does not
-        // consume the insets it reports, so applying it in addition to the inset padding below
-        // would inset the controls by roughly twice the system bar heights.
+    ) { paddingValues ->
         Box(
             modifier = modifier
                 .fillMaxSize()
         ) {
             // Layer 1: Media Surface
-            // Occupies the full screen background
+            // Occupies the full screen background (intentionally unpadded so media renders
+            // edge-to-edge behind the system bars).
             mediaSurface(
                 Modifier
                     .fillMaxSize()
@@ -77,18 +79,12 @@ fun PostCaptureLayout(
             )
 
             // Layer 2: PostCapture Controls
-            // Uses SpaceBetween to push two rows to the absolute edges
+            // Uses SpaceBetween to push two rows to the absolute edges, inset once by the
+            // Scaffold's contentWindowInsets.
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    // The *IgnoringVisibility insets keep reporting the bar sizes while the status
-                    // bar is hidden on this screen, so the controls do not move when it is hidden
-                    // or transiently revealed. safeContent is deliberately avoided: it includes the
-                    // gesture insets, which would pull the left/right buttons inward.
-                    .windowInsetsPadding(
-                        WindowInsets.systemBarsIgnoringVisibility
-                            .union(WindowInsets.displayCutout)
-                    ),
+                    .padding(paddingValues),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 // Top Bar Area
