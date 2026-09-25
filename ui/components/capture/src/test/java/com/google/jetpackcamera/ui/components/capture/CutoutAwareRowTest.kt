@@ -24,16 +24,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import com.google.common.truth.Truth.assertThat
@@ -205,5 +208,38 @@ class CutoutAwareRowTest {
             }
         }
         assertThat(observedExitingFrames).isGreaterThan(3)
+    }
+
+    @Test
+    fun cutoutAwareRow_rtlLayoutDirection_shiftsItemsLeftOfRightSideCutout() {
+        // Right-side cutout spanning [290, 330] in a 360dp-wide row with 8dp clearance ->
+        // physical keep-out interval is [282, 338].
+        // In RTL (starting from x = 360 going left):
+        // - Item 0 (width 30dp) at the right edge [330, 360] overlaps [282, 338], so it must
+        //   jump to the left of the keep-out zone and land at [252, 282].
+        // - Item 1 (width 30dp) follows 8dp to the left at [214, 244].
+        val rightSideCutout = IntRect(left = 290, top = 0, right = 330, bottom = 48)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                CutoutAwareRow(
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    horizontalSpacing = 8.dp,
+                    cutoutClearance = 8.dp,
+                    cutoutRectsOverride = listOf(rightSideCutout)
+                ) {
+                    Box(modifier = Modifier.size(30.dp, 24.dp).testTag("rtl0"))
+                    Box(modifier = Modifier.size(30.dp, 24.dp).testTag("rtl1"))
+                }
+            }
+        }
+
+        val rtl0Bounds = composeTestRule.onNodeWithTag("rtl0").getUnclippedBoundsInRoot()
+        val rtl1Bounds = composeTestRule.onNodeWithTag("rtl1").getUnclippedBoundsInRoot()
+
+        assertThat(rtl0Bounds.left).isEqualTo(252.dp)
+        assertThat(rtl0Bounds.right).isEqualTo(282.dp)
+        assertThat(rtl1Bounds.left).isEqualTo(214.dp)
+        assertThat(rtl1Bounds.right).isEqualTo(244.dp)
     }
 }

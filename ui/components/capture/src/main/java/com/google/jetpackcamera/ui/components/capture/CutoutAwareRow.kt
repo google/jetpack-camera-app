@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
@@ -35,8 +36,10 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
+import com.google.jetpackcamera.core.common.ignoreResult
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -66,6 +69,7 @@ import kotlin.math.roundToInt
  *   the host window's [android.view.DisplayCutout] and mapped into the row's local coordinates.
  * @param content the row children, scoped to [RowScope].
  */
+@SuppressLint("NullableCollection")
 @Composable
 fun CutoutAwareRow(
     modifier: Modifier = Modifier,
@@ -97,10 +101,9 @@ fun CutoutAwareRow(
             }
         ) { measurables, constraints ->
             // Read WindowInsets.displayCutout inside measure to subscribe to inset updates.
-            // Assigned to `unused` to satisfy the @CheckReturnValue lint check on WindowInsets.
-            val unused = cutoutInsets.getTop(this) +
-                cutoutInsets.getLeft(this, layoutDirection) +
-                cutoutInsets.getRight(this, layoutDirection)
+            cutoutInsets.getTop(this).ignoreResult()
+            cutoutInsets.getLeft(this, layoutDirection).ignoreResult()
+            cutoutInsets.getRight(this, layoutDirection).ignoreResult()
 
             val spacingPx = horizontalSpacing.roundToPx()
             val clearancePx = cutoutClearance.roundToPx()
@@ -117,9 +120,27 @@ fun CutoutAwareRow(
             val rowHeight = max(maxChildHeight, constraints.minHeight)
                 .coerceAtMost(constraints.maxHeight)
 
-            // Resolve cutout rects in the row's local coordinate space.
+            // Resolve cutout rects in the row's start-relative coordinate space so that
+            // xPositions align with placeRelative in both LTR and RTL layouts.
+            val isRtl = layoutDirection == LayoutDirection.Rtl
+            val rtlReferenceWidth = if (constraints.hasBoundedWidth) {
+                constraints.maxWidth
+            } else {
+                placeables.sumOf { it.width }
+            }
             val localCutoutRects: List<IntRect> = if (cutoutRectsOverride != null) {
-                cutoutRectsOverride
+                if (isRtl) {
+                    cutoutRectsOverride.map { rect ->
+                        IntRect(
+                            left = rtlReferenceWidth - rect.right,
+                            top = rect.top,
+                            right = rtlReferenceWidth - rect.left,
+                            bottom = rect.bottom
+                        )
+                    }
+                } else {
+                    cutoutRectsOverride
+                }
             } else {
                 val windowCutoutRects =
                     ViewCompat.getRootWindowInsets(view)?.displayCutout?.boundingRects
@@ -134,15 +155,27 @@ fun CutoutAwareRow(
                             )
                         ?: emptyList()
                 val bounds = rowBoundsInWindow
-                val offsetX = bounds?.left ?: 0
                 val offsetY = bounds?.top ?: 0
-                windowCutoutRects.map { rect ->
-                    IntRect(
-                        left = rect.left - offsetX,
-                        top = rect.top - offsetY,
-                        right = rect.right - offsetX,
-                        bottom = rect.bottom - offsetY
-                    )
+                if (isRtl) {
+                    val startEdgeX = bounds?.right ?: rtlReferenceWidth
+                    windowCutoutRects.map { rect ->
+                        IntRect(
+                            left = startEdgeX - rect.right,
+                            top = rect.top - offsetY,
+                            right = startEdgeX - rect.left,
+                            bottom = rect.bottom - offsetY
+                        )
+                    }
+                } else {
+                    val offsetX = bounds?.left ?: 0
+                    windowCutoutRects.map { rect ->
+                        IntRect(
+                            left = rect.left - offsetX,
+                            top = rect.top - offsetY,
+                            right = rect.right - offsetX,
+                            bottom = rect.bottom - offsetY
+                        )
+                    }
                 }
             }
 
@@ -211,8 +244,11 @@ fun CutoutAwareRow(
                 }
             }
 
-            val rowWidth = max(maxRight, constraints.minWidth)
-                .coerceAtMost(constraints.maxWidth)
+            val rowWidth = if (isRtl && constraints.hasBoundedWidth) {
+                max(maxRight, constraints.maxWidth)
+            } else {
+                max(maxRight, constraints.minWidth).coerceAtMost(constraints.maxWidth)
+            }
 
             layout(rowWidth, rowHeight) {
                 for (i in placeables.indices) {

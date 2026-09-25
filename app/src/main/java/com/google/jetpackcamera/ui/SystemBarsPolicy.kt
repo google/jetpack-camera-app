@@ -74,7 +74,7 @@ internal fun systemBarsPolicyFor(route: String?): SystemBarsPolicy =
  * redundant `hide`/`show` calls, while calling them unconditionally avoids stale reads from
  * `ViewCompat.getRootWindowInsets(view)` during activity launch or keyguard transitions.
  */
-private fun applySystemBars(
+internal fun applySystemBars(
     window: Window,
     view: View,
     hideStatusBar: Boolean,
@@ -100,13 +100,17 @@ private fun applySystemBars(
         controller.show(WindowInsetsCompat.Type.statusBars())
     }
 
-    // When the status bar is visible on a non-capture surface (such as Settings), its icon
-    // appearance should match the surface contrast: dark icons on a light surface, light icons on
-    // a dark surface. On capture surfaces where the status bar is hidden, any transient reveal
-    // overlays the black viewfinder background, so icons should always remain light (white).
-    val lightStatusBars = !hideStatusBar && !isDarkTheme
-    if (controller.isAppearanceLightStatusBars != lightStatusBars) {
-        controller.isAppearanceLightStatusBars = lightStatusBars
+    // When system bars sit over a non-capture surface (such as Settings), their icon appearance
+    // should match the surface contrast: dark icons on a light surface, light icons on a dark
+    // surface. On capture surfaces where the status bar is hidden, both the transiently revealed
+    // status bar and the visible navigation bar overlay the black camera/media background, so
+    // icons should always remain light (white).
+    val lightSystemBars = !hideStatusBar && !isDarkTheme
+    if (controller.isAppearanceLightStatusBars != lightSystemBars) {
+        controller.isAppearanceLightStatusBars = lightSystemBars
+    }
+    if (controller.isAppearanceLightNavigationBars != lightSystemBars) {
+        controller.isAppearanceLightNavigationBars = lightSystemBars
     }
 
     controller.show(WindowInsetsCompat.Type.navigationBars())
