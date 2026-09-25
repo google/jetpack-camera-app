@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.data.camera
 
+import android.util.Log
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
@@ -26,6 +27,7 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
 import com.google.jetpackcamera.settings.model.getSupportedMimeTypes
 import javax.inject.Provider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -37,6 +39,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+
+private const val TAG = "CameraXCameraSystemRepo"
 
 /**
  * Implementation of [CameraSystemRepository] and [ConstraintsRepository] that manages
@@ -96,6 +100,13 @@ class CameraXCameraSystemRepository(
                 _cameraPropertiesJSON.value = properties
             }
             defaultSettings
+        }.also { deferred ->
+            // Log failures that nothing observes through await()
+            deferred.invokeOnCompletion { cause ->
+                if (cause != null && cause !is CancellationException) {
+                    Log.e(TAG, "Failed to initialize camera system", cause)
+                }
+            }
         }
 
     override suspend fun getCameraSystem(): CameraSystem {
