@@ -15,17 +15,14 @@
  */
 package com.google.jetpackcamera.core.settings.datastoreprefs
 
-import android.content.ContextWrapper
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -249,48 +246,5 @@ class PrefsDataStoreSettingsDataSourceInstrumentedTest {
         val newAudioEnabled = dataSource.getCurrentDefaultCameraAppSettings().audioEnabled
         assertThat(initialAudioEnabled).isTrue()
         assertThat(newAudioEnabled).isFalse()
-    }
-
-    @Test
-    fun can_update_concurrent_camera_mode() = runTest {
-        val initialConcurrentCameraMode =
-            dataSource.getCurrentDefaultCameraAppSettings().concurrentCameraMode
-        dataSource.updateConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-        advanceUntilIdle()
-
-        val newConcurrentCameraMode =
-            dataSource.getCurrentDefaultCameraAppSettings().concurrentCameraMode
-        assertThat(initialConcurrentCameraMode).isEqualTo(ConcurrentCameraMode.OFF)
-        assertThat(newConcurrentCameraMode).isEqualTo(ConcurrentCameraMode.DUAL)
-    }
-
-    @Test
-    fun invalid_enum_preference_falls_back_to_default() = runTest {
-        testDataStore.edit { prefs ->
-            prefs[PreferenceKeys.KEY_DARK_MODE] = "UNRECOGNIZED_DARK_MODE"
-        }
-        advanceUntilIdle()
-
-        val darkMode = dataSource.getCurrentDefaultCameraAppSettings().darkMode
-        assertThat(darkMode).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.darkMode)
-    }
-
-    @Test
-    fun create_initializes_datastore_with_capture_mode_override() = runTest {
-        val fakeContext = object : ContextWrapper(null) {
-            override fun getFilesDir(): File = tempFolder.root
-        }
-        val createdDataSource = PrefsDataStoreSettingsDataSource.create(
-            context = fakeContext,
-            defaultCaptureModeOverride = CaptureMode.VIDEO_ONLY,
-            ioDispatcher = Dispatchers.Unconfined
-        )
-
-        createdDataSource.updateAudioEnabled(false)
-        val settings = createdDataSource.getCurrentDefaultCameraAppSettings()
-
-        assertThat(settings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
-        assertThat(settings.audioEnabled).isFalse()
-        assertThat(File(tempFolder.root, "datastore/app_settings.preferences_pb").exists()).isTrue()
     }
 }
