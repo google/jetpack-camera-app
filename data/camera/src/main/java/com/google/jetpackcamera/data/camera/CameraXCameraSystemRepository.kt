@@ -69,23 +69,6 @@ class CameraXCameraSystemRepository(
         cameraXCameraSystemProvider.get()
     }
 
-    override val surfaceRequest: StateFlow<SurfaceRequest?> by lazy {
-        cameraSystem.getSurfaceRequest()
-    }
-
-    override val systemConstraints: StateFlow<CameraSystemConstraints?> by lazy {
-        initializationDeferred.start()
-        cameraSystem.getSystemConstraints()
-    }
-
-    override val currentSettings: StateFlow<CameraAppSettings?> by lazy {
-        cameraSystem.getCurrentSettings()
-    }
-
-    override val currentCameraState: StateFlow<CameraState> by lazy {
-        cameraSystem.getCurrentCameraState()
-    }
-
     private val _cameraPropertiesJSON = MutableStateFlow<String?>(null)
     override val cameraPropertiesJSON: StateFlow<String?> = _cameraPropertiesJSON.asStateFlow()
 
@@ -108,6 +91,23 @@ class CameraXCameraSystemRepository(
                 }
             }
         }
+
+    override val surfaceRequest: StateFlow<SurfaceRequest?> by lazy {
+        cameraSystem.getSurfaceRequest()
+    }
+
+    override val systemConstraints: StateFlow<CameraSystemConstraints?> by lazy {
+        initializationDeferred.start()
+        cameraSystem.getSystemConstraints()
+    }
+
+    override val currentSettings: StateFlow<CameraAppSettings?> by lazy {
+        cameraSystem.getCurrentSettings()
+    }
+
+    override val currentCameraState: StateFlow<CameraState> by lazy {
+        cameraSystem.getCurrentCameraState()
+    }
 
     override suspend fun getCameraSystem(): CameraSystem {
         initializationDeferred.await()
