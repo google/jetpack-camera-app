@@ -26,7 +26,9 @@ import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.printToLog
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
@@ -315,13 +317,23 @@ internal class ImageCaptureDeviceTest {
         @StringRes msgResId: Int
     ) {
         clickCapture()
-        composeTestRule.waitUntil(timeoutMillis = msgTimeOut) {
-            composeTestRule.onNodeWithText(msgResId).isDisplayed()
+        try {
+            composeTestRule.waitUntil(timeoutMillis = msgTimeOut) {
+                composeTestRule.onNodeWithText(msgResId).isDisplayed()
+            }
+        } catch (e: ComposeTimeoutException) {
+            composeTestRule.onRoot().printToLog("CaptureTree_MsgTimeout")
+            throw e
         }
         val dismissButtonMatcher =
             hasContentDescription(value = "dismiss", substring = true, ignoreCase = true)
-        composeTestRule.waitUntil(timeoutMillis = msgTimeOut) {
-            composeTestRule.onNode(dismissButtonMatcher, useUnmergedTree = true).isDisplayed()
+        try {
+            composeTestRule.waitUntil(timeoutMillis = msgTimeOut) {
+                composeTestRule.onNode(dismissButtonMatcher, useUnmergedTree = true).isDisplayed()
+            }
+        } catch (e: ComposeTimeoutException) {
+            composeTestRule.onRoot().printToLog("CaptureTree_DismissTimeout")
+            throw e
         }
         composeTestRule.onNode(dismissButtonMatcher, useUnmergedTree = true)
             .performClick()

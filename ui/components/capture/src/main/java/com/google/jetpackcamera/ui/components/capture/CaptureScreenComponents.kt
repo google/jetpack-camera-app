@@ -55,13 +55,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
@@ -72,9 +76,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -118,6 +125,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.controller.SnackBarController
+import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
@@ -140,7 +148,91 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 
-private const val TAG = "PreviewScreen"
+private const val TAG = "CaptureScreenComponents"
+
+/**
+ * The vertical offset for the snackbar from the top of the screen, expressed as a fraction of the
+ * total screen height.
+ */
+const val SNACKBAR_VERTICAL_OFFSET = 0.625f
+
+/**
+ * A custom [SnackbarHost] that displays snackbars with a pill shape and an icon.
+ *
+ * @param snackbarHostState the [SnackbarHostState] for the host.
+ * @param modifier the modifier for this component.
+ */
+@Composable
+fun JcaSnackbarHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifier) {
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = modifier
+            .testTag(SNACKBAR_NODE_TAG)
+            .fillMaxHeight(SNACKBAR_VERTICAL_OFFSET)
+            .wrapContentHeight(Alignment.Bottom)
+    ) { data ->
+        val customVisuals = data.visuals as? CustomSnackbarVisuals
+        val isError = customVisuals?.isError ?: false
+
+        val containerColor = if (isError) {
+            MaterialTheme.colorScheme.errorContainer
+        } else {
+            MaterialTheme.colorScheme.secondaryContainer
+        }
+        val contentColor = if (isError) {
+            MaterialTheme.colorScheme.onErrorContainer
+        } else {
+            MaterialTheme.colorScheme.onSecondaryContainer
+        }
+        val icon = if (isError) {
+            painterResource(R.drawable.ic_error_outline)
+        } else {
+            painterResource(R.drawable.ic_check_circle_outline)
+        }
+
+        Snackbar(
+            modifier = Modifier.padding(12.dp),
+            containerColor = containerColor,
+            contentColor = contentColor,
+            shape = MaterialTheme.shapes.extraLarge,
+            action = if (data.visuals.actionLabel != null) {
+                {
+                    TextButton(onClick = { data.performAction() }) {
+                        Text(
+                            text = data.visuals.actionLabel!!,
+                            color = contentColor
+                        )
+                    }
+                }
+            } else {
+                null
+            },
+            dismissAction = if (data.visuals.withDismissAction) {
+                {
+                    IconButton(onClick = { data.dismiss() }) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_close),
+                            contentDescription = "dismiss",
+                            tint = contentColor
+                        )
+                    }
+                }
+            } else {
+                null
+            }
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(data.visuals.message)
+            }
+        }
+    }
+}
 private const val BLINK_TIME = 100L
 private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
 private const val FOCUS_INDICATOR_FAILURE_DELAY = 500L
@@ -429,7 +521,7 @@ fun CaptureModeToggleButton(
  * @param modifier the modifier for this component.
  * @param snackbarToShow the [SnackbarData] to show.
  * @param snackbarHostState the [SnackbarHostState] for this component.
- * @param onSnackbarResult the callback for the snackbar result.
+ * @param snackBarController the [SnackBarController] for this component.
  */
 @Composable
 fun TestableSnackbar(
@@ -448,17 +540,23 @@ fun TestableSnackbar(
             val message = context.getString(snackbarToShow.stringResource)
             Log.d(TAG, "Snackbar Displayed with message: $message")
             try {
-                val result =
-                    snackbarHostState.showSnackbar(
-                        message = message,
-                        duration = snackbarToShow.duration,
-                        withDismissAction = snackbarToShow.withDismissAction,
-                        actionLabel = if (snackbarToShow.actionLabelRes == null) {
-                            null
-                        } else {
-                            context.getString(snackbarToShow.actionLabelRes!!)
-                        }
-                    )
+                val actionLabel = if (snackbarToShow.actionLabelRes == null) {
+                    null
+                } else {
+                    context.getString(snackbarToShow.actionLabelRes!!)
+                }
+
+                // Convert SnackbarData into SnackbarVisuals so SnackbarHost can receive it
+                val visuals = CustomSnackbarVisuals(
+                    message = message,
+                    actionLabel = actionLabel,
+                    withDismissAction = snackbarToShow.withDismissAction,
+                    duration = snackbarToShow.duration,
+                    isError = snackbarToShow.isError
+                )
+
+                val result = snackbarHostState.showSnackbar(visuals)
+
                 when (result) {
                     SnackbarResult.ActionPerformed,
                     SnackbarResult.Dismissed -> snackBarController.onSnackBarResult(
