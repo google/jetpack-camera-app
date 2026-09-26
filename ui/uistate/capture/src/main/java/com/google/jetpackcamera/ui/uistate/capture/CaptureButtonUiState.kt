@@ -50,10 +50,8 @@ sealed interface CaptureButtonUiState {
          *   [CaptureMode.VIDEO]) to indicate the button's primary action.
          * @property isEnabled Whether the button is enabled for interaction.
          */
-        data class Idle(
-            val captureMode: CaptureMode,
-            override val isEnabled: Boolean = true
-        ) : Enabled
+        data class Idle(val captureMode: CaptureMode, override val isEnabled: Boolean = true) :
+            Enabled
 
         /**
          * The button is in a video recording state.

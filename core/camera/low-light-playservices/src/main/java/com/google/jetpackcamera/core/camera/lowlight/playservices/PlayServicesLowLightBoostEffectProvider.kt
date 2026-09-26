@@ -28,9 +28,8 @@ import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 
-class PlayServicesLowLightBoostEffectProvider(
-    private val context: Context
-) : LowLightBoostEffectProvider {
+class PlayServicesLowLightBoostEffectProvider(private val context: Context) :
+    LowLightBoostEffectProvider {
     @SuppressLint("RestrictedApi")
     @RequiresApi(Build.VERSION_CODES.R)
     override fun create(
