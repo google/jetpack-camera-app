@@ -18,7 +18,7 @@ package com.google.jetpackcamera.ui.components.capture.layout
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import kotlin.system.measureTimeMillis
+import kotlin.time.measureTime
 import org.junit.Test
 
 /**
@@ -226,7 +226,7 @@ class CameraLayoutSolverPropertyTest {
         Grid.everyWindow().forEach { window ->
             val solution = solutionFor(window)
             val ordered = solution.rowBands.values.sortedBy { it.top.value }
-            ordered.zipWithNext { upper, lower ->
+            ordered.zipWithNext().forEach { (upper, lower) ->
                 assertWithMessage("rows overlap at %s", window.describe())
                     .that(lower.top.value)
                     .isAtLeast(upper.bottom.value - 0.05f)
@@ -367,9 +367,11 @@ class CameraLayoutSolverPropertyTest {
         // evaluation itself becoming expensive, so a loose bound is the right kind of bound here.
         //
         // The solve runs once per window geometry on device, not per frame.
-        val elapsed = measureTimeMillis {
-            Grid.inScope().forEach { CameraLayoutSolver.solve(spec, it) }
-        }
+        val elapsed = measureTime {
+            Grid.inScope().forEach {
+                val unused = CameraLayoutSolver.solve(spec, it)
+            }
+        }.inWholeMilliseconds
         assertWithMessage("in-scope sweep took %s ms", elapsed).that(elapsed).isLessThan(2_000)
     }
 
@@ -379,9 +381,11 @@ class CameraLayoutSolverPropertyTest {
         // because there is no cheap answer for geometry the layout was not built for. What they may
         // not do is run unbounded. This bound exists to catch the budget being removed or bypassed,
         // not to track performance, so it is deliberately generous.
-        val elapsed = measureTimeMillis {
-            Grid.outOfScope().forEach { CameraLayoutSolver.solve(spec, it) }
-        }
+        val elapsed = measureTime {
+            Grid.outOfScope().forEach {
+                val unused = CameraLayoutSolver.solve(spec, it)
+            }
+        }.inWholeMilliseconds
         assertWithMessage("out-of-scope sweep took %s ms", elapsed).that(elapsed).isLessThan(30_000)
     }
 
