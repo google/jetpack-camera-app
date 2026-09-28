@@ -46,7 +46,13 @@ internal object GoldenFixture {
     private const val RESOURCE = "/layout/solver_golden.txt"
 
     fun load(): List<GoldenCase> {
-        val stream = requireNotNull(GoldenFixture::class.java.getResourceAsStream(RESOURCE)) {
+        val stream = requireNotNull(
+            GoldenFixture::class.java.getResourceAsStream(RESOURCE)
+                ?: java.io.File(".")
+                    .walkTopDown()
+                    .firstOrNull { it.path.endsWith("src/test/resources$RESOURCE") }
+                    ?.inputStream()
+        ) {
             "Missing golden fixture at $RESOURCE. Regenerate it with scratch/solver_extract."
         }
         return stream.bufferedReader().useLines { lines ->
