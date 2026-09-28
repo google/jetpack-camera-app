@@ -59,6 +59,7 @@ android {
 
     @Suppress("UnstableApiUsage")
     testOptions {
+        unitTests.isIncludeAndroidResources = true
         managedDevices {
             localDevices {
                 create("pixel2Api28") {
@@ -94,6 +95,9 @@ dependencies {
 
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
+    debugImplementation(libs.compose.test.manifest)
+    testImplementation(libs.compose.test.manifest)
+    testImplementation(libs.compose.junit)
 
     // Testing
     testImplementation(libs.junit)

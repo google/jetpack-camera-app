@@ -92,7 +92,6 @@ import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.PreviewLayout
-import com.google.jetpackcamera.ui.components.capture.PreviewPortraitDevices
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
 import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
@@ -457,6 +456,7 @@ private fun ContentScreen(
     ) {
         @Composable { modifier: Modifier ->
             PreviewDisplay(
+                modifier = modifier,
                 previewDisplayUiState = previewDisplayState.value,
                 onFlipCamera = onFlipCamera,
                 onTapToFocus = onTapToFocusLambda,
@@ -876,7 +876,6 @@ private fun LayoutWrapper(
     )
 }
 
-@PreviewPortraitDevices
 @Preview
 @Composable
 private fun ContentScreenPreview() {

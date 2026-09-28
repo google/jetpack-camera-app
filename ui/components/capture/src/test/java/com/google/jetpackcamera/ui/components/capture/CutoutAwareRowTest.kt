@@ -24,16 +24,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import com.google.common.truth.Truth.assertThat
@@ -44,6 +47,10 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+/**
+ * Tests for [CutoutAwareRow] verifying layout positioning around display cutouts
+ * and horizontal animation stability.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "w360dp-h800dp")
 class CutoutAwareRowTest {
@@ -201,5 +208,101 @@ class CutoutAwareRowTest {
             }
         }
         assertThat(observedExitingFrames).isGreaterThan(3)
+    }
+
+    @Test
+    fun cutoutAwareRow_rtlLayoutDirection_shiftsItemsLeftOfRightSideCutout() {
+        // Right-side cutout spanning [290, 330] in a 360dp-wide row with 8dp clearance ->
+        // physical keep-out interval is [282, 338].
+        // In RTL (starting from x = 360 going left):
+        // - Item 0 (width 30dp) at the right edge [330, 360] overlaps [282, 338], so it must
+        //   jump to the left of the keep-out zone and land at [252, 282].
+        // - Item 1 (width 30dp) follows 8dp to the left at [214, 244].
+        val rightSideCutout = IntRect(left = 290, top = 0, right = 330, bottom = 48)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                CutoutAwareRow(
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    horizontalSpacing = 8.dp,
+                    cutoutClearance = 8.dp,
+                    cutoutRectsOverride = listOf(rightSideCutout)
+                ) {
+                    Box(modifier = Modifier.size(30.dp, 24.dp).testTag("rtl0"))
+                    Box(modifier = Modifier.size(30.dp, 24.dp).testTag("rtl1"))
+                }
+            }
+        }
+
+        val rtl0Bounds = composeTestRule.onNodeWithTag("rtl0").getUnclippedBoundsInRoot()
+        val rtl1Bounds = composeTestRule.onNodeWithTag("rtl1").getUnclippedBoundsInRoot()
+
+        assertThat(rtl0Bounds.left).isEqualTo(252.dp)
+        assertThat(rtl0Bounds.right).isEqualTo(282.dp)
+        assertThat(rtl1Bounds.left).isEqualTo(214.dp)
+        assertThat(rtl1Bounds.right).isEqualTo(244.dp)
+    }
+
+    @Test
+    fun cutoutAwareRow_nullOverride_laysOutChildrenInLtrAndRtl() {
+        var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
+        var hostView: android.view.View? = null
+        composeTestRule.setContent {
+            hostView = androidx.compose.ui.platform.LocalView.current
+            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                CutoutAwareRow(
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    horizontalSpacing = 8.dp,
+                    cutoutClearance = 8.dp,
+                    cutoutRectsOverride = null
+                ) {
+                    Box(modifier = Modifier.size(30.dp, 24.dp).testTag("live0"))
+                    Box(modifier = Modifier.size(30.dp, 24.dp).testTag("live1"))
+                }
+            }
+        }
+
+        val cutout = androidx.core.view.DisplayCutoutCompat(
+            android.graphics.Rect(0, 48, 0, 0),
+            listOf(android.graphics.Rect(10, 0, 50, 48))
+        )
+        val insets = androidx.core.view.WindowInsetsCompat.Builder()
+            .setDisplayCutout(cutout)
+            .build()
+        composeTestRule.runOnUiThread {
+            androidx.core.view.ViewCompat.dispatchApplyWindowInsets(checkNotNull(hostView), insets)
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(composeTestRule.onNodeWithTag("live0").getUnclippedBoundsInRoot().left)
+            .isAtLeast(0.dp)
+
+        layoutDirection = LayoutDirection.Rtl
+        composeTestRule.waitForIdle()
+
+        assertThat(composeTestRule.onNodeWithTag("live0").getUnclippedBoundsInRoot().right)
+            .isAtMost(360.dp)
+
+        val windowRects = listOf(android.graphics.Rect(20, 4, 60, 44))
+        val rowBounds = IntRect(left = 10, top = 4, right = 370, bottom = 52)
+        assertThat(
+            resolveLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = windowRects,
+                rowBoundsInWindow = rowBounds,
+                isRtl = false,
+                rtlReferenceWidth = 360
+            )
+        ).containsExactly(IntRect(left = 10, top = 0, right = 50, bottom = 40))
+
+        assertThat(
+            resolveLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = windowRects,
+                rowBoundsInWindow = rowBounds,
+                isRtl = true,
+                rtlReferenceWidth = 360
+            )
+        ).containsExactly(IntRect(left = 310, top = 0, right = 350, bottom = 40))
     }
 }

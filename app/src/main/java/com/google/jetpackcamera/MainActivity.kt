@@ -90,7 +90,6 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var cameraLaunchConfigProvider: CameraLaunchConfigProvider
     private val viewModel: MainActivityViewModel by viewModels()
 
-    @RequiresApi(Build.VERSION_CODES.M)
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         // Force light content (white icons) on transparent bars instead of the default "auto"
@@ -98,15 +97,11 @@ class MainActivity : ComponentActivity() {
         // unrelated to this app's own theme, so on a light system the status bar icons would be
         // drawn dark on top of the black viewfinder and become invisible. Explicit styles also
         // avoid the translucent scrim "auto" applies below API 29.
+        @Suppress("DEPRECATION")
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // The navigation bar stays visible on top of app content, so opt out of the system's
-            // automatic scrim behind it.
-            window.isNavigationBarContrastEnforced = false
-        }
         super.onCreate(savedInstanceState)
         cameraLaunchConfigProvider.setIntent(intent)
         var uiState: MainActivityUiState by mutableStateOf(Loading)

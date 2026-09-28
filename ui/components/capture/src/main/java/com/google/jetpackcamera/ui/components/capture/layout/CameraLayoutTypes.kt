@@ -235,6 +235,10 @@ data class Collision(val viewfinderId: String, val rowId: String)
  * @param collisions empty when the solve succeeded. Non-empty means no collision-free layout exists
  *   for this geometry and the best available was returned instead.
  * @param liftedStack whether the stack had to be raised above its preferred bottom padding.
+ * @param evaluationCount how many candidate layouts the solver evaluated to reach this result.
+ *   Diagnostic only, and deliberately not part of the layout. The search cost depends on the window
+ *   it is handed, and windows are not ours to choose, so this exists to make that cost measurable
+ *   instead of estimated. It is what the property tests bound.
  */
 data class CameraLayoutSolution(
     val rowBands: Map<String, DpRange>,
@@ -245,8 +249,29 @@ data class CameraLayoutSolution(
     val resolvedGaps: List<Dp>,
     val minClearance: Dp,
     val collisions: List<Collision>,
-    val liftedStack: Boolean
+    val liftedStack: Boolean,
+    val evaluationCount: Int = 0
 ) {
     /** True when every viewfinder edge clears every control row by the required margin. */
     val isCollisionFree: Boolean get() = collisions.isEmpty()
+
+    /**
+     * Returns the solved vertical band for the viewfinder whose aspect ratio (`width / height`) is
+     * closest to [aspectRatio], or `null` if [viewfinders] is empty.
+     */
+    fun viewfinderBandFor(
+        aspectRatio: Float,
+        slots: List<ViewfinderSlot> = CameraLayoutDefaults.viewfinders()
+    ): DpRange? {
+        val closestSlot = slots.minByOrNull { kotlin.math.abs(it.aspectRatio - aspectRatio) }
+            ?: return null
+        return viewfinders[closestSlot.id]
+    }
+}
+
+/**
+ * Provides the active [CameraLayoutSolution] to descendants such as the viewfinder display.
+ */
+val LocalCameraLayoutSolution = androidx.compose.runtime.compositionLocalOf<CameraLayoutSolution?> {
+    null
 }
