@@ -29,7 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.google.jetpackcamera.ui.components.capture.JcaSnackbarHost
+import com.google.jetpackcamera.ui.components.capture.PillSnackbarHost
 
 @Composable
 fun PostCaptureLayout(
@@ -76,36 +76,38 @@ fun PostCaptureLayout(
                 }
 
                 // Bottom Bar Area
-                // Using a Row with SpaceBetween to separate negative (left) from positive (right) actions
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Negative actions on the left
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        deleteButton(Modifier)
-                    }
+                    PillSnackbarHost(snackbarHostState = snackbarHostState)
 
-                    // Positive actions on the right
+                    // Using a Row with SpaceBetween to separate negative (left) from positive (right) actions
                     Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.End
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        saveButton(Modifier)
-                        shareButton(Modifier)
+                        // Negative actions on the left
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            deleteButton(Modifier)
+                        }
+
+                        // Positive actions on the right
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            saveButton(Modifier)
+                            shareButton(Modifier)
+                        }
                     }
                 }
             }
             snackBar(Modifier, snackbarHostState)
-
-            JcaSnackbarHost(
-                snackbarHostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
         }
     }
 }

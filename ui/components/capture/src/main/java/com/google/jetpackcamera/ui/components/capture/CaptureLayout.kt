@@ -156,17 +156,18 @@ fun PreviewLayout(
                             quickSettingsToggleButton = quickSettingsButton,
                             captureModeToggleSwitch = captureModeToggle,
                             zoomControls = zoomLevelDisplay,
-                            elapsedTimeDisplay = elapsedTimeDisplay
+                            elapsedTimeDisplay = elapsedTimeDisplay,
+                            snackbarHost = { modifier ->
+                                PillSnackbarHost(
+                                    snackbarHostState = scaffoldState.snackbarHostState,
+                                    modifier = modifier
+                                )
+                            }
                         )
                     }
                     // controls overlay
                     snackBar(Modifier, scaffoldState.snackbarHostState)
                     screenFlashOverlay(Modifier)
-
-                    JcaSnackbarHost(
-                        snackbarHostState = scaffoldState.snackbarHostState,
-                        modifier = Modifier.align(Alignment.TopCenter)
-                    )
                 }
                 debugOverlay(Modifier)
 
@@ -201,11 +202,14 @@ private fun VerticalMaterialControls(
     flipCameraButton: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable (Modifier) -> Unit
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                snackbarHost(Modifier)
+
                 elapsedTimeDisplay(Modifier)
 
                 // zoom controls row
