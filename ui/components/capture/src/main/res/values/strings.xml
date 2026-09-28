@@ -106,6 +106,20 @@
     <!-- ImageWell -->
     <string name="image_well_content_description">View recently saved media</string>
 
+    <!-- Capture Button -->
+    <!-- Accessibility label for the capture button while the camera is in photo mode. Activating the button takes a photo. [CHAR LIMIT=NONE] -->
+    <string name="capture_button_capture_photo">Capture Photo</string>
+    <!-- Accessibility label for the capture button while the camera is in video mode and not recording. Activating the button starts recording a video. [CHAR LIMIT=NONE] -->
+    <string name="capture_button_start_video_recording">Start Video Recording</string>
+    <!-- Accessibility label for the capture button while a video is being recorded, describing the current state of the camera. [CHAR LIMIT=NONE] -->
+    <string name="capture_button_recording_video">Recording Video</string>
+    <!-- Accessibility label for the capture button while a video is being recorded. Activating the button stops the recording. [CHAR LIMIT=NONE] -->
+    <string name="capture_button_stop_video_recording">Stop Video Recording</string>
+    <!-- Accessibility label for the control that locks video recording, so the user can keep recording without holding down the capture button. [CHAR LIMIT=NONE] -->
+    <string name="capture_button_lock_video_recording">Lock Video Recording</string>
+    <!-- Accessibility label for the capture button when it is disabled, for example while the camera is busy, and cannot be activated. [CHAR LIMIT=NONE] -->
+    <string name="capture_button_unavailable">Capture</string>
+
     <string name="camera_viewfinder_content_description">Camera viewfinder</string>
 
     <!-- Focus Metering Accessibility -->

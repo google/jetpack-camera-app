@@ -25,6 +25,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalView
 import androidx.core.app.MultiWindowModeChangedInfo
@@ -126,7 +127,8 @@ fun CameraSystemBarsEffect(
         }
     }
 
-    DisposableEffect(activity, view, isDarkTheme) {
+    val currentIsDarkTheme by rememberUpdatedState(isDarkTheme)
+    DisposableEffect(activity, view) {
         onDispose {
             // Skip the restore when the activity is going away or being recreated: the bars would
             // visibly blink during a configuration change, and a finishing activity's window state
@@ -137,7 +139,7 @@ fun CameraSystemBarsEffect(
                     view = view,
                     hideStatusBar = false,
                     keepNavigationBar = true,
-                    isDarkTheme = isDarkTheme
+                    isDarkTheme = currentIsDarkTheme
                 )
             }
         }
@@ -221,13 +223,17 @@ internal fun applySystemBars(
         controller.show(WindowInsetsCompat.Type.statusBars())
     }
 
-    // When the status bar is visible on a non-capture surface (such as Settings), its icon
-    // appearance should match the surface contrast: dark icons on a light surface, light icons on
-    // a dark surface. On capture surfaces where the status bar is hidden, any transient reveal
-    // overlays the black viewfinder background, so icons should always remain light (white).
-    val lightStatusBars = !hideStatusBar && !isDarkTheme
-    if (controller.isAppearanceLightStatusBars != lightStatusBars) {
-        controller.isAppearanceLightStatusBars = lightStatusBars
+    // When system bars sit over a non-capture surface (such as Settings), their icon appearance
+    // should match the surface contrast: dark icons on a light surface, light icons on a dark
+    // surface. On capture surfaces where the status bar is hidden, both the transiently revealed
+    // status bar and the visible navigation bar overlay the black camera/media background, so
+    // icons should always remain light (white).
+    val lightSystemBars = !hideStatusBar && !isDarkTheme
+    if (controller.isAppearanceLightStatusBars != lightSystemBars) {
+        controller.isAppearanceLightStatusBars = lightSystemBars
+    }
+    if (controller.isAppearanceLightNavigationBars != lightSystemBars) {
+        controller.isAppearanceLightNavigationBars = lightSystemBars
     }
 
     if (keepNavigationBar) {

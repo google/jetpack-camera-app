@@ -15,18 +15,27 @@
  */
 package com.google.jetpackcamera.ui
 
+import android.view.View
+import androidx.activity.ComponentActivity
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute
 import com.google.jetpackcamera.permissions.navigation.PermissionsRoute
-import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.Robolectric
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
- * Tests for [systemBarsPolicyFor].
+ * Tests for [systemBarsPolicyFor] and [SystemBarsPolicyEffect].
  *
  * The important cases here are the destinations that declare navigation arguments: their
  * `NavDestination.route` is the route *pattern*, so it still contains unresolved `{placeholder}`
  * query parameters. Matching on the raw string would silently fall through to the default policy.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [29])
 class SystemBarsPolicyTest {
 
     private val previewRouteWithArgs = "$PreviewRoute" +
@@ -54,20 +63,65 @@ class SystemBarsPolicyTest {
             "someUnknownRoute?arg={arg}" to SystemBarsPolicy.ShowAll
         )
 
-        cases.forEach { (route, expected) ->
-            assertEquals(
-                "Unexpected policy for route: $route",
-                expected,
-                systemBarsPolicyFor(route)
-            )
+        for ((route, expected) in cases) {
+            assertWithMessage("Unexpected policy for route: %s", route)
+                .that(systemBarsPolicyFor(route))
+                .isEqualTo(expected)
         }
     }
 
     @Test
     fun systemBarsPolicyFor_doesNotMatchRoutesThatMerelyStartWithACaptureRoute() {
-        assertEquals(
-            SystemBarsPolicy.ShowAll,
-            systemBarsPolicyFor("${PreviewRoute}Something")
+        assertThat(systemBarsPolicyFor("${PreviewRoute}Something"))
+            .isEqualTo(SystemBarsPolicy.ShowAll)
+    }
+
+    @Test
+    fun systemBarsPolicyEffect_appliesPolicy_clampsInMultiWindow_andRestoresOnDispose() {
+        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+        val view = activity.window.decorView
+        val composed = androidx.compose.runtime.mutableStateOf(true)
+
+        activity.setContentView(
+            androidx.compose.ui.platform.ComposeView(activity).apply {
+                setContent {
+                    if (composed.value) {
+                        SystemBarsPolicyEffect(
+                            policy = SystemBarsPolicy.HideStatusBar,
+                            isDarkTheme = false
+                        )
+                    }
+                }
+            }
         )
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
+
+        // Entering multi-window mode clamps policy to ShowAll.
+        activity.onMultiWindowModeChanged(true, android.content.res.Configuration())
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(0)
+
+        // Exiting multi-window mode re-hides the status bar.
+        activity.onMultiWindowModeChanged(false, android.content.res.Configuration())
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
+
+        // Disposing the effect when not finishing/changing configurations restores the status bar.
+        composed.value = false
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(0)
     }
 }

@@ -163,8 +163,10 @@ private val LOWER_SECTION_HORIZONTAL_PADDING = 16.dp
  * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug settings
  * @param screenFlashOverlay the screen flash overlay composable
  * @param snackBar the snack bar composable for showing messages
+ * @param topStartContent optional composable content aligned to the top-start of the viewfinder
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Suppress("DEPRECATION")
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
@@ -189,7 +191,8 @@ fun PreviewLayout(
     debugOverlay: @Composable (Modifier) -> Unit,
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (Modifier) -> Unit,
-    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit
+    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    topStartContent: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
@@ -234,6 +237,7 @@ fun PreviewLayout(
                         windowWidth = maxWidth,
                         windowHeight = maxHeight,
                         viewfinder = viewfinder,
+                        topStartContent = topStartContent,
                         indicatorRow = indicatorRow,
                         elapsedTimeDisplay = elapsedTimeDisplay,
                         zoomControls = zoomLevelDisplay,
@@ -275,7 +279,10 @@ fun PreviewLayout(
                         ) {
                             indicatorRow(Modifier)
                         }
-                        viewfinder(Modifier)
+                        Box {
+                            viewfinder(Modifier)
+                            topStartContent(Modifier.align(Alignment.TopStart))
+                        }
                     }
 
                     Box(
@@ -342,6 +349,7 @@ private fun AdaptivePortraitCaptureLayout(
     windowWidth: Dp,
     windowHeight: Dp,
     viewfinder: @Composable (Modifier) -> Unit,
+    topStartContent: @Composable (Modifier) -> Unit,
     indicatorRow: @Composable (Modifier) -> Unit,
     elapsedTimeDisplay: @Composable (Modifier) -> Unit,
     zoomControls: @Composable (Modifier) -> Unit,
@@ -398,6 +406,7 @@ private fun AdaptivePortraitCaptureLayout(
             content = {
                 Box(modifier = Modifier.layoutId(CaptureSlotId.Viewfinder)) {
                     viewfinder(Modifier)
+                    topStartContent(Modifier.align(Alignment.TopStart))
                 }
 
                 Box(
