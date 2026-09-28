@@ -17,8 +17,6 @@ package com.google.jetpackcamera.ui
 
 import android.view.View
 import androidx.activity.ComponentActivity
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute
@@ -30,7 +28,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Tests for [systemBarsPolicyFor] and [applySystemBars].
+ * Tests for [systemBarsPolicyFor] and [SystemBarsPolicyEffect].
  *
  * The important cases here are the destinations that declare navigation arguments: their
  * `NavDestination.route` is the route *pattern*, so it still contains unresolved `{placeholder}`
@@ -76,60 +74,6 @@ class SystemBarsPolicyTest {
     fun systemBarsPolicyFor_doesNotMatchRoutesThatMerelyStartWithACaptureRoute() {
         assertThat(systemBarsPolicyFor("${PreviewRoute}Something"))
             .isEqualTo(SystemBarsPolicy.ShowAll)
-    }
-
-    @Test
-    fun applySystemBars_hideStatusBar_setsTransientBehaviorAndLightIcons() {
-        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
-        val window = activity.window
-        val view = window.decorView
-        val controller = WindowCompat.getInsetsController(window, view)
-
-        applySystemBars(window = window, view = view, hideStatusBar = true, isDarkTheme = false)
-
-        @Suppress("DEPRECATION")
-        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
-            .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
-        assertThat(controller.systemBarsBehavior)
-            .isEqualTo(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
-        assertThat(controller.isAppearanceLightStatusBars).isFalse()
-        assertThat(controller.isAppearanceLightNavigationBars).isFalse()
-    }
-
-    @Test
-    fun applySystemBars_showAllInLightTheme_setsDefaultBehaviorAndDarkIcons() {
-        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
-        val window = activity.window
-        val view = window.decorView
-        val controller = WindowCompat.getInsetsController(window, view)
-
-        applySystemBars(window = window, view = view, hideStatusBar = true, isDarkTheme = false)
-        applySystemBars(window = window, view = view, hideStatusBar = false, isDarkTheme = false)
-
-        @Suppress("DEPRECATION")
-        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
-            .isEqualTo(0)
-        assertThat(controller.systemBarsBehavior)
-            .isEqualTo(WindowInsetsControllerCompat.BEHAVIOR_DEFAULT)
-        assertThat(controller.isAppearanceLightStatusBars).isTrue()
-        assertThat(controller.isAppearanceLightNavigationBars).isTrue()
-    }
-
-    @Test
-    fun applySystemBars_showAllInDarkTheme_setsDefaultBehaviorAndLightIcons() {
-        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
-        val window = activity.window
-        val view = window.decorView
-        val controller = WindowCompat.getInsetsController(window, view)
-
-        // First set dark icons so we also exercise the true -> false transition.
-        applySystemBars(window = window, view = view, hideStatusBar = false, isDarkTheme = false)
-        applySystemBars(window = window, view = view, hideStatusBar = false, isDarkTheme = true)
-
-        assertThat(controller.systemBarsBehavior)
-            .isEqualTo(WindowInsetsControllerCompat.BEHAVIOR_DEFAULT)
-        assertThat(controller.isAppearanceLightStatusBars).isFalse()
-        assertThat(controller.isAppearanceLightNavigationBars).isFalse()
     }
 
     @Test
