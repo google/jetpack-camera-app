@@ -24,6 +24,9 @@ import android.os.Environment
 import android.os.PowerManager
 import android.os.StatFs
 import android.provider.MediaStore
+import android.system.ErrnoException
+import android.system.Os
+import android.system.OsConstants
 import android.util.Log
 import android.util.Range
 import androidx.annotation.OptIn
@@ -535,7 +538,7 @@ class CameraXCameraSystem(
                     ConcurrentCameraMode.DUAL -> {
                         val primaryFacing = currentCameraSettings.cameraLensFacing
                         val secondaryFacing = primaryFacing.flip()
-                        cameraProvider.availableConcurrentCameraInfos.firstNotNullOf {
+                        cameraProvider.availableConcurrentCameraInfos.firstNotNullOfOrNull {
                             var primaryCameraInfo: CameraInfo? = null
                             var secondaryCameraInfo: CameraInfo? = null
                             it.forEach { cameraInfo ->
@@ -555,6 +558,14 @@ class CameraXCameraSystem(
                                     )
                                 }
                             }
+                        } ?: run {
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    isCameraRunning = false,
+                                    cameraError = CameraError.StreamConfigError
+                                )
+                            }
+                            null
                         }
                     }
                 }
@@ -637,22 +648,52 @@ class CameraXCameraSystem(
         }
     }
 
-    private fun hasSufficientStorage(saveLocation: SaveLocation): Boolean {
-        return try {
-            val targetDir = when (saveLocation) {
-                is SaveLocation.Cache -> saveLocation.cacheDir?.toFile() ?: application.cacheDir
-                is SaveLocation.Default,
-                is SaveLocation.Explicit ->
-                    application.getExternalFilesDir(null)
-                        ?: application.filesDir
-                        ?: Environment.getDataDirectory()
+    private suspend fun hasSufficientStorage(saveLocation: SaveLocation): Boolean =
+        withContext(iODispatcher) {
+            try {
+                val availableBytes = when (saveLocation) {
+                    is SaveLocation.Cache -> {
+                        val dir = saveLocation.cacheDir?.toFile() ?: application.cacheDir
+                        StatFs(dir.path).availableBytes
+                    }
+
+                    is SaveLocation.Explicit -> {
+                        val uri = saveLocation.locationUri
+                        if (uri.scheme == ContentResolver.SCHEME_FILE && uri.path != null) {
+                            StatFs(uri.path!!).availableBytes
+                        } else {
+                            (
+                                application.contentResolver.openFileDescriptor(uri, "r")
+                                    ?: application.contentResolver.openFileDescriptor(uri, "rw")
+                                )?.use { pfd ->
+                                val statVfs = Os.fstatvfs(pfd.fileDescriptor)
+                                statVfs.f_bavail * statVfs.f_frsize
+                            } ?: fallbackAvailableBytes()
+                        }
+                    }
+
+                    is SaveLocation.Default -> fallbackAvailableBytes()
+                }
+                availableBytes >= MIN_REQUIRED_STORAGE_BYTES
+            } catch (e: Exception) {
+                true
             }
-            val stat = StatFs(targetDir.path)
-            stat.availableBytes >= MIN_REQUIRED_STORAGE_BYTES
-        } catch (e: Exception) {
-            true
         }
+
+    private fun fallbackAvailableBytes(): Long {
+        val targetDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
+            ?.takeIf { it.exists() }
+            ?: application.getExternalFilesDir(null)
+            ?: application.filesDir
+            ?: Environment.getDataDirectory()
+        return StatFs(targetDir.path).availableBytes
     }
+
+    private fun Throwable.isNoSpaceException(): Boolean =
+        generateSequence(this) { it.cause }.any { cause ->
+            (cause is ErrnoException && cause.errno == OsConstants.ENOSPC) ||
+                cause.message?.contains("No space left on device", ignoreCase = true) == true
+        }
 
     override fun clearCameraError() {
         currentCameraState.update { old ->
@@ -783,7 +824,9 @@ class CameraXCameraSystem(
                     onCaptureStarted
                 )
             } catch (e: ImageCaptureException) {
-                if (e.imageCaptureError == ImageCapture.ERROR_FILE_IO) {
+                if (e.imageCaptureError == ImageCapture.ERROR_FILE_IO &&
+                    (!hasSufficientStorage(saveLocation) || e.isNoSpaceException())
+                ) {
                     currentCameraState.update { old ->
                         old.copy(cameraError = CameraError.InsufficientStorage)
                     }

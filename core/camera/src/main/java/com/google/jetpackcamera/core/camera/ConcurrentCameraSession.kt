@@ -22,6 +22,7 @@ import androidx.camera.core.CameraState as CXCameraState
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
 import androidx.lifecycle.asFlow
+import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -31,6 +32,7 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -58,52 +60,52 @@ internal suspend fun runConcurrentCameraSession(
         .filterNotNull()
         .first()
 
-    val videoCapture = if (sessionSettings.captureMode != CaptureMode.IMAGE_ONLY) {
-        createVideoUseCase(
-            cameraProvider.getCameraInfo(
-                initialTransientSettings.primaryLensFacing.toCameraSelector()
-            ),
-            sessionSettings.aspectRatio,
-            TARGET_FPS_AUTO,
-            StabilizationMode.OFF,
-            DynamicRange.SDR,
-            VideoQuality.UNSPECIFIED,
-            backgroundDispatcher
-        )
-    } else {
-        null
-    }
-
-    val useCaseGroup = createUseCaseGroup(
-        cameraInfo = sessionSettings.primaryCameraInfo,
-        initialTransientSettings = initialTransientSettings,
-        stabilizationMode = StabilizationMode.OFF,
-        aspectRatio = sessionSettings.aspectRatio,
-        imageFormat = ImageOutputFormat.JPEG,
-        captureMode = sessionSettings.captureMode,
-        videoCaptureUseCase = videoCapture
-    )
-
-    val cameraConfigs = listOf(
-        Pair(
-            sessionSettings.primaryCameraInfo.cameraSelector,
-            CompositionSettings.Builder()
-                .setAlpha(1.0f)
-                .setOffset(0.0f, 0.0f)
-                .setScale(1.0f, 1.0f)
-                .build()
-        ),
-        Pair(
-            sessionSettings.secondaryCameraInfo.cameraSelector,
-            CompositionSettings.Builder()
-                .setAlpha(1.0f)
-                .setOffset(2 / 3f - 0.1f, -2 / 3f + 0.1f)
-                .setScale(1 / 3f, 1 / 3f)
-                .build()
-        )
-    )
-
     try {
+        val videoCapture = if (sessionSettings.captureMode != CaptureMode.IMAGE_ONLY) {
+            createVideoUseCase(
+                cameraProvider.getCameraInfo(
+                    initialTransientSettings.primaryLensFacing.toCameraSelector()
+                ),
+                sessionSettings.aspectRatio,
+                TARGET_FPS_AUTO,
+                StabilizationMode.OFF,
+                DynamicRange.SDR,
+                VideoQuality.UNSPECIFIED,
+                backgroundDispatcher
+            )
+        } else {
+            null
+        }
+
+        val useCaseGroup = createUseCaseGroup(
+            cameraInfo = sessionSettings.primaryCameraInfo,
+            initialTransientSettings = initialTransientSettings,
+            stabilizationMode = StabilizationMode.OFF,
+            aspectRatio = sessionSettings.aspectRatio,
+            imageFormat = ImageOutputFormat.JPEG,
+            captureMode = sessionSettings.captureMode,
+            videoCaptureUseCase = videoCapture
+        )
+
+        val cameraConfigs = listOf(
+            Pair(
+                sessionSettings.primaryCameraInfo.cameraSelector,
+                CompositionSettings.Builder()
+                    .setAlpha(1.0f)
+                    .setOffset(0.0f, 0.0f)
+                    .setScale(1.0f, 1.0f)
+                    .build()
+            ),
+            Pair(
+                sessionSettings.secondaryCameraInfo.cameraSelector,
+                CompositionSettings.Builder()
+                    .setAlpha(1.0f)
+                    .setOffset(2 / 3f - 0.1f, -2 / 3f + 0.1f)
+                    .setScale(1 / 3f, 1 / 3f)
+                    .build()
+            )
+        )
+
         cameraProvider.runWithConcurrent(cameraConfigs, useCaseGroup) { concurrentCamera ->
             Log.d(TAG, "Concurrent camera session started")
             // todo: concurrent camera only ever lists one camera
@@ -135,9 +137,12 @@ internal suspend fun runConcurrentCameraSession(
 
             // Update CameraState to reflect when camera is running and any camera errors
             launch {
-                primaryCamera.cameraInfo.cameraState
-                    .asFlow()
-                    .filterNotNull()
+                combine(
+                    sessionSettings.primaryCameraInfo.cameraState.asFlow().filterNotNull(),
+                    sessionSettings.secondaryCameraInfo.cameraState.asFlow().filterNotNull()
+                ) { primaryState, secondaryState ->
+                    primaryState to secondaryState
+                }
                     .distinctUntilChanged()
                     .onCompletion {
                         currentCameraState.update { old ->
@@ -146,14 +151,17 @@ internal suspend fun runConcurrentCameraSession(
                             )
                         }
                     }
-                    .collectLatest { cameraState ->
-                        val mappedError = cameraState.error?.toCameraError(context)
+                    .collectLatest { (primaryState, secondaryState) ->
+                        val mappedError =
+                            (primaryState.error ?: secondaryState.error)?.toCameraError(context)
+                        val bothOpen = primaryState.type == CXCameraState.Type.OPEN &&
+                            secondaryState.type == CXCameraState.Type.OPEN
                         currentCameraState.update { old ->
                             old.copy(
-                                isCameraRunning = cameraState.type == CXCameraState.Type.OPEN,
+                                isCameraRunning = primaryState.type == CXCameraState.Type.OPEN,
                                 cameraError = when {
                                     mappedError != null -> mappedError
-                                    cameraState.type == CXCameraState.Type.OPEN -> null
+                                    bothOpen -> null
                                     else -> old.cameraError
                                 }
                             )
@@ -210,7 +218,11 @@ internal suspend fun runConcurrentCameraSession(
         currentCameraState.update { old ->
             old.copy(
                 isCameraRunning = false,
-                cameraError = com.google.jetpackcamera.model.CameraError.StreamConfigError
+                cameraError = if (cameraProvider.availableCameraInfos.isEmpty()) {
+                    CameraError.CameraRemoved
+                } else {
+                    CameraError.StreamConfigError
+                }
             )
         }
         kotlinx.coroutines.awaitCancellation()
