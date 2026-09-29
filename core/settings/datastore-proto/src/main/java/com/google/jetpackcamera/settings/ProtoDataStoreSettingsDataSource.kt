@@ -158,6 +158,12 @@ class ProtoDataStoreSettingsDataSource(
         }
     }
 
+    override suspend fun updateLocationEnabled(locationEnabled: Boolean) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.copy { this.locationEnabled = locationEnabled }
+        }
+    }
+
     companion object {
         private const val FILE_LOCATION = "CameraAppSettings.pb"
 
