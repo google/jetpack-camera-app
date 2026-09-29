@@ -17,7 +17,10 @@ package com.google.jetpackcamera.core.camera
 
 import android.app.Application
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
+import androidx.camera.core.CameraInfo
+import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -30,12 +33,17 @@ import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecorded
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.di.PostProcessModule.Companion.provideImagePostProcessorMap
+import com.google.jetpackcamera.core.camera.submode.CameraSessionBinding
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
 import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeDescriptor
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -45,7 +53,10 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.OptionVisibility
+import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.util.AbstractMap
@@ -349,7 +360,8 @@ class CameraXCameraSystemTest {
 
     private suspend fun createAndInitCameraXCameraSystem(
         appSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-        fakeImagePostProcessor: FakeImagePostProcessor? = null
+        fakeImagePostProcessor: FakeImagePostProcessor? = null,
+        captureSubModeProvider: CaptureSubModeProvider? = null
     ) = CameraXCameraSystem(
         application = application,
         defaultDispatcher = Dispatchers.Default,
@@ -358,7 +370,12 @@ class CameraXCameraSystemTest {
         effectProviders = emptyMap(),
         imagePostProcessors = getFakePostProcessorMap(fakeImagePostProcessor),
         cameraEffectProviders = emptyMap(),
-        filePathGenerator = FakeFilePathGenerator()
+        filePathGenerator = FakeFilePathGenerator(),
+        captureSubModeProviders = captureSubModeProvider?.let { provider ->
+            mapOf<CaptureSubModeFeatureKey, Provider<CaptureSubModeProvider>>(
+                FakeCaptureSubModeFeatureKey to Provider { provider }
+            )
+        } ?: emptyMap()
     ).apply {
         initialize(appSettings) {}
         providePreviewSurface()
@@ -697,6 +714,90 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun leaveCaptureSubMode_restoresSettingsReplacedByItsPolicy(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the aspect ratio to 9:16.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setAspectRatio(AspectRatio.ONE_ONE)
+
+        // Act. Enter the sub-mode.
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Assert. The policy replaces the aspect ratio.
+        var settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+        // Act. Leave the sub-mode.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The previous aspect ratio is restored.
+        settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+    }
+
+    @Test
+    fun leaveCaptureSubMode_keepsSettingsChangedWhileActive(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy limits the aspect ratio to 9:16 or 1:1.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(
+                        defaultValue = AspectRatio.NINE_SIXTEEN,
+                        visibility = OptionVisibility.from(
+                            AspectRatio.NINE_SIXTEEN,
+                            AspectRatio.ONE_ONE
+                        )
+                    )
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setAspectRatio(AspectRatio.THREE_FOUR)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(cameraSystem.getCurrentSettings().value!!.aspectRatio)
+            .isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+        // Act. Choose another permitted aspect ratio, then leave the sub-mode.
+        cameraSystem.setAspectRatio(AspectRatio.ONE_ONE)
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The aspect ratio chosen in the sub-mode is kept.
+        assertThat(cameraSystem.getCurrentSettings().value!!.aspectRatio)
+            .isEqualTo(AspectRatio.ONE_ONE)
+    }
+
+    @Test
+    fun switchCaptureMode_fromCaptureSubMode_appliesNewModeDefaults(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the aspect ratio to 9:16.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setAspectRatio(AspectRatio.ONE_ONE)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act. Switching capture mode ends the sub-mode.
+        cameraSystem.setCaptureMode(CaptureMode.VIDEO_ONLY)
+
+        // Assert. The video mode's aspect ratio takes precedence over the restored 1:1.
+        val settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+    }
+
+    @Test
     fun switchCaptureMode_updatesAspectRatio(): Unit = runBlocking {
         // Arrange. Start with STANDARD mode and 4:3 aspect ratio
         val cameraSystem =
@@ -778,6 +879,32 @@ class CameraXCameraSystemTest {
 }
 
 object FakeImagePostProcessorFeatureKey : ImagePostProcessorFeatureKey
+
+private val FAKE_CAPTURE_SUB_MODE_ID = CaptureSubModeId("fake_sub_mode")
+
+private object FakeCaptureSubModeFeatureKey : CaptureSubModeFeatureKey {
+    override val id = FAKE_CAPTURE_SUB_MODE_ID
+}
+
+/** An image sub-mode that is supported on every lens and enforces [featurePolicy]. */
+private class FakeCaptureSubModeProvider(
+    override val featurePolicy: CameraFeaturePolicy
+) : CaptureSubModeProvider {
+    override val descriptor = CaptureSubModeDescriptor(
+        id = FAKE_CAPTURE_SUB_MODE_ID,
+        parentCaptureMode = CaptureMode.IMAGE_ONLY,
+        labelResId = 0
+    )
+
+    override suspend fun isSupported(
+        context: Context,
+        cameraProvider: ProcessCameraProvider,
+        cameraInfo: CameraInfo
+    ): Boolean = true
+
+    override val sessionBinding =
+        CameraSessionBinding.SingleCamera { _, baseSelector -> baseSelector }
+}
 
 class FakeImagePostProcessor(val shouldError: Boolean = false) : ImagePostProcessor {
     var postProcessImageCalled = false

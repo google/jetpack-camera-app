@@ -251,4 +251,119 @@ class CameraFeaturePolicyTest {
         val config = CameraFeaturePolicy()
         assertThat(config.toCameraAppSettings()).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS)
     }
+
+    @Test
+    fun enforceRestrictions_whenSettingViolatesHidden_clampsToDefaultValue() {
+        val policy = CameraFeaturePolicy(
+            dynamicRange = SettingConfig(
+                defaultValue = DynamicRange.SDR,
+                visibility = OptionVisibility.Hidden
+            ),
+            imageFormat = SettingConfig(
+                defaultValue = ImageOutputFormat.JPEG,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+        val settings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+            dynamicRange = DynamicRange.HLG10,
+            imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
+            aspectRatio = AspectRatio.ONE_ONE
+        )
+
+        val enforced = policy.enforceRestrictions(settings)
+
+        assertThat(enforced.dynamicRange).isEqualTo(DynamicRange.SDR)
+        assertThat(enforced.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        assertThat(enforced.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+    }
+
+    @Test
+    fun enforceRestrictions_whenSettingPermittedByOnly_preservesValue() {
+        val policy = CameraFeaturePolicy(
+            aspectRatio = SettingConfig(
+                defaultValue = AspectRatio.THREE_FOUR,
+                visibility = OptionVisibility.Only(AspectRatio.THREE_FOUR, AspectRatio.NINE_SIXTEEN)
+            )
+        )
+        val permitted = DEFAULT_CAMERA_APP_SETTINGS.copy(aspectRatio = AspectRatio.NINE_SIXTEEN)
+        val disallowed = DEFAULT_CAMERA_APP_SETTINGS.copy(aspectRatio = AspectRatio.ONE_ONE)
+
+        assertThat(policy.enforceRestrictions(permitted).aspectRatio)
+            .isEqualTo(AspectRatio.NINE_SIXTEEN)
+        assertThat(policy.enforceRestrictions(disallowed).aspectRatio)
+            .isEqualTo(AspectRatio.THREE_FOUR)
+    }
+
+    @Test
+    fun isCompatibleWith_whenDisjointConstraints_returnsFalse() {
+        val hostPolicy = CameraFeaturePolicy(
+            dynamicRange = SettingConfig(
+                defaultValue = DynamicRange.HLG10,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+        val subModePolicy = CameraFeaturePolicy(
+            dynamicRange = SettingConfig(
+                defaultValue = DynamicRange.SDR,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+
+        assertThat(hostPolicy.isCompatibleWith(subModePolicy)).isFalse()
+    }
+
+    @Test
+    fun isCompatibleWith_whenOverlappingConstraints_returnsTrue() {
+        val hostPolicy = CameraFeaturePolicy(
+            captureMode = SettingConfig(
+                defaultValue = CaptureMode.IMAGE_ONLY,
+                visibility = OptionVisibility.Only(CaptureMode.IMAGE_ONLY, CaptureMode.VIDEO_ONLY)
+            )
+        )
+        val subModePolicy = CameraFeaturePolicy(
+            captureMode = SettingConfig(
+                defaultValue = CaptureMode.IMAGE_ONLY,
+                visibility = OptionVisibility.Hidden
+            ),
+            dynamicRange = SettingConfig(
+                defaultValue = DynamicRange.SDR,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+
+        assertThat(hostPolicy.isCompatibleWith(subModePolicy)).isTrue()
+    }
+
+    @Test
+    fun intersect_narrowsVisibilityToCommonAllowedOptions() {
+        val hostPolicy = CameraFeaturePolicy(
+            aspectRatio = SettingConfig(
+                defaultValue = AspectRatio.THREE_FOUR,
+                visibility = OptionVisibility.Only(
+                    AspectRatio.THREE_FOUR,
+                    AspectRatio.NINE_SIXTEEN,
+                    AspectRatio.ONE_ONE
+                )
+            )
+        )
+        val subModePolicy = CameraFeaturePolicy(
+            aspectRatio = SettingConfig(
+                defaultValue = AspectRatio.NINE_SIXTEEN,
+                visibility = OptionVisibility.Only(AspectRatio.THREE_FOUR, AspectRatio.NINE_SIXTEEN)
+            ),
+            dynamicRange = SettingConfig(
+                defaultValue = DynamicRange.SDR,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+
+        val intersected = hostPolicy.intersect(subModePolicy)
+
+        assertThat(intersected.aspectRatio?.defaultValue).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        assertThat(intersected.aspectRatio?.visibility).isEqualTo(
+            OptionVisibility.Only(AspectRatio.THREE_FOUR, AspectRatio.NINE_SIXTEEN)
+        )
+        assertThat(intersected.dynamicRange?.defaultValue).isEqualTo(DynamicRange.SDR)
+        assertThat(intersected.dynamicRange?.visibility).isEqualTo(OptionVisibility.Hidden)
+    }
 }

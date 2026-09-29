@@ -25,6 +25,8 @@ import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.data.camera.CameraLaunchConfigProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
@@ -94,6 +96,10 @@ internal object CameraModule {
         cameraEffectProviders: Map<
             CameraEffectFeatureKey,
             @JvmSuppressWildcards Provider<CameraEffectProvider>
+            >,
+        captureSubModeProviders: Map<
+            CaptureSubModeFeatureKey,
+            @JvmSuppressWildcards Provider<CaptureSubModeProvider>
             >
     ): CameraXCameraSystem {
         return CameraXCameraSystem(
@@ -104,7 +110,8 @@ internal object CameraModule {
             availabilityCheckers,
             effectProviders,
             imagePostProcessors,
-            cameraEffectProviders
+            cameraEffectProviders,
+            captureSubModeProviders
         )
     }
 }

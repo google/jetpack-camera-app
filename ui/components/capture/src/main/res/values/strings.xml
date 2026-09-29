@@ -154,4 +154,7 @@
     <string name="quick_settings_preview_sd_description">Standard Definition</string>
     <string name="quick_settings_preview_hd_description">High Definition</string>
     <string name="quick_settings_preview_fhd_description">Full High Definition</string>
+    <string name="capture_mode_standard_default">Standard</string>
+    <string name="capture_mode_photo_default">Photo</string>
+    <string name="capture_mode_video_default">Video</string>
 </resources>

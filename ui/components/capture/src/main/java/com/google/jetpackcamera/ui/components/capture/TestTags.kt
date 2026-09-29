@@ -17,9 +17,14 @@ package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import com.google.jetpackcamera.model.CaptureSubModeId
+
 const val CAPTURE_BUTTON = "CaptureButton"
 internal const val CAPTURE_BUTTON_RING_BORDER = "CaptureButtonRingBorder"
 const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
+const val CAPTURE_MODE_CAROUSEL = "CaptureModeCarousel"
+
+fun captureSubModeOptionTag(id: CaptureSubModeId): String = "CaptureSubModeOption_${id.value}"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
 const val SNACKBAR_NODE_TAG = "SnackbarNodeTag"
 

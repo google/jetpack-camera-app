@@ -51,5 +51,22 @@ internal class QuickSettingsUiStateAdapterTest {
         assertThat(availableState.flipLensUiState).isEqualTo(flipLensUiState)
         assertThat(availableState.aspectRatioUiState).isEqualTo(aspectRatioUiState)
         assertThat(availableState.hdrUiState).isEqualTo(hdrUiState)
+        assertThat(availableState.titleResId).isNull()
+    }
+
+    @Test
+    fun from_withTitleResId_forwardsTitleOverride() {
+        val titleResId = 42
+        val quickSettingsUiState = QuickSettingsUiState.from(
+            captureModeUiState = CaptureModeUiState.Unavailable,
+            flashModeUiState = FlashModeUiState.Unavailable,
+            flipLensUiState = FlipLensUiState.Unavailable,
+            aspectRatioUiState = AspectRatioUiState.Unavailable,
+            hdrUiState = HdrUiState.Unavailable,
+            titleResId = titleResId
+        )
+
+        assertThat((quickSettingsUiState as QuickSettingsUiState.Available).titleResId)
+            .isEqualTo(titleResId)
     }
 }

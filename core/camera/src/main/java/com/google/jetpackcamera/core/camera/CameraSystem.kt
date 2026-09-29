@@ -22,6 +22,7 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
@@ -267,6 +268,13 @@ interface CameraSystem {
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
     /**
+     * Sets the active capture sub-mode for the camera.
+     *
+     * @param captureSubModeId The [CaptureSubModeId] to set.
+     */
+    fun setCaptureSubMode(captureSubModeId: CaptureSubModeId)
+
+    /**
      * Represents the events required for screen flash.
      */
     data class ScreenFlashEvent(val type: Type, val onComplete: () -> Unit) {
@@ -323,6 +331,11 @@ interface CameraSystem {
                 new,
                 CameraAppSettings::concurrentCameraMode,
                 cameraSystem::setConcurrentCameraMode
+            )
+            applyDiff(
+                new,
+                CameraAppSettings::captureSubModeId,
+                cameraSystem::setCaptureSubMode
             )
         }
     }

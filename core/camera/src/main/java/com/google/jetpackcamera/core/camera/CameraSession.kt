@@ -32,6 +32,7 @@ import android.util.Log
 import android.util.Range
 import android.util.Rational
 import android.util.Size
+import androidx.annotation.MainThread
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
@@ -44,6 +45,7 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraState as CXCameraState
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
@@ -67,6 +69,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.net.toFile
 import androidx.lifecycle.asFlow
+import com.google.jetpackcamera.core.camera.submode.CameraSessionBinding
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -113,6 +116,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraSession"
 private val QUALITY_RANGE_MAP = mapOf(
@@ -136,7 +140,7 @@ internal suspend fun runSingleCameraSession(
 
     // only create video use case in standard or video_only
     val videoCaptureUseCase = when (sessionSettings.captureMode) {
-        CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY ->
+        CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY -> withContext(backgroundDispatcher) {
             createVideoUseCase(
                 cameraProvider.getCameraInfo(initialCameraSelector),
                 sessionSettings.aspectRatio,
@@ -146,6 +150,7 @@ internal suspend fun runSingleCameraSession(
                 sessionSettings.videoQuality,
                 backgroundDispatcher
             )
+        }
 
         else -> {
             null
@@ -177,9 +182,22 @@ internal suspend fun runSingleCameraSession(
         .collectLatest { currentTransientSettings ->
             coroutineScope sessionScope@{
                 cameraProvider.unbindAll()
-                val currentCameraSelector = currentTransientSettings.primaryLensFacing
+                val baseSelector = currentTransientSettings.primaryLensFacing
                     .toCameraSelector()
-                val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
+                val activeSubModeProvider = sessionSettings.activeCaptureSubMode?.let { key ->
+                    captureSubModeProviders[key]?.get()
+                }
+                // Resolving the selector (e.g. querying extension availability) and its
+                // CameraInfo can issue blocking camera metadata queries, so this is kept off the
+                // calling (typically main) thread.
+                val (currentCameraSelector, cameraInfo) = withContext(backgroundDispatcher) {
+                    val selector = when (val binding = activeSubModeProvider?.sessionBinding) {
+                        is CameraSessionBinding.SingleCamera ->
+                            binding.transformCameraSelector(cameraProvider, baseSelector)
+                        else -> baseSelector
+                    }
+                    selector to cameraProvider.getCameraInfo(selector)
+                }
                 val camera2Info = Camera2CameraInfo.from(cameraInfo)
                 val cameraId = camera2Info.cameraId
 
@@ -219,18 +237,21 @@ internal suspend fun runSingleCameraSession(
                         cameraEffect = cameraEffectProviders[key]?.createEffect(this@sessionScope)
                     }
                 }
-                val useCaseGroup = createUseCaseGroup(
-                    cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),
-                    videoCaptureUseCase = videoCaptureUseCase,
-                    initialTransientSettings = currentTransientSettings,
-                    stabilizationMode = sessionSettings.stabilizationMode,
-                    aspectRatio = sessionSettings.aspectRatio,
-                    imageFormat = sessionSettings.imageFormat,
-                    captureMode = sessionSettings.captureMode,
-                    effect = cameraEffect,
-                    captureResults = captureResults
-
-                ).apply {
+                val effect = cameraEffect
+                val useCaseGroup = withContext(backgroundDispatcher) {
+                    createUseCaseGroup(
+                        cameraInfo = cameraInfo,
+                        videoCaptureUseCase = videoCaptureUseCase,
+                        initialTransientSettings = currentTransientSettings,
+                        stabilizationMode = sessionSettings.stabilizationMode,
+                        aspectRatio = sessionSettings.aspectRatio,
+                        imageFormat = sessionSettings.imageFormat,
+                        captureMode = sessionSettings.captureMode,
+                        effect = effect,
+                        captureResults = captureResults
+                    )
+                }.apply {
+                    attachPreviewSurfaceProvider(surfaceRequests)
                     getImageCapture()?.let(onImageCaptureCreated)
                 }
 
@@ -769,11 +790,23 @@ private fun createPreviewUseCase(
         getResolutionSelector(cameraInfo.sensorLandscapeRatio, aspectRatio)
     )
 }.build()
-    .apply {
-        setSurfaceProvider { surfaceRequest ->
+
+/**
+ * Routes surface requests from this group's [Preview] use case to [surfaceRequests].
+ *
+ * Use cases may be constructed off the main thread, but [Preview.setSurfaceProvider] must be
+ * called on the main thread, so this is applied separately before the group is bound.
+ */
+@MainThread
+internal fun UseCaseGroup.attachPreviewSurfaceProvider(
+    surfaceRequests: MutableStateFlow<SurfaceRequest?>
+) {
+    useCases.filterIsInstance<Preview>().forEach { preview ->
+        preview.setSurfaceProvider { surfaceRequest ->
             surfaceRequests.update { surfaceRequest }
         }
     }
+}
 
 @OptIn(ExperimentalCamera2Interop::class)
 private fun Preview.Builder.setOpticalStabilizationModeEnabled(enabled: Boolean): Preview.Builder {
@@ -1310,7 +1343,11 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         }
                     }
                 }
-                val logicalCameraId = session.device.id
+                val logicalCameraId = try {
+                    session.device.id
+                } catch (_: Exception) {
+                    targetCameraLogicalId
+                }
 
                 // todo(b/405987189): remove completely after buggy zoomState is fixed
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&

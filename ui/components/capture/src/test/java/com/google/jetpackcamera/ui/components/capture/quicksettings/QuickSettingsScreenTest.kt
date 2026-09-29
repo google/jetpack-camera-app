@@ -15,11 +15,14 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
+import android.content.Context
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -27,6 +30,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
+import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
@@ -120,6 +124,46 @@ class QuickSettingsScreenTest {
         composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertIsDisplayed()
         composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_ASPECT_RATIO).assertIsDisplayed()
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON).assertIsDisplayed()
+    }
+
+    @Test
+    fun quickSettingsScaffoldContent_noTitleOverride_usesCaptureModeTitle() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsScaffoldContent(
+                    quickSettingsUiState = sampleAvailableUiState,
+                    onNavigateToSettings = {},
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(
+            ApplicationProvider.getApplicationContext<Context>().getString(
+                R.string.quick_settings_title_photo_and_video_settings
+            )
+        ).assertIsDisplayed()
+    }
+
+    @Test
+    fun quickSettingsScaffoldContent_titleOverride_usesOverrideTitle() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsScaffoldContent(
+                    quickSettingsUiState = sampleAvailableUiState.copy(
+                        titleResId = R.string.quick_settings_title_video_settings
+                    ),
+                    onNavigateToSettings = {},
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(
+            ApplicationProvider.getApplicationContext<Context>().getString(
+                R.string.quick_settings_title_video_settings
+            )
+        ).assertIsDisplayed()
     }
 
     @Test

@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -104,7 +103,8 @@ fun PreviewLayout(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
-    topStartContent: @Composable (Modifier) -> Unit = {}
+    topStartContent: @Composable (Modifier) -> Unit = {},
+    captureModeCarousel: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
@@ -162,7 +162,8 @@ fun PreviewLayout(
                             quickSettingsToggleButton = quickSettingsButton,
                             captureModeToggleSwitch = captureModeToggle,
                             zoomControls = zoomLevelDisplay,
-                            elapsedTimeDisplay = elapsedTimeDisplay
+                            elapsedTimeDisplay = elapsedTimeDisplay,
+                            captureModeCarousel = captureModeCarousel
                         )
                     }
                     // controls overlay
@@ -202,7 +203,8 @@ private fun VerticalMaterialControls(
     flipCameraButton: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable (Modifier) -> Unit
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    captureModeCarousel: @Composable (Modifier) -> Unit = {}
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
@@ -250,12 +252,14 @@ private fun VerticalMaterialControls(
                     }
                 }
 
-                Spacer(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        // todo(kc): tune padding
-                        .padding(bottom = 50.dp)
-                )
+                        .defaultMinSize(minHeight = 50.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    captureModeCarousel(Modifier)
+                }
 
                 // bottom controls row
                 Row(

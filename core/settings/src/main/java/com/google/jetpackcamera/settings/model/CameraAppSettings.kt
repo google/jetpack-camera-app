@@ -18,6 +18,7 @@ package com.google.jetpackcamera.settings.model
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DebugSettings
@@ -40,6 +41,7 @@ import com.google.jetpackcamera.model.VideoQuality
  */
 data class CameraAppSettings(
     val captureMode: CaptureMode = CaptureMode.STANDARD,
+    val captureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
     val darkMode: DarkMode = DarkMode.DARK,
     val flashMode: FlashMode = FlashMode.OFF,

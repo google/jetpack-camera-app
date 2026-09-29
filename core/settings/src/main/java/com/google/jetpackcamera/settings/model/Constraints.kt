@@ -18,6 +18,8 @@ package com.google.jetpackcamera.settings.model
 import android.util.Range
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraEffectTarget
+import com.google.jetpackcamera.model.CaptureSubModeDescriptor
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
@@ -44,11 +46,17 @@ import com.google.jetpackcamera.model.VideoQuality
  * @property perLensConstraints A map where each key is a [com.google.jetpackcamera.model.LensFacing] value and the
  *                              corresponding value is a [CameraConstraints] object
  *                              detailing the specific capabilities and limitations of that lens.
+ * @property captureSubModeDescriptors A map of [CaptureSubModeId] to [CaptureSubModeDescriptor]
+ *                                     for all registered capture sub-modes.
+ * @property captureSubModePolicies A map of [CaptureSubModeId] to the [CameraFeaturePolicy]
+ *                                  enforced when that sub-mode is active.
  */
 data class CameraSystemConstraints(
     val availableLenses: List<LensFacing> = emptyList(),
     val concurrentCamerasSupported: Boolean = false,
-    val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap()
+    val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap(),
+    val captureSubModeDescriptors: Map<CaptureSubModeId, CaptureSubModeDescriptor> = emptyMap(),
+    val captureSubModePolicies: Map<CaptureSubModeId, CameraFeaturePolicy> = emptyMap()
 )
 
 inline fun <reified T> CameraSystemConstraints.forDevice(
@@ -105,6 +113,7 @@ fun CameraSystemConstraints.getSupportedMimeTypes(): Map<LensFacing, Set<String>
  * @property supportedZoomRange Optional [Range] of floats for zoom ratios. Null if zoom is not supported.
  * @property unsupportedStabilizationFpsMap Map of [StabilizationMode] to a set of frame rates (FPS) that are unsupported with that mode.
  * @property supportedTestPatterns Set of [TestPattern] values supported by this lens, used for debugging.
+ * @property supportedCaptureSubModes Set of [CaptureSubModeId] values supported on this lens.
  */
 data class CameraConstraints(
     val supportedStabilizationModes: Set<StabilizationMode>,
@@ -118,7 +127,8 @@ data class CameraConstraints(
     val supportedFlashModes: Set<FlashMode>,
     val supportedZoomRange: Range<Float>?,
     val unsupportedStabilizationFpsMap: Map<StabilizationMode, Set<Int>>,
-    val supportedTestPatterns: Set<TestPattern>
+    val supportedTestPatterns: Set<TestPattern>,
+    val supportedCaptureSubModes: Set<CaptureSubModeId> = emptySet()
 ) {
     val StabilizationMode.unsupportedFpsSet
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
