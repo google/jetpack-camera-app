@@ -107,7 +107,6 @@ private const val PRESSED_IMAGE_CAPTURE_SCALE = 0.93f
 private const val LOCKED_RECORDING_NUCLEUS_SCALE = 0.51f
 private const val BORDER_WIDTH = 3f
 private const val ALPHA_DISABLED_NUCLEUS = 0.6f
-private const val ALPHA_PRESSED_IMAGE_ONLY = 0.8f
 private const val ALPHA_PRESSED_STANDARD = 0.9f
 private const val ALPHA_WHITE_20 = 0.2f
 private const val ALPHA_BLACK_60 = 0.6f
@@ -950,9 +949,8 @@ internal fun CaptureButtonNucleus(
             NucleusSizeState.Unavailable -> imageCaptureModeColor.copy(alpha = 0f)
             NucleusSizeState.PressedStandard ->
                 imageCaptureModeColor.copy(alpha = ALPHA_PRESSED_STANDARD)
-            NucleusSizeState.IdleImageOnly -> imageCaptureModeColor
-            NucleusSizeState.PressedImage ->
-                imageCaptureModeColor.copy(alpha = ALPHA_PRESSED_IMAGE_ONLY)
+            NucleusSizeState.IdleImageOnly,
+            NucleusSizeState.PressedImage -> imageCaptureModeColor
             NucleusSizeState.IdleVideoOnly ->
                 if (isTapping) recordingColor else imageCaptureModeColor
             NucleusSizeState.RecordingPressed,
