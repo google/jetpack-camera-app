@@ -168,7 +168,7 @@ class CameraXCameraSystemRepositoryTest {
             scope = testScope
         )
 
-        repository.getCameraSystem()
+        assertThat(repository.getCameraSystem()).isEqualTo(testCamera)
         assertThat(testCamera.initializedSettings?.flashMode).isEqualTo(FlashMode.ON)
         assertThat(testCamera.initializedSettings?.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
         assertThat(testCamera.initializedSettings?.captureMode).isEqualTo(CaptureMode.STANDARD)
@@ -188,7 +188,7 @@ class CameraXCameraSystemRepositoryTest {
                 scope = testScope
             )
 
-            repository.getCameraSystem()
+            assertThat(repository.getCameraSystem()).isEqualTo(testCamera)
             assertThat(
                 testCamera.initializedSettings?.captureMode
             ).isEqualTo(CaptureMode.VIDEO_ONLY)
