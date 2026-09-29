@@ -264,6 +264,17 @@ class ProtoDataStoreSettingsDataSourceTest {
     }
 
     @Test
+    fun can_update_location_enabled() = runTest {
+        val initial = repository.getCurrentDefaultCameraAppSettings().locationEnabled
+        repository.updateLocationEnabled(true)
+        advanceUntilIdle()
+        val new = repository.getCurrentDefaultCameraAppSettings().locationEnabled
+
+        assertThat(initial).isFalse()
+        assertThat(new).isTrue()
+    }
+
+    @Test
     fun persisted_settings_survive_new_datastore_instance() = runTest {
         repository.updateDarkModeStatus(DarkMode.LIGHT)
         repository.updateTargetFrameRate(60)

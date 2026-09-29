@@ -54,4 +54,5 @@ val DEFAULT_CAMERA_APP_SETTINGS_PROTO: CameraAppSettingsProto = cameraAppSetting
     concurrentCameraMode = ConcurrentCameraMode.CONCURRENT_CAMERA_MODE_OFF
     targetFrameRate = TARGET_FPS_AUTO
     lowLightBoostPriority = LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_UNSPECIFIED
+    locationEnabled = false
 }
