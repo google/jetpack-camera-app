@@ -97,7 +97,7 @@ internal fun FlashModeUiState.Companion.from(
 
             // 2. Hide if restricted by developer visibility configuration.
             if (optionVisibility is OptionVisibility.Only &&
-                !optionVisibility.enabledOptions.contains(mode)
+                mode !in optionVisibility.enabledOptions
             ) {
                 continue
             }
