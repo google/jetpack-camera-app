@@ -30,7 +30,6 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveMode
-import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -82,14 +81,15 @@ class PreviewViewModelTest {
             ) {}
             return cameraSystem
         }
+        override suspend fun getInitialDefaultCameraAppSettings(): CameraAppSettings =
+            CameraAppSettings()
         override suspend fun getSupportedMimeTypes(): List<String> = emptyList()
     }
 
-    private val cameraSystem = FakeCameraSystem()
-    private val cameraSystemRepository = createFakeCameraSystemRepository(cameraSystem)
-    private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-        updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+    private val cameraSystem = FakeCameraSystem().apply {
+        setSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
+    private val cameraSystemRepository = createFakeCameraSystemRepository(cameraSystem)
     private val defaultTestPolicy = CameraFeaturePolicy(
         aspectRatio = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.aspectRatio),
         flashMode = SettingConfig(DEFAULT_CAMERA_APP_SETTINGS.flashMode),
@@ -104,7 +104,6 @@ class PreviewViewModelTest {
         Dispatchers.setMain(StandardTestDispatcher())
         previewViewModel = PreviewViewModel(
             cameraSystemRepository = cameraSystemRepository,
-            constraintsRepository = constraintsRepository,
             settingsRepository = FakeSettingsRepository(),
             mediaRepository = FakeMediaRepository(),
             savedStateHandle = SavedStateHandle(),
@@ -228,7 +227,6 @@ class PreviewViewModelTest {
             )
             val viewModel = PreviewViewModel(
                 cameraSystemRepository = cameraSystemRepository,
-                constraintsRepository = constraintsRepository,
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),
                 savedStateHandle = SavedStateHandle(),
@@ -254,7 +252,6 @@ class PreviewViewModelTest {
         runTest(StandardTestDispatcher()) {
             val viewModel = PreviewViewModel(
                 cameraSystemRepository = cameraSystemRepository,
-                constraintsRepository = constraintsRepository,
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),
                 savedStateHandle = SavedStateHandle(),
@@ -278,13 +275,14 @@ class PreviewViewModelTest {
     @Test
     fun captureUiState_whenExternalCaptureModeImageCapture_captureModeToggleIsUnavailable() =
         runTest(StandardTestDispatcher()) {
-            val testCameraSystem = FakeCameraSystem()
+            val testCameraSystem = FakeCameraSystem().apply {
+                setSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+            }
             val viewModel = PreviewViewModel(
                 cameraSystemRepository = createFakeCameraSystemRepository(
                     testCameraSystem,
                     ExternalCaptureMode.ImageCapture
                 ),
-                constraintsRepository = constraintsRepository,
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),
                 savedStateHandle = SavedStateHandle(
@@ -308,13 +306,14 @@ class PreviewViewModelTest {
     @Test
     fun captureUiState_whenExternalCaptureModeVideoCapture_captureModeToggleIsUnavailable() =
         runTest(StandardTestDispatcher()) {
-            val testCameraSystem = FakeCameraSystem()
+            val testCameraSystem = FakeCameraSystem().apply {
+                setSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+            }
             val viewModel = PreviewViewModel(
                 cameraSystemRepository = createFakeCameraSystemRepository(
                     testCameraSystem,
                     ExternalCaptureMode.VideoCapture
                 ),
-                constraintsRepository = constraintsRepository,
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),
                 savedStateHandle = SavedStateHandle(
@@ -333,6 +332,24 @@ class PreviewViewModelTest {
             val readyState = uiState as CaptureUiState.Ready
             assertThat(readyState.captureModeToggleUiState)
                 .isEqualTo(CaptureModeToggleUiState.Unavailable)
+        }
+
+    @Test
+    fun defaultSettingsChangedBeforeCreation_propagatesToCameraSystem() =
+        runTest(StandardTestDispatcher()) {
+            previewViewModel = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(cameraLensFacing = LensFacing.FRONT)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate,
+                cameraFeaturePolicy = defaultTestPolicy
+            )
+            startCameraUntilRunning()
+
+            assertThat(cameraSystem.isLensFacingFront).isTrue()
         }
 
     private fun TestScope.startCameraUntilRunning(viewModel: PreviewViewModel? = null) {

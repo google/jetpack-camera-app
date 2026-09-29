@@ -27,7 +27,6 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -61,9 +60,8 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 internal class CaptureUiStateAdapterTest {
 
-    private val cameraSystem = FakeCameraSystem()
-    private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-        updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+    private val cameraSystem = FakeCameraSystem().apply {
+        setSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
     private val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
     private val externalCaptureMode = ExternalCaptureMode.Standard
@@ -81,7 +79,7 @@ internal class CaptureUiStateAdapterTest {
     ) = captureUiState(
         currentSettings = cameraSystem.getCurrentSettings(),
         cameraFeaturePolicy = cameraFeaturePolicy,
-        systemConstraints = constraintsRepository.systemConstraints,
+        systemConstraints = cameraSystem.getSystemConstraints(),
         currentCameraState = cameraSystem.getCurrentCameraState(),
         trackedCaptureUiState = trackedCaptureUiState,
         externalCaptureMode = externalCaptureMode
@@ -167,7 +165,7 @@ internal class CaptureUiStateAdapterTest {
 
     @Test
     fun captureUiState_flashModeUpdate_emitsUpdatedState() = runTest {
-        constraintsRepository.updateSystemConstraints(
+        cameraSystem.setSystemConstraints(
             CameraSystemConstraints(
                 availableLenses = listOf(LensFacing.BACK),
                 perLensConstraints = mapOf(
@@ -242,7 +240,7 @@ internal class CaptureUiStateAdapterTest {
 
     @Test
     fun captureUiState_withFlashModeAndHdrHidden_emitsUnavailableUiStates() = runTest {
-        constraintsRepository.updateSystemConstraints(
+        cameraSystem.setSystemConstraints(
             CameraSystemConstraints(
                 availableLenses = listOf(LensFacing.BACK),
                 perLensConstraints = mapOf(

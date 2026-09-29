@@ -29,6 +29,7 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.data.camera.CameraLaunchConfigProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.camera.CameraXCameraSystemRepository
+import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import dagger.Module
 import dagger.Provides
@@ -49,17 +50,27 @@ internal object CameraModule {
 
     @Provides
     @ActivityRetainedScoped
-    fun providesCameraSystemRepository(
+    fun providesCameraXCameraSystemRepository(
         cameraXCameraSystemProvider: Provider<CameraXCameraSystem>,
         settingsRepository: SettingsRepository,
         launchConfigProvider: CameraLaunchConfigProvider,
         @DefaultCoroutineScope scope: CoroutineScope
-    ): CameraSystemRepository = CameraXCameraSystemRepository(
+    ): CameraXCameraSystemRepository = CameraXCameraSystemRepository(
         cameraXCameraSystemProvider = cameraXCameraSystemProvider,
         settingsRepository = settingsRepository,
         launchConfigProvider = launchConfigProvider,
         scope = scope
     )
+
+    @Provides
+    fun providesCameraSystemRepository(
+        repository: CameraXCameraSystemRepository
+    ): CameraSystemRepository = repository
+
+    @Provides
+    fun providesConstraintsRepository(
+        repository: CameraXCameraSystemRepository
+    ): ConstraintsRepository = repository
 
     @Provides
     @ActivityRetainedScoped

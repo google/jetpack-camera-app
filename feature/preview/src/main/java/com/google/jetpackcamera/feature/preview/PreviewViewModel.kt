@@ -38,7 +38,6 @@ import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.model.VideoCaptureEvent
-import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
@@ -76,7 +75,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -94,7 +92,6 @@ class PreviewViewModel @Inject constructor(
     private val defaultSaveMode: SaveMode,
     private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy(),
     private val settingsRepository: SettingsRepository,
-    private val constraintsRepository: SettableConstraintsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
     private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
@@ -127,7 +124,7 @@ class PreviewViewModel @Inject constructor(
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         currentSettings = cameraSystemRepository.currentSettings,
         cameraFeaturePolicy = cameraFeaturePolicy,
-        systemConstraints = constraintsRepository.systemConstraints,
+        systemConstraints = cameraSystemRepository.systemConstraints,
         currentCameraState = cameraSystemRepository.currentCameraState,
         trackedCaptureUiState = trackedCaptureUiState,
         externalCaptureMode = externalCaptureMode
@@ -139,7 +136,7 @@ class PreviewViewModel @Inject constructor(
         )
     val debugUiState: StateFlow<DebugUiState> = debugUiState(
         currentSettings = cameraSystemRepository.currentSettings,
-        systemConstraints = constraintsRepository.systemConstraints,
+        systemConstraints = cameraSystemRepository.systemConstraints,
         currentCameraState = cameraSystemRepository.currentCameraState,
         debugSettings = debugSettings,
         cameraPropertiesJSON = cameraSystemRepository.cameraPropertiesJSON,
@@ -245,20 +242,14 @@ class PreviewViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             launch {
-                cameraSystemRepository.systemConstraints
-                    .filterNotNull()
-                    .collect { constraints ->
-                        constraintsRepository.updateSystemConstraints(constraints)
-                    }
-            }
-
-            launch {
-                var oldCameraAppSettings: CameraAppSettings? = null
+                var oldCameraAppSettings: CameraAppSettings =
+                    cameraSystemRepository.getInitialDefaultCameraAppSettings()
                 settingsRepository.defaultCameraAppSettings
                     .collect { new ->
-                        oldCameraAppSettings?.apply {
-                            applyDiffs(new, cameraSystemRepository.getCameraSystem())
-                        }
+                        oldCameraAppSettings.applyDiffs(
+                            new,
+                            cameraSystemRepository.getCameraSystem()
+                        )
                         oldCameraAppSettings = new
                     }
             }

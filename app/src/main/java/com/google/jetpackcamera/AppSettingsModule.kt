@@ -16,13 +16,10 @@
 package com.google.jetpackcamera
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStoreFile
-import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
 import com.google.jetpackcamera.di.DefaultCaptureModeOverride
+import com.google.jetpackcamera.di.IODispatcher
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.settings.ProtoDataStoreSettingsDataSource
 import com.google.jetpackcamera.settings.SettingsDataSource
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import dagger.Module
@@ -31,6 +28,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -38,22 +36,16 @@ object AppSettingsModule {
 
     @Provides
     @Singleton
-    fun providePreferencesDataStore(@ApplicationContext context: Context): DataStore<Preferences> {
-        return PreferenceDataStoreFactory.create(
-            produceFile = { context.preferencesDataStoreFile("app_settings.preferences_pb") }
-        )
-    }
-
-    @Provides
-    @Singleton
     fun provideSettingsDataSource(
-        dataStore: DataStore<Preferences>,
+        @ApplicationContext context: Context,
         @DefaultCaptureModeOverride defaultCaptureMode: CaptureMode,
+        @IODispatcher ioDispatcher: CoroutineDispatcher,
         cameraFeaturePolicy: CameraFeaturePolicy
     ): SettingsDataSource {
-        return PrefsDataStoreSettingsDataSource(
-            dataStore = dataStore,
+        return ProtoDataStoreSettingsDataSource.create(
+            context = context,
             defaultCaptureModeOverride = defaultCaptureMode,
+            coroutineContext = ioDispatcher,
             cameraFeaturePolicy = cameraFeaturePolicy
         )
     }

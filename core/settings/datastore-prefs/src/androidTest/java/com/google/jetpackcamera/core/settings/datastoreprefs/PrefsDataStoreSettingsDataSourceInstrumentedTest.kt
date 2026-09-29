@@ -289,4 +289,15 @@ class PrefsDataStoreSettingsDataSourceInstrumentedTest {
         // Baseline default for unconfigured key is used
         assertThat(settings.flashMode).isEqualTo(FlashMode.ON)
     }
+
+    @Test
+    fun can_update_location_enabled() = runTest {
+        val initialLocationEnabled = dataSource.getCurrentDefaultCameraAppSettings().locationEnabled
+        dataSource.updateLocationEnabled(true)
+        advanceUntilIdle()
+
+        val newLocationEnabled = dataSource.getCurrentDefaultCameraAppSettings().locationEnabled
+        assertThat(initialLocationEnabled).isFalse()
+        assertThat(newLocationEnabled).isTrue()
+    }
 }
