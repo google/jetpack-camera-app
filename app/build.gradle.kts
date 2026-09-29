@@ -199,6 +199,9 @@ dependencies {
 
     // Concurrent camera sub-mode implementation
     implementation(project(":core:camera:concurrent:concurrent-di"))
+
+    // Night mode sub-mode implementation
+    implementation(project(":core:camera:night:night-di"))
 }
 
 // Allow references to generated code
