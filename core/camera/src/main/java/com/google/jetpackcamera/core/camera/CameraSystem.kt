@@ -313,6 +313,8 @@ interface CameraSystem {
                 cameraSystem::setMaxVideoDuration
             )
             applyDiff(new, CameraAppSettings::videoQuality, cameraSystem::setVideoQuality)
+            applyDiff(new, CameraAppSettings::dynamicRange, cameraSystem::setDynamicRange)
+            applyDiff(new, CameraAppSettings::imageFormat, cameraSystem::setImageFormat)
             applyDiff(new, CameraAppSettings::audioEnabled, cameraSystem::setAudioEnabled)
             applyDiff(
                 new,

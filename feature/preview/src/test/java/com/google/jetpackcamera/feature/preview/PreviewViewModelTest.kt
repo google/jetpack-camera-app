@@ -24,7 +24,10 @@ import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
@@ -38,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -64,11 +68,13 @@ class PreviewViewModelTest {
             cameraSystem.initialize(CameraAppSettings()) {}
             return cameraSystem
         }
+
         override suspend fun getSupportedMimeTypes(): List<String> = emptyList()
     }
     private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
         updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
+    private val settingsRepository = FakeSettingsRepository()
     private lateinit var previewViewModel: PreviewViewModel
 
     @Before
@@ -77,7 +83,7 @@ class PreviewViewModelTest {
         previewViewModel = PreviewViewModel(
             cameraSystemRepository = cameraSystemRepository,
             constraintsRepository = constraintsRepository,
-            settingsRepository = FakeSettingsRepository(),
+            settingsRepository = settingsRepository,
             mediaRepository = FakeMediaRepository(),
             savedStateHandle = SavedStateHandle(),
             defaultSaveMode = SaveMode.Immediate
@@ -181,6 +187,67 @@ class PreviewViewModelTest {
             ).isEqualTo(LensFacing.FRONT)
         }
         assertThat(cameraSystem.isLensFacingFront).isTrue()
+    }
+
+    /**
+     * Verifies that when [DynamicRange] is updated in [SettingsRepository], the change propagates
+     * through [CameraAppSettings.applyDiffs] to the [CameraSystem].
+     *
+     * CaptureMode is switched to [CaptureMode.VIDEO_ONLY] since HDR video is not supported in
+     * standard capture mode.
+     */
+    @Test
+    fun updateDynamicRange_propagatesToCameraSystem() = runTest(StandardTestDispatcher()) {
+        enableHdrAndUltraHdrConstraints()
+        startCameraUntilRunning()
+        previewViewModel.quickSettingsController.setCaptureMode(CaptureMode.VIDEO_ONLY)
+        advanceUntilIdle()
+        settingsRepository.updateDynamicRange(DynamicRange.HLG10)
+        advanceUntilIdle()
+        assertThat(cameraSystem.getCurrentSettings().first()?.dynamicRange)
+            .isEqualTo(DynamicRange.HLG10)
+    }
+
+    /**
+     * Verifies that when [ImageOutputFormat] is updated in [SettingsRepository], the change
+     * propagates through [CameraAppSettings.applyDiffs] to the [CameraSystem].
+     *
+     * CaptureMode is switched to [CaptureMode.IMAGE_ONLY] since Ultra HDR is not supported in
+     * standard capture mode.
+     */
+    @Test
+    fun updateImageFormat_propagatesToCameraSystem() = runTest(StandardTestDispatcher()) {
+        enableHdrAndUltraHdrConstraints()
+        startCameraUntilRunning()
+        previewViewModel.quickSettingsController.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        advanceUntilIdle()
+        settingsRepository.updateImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+        advanceUntilIdle()
+        assertThat(cameraSystem.getCurrentSettings().first()?.imageFormat)
+            .isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
+
+    private fun enableHdrAndUltraHdrConstraints() {
+        constraintsRepository.updateSystemConstraints(
+            TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints
+                    .mapValues { (_, constraints) ->
+                        constraints.copy(
+                            supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10),
+                            supportedImageFormatsMap = mapOf(
+                                false to setOf(
+                                    ImageOutputFormat.JPEG,
+                                    ImageOutputFormat.JPEG_ULTRA_HDR
+                                ),
+                                true to setOf(
+                                    ImageOutputFormat.JPEG,
+                                    ImageOutputFormat.JPEG_ULTRA_HDR
+                                )
+                            )
+                        )
+                    }
+            )
+        )
     }
 
     private fun TestScope.startCameraUntilRunning() {
