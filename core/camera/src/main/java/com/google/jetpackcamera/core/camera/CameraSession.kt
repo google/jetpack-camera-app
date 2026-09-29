@@ -138,21 +138,36 @@ internal suspend fun runSingleCameraSession(
         .primaryLensFacing.toCameraSelector()
 
     // only create video use case in standard or video_only
-    val videoCaptureUseCase = when (sessionSettings.captureMode) {
-        CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY ->
-            createVideoUseCase(
-                cameraProvider.getCameraInfo(initialCameraSelector),
-                sessionSettings.aspectRatio,
-                sessionSettings.targetFrameRate,
-                sessionSettings.stabilizationMode,
-                sessionSettings.dynamicRange,
-                sessionSettings.videoQuality,
-                backgroundDispatcher
-            )
+    val videoCaptureUseCase = try {
+        when (sessionSettings.captureMode) {
+            CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY ->
+                createVideoUseCase(
+                    cameraProvider.getCameraInfo(initialCameraSelector),
+                    sessionSettings.aspectRatio,
+                    sessionSettings.targetFrameRate,
+                    sessionSettings.stabilizationMode,
+                    sessionSettings.dynamicRange,
+                    sessionSettings.videoQuality,
+                    backgroundDispatcher
+                )
 
-        else -> {
-            null
+            else -> {
+                null
+            }
         }
+    } catch (e: IllegalArgumentException) {
+        Log.e(TAG, "Failed to create video use case (stream config error)", e)
+        currentCameraState.update { old ->
+            old.copy(
+                isCameraRunning = false,
+                cameraError = if (cameraProvider.availableCameraInfos.isEmpty()) {
+                    CameraError.CameraRemoved
+                } else {
+                    CameraError.StreamConfigError
+                }
+            )
+        }
+        kotlinx.coroutines.awaitCancellation()
     }
 
     launch {
@@ -182,62 +197,64 @@ internal suspend fun runSingleCameraSession(
                 cameraProvider.unbindAll()
                 val currentCameraSelector = currentTransientSettings.primaryLensFacing
                     .toCameraSelector()
-                val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
-                val camera2Info = Camera2CameraInfo.from(cameraInfo)
-                val cameraId = camera2Info.cameraId
-
-                var cameraEffect: CameraEffect? = null
-                val captureResults = MutableStateFlow<TotalCaptureResult?>(null)
-                if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-                        cameraConstraints?.supportedIlluminants?.contains(
-                            Illuminant.LOW_LIGHT_BOOST_CAMERA_EFFECT
-                        ) == true && lowLightBoostEffectProvider != null
-                    ) {
-                        cameraEffect = lowLightBoostEffectProvider.create(
-                            cameraId = cameraId,
-                            captureResults = captureResults,
-                            coroutineScope = this@sessionScope,
-                            onSceneBrightnessChanged = { boostStrength ->
-                                val strength = LowLightBoostState.Active(strength = boostStrength)
-                                currentCameraState.update { old ->
-                                    if (old.lowLightBoostState != strength) {
-                                        old.copy(lowLightBoostState = strength)
-                                    } else {
-                                        old
-                                    }
-                                }
-                            },
-                            onLowLightBoostError = { e ->
-                                Log.w(TAG, "Emitting LLB Error", e)
-                                currentCameraState.update { old ->
-                                    old.copy(lowLightBoostState = LowLightBoostState.Error(e))
-                                }
-                            }
-                        )
-                    }
-                }
-                if (cameraEffect == null) {
-                    sessionSettings.activeCameraEffect?.let { key ->
-                        cameraEffect = cameraEffectProviders[key]?.createEffect(this@sessionScope)
-                    }
-                }
-                val useCaseGroup = createUseCaseGroup(
-                    cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector),
-                    videoCaptureUseCase = videoCaptureUseCase,
-                    initialTransientSettings = currentTransientSettings,
-                    stabilizationMode = sessionSettings.stabilizationMode,
-                    aspectRatio = sessionSettings.aspectRatio,
-                    imageFormat = sessionSettings.imageFormat,
-                    captureMode = sessionSettings.captureMode,
-                    effect = cameraEffect,
-                    captureResults = captureResults
-
-                ).apply {
-                    getImageCapture()?.let(onImageCaptureCreated)
-                }
 
                 try {
+                    val cameraInfo = cameraProvider.getCameraInfo(currentCameraSelector)
+                    val camera2Info = Camera2CameraInfo.from(cameraInfo)
+                    val cameraId = camera2Info.cameraId
+
+                    var cameraEffect: CameraEffect? = null
+                    val captureResults = MutableStateFlow<TotalCaptureResult?>(null)
+                    if (currentTransientSettings.flashMode == FlashMode.LOW_LIGHT_BOOST) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                            cameraConstraints?.supportedIlluminants?.contains(
+                                Illuminant.LOW_LIGHT_BOOST_CAMERA_EFFECT
+                            ) == true && lowLightBoostEffectProvider != null
+                        ) {
+                            cameraEffect = lowLightBoostEffectProvider.create(
+                                cameraId = cameraId,
+                                captureResults = captureResults,
+                                coroutineScope = this@sessionScope,
+                                onSceneBrightnessChanged = { boostStrength ->
+                                    val strength =
+                                        LowLightBoostState.Active(strength = boostStrength)
+                                    currentCameraState.update { old ->
+                                        if (old.lowLightBoostState != strength) {
+                                            old.copy(lowLightBoostState = strength)
+                                        } else {
+                                            old
+                                        }
+                                    }
+                                },
+                                onLowLightBoostError = { e ->
+                                    Log.w(TAG, "Emitting LLB Error", e)
+                                    currentCameraState.update { old ->
+                                        old.copy(lowLightBoostState = LowLightBoostState.Error(e))
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    if (cameraEffect == null) {
+                        sessionSettings.activeCameraEffect?.let { key ->
+                            cameraEffect =
+                                cameraEffectProviders[key]?.createEffect(this@sessionScope)
+                        }
+                    }
+                    val useCaseGroup = createUseCaseGroup(
+                        cameraInfo = cameraInfo,
+                        videoCaptureUseCase = videoCaptureUseCase,
+                        initialTransientSettings = currentTransientSettings,
+                        stabilizationMode = sessionSettings.stabilizationMode,
+                        aspectRatio = sessionSettings.aspectRatio,
+                        imageFormat = sessionSettings.imageFormat,
+                        captureMode = sessionSettings.captureMode,
+                        effect = cameraEffect,
+                        captureResults = captureResults
+                    ).apply {
+                        getImageCapture()?.let(onImageCaptureCreated)
+                    }
+
                     cameraProvider.runWith(
                         currentCameraSelector,
                         useCaseGroup
@@ -380,7 +397,11 @@ internal suspend fun runSingleCameraSession(
                     currentCameraState.update { old ->
                         old.copy(
                             isCameraRunning = false,
-                            cameraError = CameraError.StreamConfigError
+                            cameraError = if (cameraProvider.availableCameraInfos.isEmpty()) {
+                                CameraError.CameraRemoved
+                            } else {
+                                CameraError.StreamConfigError
+                            }
                         )
                     }
                     kotlinx.coroutines.awaitCancellation()

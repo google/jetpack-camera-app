@@ -66,14 +66,14 @@ class CameraErrorUiStateAdapterTest {
     }
 
     @Test
-    fun from_cameraDisabledByPolicy_hasNullBodyAndExitsApp() {
+    fun from_cameraDisabledByPolicy_exitsApp() {
         val state = CameraErrorUiState.from(
             cameraState = CameraState(cameraError = CameraError.CameraDisabledByPolicy),
             acknowledgedError = null
         ) as CameraErrorUiState.Showing
 
         assertThat(state.titleResId).isEqualTo(R.string.picker_camera_error_disabled_title)
-        assertThat(state.bodyResId).isNull()
+        assertThat(state.bodyResId).isEqualTo(R.string.picker_camera_error_disabled_body)
         assertThat(state.shouldExitAppOnConfirm).isTrue()
     }
 

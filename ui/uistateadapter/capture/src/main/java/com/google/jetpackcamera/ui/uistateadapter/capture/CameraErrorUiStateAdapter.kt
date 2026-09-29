@@ -64,7 +64,7 @@ fun CameraErrorUiState.Companion.from(
         CameraError.CameraDisabledByPolicy -> CameraErrorUiState.Showing(
             error = error,
             titleResId = R.string.picker_camera_error_disabled_title,
-            bodyResId = null,
+            bodyResId = R.string.picker_camera_error_disabled_body,
             confirmButtonTextResId = okButton,
             shouldExitAppOnConfirm = true
         )
