@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.model
+package com.google.jetpackcamera.core.camera.concurrent
 
-enum class ConcurrentCameraMode {
-    OFF,
-    DUAL
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
+import com.google.jetpackcamera.model.CaptureSubModeId
+
+val CONCURRENT_SUB_MODE_ID = CaptureSubModeId("concurrent_dual")
+
+object ConcurrentCameraSubModeKey : CaptureSubModeFeatureKey {
+    override val id: CaptureSubModeId = CONCURRENT_SUB_MODE_ID
 }

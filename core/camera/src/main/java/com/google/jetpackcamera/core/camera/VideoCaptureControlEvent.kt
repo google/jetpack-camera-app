@@ -20,7 +20,8 @@ import com.google.jetpackcamera.model.SaveLocation
 /**
  * Represents events that control video capture operations.
  */
-internal sealed interface VideoCaptureControlEvent {
+@InternalCameraApi
+sealed interface VideoCaptureControlEvent {
 
     /**
      * Starts video recording.

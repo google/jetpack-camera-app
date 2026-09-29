@@ -48,12 +48,11 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
-import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
@@ -79,6 +78,7 @@ import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
+import com.google.jetpackcamera.ui.components.capture.captureSubModeOptionTag
 import com.google.jetpackcamera.ui.uistateadapter.capture.R
 import org.junit.AssumptionViolatedException
 
@@ -498,6 +498,16 @@ fun ComposeTestRule.getCurrentCaptureMode(): CaptureMode = visitQuickSettings {
         return@visitQuickSettings CaptureMode.STANDARD
     }
 
+    // When shown, the image/video toggle reflects the current capture mode. Check it before the
+    // quick settings title, since an active capture sub-mode can replace the title.
+    val captureModeToggleExists = onAllNodesWithTag(
+        CAPTURE_MODE_TOGGLE_BUTTON
+    ).fetchSemanticsNodes().isNotEmpty()
+
+    if (captureModeToggleExists) {
+        return@visitQuickSettings getCaptureModeToggleState()
+    }
+
     val aspectRatioRowExists = onAllNodesWithTag(
         ROW_QUICK_SETTINGS_ASPECT_RATIO
     ).fetchSemanticsNodes().isNotEmpty()
@@ -714,30 +724,57 @@ fun ComposeTestRule.searchForQuickSetting(settingTestTag: String) {
     this.onNodeWithTag(settingTestTag).assertExists()
 }
 
+private val CONCURRENT_SUB_MODE_ID = CaptureSubModeId("concurrent_dual")
+
 /**
- * Navigates to the Settings screen and sets the concurrent camera mode.
+ * Switches to [CaptureMode.VIDEO_ONLY] (if needed) and selects the concurrent camera sub-mode
+ * from the capture mode carousel.
  *
- * Assumes the setting is enabled/supported by the device, skipping the test if not.
+ * Assumes the sub-mode is supported by the device, skipping the test if not. After the selection
+ * is applied, waits for the capture button to be enabled, since the camera session restarts
+ * asynchronously.
  *
- * @param concurrentMode the target [ConcurrentCameraMode] to set.
+ * @param enabled `true` to select the concurrent camera sub-mode, `false` to select the default
+ * sub-mode.
  */
-fun ComposeTestRule.setConcurrentCameraModeInSettings(concurrentMode: ConcurrentCameraMode) {
-    visitSettingsScreen {
-        onNodeWithTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG)
-            .assertExists()
-            .apply {
-                val isCurrentlyOn = fetchSemanticsNode().config.getOrNull(
-                    SemanticsProperties.ToggleableState
-                ) == ToggleableState.On
-                val shouldBeOn = (concurrentMode == ConcurrentCameraMode.DUAL)
-                if (isCurrentlyOn != shouldBeOn) {
-                    assume(
-                        isEnabled()
-                    ) { "Concurrent camera toggle is not supported by the device" }
-                    performClick()
-                }
-            }
+fun ComposeTestRule.selectConcurrentCameraSubMode(enabled: Boolean) {
+    closeQuickSettings()
+    if (getCurrentCaptureMode() != CaptureMode.VIDEO_ONLY) {
+        setCaptureMode(CaptureMode.VIDEO_ONLY)
+        waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
     }
+
+    val concurrentOptionTag = captureSubModeOptionTag(CONCURRENT_SUB_MODE_ID)
+    val defaultOptionTag = captureSubModeOptionTag(CaptureSubModeId.DEFAULT)
+    val isSupported = onAllNodesWithTag(concurrentOptionTag).fetchSemanticsNodes().isNotEmpty()
+
+    if (!isSupported) {
+        if (enabled) {
+            throw AssumptionViolatedException(
+                "Concurrent camera sub-mode is not supported by the device"
+            )
+        } else {
+            return
+        }
+    }
+
+    val targetTag = if (enabled) {
+        concurrentOptionTag
+    } else {
+        defaultOptionTag
+    }
+
+    onNodeWithTag(targetTag)
+        .assertExists()
+        .assume(isEnabled()) { "Concurrent camera sub-mode option is not enabled" }
+        .performClick()
+
+    waitUntil(DEFAULT_TIMEOUT_MILLIS) {
+        onNodeWithTag(targetTag).fetchSemanticsNode().config.getOrNull(
+            SemanticsProperties.Selected
+        ) == true
+    }
+    waitForCaptureButton()
 }
 
 // ////////////////////////////

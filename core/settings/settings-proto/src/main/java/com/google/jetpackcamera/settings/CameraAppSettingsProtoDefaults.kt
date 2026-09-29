@@ -18,7 +18,6 @@ package com.google.jetpackcamera.settings
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.proto.AspectRatio
-import com.google.jetpackcamera.model.proto.ConcurrentCameraMode
 import com.google.jetpackcamera.model.proto.DarkMode
 import com.google.jetpackcamera.model.proto.DynamicRange
 import com.google.jetpackcamera.model.proto.FlashMode
@@ -57,7 +56,6 @@ val DEFAULT_CAMERA_APP_SETTINGS_PROTO: CameraAppSettingsProto = cameraAppSetting
     maxVideoDurationMillis = UNLIMITED_VIDEO_DURATION
     videoQuality = VideoQuality.VIDEO_QUALITY_UNSPECIFIED
     audioEnabled = true
-    concurrentCameraMode = ConcurrentCameraMode.CONCURRENT_CAMERA_MODE_OFF
     targetFrameRate = TARGET_FPS_AUTO
     lowLightBoostPriority = LowLightBoostPriority.LOW_LIGHT_BOOST_PRIORITY_UNSPECIFIED
     locationEnabled = false

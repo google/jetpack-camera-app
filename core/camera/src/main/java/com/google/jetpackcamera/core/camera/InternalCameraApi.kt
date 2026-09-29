@@ -13,15 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-syntax = "proto3";
+package com.google.jetpackcamera.core.camera
 
-package com.google.jetpackcamera.model.proto;
-
-option java_package = "com.google.jetpackcamera.model.proto";
-option java_multiple_files = true;
-
-enum ConcurrentCameraMode {
-  CONCURRENT_CAMERA_MODE_UNSPECIFIED = 0;
-  CONCURRENT_CAMERA_MODE_OFF = 1;
-  CONCURRENT_CAMERA_MODE_DUAL = 2;
-}
+@RequiresOptIn(
+    level = RequiresOptIn.Level.ERROR,
+    message = "Internal camera session API intended only for camera session sub-mode modules."
+)
+@Retention(AnnotationRetention.BINARY)
+annotation class InternalCameraApi

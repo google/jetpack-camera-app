@@ -23,7 +23,6 @@ import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -219,13 +218,6 @@ interface CameraSystem {
     fun setDeviceRotation(deviceRotation: DeviceRotation)
 
     /**
-     * Sets the concurrent camera mode.
-     *
-     * @param concurrentCameraMode The [ConcurrentCameraMode] to set.
-     */
-    suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
-
-    /**
      * Sets the image output format.
      *
      * @param imageFormat The [ImageOutputFormat] to set.
@@ -269,6 +261,13 @@ interface CameraSystem {
 
     /**
      * Sets the active capture sub-mode for the camera.
+     *
+     * A sub-mode is only active while the capture mode matches its parent [CaptureMode]. If the
+     * current capture mode is [CaptureMode.STANDARD] and the sub-mode has a different parent, the
+     * capture mode is switched to that parent, applying the same defaults as [setCaptureMode].
+     * An explicitly selected [CaptureMode.IMAGE_ONLY] or [CaptureMode.VIDEO_ONLY] capture mode is
+     * never changed. If the sub-mode is unsupported or incompatible with the resulting settings,
+     * the default sub-mode remains active.
      *
      * @param captureSubModeId The [CaptureSubModeId] to set.
      */
@@ -326,11 +325,6 @@ interface CameraSystem {
                 new,
                 CameraAppSettings::lowLightBoostPriority,
                 cameraSystem::setLowLightBoostPriority
-            )
-            applyDiff(
-                new,
-                CameraAppSettings::concurrentCameraMode,
-                cameraSystem::setConcurrentCameraMode
             )
             applyDiff(
                 new,

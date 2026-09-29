@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:kotlin.OptIn(InternalCameraApi::class)
+
 package com.google.jetpackcamera.core.camera
 
 import android.Manifest
@@ -389,8 +391,9 @@ internal suspend fun runSingleCameraSession(
 }
 
 context(CameraSessionContext)
+@InternalCameraApi
 @OptIn(ExperimentalCamera2Interop::class)
-internal suspend fun processTransientSettingEvents(
+suspend fun processTransientSettingEvents(
     camera: Camera,
     cameraConstraints: CameraConstraints?,
     useCaseGroup: UseCaseGroup,
@@ -583,7 +586,8 @@ private suspend fun updateCamera2RequestOptions(
     }
 }
 
-internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
+@InternalCameraApi
+fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
     val targetRotation = deviceRotation.toUiSurfaceRotation()
     useCaseGroup.useCases.forEach {
         when (it) {
@@ -607,7 +611,8 @@ internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: U
 }
 
 context(CameraSessionContext)
-internal fun createUseCaseGroup(
+@InternalCameraApi
+fun createUseCaseGroup(
     cameraInfo: CameraInfo,
     initialTransientSettings: TransientSessionSettings,
     stabilizationMode: StabilizationMode,
@@ -699,7 +704,8 @@ private fun createImageUseCase(
     return builder.build()
 }
 
-internal fun createVideoUseCase(
+@InternalCameraApi
+fun createVideoUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
@@ -797,10 +803,9 @@ private fun createPreviewUseCase(
  * Use cases may be constructed off the main thread, but [Preview.setSurfaceProvider] must be
  * called on the main thread, so this is applied separately before the group is bound.
  */
+@InternalCameraApi
 @MainThread
-internal fun UseCaseGroup.attachPreviewSurfaceProvider(
-    surfaceRequests: MutableStateFlow<SurfaceRequest?>
-) {
+fun UseCaseGroup.attachPreviewSurfaceProvider(surfaceRequests: MutableStateFlow<SurfaceRequest?>) {
     useCases.filterIsInstance<Preview>().forEach { preview ->
         preview.setSurfaceProvider { surfaceRequest ->
             surfaceRequests.update { surfaceRequest }
@@ -1272,7 +1277,8 @@ private suspend fun runVideoRecording(
 }
 
 context(CameraSessionContext)
-internal suspend fun processVideoControlEvents(
+@InternalCameraApi
+suspend fun processVideoControlEvents(
     videoCapture: VideoCapture<Recorder>?,
     captureTypeSuffix: String
 ) = coroutineScope {

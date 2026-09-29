@@ -27,7 +27,6 @@ import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -250,12 +249,6 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override fun setDeviceRotation(deviceRotation: DeviceRotation) {
         currentSettings.update { old ->
             old.copy(deviceRotation = deviceRotation)
-        }
-    }
-
-    override suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        currentSettings.update { old ->
-            old.copy(concurrentCameraMode = concurrentCameraMode)
         }
     }
 

@@ -196,6 +196,9 @@ dependencies {
     implementation(project(":core:camera:postprocess:postprocess-di"))
     implementation(project(":core:camera:low-light-playservices"))
     implementation(project(":core:camera:effects:single-stream"))
+
+    // Concurrent camera sub-mode implementation
+    implementation(project(":core:camera:concurrent:concurrent-di"))
 }
 
 // Allow references to generated code

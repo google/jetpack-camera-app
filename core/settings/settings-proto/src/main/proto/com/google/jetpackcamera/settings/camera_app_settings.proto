@@ -27,7 +27,6 @@ import "com/google/jetpackcamera/model/proto/lens_facing.proto";
 import "com/google/jetpackcamera/model/proto/stabilization_mode.proto";
 import "com/google/jetpackcamera/model/proto/video_quality.proto";
 import "com/google/jetpackcamera/model/proto/low_light_boost_priority.proto";
-import "com/google/jetpackcamera/model/proto/concurrent_camera_mode.proto";
 
 
 option java_package = "com.google.jetpackcamera.settings.proto";
@@ -49,7 +48,9 @@ message CameraAppSettings {
 
   // Non-camera app settings
   com.google.jetpackcamera.model.proto.DarkMode dark_mode = 9;
-  com.google.jetpackcamera.model.proto.ConcurrentCameraMode concurrent_camera_mode = 15;
+  // Concurrent camera is now selected as a capture sub-mode and is no longer persisted.
+  reserved 15;
+  reserved "concurrent_camera_mode";
   string selected_camera_effect = 16;
   bool location_enabled = 17;
 }
