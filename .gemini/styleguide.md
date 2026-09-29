@@ -25,17 +25,24 @@ When reviewing a pull request, focus on the following key areas:
     * **Remove Unused Imports:** Check for and remove any unused import statements to maintain code cleanliness.
     * Look for potential null-safety issues, improper error handling, or resource leaks.
     * **Promote Reusability (DRY Principle):** Identify duplicated or highly similar blocks of code. If a pattern of logic is repeated—even with minor variations—suggest extracting it into a reusable function, composable, or helper class.
+    * **Avoid Magic Numbers:** Avoid scattering literal dimension values or scales directly in the layout code. Instead, group them into a `private object Tokens` at the top of the file if file-scoped, or in a separate `Dimensions.kt` or `Tokens.kt` file if shared across features. Use semantic naming (e.g., `SmallPadding`) rather than value-based naming (e.g., `Dp16`).
 
 3.  **Performance and Efficiency**
     * Scan for inefficient operations, especially within Composable functions (e.g., expensive calculations, improper state management leading to excessive recompositions).
     * Analyze camera configurations and use cases for potential performance bottlenecks.
     * Ensure coroutines and asynchronous operations are used efficiently.
     * **State Conflation in Adapters:** High-frequency stream data (e.g., nanosecond timestamps) should be rounded or conflated at the `UiStateAdapter` level before reaching the UI state, to avoid unnecessary recompositions. [Introduced in PR #514]
+    * **Deferred State Reading for High-Frequency State:** When a unified `StateFlow` contains high-frequency state (e.g., a ticking timer), do not read its `.value` at the top level of the screen to prevent global recomposition on every tick. Instead:
+        1.  **Collect without reading:** Keep the `State` object itself and pass a lambda provider down (e.g., `val provider = remember { { state.value } }`).
+        2.  **Shield static sub-components:** Use `derivedStateOf` to extract and debounce low-frequency static state, then wrap the component in a remembered lambda (e.g., `val myLambda = remember(debouncedState) { @Composable { Component(debouncedState.value) } }`).
+        3.  **Defer high-frequency reads:** Pass the lambda provider directly into the high-frequency component so the `.value` read is deferred into the deepest possible node.
+        4.  **Isolate conditional logic:** For conditional visibility or logic involving high-frequency state, extract the condition into a `derivedStateOf` boolean to keep the lambda body perfectly stable.
 
 4.  **Jetpack Compose & CameraX Usage**
     * Verify that Compose and CameraX APIs are used correctly and effectively.
     * Suggest more idiomatic or updated API usages where applicable.
     * Ensure state management in Compose is handled correctly (e.g., using `remember`, `derivedStateOf`, etc.).
+    * **Avoid Window-Spawning Overlays (`ModalBottomSheet`):** Do NOT use `ModalBottomSheet` on the camera capture screen. Modal bottom sheets spawn a separate Android `DialogWindow` above the main window, which can disrupt hardware-accelerated zero-copy rendering over the CameraX `SurfaceView` and create window lifecycle/gesture conflicts. Instead, use in-hierarchy containers like `BottomSheetScaffold` with `sheetPeekHeight = 0.dp`.
 
 5.  **Testing Coverage**
     * **When Tests are Missing:** If a PR introduces a significant feature or modifies logic without corresponding tests, flag this omission. Suggest a name for a new test class (e.g., `NewFeatureViewModelTest`) and outline what it should verify (e.g., "This test should check that the UI state updates correctly when the user performs X action").
@@ -48,6 +55,7 @@ When reviewing a pull request, focus on the following key areas:
     * **Test Stability & Timeouts:**
         *   **Explicit Timeouts:** Avoid using `waitUntil` (or similar synchronization) without explicitly defining a `timeoutMillis`. Default timeouts are often too short for slower emulators (like API 28) or low-end devices, leading to flakiness.
         *   **Helper Functions for Waits:** If a wait condition is repeated (e.g., waiting for a specific UI element), extract it into a helper function (e.g., `waitForNodeWithTag`). This consolidates the logic and allows the timeout duration to be tuned centrally for that specific scenario.
+        *   **Animation Bypassing for Tests:** Any new animation added to the UI **must** respect `LocalDisableAnimations` and snap to its end state or use a fixed state when animations are disabled, to prevent Espresso timeouts on slow emulators.
 
 6.  **Documentation Sync**
     * **Check for necessary updates:** Analyze if the PR's changes (e.g., adding a new feature, changing build logic, deprecating functionality) require updates to `README.md` or other documentation files.
@@ -63,6 +71,7 @@ When reviewing a pull request, focus on the following key areas:
 8.  **Resource Management**
     * **No Hardcoded Strings:** Forbid hardcoded user-facing strings in composables. All text should be extracted into `strings.xml` to support localization and make updates easier.
     * **Prefer Vector Drawables:** For icons and simple graphics, vector drawables (SVGs) should be preferred over raster images (PNGs) to reduce APK size and ensure sharp rendering on all screen densities.
+    * **Delete Unused Resources:** When refactoring or removing components, ensure that any associated resources (such as strings in `strings.xml` or icons/drawables in the `res/drawable` directory) that are no longer used anywhere in the project are deleted to reduce the final file size and maintain codebase cleanliness.
 
 9.  **Readability, Logging, and Documentation**
     *   **Code Clarity:** Is the code clear, concise, and easy to understand? Are function and variable names descriptive?
@@ -88,6 +97,11 @@ When reviewing a pull request, focus on the following key areas:
     *   **Apply Proper Semantics:** When building custom UI components from the ground up (e.g., a custom button made of an `Icon` and a `Text`), apply the correct semantics to ensure they are accessible.
         *   Use `semantics { role = Role.Button }` (or `Role.Checkbox`, etc.) to define the component's logical purpose for screen readers.
         *   For components made of multiple parts that should be read as a single, coherent unit, use `semantics { mergeDescendants = true }`. This prevents screen readers from announcing inner elements (like an icon and its text label) as separate, unrelated items.
+        *   **Explicit Focusability:** When building custom components that handle input manually via low-level gestures (e.g., using `pointerInput` or `detectTapGestures`) rather than `Modifier.clickable()`, they may not automatically become focusable. In such cases, explicitly add `Modifier.focusable()` to ensure they are reachable via keyboard navigation and analyzed by automated accessibility checks.
+        *   **Content vs State Descriptions:**
+            *   Use `contentDescription` to describe the **identity** or **action** of the component (e.g., "Capture Photo", "Start Video Recording").
+            *   Use `stateDescription` to describe the **current state** of the component (e.g., "Locked", "Selected").
+            *   **Avoid Redundancy:** Do not include state information or control type in `contentDescription` (e.g., avoid "Locked Video Button" or "Shutter Button"). Let the system announce role and state automatically.
 
 ## Rules for Providing Feedback
 * **Be Constructive:** Frame feedback as suggestions, not commands. Explain the reasoning ("why") behind each comment.
@@ -100,3 +114,5 @@ When reviewing a pull request, focus on the following key areas:
 * **Indicate Low Priority:** For minor cosmetic, spacing, or simple typographical suggestions, preface the comment with `nit:` to indicate it is a low-priority polish item.
 * **Cite Sources:** When suggesting a change based on a best practice or API guideline, link to the relevant official documentation (e.g., developer.android.com) to support your feedback.
 * **Tone:** Maintain a helpful, collaborative, concise, and professional tone.
+12. **Proto Enum Best Practices**
+    *   **Zero-Value Requirement:** In accordance with the [Proto3 Style Guide](https://protobuf.dev/programming-guides/style/#enums), the first value of any proto enum must be `0` and should be named `<ENUM_NAME>_UNSPECIFIED`. This zero-value acts as the default when a field is missing, preventing implicit fallbacks to a semantically valid choice.

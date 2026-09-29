@@ -15,34 +15,44 @@
  */
 package com.google.jetpackcamera.core.camera
 
+import android.hardware.camera2.CameraMetadata
+import android.hardware.camera2.CaptureResult
+import android.hardware.camera2.TotalCaptureResult
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.SurfaceRequest
 import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-
+import kotlinx.coroutines.withTimeoutOrNull
 private const val TAG = "FocusMetering"
-private const val AUTO_FOCUS_TIMEOUT_MILLIS = 2500L
+private const val SCENE_CHANGE_POST_LOCK_DELAY_MILLIS = 3000L
+private const val REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES = 3
+internal const val FOCUS_LOCK_FALLBACK_TIMEOUT_MILLIS = 15000L
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal suspend fun CameraSessionContext.processFocusMeteringEvents(
     cameraInfo: CameraInfo,
-    cameraControl: CameraControl
+    cameraControl: CameraControl,
+    captureResults: StateFlow<TotalCaptureResult?>? = null
 ) {
     surfaceRequests.flatMapLatest { surfaceRequest ->
         surfaceRequest?.let { request ->
@@ -87,7 +97,7 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
 
                     val meteringPoint = createPoint(event.x, event.y)
                     val action = FocusMeteringAction.Builder(meteringPoint)
-                        .setAutoCancelDuration(AUTO_FOCUS_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+                        .disableAutoCancel()
                         .build()
 
                     if (!cameraInfo.isFocusMeteringSupported(action)) {
@@ -103,7 +113,7 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
                             FocusState.Status.FAILURE
                         }
                     } catch (_: CameraControl.OperationCanceledException) {
-                        FocusState.Status.FAILURE
+                        FocusState.Status.CANCELLED
                     } catch (e: IllegalArgumentException) {
                         Log.w(TAG, "tapToFocus failed", e)
                         FocusState.Status.FAILURE
@@ -115,6 +125,32 @@ internal suspend fun CameraSessionContext.processFocusMeteringEvents(
                     )
 
                     updateFocusState(completionStatus)
+
+                    if (completionStatus == FocusState.Status.SUCCESS) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                            captureResults != null
+                        ) {
+                            delay(SCENE_CHANGE_POST_LOCK_DELAY_MILLIS)
+
+                            awaitClearFocusLock(
+                                captureResults
+                                    .filterNotNull()
+                                    .map { it.get(CaptureResult.CONTROL_AF_SCENE_CHANGE) }
+                            )
+                        } else {
+                            // Fallback for API < 28 or when captureResults is null
+                            delay(FOCUS_LOCK_FALLBACK_TIMEOUT_MILLIS)
+                        }
+
+                        try {
+                            cameraControl.cancelFocusAndMetering().await()
+                        } catch (_: CameraControl.OperationCanceledException) {
+                            // Ignored if cancelled by a subsequent action
+                        } catch (e: Exception) {
+                            Log.w(TAG, "cancelFocusAndMetering failed", e)
+                        }
+                        updateFocusState(FocusState.Status.CANCELLED)
+                    }
                 }
             }
     }
@@ -129,4 +165,42 @@ private fun SurfaceRequest.createTransformationInfoFlow(
     setTransformationInfoListener(executor, listener)
 
     awaitClose { clearTransformationInfoListener() }
+}
+
+@RequiresApi(Build.VERSION_CODES.P)
+internal suspend fun awaitClearFocusLock(sceneChangeStatusFlow: Flow<Int?>) {
+    // Phase 1: Wait up to 15s for the first non-null metadata frame to verify hardware capability
+    val initialStatus = withTimeoutOrNull(FOCUS_LOCK_FALLBACK_TIMEOUT_MILLIS) {
+        sceneChangeStatusFlow.filterNotNull().first()
+    }
+
+    if (initialStatus == null) {
+        Log.i(
+            TAG,
+            "Device did not produce AF_SCENE_CHANGE metadata within 15s timeout. " +
+                "Cancelling focus lock ***"
+        )
+        return
+    }
+
+    // Phase 2: Hardware capability confirmed. Monitor indefinitely until 3 consecutive frames detect scene change
+    var consecutiveFrames =
+        if (initialStatus == CameraMetadata.CONTROL_AF_SCENE_CHANGE_DETECTED) 1 else 0
+    if (consecutiveFrames < REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES) {
+        sceneChangeStatusFlow.filterNotNull().first { status ->
+            if (status == CameraMetadata.CONTROL_AF_SCENE_CHANGE_DETECTED) {
+                consecutiveFrames++
+            } else {
+                consecutiveFrames = 0
+            }
+            consecutiveFrames >= REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES
+        }
+    }
+
+    Log.i(
+        TAG,
+        "*** AF SCENE CHANGE DETECTED " +
+            "($REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES consecutive frames)!" +
+            " Cancelling focus lock ***"
+    )
 }

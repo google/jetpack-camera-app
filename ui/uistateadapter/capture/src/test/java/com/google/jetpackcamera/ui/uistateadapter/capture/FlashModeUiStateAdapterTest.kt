@@ -17,13 +17,19 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
-import org.junit.Assert.assertThrows
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -62,7 +68,7 @@ class FlashModeUiStateAdapterTest {
         val flashModeUiState = FlashModeUiState.from(defaultCameraAppSettings, systemConstraints)
 
         // Then the UI state is Unavailable
-        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Unavailable::class.java)
+        assertThat(flashModeUiState).isEqualTo(FlashModeUiState.Unavailable)
     }
 
     @Test
@@ -125,7 +131,7 @@ class FlashModeUiStateAdapterTest {
     }
 
     @Test
-    fun updateFrom_unavailablePreviouslySelectedFlashMode_throwsException() {
+    fun updateFrom_unavailablePreviouslySelectedFlashMode_fallbackToOff() {
         // Given an initial UI state with ON selected
         val initialAppSettings = defaultCameraAppSettings.copy(flashMode = FlashMode.ON)
         val initialSystemConstraints = CameraSystemConstraints(
@@ -146,14 +152,17 @@ class FlashModeUiStateAdapterTest {
             )
         )
 
-        // Then an IllegalStateException is thrown
-        assertThrows(IllegalStateException::class.java) {
-            uiState.updateFrom(
-                initialAppSettings,
-                newSystemConstraints,
-                defaultCameraState
-            )
-        }
+        // When updating the state
+        val updatedUiState = uiState.updateFrom(
+            initialAppSettings,
+            newSystemConstraints,
+            defaultCameraState
+        )
+
+        // Then it falls back to OFF
+        assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = updatedUiState as FlashModeUiState.Available
+        assertThat(availableUiState.selectedFlashMode).isEqualTo(FlashMode.OFF)
     }
 
     @Test
@@ -258,5 +267,250 @@ class FlashModeUiStateAdapterTest {
         assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
         val availableUiState = updatedUiState as FlashModeUiState.Available
         assertThat(availableUiState.isLowLightBoostActive).isEqualTo(false)
+    }
+
+    @Test
+    fun from_hdrImageOn_lowLightBoostDisabled() {
+        // Given a system supporting LLB, but HDR image is ON in settings
+        val appSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.OFF,
+            captureMode = CaptureMode.IMAGE_ONLY,
+            imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+
+        // When
+        val flashModeUiState = FlashModeUiState.from(appSettings, systemConstraints)
+
+        // Then LLB is disabled because of HDR
+        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = flashModeUiState as FlashModeUiState.Available
+        val llbState = availableUiState.availableFlashModes.find {
+            it.value == FlashMode.LOW_LIGHT_BOOST
+        }
+        assertThat(llbState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
+        val disabledLlb = llbState as SingleSelectableUiState.Disabled
+        assertThat(disabledLlb.disabledReason).isEqualTo(DisabledReason.LLB_DISABLED_BY_HDR)
+    }
+
+    @Test
+    fun from_hdrVideoOn_lowLightBoostDisabled() {
+        // Given a system supporting LLB, but HDR video is ON in settings
+        val appSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.OFF,
+            captureMode = CaptureMode.VIDEO_ONLY,
+            dynamicRange = DynamicRange.HLG10
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+
+        // When
+        val flashModeUiState = FlashModeUiState.from(appSettings, systemConstraints)
+
+        // Then LLB is disabled because of HDR
+        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = flashModeUiState as FlashModeUiState.Available
+        val llbState =
+            availableUiState.availableFlashModes.find { it.value == FlashMode.LOW_LIGHT_BOOST }
+        assertThat(llbState).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
+        val disabledLlb = llbState as SingleSelectableUiState.Disabled
+        assertThat(disabledLlb.disabledReason).isEqualTo(DisabledReason.LLB_DISABLED_BY_HDR)
+    }
+
+    @Test
+    fun from_flashUnsupportedOnCurrentLens_flashModeHidden() {
+        // Given a device that supports FLASH_ON on some lens, but NOT on the current lens (which supports OFF and AUTO)
+        val appSettings = defaultCameraAppSettings.copy(
+            cameraLensFacing = LensFacing.BACK,
+            flashMode = FlashMode.OFF
+        )
+        val systemConstraints = CameraSystemConstraints(
+            availableLenses = listOf(LensFacing.BACK, LensFacing.FRONT),
+            perLensConstraints = mapOf(
+                LensFacing.BACK to emptyCameraConstraints.copy(
+                    // Current lens supports OFF and AUTO
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.AUTO)
+                ),
+                LensFacing.FRONT to emptyCameraConstraints.copy(
+                    // Other lens supports ON as well
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.AUTO, FlashMode.ON)
+                )
+            )
+        )
+
+        // When
+        val flashModeUiState = FlashModeUiState.from(appSettings, systemConstraints)
+
+        // Then FLASH_ON is not present because it is unsupported on the current lens
+        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = flashModeUiState as FlashModeUiState.Available
+        val hasFlashOn = availableUiState.availableFlashModes.any { it.value == FlashMode.ON }
+        assertThat(hasFlashOn).isFalse()
+        // Ensure other modes are present
+        val hasFlashAuto = availableUiState.availableFlashModes.any { it.value == FlashMode.AUTO }
+        assertThat(hasFlashAuto).isTrue()
+    }
+
+    @Test
+    fun from_hdrOff_lowLightBoostEnabled() {
+        // Given a system supporting LLB, and HDR is OFF in settings
+        val appSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.OFF,
+            captureMode = CaptureMode.IMAGE_ONLY,
+            imageFormat = ImageOutputFormat.JPEG
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+
+        // Skip the test if LOW_LIGHT_BOOST is not present in the lens constraints
+        val currentLensConstraints =
+            systemConstraints.perLensConstraints[appSettings.cameraLensFacing]
+        val isLlbSupported = currentLensConstraints?.supportedFlashModes
+            ?.contains(FlashMode.LOW_LIGHT_BOOST) == true
+        assumeTrue(
+            "Skipping: Low Light Boost is not supported by constraints",
+            isLlbSupported
+        )
+
+        // When
+        val flashModeUiState = FlashModeUiState.from(appSettings, systemConstraints)
+
+        // Then LLB is selectable
+        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = flashModeUiState as FlashModeUiState.Available
+        val llbState = availableUiState.availableFlashModes.find {
+            it.value == FlashMode.LOW_LIGHT_BOOST
+        }
+        assertThat(llbState).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
+    }
+
+    @Test
+    fun from_concurrentCameraDual_lowLightBoostHidden() {
+        // Given a system supporting ON and LLB, but concurrent camera is DUAL
+        val appSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.OFF,
+            concurrentCameraMode = ConcurrentCameraMode.DUAL
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(
+                        FlashMode.OFF,
+                        FlashMode.ON,
+                        FlashMode.LOW_LIGHT_BOOST
+                    )
+                )
+            )
+        )
+
+        // When
+        val flashModeUiState = FlashModeUiState.from(appSettings, systemConstraints)
+
+        // Then LLB is not present in available flash modes, but ON is present (keeping state Available)
+        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = flashModeUiState as FlashModeUiState.Available
+        val hasLlb = availableUiState.availableFlashModes.any {
+            it.value == FlashMode.LOW_LIGHT_BOOST
+        }
+        assertThat(hasLlb).isFalse()
+        val hasFlashOn = availableUiState.availableFlashModes.any { it.value == FlashMode.ON }
+        assertThat(hasFlashOn).isTrue()
+    }
+
+    @Test
+    fun updateFrom_selectedFlashModeChanged_updatesSelection() {
+        // Given an initial UI state with OFF selected
+        val initialAppSettings = defaultCameraAppSettings.copy(flashMode = FlashMode.OFF)
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.ON)
+                )
+            )
+        )
+        val uiState = FlashModeUiState.from(initialAppSettings, systemConstraints)
+        assertThat(
+            (uiState as FlashModeUiState.Available).selectedFlashMode
+        ).isEqualTo(FlashMode.OFF)
+
+        // When the selected flash mode changes to ON in settings, but constraints are unchanged
+        val newAppSettings = initialAppSettings.copy(flashMode = FlashMode.ON)
+        val updatedUiState = uiState.updateFrom(
+            newAppSettings,
+            systemConstraints,
+            defaultCameraState
+        )
+
+        // Then the selected flash mode in UI state is updated
+        assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = updatedUiState as FlashModeUiState.Available
+        assertThat(availableUiState.selectedFlashMode).isEqualTo(FlashMode.ON)
+        // And the available modes did not change
+        assertThat(availableUiState.availableFlashModes).isEqualTo(uiState.availableFlashModes)
+    }
+
+    @Test
+    fun updateFrom_availableModesChangeAndLlbActive_preservesLlbActiveState() {
+        // Given an initial UI state with LOW_LIGHT_BOOST selected and active
+        val initialAppSettings = defaultCameraAppSettings.copy(
+            flashMode = FlashMode.LOW_LIGHT_BOOST
+        )
+        val initialSystemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                )
+            )
+        )
+        val cameraState = defaultCameraState.copy(
+            lowLightBoostState = LowLightBoostState.Active(strength = 0.7f)
+        )
+        var uiState = FlashModeUiState.from(initialAppSettings, initialSystemConstraints)
+        uiState = uiState.updateFrom(initialAppSettings, initialSystemConstraints, cameraState)
+        assertThat((uiState as FlashModeUiState.Available).isLowLightBoostActive).isEqualTo(true)
+
+        // When the available flash modes change (e.g. adding AUTO)
+        val newSystemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                initialAppSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedFlashModes = setOf(
+                        FlashMode.OFF,
+                        FlashMode.AUTO,
+                        FlashMode.LOW_LIGHT_BOOST
+                    )
+                )
+            )
+        )
+        val updatedUiState = uiState.updateFrom(
+            initialAppSettings,
+            newSystemConstraints,
+            cameraState
+        )
+
+        // Then isLowLightBoostActive is preserved as true
+        assertThat(updatedUiState).isInstanceOf(FlashModeUiState.Available::class.java)
+        val availableUiState = updatedUiState as FlashModeUiState.Available
+        assertThat(availableUiState.isLowLightBoostActive).isEqualTo(true)
+        assertThat(availableUiState.availableFlashModes.map { it.value }).containsExactly(
+            FlashMode.OFF,
+            FlashMode.AUTO,
+            FlashMode.LOW_LIGHT_BOOST
+        )
     }
 }

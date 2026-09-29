@@ -62,6 +62,11 @@ sealed interface CaptureButtonUiState {
             override val isEnabled: Boolean get() = true
 
             /**
+             * The video recording request has been sent and is starting.
+             */
+            data object Starting : Recording
+
+            /**
              * The user is actively pressing the button to record video (press-and-hold).
              */
             data object PressedRecording : Recording

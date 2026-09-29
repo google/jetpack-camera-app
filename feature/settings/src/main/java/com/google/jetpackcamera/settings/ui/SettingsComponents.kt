@@ -66,7 +66,6 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_60
@@ -88,7 +87,6 @@ import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
 import com.google.jetpackcamera.settings.StabilizationUiState
-import com.google.jetpackcamera.settings.StreamConfigUiState
 import com.google.jetpackcamera.settings.TEN_SECONDS_DURATION
 import com.google.jetpackcamera.settings.THIRTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.VideoQualityUiState
@@ -345,66 +343,6 @@ fun AspectRatioSetting(
                     enabled = true,
                     onClick = { setAspectRatio(AspectRatio.ONE_ONE) }
                 )
-            }
-        }
-    )
-}
-
-@Composable
-fun StreamConfigSetting(
-    streamConfigUiState: StreamConfigUiState,
-    setStreamConfig: (StreamConfig) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val enabled = streamConfigUiState is StreamConfigUiState.Enabled
-    BasicPopupSetting(
-        modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG),
-        title = stringResource(R.string.stream_config_title),
-        leadingIcon = null,
-        enabled = enabled,
-        description = when (streamConfigUiState) {
-            is StreamConfigUiState.Enabled -> {
-                when (streamConfigUiState.currentStreamConfig) {
-                    StreamConfig.MULTI_STREAM -> stringResource(
-                        id = R.string.stream_config_description_multi_stream
-                    )
-
-                    StreamConfig.SINGLE_STREAM -> stringResource(
-                        id = R.string.stream_config_description_single_stream
-                    )
-                }
-            }
-
-            is StreamConfigUiState.Disabled -> {
-                disabledRationaleString(disabledRationale = streamConfigUiState.disabledRationale)
-            }
-        },
-        popupContents = {
-            if (streamConfigUiState is StreamConfigUiState.Enabled) {
-                Column(Modifier.selectableGroup()) {
-                    SingleChoiceSelector(
-                        modifier = Modifier.testTag(
-                            BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
-                        ),
-                        text = stringResource(id = R.string.stream_config_selector_multi_stream),
-                        selected = streamConfigUiState.currentStreamConfig ==
-                            StreamConfig.MULTI_STREAM,
-                        enabled = true,
-                        onClick = { setStreamConfig(StreamConfig.MULTI_STREAM) }
-                    )
-                    SingleChoiceSelector(
-                        modifier = Modifier.testTag(
-                            BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
-                        ),
-                        text = stringResource(
-                            id = R.string.stream_config_description_single_stream
-                        ),
-                        selected = streamConfigUiState.currentStreamConfig ==
-                            StreamConfig.SINGLE_STREAM,
-                        enabled = true,
-                        onClick = { setStreamConfig(StreamConfig.SINGLE_STREAM) }
-                    )
-                }
             }
         }
     )

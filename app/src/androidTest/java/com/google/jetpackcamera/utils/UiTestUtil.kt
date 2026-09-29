@@ -68,16 +68,15 @@ val isEmulatorWithFakeFrontCamera: Boolean
  *
  * These extras are used to work around issues on specific devices or emulators.
  */
-internal val compatMainActivityExtras: Bundle?
-    get() = if (isEmulatorWithFakeFrontCamera) {
-        // The GMD API 28 and 34 emulators' PackageInfo reports it has front and back cameras, but
-        // GMD is only configured for a back camera. This causes CameraX to take a long time
-        // to initialize. Set the device to use single lens mode to work around this issue.
-        Bundle().apply {
+internal val compatMainActivityExtras: Bundle
+    get() = Bundle().apply {
+        putBoolean(MainActivity.KEY_DISABLE_ANIMATIONS, true)
+        if (isEmulatorWithFakeFrontCamera) {
+            // The GMD API 28 and 34 emulators' PackageInfo reports it has front and back cameras, but
+            // GMD is only configured for a back camera. This causes CameraX to take a long time
+            // to initialize. Set the device to use single lens mode to work around this issue.
             putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, "back")
         }
-    } else {
-        null
     }
 
 /**
@@ -86,14 +85,14 @@ internal val compatMainActivityExtras: Bundle?
  * @param extras The extras to merge with the compat extras.
  * @return The merged bundle, or null if there are no extras.
  */
-fun mergeWithCompatExtras(extras: Bundle?): Bundle? {
-    return compatMainActivityExtras?.apply { extras?.let { putAll(it) } } ?: extras
+fun mergeWithCompatExtras(extras: Bundle?): Bundle {
+    return compatMainActivityExtras.apply { extras?.let { putAll(it) } }
 }
 
 val debugExtra: Bundle = Bundle().apply { putBoolean("KEY_DEBUG_MODE", true) }
 val cacheExtra: Bundle = Bundle().apply { putBoolean("KEY_REVIEW_AFTER_CAPTURE", true) }
 
-const val DEFAULT_TIMEOUT_MILLIS = 5_000L
+const val DEFAULT_TIMEOUT_MILLIS = 15_000L
 const val APP_START_TIMEOUT_MILLIS = 20_000L
 const val ELAPSED_TIME_TEXT_TIMEOUT_MILLIS = 45_000L
 const val SCREEN_FLASH_OVERLAY_TIMEOUT_MILLIS = 5_000L
@@ -102,7 +101,7 @@ const val VIDEO_CAPTURE_TIMEOUT_MILLIS = 15_000L
 const val SAVE_MEDIA_TIMEOUT_MILLIS = 15_000L
 const val IMAGE_WELL_LOAD_TIMEOUT_MILLIS = 10_000L
 
-const val VIDEO_DURATION_MILLIS = 3_000L
+const val VIDEO_DURATION_MILLIS = 1_000L
 const val MESSAGE_DISAPPEAR_TIMEOUT_MILLIS = 15_000L
 const val FOCUS_METERING_INDICATOR_TIMEOUT_MILLIS = 10_000L
 const val FILE_PREFIX = "JCA"
@@ -112,6 +111,7 @@ const val COMPONENT_PACKAGE_NAME = "com.google.jetpackcamera"
 const val COMPONENT_CLASS = "com.google.jetpackcamera.MainActivity"
 private const val TAG = "UiTestUtil"
 
+@Suppress("ImmutableEnum")
 internal enum class CacheParam(val extras: Bundle?) {
     NO_CACHE(null),
     WITH_CACHE(cacheExtra)
@@ -169,17 +169,17 @@ inline fun runMainActivityMediaStoreAutoDeleteScenarioTest(
 
             val detectedNumFiles = insertedMediaStoreEntries.size
             // Delete all inserted files that we know about at this point
-            insertedMediaStoreEntries.forEach {
-                Log.d(debugTag, "Deleting media store file: $it")
+            for (entry in insertedMediaStoreEntries) {
+                Log.d(debugTag, "Deleting media store file: $entry")
                 val deletedRows = instrumentation.targetContext.contentResolver.delete(
-                    it.value,
+                    entry.value,
                     null,
                     null
                 )
                 if (deletedRows > 0) {
                     Log.d(debugTag, "Deleted $deletedRows files")
                 } else {
-                    Log.e(debugTag, "Failed to delete ${it.key}")
+                    Log.e(debugTag, "Failed to delete ${entry.key}")
                 }
             }
 
@@ -254,9 +254,9 @@ inline fun <reified T : Activity> runScenarioTestForResult(
     crossinline block: ActivityScenario<T>.() -> Unit
 ): Instrumentation.ActivityResult {
     activityExtras?.let { intent.putExtras(it) }
-    ActivityScenario.launchActivityForResult<T>(intent).use { scenario ->
+    return ActivityScenario.launchActivityForResult<T>(intent).use { scenario ->
         scenario.apply(block)
-        return runBlocking { scenario.pollResult() }
+        runBlocking { scenario.pollResult() }
     }
 }
 

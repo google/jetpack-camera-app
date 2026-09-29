@@ -15,12 +15,6 @@
  */
 package com.google.jetpackcamera.model
 
-import android.util.Base64
-import com.google.jetpackcamera.model.LensFacing.Companion.toProto
-import com.google.jetpackcamera.model.TestPattern.Companion.toProto
-import com.google.jetpackcamera.model.proto.DebugSettings as DebugSettingsProto
-import com.google.jetpackcamera.model.proto.debugSettings as debugSettingsProto
-
 /**
  * Data class for defining settings used in debug flows within the app.
  *
@@ -38,64 +32,81 @@ data class DebugSettings(
 ) {
     companion object {
         /**
-         * Creates a [DebugSettings] domain model from its protobuf representation.
-         *
-         * @param proto The [DebugSettingsProto] instance.
-         * @return The corresponding [DebugSettings] instance.
-         */
-        fun fromProto(proto: DebugSettingsProto): DebugSettings {
-            return DebugSettings(
-                isDebugModeEnabled = proto.isDebugModeEnabled,
-                singleLensMode = if (proto.hasSingleLensMode()) {
-                    LensFacing.fromProto(proto.singleLensMode)
-                } else {
-                    null
-                },
-                testPattern = TestPattern.fromProto(proto.testPattern)
-            )
-        }
-
-        /**
-         * Converts a [DebugSettings] domain model to its protobuf representation.
-         *
-         * @receiver The [DebugSettings] instance to convert.
-         * @return The corresponding [DebugSettingsProto] instance.
-         */
-        fun DebugSettings.toProto(): DebugSettingsProto = debugSettingsProto {
-            isDebugModeEnabled = this@toProto.isDebugModeEnabled
-            this@toProto.singleLensMode?.let { lensFacing ->
-                singleLensMode = lensFacing.toProto()
-            }
-            testPattern = this@toProto.testPattern.toProto()
-        }
-
-        /**
-         * Parses the encoded byte array into a [DebugSettings] instance.
-         */
-        fun parseFromByteArray(value: ByteArray): DebugSettings {
-            val protoValue = DebugSettingsProto.parseFrom(value)
-            return fromProto(protoValue)
-        }
-
-        /**
-         * Parses the Base64 encoded string into a [DebugSettings] instance.
+         * Parses the string into a [DebugSettings] instance.
          */
         fun parseFromString(value: String): DebugSettings {
-            val decodedBytes = Base64.decode(value, Base64.NO_WRAP)
-            return parseFromByteArray(decodedBytes)
+            val parts = value.split(";")
+            var isDebugModeEnabled = false
+            var singleLensMode: LensFacing? = null
+            var testPattern: TestPattern = TestPattern.Off
+
+            for (part in parts) {
+                val kv = part.split(":")
+                if (kv.size == 2) {
+                    when (kv[0]) {
+                        "debug" -> isDebugModeEnabled = kv[1].toBoolean()
+                        "lens" -> singleLensMode = enumValues<LensFacing>()
+                            .firstOrNull { it.name == kv[1] }
+                        "pattern" -> {
+                            testPattern = when (kv[1]) {
+                                "Off" -> TestPattern.Off
+                                "ColorBars" -> TestPattern.ColorBars
+                                "ColorBarsFadeToGray" -> TestPattern.ColorBarsFadeToGray
+                                "PN9" -> TestPattern.PN9
+                                "Custom1" -> TestPattern.Custom1
+                                else -> {
+                                    if (kv[1].startsWith("SolidColor(") &&
+                                        kv[1].endsWith(")")
+                                    ) {
+                                        val channels = kv[1]
+                                            .removePrefix("SolidColor(")
+                                            .removeSuffix(")")
+                                            .split(",")
+                                        if (channels.size == 4) {
+                                            val red = channels[0].toUIntOrNull()
+                                            val greenEven = channels[1].toUIntOrNull()
+                                            val greenOdd = channels[2].toUIntOrNull()
+                                            val blue = channels[3].toUIntOrNull()
+                                            if (red != null &&
+                                                greenEven != null &&
+                                                greenOdd != null &&
+                                                blue != null
+                                            ) {
+                                                TestPattern.SolidColor(
+                                                    red,
+                                                    greenEven,
+                                                    greenOdd,
+                                                    blue
+                                                )
+                                            } else {
+                                                TestPattern.Off
+                                            }
+                                        } else {
+                                            TestPattern.Off
+                                        }
+                                    } else {
+                                        TestPattern.Off
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return DebugSettings(isDebugModeEnabled, singleLensMode, testPattern)
         }
 
         /**
-         * Encodes the [DebugSettings] data class into a byte array.
-         */
-        fun DebugSettings.encodeAsByteArray(): ByteArray = this.toProto().toByteArray()
-
-        /**
-         * Encodes the [DebugSettings] data class to a Base64 string.
+         * Encodes the [DebugSettings] data class to a string.
          */
         fun DebugSettings.encodeAsString(): String {
-            val protoValue = this.toProto() // Data class -> Proto
-            return Base64.encodeToString(protoValue.toByteArray(), Base64.NO_WRAP)
+            val lensStr = singleLensMode?.name ?: ""
+            val patternStr = when (val pattern = testPattern) {
+                is TestPattern.SolidColor ->
+                    "SolidColor(${pattern.red},${pattern.greenEven},${pattern.greenOdd},${pattern.blue})"
+                else -> pattern.toString()
+            }
+            return "debug:$isDebugModeEnabled;lens:$lensStr;pattern:$patternStr"
         }
     }
 }

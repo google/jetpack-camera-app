@@ -16,14 +16,17 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.android.legacy.kapt)
     alias(libs.plugins.compose.compiler)
 }
 
 android {
     namespace = "com.google.jetpackcamera.ui.controller.impl"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -32,7 +35,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
 
     flavorDimensions += "flavor"
     productFlavors {
@@ -48,14 +50,13 @@ android {
     }
     kotlin {
         jvmToolchain(17)
+        compilerOptions {
+            freeCompilerArgs.add("-Xcontext-receivers")
+        }
     }
     buildFeatures {
         buildConfig = true
         compose = true
-    }
-
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
     }
 }
 
@@ -70,7 +71,6 @@ dependencies {
     implementation(libs.kotlinx.atomicfu)
 
     implementation(project(":data:media"))
-    implementation(project(":ui:components:capture"))
     implementation(project(":ui:controller"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
@@ -87,6 +87,7 @@ dependencies {
     testImplementation(project(":core:common"))
     testImplementation(project(":core:camera:testing"))
     testImplementation(project(":data:settings"))
+    testImplementation(project(":core:settings"))
 }
 
 // Allow references to generated code

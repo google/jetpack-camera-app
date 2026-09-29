@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
@@ -65,7 +66,11 @@ class CaptureButtonUiStateAdapterTest {
     @Test
     fun from_cameraRunning_recordingPressed_returnsPressedRecording() {
         val cameraState = defaultCameraState.copy(
-            videoRecordingState = VideoRecordingState.Active.Recording(0L, 0.0, 0L)
+            videoRecordingState = VideoRecordingState.Active.Recording(
+                0L,
+                AudioStreamState.Active(0.0),
+                0L
+            )
         )
         val uiState = CaptureButtonUiState.from(
             defaultCameraAppSettings,
@@ -81,7 +86,11 @@ class CaptureButtonUiStateAdapterTest {
     @Test
     fun from_cameraRunning_recordingLocked_returnsLockedRecording() {
         val cameraState = defaultCameraState.copy(
-            videoRecordingState = VideoRecordingState.Active.Recording(0L, 0.0, 0L)
+            videoRecordingState = VideoRecordingState.Active.Recording(
+                0L,
+                AudioStreamState.Active(0.0),
+                0L
+            )
         )
         val uiState = CaptureButtonUiState.from(
             defaultCameraAppSettings,
@@ -95,7 +104,7 @@ class CaptureButtonUiStateAdapterTest {
     }
 
     @Test
-    fun from_cameraRunning_recordingStarting_returnsIdleAndEnabled() {
+    fun from_cameraRunning_recordingStarting_returnsStartingRecording() {
         val cameraState = defaultCameraState.copy(
             videoRecordingState = VideoRecordingState.Starting(null)
         )
@@ -105,7 +114,8 @@ class CaptureButtonUiStateAdapterTest {
             lockedState = false
         )
 
-        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Enabled.Idle::class.java)
+        assertThat(uiState)
+            .isInstanceOf(CaptureButtonUiState.Enabled.Recording.Starting::class.java)
         assertThat(uiState.isEnabled).isTrue()
     }
 }

@@ -118,6 +118,33 @@ class FakeContentProvider : ContentProvider() {
                 }
             }
 
+            // Simple support for RELATIVE_PATH LIKE ? AND OWNER_PACKAGE_NAME = ?
+            if (selection != null &&
+                selection.contains(MediaStore.MediaColumns.RELATIVE_PATH) &&
+                selection.contains(MediaStore.MediaColumns.OWNER_PACKAGE_NAME) &&
+                selectionArgs != null && selectionArgs.size >= 2
+            ) {
+                val pathPattern = selectionArgs[0].replace("%", ".*")
+                val pathRegex = Regex(pathPattern)
+                val targetOwner = selectionArgs[1]
+
+                filteredMedia = filteredMedia.filter {
+                    val path = it.value.getAsString(MediaStore.MediaColumns.RELATIVE_PATH) ?: ""
+                    val owner = it.value.getAsString(MediaStore.MediaColumns.OWNER_PACKAGE_NAME)
+                        ?: if (it.value.containsKey(MediaStore.MediaColumns.DISPLAY_NAME)) {
+                            val name = it.value.getAsString(MediaStore.MediaColumns.DISPLAY_NAME)
+                            if (name?.startsWith("JCA") == true) {
+                                context?.packageName
+                            } else {
+                                "com.other.app"
+                            }
+                        } else {
+                            context?.packageName
+                        }
+                    pathRegex.matches(path) && owner == targetOwner
+                }
+            }
+
             val sortedMedia = filteredMedia
                 .sortedByDescending {
                     it.value.getAsLong(MediaStore.MediaColumns.DATE_ADDED) ?: 0L

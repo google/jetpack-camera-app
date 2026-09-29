@@ -40,16 +40,16 @@ import androidx.camera.video.Recorder
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
+import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
-import com.google.jetpackcamera.core.common.DefaultDispatcher
-import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
 import com.google.jetpackcamera.core.common.FilePathGenerator
-import com.google.jetpackcamera.core.common.IODispatcher
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
+import com.google.jetpackcamera.model.CameraEffectTarget
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -65,7 +65,6 @@ import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_60
@@ -102,15 +101,17 @@ private const val TAG = "CameraXCameraSystem"
  */
 class CameraXCameraSystem(
     private val application: Application,
-    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
-    @param:IODispatcher private val iODispatcher: CoroutineDispatcher,
-    @DefaultFilePathGenerator private val filePathGenerator: FilePathGenerator,
+    private val defaultDispatcher: CoroutineDispatcher,
+    private val iODispatcher: CoroutineDispatcher,
+    private val filePathGenerator: FilePathGenerator,
     availabilityCheckers:
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>>,
     effectProviders:
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostEffectProvider>>,
     val imagePostProcessors:
-    Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>>
+    Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>>,
+    private val cameraEffectProviders:
+    Map<CameraEffectFeatureKey, @JvmSuppressWildcards Provider<CameraEffectProvider>>
 ) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -269,12 +270,16 @@ class CameraXCameraSystem(
                                 supportedFixedFrameRates = supportedFixedFrameRates,
                                 supportedDynamicRanges = supportedDynamicRanges,
                                 supportedImageFormatsMap = mapOf(
-                                    // Only JPEG is supported in single-stream mode, since
-                                    // single-stream mode uses CameraEffect, which does not support
+                                    // Only JPEG is supported in single-stream mode (represented by true),
+                                    // since single-stream mode uses CameraEffect, which does not support
                                     // Ultra HDR now.
-                                    Pair(StreamConfig.SINGLE_STREAM, setOf(ImageOutputFormat.JPEG)),
-                                    Pair(StreamConfig.MULTI_STREAM, supportedImageFormats)
+                                    Pair(true, setOf(ImageOutputFormat.JPEG)),
+                                    Pair(false, supportedImageFormats)
                                 ),
+                                supportedEffects = cameraEffectProviders.keys.map { it.id }.toSet(),
+                                effectTargetsMap = cameraEffectProviders.map { (key, provider) ->
+                                    key.id to provider.get().targets
+                                }.toMap(),
                                 supportedVideoQualitiesMap = supportedVideoQualitiesMap,
                                 supportedIlluminants = supportedIlluminants,
                                 supportedFlashModes = supportedFlashModes,
@@ -424,10 +429,14 @@ class CameraXCameraSystem(
                             concurrentCameraMode = currentCameraSettings.concurrentCameraMode
                         )
 
+                        val activeCameraEffect = cameraEffectProviders.keys.firstOrNull {
+                            it.id == currentCameraSettings.selectedCameraEffect
+                        }
+
                         PerpetualSessionSettings.SingleCamera(
                             aspectRatio = currentCameraSettings.aspectRatio,
                             captureMode = currentCameraSettings.captureMode,
-                            streamConfig = currentCameraSettings.streamConfig,
+                            activeCameraEffect = activeCameraEffect,
                             targetFrameRate = currentCameraSettings.targetFrameRate,
                             stabilizationMode = resolvedStabilizationMode,
                             dynamicRange = currentCameraSettings.dynamicRange,
@@ -478,7 +487,8 @@ class CameraXCameraSystem(
                             currentCameraState = currentCameraState,
                             surfaceRequests = _surfaceRequest,
                             transientSettings = transientSettings,
-                            lowLightBoostEffectProvider = lowLightBoostEffectProvider
+                            lowLightBoostEffectProvider = lowLightBoostEffectProvider,
+                            cameraEffectProviders = cameraEffectProviders
                         )
                     ) {
                         try {
@@ -672,6 +682,9 @@ class CameraXCameraSystem(
 
     // Sets the camera to the designated lensFacing direction
     override suspend fun setLensFacing(lensFacing: LensFacing) {
+        // TODO: Handle lens flipping during recording when only one lens supports HDR.
+        // We should define the expected behavior (e.g., disable flip button, stop recording with error,
+        // or fallback to SDR mid-recording if supported by CameraX).
         currentSettings.update { old ->
             if (systemConstraints.availableLenses.contains(lensFacing)) {
                 old?.copy(cameraLensFacing = lensFacing)
@@ -684,6 +697,10 @@ class CameraXCameraSystem(
                 old
             }
         }
+    }
+
+    private fun CameraAppSettings.isSingleStreamLayout(): Boolean {
+        return cameraEffectProviders.keys.any { it.id == selectedCameraEffect }
     }
 
     /**
@@ -706,29 +723,6 @@ class CameraXCameraSystem(
                 // concurrent currently only supports VIDEO_ONLY
                 if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
                     CaptureMode.VIDEO_ONLY
-                }
-
-                // if hdr is enabled...
-                else if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR ||
-                    dynamicRange == DynamicRange.HLG10
-                ) {
-                    // if both hdr video and image capture are supported, default to VIDEO_ONLY
-                    if (constraints.supportedDynamicRanges.contains(DynamicRange.HLG10) &&
-                        constraints.supportedImageFormatsMap[streamConfig]
-                            ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
-                    ) {
-                        if (captureMode == CaptureMode.STANDARD) {
-                            CaptureMode.VIDEO_ONLY
-                        } else {
-                            return this
-                        }
-                    }
-                    // return appropriate capture mode if only one is supported
-                    else if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
-                        CaptureMode.IMAGE_ONLY
-                    } else {
-                        CaptureMode.VIDEO_ONLY
-                    }
                 } else {
                     defaultCaptureMode ?: return this
                 }
@@ -736,7 +730,7 @@ class CameraXCameraSystem(
             Log.d(TAG, "new capture mode $newCaptureMode")
             this@tryApplyCaptureModeConstraints.copy(
                 captureMode = newCaptureMode
-            )
+            ).tryApplyAspectRatioForExternalCapture(newCaptureMode)
         } ?: this
     }
 
@@ -784,10 +778,13 @@ class CameraXCameraSystem(
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedDynamicRanges) {
                 val newDynamicRange = if (contains(dynamicRange) &&
-                    flashMode != FlashMode.LOW_LIGHT_BOOST
+                    flashMode != FlashMode.LOW_LIGHT_BOOST &&
+                    captureMode != CaptureMode.STANDARD
                 ) {
                     dynamicRange
                 } else {
+                    // TODO: Consider preserving user preference for HDR instead of permanently
+                    //  resetting to SDR here when switching lenses.
                     DynamicRange.SDR
                 }
 
@@ -808,12 +805,24 @@ class CameraXCameraSystem(
             this.copy(aspectRatio = AspectRatio.NINE_SIXTEEN)
     }
 
+    private fun CameraAppSettings.affectsImageCapture(): Boolean {
+        val activeEffectTargets = systemConstraints.perLensConstraints[cameraLensFacing]
+            ?.effectTargetsMap?.get(selectedCameraEffect) ?: emptySet()
+        return activeEffectTargets.contains(CameraEffectTarget.IMAGE_CAPTURE)
+    }
+
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            with(constraints.supportedImageFormatsMap[streamConfig]) {
-                val newImageFormat = if (this != null && contains(imageFormat)) {
+            with(constraints.supportedImageFormatsMap[affectsImageCapture()]) {
+                // Prioritize Low Light Boost over Ultra HDR to maintain consistency with
+                // Video HDR / Low Light Boost conflict resolution.
+                val newImageFormat = if (this != null && contains(imageFormat) &&
+                    captureMode != CaptureMode.STANDARD &&
+                    flashMode != FlashMode.LOW_LIGHT_BOOST
+                ) {
                     imageFormat
                 } else {
+                    // TODO: Consider preserving user preference for HDR instead of permanently resetting to JPEG here when switching lenses.
                     ImageOutputFormat.JPEG
                 }
 
@@ -861,8 +870,9 @@ class CameraXCameraSystem(
             ConcurrentCameraMode.OFF -> this
             else ->
                 if (systemConstraints.concurrentCamerasSupported &&
+                    captureMode == CaptureMode.VIDEO_ONLY &&
                     dynamicRange == DynamicRange.SDR &&
-                    streamConfig == StreamConfig.MULTI_STREAM &&
+                    !isSingleStreamLayout() &&
                     flashMode != FlashMode.LOW_LIGHT_BOOST
                 ) {
                     copy(
@@ -927,6 +937,7 @@ class CameraXCameraSystem(
         currentSettings.update { old ->
             old?.copy(flashMode = flashMode)
                 ?.tryApplyDynamicRangeConstraints()
+                ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
@@ -954,9 +965,9 @@ class CameraXCameraSystem(
         }
     }
 
-    override suspend fun setStreamConfig(streamConfig: StreamConfig) {
+    override suspend fun setCameraEffect(cameraEffect: CameraEffectId) {
         currentSettings.update { old ->
-            old?.copy(streamConfig = streamConfig)
+            old?.copy(selectedCameraEffect = cameraEffect)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
                 ?.tryApplyCaptureModeConstraints()
@@ -969,7 +980,7 @@ class CameraXCameraSystem(
             old?.copy(dynamicRange = dynamicRange)
                 ?.tryApplyDynamicRangeConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
-                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -983,7 +994,7 @@ class CameraXCameraSystem(
         currentSettings.update { old ->
             old?.copy(concurrentCameraMode = concurrentCameraMode)
                 ?.tryApplyConcurrentCameraModeConstraints()
-                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -991,7 +1002,7 @@ class CameraXCameraSystem(
         currentSettings.update { old ->
             old?.copy(imageFormat = imageFormat)
                 ?.tryApplyImageFormatConstraints()
-                ?.tryApplyCaptureModeConstraints(CaptureMode.STANDARD)
+                ?.tryApplyCaptureModeConstraints()
         }
     }
 
@@ -1025,6 +1036,10 @@ class CameraXCameraSystem(
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
             old?.copy(captureMode = captureMode)
+                ?.tryApplyDynamicRangeConstraints()
+                ?.tryApplyAspectRatioForExternalCapture(captureMode)
+                ?.tryApplyImageFormatConstraints()
+                ?.tryApplyConcurrentCameraModeConstraints()
         }
     }
 

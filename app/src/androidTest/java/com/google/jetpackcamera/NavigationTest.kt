@@ -15,10 +15,15 @@
  */
 package com.google.jetpackcamera
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -28,11 +33,10 @@ import com.google.jetpackcamera.settings.ui.BACK_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DRAG_HANDLE
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCRIM
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
-import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assume
 import com.google.jetpackcamera.utils.onNodeWithText
@@ -64,9 +68,10 @@ class NavigationTest {
 
         // open quick settings
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertExists()
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
 
         // Navigate to the settings screen
+        composeTestRule.waitForNodeWithTag(SETTINGS_BUTTON)
         composeTestRule.searchForQuickSetting(SETTINGS_BUTTON)
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON)
             .assertExists()
@@ -104,9 +109,10 @@ class NavigationTest {
 
         // open quick settings
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertExists()
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
 
         // Navigate to the settings screen
+        composeTestRule.waitForNodeWithTag(SETTINGS_BUTTON)
         composeTestRule.searchForQuickSetting(SETTINGS_BUTTON)
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON)
             .assertExists()
@@ -121,7 +127,7 @@ class NavigationTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
 
         // Assert bottom sheet is not open
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
+        composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
     }
 
     @Test
@@ -135,42 +141,72 @@ class NavigationTest {
             .performClick()
 
         // Wait for the quick settings to be displayed
-        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON)
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
 
         // Press the device's back button
         uiDevice.pressBack()
 
-        // Assert we're on PreviewScreen by finding the flip camera button
-        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
+        // Assert we're on PreviewScreen and bottom sheet is closed
+        composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
     }
 
     @Test
-    fun backFromQuickSettingsExpended_returnToQuickSettings() = runMainActivityScenarioTest {
+    fun dismissQuickSettings_viaDragHandle_returnsToPreview() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
 
-        // Navigate to the quick settings screen
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-            .assertExists()
-            .performClick()
+        // open quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
 
-        composeTestRule.searchForQuickSetting(QUICK_SETTINGS_RATIO_BUTTON)
+        // close quick settings directly via drag handle
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
 
-        // Navigate to the expanded quick settings ratio screen
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON)
-            .assertExists()
-            .performClick()
+        // Assert we're on PreviewScreen and bottom sheet is closed
+        composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
+    }
 
-        // Wait for the 1:1 ratio button to be displayed
-        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON)
+    @Test
+    fun dismissQuickSettings_viaScrim_returnsToPreview() = runMainActivityScenarioTest {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitForCaptureButton()
 
-        // Press the device's back button
-        uiDevice.pressBack()
+        // open quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
 
-        // Assert bottom sheet closed
-        composeTestRule.waitForNodeWithTagToDisappear(
-            QUICK_SETTINGS_BOTTOM_SHEET,
-            DEFAULT_TIMEOUT_MILLIS
-        )
+        // Tap the scrim in the upper quadrant (20% from the top) to ensure the touch lands
+        // safely within the visible scrim area above the bottom sheet and avoids system
+        // status bar/notch insets.
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_SCRIM)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).performTouchInput {
+            click(Offset(centerX, height * 0.2f))
+        }
+
+        // Assert we're on PreviewScreen and bottom sheet is closed
+        composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
+    }
+
+    @Test
+    fun dismissQuickSettings_viaSwipeDown_returnsToPreview() = runMainActivityScenarioTest {
+        // Wait for the capture button to be displayed
+        composeTestRule.waitForCaptureButton()
+
+        // open quick settings
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertExists().performClick()
+        composeTestRule.waitForNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+
+        // swipe down to dismiss
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).performTouchInput {
+            swipeDown()
+        }
+
+        // Assert we're on PreviewScreen and bottom sheet is closed
+        composeTestRule.waitForNodeWithTagToDisappear(QUICK_SETTINGS_BOTTOM_SHEET)
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
     }
 }

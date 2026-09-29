@@ -16,14 +16,16 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
-    alias(libs.plugins.dagger.hilt.android)
+    alias(libs.plugins.android.legacy.kapt)
 }
 
 android {
     namespace = "com.google.jetpackcamera.core.camera.lowlight"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -40,12 +42,5 @@ android {
 
 dependencies {
     implementation(libs.camera.core)
-    implementation(libs.dagger.hilt.android)
-    kapt(libs.dagger.hilt.compiler)
     implementation(libs.kotlinx.coroutines.core)
-}
-
-// Allow references to generated code
-kapt {
-    correctErrorTypes = true
 }

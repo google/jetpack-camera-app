@@ -48,6 +48,7 @@ import kotlinx.coroutines.withContext
  *
  * This is useful for tests that require a valid surface provider but do not need to display the output.
  */
+@android.annotation.SuppressLint("Recycle")
 suspend fun SurfaceRequest.provideUpdatingSurface() {
     var isReleased = false
     val executor = Executors.newFixedThreadPool(1)

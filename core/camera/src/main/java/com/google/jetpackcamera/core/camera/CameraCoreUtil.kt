@@ -59,63 +59,32 @@ object CameraCoreUtil {
     @OptIn(ExperimentalCamera2Interop::class)
     private fun getCameraPropertiesJSONObject(cameraInfo: Camera2CameraInfo): JSONObject {
         val jsonObject = JSONObject()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_POSE_ROTATION)
-                ?.let {
-                    jsonObject.put(
-                        CameraCharacteristics.LENS_POSE_ROTATION.name,
-                        it.contentToString()
-                    )
-                }
-            cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_POSE_TRANSLATION)
-                ?.let {
-                    jsonObject.put(
-                        CameraCharacteristics.LENS_POSE_TRANSLATION.name,
-                        it.contentToString()
-                    )
-                }
-            cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION)
-                ?.let {
-                    jsonObject.put(
-                        CameraCharacteristics.LENS_INTRINSIC_CALIBRATION.name,
-                        it.contentToString()
-                    )
-                }
+
+        fun <T> putCharacteristic(
+            key: CameraCharacteristics.Key<T>,
+            valueTransform: (T) -> Any? = { it }
+        ) {
+            cameraInfo.getCameraCharacteristic(key)?.let {
+                jsonObject.put(key.name, valueTransform(it))
+            }
         }
+
+        putCharacteristic(CameraCharacteristics.LENS_POSE_ROTATION) { it.contentToString() }
+        putCharacteristic(CameraCharacteristics.LENS_POSE_TRANSLATION) { it.contentToString() }
+        putCharacteristic(CameraCharacteristics.LENS_INTRINSIC_CALIBRATION) { it.contentToString() }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_DISTORTION)
-                ?.let {
-                    jsonObject.put(
-                        CameraCharacteristics.LENS_DISTORTION.name,
-                        it.contentToString()
-                    )
-                }
+            putCharacteristic(CameraCharacteristics.LENS_DISTORTION) { it.contentToString() }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            cameraInfo.getCameraCharacteristic(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)
-                ?.let { jsonObject.put(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE.name, it) }
+            putCharacteristic(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)
         }
-        cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)
-            ?.let {
-                jsonObject.put(
-                    CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS.name,
-                    it.contentToString()
-                )
-            }
-        cameraInfo.getCameraCharacteristic(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE)
-            ?.let {
-                jsonObject.put(
-                    CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE.name,
-                    it
-                )
-            }
-        cameraInfo.getCameraCharacteristic(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
-            ?.let {
-                jsonObject.put(
-                    CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES.name,
-                    it.contentToString()
-                )
-            }
+        putCharacteristic(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS) {
+            it.contentToString()
+        }
+        putCharacteristic(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE)
+        putCharacteristic(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES) {
+            it.contentToString()
+        }
 
         return jsonObject
     }

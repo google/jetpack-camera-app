@@ -16,15 +16,17 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.android.legacy.kapt)
     alias(libs.plugins.dagger.hilt.android)
-    alias(libs.plugins.google.protobuf)
 }
 
 android {
     namespace = "com.google.jetpackcamera.data.settings"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -76,10 +78,6 @@ dependencies {
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
-    // proto datastore
-    implementation(libs.androidx.datastore)
-    implementation(libs.protobuf.kotlin.lite)
-
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
@@ -91,29 +89,7 @@ dependencies {
 
     // Access Model data
     implementation(project(":core:model"))
-    implementation(project(":core:common"))
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.21.12"
-    }
-
-    generateProtoTasks {
-        all().forEach { task ->
-            task.builtins {
-                create("java") {
-                    option("lite")
-                }
-            }
-
-            task.builtins {
-                create("kotlin") {
-                    option("lite")
-                }
-            }
-        }
-    }
+    implementation(project(":core:settings"))
 }
 
 // Allow references to generated code

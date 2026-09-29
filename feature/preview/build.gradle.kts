@@ -16,15 +16,18 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.android.legacy.kapt)
     alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.compose.compiler)
 }
 
 android {
     namespace = "com.google.jetpackcamera.feature.preview"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -96,6 +99,7 @@ dependencies {
     // Compose - Integration with ViewModels with Navigation and Hilt
     implementation(libs.androidx.navigation.compose)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.lifecycle.viewmodel.compose)
 
     // Compose - Lifecycle utilities
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -139,6 +143,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":data:media"))
     implementation(project(":data:settings"))
+    implementation(project(":core:settings"))
     implementation(project(":core:model"))
     testImplementation(project(":core:camera:testing"))
     testImplementation(project(":data:settings:testing"))

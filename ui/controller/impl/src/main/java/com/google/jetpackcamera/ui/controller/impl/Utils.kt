@@ -15,26 +15,12 @@
  */
 package com.google.jetpackcamera.ui.controller.impl
 
-import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
 
 object Utils {
-    /**
-     * Posts the given [MediaDescriptor] to the [MediaRepository] as the current media.
-     *
-     * @param mediaRepository The repository to update.
-     * @param mediaDescriptor The media to set as current.
-     */
-    suspend fun postCurrentMediaToMediaRepository(
-        mediaRepository: MediaRepository,
-        mediaDescriptor: MediaDescriptor
-    ) {
-        mediaRepository.setCurrentMedia(mediaDescriptor)
-    }
 
     /**
      * Determines the next [SaveLocation] and optional [IntProgress] for a capture.

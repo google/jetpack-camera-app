@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import androidx.camera.core.CameraInfo
+import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DeviceRotation
@@ -25,7 +26,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.StabilizationMode
-import com.google.jetpackcamera.model.StreamConfig
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 
@@ -42,7 +42,7 @@ internal sealed interface PerpetualSessionSettings {
     data class SingleCamera(
         override val aspectRatio: AspectRatio,
         override val captureMode: CaptureMode,
-        val streamConfig: StreamConfig,
+        val activeCameraEffect: CameraEffectFeatureKey?,
         val targetFrameRate: Int,
         val stabilizationMode: StabilizationMode,
         val dynamicRange: DynamicRange,

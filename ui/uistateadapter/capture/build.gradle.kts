@@ -16,14 +16,17 @@
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.android.legacy.kapt)
     alias(libs.plugins.compose.compiler)
 }
 
 android {
     namespace = "com.google.jetpackcamera.ui.uistateadapter.capture"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -32,7 +35,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
 
     flavorDimensions += "flavor"
     productFlavors {
@@ -48,14 +50,13 @@ android {
     }
     kotlin {
         jvmToolchain(17)
+        compilerOptions {
+            freeCompilerArgs.add("-Xcontext-receivers")
+        }
     }
     buildFeatures {
         buildConfig = true
         compose = true
-    }
-
-    kotlinOptions {
-        freeCompilerArgs += "-Xcontext-receivers"
     }
 }
 
@@ -68,18 +69,20 @@ dependencies {
     implementation(libs.compose.material3)
 
     implementation(project(":data:settings"))
+    implementation(project(":core:settings"))
     implementation(project(":core:model"))
     implementation(project(":data:media"))
     implementation(project(":core:camera"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistateadapter"))
     implementation(project(":ui:uistate:capture"))
-    implementation(project(":ui:components:capture"))
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    testImplementation(project(":core:camera:testing"))
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 // Allow references to generated code

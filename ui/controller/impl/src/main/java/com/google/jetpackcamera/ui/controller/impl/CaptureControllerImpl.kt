@@ -16,12 +16,11 @@
 package com.google.jetpackcamera.ui.controller.impl
 
 import android.content.ContentResolver
+import android.net.Uri
 import android.util.Log
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
-import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
@@ -29,18 +28,8 @@ import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.model.VideoCaptureEvent
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.components.capture.IMAGE_CAPTURE_SUCCESS_TAG
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_FAILURE_TAG
-import com.google.jetpackcamera.ui.components.capture.VIDEO_CAPTURE_SUCCESS_TAG
 import com.google.jetpackcamera.ui.controller.CaptureController
-import com.google.jetpackcamera.ui.controller.ImageWellController
-import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.impl.Utils.nextSaveLocation
-import com.google.jetpackcamera.ui.controller.impl.Utils.postCurrentMediaToMediaRepository
-import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlin.coroutines.CoroutineContext
 import kotlinx.atomicfu.atomic
@@ -58,29 +47,27 @@ private const val TAG = "CaptureButtonControllerImpl"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 /**
- * Implementation of [CaptureController] that interacts with [CameraSystem] and [MediaRepository].
+ * Implementation of [CaptureController] that interacts with [CameraSystem].
  *
  * @param trackedCaptureUiState State for tracking UI changes during capture.
- * @param cameraSystem The camera system to perform capture operations.
- * @param mediaRepository Repository for managing captured media.
+ * @param cameraSystemProvider Provider for the initialized [CameraSystem].
  * @param saveMode Mode for saving captured media.
  * @param externalCaptureMode Mode for external capture requests.
  * @param externalCapturesCallback Callback for getting external capture information.
  * @property captureEvents Channel for sending capture-related events.
- * @param captureScreenController Controller for UI-related capture screen actions.
- * @param snackBarController Controller for showing snackbars.
+ * @param onImageCached Callback invoked when an image is saved to cache.
+ * @param onVideoCached Callback invoked when a video is saved to cache.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class CaptureControllerImpl(
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
-    private val cameraSystem: CameraSystem,
-    private val mediaRepository: MediaRepository,
+    private val cameraSystemProvider: suspend () -> CameraSystem,
     private val saveMode: SaveMode,
     private val externalCaptureMode: ExternalCaptureMode,
     private val externalCapturesCallback: () -> Pair<SaveLocation, IntProgress?>,
     override val captureEvents: Channel<CaptureEvent>,
-    private val imageWellController: ImageWellController,
-    private val snackBarController: SnackBarController?,
+    private val onImageCached: ((Uri) -> Unit)? = null,
+    private val onVideoCached: ((Uri) -> Unit)? = null,
     coroutineContext: CoroutineContext
 ) : CaptureController {
 
@@ -92,14 +79,7 @@ class CaptureControllerImpl(
 
     override fun captureImage(contentResolver: ContentResolver) {
         if (externalCaptureMode == ExternalCaptureMode.VideoCapture) {
-            snackBarController?.addSnackBarData(
-                SnackbarData(
-                    cookie = "Image-ExternalVideoCaptureMode",
-                    stringResource = R.string.toast_image_capture_external_unsupported,
-                    withDismissAction = true,
-                    testTag = IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-                )
-            )
+            captureEvents.trySend(ImageCaptureEvent.ImageCaptureExternalUnsupported)
             return
         }
         Log.d(TAG, "captureImage")
@@ -112,7 +92,7 @@ class CaptureControllerImpl(
             captureImageInternal(
                 saveLocation = saveLocation,
                 doTakePicture = {
-                    cameraSystem.takePicture(contentResolver, saveLocation) {
+                    cameraSystemProvider().takePicture(contentResolver, saveLocation) {
                         trackedCaptureUiState.update { old ->
                             old.copy(lastBlinkTimeStamp = System.currentTimeMillis())
                         }
@@ -128,16 +108,9 @@ class CaptureControllerImpl(
                             ImageCaptureEvent.SingleImageSaved(savedUri)
                         }
                     }
-                    if (saveLocation !is SaveLocation.Cache) {
-                        imageWellController.updateLastCapturedMedia()
-                    } else {
-                        savedUri?.let {
-                            scope.launch {
-                                postCurrentMediaToMediaRepository(
-                                    mediaRepository,
-                                    MediaDescriptor.Content.Image(it, null, true)
-                                )
-                            }
+                    if (saveLocation is SaveLocation.Cache) {
+                        savedUri?.let { uri ->
+                            onImageCached?.invoke(uri)
                         }
                     }
                     captureEvents.trySend(event)
@@ -158,27 +131,18 @@ class CaptureControllerImpl(
     override fun startVideoRecording() {
         if (externalCaptureMode == ExternalCaptureMode.ImageCapture) {
             Log.d(TAG, "externalVideoRecording")
-            snackBarController?.addSnackBarData(
-                SnackbarData(
-                    cookie = "Video-ExternalImageCaptureMode",
-                    stringResource = R.string.toast_video_capture_external_unsupported,
-                    withDismissAction = true,
-                    testTag = VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED_TAG
-                )
-            )
+            captureEvents.trySend(VideoCaptureEvent.VideoCaptureExternalUnsupported)
             return
         }
         Log.d(TAG, "startVideoRecording")
         recordingJob = scope.launch {
-            val cookie = "Video-${videoCaptureStartedCount.incrementAndGet()}"
             val (saveLocation, _) = nextSaveLocation(
                 saveMode,
                 externalCaptureMode,
                 externalCapturesCallback
             )
             try {
-                cameraSystem.startVideoRecording(saveLocation) {
-                    var snackbarToShow: SnackbarData?
+                cameraSystemProvider().startVideoRecording(saveLocation) {
                     when (it) {
                         is OnVideoRecordEvent.OnVideoRecorded -> {
                             Log.d(TAG, "cameraSystem.startRecording OnVideoRecorded")
@@ -188,45 +152,17 @@ class CaptureControllerImpl(
                                 VideoCaptureEvent.VideoSaved(it.savedUri)
                             }
 
-                            if (saveLocation !is SaveLocation.Cache) {
-                                imageWellController.updateLastCapturedMedia()
-                            } else {
-                                scope.launch {
-                                    postCurrentMediaToMediaRepository(
-                                        mediaRepository,
-                                        MediaDescriptor.Content.Video(it.savedUri, null, true)
-                                    )
-                                }
+                            if (saveLocation is SaveLocation.Cache) {
+                                onVideoCached?.invoke(it.savedUri)
                             }
 
                             captureEvents.trySend(event)
-                            // don't display snackbar for successful capture
-                            snackbarToShow = if (saveLocation is SaveLocation.Cache) {
-                                null
-                            } else {
-                                SnackbarData(
-                                    cookie = cookie,
-                                    stringResource = R.string.toast_video_capture_success,
-                                    withDismissAction = true,
-                                    testTag = VIDEO_CAPTURE_SUCCESS_TAG
-                                )
-                            }
                         }
 
                         is OnVideoRecordEvent.OnVideoRecordError -> {
                             Log.d(TAG, "cameraSystem.startRecording OnVideoRecordError")
                             captureEvents.trySend(VideoCaptureEvent.VideoCaptureError(it.error))
-                            snackbarToShow = SnackbarData(
-                                cookie = cookie,
-                                stringResource = R.string.toast_video_capture_failure,
-                                withDismissAction = true,
-                                testTag = VIDEO_CAPTURE_FAILURE_TAG
-                            )
                         }
-                    }
-
-                    snackbarToShow?.let { data ->
-                        snackBarController?.addSnackBarData(data)
                     }
                 }
                 Log.d(TAG, "cameraSystem.startRecording success")
@@ -238,9 +174,10 @@ class CaptureControllerImpl(
 
     override fun stopVideoRecording() {
         Log.d(TAG, "stopVideoRecording")
+        recordingJob?.cancel()
+        recordingJob = null
         scope.launch {
-            cameraSystem.stopVideoRecording()
-            recordingJob?.cancel()
+            cameraSystemProvider().stopVideoRecording()
         }
     }
 
@@ -250,41 +187,16 @@ class CaptureControllerImpl(
         onSuccess: (T) -> Unit = {},
         onFailure: (exception: Exception) -> Unit = {}
     ) {
-        val cookieInt = snackBarController?.incrementAndGetSnackBarCount()
-            ?: traceCookie.incrementAndGet()
-        val cookie = "Image-$cookieInt"
-        val snackBarData = try {
-            traceAsync(IMAGE_CAPTURE_TRACE, cookieInt) {
+        val cookieInt = traceCookie.incrementAndGet()
+        try {
+            val result = traceAsync(IMAGE_CAPTURE_TRACE, cookieInt) {
                 doTakePicture()
-            }.also { result ->
-                onSuccess(result)
             }
+            onSuccess(result)
             Log.d(TAG, "cameraSystem.takePicture success")
-            // don't display snackbar for successful capture
-            if (saveLocation is SaveLocation.Cache) {
-                null
-            } else {
-                SnackbarData(
-                    cookie = cookie,
-                    stringResource = R.string.toast_image_capture_success,
-                    withDismissAction = true,
-                    testTag = IMAGE_CAPTURE_SUCCESS_TAG
-                )
-            }
         } catch (exception: Exception) {
             onFailure(exception)
             Log.d(TAG, "cameraSystem.takePicture error", exception)
-            SnackbarData(
-                cookie = cookie,
-                stringResource = R.string.toast_capture_failure,
-                withDismissAction = true,
-                testTag = IMAGE_CAPTURE_FAILURE_TAG
-            )
-        }
-        snackBarData?.let {
-            snackBarController?.addSnackBarData(
-                it
-            )
         }
     }
 
@@ -297,16 +209,16 @@ class CaptureControllerImpl(
     override fun setPaused(shouldBePaused: Boolean) {
         scope.launch {
             if (shouldBePaused) {
-                cameraSystem.pauseVideoRecording()
+                cameraSystemProvider().pauseVideoRecording()
             } else {
-                cameraSystem.resumeVideoRecording()
+                cameraSystemProvider().resumeVideoRecording()
             }
         }
     }
 
     override fun setAudioEnabled(shouldEnableAudio: Boolean) {
         scope.launch {
-            cameraSystem.setAudioEnabled(shouldEnableAudio)
+            cameraSystemProvider().setAudioEnabled(shouldEnableAudio)
         }
 
         Log.d(

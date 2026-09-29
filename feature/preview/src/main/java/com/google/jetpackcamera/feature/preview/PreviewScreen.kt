@@ -15,12 +15,13 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import android.Manifest
-import android.os.Build
 import android.util.Log
 import android.util.Range
+import androidx.activity.compose.BackHandler
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -31,15 +32,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,13 +61,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureEvent
@@ -79,6 +82,7 @@ import com.google.jetpackcamera.ui.components.capture.ElapsedTimeText
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
 import com.google.jetpackcamera.ui.components.capture.ImageWell
+import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.PreviewLayout
@@ -91,7 +95,7 @@ import com.google.jetpackcamera.ui.components.capture.VideoQualityIcon
 import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
 import com.google.jetpackcamera.ui.components.capture.ZoomStateManager
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsBottomSheet
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
@@ -100,6 +104,7 @@ import com.google.jetpackcamera.ui.controller.CaptureController
 import com.google.jetpackcamera.ui.controller.ImageWellController
 import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
+import com.google.jetpackcamera.ui.controller.ZoomController
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.debug.DebugController
 import com.google.jetpackcamera.ui.debug.DebugOverlay
@@ -110,11 +115,9 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
-import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
 
@@ -123,7 +126,6 @@ private const val TAG = "PreviewScreen"
 /**
  * Screen used for the Preview feature.
  */
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
@@ -136,12 +138,11 @@ fun PreviewScreen(
 ) {
     Log.d(TAG, "PreviewScreen")
 
-    val captureUiState: CaptureUiState by viewModel.captureUiState.collectAsState()
+    val rawUiState = viewModel.captureUiState.collectAsState()
     val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
     val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
 
-    val screenFlashUiState =
-        (captureUiState as? CaptureUiState.Ready)?.screenFlashUiState ?: ScreenFlashUiState()
+    val isReady by remember { derivedStateOf { rawUiState.value is CaptureUiState.Ready } }
 
     val surfaceRequest: SurfaceRequest?
         by viewModel.surfaceRequest.collectAsState()
@@ -167,7 +168,7 @@ fun PreviewScreen(
 
     if (Trace.isEnabled()) {
         LaunchedEffect(onFirstFrameCaptureCompleted) {
-            snapshotFlow { captureUiState }
+            snapshotFlow { rawUiState.value }
                 .transformWhile {
                     var continueCollecting = true
                     (it as? CaptureUiState.Ready)?.let { ready ->
@@ -183,173 +184,53 @@ fun PreviewScreen(
         }
     }
 
-    when (val currentUiState = captureUiState) {
-        is CaptureUiState.NotReady -> LoadingScreen()
-        is CaptureUiState.Ready -> {
-            var initialRecordingSettings by remember {
-                mutableStateOf<InitialRecordingSettings?>(
-                    null
-                )
-            }
-
-            val context = LocalContext.current
-            LaunchedEffect(Unit) {
-                debouncedOrientationFlow(context).collect(
-                    viewModel.cameraController::setDisplayRotation
-                )
-            }
-            val scope = rememberCoroutineScope()
-            val zoomStateManager = remember {
-                // the initialZoomLevel must be fetched from the settings, not the cameraState.
-                // since we want to reset the ZoomState on flip, the zoomstate of the cameraState
-                // may not yet be congruent with the settings
-
-                ZoomStateManager(
-                    initialZoomLevel = (
-                        currentUiState.zoomControlUiState as?
-                            ZoomControlUiState.Enabled
-                        )
-                        ?.initialZoomRatio
-                        ?: 1f,
-                    zoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
-                        ?.primaryZoomRange
-                        ?: Range(1f, 1f),
-                    zoomController = viewModel.zoomController
-                )
-            }
-
-            LaunchedEffect(
-                (currentUiState.flipLensUiState as? FlipLensUiState.Available)
-                    ?.selectedLensFacing
-            ) {
-                zoomStateManager.onChangeLens(
-                    newInitialZoomLevel = (
-                        currentUiState.zoomControlUiState as?
-                            ZoomControlUiState.Enabled
-                        )
-                        ?.initialZoomRatio
-                        ?: 1f,
-                    newZoomRange = (currentUiState.zoomUiState as? ZoomUiState.Enabled)
-                        ?.primaryZoomRange
-                        ?: Range(1f, 1f)
-                )
-            }
-            // todo(kc) handle reset certain values after video recording is complete
-            LaunchedEffect(currentUiState.videoRecordingState) {
-                with(currentUiState.videoRecordingState) {
-                    when (this) {
-                        is VideoRecordingState.Starting -> {
-                            initialRecordingSettings = this.initialRecordingSettings
-                        }
-
-                        is VideoRecordingState.Inactive -> {
-                            initialRecordingSettings?.let {
-                                val oldPrimaryLensFacing = it.lensFacing
-                                val oldZoomRatios = it.zoomRatios
-                                val oldAudioEnabled = it.isAudioEnabled
-                                Log.d(TAG, "reset pre recording settings")
-                                viewModel.captureController.setAudioEnabled(oldAudioEnabled)
-                                viewModel.quickSettingsController.setLensFacing(
-                                    oldPrimaryLensFacing
-                                )
-                                zoomStateManager.apply {
-                                    absoluteZoom(
-                                        targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing] ?: 1f,
-                                        lensToZoom = LensToZoom.PRIMARY
-                                    )
-                                    absoluteZoom(
-                                        targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing.flip()]
-                                            ?: 1f,
-                                        lensToZoom = LensToZoom.SECONDARY
-                                    )
-                                }
-                            }
-                            initialRecordingSettings = null
-                        }
-
-                        is VideoRecordingState.Active -> {}
-                    }
-                }
-            }
-
-            ContentScreen(
-                modifier = modifier,
-                captureUiState = currentUiState,
-                screenFlashUiState = screenFlashUiState,
-                surfaceRequest = surfaceRequest,
-                onNavigateToSettings = onNavigateToSettings,
-
-                onAbsoluteZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
-                    scope.launch {
-                        zoomStateManager.absoluteZoom(
-                            zoomRatio,
-                            lensToZoom
-                        )
-                    }
-                },
-                onScaleZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
-                    scope.launch {
-                        zoomStateManager.scaleZoom(
-                            zoomRatio,
-                            lensToZoom
-                        )
-                    }
-                },
-                onAnimateZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
-                    scope.launch {
-                        zoomStateManager.animatedZoom(
-                            targetZoomLevel = zoomRatio,
-                            lensToZoom = lensToZoom
-                        )
-                    }
-                },
-                onIncrementZoom = { zoomRatio: Float, lensToZoom: LensToZoom ->
-                    scope.launch {
-                        zoomStateManager.incrementZoom(
-                            zoomRatio,
-                            lensToZoom
-                        )
-                    }
-                },
-                onRequestWindowColorMode = onRequestWindowColorMode,
-                onNavigatePostCapture = onNavigateToPostCapture,
-                debugUiState = debugUiState,
-                snackBarUiState = snackBarUiState,
-                debugController = viewModel.debugController,
-                snackBarController = viewModel.snackBarController,
-                quickSettingsController = viewModel.quickSettingsController,
-                captureController = viewModel.captureController,
-                imageWellController = viewModel.imageWellController,
-                cameraController = viewModel.cameraController,
-                screenFlashController = viewModel.screenFlashController
-            )
-            val readStoragePermission: PermissionState = rememberPermissionState(
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-
-            LaunchedEffect(readStoragePermission.status) {
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P ||
-                    readStoragePermission.status.isGranted
-                ) {
-                    viewModel.imageWellController.updateLastCapturedMedia()
+    if (!isReady) {
+        LoadingScreen()
+    } else {
+        val readyStateProvider: () -> CaptureUiState.Ready = remember {
+            {
+                requireNotNull(rawUiState.value as? CaptureUiState.Ready) {
+                    "Deferred read invoked when state was not Ready. " +
+                        "Current state: ${rawUiState.value}"
                 }
             }
         }
+
+        val context = LocalContext.current
+        LaunchedEffect(Unit) {
+            debouncedOrientationFlow(context).collect(
+                viewModel.cameraController::setDisplayRotation
+            )
+        }
+
+        ContentScreen(
+            modifier = modifier,
+            captureUiStateProvider = readyStateProvider,
+            surfaceRequest = surfaceRequest,
+            onNavigateToSettings = onNavigateToSettings,
+            onRequestWindowColorMode = onRequestWindowColorMode,
+            onNavigatePostCapture = onNavigateToPostCapture,
+            debugUiState = debugUiState,
+            snackBarUiState = snackBarUiState,
+            debugController = viewModel.debugController,
+            snackBarController = viewModel.snackBarController,
+            quickSettingsController = viewModel.quickSettingsController,
+            captureController = viewModel.captureController,
+            imageWellController = viewModel.imageWellController,
+            cameraController = viewModel.cameraController,
+            screenFlashController = viewModel.screenFlashController,
+            zoomController = viewModel.zoomController
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ContentScreen(
-    captureUiState: CaptureUiState.Ready,
-    screenFlashUiState: ScreenFlashUiState,
+    captureUiStateProvider: () -> CaptureUiState.Ready,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
-    onAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
-    onScaleZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
-    onIncrementZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
-    onAnimateZoom: (Float, LensToZoom) -> Unit = { _, _ -> },
     onRequestWindowColorMode: (Int) -> Unit = {},
     onNavigatePostCapture: () -> Unit = {},
     debugUiState: DebugUiState = DebugUiState.Disabled,
@@ -360,21 +241,126 @@ private fun ContentScreen(
     captureController: CaptureController? = null,
     imageWellController: ImageWellController? = null,
     cameraController: CameraController? = null,
-    screenFlashController: ScreenFlashController? = null
+    screenFlashController: ScreenFlashController? = null,
+    zoomController: ZoomController? = null
 ) {
-    val onFlipCamera = {
-        if (captureUiState.flipLensUiState is FlipLensUiState.Available) {
-            quickSettingsController?.setLensFacing(
-                (
-                    captureUiState.flipLensUiState as FlipLensUiState.Available
-                    )
-                    .selectedLensFacing.flip()
-            )
+    val currentCaptureUiStateProvider by rememberUpdatedState(captureUiStateProvider)
+    val flipLensState =
+        remember { derivedStateOf { currentCaptureUiStateProvider().flipLensUiState } }
+    val zoomControlState = remember {
+        derivedStateOf { currentCaptureUiStateProvider().zoomControlUiState }
+    }
+    val zoomUiState = remember { derivedStateOf { currentCaptureUiStateProvider().zoomUiState } }
+    val videoRecordingState = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().videoRecordingState
+        }
+    }
+    val isVideoRecordingActive = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().videoRecordingState is VideoRecordingState.Active
         }
     }
 
-    val isAudioEnabled = remember(captureUiState) {
-        captureUiState.audioUiState is AudioUiState.Enabled.On
+    val scope = rememberCoroutineScope()
+    val zoomStateManager = remember(zoomController) {
+        val safeZoomController = zoomController ?: object : ZoomController {
+            override fun setZoomRatio(zoomRatio: com.google.jetpackcamera.model.CameraZoomRatio) {}
+            override fun setZoomAnimationState(targetValue: Float?) {}
+        }
+        ZoomStateManager(
+            initialZoomLevel =
+            (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
+            zoomRange = (zoomUiState.value as? ZoomUiState.Enabled)
+                ?.primaryZoomRange ?: Range(1f, 1f),
+            zoomController = safeZoomController
+        )
+    }
+
+    LaunchedEffect((flipLensState.value as? FlipLensUiState.Available)?.selectedLensFacing) {
+        zoomStateManager.onChangeLens(
+            newInitialZoomLevel =
+            (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
+            newZoomRange = (zoomUiState.value as? ZoomUiState.Enabled)
+                ?.primaryZoomRange ?: Range(1f, 1f)
+        )
+    }
+
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            skipHiddenState = false
+        )
+    )
+
+    // Derive whether quick settings is open directly from the sheet state's target value.
+    // This provides a single source of truth without bidirectional synchronization loops.
+    val isQuickSettingsOpen by remember(scaffoldState.bottomSheetState) {
+        derivedStateOf {
+            scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+        }
+    }
+
+    // Intercept back navigation only while Quick Settings is actively open.
+    BackHandler(enabled = isQuickSettingsOpen) {
+        scope.launch { scaffoldState.bottomSheetState.hide() }
+    }
+
+    val onDismissQuickSettings: () -> Unit = remember(scope, scaffoldState.bottomSheetState) {
+        {
+            scope.launch { scaffoldState.bottomSheetState.hide() }
+            Unit
+        }
+    }
+
+    var initialRecordingSettings by remember { mutableStateOf<InitialRecordingSettings?>(null) }
+    LaunchedEffect(videoRecordingState.value) {
+        with(videoRecordingState.value) {
+            when (this) {
+                is VideoRecordingState.Starting -> {
+                    initialRecordingSettings = this.initialRecordingSettings
+                }
+
+                is VideoRecordingState.Inactive -> {
+                    initialRecordingSettings?.let {
+                        val oldPrimaryLensFacing = it.lensFacing
+                        val oldZoomRatios = it.zoomRatios
+                        val oldAudioEnabled = it.isAudioEnabled
+                        captureController?.setAudioEnabled(oldAudioEnabled)
+                        quickSettingsController?.setLensFacing(oldPrimaryLensFacing)
+                        zoomStateManager.apply {
+                            absoluteZoom(
+                                targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing] ?: 1f,
+                                lensToZoom = LensToZoom.PRIMARY
+                            )
+                            absoluteZoom(
+                                targetZoomLevel = oldZoomRatios[oldPrimaryLensFacing.flip()] ?: 1f,
+                                lensToZoom = LensToZoom.SECONDARY
+                            )
+                        }
+                    }
+                    initialRecordingSettings = null
+                }
+
+                is VideoRecordingState.Active -> {}
+            }
+        }
+    }
+
+    val onFlipCamera = remember {
+        {
+            val state = flipLensState.value
+            if (state is FlipLensUiState.Available) {
+                quickSettingsController?.setLensFacing(
+                    state.selectedLensFacing.flip()
+                )
+            }
+        }
+    }
+
+    val audioState = remember { derivedStateOf { currentCaptureUiStateProvider().audioUiState } }
+    val isAudioEnabled by remember {
+        derivedStateOf { audioState.value is AudioUiState.Enabled.On }
     }
     val onToggleAudio: () -> Unit = remember(isAudioEnabled) {
         {
@@ -382,201 +368,334 @@ private fun ContentScreen(
         }
     }
 
-    LayoutWrapper(
-        modifier = modifier,
-        hdrIndicator = { HdrIndicator(modifier = it, hdrUiState = captureUiState.hdrUiState) },
-        flashModeIndicator = {
+    // Slot lambdas are wrapped in remember blocks to isolate recompositions.
+    val hdrState = remember { derivedStateOf { currentCaptureUiStateProvider().hdrUiState } }
+    val hdrIndicatorLambda = remember {
+        @Composable { modifier: Modifier ->
+            HdrIndicator(modifier = modifier, hdrUiState = hdrState.value)
+        }
+    }
+    val flashModeState =
+        remember { derivedStateOf { currentCaptureUiStateProvider().flashModeUiState } }
+    val flashModeIndicatorLambda = remember {
+        @Composable { modifier: Modifier ->
             FlashModeIndicator(
-                modifier = it,
-                flashModeUiState = captureUiState.flashModeUiState
+                flashModeUiState = flashModeState.value,
+                modifier = modifier
             )
-        },
-        videoQualityIndicator = {
+        }
+    }
+    val videoQualityState =
+        remember { derivedStateOf { currentCaptureUiStateProvider().videoQuality } }
+    val videoQualityIndicatorLambda = remember {
+        @Composable { modifier: Modifier ->
             VideoQualityIcon(
-                captureUiState.videoQuality,
-                Modifier.testTag(VIDEO_QUALITY_TAG)
+                videoQualityState.value,
+                modifier.testTag(VIDEO_QUALITY_TAG)
             )
-        },
-        stabilizationIndicator = {
+        }
+    }
+    val stabilizationState = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().stabilizationUiState
+        }
+    }
+    val stabilizationIndicatorLambda = remember {
+        @Composable { modifier: Modifier ->
             StabilizationIcon(
-                modifier = it,
-                stabilizationUiState = captureUiState.stabilizationUiState
+                modifier = modifier,
+                stabilizationUiState = stabilizationState.value
             )
-        },
+        }
+    }
 
-        viewfinder = {
+    val onTapToFocusLambda = cameraController?.let { it::tapToFocus }
+        ?: remember { { _: Float, _: Float -> } }
+    val onScaleZoomLambda = remember {
+        { zoomRatio: Float ->
+            scope.launch { zoomStateManager.scaleZoom(zoomRatio, LensToZoom.PRIMARY) }
+        }
+    }
+
+    val previewDisplayState = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().previewDisplayUiState
+        }
+    }
+    val focusMeteringState = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().focusMeteringUiState
+        }
+    }
+    val viewfinderLambda = remember(
+        previewDisplayState,
+        focusMeteringState,
+        onFlipCamera,
+        onTapToFocusLambda,
+        onScaleZoomLambda,
+        surfaceRequest,
+        onRequestWindowColorMode
+    ) {
+        @Composable { modifier: Modifier ->
             PreviewDisplay(
-                previewDisplayUiState = captureUiState.previewDisplayUiState,
+                modifier = modifier,
+                previewDisplayUiState = previewDisplayState.value,
                 onFlipCamera = onFlipCamera,
-                onTapToFocus = cameraController?.let { it::tapToFocus } ?: { _, _ -> },
-                onScaleZoom = { onScaleZoom(it, LensToZoom.PRIMARY) },
+                onTapToFocus = onTapToFocusLambda,
+                onScaleZoom = { zoomRatio -> onScaleZoomLambda(zoomRatio) },
                 surfaceRequest = surfaceRequest,
                 onRequestWindowColorMode = onRequestWindowColorMode,
-                focusMeteringUiState = captureUiState.focusMeteringUiState
+                focusMeteringUiState = focusMeteringState.value
             )
-        },
-        captureButton = {
-            fun runCaptureAction(action: () -> Unit) {
-                if ((captureUiState.quickSettingsUiState as? QuickSettingsUiState.Available)
-                        ?.quickSettingsIsOpen == true
-                ) {
-                    quickSettingsController?.toggleQuickSettings()
-                }
-                action()
-            }
+        }
+    }
+
+    val captureButtonState = remember {
+        derivedStateOf { currentCaptureUiStateProvider().captureButtonUiState }
+    }
+    val quickSettingsState = remember {
+        derivedStateOf { currentCaptureUiStateProvider().quickSettingsUiState }
+    }
+    val captureButtonLambda = remember(
+        captureButtonState,
+        captureController,
+        zoomStateManager,
+        scaffoldState.bottomSheetState,
+        scope
+    ) {
+        @Composable { modifier: Modifier ->
             CaptureButton(
-                captureButtonUiState = captureUiState.captureButtonUiState,
-                isQuickSettingsOpen = (
-                    captureUiState.quickSettingsUiState as?
-                        QuickSettingsUiState.Available
-                    )?.quickSettingsIsOpen ?: false,
+                modifier = modifier,
+                captureButtonUiState = captureButtonState.value,
                 onCaptureImage = {
-                    runCaptureAction {
-                        captureController?.captureImage(it)
+                    if (scaffoldState.bottomSheetState.isVisible) {
+                        scope.launch { scaffoldState.bottomSheetState.hide() }
                     }
+                    captureController?.captureImage(it)
                 },
                 onIncrementZoom = { targetZoom ->
-                    onIncrementZoom(targetZoom, LensToZoom.PRIMARY)
+                    scope.launch { zoomStateManager.incrementZoom(targetZoom, LensToZoom.PRIMARY) }
                 },
                 onStartVideoRecording = {
-                    runCaptureAction {
-                        captureController?.startVideoRecording()
+                    if (scaffoldState.bottomSheetState.isVisible) {
+                        scope.launch { scaffoldState.bottomSheetState.hide() }
                     }
+                    captureController?.startVideoRecording()
                 },
                 onStopVideoRecording = { captureController?.stopVideoRecording() },
                 onLockVideoRecording = { isLocked ->
-                    captureController?.setLockedRecording(
-                        isLocked
-                    )
+                    captureController?.setLockedRecording(isLocked)
                 }
             )
-        },
-        flipCameraButton = {
+        }
+    }
+
+    val flipCameraButtonLambda = remember(flipLensState, onFlipCamera) {
+        @Composable { modifier: Modifier ->
             FlipCameraButton(
-                modifier = Modifier.testTag(FLIP_CAMERA_BUTTON),
+                modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
                 onClick = onFlipCamera,
-                flipLensUiState = captureUiState.flipLensUiState,
-                // enable only when phone has front and rear camera
-                enabledCondition = when (val flipLensUiState = captureUiState.flipLensUiState) {
-                    is FlipLensUiState.Available -> flipLensUiState.availableLensFacings.size > 1
+                flipLensUiState = flipLensState.value,
+                enabledCondition = when (val uiState = flipLensState.value) {
+                    is FlipLensUiState.Available -> uiState.availableLensFacings.size > 1
                     FlipLensUiState.Unavailable -> false
                 }
             )
-        },
-        zoomLevelDisplay = {
-            Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        }
+    }
+
+    val zoomLevelDisplayLambda = remember(zoomControlState) {
+        @Composable { modifier: Modifier ->
+            Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
                 ZoomButtonRow(
-                    zoomControlUiState = captureUiState.zoomControlUiState,
+                    zoomControlUiState = zoomControlState.value,
                     onChangeZoom = { targetZoom ->
-                        onAnimateZoom(targetZoom, LensToZoom.PRIMARY)
+                        scope.launch {
+                            zoomStateManager.animatedZoom(
+                                targetZoomLevel = targetZoom,
+                                lensToZoom = LensToZoom.PRIMARY
+                            )
+                        }
                     }
                 )
             }
-        },
-        elapsedTimeDisplay = {
-            AnimatedVisibility(
-                visible = (captureUiState.videoRecordingState is VideoRecordingState.Active),
-                enter = fadeIn(),
-                exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
-            ) {
-                ElapsedTimeText(
-                    modifier = Modifier.testTag(ELAPSED_TIME_TAG),
-                    elapsedTimeUiState = captureUiState.elapsedTimeUiState
-                )
-            }
-        },
-        quickSettingsButton = {
-            AnimatedVisibility(
-                visible = (captureUiState.videoRecordingState !is VideoRecordingState.Active),
-                enter = fadeIn(),
-                exit = fadeOut(animationSpec = tween(delayMillis = 1_500))
-            ) {
-                quickSettingsController?.let { quickSettingsController ->
-                    ToggleQuickSettingsButton(
-                        modifier = it,
-                        isOpen = (
-                            captureUiState.quickSettingsUiState
-                                as? QuickSettingsUiState.Available
-                            )?.quickSettingsIsOpen == true,
-                        quickSettingsController = quickSettingsController
+        }
+    }
 
+    val audioToggleButtonLambda = remember(audioState, onToggleAudio) {
+        @Composable { modifier: Modifier ->
+            AmplitudeToggleButton(
+                modifier = modifier,
+                onToggleAudio = onToggleAudio,
+                audioUiState = audioState.value
+            )
+        }
+    }
+
+    val elapsedTimeDisplayLambda = remember(videoRecordingState) {
+        @Composable { modifier: Modifier ->
+            val isVisible = videoRecordingState.value is VideoRecordingState.Active
+            val disableAnimations = LocalDisableAnimations.current
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = if (disableAnimations) EnterTransition.None else fadeIn(),
+                exit = if (disableAnimations) {
+                    ExitTransition.None
+                } else {
+                    fadeOut(
+                        animationSpec = tween(delayMillis = 1_500)
                     )
                 }
-            }
-        },
-        audioToggleButton = {
-            AmplitudeToggleButton(
-                modifier = it,
-                onToggleAudio = onToggleAudio,
-                audioUiState = captureUiState.audioUiState
-            )
-        },
-        captureModeToggle = {
-            if (captureUiState.captureModeToggleUiState is CaptureModeToggleUiState.Available) {
-                CaptureModeToggleButton(
-                    uiState = captureUiState.captureModeToggleUiState
-                        as CaptureModeToggleUiState.Available,
-
-                    quickSettingsController = quickSettingsController,
-                    snackBarController = snackBarController,
-                    modifier = it.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+            ) {
+                val elapsedTimeModifier = remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
+                ElapsedTimeText(
+                    modifier = elapsedTimeModifier,
+                    elapsedTimeUiStateProvider = {
+                        currentCaptureUiStateProvider().elapsedTimeUiState
+                    }
                 )
             }
-        },
-        quickSettingsOverlay = {
-            quickSettingsController?.let { quickSettingsController ->
-                QuickSettingsBottomSheet(
-                    modifier = it,
-                    quickSettingsUiState = captureUiState.quickSettingsUiState,
+        }
+    }
+
+    val captureModeToggleState = remember {
+        derivedStateOf { currentCaptureUiStateProvider().captureModeToggleUiState }
+    }
+    val captureModeToggleLambda = remember(
+        captureModeToggleState,
+        quickSettingsController,
+        snackBarController
+    ) {
+        @Composable { modifier: Modifier ->
+            val captureModeToggleUiState = captureModeToggleState.value
+            if (captureModeToggleUiState is CaptureModeToggleUiState.Available) {
+                CaptureModeToggleButton(
+                    uiState = captureModeToggleUiState,
+                    onChangeCaptureMode = { newCaptureMode ->
+                        quickSettingsController?.setCaptureMode(newCaptureMode)
+                    },
+                    onToggleWhenDisabled = { disableRationale ->
+                        snackBarController?.enqueueDisabledHdrToggleSnackBar(disableRationale)
+                    },
+                    modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                )
+            }
+        }
+    }
+
+    val quickSettingsButtonLambda = remember(
+        isVideoRecordingActive,
+        isQuickSettingsOpen,
+        scaffoldState.bottomSheetState,
+        scope
+    ) {
+        @Composable { modifier: Modifier ->
+            val isQuickSettingsVisible = !isVideoRecordingActive.value
+            val disableAnimations = LocalDisableAnimations.current
+            AnimatedVisibility(
+                visible = isQuickSettingsVisible,
+                enter = if (disableAnimations) EnterTransition.None else fadeIn(),
+                exit = if (disableAnimations) {
+                    ExitTransition.None
+                } else {
+                    fadeOut(
+                        animationSpec = tween(delayMillis = 1_500)
+                    )
+                }
+            ) {
+                ToggleQuickSettingsButton(
+                    isOpen = isQuickSettingsOpen,
+                    onClick = {
+                        scope.launch {
+                            if (scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded) {
+                                scaffoldState.bottomSheetState.hide()
+                            } else {
+                                scaffoldState.bottomSheetState.expand()
+                            }
+                        }
+                    },
+                    modifier = modifier
+                )
+            }
+        }
+    }
+
+    val quickSettingsOverlayLambda = remember(
+        quickSettingsState,
+        quickSettingsController,
+        onNavigateToSettings,
+        scaffoldState.bottomSheetState,
+        scope
+    ) {
+        @Composable { modifier: Modifier ->
+            quickSettingsController?.let { controller ->
+                QuickSettingsScaffoldContent(
+                    modifier = modifier,
+                    quickSettingsUiState = quickSettingsState.value,
                     onNavigateToSettings = {
-                        quickSettingsController.toggleQuickSettings()
+                        scope.launch { scaffoldState.bottomSheetState.hide() }
                         onNavigateToSettings()
                     },
-                    quickSettingsController = quickSettingsController
+                    quickSettingsController = controller
                 )
             }
-        },
-        debugOverlay = { modifier, extraControls ->
-            (debugUiState as? DebugUiState.Enabled)?.let { debugUiState ->
+            Unit
+        }
+    }
+
+    val debugOverlayLambda = remember(debugController, debugUiState) {
+        @Composable { modifier: Modifier, extraControls: Array<@Composable () -> Unit>? ->
+            if (debugUiState is DebugUiState.Enabled) {
                 debugController?.let { debugController ->
                     DebugOverlay(
                         modifier = modifier,
                         debugUiState = debugUiState,
-                        onChangeZoomRatio = { f: Float -> onAbsoluteZoom(f, LensToZoom.PRIMARY) },
+                        onChangeZoomRatio = { f: Float ->
+                            scope.launch { zoomStateManager.absoluteZoom(f, LensToZoom.PRIMARY) }
+                        },
                         extraControls = extraControls.orEmpty(),
                         debugController = debugController
                     )
                 }
             }
-        },
-        debugVisibilityWrapper = { content ->
-            val uiState = debugUiState
-            if (uiState !is DebugUiState.Enabled || !uiState.debugHidingComponents) {
+            Unit
+        }
+    }
+
+    val debugVisibilityWrapperLambda = remember(debugUiState) {
+        @Composable { content: @Composable () -> Unit ->
+            if (debugUiState !is DebugUiState.Enabled || !debugUiState.debugHidingComponents) {
                 content()
             }
-        },
-        screenFlashOverlay = {
-            // Screen flash overlay that stays on top of everything but invisible normally. This should
-            // not be enabled based on whether screen flash is enabled because a previous image capture
-            // may still be running after flash mode change and clear actions (e.g. brightness restore)
-            // may need to be handled later. Compose smart recomposition should be able to optimize this
-            // if the relevant states are no longer changing.
+            Unit
+        }
+    }
+
+    val screenFlashState = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().screenFlashUiState
+        }
+    }
+    val screenFlashOverlayLambda = remember(screenFlashState, screenFlashController) {
+        @Composable { modifier: Modifier ->
             ScreenFlashScreen(
-                screenFlashUiState = screenFlashUiState,
+                screenFlashUiState = screenFlashState.value,
                 onInitialBrightnessCalculated = {
-                    screenFlashController?.setClearUiScreenBrightness(
-                        it
-                    )
+                    screenFlashController?.setClearUiScreenBrightness(it)
                 }
             )
-        },
-        snackBar = { modifier, snackbarHostState ->
+        }
+    }
+
+    val snackBarLambda = remember(snackBarController, snackBarUiState) {
+        @Composable { modifier: Modifier, snackbarHostState: SnackbarHostState ->
+            val snackBarUiState = snackBarUiState
             if (snackBarUiState is SnackBarUiState.Enabled) {
                 val snackBarData = snackBarUiState.snackBarQueue.peek()
                 if (snackBarData != null) {
                     snackBarController?.let { snackBarController ->
                         TestableSnackbar(
-                            modifier = modifier.testTag(snackBarData.testTag),
+                            modifier = modifier,
                             snackbarToShow = snackBarData,
                             snackbarHostState = snackbarHostState,
                             snackBarController = snackBarController
@@ -584,27 +703,74 @@ private fun ContentScreen(
                     }
                 }
             }
-        },
-        pauseToggleButton = {
+            Unit
+        }
+    }
+
+    val pauseToggleButtonLambda = remember(videoRecordingState, captureController) {
+        @Composable { modifier: Modifier ->
             PauseResumeToggleButton(
+                modifier = modifier,
                 onSetPause = captureController?.let { it::setPaused } ?: { _ -> },
-                currentRecordingState = captureUiState.videoRecordingState
+                currentRecordingStateProvider = { videoRecordingState.value }
             )
-        },
-        imageWell = { modifier ->
-            if (captureUiState.externalCaptureMode == ExternalCaptureMode.Standard) {
-                (captureUiState.imageWellUiState as? ImageWellUiState.Content)?.let {
+        }
+    }
+
+    val externalCaptureModeState = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().externalCaptureMode
+        }
+    }
+    val imageWellState =
+        remember { derivedStateOf { currentCaptureUiStateProvider().imageWellUiState } }
+    val imageWellLambda = remember(
+        externalCaptureModeState,
+        imageWellState,
+        imageWellController,
+        onNavigatePostCapture
+    ) {
+        @Composable { modifier: Modifier ->
+            if (externalCaptureModeState.value == ExternalCaptureMode.Standard) {
+                (imageWellState.value as? ImageWellUiState.Content)?.let { contentState ->
                     ImageWell(
                         modifier = modifier,
-                        imageWellUiState = it,
+                        imageWellUiState = contentState,
                         onClick = {
-                            imageWellController?.imageWellToRepository(it.mediaDescriptor)
+                            imageWellController?.imageWellToRepository(contentState.mediaDescriptor)
                             onNavigatePostCapture()
                         }
                     )
                 }
             }
+            Unit
         }
+    }
+
+    LayoutWrapper(
+        modifier = modifier,
+        scaffoldState = scaffoldState,
+        onDismissQuickSettings = onDismissQuickSettings,
+        hdrIndicator = hdrIndicatorLambda,
+        flashModeIndicator = flashModeIndicatorLambda,
+        videoQualityIndicator = videoQualityIndicatorLambda,
+        stabilizationIndicator = stabilizationIndicatorLambda,
+
+        viewfinder = viewfinderLambda,
+        captureButton = captureButtonLambda,
+        flipCameraButton = flipCameraButtonLambda,
+        zoomLevelDisplay = zoomLevelDisplayLambda,
+        elapsedTimeDisplay = elapsedTimeDisplayLambda,
+        quickSettingsButton = quickSettingsButtonLambda,
+        audioToggleButton = audioToggleButtonLambda,
+        captureModeToggle = captureModeToggleLambda,
+        quickSettingsOverlay = quickSettingsOverlayLambda,
+        debugOverlay = debugOverlayLambda,
+        debugVisibilityWrapper = debugVisibilityWrapperLambda,
+        screenFlashOverlay = screenFlashOverlayLambda,
+        snackBar = snackBarLambda,
+        pauseToggleButton = pauseToggleButtonLambda,
+        imageWell = imageWellLambda
     )
 }
 
@@ -622,9 +788,12 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LayoutWrapper(
     modifier: Modifier = Modifier,
+    scaffoldState: BottomSheetScaffoldState,
+    onDismissQuickSettings: () -> Unit = {},
     viewfinder: @Composable (modifier: Modifier) -> Unit,
     captureButton: @Composable (modifier: Modifier) -> Unit,
     flipCameraButton: @Composable (modifier: Modifier) -> Unit,
@@ -650,6 +819,8 @@ private fun LayoutWrapper(
 ) {
     PreviewLayout(
         modifier = modifier,
+        scaffoldState = scaffoldState,
+        onDismissQuickSettings = onDismissQuickSettings,
         viewfinder = viewfinder,
         captureButton = captureButton,
         imageWell = imageWell,
@@ -692,8 +863,7 @@ private fun LayoutWrapper(
 private fun ContentScreenPreview() {
     MaterialTheme {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_READY,
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = { FAKE_PREVIEW_UI_STATE_READY },
             surfaceRequest = null
         )
     }
@@ -704,8 +874,7 @@ private fun ContentScreenPreview() {
 private fun ContentScreen_Standard_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(),
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = { FAKE_PREVIEW_UI_STATE_READY.copy() },
             surfaceRequest = null
         )
     }
@@ -716,10 +885,11 @@ private fun ContentScreen_Standard_Idle() {
 private fun ContentScreen_ImageOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
-                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
-            ),
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = {
+                FAKE_PREVIEW_UI_STATE_READY.copy(
+                    captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.IMAGE_ONLY)
+                )
+            },
             surfaceRequest = null
         )
     }
@@ -730,10 +900,11 @@ private fun ContentScreen_ImageOnly_Idle() {
 private fun ContentScreen_VideoOnly_Idle() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_READY.copy(
-                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
-            ),
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = {
+                FAKE_PREVIEW_UI_STATE_READY.copy(
+                    captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.VIDEO_ONLY)
+                )
+            },
             surfaceRequest = null
         )
     }
@@ -744,8 +915,7 @@ private fun ContentScreen_VideoOnly_Idle() {
 private fun ContentScreen_Standard_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING,
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = { FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING },
             surfaceRequest = null
         )
     }
@@ -756,8 +926,7 @@ private fun ContentScreen_Standard_Recording() {
 private fun ContentScreen_Locked_Recording() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ContentScreen(
-            captureUiState = FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING,
-            screenFlashUiState = ScreenFlashUiState(),
+            captureUiStateProvider = { FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING },
             surfaceRequest = null
         )
     }
@@ -770,13 +939,13 @@ private val FAKE_PREVIEW_UI_STATE_READY = CaptureUiState.Ready(
 )
 
 private val FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(
-    videoRecordingState = VideoRecordingState.Active.Recording(0, 0.0, 0),
+    videoRecordingState = VideoRecordingState.Active.Recording(0, AudioStreamState.Active(0.0), 0),
     captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording,
-    audioUiState = AudioUiState.Enabled.On(1.0)
+    audioUiState = AudioUiState.Enabled.On(1.0, true)
 )
 
 private val FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(
-    videoRecordingState = VideoRecordingState.Active.Recording(0, 0.0, 0),
+    videoRecordingState = VideoRecordingState.Active.Recording(0, AudioStreamState.Active(0.0), 0),
     captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording,
-    audioUiState = AudioUiState.Enabled.On(1.0)
+    audioUiState = AudioUiState.Enabled.On(1.0, true)
 )
