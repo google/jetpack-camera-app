@@ -55,8 +55,4 @@
     <string name="picker_camera_error_dnd_body">Turn off Do Not Disturb and open the camera again</string>
     <string name="picker_camera_error_removed_title">Camera not found</string>
     <string name="picker_camera_error_removed_body">Check if the camera is connected</string>
-    <string name="picker_camera_error_thermal_title">Device is too warm</string>
-    <string name="picker_camera_error_thermal_body">Can\u2019t use camera</string>
-    <string name="picker_camera_error_storage_title">Not enough storage</string>
-    <string name="picker_camera_error_storage_body">Can\u2019t use camera</string>
 </resources>
