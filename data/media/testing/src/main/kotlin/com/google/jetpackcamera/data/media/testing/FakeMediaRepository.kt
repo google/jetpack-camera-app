@@ -15,8 +15,8 @@
  */
 package com.google.jetpackcamera.data.media.testing
 
-import android.graphics.Bitmap
 import android.net.Uri
+import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
@@ -36,7 +36,7 @@ class FakeMediaRepository : MediaRepository {
     var loadHandler: (MediaDescriptor) -> Media = { mediaDescriptor ->
         when (mediaDescriptor) {
             is MediaDescriptor.Content.Image -> Media.Image(
-                Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+                createBitmap(1, 1)
             )
             is MediaDescriptor.Content.Video -> Media.Video(mediaDescriptor.uri)
             else -> Media.None

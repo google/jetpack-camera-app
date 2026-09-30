@@ -23,7 +23,6 @@ import android.net.Uri
 import android.provider.MediaStore
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.OutputStream
 
 /**
  * A fake [ContentProvider] for testing interactions with the MediaStore.
@@ -37,7 +36,7 @@ import java.io.OutputStream
  * - `query`: Simulates querying for media, primarily for `_ID` and `DATE_ADDED`.
  * - `insert`: Simulates adding a new media item and returns a content URI.
  * - `delete`: Simulates removing a media item.
- * - `openOutputStream`: Provides an in-memory [OutputStream] for writing data.
+ * - `openOutputStream`: Provides an in-memory [java.io.OutputStream] for writing data.
  *
  * Note: This is a simplified fake and does not implement all features of the
  *       real MediaStore ContentProvider. It is intended for specific test cases

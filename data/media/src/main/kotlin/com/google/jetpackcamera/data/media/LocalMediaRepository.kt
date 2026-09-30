@@ -71,21 +71,26 @@ class LocalMediaRepository(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             context.contentResolver.loadThumbnail(uri, Size(640, 480), null)
         } else {
-            if (collectionUri == MediaStore.Images.Media.EXTERNAL_CONTENT_URI) {
-                MediaStore.Images.Thumbnails.getThumbnail(
-                    context.contentResolver,
-                    ContentUris.parseId(uri),
-                    MediaStore.Images.Thumbnails.MINI_KIND,
-                    null
-                )
-            } else { // Video
-                MediaStore.Video.Thumbnails.getThumbnail(
-                    context.contentResolver,
-                    ContentUris.parseId(uri),
-                    MediaStore.Video.Thumbnails.MINI_KIND,
-                    null
-                )
-            }
+            loadThumbnailLegacy(uri, collectionUri)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun loadThumbnailLegacy(uri: Uri, collectionUri: Uri): Bitmap? {
+        return if (collectionUri == MediaStore.Images.Media.EXTERNAL_CONTENT_URI) {
+            MediaStore.Images.Thumbnails.getThumbnail(
+                context.contentResolver,
+                ContentUris.parseId(uri),
+                MediaStore.Images.Thumbnails.MINI_KIND,
+                null
+            )
+        } else { // Video
+            MediaStore.Video.Thumbnails.getThumbnail(
+                context.contentResolver,
+                ContentUris.parseId(uri),
+                MediaStore.Video.Thumbnails.MINI_KIND,
+                null
+            )
         }
     }
 
@@ -280,23 +285,30 @@ class LocalMediaRepository(
                             val pathColumn =
                                 cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH)
 
+                            val owner = if (ownerColumn != -1 && !cursor.isNull(ownerColumn)) {
+                                cursor.getString(ownerColumn)
+                            } else {
+                                null
+                            }
+                            val path = if (pathColumn != -1 && !cursor.isNull(pathColumn)) {
+                                cursor.getString(pathColumn)
+                            } else {
+                                null
+                            }
+
                             // 1. Check Owner Package
-                            if (ownerColumn != -1 && !cursor.isNull(ownerColumn)) {
-                                val owner = cursor.getString(ownerColumn)
-                                if (owner != context.packageName) return@withContext false
+                            if (owner != null && owner != context.packageName) {
+                                return@withContext false
                             }
 
                             // 2. Check Relative Path (Ensure it's in the camera directory)
-                            if (pathColumn != -1 && !cursor.isNull(pathColumn)) {
-                                val path = cursor.getString(pathColumn)
-                                if (path != null &&
-                                    !path.startsWith(filePathGenerator.baseRelativePath)
-                                ) {
-                                    return@withContext false
-                                }
+                            if (path != null &&
+                                !path.startsWith(filePathGenerator.baseRelativePath)
+                            ) {
+                                return@withContext false
                             }
 
-                            if (ownerColumn != -1 || pathColumn != -1) return@withContext true
+                            if (owner == context.packageName) return@withContext true
                         }
 
                         // 3. Fallback to Display Name Prefix (API 28 or missing modern columns)
@@ -434,7 +446,6 @@ class LocalMediaRepository(
      * @return The [Uri] of the saved media, or `null` if the save attempt fails.
      * @throws IOException if an I/O error occurs during the save operation.
      */
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Throws(IOException::class)
     override suspend fun saveToMediaStore(
         mediaDescriptor: MediaDescriptor.Content,

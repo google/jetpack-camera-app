@@ -319,7 +319,6 @@ class PreviewViewModel @Inject constructor(
             val prefix = when (event) {
                 is ImageCaptureEvent -> "Image"
                 is VideoCaptureEvent -> "Video"
-                else -> "Capture"
             }
             snackBarController.addSnackBarData(
                 SnackbarData(

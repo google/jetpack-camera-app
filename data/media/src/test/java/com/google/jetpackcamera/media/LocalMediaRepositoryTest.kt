@@ -168,7 +168,8 @@ class LocalMediaRepositoryTest {
         contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
 
         val appDescriptor = repository.lastCapturedMedia.value
-        assertThat(appDescriptor).isInstanceOf(MediaDescriptor.Content::class.java)
+        assertThat(appDescriptor).isInstanceOf(MediaDescriptor.Content.Image::class.java)
+        assertThat((appDescriptor as MediaDescriptor.Content.Image).uri).isEqualTo(appUrl)
 
         // When a file from a different app is inserted
         val otherUrl = fakeContentProvider.insert(
@@ -180,6 +181,22 @@ class LocalMediaRepositoryTest {
             )
         )!!
         contentResolver.notifyChange(otherUrl, null)
+
+        // Then the flow still points to our app's file
+        assertThat(repository.lastCapturedMedia.value).isEqualTo(appDescriptor)
+
+        // When a third-party file has a masked (null) ownerPackageName in the camera directory
+        val maskedOwnerValues = createContentValues(
+            displayName = "OTHER_Image_Masked.jpg",
+            dateAdded = 6000L
+        ).apply {
+            putNull(MediaStore.MediaColumns.OWNER_PACKAGE_NAME)
+        }
+        val maskedOwnerUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            maskedOwnerValues
+        )!!
+        contentResolver.notifyChange(maskedOwnerUrl, null)
 
         // Then the flow still points to our app's file
         assertThat(repository.lastCapturedMedia.value).isEqualTo(appDescriptor)
@@ -206,8 +223,8 @@ class LocalMediaRepositoryTest {
     fun lastCapturedMedia_initialLoad_usesDynamicPrefixAndPath() = runTest {
         // Given a custom generator with different prefix and path
         val customGenerator = object : FilePathGenerator by filePathGenerator {
-            override val prefix: String = "GPH"
-            override val baseRelativePath: String = "DCIM/Photos"
+            override val prefix: String = "CUSTOM"
+            override val baseRelativePath: String = "DCIM/Custom"
         }
 
         // Add a JCA file (should be ignored by the custom repo)
@@ -220,12 +237,12 @@ class LocalMediaRepositoryTest {
             )
         )!!
 
-        // Add a GPH file (should be found by the custom repo)
-        val gphUrl = fakeContentProvider.insert(
+        // Add a custom file (should be found by the custom repo)
+        val customUrl = fakeContentProvider.insert(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             createContentValues(
-                displayName = "GPH_Image.jpg",
-                relativePath = "DCIM/Photos",
+                displayName = "CUSTOM_Image.jpg",
+                relativePath = "DCIM/Custom",
                 ownerPackageName = context.packageName
             )
         )!!
@@ -236,7 +253,7 @@ class LocalMediaRepositoryTest {
 
         val result = customRepo.lastCapturedMedia.value
         assertThat(result).isInstanceOf(MediaDescriptor.Content::class.java)
-        assertThat((result as MediaDescriptor.Content).uri).isEqualTo(gphUrl)
+        assertThat((result as MediaDescriptor.Content).uri).isEqualTo(customUrl)
     }
 
     @Test

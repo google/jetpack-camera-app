@@ -18,6 +18,8 @@ package com.google.jetpackcamera.ui.components.capture
 import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -33,10 +35,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -46,6 +45,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import com.google.jetpackcamera.data.media.MediaDescriptor
@@ -70,35 +70,32 @@ fun ImageWell(
     shape: Shape = RoundedCornerShape(16.dp),
     enabled: Boolean = true
 ) {
-    val currentContent = (imageWellUiState as? ImageWellUiState.Content)?.mediaDescriptor
-    var lastValidContent by remember { mutableStateOf<MediaDescriptor.Content?>(null) }
+    if (imageWellUiState is ImageWellUiState.Content) {
+        val disableAnimations = LocalDisableAnimations.current
+        val animationSpec: FiniteAnimationSpec<IntOffset> =
+            if (disableAnimations) snap() else tween(300)
 
-    if (currentContent != null) {
-        lastValidContent = currentContent
-    }
-
-    Box(
-        modifier = modifier
-            .testTag(IMAGE_WELL_TAG)
-            .size(IconButtonDefaults.mediumContainerSize())
-            .border(2.dp, Color.White, shape)
-            .clip(shape)
-            .clickable(onClick = onClick, enabled = enabled)
-    ) {
-        lastValidContent?.let { targetContent ->
+        Box(
+            modifier = modifier
+                .testTag(IMAGE_WELL_TAG)
+                .size(IconButtonDefaults.mediumContainerSize())
+                .border(2.dp, Color.White, shape)
+                .clip(shape)
+                .clickable(onClick = onClick, enabled = enabled)
+        ) {
             AnimatedContent(
-                targetState = targetContent,
+                targetState = imageWellUiState.mediaDescriptor,
                 modifier = Modifier.fillMaxSize(),
                 label = "ImageWellAnimation",
                 contentKey = { it.uri },
                 transitionSpec = {
                     val enter = slideInVertically(
                         initialOffsetY = { -it },
-                        animationSpec = tween(300)
+                        animationSpec = animationSpec
                     )
                     val exit = slideOutVertically(
                         targetOffsetY = { it },
-                        animationSpec = tween(300)
+                        animationSpec = animationSpec
                     )
                     enter.togetherWith(exit).apply {
                         targetContentZIndex = 1f
