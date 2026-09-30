@@ -27,7 +27,6 @@ import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveMode
-import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
@@ -52,7 +51,9 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class PreviewViewModelTest {
 
-    private val cameraSystem = FakeCameraSystem()
+    private val cameraSystem = FakeCameraSystem().apply {
+        setSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+    }
     private val cameraSystemRepository = object : CameraSystemRepository {
         override val surfaceRequest = cameraSystem.getSurfaceRequest()
         override val systemConstraints = cameraSystem.getSystemConstraints()
@@ -64,10 +65,9 @@ class PreviewViewModelTest {
             cameraSystem.initialize(CameraAppSettings()) {}
             return cameraSystem
         }
+        override suspend fun getInitialDefaultCameraAppSettings(): CameraAppSettings =
+            CameraAppSettings()
         override suspend fun getSupportedMimeTypes(): List<String> = emptyList()
-    }
-    private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-        updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
     private lateinit var previewViewModel: PreviewViewModel
 
@@ -76,7 +76,6 @@ class PreviewViewModelTest {
         Dispatchers.setMain(StandardTestDispatcher())
         previewViewModel = PreviewViewModel(
             cameraSystemRepository = cameraSystemRepository,
-            constraintsRepository = constraintsRepository,
             settingsRepository = FakeSettingsRepository(),
             mediaRepository = FakeMediaRepository(),
             savedStateHandle = SavedStateHandle(),
@@ -182,6 +181,23 @@ class PreviewViewModelTest {
         }
         assertThat(cameraSystem.isLensFacingFront).isTrue()
     }
+
+    @Test
+    fun defaultSettingsChangedBeforeCreation_propagatesToCameraSystem() =
+        runTest(StandardTestDispatcher()) {
+            previewViewModel = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(cameraLensFacing = LensFacing.FRONT)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            startCameraUntilRunning()
+
+            assertThat(cameraSystem.isLensFacingFront).isTrue()
+        }
 
     private fun TestScope.startCameraUntilRunning() {
         previewViewModel.cameraController.startCamera()

@@ -108,6 +108,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(project(":core:settings:datastore-prefs"))
     testImplementation(project(":core:settings:datastore-prefs:testing"))
+    testImplementation(project(":data:settings:testing"))
     testImplementation(libs.androidx.datastore.preferences)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
