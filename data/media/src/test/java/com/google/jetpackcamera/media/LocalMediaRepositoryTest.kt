@@ -753,7 +753,8 @@ class LocalMediaRepositoryTest {
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             createContentValues(
                 displayName = "${filePathGenerator.prefix}_LegacyImage.jpg",
-                dateAdded = 1000L
+                dateAdded = 1000L,
+                relativePath = ""
             )
         )!!
         fakeContentProvider.setThumbnailFail(imageUrl, true)
@@ -767,7 +768,8 @@ class LocalMediaRepositoryTest {
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             createContentValues(
                 displayName = "${filePathGenerator.prefix}_LegacyVideo.mp4",
-                dateAdded = 2000L
+                dateAdded = 2000L,
+                relativePath = ""
             )
         )!!
         fakeContentProvider.setThumbnailFail(videoUrl, true)
@@ -776,5 +778,18 @@ class LocalMediaRepositoryTest {
         val videoDescriptor = legacyRepo.lastCapturedMedia.value as MediaDescriptor.Content.Video
         assertThat(videoDescriptor.uri).isEqualTo(videoUrl)
         assertThat(videoDescriptor.thumbnail).isSameInstanceAs(legacyStubBitmap)
+
+        // On API 28, filtering relies on DISPLAY_NAME prefix rather than RELATIVE_PATH/OWNER_PACKAGE_NAME
+        val otherLegacyUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues(
+                displayName = "OTHER_LegacyImage.jpg",
+                dateAdded = 3000L
+            )
+        )!!
+        contentResolver.notifyChange(otherLegacyUrl, null)
+        assertThat(legacyRepo.lastCapturedMedia.value).isEqualTo(videoDescriptor)
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+        assertThat(legacyRepo.lastCapturedMedia.value).isEqualTo(videoDescriptor)
     }
 }
