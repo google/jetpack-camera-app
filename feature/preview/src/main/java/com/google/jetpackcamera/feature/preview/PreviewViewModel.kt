@@ -22,6 +22,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
+import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.core.location.LocationProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
@@ -67,7 +69,10 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateAdapterR
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.Optional
 import javax.inject.Inject
+import kotlin.jvm.optionals.getOrNull
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -92,7 +97,8 @@ class PreviewViewModel @Inject constructor(
     private val defaultSaveMode: SaveMode,
     private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy(),
     private val settingsRepository: SettingsRepository,
-    private val mediaRepository: MediaRepository
+    private val mediaRepository: MediaRepository,
+    private val locationProvider: Optional<LocationProvider>
 ) : ViewModel() {
     private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState> =
@@ -200,6 +206,9 @@ class PreviewViewModel @Inject constructor(
         coroutineContext = viewModelScope.coroutineContext
     )
 
+    @Volatile
+    private var isLocationEnabled = false
+
     val captureController: CaptureController = CaptureControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
         cameraSystemProvider = cameraSystemRepository::getCameraSystem,
@@ -222,6 +231,14 @@ class PreviewViewModel @Inject constructor(
         },
         captureEvents = incomingCaptureEvents,
         imageWellController = imageWellController,
+        locationProvider = locationProvider.getOrNull()?.let { provider ->
+            object : LocationProvider {
+                override fun getCurrentLocation() =
+                    if (isLocationEnabled) provider.getCurrentLocation() else null
+
+                override suspend fun runLocationUpdates() = provider.runLocationUpdates()
+            }
+        },
         onImageCached = { uri ->
             viewModelScope.launch {
                 mediaRepository.setCurrentMedia(
@@ -239,6 +256,55 @@ class PreviewViewModel @Inject constructor(
         coroutineContext = viewModelScope.coroutineContext
     )
 
+    private var locationUpdatesJob: Job? = null
+    private var isPreviewActive = false
+
+    /**
+     * Initiates location hardware warmup to acquire a fresh fix before capture.
+     *
+     * Called when the preview screen becomes visible. Safe no-op if no [LocationProvider] is bound,
+     * if location tagging is disabled in settings, or if video recording is active.
+     */
+    fun startLocationWarmup() {
+        isPreviewActive = true
+        locationUpdatesJob?.cancel()
+        locationUpdatesJob = null
+        updateLocationWarmup()
+    }
+
+    /**
+     * Stops active location updates and releases location hardware.
+     *
+     * Called when preview is paused or disposed to conserve battery. Safe no-op if no [LocationProvider] is bound.
+     */
+    fun stopLocationWarmup() {
+        isPreviewActive = false
+        updateLocationWarmup()
+    }
+
+    private fun updateLocationWarmup() {
+        if (isPreviewActive &&
+            isLocationEnabled &&
+            locationProvider.isPresent &&
+            !isVideoRecordingActive()
+        ) {
+            if (locationUpdatesJob == null) {
+                locationUpdatesJob = viewModelScope.launch {
+                    locationProvider.get().runLocationUpdates()
+                }
+            }
+        } else {
+            locationUpdatesJob?.cancel()
+            locationUpdatesJob = null
+        }
+    }
+
+    private fun isVideoRecordingActive(): Boolean {
+        val recordingState = cameraSystemRepository.currentCameraState.value.videoRecordingState
+        return recordingState is VideoRecordingState.Active ||
+            recordingState is VideoRecordingState.Starting
+    }
+
     init {
         viewModelScope.launch {
             launch {
@@ -246,6 +312,10 @@ class PreviewViewModel @Inject constructor(
                     cameraSystemRepository.getInitialDefaultCameraAppSettings()
                 settingsRepository.defaultCameraAppSettings
                     .collect { new ->
+                        if (isLocationEnabled != new.locationEnabled) {
+                            isLocationEnabled = new.locationEnabled
+                            updateLocationWarmup()
+                        }
                         oldCameraAppSettings.applyDiffs(
                             new,
                             cameraSystemRepository.getCameraSystem()
@@ -278,6 +348,18 @@ class PreviewViewModel @Inject constructor(
                     showSnackbarForCaptureEvent(event)
                     outgoingCaptureEvents.send(event)
                 }
+            }
+
+            launch {
+                cameraSystemRepository.currentCameraState
+                    .map {
+                        it.videoRecordingState is VideoRecordingState.Active ||
+                            it.videoRecordingState is VideoRecordingState.Starting
+                    }
+                    .distinctUntilChanged()
+                    .collect {
+                        updateLocationWarmup()
+                    }
             }
         }
     }
@@ -312,7 +394,6 @@ class PreviewViewModel @Inject constructor(
             val prefix = when (event) {
                 is ImageCaptureEvent -> "Image"
                 is VideoCaptureEvent -> "Video"
-                else -> "Capture"
             }
             snackBarController.addSnackBarData(
                 SnackbarData(

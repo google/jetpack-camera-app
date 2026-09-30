@@ -17,6 +17,7 @@ package com.google.jetpackcamera.core.camera.testing
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
+import android.location.Location
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
@@ -39,6 +40,7 @@ import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,6 +63,24 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     var isRecordingPaused = false
 
     var isLensFacingFront = false
+
+    private val _lastPictureTakenLocation = AtomicReference<Location?>(null)
+
+    /** The most recent [Location] passed to [takePicture], or `null` if none was provided. */
+    var lastPictureTakenLocation: Location?
+        get() = _lastPictureTakenLocation.get()
+        set(value) {
+            _lastPictureTakenLocation.set(value)
+        }
+
+    private val _lastVideoRecordingLocation = AtomicReference<Location?>(null)
+
+    /** The most recent [Location] passed to [startVideoRecording], or `null` if none was provided. */
+    var lastVideoRecordingLocation: Location?
+        get() = _lastVideoRecordingLocation.get()
+        set(value) {
+            _lastVideoRecordingLocation.set(value)
+        }
 
     private var isScreenFlash = true
     private var screenFlashEvents = Channel<CameraSystem.ScreenFlashEvent>(capacity = UNLIMITED)
@@ -106,10 +126,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
             throw IllegalStateException("Usecases not bound")
         }
         if (isScreenFlash) {
-            screenFlashEvents.trySend(
+            val unused1 = screenFlashEvents.trySend(
                 CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.APPLY_UI) { }
             )
-            screenFlashEvents.trySend(
+            val unused2 = screenFlashEvents.trySend(
                 CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.CLEAR_UI) { }
             )
         }
@@ -120,8 +140,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override suspend fun takePicture(
         contentResolver: ContentResolver,
         saveLocation: SaveLocation,
+        location: Location?,
         onCaptureStarted: () -> Unit
     ): ImageCapture.OutputFileResults {
+        lastPictureTakenLocation = location
         takePicture(onCaptureStarted)
         return ImageCapture.OutputFileResults(null)
     }
@@ -134,11 +156,13 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     override suspend fun startVideoRecording(
         saveLocation: SaveLocation,
+        location: Location?,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
+        lastVideoRecordingLocation = location
         numVideoRecordingStarts++
         recordingInProgress = true
     }

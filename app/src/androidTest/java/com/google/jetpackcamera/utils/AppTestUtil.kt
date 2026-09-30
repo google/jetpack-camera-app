@@ -83,6 +83,8 @@ internal val APP_REQUIRED_PERMISSIONS: List<String> = buildList {
 
 val TEST_REQUIRED_PERMISSIONS: List<String> = buildList {
     addAll(APP_REQUIRED_PERMISSIONS)
+    add(android.Manifest.permission.ACCESS_FINE_LOCATION)
+    add(android.Manifest.permission.ACCESS_COARSE_LOCATION)
     if (Build.VERSION.SDK_INT >= 33) {
         add(android.Manifest.permission.READ_MEDIA_IMAGES)
         add(android.Manifest.permission.READ_MEDIA_VIDEO)
