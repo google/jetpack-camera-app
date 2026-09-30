@@ -34,7 +34,9 @@ import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
 import java.io.File
 import java.io.IOException
@@ -298,6 +300,77 @@ class ProtoDataStoreSettingsDataSourceTest {
         } finally {
             secondScope.cancel()
         }
+    }
+
+    @Test
+    fun unconfiguredSettings_fallBackToCameraFeaturePolicyDefaults() = runTest {
+        val policy = CameraFeaturePolicy(
+            captureMode = SettingConfig(defaultValue = CaptureMode.IMAGE_ONLY),
+            aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE),
+            flashMode = SettingConfig(defaultValue = FlashMode.ON),
+            dynamicRange = SettingConfig(defaultValue = DynamicRange.HLG10),
+            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR)
+        )
+        val policyRepository = ProtoDataStoreSettingsDataSource(
+            jcaSettings = testDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD,
+            cameraFeaturePolicy = policy
+        )
+
+        val settings = policyRepository.getCurrentDefaultCameraAppSettings()
+
+        assertThat(settings.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+        assertThat(settings.flashMode).isEqualTo(FlashMode.ON)
+        assertThat(settings.dynamicRange).isEqualTo(DynamicRange.HLG10)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
+
+    @Test
+    fun unconfiguredSettings_fallBackToPolicyDefaults_afterUnrelatedSettingIsStored() = runTest {
+        // Storing an unrelated setting persists the seeded message. The policy-configurable
+        // fields must remain unset so that they still resolve to the policy defaults.
+        repository.updateDarkModeStatus(DarkMode.LIGHT)
+        advanceUntilIdle()
+
+        val policy = CameraFeaturePolicy(
+            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR)
+        )
+        val policyRepository = ProtoDataStoreSettingsDataSource(
+            jcaSettings = testDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD,
+            cameraFeaturePolicy = policy
+        )
+
+        val settings = policyRepository.getCurrentDefaultCameraAppSettings()
+        assertThat(settings.darkMode).isEqualTo(DarkMode.LIGHT)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
+
+    @Test
+    fun storedUserPreferences_takePrecedenceOverCameraFeaturePolicyDefaults() = runTest {
+        // User selects 3:4 and standard JPEG
+        repository.updateAspectRatio(AspectRatio.THREE_FOUR)
+        repository.updateImageFormat(ImageOutputFormat.JPEG)
+        advanceUntilIdle()
+
+        val policy = CameraFeaturePolicy(
+            aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE),
+            flashMode = SettingConfig(defaultValue = FlashMode.ON),
+            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR)
+        )
+        val policyRepository = ProtoDataStoreSettingsDataSource(
+            jcaSettings = testDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD,
+            cameraFeaturePolicy = policy
+        )
+
+        val settings = policyRepository.getCurrentDefaultCameraAppSettings()
+        // Stored user preferences are preserved
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        // Policy default is used for the setting the user has not configured
+        assertThat(settings.flashMode).isEqualTo(FlashMode.ON)
     }
 
     @Test

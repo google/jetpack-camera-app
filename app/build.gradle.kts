@@ -164,6 +164,7 @@ dependencies {
     implementation(project(":data:settings"))
     implementation(project(":core:settings:datastore-proto"))
     implementation(project(":core:settings"))
+
     implementation(project(":core:model"))
 
     // Camera Preview

@@ -32,6 +32,8 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.toProto
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
 import com.google.jetpackcamera.settings.proto.copy
 import java.io.File
@@ -49,11 +51,22 @@ import kotlinx.coroutines.flow.map
 
 /**
  * Settings data source using Proto DataStore.
+ *
+ * @param jcaSettings The [DataStore] holding the persisted settings.
+ * @param defaultCaptureModeOverride The [CaptureMode] reported by every emitted
+ * [CameraAppSettings], unless [cameraFeaturePolicy] configures a capture mode default.
+ * @param cameraFeaturePolicy The [CameraFeaturePolicy] whose default values are used for settings
+ * that the user has not configured. Stored user preferences take precedence.
  */
 class ProtoDataStoreSettingsDataSource(
     private val jcaSettings: DataStore<CameraAppSettingsProto>,
-    private val defaultCaptureModeOverride: CaptureMode
+    defaultCaptureModeOverride: CaptureMode,
+    cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy()
 ) : SettingsDataSource {
+
+    private val baselineDefaults: CameraAppSettings = cameraFeaturePolicy.toCameraAppSettings(
+        DEFAULT_CAMERA_APP_SETTINGS.copy(captureMode = defaultCaptureModeOverride)
+    )
 
     private val jcaSettingsFlow: Flow<CameraAppSettingsProto> =
         jcaSettings.data.catch { exception ->
@@ -68,11 +81,11 @@ class ProtoDataStoreSettingsDataSource(
         }
 
     override val defaultCameraAppSettings: Flow<CameraAppSettings> = jcaSettingsFlow.map {
-        it.toModel(defaultCaptureModeOverride)
+        it.toModel(baselineDefaults.captureMode, baselineDefaults)
     }
 
     override suspend fun getCurrentDefaultCameraAppSettings(): CameraAppSettings =
-        jcaSettingsFlow.first().toModel(defaultCaptureModeOverride)
+        jcaSettingsFlow.first().toModel(baselineDefaults.captureMode, baselineDefaults)
 
     override suspend fun updateDefaultLensFacing(lensFacing: LensFacing) {
         jcaSettings.updateData { currentSettings ->
@@ -176,7 +189,10 @@ class ProtoDataStoreSettingsDataSource(
          *
          * @param context The application context.
          * @param defaultCaptureModeOverride The [CaptureMode] reported by every [CameraAppSettings]
-         * emitted by the returned data source.
+         * emitted by the returned data source, unless [cameraFeaturePolicy] configures a capture
+         * mode default.
+         * @param cameraFeaturePolicy The [CameraFeaturePolicy] whose default values are used for
+         * settings that the user has not configured. Defaults to an empty policy.
          * @param coroutineContext An optional [CoroutineContext] for the DataStore's background
          * work. The work runs on [Dispatchers.IO] unless this context contains a
          * [kotlinx.coroutines.CoroutineDispatcher]. If this context contains a [Job], the
@@ -187,6 +203,7 @@ class ProtoDataStoreSettingsDataSource(
         fun create(
             context: Context,
             defaultCaptureModeOverride: CaptureMode,
+            cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy(),
             coroutineContext: CoroutineContext = EmptyCoroutineContext
         ): SettingsDataSource {
             val scope = CoroutineScope(
@@ -197,7 +214,11 @@ class ProtoDataStoreSettingsDataSource(
                 scope = scope,
                 produceFile = { File(context.filesDir, "datastore/$FILE_LOCATION") }
             )
-            return ProtoDataStoreSettingsDataSource(dataStore, defaultCaptureModeOverride)
+            return ProtoDataStoreSettingsDataSource(
+                dataStore,
+                defaultCaptureModeOverride,
+                cameraFeaturePolicy
+            )
         }
     }
 }

@@ -21,6 +21,7 @@ import com.google.jetpackcamera.di.IODispatcher
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.ProtoDataStoreSettingsDataSource
 import com.google.jetpackcamera.settings.SettingsDataSource
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,12 +39,14 @@ object AppSettingsModule {
     fun provideSettingsDataSource(
         @ApplicationContext context: Context,
         @DefaultCaptureModeOverride defaultCaptureMode: CaptureMode,
-        @IODispatcher ioDispatcher: CoroutineDispatcher
+        @IODispatcher ioDispatcher: CoroutineDispatcher,
+        cameraFeaturePolicy: CameraFeaturePolicy
     ): SettingsDataSource {
         return ProtoDataStoreSettingsDataSource.create(
             context = context,
             defaultCaptureModeOverride = defaultCaptureMode,
-            coroutineContext = ioDispatcher
+            coroutineContext = ioDispatcher,
+            cameraFeaturePolicy = cameraFeaturePolicy
         )
     }
 }

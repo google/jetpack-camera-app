@@ -15,6 +15,10 @@
   ~ limitations under the License.
   -->
 <resources>
+    <string name="toast_unknown_disabled_rationale" description="Message shown to the user when they tap a camera setting that is disabled for an unknown reason. [CHAR LIMIT=60]">Unknown Disabled Rationale</string>
+    <string name="toast_image_capture_restricted" description="Message shown to the user when they try to select the photo-only capture mode, but the app has restricted this option. [CHAR LIMIT=60]">Image Capture option is restricted</string>
+    <string name="toast_video_capture_restricted" description="Message shown to the user when they try to select the video-only capture mode, but the app has restricted this option. [CHAR LIMIT=60]">Video Capture option is restricted</string>
+    <string name="toast_hybrid_capture_restricted" description="Message shown to the user when they try to select the combined photo and video capture mode, but the app has restricted this option. [CHAR LIMIT=60]">Hybrid Capture option is restricted</string>
     <string name="toast_image_capture_success">Image Capture Success</string>
     <string name="toast_video_capture_success">Video Capture Success</string>
     <string name="toast_capture_failure">Image Capture Failure</string>
