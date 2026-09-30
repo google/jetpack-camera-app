@@ -76,16 +76,4 @@ class CameraErrorUiStateAdapterTest {
         assertThat(state.bodyResId).isEqualTo(R.string.picker_camera_error_disabled_body)
         assertThat(state.shouldExitAppOnConfirm).isTrue()
     }
-
-    @Test
-    fun from_insufficientStorage_doesNotExitApp() {
-        val state = CameraErrorUiState.from(
-            cameraState = CameraState(cameraError = CameraError.InsufficientStorage),
-            acknowledgedError = null
-        ) as CameraErrorUiState.Showing
-
-        assertThat(state.titleResId).isEqualTo(R.string.picker_camera_error_storage_title)
-        assertThat(state.bodyResId).isEqualTo(R.string.picker_camera_error_storage_body)
-        assertThat(state.shouldExitAppOnConfirm).isFalse()
-    }
 }

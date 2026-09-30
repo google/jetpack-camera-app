@@ -96,19 +96,5 @@ fun CameraErrorUiState.Companion.from(
             confirmButtonTextResId = okButton,
             shouldExitAppOnConfirm = true
         )
-        CameraError.ThermalOverheat -> CameraErrorUiState.Showing(
-            error = error,
-            titleResId = R.string.picker_camera_error_thermal_title,
-            bodyResId = R.string.picker_camera_error_thermal_body,
-            confirmButtonTextResId = okButton,
-            shouldExitAppOnConfirm = true
-        )
-        CameraError.InsufficientStorage -> CameraErrorUiState.Showing(
-            error = error,
-            titleResId = R.string.picker_camera_error_storage_title,
-            bodyResId = R.string.picker_camera_error_storage_body,
-            confirmButtonTextResId = okButton,
-            shouldExitAppOnConfirm = false
-        )
     }
 }

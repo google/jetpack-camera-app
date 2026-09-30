@@ -74,16 +74,4 @@ sealed interface CameraError {
     data object CameraRemoved : CameraError {
         override val isRecoverable = false
     }
-
-    // --- Environmental & Capture Errors ---
-
-    /** Device thermal status >= `THERMAL_STATUS_CRITICAL` (API 29+). */
-    data object ThermalOverheat : CameraError {
-        override val isRecoverable = false
-    }
-
-    /** Storage full (`StatFs` pre-check, `ERROR_FILE_IO`, or `ERROR_INSUFFICIENT_STORAGE`). */
-    data object InsufficientStorage : CameraError {
-        override val isRecoverable = true
-    }
 }

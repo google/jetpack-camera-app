@@ -63,7 +63,6 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED
-import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_INSUFFICIENT_STORAGE
 import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
@@ -1190,13 +1189,6 @@ private suspend fun startVideoRecordingInternal(
                     }
 
                     else -> {
-                        val storageError = if (
-                            onVideoRecordEvent.error == ERROR_INSUFFICIENT_STORAGE
-                        ) {
-                            CameraError.InsufficientStorage
-                        } else {
-                            null
-                        }
                         onVideoRecord(
                             OnVideoRecordEvent.OnVideoRecordError(
                                 RuntimeException(
@@ -1210,8 +1202,7 @@ private suspend fun startVideoRecordingInternal(
                                 videoRecordingState = VideoRecordingState.Inactive(
                                     finalElapsedTimeNanos = onVideoRecordEvent.recordingStats
                                         .recordedDurationNanos
-                                ),
-                                cameraError = storageError ?: old.cameraError
+                                )
                             )
                         }
                     }
