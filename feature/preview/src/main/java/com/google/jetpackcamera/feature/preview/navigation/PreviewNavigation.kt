@@ -55,7 +55,7 @@ fun NavController.navigateToPreview(
     externalCaptureMode: ExternalCaptureMode? = null,
     captureUris: List<Uri>? = null,
     debugSettings: DebugSettings? = null,
-    saveMode: Boolean? = null,
+    shouldReviewAfterCapture: Boolean? = null,
     builder: (NavOptionsBuilder.() -> Unit) = {}
 ) {
     var route = BASE_ROUTE_DEF // Start with the base route
@@ -70,7 +70,7 @@ fun NavController.navigateToPreview(
             ).serializeAsValue(it)}"
         )
     }
-    saveMode?.let {
+    shouldReviewAfterCapture?.let {
         queryParams.add(
             "${ARG_REVIEW_AFTER_CAPTURE}=${
                 NavType.BoolType.serializeAsValue(it)}"

@@ -40,6 +40,7 @@ import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
@@ -89,6 +90,7 @@ class PreviewViewModel @Inject constructor(
     private val cameraSystemRepository: CameraSystemRepository,
     private val savedStateHandle: SavedStateHandle,
     private val defaultSaveMode: SaveMode,
+    private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy(),
     private val settingsRepository: SettingsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
@@ -121,6 +123,7 @@ class PreviewViewModel @Inject constructor(
 
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         currentSettings = cameraSystemRepository.currentSettings,
+        cameraFeaturePolicy = cameraFeaturePolicy,
         systemConstraints = cameraSystemRepository.systemConstraints,
         currentCameraState = cameraSystemRepository.currentCameraState,
         trackedCaptureUiState = trackedCaptureUiState,

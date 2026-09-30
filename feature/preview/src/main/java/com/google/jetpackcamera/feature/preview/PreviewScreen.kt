@@ -124,6 +124,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
 
@@ -601,14 +602,18 @@ private fun ContentScreen(
         }
     }
 
+    // TODO: When QuickSettingsUiState is Unavailable, coordinate with optional onNavigateToSettings
+    //       if a direct navigation path to settings from the toggle button is desired.
     val quickSettingsButtonLambda = remember(
         isVideoRecordingActive,
         isQuickSettingsOpen,
+        quickSettingsState,
         scaffoldState.bottomSheetState,
         scope
     ) {
         @Composable { modifier: Modifier ->
-            val isQuickSettingsVisible = !isVideoRecordingActive.value
+            val isQuickSettingsVisible = !isVideoRecordingActive.value &&
+                quickSettingsState.value is QuickSettingsUiState.Available
             val disableAnimations = LocalDisableAnimations.current
             AnimatedVisibility(
                 visible = isQuickSettingsVisible,
