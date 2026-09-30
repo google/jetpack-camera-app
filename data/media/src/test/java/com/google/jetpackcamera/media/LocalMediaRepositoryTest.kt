@@ -43,6 +43,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowContentResolver
+import org.robolectric.shadows.ShadowMediaStore
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
@@ -704,5 +705,76 @@ class LocalMediaRepositoryTest {
 
         // Then
         assertThat(result).isNull()
+    }
+
+    @Test
+    fun defaultThumbnailLoader_api29Plus_usesContentResolverLoadThumbnail() = runTest {
+        val legacyStubBitmap = Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
+        ShadowMediaStore.setStubBitmapForThumbnails(legacyStubBitmap)
+
+        val defaultRepo = LocalMediaRepository(context, testDispatcher, filePathGenerator)
+
+        val imageUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues(
+                displayName = "${filePathGenerator.prefix}_Image.jpg",
+                dateAdded = 1000L
+            )
+        )!!
+        contentResolver.notifyChange(imageUrl, null)
+        val loadedDescriptor = defaultRepo.lastCapturedMedia.value as MediaDescriptor.Content.Image
+        assertThat(loadedDescriptor.uri).isEqualTo(imageUrl)
+        assertThat(loadedDescriptor.thumbnail).isNotNull()
+        assertThat(loadedDescriptor.thumbnail).isNotSameInstanceAs(legacyStubBitmap)
+
+        // ContentResolver.loadThumbnail delegates to FakeContentProvider.openTypedAssetFile,
+        // which returns null when setThumbnailFail is enabled (unlike legacy ShadowMediaStore).
+        val failedImageUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues(
+                displayName = "${filePathGenerator.prefix}_Image_Fail.jpg",
+                dateAdded = 2000L
+            )
+        )!!
+        fakeContentProvider.setThumbnailFail(failedImageUrl, true)
+        val freshRepo = LocalMediaRepository(context, testDispatcher, filePathGenerator)
+        val failedDescriptor = freshRepo.lastCapturedMedia.value as MediaDescriptor.Content.Image
+        assertThat(failedDescriptor.uri).isEqualTo(failedImageUrl)
+        assertThat(failedDescriptor.thumbnail).isNull()
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.P])
+    fun defaultThumbnailLoader_api28_usesLegacyThumbnails() = runTest {
+        val legacyStubBitmap = Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
+        ShadowMediaStore.setStubBitmapForThumbnails(legacyStubBitmap)
+
+        val imageUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues(
+                displayName = "${filePathGenerator.prefix}_LegacyImage.jpg",
+                dateAdded = 1000L
+            )
+        )!!
+        fakeContentProvider.setThumbnailFail(imageUrl, true)
+
+        val legacyRepo = LocalMediaRepository(context, testDispatcher, filePathGenerator)
+        val imageDescriptor = legacyRepo.lastCapturedMedia.value as MediaDescriptor.Content.Image
+        assertThat(imageDescriptor.uri).isEqualTo(imageUrl)
+        assertThat(imageDescriptor.thumbnail).isSameInstanceAs(legacyStubBitmap)
+
+        val videoUrl = fakeContentProvider.insert(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            createContentValues(
+                displayName = "${filePathGenerator.prefix}_LegacyVideo.mp4",
+                dateAdded = 2000L
+            )
+        )!!
+        fakeContentProvider.setThumbnailFail(videoUrl, true)
+        contentResolver.notifyChange(videoUrl, null)
+
+        val videoDescriptor = legacyRepo.lastCapturedMedia.value as MediaDescriptor.Content.Video
+        assertThat(videoDescriptor.uri).isEqualTo(videoUrl)
+        assertThat(videoDescriptor.thumbnail).isSameInstanceAs(legacyStubBitmap)
     }
 }
