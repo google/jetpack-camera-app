@@ -192,19 +192,16 @@ class FakeContentProvider : ContentProvider() {
         val newUri = Uri.withAppendedPath(uri, nextId.toString())
         mediaStore[newUri.toString()] = values
 
-        // Proactively create the file and write a dummy bitmap so loadThumbnail succeeds
+        // Proactively create the file and write a valid dummy image so loadThumbnail succeeds
         context?.let { ctx ->
             val file = File(ctx.cacheDir, newUri.lastPathSegment ?: "tempfile")
             if (!file.exists() || file.length() == 0L) {
                 file.createNewFile()
-                val bitmap = android.graphics.Bitmap.createBitmap(
-                    1,
-                    1,
-                    android.graphics.Bitmap.Config.ARGB_8888
+                val pngBytes = android.util.Base64.decode(
+                    DUMMY_PNG_BASE64,
+                    android.util.Base64.DEFAULT
                 )
-                file.outputStream().use { out ->
-                    bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
-                }
+                file.writeBytes(pngBytes)
             }
         }
 
@@ -259,14 +256,11 @@ class FakeContentProvider : ContentProvider() {
             if (!file.exists()) {
                 file.createNewFile()
                 if (mode == "r") {
-                    val bitmap = android.graphics.Bitmap.createBitmap(
-                        1,
-                        1,
-                        android.graphics.Bitmap.Config.ARGB_8888
+                    val pngBytes = android.util.Base64.decode(
+                        DUMMY_PNG_BASE64,
+                        android.util.Base64.DEFAULT
                     )
-                    file.outputStream().use { out ->
-                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
-                    }
+                    file.writeBytes(pngBytes)
                 }
             }
 
@@ -275,5 +269,11 @@ class FakeContentProvider : ContentProvider() {
         } catch (e: FileNotFoundException) {
             return null
         }
+    }
+
+    companion object {
+        private const val DUMMY_PNG_BASE64 =
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk" +
+                "+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
     }
 }

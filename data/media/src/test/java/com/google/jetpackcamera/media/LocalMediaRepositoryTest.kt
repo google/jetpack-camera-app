@@ -42,6 +42,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import org.robolectric.shadows.ShadowContentResolver
 import org.robolectric.shadows.ShadowMediaStore
 
@@ -708,6 +709,7 @@ class LocalMediaRepositoryTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun defaultThumbnailLoader_api29Plus_usesContentResolverLoadThumbnail() = runTest {
         val legacyStubBitmap = Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
         ShadowMediaStore.setStubBitmapForThumbnails(legacyStubBitmap)
