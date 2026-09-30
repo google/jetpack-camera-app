@@ -91,23 +91,23 @@ class FakeContentProvider : ContentProvider() {
 
         // Case 2: Collection URI lookup
         val segments = uri.pathSegments
-        val isImageCollection = segments.contains("images") && segments.last() == "media"
-        val isVideoCollection = segments.contains("video") && segments.last() == "media"
+        val isImageCollection = "images" in segments && segments.last() == "media"
+        val isVideoCollection = "video" in segments && segments.last() == "media"
 
         if (isImageCollection || isVideoCollection) {
             var filteredMedia = mediaStore.entries.filter {
                 val keyUri = Uri.parse(it.key)
                 if (isImageCollection) {
-                    keyUri.pathSegments.contains("images")
+                    "images" in keyUri.pathSegments
                 } else {
-                    keyUri.pathSegments.contains("video")
+                    "video" in keyUri.pathSegments
                 }
             }
 
             // Simple support for DISPLAY_NAME LIKE ?
-            if (selection != null && selection.contains(
-                    MediaStore.MediaColumns.DISPLAY_NAME
-                ) && selectionArgs != null
+            if (selection != null &&
+                MediaStore.MediaColumns.DISPLAY_NAME in selection &&
+                selectionArgs != null
             ) {
                 val pattern = selectionArgs[0].replace("%", ".*").replace("_", ".")
                 val regex = Regex(pattern)
@@ -119,8 +119,8 @@ class FakeContentProvider : ContentProvider() {
 
             // Simple support for RELATIVE_PATH LIKE ? AND OWNER_PACKAGE_NAME = ?
             if (selection != null &&
-                selection.contains(MediaStore.MediaColumns.RELATIVE_PATH) &&
-                selection.contains(MediaStore.MediaColumns.OWNER_PACKAGE_NAME) &&
+                MediaStore.MediaColumns.RELATIVE_PATH in selection &&
+                MediaStore.MediaColumns.OWNER_PACKAGE_NAME in selection &&
                 selectionArgs != null && selectionArgs.size >= 2
             ) {
                 val pathPattern = selectionArgs[0].replace("%", ".*")
@@ -254,7 +254,7 @@ class FakeContentProvider : ContentProvider() {
         val context = context ?: return null
         val file = File(context.cacheDir, uri.lastPathSegment ?: "tempfile")
         try {
-            if (thumbnailFailures.contains(uri.toString())) return null
+            if (uri.toString() in thumbnailFailures) return null
 
             if (!file.exists()) {
                 file.createNewFile()

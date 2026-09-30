@@ -148,7 +148,7 @@ class LocalMediaRepository(
 
     private fun isCollectionUri(uri: Uri): Boolean {
         val segments = uri.pathSegments
-        return (segments.contains("images") || segments.contains("video")) &&
+        return ("images" in segments || "video" in segments) &&
             segments.lastOrNull() == "media"
     }
 
@@ -242,7 +242,7 @@ class LocalMediaRepository(
             return cachedDesc
         }
 
-        val descriptor = if (uri.toString().contains("video")) {
+        val descriptor = if ("video" in uri.toString()) {
             getVideoMediaDescriptor(uri)
         } else {
             getImageMediaDescriptor(uri)
