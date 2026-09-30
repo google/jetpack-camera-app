@@ -24,7 +24,6 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
-import com.google.jetpackcamera.settings.SettableConstraintsRepositoryImpl
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
@@ -49,16 +48,15 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 internal class CaptureUiStateAdapterTest {
 
-    private val cameraSystem = FakeCameraSystem()
-    private val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-        updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+    private val cameraSystem = FakeCameraSystem().apply {
+        setSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
     }
     private val trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState())
     private val externalCaptureMode = ExternalCaptureMode.Standard
 
     private fun createCaptureUiStateFlow() = captureUiState(
         currentSettings = cameraSystem.getCurrentSettings(),
-        systemConstraints = constraintsRepository.systemConstraints,
+        systemConstraints = cameraSystem.getSystemConstraints(),
         currentCameraState = cameraSystem.getCurrentCameraState(),
         trackedCaptureUiState = trackedCaptureUiState,
         externalCaptureMode = externalCaptureMode
@@ -144,7 +142,7 @@ internal class CaptureUiStateAdapterTest {
 
     @Test
     fun captureUiState_flashModeUpdate_emitsUpdatedState() = runTest {
-        constraintsRepository.updateSystemConstraints(
+        cameraSystem.setSystemConstraints(
             CameraSystemConstraints(
                 availableLenses = listOf(LensFacing.BACK),
                 perLensConstraints = mapOf(
