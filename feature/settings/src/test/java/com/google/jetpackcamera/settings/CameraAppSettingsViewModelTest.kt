@@ -26,6 +26,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
 import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
 import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
 import com.google.jetpackcamera.model.CaptureMode
@@ -41,6 +42,7 @@ import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
 import java.io.File
+import java.util.Optional
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -106,6 +108,8 @@ internal class CameraAppSettingsViewModelTest {
     private lateinit var testDataStore: DataStore<Preferences>
     private lateinit var datastoreScope: CoroutineScope
     private lateinit var settingsViewModel: SettingsViewModel
+    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var constraintsRepository: FakeConstraintsRepository
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
@@ -122,13 +126,14 @@ internal class CameraAppSettingsViewModelTest {
             dataStore = testDataStore,
             defaultCaptureModeOverride = CaptureMode.STANDARD
         )
-        val settingsRepository = LocalSettingsRepository(
+        settingsRepository = LocalSettingsRepository(
             settingsDataSource = settingsDataSource
         )
-        val constraintsRepository = FakeConstraintsRepository(TYPICAL_SYSTEM_CONSTRAINTS)
+        constraintsRepository = FakeConstraintsRepository(TYPICAL_SYSTEM_CONSTRAINTS)
         settingsViewModel = SettingsViewModel(
             settingsRepository,
-            constraintsRepository
+            constraintsRepository,
+            Optional.of(FakeLocationProvider())
         )
         advanceUntilIdle()
     }
@@ -137,6 +142,18 @@ internal class CameraAppSettingsViewModelTest {
     fun tearDown() {
         datastoreScope.cancel()
     }
+
+    @Test
+    fun locationSetting_whenLocationProviderNotPresent_isHidden() =
+        runTest(StandardTestDispatcher()) {
+            val vm = SettingsViewModel(
+                settingsRepository,
+                constraintsRepository,
+                Optional.empty()
+            )
+            val uiState = vm.settingsUiState.first { it is SettingsUiState.Enabled }
+            assertThat(assertIsEnabled(uiState).locationUiState).isEqualTo(LocationUiState.Hidden)
+        }
 
     @Test
     fun getSettingsUiState() = runTest(StandardTestDispatcher()) {
@@ -217,6 +234,101 @@ internal class CameraAppSettingsViewModelTest {
             assertThat(it.audioUiState).isNotInstanceOf(AudioUiState.Enabled::class.java)
         }
     }
+
+    @Test
+    fun setLocation_permission_granted() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        settingsViewModel.setGrantedPermissions(
+            mutableSetOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        )
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialLocationState = assertIsEnabled(initialState).locationUiState
+        // assert that locationUiState is Enabled.Off
+        assertThat(initialLocationState).isInstanceOf(LocationUiState.Enabled.Off::class.java)
+
+        val nextLocationUiState = LocationUiState.Enabled.On
+        settingsViewModel.setLocationEnabled(true)
+
+        advanceUntilIdle()
+
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.locationUiState).isEqualTo(nextLocationUiState)
+        }
+    }
+
+    @Test
+    fun setLocation_permission_not_granted() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialLocationState = assertIsEnabled(initialState).locationUiState
+        // assert that locationUiState is disabled
+        assertThat(initialLocationState).isNotInstanceOf(LocationUiState.Enabled::class.java)
+
+        settingsViewModel.setLocationEnabled(true)
+
+        advanceUntilIdle()
+
+        // ensure still disabled
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.locationUiState).isNotInstanceOf(LocationUiState.Enabled::class.java)
+        }
+    }
+
+    @Test
+    fun setLocation_coarsePermissionOnly_granted() = runTest(StandardTestDispatcher()) {
+        settingsViewModel.setGrantedPermissions(
+            mutableSetOf(Manifest.permission.ACCESS_COARSE_LOCATION)
+        )
+        advanceUntilIdle()
+
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialLocationState = assertIsEnabled(initialState).locationUiState
+        assertThat(initialLocationState).isInstanceOf(LocationUiState.Enabled.Off::class.java)
+
+        settingsViewModel.setLocationEnabled(true)
+        advanceUntilIdle()
+
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.locationUiState).isEqualTo(LocationUiState.Enabled.On)
+        }
+    }
+
+    @Test
+    fun locationUiState_permissionRevoked_disablesLocationUiState() =
+        runTest(StandardTestDispatcher()) {
+            // Start with permission granted and location enabled
+            settingsViewModel.setGrantedPermissions(
+                mutableSetOf(Manifest.permission.ACCESS_FINE_LOCATION)
+            )
+            settingsViewModel.setLocationEnabled(true)
+            advanceUntilIdle()
+
+            val stateWithPerm = assertIsEnabled(
+                settingsViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            )
+            assertThat(stateWithPerm.locationUiState).isEqualTo(LocationUiState.Enabled.On)
+
+            // Revoke location permission
+            settingsViewModel.setGrantedPermissions(mutableSetOf())
+            advanceUntilIdle()
+
+            val stateWithoutPerm = assertIsEnabled(settingsViewModel.settingsUiState.value)
+            assertThat(stateWithoutPerm.locationUiState)
+                .isInstanceOf(LocationUiState.Disabled::class.java)
+            val disabledRationale =
+                (stateWithoutPerm.locationUiState as LocationUiState.Disabled).disabledRationale
+            assertThat(disabledRationale)
+                .isInstanceOf(DisabledRationale.PermissionLocationNotGrantedRationale::class.java)
+        }
 
     @Test
     fun setDefaultToFrontCamera() = runTest(StandardTestDispatcher()) {

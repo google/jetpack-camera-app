@@ -34,6 +34,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,8 +50,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.permissions.PermissionEnum
 import com.google.jetpackcamera.permissions.R
@@ -64,13 +70,37 @@ fun PermissionTemplate(
     onDismissPermission: () -> Unit,
     onOpenAppSettings: () -> Unit
 ) {
-    val permissionState = rememberPermissionState(permissionEnum.getPermission())
+    key(permissionEnum) {
+        val permissionStates = rememberMultiplePermissionsState(permissionEnum.getPermissions())
+        PermissionTemplate(
+            modifier = modifier,
+            permissionEnum = permissionEnum,
+            permissionStates = permissionStates,
+            onDismissPermission = onDismissPermission,
+            onOpenAppSettings = onOpenAppSettings
+        )
+    }
+}
 
-    // LaunchedEffect will skip permission enum if already granted.
-    LaunchedEffect(permissionState.status) {
-        if (permissionState.status.isGranted ||
-            (permissionState.status.shouldShowRationale && permissionEnum.isOptional())
-        ) {
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+internal fun PermissionTemplate(
+    permissionEnum: PermissionEnum,
+    permissionStates: MultiplePermissionsState,
+    onDismissPermission: () -> Unit,
+    onOpenAppSettings: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var hasAttemptedRequest by rememberSaveable(permissionEnum) { mutableStateOf(false) }
+
+    val isAnyGranted = permissionStates.permissions.any { it.status.isGranted }
+    val canShowRationale =
+        permissionStates.shouldShowRationale ||
+            permissionStates.permissions.any { it.status.shouldShowRationale }
+
+    // LaunchedEffect will skip permission enum if already granted or declined.
+    LaunchedEffect(isAnyGranted, canShowRationale) {
+        if (isAnyGranted || (canShowRationale && permissionEnum.isOptional())) {
             onDismissPermission()
         }
     }
@@ -79,10 +109,19 @@ fun PermissionTemplate(
         modifier = modifier,
         testTag = permissionEnum.getTestTag(),
         onRequestPermission = {
-            if (permissionState.status.shouldShowRationale) {
-                onOpenAppSettings()
+            if (permissionEnum.isOptional()) {
+                if (hasAttemptedRequest && !canShowRationale) {
+                    onDismissPermission()
+                } else {
+                    hasAttemptedRequest = true
+                    permissionStates.launchMultiplePermissionRequest()
+                }
             } else {
-                permissionState.launchPermissionRequest()
+                if (permissionStates.shouldShowRationale) {
+                    onOpenAppSettings()
+                } else {
+                    permissionStates.launchMultiplePermissionRequest()
+                }
             }
         },
         painter = permissionEnum.getPainter(),
@@ -91,13 +130,13 @@ fun PermissionTemplate(
 
         // if declined by user, must navigate to system app settings to enable permission
         bodyText =
-        if (!permissionState.status.shouldShowRationale || permissionEnum.isOptional()) {
+        if (!permissionStates.shouldShowRationale || permissionEnum.isOptional()) {
             stringResource(id = permissionEnum.getPermissionBodyTextResId())
         } else {
             stringResource(id = permissionEnum.getRationaleBodyTextResId()!!)
         },
         requestButtonText =
-        if (!permissionState.status.shouldShowRationale || permissionEnum.isOptional()) {
+        if (!permissionStates.shouldShowRationale || permissionEnum.isOptional()) {
             stringResource(id = R.string.request_permission)
         } else {
             stringResource(id = R.string.navigate_to_settings)

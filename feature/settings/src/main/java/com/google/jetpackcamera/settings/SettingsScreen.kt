@@ -16,6 +16,9 @@
 package com.google.jetpackcamera.settings
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,24 +27,35 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
+import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
@@ -55,6 +69,10 @@ import com.google.jetpackcamera.settings.ui.ConcurrentCameraSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
+import com.google.jetpackcamera.settings.ui.LOCATION_PERMISSION_DIALOG_CANCEL_BTN_TAG
+import com.google.jetpackcamera.settings.ui.LOCATION_PERMISSION_DIALOG_CONFIRM_BTN_TAG
+import com.google.jetpackcamera.settings.ui.LOCATION_PERMISSION_RATIONALE_DIALOG_TAG
+import com.google.jetpackcamera.settings.ui.LocationSetting
 import com.google.jetpackcamera.settings.ui.LowLightBoostPrioritySetting
 import com.google.jetpackcamera.settings.ui.MaxVideoDurationSetting
 import com.google.jetpackcamera.settings.ui.RecordingAudioSetting
@@ -74,6 +92,7 @@ private val LOADING_INDICATOR_SIZE = 50.dp
  * @param versionInfo Holder for application version and build type information.
  * @param onNavigateBack Callback when the user navigates back from settings.
  * @param viewModel The [SettingsViewModel] providing the settings state.
+ * @param onOpenAppSettings Optional callback when user chooses to open system app settings.
  * @param cameraSettingsSlot Slot for the camera settings section.
  * @param recordingSettingsSlot Slot for the recording settings section.
  * @param appSettingsSlot Slot for the general application settings section.
@@ -84,12 +103,17 @@ fun SettingsScreen(
     versionInfo: VersionInfoHolder,
     onNavigateBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
+    onOpenAppSettings: (() -> Unit)? = null,
     cameraSettingsSlot: @Composable () -> Unit = { DefaultCameraSettings(viewModel = viewModel) },
     recordingSettingsSlot: @Composable () -> Unit = {
         DefaultRecordingSettings(viewModel = viewModel)
     },
     appSettingsSlot: @Composable () -> Unit = {
-        DefaultAppSettings(versionInfo = versionInfo, viewModel = viewModel)
+        DefaultAppSettings(
+            versionInfo = versionInfo,
+            viewModel = viewModel,
+            onOpenAppSettings = onOpenAppSettings
+        )
     }
 ) {
     val permissionStates = rememberMultiplePermissionsState(
@@ -97,7 +121,9 @@ fun SettingsScreen(
         listOf(
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_EXTERNAL_STORAGE
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
         )
     )
 
@@ -293,20 +319,87 @@ fun DefaultRecordingSettings(
  *
  * @param versionInfo The [VersionInfoHolder] containing app version information.
  * @param viewModel The [SettingsViewModel] providing the settings state.
+ * @param locationPermissionStates The [MultiplePermissionsState] for location permissions.
+ * @param onOpenAppSettings Optional callback when user chooses to open system app settings.
  */
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun DefaultAppSettings(
     versionInfo: VersionInfoHolder,
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    locationPermissionStates: MultiplePermissionsState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    ),
+    onOpenAppSettings: (() -> Unit)? = null
 ) {
     val uiState by viewModel.settingsUiState.collectAsState()
     val enabledState = uiState as? SettingsUiState.Enabled ?: return
 
+    val context = LocalContext.current
+    val openSettingsHandler = onOpenAppSettings ?: {
+        Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", context.packageName, null)
+        ).also(context::startActivity)
+    }
+
+    var showLocationRationaleDialog by rememberSaveable { mutableStateOf(false) }
+    var hasAttemptedLocationRequest by rememberSaveable { mutableStateOf(false) }
+    var pendingLocationEnable by rememberSaveable { mutableStateOf(false) }
+
+    val hasLocationPermission = locationPermissionStates.permissions.any { it.status.isGranted }
+
+    LaunchedEffect(hasLocationPermission) {
+        if (hasLocationPermission && pendingLocationEnable) {
+            viewModel.setLocationEnabled(true)
+            pendingLocationEnable = false
+        }
+    }
+
     DefaultAppSettings(
         versionInfo = versionInfo,
         enabledState = enabledState,
-        setDarkMode = viewModel::setDarkMode
+        setDarkMode = viewModel::setDarkMode,
+        setLocationEnabled = { enabled ->
+            if (enabled) {
+                if (hasLocationPermission) {
+                    viewModel.setLocationEnabled(true)
+                } else {
+                    pendingLocationEnable = true
+                    val canShowRationale =
+                        locationPermissionStates.permissions.any { it.status.shouldShowRationale }
+                    // After a request has been denied without a rationale, the system no longer
+                    // shows the prompt, so direct the user to app settings instead.
+                    if (canShowRationale || !hasAttemptedLocationRequest) {
+                        hasAttemptedLocationRequest = true
+                        locationPermissionStates.launchMultiplePermissionRequest()
+                    } else {
+                        showLocationRationaleDialog = true
+                    }
+                }
+            } else {
+                pendingLocationEnable = false
+                viewModel.setLocationEnabled(false)
+            }
+        }
     )
+
+    if (showLocationRationaleDialog) {
+        LocationPermissionRationaleDialog(
+            onConfirm = {
+                showLocationRationaleDialog = false
+                pendingLocationEnable = true
+                openSettingsHandler()
+            },
+            onDismiss = {
+                showLocationRationaleDialog = false
+                pendingLocationEnable = false
+            }
+        )
+    }
 }
 
 /**
@@ -315,14 +408,23 @@ fun DefaultAppSettings(
  * @param versionInfo The [VersionInfoHolder] containing app version information.
  * @param enabledState The current [SettingsUiState.Enabled] state.
  * @param setDarkMode Callback to set the dark mode.
+ * @param setLocationEnabled Callback to set whether location is enabled.
  */
 @Composable
 fun DefaultAppSettings(
     versionInfo: VersionInfoHolder,
     enabledState: SettingsUiState.Enabled,
-    setDarkMode: (DarkMode) -> Unit
+    setDarkMode: (DarkMode) -> Unit,
+    setLocationEnabled: (Boolean) -> Unit = {}
 ) {
     SectionHeader(title = stringResource(id = R.string.section_title_app_settings))
+
+    if (enabledState.locationUiState !is LocationUiState.Hidden) {
+        LocationSetting(
+            locationUiState = enabledState.locationUiState,
+            onLocationToggled = setLocationEnabled
+        )
+    }
 
     DarkModeSetting(
         darkModeUiState = enabledState.darkModeUiState,
@@ -334,6 +436,48 @@ fun DefaultAppSettings(
     VersionInfo(
         versionName = versionInfo.versionName,
         buildType = versionInfo.buildType
+    )
+}
+
+/**
+ * Dialog informing the user that location permissions are required for geotagging and
+ * providing an action to navigate to system app settings.
+ *
+ * @param onConfirm Callback when the user confirms navigating to app settings.
+ * @param onDismiss Callback when the dialog is dismissed or cancelled.
+ * @param modifier Modifier for the dialog layout.
+ */
+@Composable
+fun LocationPermissionRationaleDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        modifier = modifier.testTag(LOCATION_PERMISSION_RATIONALE_DIALOG_TAG),
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(R.string.location_permission_dialog_title))
+        },
+        text = {
+            Text(text = stringResource(R.string.location_permission_dialog_message))
+        },
+        confirmButton = {
+            TextButton(
+                modifier = Modifier.testTag(LOCATION_PERMISSION_DIALOG_CONFIRM_BTN_TAG),
+                onClick = onConfirm
+            ) {
+                Text(text = stringResource(R.string.location_permission_dialog_open_settings))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                modifier = Modifier.testTag(LOCATION_PERMISSION_DIALOG_CANCEL_BTN_TAG),
+                onClick = onDismiss
+            ) {
+                Text(text = stringResource(R.string.location_permission_dialog_cancel))
+            }
+        }
     )
 }
 

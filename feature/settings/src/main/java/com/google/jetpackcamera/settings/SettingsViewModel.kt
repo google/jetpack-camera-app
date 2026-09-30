@@ -22,6 +22,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
+import com.google.jetpackcamera.core.location.LocationProvider
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -51,6 +52,7 @@ import com.google.jetpackcamera.settings.ui.FLASH_LLB_ACTIVE_TAG
 import com.google.jetpackcamera.settings.ui.HDR_ACTIVE_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_ACTIVE_TAG
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.Optional
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -70,7 +72,8 @@ private val fpsOptions = setOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60)
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    constraintsRepository: ConstraintsRepository
+    constraintsRepository: ConstraintsRepository,
+    private val locationProvider: Optional<LocationProvider> = Optional.empty()
 ) : ViewModel() {
     private var grantedPermissions = MutableStateFlow<Set<String>>(emptySet())
 
@@ -80,7 +83,7 @@ class SettingsViewModel @Inject constructor(
             constraintsRepository.systemConstraints.filterNotNull(),
             grantedPermissions
         ) { updatedSettings, constraints, grantedPerms ->
-            updatedSettings.videoQuality
+            val unused = updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
                 cameraEffectUiState = getCameraEffectUiState(updatedSettings, constraints),
@@ -93,6 +96,15 @@ class SettingsViewModel @Inject constructor(
                     updatedSettings.audioEnabled,
                     grantedPerms.contains(Manifest.permission.RECORD_AUDIO)
                 ),
+                locationUiState = if (locationProvider.isPresent) {
+                    getLocationUiState(
+                        updatedSettings.locationEnabled,
+                        grantedPerms.contains(Manifest.permission.ACCESS_FINE_LOCATION) ||
+                            grantedPerms.contains(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    )
+                } else {
+                    LocationUiState.Hidden
+                },
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
                 stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
@@ -259,6 +271,24 @@ class SettingsViewModel @Inject constructor(
                     )
             )
         }
+
+    private fun getLocationUiState(
+        isLocationEnabled: Boolean,
+        permissionGranted: Boolean
+    ): LocationUiState = if (permissionGranted) {
+        if (isLocationEnabled) {
+            LocationUiState.Enabled.On
+        } else {
+            LocationUiState.Enabled.Off
+        }
+    } else {
+        LocationUiState.Disabled(
+            DisabledRationale
+                .PermissionLocationNotGrantedRationale(
+                    R.string.save_location_rationale_prefix
+                )
+        )
+    }
 
     @OptIn(ExperimentalPermissionsApi::class)
     fun setGrantedPermissions(multiplePermissionsState: MultiplePermissionsState) {
@@ -747,6 +777,18 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateAudioEnabled(isAudioEnabled)
             Log.d(TAG, "recording audio muted: $isAudioEnabled")
+        }
+    }
+
+    /**
+     * Updates the location setting in the repository.
+     *
+     * @param enabled Whether location tagging should be enabled for captured media.
+     */
+    internal fun setLocationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateLocationEnabled(enabled)
+            Log.d(TAG, "set save location enabled: $enabled")
         }
     }
 
