@@ -15,9 +15,8 @@
   ~ limitations under the License.
   -->
 <resources>
-    <string name="app_name_full">Jetpack Camera</string>
-    <string name="app_name_short">JCA</string>
+    <string name="app_name_full" translatable="false">Jetpack Camera</string>
+    <string name="app_name_short" translatable="false">JCA</string>
+    <!-- Text shown on the splash/loading screen while the camera application is initializing. [CHAR LIMIT=30] -->
     <string name="jca_loading">Loading App…</string>
-    <string name="camera_not_available">Camera not available</string>
-    <string name="external_capture_uri_not_supplied">No parcelable URI is supplied for external capture.</string>
 </resources>

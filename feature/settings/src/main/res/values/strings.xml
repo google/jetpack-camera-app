@@ -14,189 +14,268 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<resources>
-    <!--
-    settings page text
-    -->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- Top app bar title for the camera settings screen. [CHAR LIMIT=30] -->
     <string name="settings_title">Settings</string>
-    <string name="nav_back_accessibility">Button to navigate back out of settings</string>
+    <!-- Accessibility label for the back navigation button in the settings top app bar. [CHAR LIMIT=NONE] -->
+    <string name="nav_back_accessibility">Navigate back</string>
 
+    <!-- Section header on the settings screen for default camera configuration options. [CHAR LIMIT=40] -->
     <string name="section_title_camera_settings">Default Camera Settings</string>
+    <!-- Section header on the settings screen for default video recording configuration options. [CHAR LIMIT=40] -->
     <string name="section_title_recording_settings">Default Recording Settings</string>
 
+    <!-- Section header on the settings screen for general application settings. [CHAR LIMIT=40] -->
     <string name="section_title_app_settings">App Settings</string>
+    <!-- Section header on the settings screen for software version and build information. [CHAR LIMIT=40] -->
     <string name="section_title_software_info">Software Information</string>
 
+    <!-- Title of the setting toggle that sets the front-facing camera as the default lens on startup. [CHAR LIMIT=50] -->
     <string name="default_facing_camera_title">Default to Front Camera</string>
+    <!-- Subtitle shown under the default camera setting when the front camera is selected as default. [CHAR LIMIT=40] -->
     <string name="default_facing_camera_description_front">Default Front</string>
+    <!-- Subtitle shown under the default camera setting when the rear camera is selected as default. [CHAR LIMIT=40] -->
     <string name="default_facing_camera_description_back">Default Back</string>
 
-    <!-- Dark mode setting strings -->
+    <!-- Title of the setting dialog and row for configuring the app dark mode theme. [CHAR LIMIT=40] -->
     <string name="dark_mode_title">Set Dark Mode</string>
 
+    <!-- Option label in the Dark Mode setting dialog to enable dark theme. [CHAR LIMIT=25] -->
     <string name="dark_mode_selector_dark">On</string>
+    <!-- Option label in the Dark Mode setting dialog to disable dark theme (use light theme). [CHAR LIMIT=25] -->
     <string name="dark_mode_selector_light">Off</string>
+    <!-- Option label in the Dark Mode setting dialog to follow the system theme setting. [CHAR LIMIT=25] -->
     <string name="dark_mode_selector_system">System</string>
 
+    <!-- Subtitle under the Dark Mode setting row when dark theme is enabled. [CHAR LIMIT=30] -->
     <string name="dark_mode_description_dark">On</string>
+    <!-- Subtitle under the Dark Mode setting row when dark theme is disabled (light theme). [CHAR LIMIT=30] -->
     <string name="dark_mode_description_light">Off</string>
+    <!-- Subtitle under the Dark Mode setting row when following the system theme setting. [CHAR LIMIT=30] -->
     <string name="dark_mode_description_system">System</string>
 
-    <!-- Flash mode setting strings -->
+    <!-- Title of the setting dialog and row for configuring the default camera flash mode. [CHAR LIMIT=40] -->
     <string name="flash_mode_title">Set Flash Mode</string>
 
+    <!-- Option label in the Flash Mode setting dialog for automatic flash. [CHAR LIMIT=25] -->
     <string name="flash_mode_selector_auto">Auto</string>
+    <!-- Option label in the Flash Mode setting dialog for flash always on. [CHAR LIMIT=25] -->
     <string name="flash_mode_selector_on">On</string>
+    <!-- Option label in the Flash Mode setting dialog for flash off. [CHAR LIMIT=25] -->
     <string name="flash_mode_selector_off">Off</string>
+    <!-- Option label in the Flash Mode setting dialog for Low Light Boost mode. [CHAR LIMIT=35] -->
     <string name="flash_mode_selector_llb">Low Light Boost</string>
 
+    <!-- Subtitle under the Flash Mode setting row when flash is set to automatic. [CHAR LIMIT=45] -->
     <string name="flash_mode_description_auto">Flash is set to Auto</string>
+    <!-- Subtitle under the Flash Mode setting row when flash is set to always on. [CHAR LIMIT=45] -->
     <string name="flash_mode_description_on">Flash is On</string>
+    <!-- Subtitle under the Flash Mode setting row when flash is turned off. [CHAR LIMIT=45] -->
     <string name="flash_mode_description_off">Flash is Off</string>
+    <!-- Subtitle under the Flash Mode setting row when Low Light Boost is selected. [CHAR LIMIT=45] -->
     <string name="flash_mode_description_llb">Using Low Light Boost</string>
 
-    <!-- Audio setting strings -->
+    <!-- Title of the setting toggle for enabling or disabling audio recording in videos. [CHAR LIMIT=40] -->
     <string name="audio_title">Enable Audio</string>
 
+    <!-- Subtitle under the Enable Audio setting when audio recording is enabled. [CHAR LIMIT=60] -->
     <string name="audio_selector_on">Recordings will start with audio enabled</string>
+    <!-- Subtitle under the Enable Audio setting when videos start muted. [CHAR LIMIT=60] -->
     <string name="audio_selector_off">Recordings will start muted</string>
 
-    <string name="audio_description_on">Recordings will start with audio enabled</string>
-    <string name="audio_description_off">Recordings will start muted</string>
-
-    <!-- Concurrent Camera setting strings -->
+    <!-- Title of the setting toggle for enabling concurrent dual-camera recording. [CHAR LIMIT=45] -->
     <string name="concurrent_camera_title">Enable Concurrent Camera</string>
+    <!-- Subtitle under the Concurrent Camera setting when dual-camera recording is enabled. [CHAR LIMIT=60] -->
     <string name="concurrent_camera_description_on">Record from multiple cameras concurrently</string>
+    <!-- Subtitle under the Concurrent Camera setting when single-camera recording is used. [CHAR LIMIT=60] -->
     <string name="concurrent_camera_description_off">Record from a single camera</string>
 
-    <!-- Stream Config mode setting strings -->
+    <!-- Title of the setting dialog and row for selecting the camera stream configuration mode. [CHAR LIMIT=40] -->
     <string name="stream_config_title">Set Camera Effect</string>
 
+    <!-- Option label in the Set Camera Effect dialog for multi-stream configuration (no single-stream effect). [CHAR LIMIT=35] -->
     <string name="stream_config_selector_multi_stream">None</string>
+    <!-- Option label in the Set Camera Effect dialog for single-stream effect configuration. [CHAR LIMIT=35] -->
     <string name="stream_config_selector_single_stream">Single Stream Effect</string>
 
+    <!-- Subtitle under the Set Camera Effect setting row when multi-stream (no effect) is selected. [CHAR LIMIT=35] -->
     <string name="stream_config_description_multi_stream">None</string>
+    <!-- Subtitle under the Set Camera Effect setting row when single-stream mode is selected. [CHAR LIMIT=35] -->
     <string name="stream_config_description_single_stream">Single Stream</string>
 
-    <!-- Low Light Boost priority setting strings -->
+    <!-- Title of the setting dialog and row for choosing Low Light Boost implementation priority. [CHAR LIMIT=50] -->
     <string name="low_light_boost_priority_title">Set Low Light Boost Priority</string>
 
+    <!-- Option label in the Low Light Boost Priority dialog to prioritize Auto-Exposure (AE) mode. [CHAR LIMIT=35] -->
     <string name="low_light_boost_priority_selector_ae_mode">AE Mode</string>
+    <!-- Option label in the Low Light Boost Priority dialog to prioritize the camera effect implementation. [CHAR LIMIT=35] -->
     <string name="low_light_boost_priority_selector_camera_effect">Camera Effect</string>
 
+    <!-- Subtitle under the Low Light Boost Priority setting row when AE Mode is prioritized. [CHAR LIMIT=100] -->
     <string name="low_light_boost_priority_description_ae_mode">Prioritizing Low Light Boost AE Mode when multiple options are available</string>
+    <!-- Subtitle under the Low Light Boost Priority setting row when Camera Effect is prioritized. [CHAR LIMIT=100] -->
     <string name="low_light_boost_priority_description_camera_effect">Prioritizing Low Light Boost camera effect when multiple options are available</string>
 
-    <!-- Aspect Ratio setting strings -->
+    <!-- Title of the setting dialog and row for selecting the camera aspect ratio. [CHAR LIMIT=40] -->
     <string name="aspect_ratio_title">Set Aspect Ratio</string>
 
-    <string name="aspect_ratio_selector_9_16">9:16</string>
-    <string name="aspect_ratio_selector_3_4">3:4</string>
-    <string name="aspect_ratio_selector_1_1">1:1</string>
+    <string name="aspect_ratio_selector_9_16" translatable="false">9:16</string>
+    <string name="aspect_ratio_selector_3_4" translatable="false">3:4</string>
+    <string name="aspect_ratio_selector_1_1" translatable="false">1:1</string>
 
+    <!-- Subtitle under the Aspect Ratio setting row when 9:16 is selected. [CHAR LIMIT=40] -->
     <string name="aspect_ratio_description_9_16">Aspect Ratio is 9:16</string>
+    <!-- Subtitle under the Aspect Ratio setting row when 3:4 is selected. [CHAR LIMIT=40] -->
     <string name="aspect_ratio_description_3_4">Aspect Ratio is 3:4</string>
+    <!-- Subtitle under the Aspect Ratio setting row when 1:1 is selected. [CHAR LIMIT=40] -->
     <string name="aspect_ratio_description_1_1">Aspect Ratio is 1:1</string>
 
-    <!-- Stabilization setting strings -->
+    <!-- Title of the setting dialog and row for configuring video stabilization. [CHAR LIMIT=45] -->
     <string name="video_stabilization_title">Set Video Stabilization</string>
 
+    <!-- Option label in the Video Stabilization dialog for automatic stabilization. [CHAR LIMIT=30] -->
     <string name="stabilization_selector_auto">Auto</string>
+    <!-- Option label in the Video Stabilization dialog to enable preview and video stabilization. [CHAR LIMIT=30] -->
     <string name="stabilization_selector_on">On</string>
+    <!-- Option label in the Video Stabilization dialog for high-quality video-only stabilization. [CHAR LIMIT=30] -->
     <string name="stabilization_selector_high_quality">High Quality</string>
+    <!-- Option label in the Video Stabilization dialog for optical image stabilization (OIS). [CHAR LIMIT=30] -->
     <string name="stabilization_selector_optical">Optical</string>
+    <!-- Option label in the Video Stabilization dialog to disable stabilization. [CHAR LIMIT=30] -->
     <string name="stabilization_selector_off">Off</string>
 
+    <!-- Helper description in the Video Stabilization dialog explaining the Auto stabilization option. [CHAR LIMIT=100] -->
     <string name="stabilization_selector_auto_info">Stabilization automatically turned on when device configuration supports it.</string>
+    <!-- Helper description in the Video Stabilization dialog explaining the On stabilization option. [CHAR LIMIT=100] -->
     <string name="stabilization_selector_on_info">Both preview and video streams stabilized.</string>
+    <!-- Helper description in the Video Stabilization dialog explaining the High Quality stabilization option. [CHAR LIMIT=120] -->
     <string name="stabilization_selector_high_quality_info">Video stream stabilized, but preview might not be. Ensures highest-quality recordings.</string>
+    <!-- Helper description in the Video Stabilization dialog explaining the Optical (OIS) stabilization option. [CHAR LIMIT=100] -->
     <string name="stabilization_selector_optical_info">All streams are stabilized by OIS hardware only.</string>
 
+    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to On. [CHAR LIMIT=45] -->
     <string name="stabilization_description_on">Stabilization On</string>
+    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to Optical. [CHAR LIMIT=45] -->
     <string name="stabilization_description_optical">Stabilization Optical</string>
+    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to High Quality. [CHAR LIMIT=45] -->
     <string name="stabilization_description_high_quality">Stabilization High Quality</string>
+    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to Auto. [CHAR LIMIT=45] -->
     <string name="stabilization_description_auto">Stabilization Auto</string>
+    <!-- Subtitle under the Video Stabilization setting row when stabilization is turned Off. [CHAR LIMIT=45] -->
     <string name="stabilization_description_off">Stabilization Off</string>
-    <string name="stabilization_description_unsupported_device">Stabilization unsupported by device</string>
-    <string name="stabilization_description_unsupported_fps">Stabilization unsupported due to frame rate</string>
 
-    <!-- Target Fps setting strings -->
+    <!-- Title of the setting dialog and row for selecting the target video frame rate (FPS). [CHAR LIMIT=40] -->
     <string name="fps_title">Set Frame Rate</string>
 
-    <string name="fps_description_unavailable">No fixed frame rates supported</string>
+    <!-- Subtitle under the Frame Rate setting row when frame rate is set to automatic. [CHAR LIMIT=40] -->
     <string name="fps_description_auto">Auto Frame Rate</string>
-    <string name="fps_description">%d fps</string>
+    <!-- Label and subtitle showing a specific frame rate in frames per second (e.g. 30 fps, 60 fps). [CHAR LIMIT=25] -->
+    <string name="fps_description"><xliff:g id="fps" example="60">%d</xliff:g> fps</string>
 
+    <!-- Option label in the Set Frame Rate dialog for automatic frame rate selection. [CHAR LIMIT=25] -->
     <string name="fps_selector_auto">Auto</string>
-    <string name="fps_selector_value">%d</string>
 
+    <!-- Footnote disclaimer in the Frame Rate dialog explaining that frame rate affects available stabilization modes. [CHAR LIMIT=100] -->
     <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected frame rate.</string>
+    <!-- Footnote disclaimer in the Video Stabilization dialog explaining that not all lenses support stabilization. [CHAR LIMIT=100] -->
     <string name="lens_stabilization_disclaimer">*Some devices may not support stabilization on both lenses.</string>
 
-    <!-- video limit strings -->
+    <!-- Title of the setting dialog and row for selecting the maximum video recording duration. [CHAR LIMIT=45] -->
     <string name="duration_title">Set Maximum Video Duration</string>
+    <!-- Option label and subtitle indicating there is no time limit for video recordings. [CHAR LIMIT=40] -->
     <string name="duration_description_none">Unlimited duration</string>
-    <string name="duration_description_seconds">%d seconds</string>
+    <!-- Option label and subtitle showing the maximum video duration in seconds (e.g. 10 seconds). [CHAR LIMIT=35] -->
+    <string name="duration_description_seconds"><xliff:g id="seconds" example="10">%d</xliff:g> seconds</string>
 
-    <!-- video quality strings -->
+    <!-- Title of the setting dialog and row for selecting the video recording resolution/quality. [CHAR LIMIT=40] -->
     <string name="video_quality_title">Set Video Quality</string>
+    <!-- Option label and subtitle for automatic video quality selection. [CHAR LIMIT=20] -->
     <string name="video_quality_value_auto">Auto</string>
+    <!-- Option label and subtitle for Standard Definition (480p) video quality. [CHAR LIMIT=20] -->
     <string name="video_quality_value_sd">SD</string>
+    <!-- Option label and subtitle for High Definition (720p) video quality. [CHAR LIMIT=20] -->
     <string name="video_quality_value_hd">HD</string>
+    <!-- Option label and subtitle for Full High Definition (1080p) video quality. [CHAR LIMIT=20] -->
     <string name="video_quality_value_fhd">FHD</string>
+    <!-- Option label and subtitle for Ultra High Definition (4K/2160p) video quality. [CHAR LIMIT=20] -->
     <string name="video_quality_value_uhd">UHD</string>
 
+    <!-- Helper description in the Set Video Quality dialog for the Auto option. [CHAR LIMIT=80] -->
     <string name="video_quality_value_auto_info">Video quality automatically selected by the device.</string>
+    <!-- Helper description in the Set Video Quality dialog for Standard Definition (SD, 480p). [CHAR LIMIT=80] -->
     <string name="video_quality_value_sd_info">Standard Definition (SD) 480p video quality.</string>
+    <!-- Helper description in the Set Video Quality dialog for High Definition (HD, 720p). [CHAR LIMIT=80] -->
     <string name="video_quality_value_hd_info">High Definition (HD) video quality.</string>
+    <!-- Helper description in the Set Video Quality dialog for Full High Definition (FHD, 1080p). [CHAR LIMIT=80] -->
     <string name="video_quality_value_fhd_info">Full High Definition (FHD) 1080p video quality.</string>
+    <!-- Helper description in the Set Video Quality dialog for Ultra High Definition (UHD, 2160p). [CHAR LIMIT=80] -->
     <string name="video_quality_value_uhd_info">Ultra High Definition (UHD) 2160p video quality.</string>
 
+    <!-- Disabled setting rationale message when a feature (%1$s) is not supported by the device hardware. [CHAR LIMIT=80] -->
+    <string name="device_unsupported"><xliff:g id="setting_name" example="Stabilization">%1$s</xliff:g> is unsupported by the device</string>
+    <!-- Disabled setting rationale message when a feature (%1$s) is not supported at the selected frame rate (%2$d fps). [CHAR LIMIT=80] -->
+    <string name="fps_unsupported"> <xliff:g id="setting_name" example="Stabilization">%1$s</xliff:g> is unsupported at <xliff:g id="fps" example="60">%2$d</xliff:g> fps</string>
+    <!-- Disabled setting rationale message when a feature (%1$s) is incompatible with the current stabilization mode. [CHAR LIMIT=80] -->
+    <string name="stabilization_unsupported"><xliff:g id="setting_name" example="60 fps">%1$s</xliff:g> is unsupported by the current stabilization</string>
+    <!-- Disabled setting rationale message when a feature (%1$s) is not supported by the rear-facing camera lens. [CHAR LIMIT=80] -->
+    <string name="rear_lens_unsupported"><xliff:g id="setting_name" example="Stabilization">%1$s</xliff:g> is unsupported by the rear lens</string>
+    <!-- Disabled setting rationale message when a feature (%1$s) is not supported by the front-facing camera lens. [CHAR LIMIT=80] -->
+    <string name="front_lens_unsupported"><xliff:g id="setting_name" example="Stabilization">%1$s</xliff:g> is unsupported by the front lens</string>
+    <!-- Disabled setting rationale message when a feature (%1$s) is incompatible with the selected video quality. [CHAR LIMIT=80] -->
+    <string name="video_quality_unsupported"><xliff:g id="setting_name" example="60 fps">%1$s</xliff:g> is unsupported by the current video quality</string>
+    <!-- Disabled setting rationale message when a feature (%1$s) is disabled because microphone permission has not been granted. [CHAR LIMIT=80] -->
+    <string name="permission_record_audio_unsupported"><xliff:g id="setting_name" example="Audio">%1$s</xliff:g> requires permission to record audio</string>
 
-    <!-- disabled rationale strings-->
+    <!-- Disabled setting rationale message when a feature (%1$s) is unavailable because Concurrent Camera mode is active. [CHAR LIMIT=80] -->
+    <string name="concurrent_camera_enabled"><xliff:g id="setting_name" example="Flash">%1$s</xliff:g> is unsupported when Concurrent Camera is active</string>
+    <!-- Disabled setting rationale message when a feature (%1$s) is unavailable because Ultra HDR is enabled. [CHAR LIMIT=80] -->
+    <string name="ultra_hdr_enabled"><xliff:g id="setting_name" example="Low Light Boost">%1$s</xliff:g> is unsupported when Ultra HDR is enabled</string>
 
-    <string name="device_unsupported">%1$s is unsupported by the device</string>
-    <string name="fps_unsupported"> %1$s is unsupported at %2$d fps</string>
-    <string name="stabilization_unsupported">%1$s is unsupported by the current stabilization</string>
-    <string name="current_lens_unsupported">%1$s is unsupported by the current lens</string>
-    <string name="rear_lens_unsupported">%1$s is unsupported by the rear lens</string>
-    <string name="front_lens_unsupported">%1$s is unsupported by the front lens</string>
-    <string name="video_quality_unsupported">%1$s is unsupported by the current video quality</string>
-    <string name="permission_record_audio_unsupported">%1$s requires permission to record audio</string>
-
-    <string name="concurrent_camera_enabled">%1$s is unsupported when Concurrent Camera is active</string>
-    <string name="ultra_hdr_enabled">%1$s is unsupported when Ultra HDR is enabled</string>
-
-
-    <!-- Rationale prefixes -->
+    <!-- Feature name substituted into disabled setting rationale messages for Video Stabilization. [CHAR LIMIT=35] -->
     <string name="stabilization_rationale_prefix">Stabilization</string>
-    <string name="lens_rationale_prefix">Lens flip</string>
+    <!-- Feature name substituted into disabled setting rationale messages for Frame Rate (FPS). [CHAR LIMIT=35] -->
     <string name="fps_rationale_prefix">Fps</string>
+    <!-- Feature name substituted into disabled setting rationale messages for Flash. [CHAR LIMIT=35] -->
     <string name="flash_rationale_prefix">Flash</string>
+    <!-- Feature name substituted into disabled setting rationale messages for Flash On mode. [CHAR LIMIT=35] -->
     <string name="flash_on_rationale_prefix">Flash On</string>
+    <!-- Feature name substituted into disabled setting rationale messages for Flash Auto mode. [CHAR LIMIT=35] -->
     <string name="flash_auto_rationale_prefix">Flash Auto</string>
+    <!-- Feature name substituted into disabled setting rationale messages for Low Light Boost mode. [CHAR LIMIT=35] -->
     <string name="flash_llb_rationale_prefix">Low Light Boost</string>
 
+    <!-- Feature name substituted into disabled setting rationale messages for Video Quality. [CHAR LIMIT=35] -->
     <string name="video_quality_rationale_prefix">Video quality</string>
+    <!-- Phrase substituted into disabled setting rationale messages referring to the currently selected dynamic range. [CHAR LIMIT=45] -->
     <string name="video_quality_rationale_suffix_default">the current dynamic range</string>
+    <!-- Abbreviation for Standard Dynamic Range substituted into disabled setting rationale messages. [CHAR LIMIT=20] -->
     <string name="video_quality_rationale_suffix_sdr">SDR</string>
 
+    <!-- Feature name substituted into disabled setting rationale messages for the front-facing camera lens. [CHAR LIMIT=35] -->
     <string name="front_lens_rationale_prefix">Front lens</string>
+    <!-- Feature name substituted into disabled setting rationale messages for the rear-facing camera lens. [CHAR LIMIT=35] -->
     <string name="rear_lens_rationale_prefix">Rear lens</string>
+    <!-- Feature name substituted into disabled setting rationale messages for fixed frame rate options. [CHAR LIMIT=35] -->
     <string name="no_fixed_fps_rationale_prefix">Fixed frame rate</string>
 
+    <!-- Feature name substituted into disabled setting rationale messages for audio mute/recording. [CHAR LIMIT=35] -->
     <string name="mute_audio_rationale_prefix">Mute</string>
+    <!-- Feature name substituted into disabled setting rationale messages for Concurrent Camera mode. [CHAR LIMIT=35] -->
     <string name="concurrent_camera_rationale_prefix">Concurrent camera</string>
 
-    <!-- Rationale texts -->
-    <string name="stabilization_active_unsupported">%1$s is unsupported when Video Stabilization is enabled</string>
-    <string name="fixed_fps_active_unsupported">%1$s is unsupported when a fixed frame rate is selected</string>
-    <string name="flash_llb_active_unsupported">%1$s is unsupported when Low Light Boost is active</string>
-    <string name="hdr_active_unsupported">%1$s is unsupported when HDR is active</string>
-    <string name="capture_mode_unsupported">%1$s is unsupported by the current capture mode</string>
+    <!-- Disabled setting rationale message when a feature (%1$s) is unavailable because Video Stabilization is enabled. [CHAR LIMIT=80] -->
+    <string name="stabilization_active_unsupported"><xliff:g id="setting_name" example="Concurrent camera">%1$s</xliff:g> is unsupported when Video Stabilization is enabled</string>
+    <!-- Disabled setting rationale message when a feature (%1$s) is unavailable because a fixed frame rate is selected. [CHAR LIMIT=80] -->
+    <string name="fixed_fps_active_unsupported"><xliff:g id="setting_name" example="Concurrent camera">%1$s</xliff:g> is unsupported when a fixed frame rate is selected</string>
+    <!-- Disabled setting rationale message when a feature (%1$s) is unavailable because Low Light Boost is active. [CHAR LIMIT=80] -->
+    <string name="flash_llb_active_unsupported"><xliff:g id="setting_name" example="Concurrent camera">%1$s</xliff:g> is unsupported when Low Light Boost is active</string>
+    <!-- Disabled setting rationale message when a feature (%1$s) is unavailable because HDR mode is active. [CHAR LIMIT=80] -->
+    <string name="hdr_active_unsupported"><xliff:g id="setting_name" example="Low Light Boost">%1$s</xliff:g> is unsupported when HDR is active</string>
+    <!-- Disabled setting rationale message explaining that Single Stream mode does not support Concurrent Camera. [CHAR LIMIT=80] -->
     <string name="concurrent_camera_stream_config_unsupported">Single Stream does not support concurrent camera</string>
+    <!-- Feature name substituted into disabled setting rationale messages for Stream Configuration. [CHAR LIMIT=35] -->
     <string name="stream_config_rationale_prefix">Stream configuration</string>
 
-    <!-- Version info strings -->
+    <!-- Label for the app version row in the Software Information section of settings. [CHAR LIMIT=30] -->
     <string name="version_info_title">Version</string>
 </resources>

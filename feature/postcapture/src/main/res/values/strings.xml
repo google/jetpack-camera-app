@@ -15,26 +15,38 @@
   ~ limitations under the License.
   -->
 <resources>
+    <!-- Accessibility content description for the captured photo preview in the post-capture viewer. [CHAR LIMIT=NONE] -->
     <string name="post_capture_image_description">An image captured by the camera</string>
+    <!-- Message displayed in the post-capture viewer when no captured photo or video is available to preview. [CHAR LIMIT=40] -->
     <string name="no_media_available">No Media Available</string>
-    <string name="player_unavailable">Video Playback failed</string>
+    <!-- Status message displayed while a captured video is loading in the post-capture video player. [CHAR LIMIT=40] -->
     <string name="loading_video_text">Loading video...</string>
 
-
+    <!-- Error message displayed when the post-capture viewer fails to load the captured photo or video. [CHAR LIMIT=40] -->
     <string name="error_loading_media">Error loading media</string>
+    <!-- Accessibility label for the button that closes the post-capture viewer and returns to the camera preview. [CHAR LIMIT=NONE] -->
     <string name="button_exit_description">Exit Post Capture</string>
+    <!-- Accessibility label for the button that saves the captured photo or video to device storage. [CHAR LIMIT=NONE] -->
     <string name="button_save_media_description">Save Media</string>
+    <!-- Accessibility label for the button that opens the system share sheet for the captured photo or video. [CHAR LIMIT=NONE] -->
     <string name="button_share_media_description">Share Media</string>
+    <!-- Accessibility label for the button that deletes the currently viewed photo or video. [CHAR LIMIT=NONE] -->
     <string name="button_delete_media_description">Delete Media</string>
 
+    <!-- Snackbar confirmation message shown when a captured photo is saved successfully. [CHAR LIMIT=60] -->
     <string name="snackbar_save_image_success">Image saved successfully</string>
+    <!-- Snackbar confirmation message shown when a captured video is saved successfully. [CHAR LIMIT=60] -->
     <string name="snackbar_save_video_success">Video saved successfully</string>
 
+    <!-- Snackbar error message shown when saving a captured photo fails. [CHAR LIMIT=60] -->
     <string name="snackbar_save_image_failure">Image failed to save</string>
+    <!-- Snackbar error message shown when saving a captured video fails. [CHAR LIMIT=60] -->
     <string name="snackbar_save_video_failure">Video failed to save</string>
+    <!-- Snackbar error message shown when deleting a captured photo fails. [CHAR LIMIT=60] -->
     <string name="snackbar_delete_image_failure">Image failed to delete</string>
+    <!-- Snackbar error message shown when deleting a captured video fails. [CHAR LIMIT=60] -->
     <string name="snackbar_delete_video_failure">Video failed to delete</string>
 
+    <!-- Title of the system share chooser dialog when sharing a captured photo or video. [CHAR LIMIT=40] -->
     <string name="title_share_media_chooser">Share Media</string>
-
 </resources>
