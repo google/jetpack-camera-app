@@ -43,6 +43,8 @@ private const val TAG = "LocationManagerLocationProvider"
 private const val WARMUP_TIMEOUT_MS = 60_000L
 private const val ACCURACY_THRESHOLD_METERS = 50f
 private const val SIGNIFICANT_ACCURACY_DELTA_METERS = 20f
+private const val LOCATION_UPDATE_INTERVAL_MS = 1_000L
+private const val LOCATION_UPDATE_MIN_DISTANCE_METERS = 0f
 private val REFRESH_INTERVAL_MS = TimeUnit.MINUTES.toMillis(5)
 private val STALE_LOCATION_THRESHOLD_NANOS = TimeUnit.MINUTES.toNanos(30)
 private val SIGNIFICANT_TIME_DELTA_NANOS = TimeUnit.MINUTES.toNanos(2)
@@ -62,8 +64,10 @@ private val SIGNIFICANT_TIME_DELTA_NANOS = TimeUnit.MINUTES.toNanos(2)
  */
 class LocationManagerLocationProvider(private val context: Context) : LocationProvider {
 
-    private val locationManager = context.getSystemService(Context.LOCATION_SERVICE)
-        as LocationManager
+    // Context.getSystemService is documented to return null when a service is unavailable. Treat
+    // a missing LocationManager as "location not available" rather than crashing at construction.
+    private val locationManager: LocationManager? =
+        ContextCompat.getSystemService(context, LocationManager::class.java)
 
     // Written from the main looper; read from any thread by capture via getCurrentLocation().
     private val cachedLocation = AtomicReference<Location?>(null)
@@ -107,6 +111,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
 
     @SuppressLint("MissingPermission")
     private suspend fun runWarmupSession() {
+        val locationManager = locationManager ?: return
         if (!hasAnyLocationPermission()) return
 
         // Pre-seed cache with last known location if available
@@ -120,9 +125,9 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         val warmupCompleted = CompletableDeferred<Unit>()
         activeWarmupDeferred.set(warmupCompleted)
 
-        val request = LocationRequestCompat.Builder(1000L)
-            .setMinUpdateIntervalMillis(1000L)
-            .setMinUpdateDistanceMeters(0f)
+        val request = LocationRequestCompat.Builder(LOCATION_UPDATE_INTERVAL_MS)
+            .setMinUpdateIntervalMillis(LOCATION_UPDATE_INTERVAL_MS)
+            .setMinUpdateDistanceMeters(LOCATION_UPDATE_MIN_DISTANCE_METERS)
             .setQuality(LocationRequestCompat.QUALITY_HIGH_ACCURACY)
             .build()
 
@@ -165,6 +170,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
 
     @SuppressLint("MissingPermission")
     private fun stopHardwareUpdates() {
+        val locationManager = locationManager ?: return
         if (isUpdating.getAndSet(false)) {
             LocationManagerCompat.removeUpdates(locationManager, locationListener)
             Log.d(TAG, "Stopped location updates across all providers.")
@@ -173,6 +179,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
 
     @SuppressLint("MissingPermission")
     private fun getBestLastKnownLocation(): Location? {
+        val locationManager = locationManager ?: return null
         if (!isLocationAvailable()) return null
 
         var bestLocation: Location? = null
@@ -191,7 +198,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
             ) {
                 add(LocationManager.FUSED_PROVIDER)
             }
-        }
+        }.filter { LocationManagerCompat.hasProvider(locationManager, it) }
         for (provider in providers) {
             try {
                 val loc = locationManager.getLastKnownLocation(provider)
@@ -294,6 +301,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
      * even though runtime permissions remain granted.
      */
     private fun isLocationAvailable(): Boolean {
+        val locationManager = locationManager ?: return false
         return hasAnyLocationPermission() && LocationManagerCompat.isLocationEnabled(
             locationManager
         )
@@ -315,6 +323,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
 
     @SuppressLint("InlinedApi")
     private fun getActiveProviders(): List<String> {
+        val locationManager = locationManager ?: return emptyList()
         if (!LocationManagerCompat.isLocationEnabled(locationManager)) {
             return emptyList()
         }
