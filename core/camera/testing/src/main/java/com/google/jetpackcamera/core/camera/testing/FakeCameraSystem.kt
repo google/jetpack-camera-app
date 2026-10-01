@@ -126,10 +126,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
             throw IllegalStateException("Usecases not bound")
         }
         if (isScreenFlash) {
-            val unused1 = screenFlashEvents.trySend(
+            screenFlashEvents.trySend(
                 CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.APPLY_UI) { }
             )
-            val unused2 = screenFlashEvents.trySend(
+            screenFlashEvents.trySend(
                 CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.CLEAR_UI) { }
             )
         }
