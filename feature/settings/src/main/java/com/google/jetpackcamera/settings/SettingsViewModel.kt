@@ -83,7 +83,7 @@ class SettingsViewModel @Inject constructor(
             constraintsRepository.systemConstraints.filterNotNull(),
             grantedPermissions
         ) { updatedSettings, constraints, grantedPerms ->
-            val unused = updatedSettings.videoQuality
+            updatedSettings.videoQuality
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
                 cameraEffectUiState = getCameraEffectUiState(updatedSettings, constraints),
