@@ -231,17 +231,8 @@ class LocalMediaRepository(
     }
 
     /**
-     * Returns the [MediaDescriptor] for the given [Uri] from the MediaStore.
-     *
-     * @param uri The [Uri] of the media to retrieve.
-     * @return The [MediaDescriptor] of the media, or [MediaDescriptor.None] if no media is found.
-     */
-    private suspend fun getCapturedMedia(uri: Uri): MediaDescriptor = cacheMutex.withLock {
-        getCapturedMediaInternal(uri)
-    }
-
-    /**
-     * Internal implementation of getCapturedMedia that assumes the [cacheMutex] is already held.
+     * Returns the [MediaDescriptor] for the given [Uri], reusing the cached descriptor when possible.
+     * Must be called under [cacheMutex].
      */
     private suspend fun getCapturedMediaInternal(uri: Uri): MediaDescriptor {
         val cachedDesc = cachedMediaDescriptor
