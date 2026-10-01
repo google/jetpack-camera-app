@@ -117,11 +117,11 @@ class LocalMediaRepository(
     override val lastCapturedMedia: StateFlow<MediaDescriptor> =
         merge(
             mediaStoreChangesFlow(context.contentResolver),
-            refreshRequests.map { null }
+            refreshRequests.map { }
         )
-            .mapLatest { changedUri ->
+            .mapLatest {
                 try {
-                    cacheMutex.withLock { resolveLastCapturedMedia(changedUri) }
+                    cacheMutex.withLock { resolveLastCapturedMedia() }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -144,48 +144,22 @@ class LocalMediaRepository(
     }
 
     /**
-     * Resolves the latest captured media for a MediaStore change. Must be called under
+     * Re-queries the MediaStore for this app's latest captured media. Must be called under
      * [cacheMutex].
      *
-     * @param changedUri the URI reported by the MediaStore, or `null` to re-query unconditionally.
+     * Any MediaStore change can affect which item is the latest (e.g. a new capture, or an older
+     * item being edited, trashed, or deleted), so the latest item is always re-queried rather than
+     * inferred from the changed URI.
      */
-    private suspend fun resolveLastCapturedMedia(changedUri: Uri?): MediaDescriptor {
-        // Any change to a collection or to one of this app's items can change which item is the
-        // latest (e.g. an older item was edited or trashed), so re-query rather than assuming the
-        // changed item is the latest.
-        val targetUri = if (
-            changedUri == null || isCollectionUri(changedUri) || isAppSpecificUri(changedUri)
-        ) {
-            findLatestAppSpecificUri()
+    private suspend fun resolveLastCapturedMedia(): MediaDescriptor {
+        val latestUri = findLatestAppSpecificUri()
+        return if (latestUri != null) {
+            getCapturedMediaInternal(latestUri)
         } else {
-            null
+            cachedUri = null
+            cachedMediaDescriptor = null
+            MediaDescriptor.None
         }
-
-        return if (targetUri != null) {
-            getCapturedMediaInternal(targetUri)
-        } else {
-            val currentCachedUri = cachedUri
-            if (currentCachedUri != null && !exists(currentCachedUri)) {
-                // The current media was deleted. Find the next most recent one.
-                val fallbackUri = findLatestAppSpecificUri()
-                if (fallbackUri != null) {
-                    getCapturedMediaInternal(fallbackUri)
-                } else {
-                    cachedUri = null
-                    cachedMediaDescriptor = null
-                    MediaDescriptor.None
-                }
-            } else {
-                // Something else changed, but our current media is still valid.
-                cachedMediaDescriptor ?: MediaDescriptor.None
-            }
-        }
-    }
-
-    private fun isCollectionUri(uri: Uri): Boolean {
-        val segments = uri.pathSegments
-        return ("images" in segments || "video" in segments) &&
-            segments.lastOrNull() == "media"
     }
 
     /**
@@ -296,68 +270,6 @@ class LocalMediaRepository(
         }
 
         return descriptor
-    }
-
-    /**
-     * Checks if the given [Uri] belongs to the app.
-     *
-     * @param uri The [Uri] to check.
-     * @return `true` if the URI is app-specific, `false` otherwise.
-     */
-    private suspend fun isAppSpecificUri(uri: Uri): Boolean = withContext(iODispatcher) {
-        val projection = mutableListOf(MediaStore.MediaColumns.DISPLAY_NAME)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            projection.add(MediaStore.MediaColumns.OWNER_PACKAGE_NAME)
-            projection.add(MediaStore.MediaColumns.RELATIVE_PATH)
-        }
-
-        try {
-            context.contentResolver.query(uri, projection.toTypedArray(), null, null, null)
-                ?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            val ownerColumn =
-                                cursor.getColumnIndex(MediaStore.MediaColumns.OWNER_PACKAGE_NAME)
-                            val pathColumn =
-                                cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH)
-
-                            val owner = if (ownerColumn != -1 && !cursor.isNull(ownerColumn)) {
-                                cursor.getString(ownerColumn)
-                            } else {
-                                null
-                            }
-                            val path = if (pathColumn != -1 && !cursor.isNull(pathColumn)) {
-                                cursor.getString(pathColumn)
-                            } else {
-                                null
-                            }
-
-                            // 1. Check Owner Package
-                            if (owner != null && owner != context.packageName) {
-                                return@withContext false
-                            }
-
-                            // 2. Check Relative Path (Ensure it's in the camera directory)
-                            if (path != null &&
-                                !path.startsWith(filePathGenerator.baseRelativePath)
-                            ) {
-                                return@withContext false
-                            }
-
-                            if (owner == context.packageName) return@withContext true
-                        }
-
-                        // 3. Fallback to Display Name Prefix (API 28 or missing modern columns)
-                        val nameColumn =
-                            cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
-                        val name = cursor.getString(nameColumn)
-                        return@withContext name?.startsWith(filePathGenerator.prefix) == true
-                    }
-                }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error checking app specificity for $uri", e)
-        }
-        false
     }
 
     /**
@@ -729,10 +641,10 @@ class LocalMediaRepository(
     }
 }
 
-private fun mediaStoreChangesFlow(contentResolver: ContentResolver): Flow<Uri?> = callbackFlow {
+private fun mediaStoreChangesFlow(contentResolver: ContentResolver): Flow<Unit> = callbackFlow {
     val observer = object : ContentObserver(null) {
         override fun onChange(selfChange: Boolean, uri: Uri?) {
-            trySend(uri).ignoreResult()
+            trySend(Unit).ignoreResult()
         }
     }
     contentResolver.registerContentObserver(

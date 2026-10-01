@@ -364,6 +364,32 @@ class LocalMediaRepositoryTest {
     }
 
     @Test
+    fun lastCapturedMedia_onOtherAppItemChange_requeries() = runTest {
+        // Given app media was added without a MediaStore change notification
+        val imageUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues()
+        )!!
+        assertThat(repository.lastCapturedMedia.value).isEqualTo(MediaDescriptor.None)
+
+        // When a newer item owned by another app is added and notified
+        val otherAppUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues(
+                displayName = "OTHER_Image.jpg",
+                dateAdded = 2000L,
+                ownerPackageName = "com.other.app"
+            )
+        )!!
+        contentResolver.notifyChange(otherAppUrl, null)
+
+        // Then the latest app media is re-queried, ignoring the other app's item
+        val result = repository.lastCapturedMedia.value
+        assertThat(result).isInstanceOf(MediaDescriptor.Content.Image::class.java)
+        assertThat((result as MediaDescriptor.Content.Image).uri).isEqualTo(imageUrl)
+    }
+
+    @Test
     fun lastCapturedMedia_newUriWithNullThumbnail_holdsPreviousMedia() = runTest {
         var shouldFailThumbnail = false
         val customThumbnailLoader: suspend (Uri, Uri) -> Bitmap? = { _, _ ->
