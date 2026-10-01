@@ -33,21 +33,27 @@ import com.google.jetpackcamera.settings.proto.cameraAppSettings
 /**
  * The default [CameraAppSettingsProto] instance.
  *
- * Every enum field is explicitly populated because a proto3 message that is absent from storage
+ * Enum fields are explicitly populated because a proto3 message that is absent from storage
  * deserializes to its zero-value (`<ENUM_NAME>_UNSPECIFIED`), which does not necessarily map to the
  * corresponding default in
  * [com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS]. Callers that persist this
  * message must seed their storage with this instance so that a first read produces the documented
  * application defaults rather than the proto3 zero-values.
+ *
+ * The exceptions are the fields that can be configured through
+ * [com.google.jetpackcamera.settings.model.CameraFeaturePolicy] (`flash_mode`, `aspect_ratio`,
+ * `dynamic_range`, and `image_format`). These remain `<ENUM_NAME>_UNSPECIFIED` until the user
+ * selects a value, so that [toModel] can resolve them against the baseline defaults supplied at
+ * read time instead of persisting a fixed default that would mask a policy default.
  */
 val DEFAULT_CAMERA_APP_SETTINGS_PROTO: CameraAppSettingsProto = cameraAppSettings {
     darkMode = DarkMode.DARK_MODE_DARK
     defaultLensFacing = LensFacing.LENS_FACING_BACK
-    flashMode = FlashMode.FLASH_MODE_OFF
-    aspectRatio = AspectRatio.ASPECT_RATIO_NINE_SIXTEEN
+    flashMode = FlashMode.FLASH_MODE_UNSPECIFIED
+    aspectRatio = AspectRatio.ASPECT_RATIO_UNSPECIFIED
     stabilizationMode = StabilizationMode.STABILIZATION_MODE_AUTO
     dynamicRange = DynamicRange.DYNAMIC_RANGE_UNSPECIFIED
-    imageFormat = ImageOutputFormat.IMAGE_OUTPUT_FORMAT_JPEG
+    imageFormat = ImageOutputFormat.IMAGE_OUTPUT_FORMAT_UNSPECIFIED
     maxVideoDurationMillis = UNLIMITED_VIDEO_DURATION
     videoQuality = VideoQuality.VIDEO_QUALITY_UNSPECIFIED
     audioEnabled = true
