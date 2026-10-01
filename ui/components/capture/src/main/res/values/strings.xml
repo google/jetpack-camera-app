@@ -154,4 +154,7 @@
     <string name="quick_settings_preview_sd_description">Standard Definition</string>
     <string name="quick_settings_preview_hd_description">High Definition</string>
     <string name="quick_settings_preview_fhd_description">Full High Definition</string>
+
+    <!-- Snackbar -->
+    <string name="snackbar_dismiss_content_description">Dismiss</string>
 </resources>
