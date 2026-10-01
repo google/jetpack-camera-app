@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.di
+package com.google.jetpackcamera.core.location.locationmanager.di
 
 import android.content.Context
 import com.google.jetpackcamera.core.location.LocationProvider
@@ -26,11 +26,16 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * Hilt module providing the application-level concrete binding for [LocationProvider].
+ * Hilt module binding [LocationManagerLocationProvider] as the concrete [LocationProvider].
+ *
+ * This module is an explicit opt-in: applications that want framework
+ * [android.location.LocationManager] backed geotagging depend on this module, while the optional
+ * contract declared in `:core:location:location-di` keeps location features dormant for
+ * applications that do not.
  */
 @Module
 @InstallIn(SingletonComponent::class)
-internal object LocationModule {
+internal object LocationManagerModule {
 
     /**
      * Provides the singleton [LocationManagerLocationProvider] instance to satisfy

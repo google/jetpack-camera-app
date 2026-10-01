@@ -200,7 +200,7 @@ dependencies {
     // Location implementations
     implementation(project(":core:location"))
     implementation(project(":core:location:location-di"))
-    implementation(project(":core:location:location-manager"))
+    implementation(project(":core:location:location-manager-di"))
 }
 
 // Allow references to generated code
