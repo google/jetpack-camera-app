@@ -15,7 +15,9 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.animation.core.spring
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,5 +29,11 @@ class CaptureTokensTest {
     @Test
     fun recordingRed_hasExpectedColorValue() {
         assertThat(CaptureTokens.RecordingRed).isEqualTo(Color(0xFFED0000))
+    }
+
+    @Test
+    fun snappyStandardTapSpatialSpec_hasExpectedSpringParameters() {
+        assertThat(CaptureTokens.SnappyStandardTapSpatialSpec)
+            .isEqualTo(spring<Dp>(dampingRatio = 0.65f, stiffness = 1800f))
     }
 }

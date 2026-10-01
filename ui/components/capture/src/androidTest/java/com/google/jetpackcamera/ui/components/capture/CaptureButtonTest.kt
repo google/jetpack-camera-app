@@ -340,7 +340,7 @@ class CaptureButtonTest {
             CaptureButtonRing(
                 captureButtonSize = 86f,
                 color = { Color.White },
-                borderWidth = { 0f }
+                borderWidth = { 0.dp }
             )
         }
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
@@ -352,7 +352,7 @@ class CaptureButtonTest {
             CaptureButtonRing(
                 captureButtonSize = 86f,
                 color = { Color.White },
-                borderWidth = { 3f }
+                borderWidth = { 3.dp }
             )
         }
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertExists()
