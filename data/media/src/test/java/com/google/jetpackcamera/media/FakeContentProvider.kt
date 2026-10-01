@@ -21,6 +21,7 @@ import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
 import android.provider.MediaStore
+import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import java.io.File
 import java.io.FileNotFoundException
 
@@ -54,6 +55,19 @@ class FakeContentProvider : ContentProvider() {
      * failures such as a [SecurityException] when storage permission is not granted.
      */
     var queryException: Exception? = null
+
+    /**
+     * Display-name prefix used to infer [MediaStore.MediaColumns.OWNER_PACKAGE_NAME] for rows that
+     * were inserted without an explicit owner. Rows whose display name starts with this prefix are
+     * treated as owned by this app; all others are treated as owned by another app.
+     */
+    var ownerPrefix: String = FakeFilePathGenerator().prefix
+
+    private fun inferOwnerPackageName(values: ContentValues): String? {
+        if (!values.containsKey(MediaStore.MediaColumns.DISPLAY_NAME)) return context?.packageName
+        val name = values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME)
+        return if (name?.startsWith(ownerPrefix) == true) context?.packageName else "com.other.app"
+    }
 
     fun setFailNextInsert(fail: Boolean) {
         failNextInsert = fail
@@ -137,16 +151,7 @@ class FakeContentProvider : ContentProvider() {
                 filteredMedia = filteredMedia.filter {
                     val path = it.value.getAsString(MediaStore.MediaColumns.RELATIVE_PATH) ?: ""
                     val owner = it.value.getAsString(MediaStore.MediaColumns.OWNER_PACKAGE_NAME)
-                        ?: if (it.value.containsKey(MediaStore.MediaColumns.DISPLAY_NAME)) {
-                            val name = it.value.getAsString(MediaStore.MediaColumns.DISPLAY_NAME)
-                            if (name?.startsWith("JCA") == true) {
-                                context?.packageName
-                            } else {
-                                "com.other.app"
-                            }
-                        } else {
-                            context?.packageName
-                        }
+                        ?: inferOwnerPackageName(it.value)
                     pathRegex.matches(path) && owner == targetOwner
                 }
             }
@@ -167,20 +172,11 @@ class FakeContentProvider : ContentProvider() {
     }
 
     private fun createRow(projection: Array<String>, values: ContentValues, uri: Uri): Array<Any?> {
-        val packageName = context?.packageName
         return projection.map { proj ->
             when (proj) {
                 MediaStore.MediaColumns._ID -> uri.lastPathSegment?.toLong()
-                MediaStore.MediaColumns.OWNER_PACKAGE_NAME -> {
-                    values.getAsString(
-                        proj
-                    ) ?: if (values.containsKey(MediaStore.MediaColumns.DISPLAY_NAME)) {
-                        val name = values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME)
-                        if (name?.startsWith("JCA") == true) packageName else "com.other.app"
-                    } else {
-                        packageName
-                    }
-                }
+                MediaStore.MediaColumns.OWNER_PACKAGE_NAME ->
+                    values.getAsString(proj) ?: inferOwnerPackageName(values)
                 else -> values.get(proj)
             }
         }.toTypedArray()

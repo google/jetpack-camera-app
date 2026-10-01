@@ -230,11 +230,11 @@ class LocalMediaRepositoryTest {
             override val baseRelativePath: String = "DCIM/Custom"
         }
 
-        // Add a JCA file (should be ignored by the custom repo)
+        // Add a default-prefix file (should be ignored by the custom repo)
         fakeContentProvider.insert(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             createContentValues(
-                displayName = "JCA_Image.jpg",
+                displayName = "${filePathGenerator.prefix}_Image.jpg",
                 relativePath = "DCIM/Camera",
                 ownerPackageName = context.packageName
             )
