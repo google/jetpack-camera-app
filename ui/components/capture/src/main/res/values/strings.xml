@@ -14,86 +14,86 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <!-- Text displayed on the camera preview screen while the camera is initializing. [CHAR LIMIT=30] -->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" xmlns:tools="http://schemas.android.com/tools">
+    <!-- Text displayed on the camera preview screen while the camera is initializing. "Camera" is a generic term. [CHAR LIMIT=30] -->
     <string name="camera_not_ready">Camera Loading…</string>
     <string name="elapsed_time_format" translatable="false">%1$d:%2$02d</string>
-    <!-- Timer text displayed on the camera preview when video recording is paused. %1$d is elapsed minutes, %2$02d is two-digit elapsed seconds. [CHAR LIMIT=25] -->
+    <!-- Timer text on the capture screen while a video recording is paused, replacing the normal "m:ss" timer. "PAUSED" describes the recording and is shown in all capital letters for emphasis (use the target language's equivalent emphasis if all caps is not appropriate). %1$d is the elapsed minutes (e.g. 1) and %2$02d is the elapsed seconds zero-padded to two digits (e.g. 05), so the text reads e.g. "PAUSED 1:05". Keep the colon between minutes and seconds. [CHAR LIMIT=25] -->
     <string name="elapsed_time_format_paused">PAUSED <xliff:g id="minutes" example="1">%1$d</xliff:g>:<xliff:g id="seconds" example="05">%2$02d</xliff:g></string>
-    <!-- Accessibility announcement for the elapsed recording timer while recording a video. %1$d is minutes, %2$d is seconds. [CHAR LIMIT=NONE] -->
-    <string name="elapsed_time_accessibility_recording">Recording time: <xliff:g id="minutes" example="1">%1$d</xliff:g> minutes and <xliff:g id="seconds" example="30">%2$d</xliff:g> seconds</string>
-    <!-- Accessibility announcement for the elapsed recording timer while video recording is paused. %1$d is minutes, %2$d is seconds. [CHAR LIMIT=NONE] -->
-    <string name="elapsed_time_accessibility_paused">Recording paused: <xliff:g id="minutes" example="1">%1$d</xliff:g> minutes and <xliff:g id="seconds" example="30">%2$d</xliff:g> seconds</string>
+    <!-- Accessibility announcement (read aloud by screen readers, not shown visually) for the elapsed-time timer on the capture screen while a video is recording. %1$d is the elapsed minutes (e.g. 1) and %2$d is the remaining elapsed seconds (e.g. 30), so the text reads e.g. "Recording time: 1 minutes and 30 seconds". [CHAR LIMIT=NONE] -->
+    <string name="elapsed_time_accessibility_recording" tools:ignore="PluralsCandidate">Recording time: <xliff:g id="minutes" example="1">%1$d</xliff:g> minutes and <xliff:g id="seconds" example="30">%2$d</xliff:g> seconds</string>
+    <!-- Accessibility announcement (read aloud by screen readers, not shown visually) for the elapsed-time timer on the capture screen while the video recording is paused. %1$d is the elapsed minutes (e.g. 1) and %2$d is the remaining elapsed seconds (e.g. 30), so the text reads e.g. "Recording paused: 1 minutes and 30 seconds". [CHAR LIMIT=NONE] -->
+    <string name="elapsed_time_accessibility_paused" tools:ignore="PluralsCandidate">Recording paused: <xliff:g id="minutes" example="1">%1$d</xliff:g> minutes and <xliff:g id="seconds" example="30">%2$d</xliff:g> seconds</string>
 
     <!-- Accessibility label for the toggle option to switch to photo capture mode. [CHAR LIMIT=NONE] -->
     <string name="capture_mode_image_capture_content_description">Image capture mode</string>
     <!-- Accessibility label for the toggle option to switch to video recording mode. [CHAR LIMIT=NONE] -->
     <string name="capture_mode_video_recording_content_description">Video recording mode</string>
     <!-- Accessibility label for the capture mode toggle when locked to photo capture mode only. [CHAR LIMIT=NONE] -->
-    <string name="capture_mode_image_capture_content_description_disabled">Image Capture mode only</string>
+    <string name="capture_mode_image_capture_content_description_disabled">Image capture mode only</string>
     <!-- Accessibility label for the capture mode toggle when locked to video recording mode only. [CHAR LIMIT=NONE] -->
     <string name="capture_mode_video_recording_content_description_disabled">Video recording mode only</string>
 
     <!-- Accessibility label for the button that pauses or resumes an active video recording. [CHAR LIMIT=NONE] -->
     <string name="pause_resume_button_description">Pause or resume video recording</string>
-    <!-- Accessibility content description for the microphone audio visualizer icon shown during video recording. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the microphone icon inside the round mute/unmute toggle button shown on the capture screen during video recording; the button's muted/on state is announced separately (microphone_muted / microphone_on). "Microphone" is a noun naming the control, not an action. [CHAR LIMIT=NONE] -->
     <string name="audio_visualizer_icon_description">Microphone</string>
-    <!-- Accessibility state description indicating the microphone is muted during video recording. [CHAR LIMIT=NONE] -->
-    <string name="microphone_muted">Microphone Muted</string>
-    <!-- Accessibility state description indicating the microphone is unmuted and active during video recording. [CHAR LIMIT=NONE] -->
-    <string name="microphone_on">Microphone On</string>
+    <!-- Accessibility state description for the microphone mute/unmute toggle button on the capture screen during video recording, read after the button name "Microphone" when audio is muted. "Muted" is an adjective describing the microphone. [CHAR LIMIT=NONE] -->
+    <string name="microphone_muted">Muted</string>
+    <!-- Accessibility state description for the microphone mute/unmute toggle button on the capture screen during video recording, read after the button name "Microphone" when audio is being recorded. "On" is a state value (the microphone is on), not an imperative verb. [CHAR LIMIT=NONE] -->
+    <string name="microphone_on">On</string>
 
-    <!-- Accessibility content description for the status icon indicating automatic video stabilization is active. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label (not shown visually) for the small status icon in the top bar of the capture screen when video stabilization is set to Auto and the app has turned stabilization on automatically. The implied subject of "on" is video stabilization; "on" is a state, not an action. [CHAR LIMIT=NONE] -->
     <string name="stabilization_icon_description_auto">Stabilization is on</string>
-    <!-- Accessibility content description for the status icon indicating both camera preview and video recording are stabilized. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility content description for the status icon indicating both camera preview and video recording are stabilized. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_icon_description_preview_and_video">Preview is Stabilized</string>
-    <!-- Accessibility content description for the status icon indicating only video recording is stabilized. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility content description for the status icon indicating only video recording is stabilized. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_icon_description_video_only">Only Video is Stabilized</string>
-    <!-- Accessibility content description for the status icon indicating optical image stabilization (OIS) is enabled. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility content description for the status icon indicating optical image stabilization (OIS) is enabled. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_icon_description_optical">Optical stabilization is Enabled</string>
-    <!-- Accessibility content description for the status icon indicating video resolution is set to Standard Definition (SD, 480p). [CHAR LIMIT=NONE] -->
-    <string name="video_quality_description_sd">Video quality is SD</string>
-    <!-- Accessibility content description for the status icon indicating video resolution is set to High Definition (HD, 720p). [CHAR LIMIT=NONE] -->
-    <string name="video_quality_description_hd">Video quality is HD</string>
-    <!-- Accessibility content description for the status icon indicating video resolution is set to Full High Definition (FHD, 1080p). [CHAR LIMIT=NONE] -->
-    <string name="video_quality_description_fhd">Video quality is FHD</string>
-    <!-- Accessibility content description for the status icon indicating video resolution is set to Ultra High Definition (UHD, 4K/2160p). [CHAR LIMIT=NONE] -->
-    <string name="video_quality_description_uhd">Video quality is UHD</string>
+    <!-- Accessibility label (not shown visually) for the status icon in the top bar of the capture screen when the video resolution is Standard Definition (SD, 480p). Spelled out in full because screen readers read abbreviations letter by letter. [CHAR LIMIT=NONE] -->
+    <string name="video_quality_description_sd">Video quality is standard definition</string>
+    <!-- Accessibility label (not shown visually) for the status icon in the top bar of the capture screen when the video resolution is High Definition (HD, 720p). Spelled out in full because screen readers read abbreviations letter by letter. [CHAR LIMIT=NONE] -->
+    <string name="video_quality_description_hd">Video quality is high definition</string>
+    <!-- Accessibility label (not shown visually) for the status icon in the top bar of the capture screen when the video resolution is Full High Definition (FHD, 1080p). Spelled out in full because screen readers read abbreviations letter by letter. [CHAR LIMIT=NONE] -->
+    <string name="video_quality_description_fhd">Video quality is full high definition</string>
+    <!-- Accessibility label (not shown visually) for the status icon in the top bar of the capture screen when the video resolution is Ultra High Definition (UHD, 4K/2160p). Spelled out in full because screen readers read abbreviations letter by letter. [CHAR LIMIT=NONE] -->
+    <string name="video_quality_description_uhd">Video quality is ultra high definition</string>
 
-    <!-- Accessibility state description for the quick settings toggle button when the quick settings panel is open. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the round quick settings button on the capture screen while the quick settings bottom sheet is open; tapping the button closes it. "open" is an adjective describing the state of the quick settings panel (it is open), not the imperative verb "open". [CHAR LIMIT=NONE] -->
     <string name="quick_settings_toggle_open_description">Quick settings open</string>
-    <!-- Accessibility state description for the quick settings toggle button when the quick settings panel is closed. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the round quick settings button on the capture screen while the quick settings bottom sheet is closed; tapping the button opens it. "closed" is an adjective describing the state of the quick settings panel (it is closed), not a verb. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_toggle_closed_description">Quick settings closed</string>
-    <!-- Accessibility label for the button that closes an expanded setting selector in the quick settings panel. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_btn_close_expanded_settings_description">Close expanded settings button</string>
+    <!-- Accessibility action label (announced as "double-tap to [label]") for tapping the drag handle of the quick settings bottom sheet, or the dimmed area behind it, on the capture screen; the action dismisses the quick settings sheet. "Close" is an imperative verb; "expanded settings" refers to the open quick settings panel. [CHAR LIMIT=NONE] -->
+    <string name="quick_settings_btn_close_expanded_settings_description">Close expanded settings</string>
 
     <!-- Short label in the quick settings panel indicating the front-facing camera lens is active. [CHAR LIMIT=20] -->
     <string name="quick_settings_front_camera_text">Front</string>
-    <!-- Short label in the quick settings panel indicating the rear-facing camera lens is active. [CHAR LIMIT=20] -->
+    <!-- Short label in the quick settings panel indicating the rear-facing camera lens is active. "Back" refers to the rear-facing camera on the back of the device, not the navigation action to go back. [CHAR LIMIT=20] -->
     <string name="quick_settings_back_camera_text">Back</string>
-    <!-- Accessibility label for the camera lens control when the front-facing camera is selected. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the round flip-camera button on the capture screen while the front-facing (selfie) camera is active; it names the current lens (a state), and tapping the button switches to the rear camera. Translate as a noun phrase ("the front camera"), not as a command to switch. "Camera" is a generic term. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_front_camera_description">Front Camera</string>
-    <!-- Accessibility label for the camera lens control when the rear-facing camera is selected. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the round flip-camera button on the capture screen while the rear-facing camera is active; it names the current lens (a state), and tapping the button switches to the front camera. Translate as a noun phrase ("the back camera"), not as a command to switch. "Back" refers to the rear-facing camera on the back of the device, not the navigation action to go back. "Camera" is a generic term. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_back_camera_description">Back Camera</string>
 
     <string name="quick_settings_aspect_ratio_3_4" translatable="false">3:4</string>
     <string name="quick_settings_aspect_ratio_9_16" translatable="false">9:16</string>
     <string name="quick_settings_aspect_ratio_1_1" translatable="false">1:1</string>
 
-    <!-- Accessibility label for the 3:4 aspect ratio option in quick settings. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_aspect_ratio_3_4_description">3 to 4 aspect ratio</string>
-    <!-- Accessibility label for the 9:16 aspect ratio option in quick settings. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_aspect_ratio_9_16_description">9 to 16 aspect ratio</string>
-    <!-- Accessibility label for the 1:1 square aspect ratio option in quick settings. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_aspect_ratio_1_1_description">1 to 1 aspect ratio</string>
+    <!-- Accessibility label for the 3:4 aspect ratio option in quick settings. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
+    <string name="quick_settings_aspect_ratio_3_4_description" tools:ignore="HardCodedNumber">3 to 4 aspect ratio</string>
+    <!-- Accessibility label for the 9:16 aspect ratio option in quick settings. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
+    <string name="quick_settings_aspect_ratio_9_16_description" tools:ignore="HardCodedNumber">9 to 16 aspect ratio</string>
+    <!-- Accessibility label for the 1:1 square aspect ratio option in quick settings. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
+    <string name="quick_settings_aspect_ratio_1_1_description" tools:ignore="HardCodedNumber">1 to 1 aspect ratio</string>
 
-    <!-- Short abbreviation for Standard Dynamic Range (SDR) in the quick settings panel. [CHAR LIMIT=12] -->
+    <!-- Subtitle under the "HDR" row title in the quick settings bottom sheet on the capture screen, showing the current selection when HDR is off. "SDR" is the abbreviation for standard dynamic range and is normally left untranslated. [CHAR LIMIT=15] -->
     <string name="quick_settings_dynamic_range_sdr">SDR</string>
-    <!-- Short abbreviation for High Dynamic Range (HDR) in the quick settings panel. [CHAR LIMIT=12] -->
+    <!-- Subtitle under the "HDR" row title in the quick settings bottom sheet on the capture screen, showing the current selection when HDR is on. "HDR" is the abbreviation for high dynamic range and is normally left untranslated. [CHAR LIMIT=15] -->
     <string name="quick_settings_dynamic_range_hdr">HDR</string>
     <!-- Accessibility label for the Standard Dynamic Range (SDR) option in quick settings. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_dynamic_range_sdr_description">Standard dynamic range</string>
-    <!-- Accessibility label for the High Dynamic Range (HDR) option in quick settings. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the High Dynamic Range (HDR) option in quick settings. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_dynamic_range_hdr_description">High dynamic range</string>
 
     <!-- Short option label in quick settings indicating camera flash is turned off. [CHAR LIMIT=15] -->
@@ -105,28 +105,28 @@
     <!-- Short abbreviated option label in quick settings for Low Light Boost mode. [CHAR LIMIT=15] -->
     <string name="quick_settings_flash_llb">LLB</string>
 
-    <!-- Accessibility label for the flash control when flash is turned off. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the flash control when flash is turned off. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_flash_off_description">Flash off</string>
-    <!-- Accessibility label for the flash control when flash is set to automatic. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the flash control when flash is set to automatic. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_flash_auto_description">Auto flash</string>
-    <!-- Accessibility label for the flash control when flash is turned on. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the flash control when flash is turned on. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_flash_on_description">Flash on</string>
-    <!-- Accessibility label for the flash control when Low Light Boost mode is enabled. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the flash control when Low Light Boost mode is enabled. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_flash_llb_description">Low Light Boost on</string>
 
-    <!-- Toast error message shown when an error occurs while running Low Light Boost. [CHAR LIMIT=80] -->
-    <string name="low_light_boost_error_toast_message">An error occurred when running low light boost.</string>
-    <!-- Option label in quick settings for hybrid capture mode (allowing both photo and video capture). [CHAR LIMIT=25] -->
+    <!-- Toast (brief pop-up message at the bottom of the capture screen) shown when the Low Light Boost flash mode fails while the camera is running. "Low Light Boost" is a feature name; translate it consistently with flash_mode_selector_llb. [CHAR LIMIT=80] -->
+    <string name="low_light_boost_error_toast_message">An error occurred when running Low Light Boost.</string>
+    <!-- Subtitle under the "Capture Mode" row title in the quick settings bottom sheet on the capture screen, showing the current selection when hybrid mode is active (the options themselves are icon-only buttons). In hybrid mode a tap on the capture button takes a photo and a long press records a video. "Hybrid" means combined photo-and-video; "Capture" is a noun. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=25] -->
     <string name="quick_settings_text_capture_mode_standard">Hybrid Capture</string>
-    <!-- Option label in quick settings for video-only capture mode. [CHAR LIMIT=25] -->
+    <!-- Subtitle under the "Capture Mode" row title in the quick settings bottom sheet on the capture screen, showing the current selection when the camera can only record videos (no photos). "Only" restricts "Video"; "Video" is a noun. [CHAR LIMIT=25] -->
     <string name="quick_settings_text_capture_mode_video_only">Video Only</string>
-    <!-- Option label in quick settings for photo-only capture mode. [CHAR LIMIT=25] -->
+    <!-- Subtitle under the "Capture Mode" row title in the quick settings bottom sheet on the capture screen, showing the current selection when the camera can only take photos (no video). "Only" restricts "Image"; "Image" means photo. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=25] -->
     <string name="quick_settings_text_capture_mode_image_only">Image Only</string>
-    <!-- Accessibility label for the hybrid/standard capture mode option in quick settings. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_description_capture_mode_standard">Standard Capture</string>
-    <!-- Accessibility label for the video-only capture mode option in quick settings. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the icon-only hybrid capture mode button in the "Capture Mode" row of the quick settings bottom sheet; in hybrid mode a tap on the capture button takes a photo and a long press records a video. Use the same term as the visible "Hybrid Capture" subtitle (quick_settings_text_capture_mode_standard). [CHAR LIMIT=NONE] -->
+    <string name="quick_settings_description_capture_mode_standard">Hybrid capture</string>
+    <!-- Accessibility label for the icon-only video-only capture mode button in the "Capture Mode" row of the quick settings bottom sheet. Use the same term as the visible "Video Only" subtitle (quick_settings_text_capture_mode_video_only). [CHAR LIMIT=NONE] -->
     <string name="quick_settings_description_capture_mode_video_only">Video only capture</string>
-    <!-- Accessibility label for the photo-only capture mode option in quick settings. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the icon-only photo-only capture mode button in the "Capture Mode" row of the quick settings bottom sheet. Use the same term as the visible "Image Only" subtitle (quick_settings_text_capture_mode_image_only). [CHAR LIMIT=NONE] -->
     <string name="quick_settings_description_capture_mode_image_only">Image only capture</string>
 
     <!-- Button label in the quick settings panel that navigates to the full camera settings screen. [CHAR LIMIT=25] -->
@@ -137,34 +137,34 @@
 
     <!-- Accessibility label for the capture button while the camera is in photo mode. Activating the button takes a photo. [CHAR LIMIT=NONE] -->
     <string name="capture_button_capture_photo">Capture Photo</string>
-    <!-- Accessibility label for the capture button while the camera is in video mode and not recording. Activating the button starts recording a video. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the large round capture button on the capture screen when the camera is in video-only mode and idle; also the label of the long-press accessibility action in hybrid mode ("double-tap and hold to Start Video Recording"). Imperative verb phrase: activating starts recording a video. [CHAR LIMIT=NONE] -->
     <string name="capture_button_start_video_recording">Start Video Recording</string>
-    <!-- Accessibility label for the capture button while a video is being recorded, describing the current state of the camera. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the large round capture button on the capture screen while the user is holding it down to record a video. Describes the current state ("a video is being recorded") as a present-progressive verb phrase; not a command and not a noun meaning "a video of a recording". [CHAR LIMIT=NONE] -->
     <string name="capture_button_recording_video">Recording Video</string>
     <!-- Accessibility label for the capture button while a video is being recorded. Activating the button stops the recording. [CHAR LIMIT=NONE] -->
     <string name="capture_button_stop_video_recording">Stop Video Recording</string>
     <!-- Accessibility label for the control that locks video recording, so the user can keep recording without holding down the capture button. [CHAR LIMIT=NONE] -->
     <string name="capture_button_lock_video_recording">Lock Video Recording</string>
-    <!-- Accessibility label for the capture button when it is disabled, for example while the camera is busy, and cannot be activated. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the capture button when it is disabled, for example while the camera is busy, and cannot be activated. "Capture" is used as an action verb (to take a photo or record a video), not a noun. [CHAR LIMIT=NONE] -->
     <string name="capture_button_unavailable">Capture</string>
 
-    <!-- Accessibility label for the live camera viewfinder surface where the user can tap to focus. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label for the live camera viewfinder surface where the user can tap to focus. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="camera_viewfinder_content_description">Camera viewfinder</string>
 
     <!-- Accessibility announcement when the camera is actively focusing on a tapped point in the viewfinder. [CHAR LIMIT=NONE] -->
     <string name="focus_scanning">Focusing</string>
-    <!-- Accessibility announcement when the camera has locked focus on the tapped point in the viewfinder. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility announcement (not shown visually) when the camera has successfully focused on the point the user tapped in the viewfinder. "Focused" is a past participle describing the camera's focus state (focus achieved), not a person concentrating. [CHAR LIMIT=NONE] -->
     <string name="focus_locked">Focused</string>
     <!-- Accessibility announcement when the camera fails to focus on the tapped point in the viewfinder. [CHAR LIMIT=NONE] -->
     <string name="focus_failed">Focus failed</string>
-    <!-- Accessibility announcement when tap-to-focus metering is reset or released. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility announcement (not shown visually) when the tap-to-focus point is cleared and the camera returns to automatic continuous focus. "Focus" is the noun (camera focus); "released" means the fixed focus point is no longer held. [CHAR LIMIT=NONE] -->
     <string name="focus_released">Focus released</string>
     <!-- Header title for the quick settings bottom sheet when the camera is in video mode. [CHAR LIMIT=40] -->
     <string name="quick_settings_title_video_settings">Video settings</string>
     <!-- Header title for the quick settings bottom sheet when the camera is in photo mode. [CHAR LIMIT=40] -->
     <string name="quick_settings_title_photo_settings">Photo settings</string>
     <!-- Header title for the quick settings bottom sheet when both photo and video settings are shown. [CHAR LIMIT=40] -->
-    <string name="quick_settings_title_photo_and_video_settings">Photo and Video settings</string>
+    <string name="quick_settings_title_photo_and_video_settings">Photo and video settings</string>
 
     <!-- Title for the Capture Mode setting row in the quick settings panel. [CHAR LIMIT=30] -->
     <string name="quick_settings_title_capture_mode">Capture Mode</string>
@@ -185,16 +185,15 @@
     <string name="quick_settings_flash_mode_subtitle_auto">Auto</string>
     <!-- Subtitle in the quick settings panel indicating Flash Mode is currently On. [CHAR LIMIT=25] -->
     <string name="quick_settings_flash_mode_subtitle_on">On</string>
-    <!-- Subtitle in the quick settings panel indicating Flash Mode is currently set to Low Light Boost. [CHAR LIMIT=30] -->
+    <!-- Subtitle under the "Flash Mode" row title in the quick settings bottom sheet on the capture screen, showing the current selection when the Low Light Boost mode is selected. "Low Light Boost" is a feature name; translate it consistently with flash_mode_selector_llb. [CHAR LIMIT=30] -->
     <string name="quick_settings_flash_mode_subtitle_low_light_boost">Low Light Boost</string>
 
-    <!-- Previews -->
-    <string name="quick_settings_preview_video_resolution">Video Resolution</string>
-    <string name="quick_settings_preview_standard_definition">Standard Definition</string>
-    <string name="quick_settings_preview_sd_description">Standard Definition</string>
-    <string name="quick_settings_preview_hd_description">High Definition</string>
-    <string name="quick_settings_preview_fhd_description">Full High Definition</string>
+    <string name="quick_settings_preview_video_resolution" translatable="false">Video Resolution</string>
+    <string name="quick_settings_preview_standard_definition" translatable="false">Standard Definition</string>
+    <string name="quick_settings_preview_sd_description" translatable="false">Standard Definition</string>
+    <string name="quick_settings_preview_hd_description" translatable="false">High Definition</string>
+    <string name="quick_settings_preview_fhd_description" translatable="false">Full High Definition</string>
 
-    <!-- Snackbar -->
+    <!-- Accessibility label for the close button (X icon) that dismisses a notification banner (snackbar) on the capture screen. "Dismiss" is an imperative verb meaning to close or hide the message. [CHAR LIMIT=NONE] -->
     <string name="snackbar_dismiss_content_description">Dismiss</string>
 </resources>

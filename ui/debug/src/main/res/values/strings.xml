@@ -15,9 +15,10 @@
   ~ limitations under the License.
   -->
 <resources>
-    <!-- Debug Overlay Text -->
-    <string name="debug_text_physical_camera_id_prefix" translatable="false">Physical ID: </string>
-    <string name="debug_text_logical_camera_id_prefix" translatable="false">Logical ID: </string>
+    <!-- Debug Overlay Text. The ID prefixes are quoted to preserve the trailing space that separates the label from the camera ID. -->
+    <string name="debug_text_physical_camera_id_prefix" translatable="false">"Physical ID: "</string>
+    <string name="debug_text_logical_camera_id_prefix" translatable="false">"Logical ID: "</string>
+    <!-- "Debug" is matched verbatim by automated UI tests; do not edit. -->
     <string name="debug_overlay_toggle_btn_text" translatable="false">Debug</string>
     <string name="debug_hide_components_desc" translatable="false">Hiding components</string>
     <string name="debug_show_components_desc" translatable="false">Displaying components</string>

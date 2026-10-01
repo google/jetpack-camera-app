@@ -20,7 +20,7 @@
     <!-- Message displayed in the post-capture viewer when no captured photo or video is available to preview. [CHAR LIMIT=40] -->
     <string name="no_media_available">No Media Available</string>
     <!-- Status message displayed while a captured video is loading in the post-capture video player. [CHAR LIMIT=40] -->
-    <string name="loading_video_text">Loading video...</string>
+    <string name="loading_video_text">Loading video…</string>
 
     <!-- Error message displayed when the post-capture viewer fails to load the captured photo or video. [CHAR LIMIT=40] -->
     <string name="error_loading_media">Error loading media</string>

@@ -15,15 +15,15 @@
   ~ limitations under the License.
   -->
 <resources>
-    <!-- Toast message shown to the user when they tap a camera setting that is disabled for an unknown reason. [CHAR LIMIT=60] -->
-    <string name="toast_unknown_disabled_rationale">Unknown Disabled Rationale</string>
+    <!-- Toast (brief pop-up message at the bottom of the capture screen) shown when the user taps a disabled camera option and the app has no specific reason to show. Fallback message, full sentence. [CHAR LIMIT=80] -->
+    <string name="toast_unknown_disabled_rationale">This option is disabled for an unknown reason</string>
     <!-- Toast message shown to the user when they try to select the photo-only capture mode, but the app has restricted this option. [CHAR LIMIT=60] -->
     <string name="toast_image_capture_restricted">Image Capture option is restricted</string>
     <!-- Toast message shown to the user when they try to select the video-only capture mode, but the app has restricted this option. [CHAR LIMIT=60] -->
     <string name="toast_video_capture_restricted">Video Capture option is restricted</string>
     <!-- Toast message shown to the user when they try to select the combined photo and video capture mode, but the app has restricted this option. [CHAR LIMIT=60] -->
     <string name="toast_hybrid_capture_restricted">Hybrid Capture option is restricted</string>
-    <!-- Toast message shown when a photo is captured and saved successfully. [CHAR LIMIT=60] -->
+    <!-- Toast message shown when a photo is captured and saved successfully. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=60] -->
     <string name="toast_image_capture_success">Image Capture Success</string>
     <!-- Toast message shown when a video recording is completed and saved successfully. [CHAR LIMIT=60] -->
     <string name="toast_video_capture_success">Video Capture Success</string>
@@ -31,26 +31,26 @@
     <string name="toast_capture_failure">Image Capture Failure</string>
     <!-- Toast message shown when recording or saving a video fails. [CHAR LIMIT=60] -->
     <string name="toast_video_capture_failure">Video Capture Failure</string>
-    <!-- Toast message shown when the user attempts to record a video while the app was launched in photo-only external capture mode. [CHAR LIMIT=80] -->
+    <!-- Toast message shown when the user attempts to record a video while the app was launched in photo-only external capture mode. [CHAR LIMIT=100] -->
     <string name="toast_video_capture_external_unsupported">Video not supported while app is in image-only capture mode</string>
-    <!-- Toast message shown when the user attempts to take a photo while the app was launched in video-only external capture mode. [CHAR LIMIT=80] -->
+    <!-- Toast message shown when the user attempts to take a photo while the app was launched in video-only external capture mode. [CHAR LIMIT=100] -->
     <string name="toast_image_capture_external_unsupported">Image capture not supported while app is in video-only capture mode</string>
-    <!-- Toast message shown when the user attempts to take a photo while dual/concurrent camera mode is active. [CHAR LIMIT=80] -->
+    <!-- Toast message shown when the user tries to take a photo while two cameras are recording at once. "dual camera mode" is the same feature as the "Enable Concurrent Camera" setting (concurrent_camera_title); use the same translated term. "Image capture" means taking a photo. [CHAR LIMIT=80] -->
     <string name="toast_image_capture_unsupported_concurrent_camera">Image capture not supported in dual camera mode</string>
     <!-- Toast message shown when Ultra HDR photo capture is not supported by the device hardware. [CHAR LIMIT=80] -->
     <string name="toast_hdr_photo_unsupported_on_device">Ultra HDR photos not supported on this device</string>
     <!-- Toast message shown when Ultra HDR photo capture is not supported by the currently selected camera lens. [CHAR LIMIT=80] -->
     <string name="toast_hdr_photo_unsupported_on_lens">Ultra HDR photos not supported by current lens</string>
-    <!-- Toast message shown when single-stream camera mode does not support Ultra HDR photo capture on the current lens. [CHAR LIMIT=100] -->
-    <string name="toast_hdr_photo_unsupported_on_lens_single_stream">Single-stream mode does not support UltraHDR photo capture for current lens</string>
-    <!-- Toast message shown when multi-stream camera mode does not support Ultra HDR photo capture on the current lens. [CHAR LIMIT=100] -->
-    <string name="toast_hdr_photo_unsupported_on_lens_multi_stream">Multi-stream mode does not support UltraHDR photo capture for current lens</string>
+    <!-- Toast message shown when the user turns on HDR but Ultra HDR photos are not available because the "Single Stream" camera effect is selected for the active camera lens. "Single-stream mode" is the same feature as "Single Stream" in settings (stream_config_description_single_stream); "Ultra HDR" is the name of an Android photo format and should not be translated. [CHAR LIMIT=120] -->
+    <string name="toast_hdr_photo_unsupported_on_lens_single_stream">Single-stream mode does not support Ultra HDR photo capture for current lens</string>
+    <!-- Toast message shown when the user turns on HDR but Ultra HDR photos are not available because no camera effect is selected (normal multi-stream mode, the "None" option in settings) for the active camera lens. "Ultra HDR" is the name of an Android photo format and should not be translated. [CHAR LIMIT=120] -->
+    <string name="toast_hdr_photo_unsupported_on_lens_multi_stream">Multi-stream mode does not support Ultra HDR photo capture for current lens</string>
     <!-- Toast message shown when HDR video recording is not supported by the device hardware. [CHAR LIMIT=80] -->
     <string name="toast_hdr_video_unsupported_on_device">HDR video not supported on this device</string>
     <!-- Toast message shown when HDR video recording is not supported by the currently selected camera lens. [CHAR LIMIT=80] -->
     <string name="toast_hdr_video_unsupported_on_lens">HDR video not supported by current lens</string>
-    <!-- Toast message shown when HDR video recording and photo capture cannot be active at the same time. [CHAR LIMIT=80] -->
-    <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be bound simultaneously</string>
+    <!-- Toast message shown when the user turns on HDR in hybrid capture mode and the device cannot run HDR video recording and photo capture at the same time. "HDR" is normally left untranslated. [CHAR LIMIT=100] -->
+    <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be used at the same time</string>
     <!-- Toast message shown when Low Light Boost is disabled because HDR mode is active. [CHAR LIMIT=80] -->
     <string name="toast_llb_disabled_by_hdr">Low Light Boost is disabled when HDR is active</string>
 </resources>

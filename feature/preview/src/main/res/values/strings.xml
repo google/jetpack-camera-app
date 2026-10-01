@@ -15,22 +15,38 @@
   ~ limitations under the License.
   -->
 <resources>
-    <!-- Camera error dialog -->
+    <!-- Button label in the bottom-right of the camera error dialog on the preview screen that acknowledges the error and closes the camera. [CHAR LIMIT=20] -->
     <string name="camera_error_dialog_ok">OK</string>
+    <!-- Dialog title shown on the preview screen when the camera cannot be opened because another app is currently using it. "Camera" is a generic term. [CHAR LIMIT=40] -->
     <string name="camera_error_in_use_title">Can\u2019t use camera</string>
+    <!-- Dialog body text shown under "Can't use camera" (camera_error_in_use_title) when another app has exclusive access to the camera. "Camera" is a generic term. [CHAR LIMIT=80] -->
     <string name="camera_error_in_use_body">The camera is being used by another app</string>
+    <!-- Dialog title shown on the preview screen when the device has reached its limit of open cameras across apps. "Camera" is a generic term. [CHAR LIMIT=40] -->
     <string name="camera_error_max_in_use_title">Can\u2019t use camera</string>
+    <!-- Dialog body text shown under "Can't use camera" (camera_error_max_in_use_title) instructing the user to close other apps that are using the camera. "Close" is an imperative verb; "Camera" is a generic term. [CHAR LIMIT=80] -->
     <string name="camera_error_max_in_use_body">Close one or more apps that are using the camera</string>
+    <!-- Dialog title shown on the preview screen when a temporary camera error occurs. "Camera" is a generic term. [CHAR LIMIT=40] -->
     <string name="camera_error_recoverable_title">Can\u2019t use camera</string>
+    <!-- Dialog body text shown under "Can't use camera" (camera_error_recoverable_title) when a temporary camera error occurs, instructing the user to try opening the camera again later. [CHAR LIMIT=60] -->
     <string name="camera_error_recoverable_body">Try again later</string>
+    <!-- Dialog title shown on the preview screen when the camera streams cannot be configured. [CHAR LIMIT=40] -->
     <string name="camera_error_stream_config_title">Something went wrong</string>
+    <!-- Dialog body text shown under "Something went wrong" (camera_error_stream_config_title) when the camera cannot be configured. "Camera" is a generic term. [CHAR LIMIT=60] -->
     <string name="camera_error_stream_config_body">Camera isn\u2019t available</string>
+    <!-- Dialog title shown on the preview screen when the device administrator (IT policy) has disabled camera access. "IT admin" means information technology administrator; "Camera" is a generic term. [CHAR LIMIT=50] -->
     <string name="camera_error_disabled_title">Camera blocked by your IT admin</string>
+    <!-- Dialog body text shown under "Camera blocked by your IT admin" (camera_error_disabled_title). "them" refers to the user's IT administrator mentioned in the title. [CHAR LIMIT=80] -->
     <string name="camera_error_disabled_body">Contact them if you have any questions</string>
+    <!-- Dialog title shown on the preview screen when the camera encounters an unrecoverable hardware or system error. [CHAR LIMIT=40] -->
     <string name="camera_error_fatal_title">Something went wrong</string>
+    <!-- Dialog body text shown under "Something went wrong" (camera_error_fatal_title) when the camera encounters an unrecoverable error. "Camera" is a generic term. [CHAR LIMIT=60] -->
     <string name="camera_error_fatal_body">Camera isn\u2019t available</string>
+    <!-- Dialog title shown on the preview screen when the camera cannot be opened because Do Not Disturb mode is active. "Camera" is a generic term. [CHAR LIMIT=40] -->
     <string name="camera_error_dnd_title">Can\u2019t use camera</string>
+    <!-- Dialog body text shown under "Can't use camera" (camera_error_dnd_title) instructing the user to disable Android's "Do Not Disturb" system setting and reopen the camera. Use the standard Android system term for "Do Not Disturb" in the target language. "Camera" is a generic term. [CHAR LIMIT=80] -->
     <string name="camera_error_dnd_body">Turn off Do Not Disturb and open the camera again</string>
+    <!-- Dialog title shown on the preview screen when an external or removable camera has been disconnected. "Camera" is a generic term. [CHAR LIMIT=40] -->
     <string name="camera_error_removed_title">Camera not found</string>
+    <!-- Dialog body text shown under "Camera not found" (camera_error_removed_title) instructing the user to check whether the camera is connected. "Camera" is a generic term. [CHAR LIMIT=60] -->
     <string name="camera_error_removed_body">Check if the camera is connected</string>
 </resources>
