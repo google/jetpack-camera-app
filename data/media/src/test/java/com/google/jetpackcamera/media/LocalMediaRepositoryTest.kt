@@ -26,6 +26,7 @@ import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.data.media.LocalMediaRepository
 import com.google.jetpackcamera.data.media.Media
@@ -280,12 +281,86 @@ class LocalMediaRepositoryTest {
             (repository.lastCapturedMedia.value as MediaDescriptor.Content).uri
         ).isEqualTo(urlB)
 
-        fakeContentProvider.delete(urlB, null, null)
+        fakeContentProvider.delete(urlB, null, null).ignoreResult()
         contentResolver.notifyChange(urlB, null)
 
         val result = repository.lastCapturedMedia.value
         assertThat(result).isInstanceOf(MediaDescriptor.Content::class.java)
         assertThat((result as MediaDescriptor.Content).uri).isEqualTo(urlA)
+    }
+
+    @Test
+    fun lastCapturedMedia_onUpdateToOlderAppItem_keepsLatest() = runTest {
+        val urlA = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues(
+                displayName = "${filePathGenerator.prefix}_A.jpg",
+                dateAdded = 1000L
+            )
+        )!!
+        val urlB = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues(
+                displayName = "${filePathGenerator.prefix}_B.jpg",
+                dateAdded = 2000L
+            )
+        )!!
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+        val latest = repository.lastCapturedMedia.value
+        assertThat((latest as MediaDescriptor.Content).uri).isEqualTo(urlB)
+
+        // When the older item is modified (e.g. edited in place)
+        fakeContentProvider.update(
+            urlA,
+            ContentValues().apply { put(MediaStore.MediaColumns.DATE_MODIFIED, 3000L) },
+            null,
+            null
+        ).ignoreResult()
+        contentResolver.notifyChange(urlA, null)
+
+        // Then the newest item is still reported
+        assertThat(repository.lastCapturedMedia.value).isEqualTo(latest)
+    }
+
+    @Test
+    fun lastCapturedMedia_queryThrows_emitsNoneAndRecovers() = runTest {
+        // Given queries fail (e.g. storage permission not granted) when the repository is created
+        fakeContentProvider.queryException = SecurityException("Permission denied")
+        val failingRepo = LocalMediaRepository(context, testDispatcher, filePathGenerator).apply {
+            setThumbnailLoader(fakeThumbnailLoader)
+        }
+        assertThat(failingRepo.lastCapturedMedia.value).isEqualTo(MediaDescriptor.None)
+
+        // When queries start succeeding and a change notification arrives
+        fakeContentProvider.queryException = null
+        val imageUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues()
+        )!!
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+
+        // Then the flow is still alive and picks up the new media
+        val result = failingRepo.lastCapturedMedia.value
+        assertThat(result).isInstanceOf(MediaDescriptor.Content.Image::class.java)
+        assertThat((result as MediaDescriptor.Content.Image).uri).isEqualTo(imageUrl)
+    }
+
+    @Test
+    fun refreshLastCapturedMedia_requeriesWithoutNotification() = runTest {
+        // Given media was added without a MediaStore change notification
+        val imageUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues()
+        )!!
+        assertThat(repository.lastCapturedMedia.value).isEqualTo(MediaDescriptor.None)
+
+        // When a refresh is requested
+        repository.refreshLastCapturedMedia()
+
+        // Then the latest media is re-queried
+        val result = repository.lastCapturedMedia.value
+        assertThat(result).isInstanceOf(MediaDescriptor.Content.Image::class.java)
+        assertThat((result as MediaDescriptor.Content.Image).uri).isEqualTo(imageUrl)
     }
 
     @Test
@@ -595,7 +670,7 @@ class LocalMediaRepositoryTest {
         contentResolver.notifyChange(jcaUrl, null)
         assertThat(repository.lastCapturedMedia.value).isNotEqualTo(MediaDescriptor.None)
 
-        fakeContentProvider.delete(jcaUrl, null, null)
+        fakeContentProvider.delete(jcaUrl, null, null).ignoreResult()
         contentResolver.notifyChange(jcaUrl, null)
 
         assertThat(repository.lastCapturedMedia.value).isEqualTo(MediaDescriptor.None)

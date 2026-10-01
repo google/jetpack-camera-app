@@ -30,8 +30,10 @@ import android.util.Log
 import android.util.Size
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.ignoreResult
 import java.io.File
 import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,7 +46,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
@@ -66,6 +70,9 @@ class LocalMediaRepository(
     private val cacheMutex = Mutex()
     private var cachedUri: Uri? = null
     private var cachedMediaDescriptor: MediaDescriptor? = null
+
+    // Incremented by refreshLastCapturedMedia(). Its initial value also drives the first query.
+    private val refreshRequests = MutableStateFlow(0)
 
     private var thumbnailLoader: suspend (Uri, Uri) -> Bitmap? = { uri, collectionUri ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -108,35 +115,21 @@ class LocalMediaRepository(
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     override val lastCapturedMedia: StateFlow<MediaDescriptor> =
-        mediaStoreChangesFlow(context.contentResolver)
+        merge(
+            mediaStoreChangesFlow(context.contentResolver),
+            refreshRequests.map { null }
+        )
             .mapLatest { changedUri ->
-                cacheMutex.withLock {
-                    val targetUri = when {
-                        changedUri == null || isCollectionUri(changedUri) ->
-                            findLatestAppSpecificUri()
-                        isAppSpecificUri(changedUri) -> changedUri
-                        else -> null
-                    }
-
-                    if (targetUri != null) {
-                        getCapturedMediaInternal(targetUri)
-                    } else {
-                        val currentCachedUri = cachedUri
-                        if (currentCachedUri != null && !exists(currentCachedUri)) {
-                            // The current media was deleted. Find the next most recent one.
-                            val fallbackUri = findLatestAppSpecificUri()
-                            if (fallbackUri != null) {
-                                getCapturedMediaInternal(fallbackUri)
-                            } else {
-                                cachedUri = null
-                                cachedMediaDescriptor = null
-                                MediaDescriptor.None
-                            }
-                        } else {
-                            // Something else changed, but our current media is still valid.
-                            cachedMediaDescriptor ?: MediaDescriptor.None
-                        }
-                    }
+                try {
+                    cacheMutex.withLock { resolveLastCapturedMedia(changedUri) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Querying the MediaStore can fail, e.g. with a SecurityException when read
+                    // permission has not been granted. Keep the flow alive so that a later change
+                    // notification or refresh can recover.
+                    Log.e(TAG, "Failed to query last captured media", e)
+                    cacheMutex.withLock { cachedMediaDescriptor ?: MediaDescriptor.None }
                 }
             }
             .distinctUntilChanged()
@@ -145,6 +138,49 @@ class LocalMediaRepository(
                 started = SharingStarted.Eagerly,
                 initialValue = MediaDescriptor.None
             )
+
+    override fun refreshLastCapturedMedia() {
+        refreshRequests.update { it + 1 }
+    }
+
+    /**
+     * Resolves the latest captured media for a MediaStore change. Must be called under
+     * [cacheMutex].
+     *
+     * @param changedUri the URI reported by the MediaStore, or `null` to re-query unconditionally.
+     */
+    private suspend fun resolveLastCapturedMedia(changedUri: Uri?): MediaDescriptor {
+        // Any change to a collection or to one of this app's items can change which item is the
+        // latest (e.g. an older item was edited or trashed), so re-query rather than assuming the
+        // changed item is the latest.
+        val targetUri = if (
+            changedUri == null || isCollectionUri(changedUri) || isAppSpecificUri(changedUri)
+        ) {
+            findLatestAppSpecificUri()
+        } else {
+            null
+        }
+
+        return if (targetUri != null) {
+            getCapturedMediaInternal(targetUri)
+        } else {
+            val currentCachedUri = cachedUri
+            if (currentCachedUri != null && !exists(currentCachedUri)) {
+                // The current media was deleted. Find the next most recent one.
+                val fallbackUri = findLatestAppSpecificUri()
+                if (fallbackUri != null) {
+                    getCapturedMediaInternal(fallbackUri)
+                } else {
+                    cachedUri = null
+                    cachedMediaDescriptor = null
+                    MediaDescriptor.None
+                }
+            } else {
+                // Something else changed, but our current media is still valid.
+                cachedMediaDescriptor ?: MediaDescriptor.None
+            }
+        }
+    }
 
     private fun isCollectionUri(uri: Uri): Boolean {
         val segments = uri.pathSegments
@@ -696,7 +732,7 @@ class LocalMediaRepository(
 private fun mediaStoreChangesFlow(contentResolver: ContentResolver): Flow<Uri?> = callbackFlow {
     val observer = object : ContentObserver(null) {
         override fun onChange(selfChange: Boolean, uri: Uri?) {
-            trySend(uri)
+            trySend(uri).ignoreResult()
         }
     }
     contentResolver.registerContentObserver(
@@ -709,8 +745,6 @@ private fun mediaStoreChangesFlow(contentResolver: ContentResolver): Flow<Uri?> 
         true,
         observer
     )
-    // Trigger initial emission
-    trySend(null)
 
     awaitClose {
         contentResolver.unregisterContentObserver(observer)

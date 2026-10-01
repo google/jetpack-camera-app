@@ -33,6 +33,16 @@ interface MediaRepository {
      */
     val lastCapturedMedia: StateFlow<MediaDescriptor>
 
+    /**
+     * Requests that [lastCapturedMedia] re-query the MediaStore for the most recent media.
+     *
+     * [lastCapturedMedia] already updates on MediaStore change notifications. This is only
+     * needed when a previous query may have produced a stale result for reasons the MediaStore
+     * does not notify about, such as a storage permission being granted after the repository was
+     * created.
+     */
+    fun refreshLastCapturedMedia()
+
     suspend fun setCurrentMedia(pendingMedia: MediaDescriptor)
 
     suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean

@@ -33,6 +33,13 @@ class FakeMediaRepository : MediaRepository {
     private val _lastCapturedMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
     override val lastCapturedMedia: StateFlow<MediaDescriptor> = _lastCapturedMedia.asStateFlow()
 
+    var refreshLastCapturedMediaCount = 0
+        private set
+
+    override fun refreshLastCapturedMedia() {
+        refreshLastCapturedMediaCount++
+    }
+
     var loadHandler: (MediaDescriptor) -> Media = { mediaDescriptor ->
         when (mediaDescriptor) {
             is MediaDescriptor.Content.Image -> Media.Image(

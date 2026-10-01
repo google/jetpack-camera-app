@@ -49,6 +49,12 @@ class FakeContentProvider : ContentProvider() {
     private var nextId = 1L
     private var failNextInsert = false
 
+    /**
+     * When non-null, [query] throws this exception instead of returning a cursor. Simulates
+     * failures such as a [SecurityException] when storage permission is not granted.
+     */
+    var queryException: Exception? = null
+
     fun setFailNextInsert(fail: Boolean) {
         failNextInsert = fail
     }
@@ -77,6 +83,7 @@ class FakeContentProvider : ContentProvider() {
         selectionArgs: Array<String>?,
         sortOrder: String?
     ): Cursor {
+        queryException?.let { throw it }
         val resolvedProjection = projection ?: arrayOf()
         val cursor = MatrixCursor(resolvedProjection)
         val uriString = uri.toString()
