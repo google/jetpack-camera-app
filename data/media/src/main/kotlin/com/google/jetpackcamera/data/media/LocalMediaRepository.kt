@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
+import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
@@ -29,13 +30,29 @@ import android.util.Log
 import android.util.Size
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.ignoreResult
 import java.io.File
 import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 private const val TAG = "LocalMediaRepository"
@@ -47,9 +64,103 @@ class LocalMediaRepository(
     private val iODispatcher: CoroutineDispatcher,
     private val filePathGenerator: FilePathGenerator
 ) : MediaRepository {
+    private val repositoryScope = CoroutineScope(iODispatcher + SupervisorJob())
     private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
 
+    private val cacheMutex = Mutex()
+    private var cachedUri: Uri? = null
+    private var cachedMediaDescriptor: MediaDescriptor? = null
+
+    // Incremented by refreshLastCapturedMedia(). Its initial value also drives the first query.
+    private val refreshRequests = MutableStateFlow(0)
+
+    private var thumbnailLoader: suspend (Uri, Uri) -> Bitmap? = { uri, collectionUri ->
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            context.contentResolver.loadThumbnail(uri, Size(640, 480), null)
+        } else {
+            loadThumbnailLegacy(uri, collectionUri)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun loadThumbnailLegacy(uri: Uri, collectionUri: Uri): Bitmap? {
+        return if (collectionUri == MediaStore.Images.Media.EXTERNAL_CONTENT_URI) {
+            MediaStore.Images.Thumbnails.getThumbnail(
+                context.contentResolver,
+                ContentUris.parseId(uri),
+                MediaStore.Images.Thumbnails.MINI_KIND,
+                null
+            )
+        } else { // Video
+            MediaStore.Video.Thumbnails.getThumbnail(
+                context.contentResolver,
+                ContentUris.parseId(uri),
+                MediaStore.Video.Thumbnails.MINI_KIND,
+                null
+            )
+        }
+    }
+
+    /**
+     * Sets a custom thumbnail loader. Primarily used for testing.
+     */
+    internal fun setThumbnailLoader(loader: suspend (Uri, Uri) -> Bitmap?) {
+        thumbnailLoader = loader
+    }
+
     override val currentMedia = _currentMedia.asStateFlow()
+
+    /**
+     * A [StateFlow] that emits the most recently captured media (image or video) from the MediaStore.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val lastCapturedMedia: StateFlow<MediaDescriptor> =
+        merge(
+            mediaStoreChangesFlow(context.contentResolver),
+            refreshRequests.map { }
+        )
+            .mapLatest {
+                try {
+                    cacheMutex.withLock { resolveLastCapturedMedia() }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Querying the MediaStore can fail, e.g. with a SecurityException when read
+                    // permission has not been granted. Keep the flow alive so that a later change
+                    // notification or refresh can recover.
+                    Log.e(TAG, "Failed to query last captured media", e)
+                    cacheMutex.withLock { cachedMediaDescriptor ?: MediaDescriptor.None }
+                }
+            }
+            .distinctUntilChanged()
+            .stateIn(
+                scope = repositoryScope,
+                started = SharingStarted.Eagerly,
+                initialValue = MediaDescriptor.None
+            )
+
+    override fun refreshLastCapturedMedia() {
+        refreshRequests.update { it + 1 }
+    }
+
+    /**
+     * Re-queries the MediaStore for this app's latest captured media. Must be called under
+     * [cacheMutex].
+     *
+     * Any MediaStore change can affect which item is the latest (e.g. a new capture, or an older
+     * item being edited, trashed, or deleted), so the latest item is always re-queried rather than
+     * inferred from the changed URI.
+     */
+    private suspend fun resolveLastCapturedMedia(): MediaDescriptor {
+        val latestUri = findLatestAppSpecificUri()
+        return if (latestUri != null) {
+            getCapturedMediaInternal(latestUri)
+        } else {
+            cachedUri = null
+            cachedMediaDescriptor = null
+            MediaDescriptor.None
+        }
+    }
 
     /**
      * Sets the current media descriptor.
@@ -58,7 +169,6 @@ class LocalMediaRepository(
      */
     override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
         _currentMedia.update { pendingMedia }
-        Log.d(TAG, "set new media $pendingMedia")
     }
 
     /**
@@ -121,11 +231,42 @@ class LocalMediaRepository(
     }
 
     /**
-     * Returns the most recent captured media (image or video) from the MediaStore.
-     *
-     * @return The [MediaDescriptor] of the last captured media, or [MediaDescriptor.None] if no media is found.
+     * Returns the [MediaDescriptor] for the given [Uri], reusing the cached descriptor when possible.
+     * Must be called under [cacheMutex].
      */
-    override suspend fun getLastCapturedMedia(): MediaDescriptor {
+    private suspend fun getCapturedMediaInternal(uri: Uri): MediaDescriptor {
+        val cachedDesc = cachedMediaDescriptor
+        if (uri == cachedUri &&
+            cachedDesc is MediaDescriptor.Content &&
+            cachedDesc.thumbnail != null
+        ) {
+            return cachedDesc
+        }
+
+        val descriptor = if ("video" in uri.toString()) {
+            getVideoMediaDescriptor(uri)
+        } else {
+            getImageMediaDescriptor(uri)
+        }
+
+        if (descriptor is MediaDescriptor.Content && descriptor.thumbnail != null) {
+            cachedUri = uri
+            cachedMediaDescriptor = descriptor
+            return descriptor
+        }
+
+        if (cachedDesc != null && cachedDesc is MediaDescriptor.Content) {
+            // The new thumbnail isn't ready yet, so return the old cached image to prevent transient unmounting.
+            return cachedDesc
+        }
+
+        return descriptor
+    }
+
+    /**
+     * Returns the most recent app-specific media URI from the MediaStore.
+     */
+    private suspend fun findLatestAppSpecificUri(): Uri? = withContext(iODispatcher) {
         val imagePair =
             getLastSavedMediaUriWithDate(
                 context.contentResolver,
@@ -137,23 +278,13 @@ class LocalMediaRepository(
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI
             )
 
-        return if (imagePair != null && videoPair != null) {
-            // Case 1: BOTH exist. Compare dates.
-            if (imagePair.second >= videoPair.second) {
-                getImageMediaDescriptor(imagePair.first)
-            } else {
-                getVideoMediaDescriptor(videoPair.first)
-            }
-        } else if (imagePair != null) {
-            // Case 2: Only image exists
-            getImageMediaDescriptor(imagePair.first)
-        } else if (videoPair != null) {
-            // Case 3: Only video exists
-            getVideoMediaDescriptor(videoPair.first)
+        val latestPair = if (imagePair != null && videoPair != null) {
+            if (imagePair.second >= videoPair.second) imagePair else videoPair
         } else {
-            // Case 4: Neither exist
-            MediaDescriptor.None
+            imagePair ?: videoPair
         }
+
+        latestPair?.first
     }
 
     /**
@@ -254,7 +385,6 @@ class LocalMediaRepository(
      * @return The [Uri] of the saved media, or `null` if the save attempt fails.
      * @throws IOException if an I/O error occurs during the save operation.
      */
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Throws(IOException::class)
     override suspend fun saveToMediaStore(
         mediaDescriptor: MediaDescriptor.Content,
@@ -424,28 +554,10 @@ class LocalMediaRepository(
         withContext(iODispatcher) {
             if (uri.scheme != ContentResolver.SCHEME_CONTENT) {
                 Log.e(TAG, "URI is not managed by a content provider")
-                return@withContext null
+                null
             } else {
-                return@withContext try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        context.contentResolver.loadThumbnail(uri, Size(640, 480), null)
-                    } else {
-                        if (collectionUri == MediaStore.Images.Media.EXTERNAL_CONTENT_URI) {
-                            MediaStore.Images.Thumbnails.getThumbnail(
-                                context.contentResolver,
-                                ContentUris.parseId(uri),
-                                MediaStore.Images.Thumbnails.MINI_KIND,
-                                null
-                            )
-                        } else { // Video
-                            MediaStore.Video.Thumbnails.getThumbnail(
-                                context.contentResolver,
-                                ContentUris.parseId(uri),
-                                MediaStore.Video.Thumbnails.MINI_KIND,
-                                null
-                            )
-                        }
-                    }
+                try {
+                    thumbnailLoader(uri, collectionUri)
                 } catch (e: Exception) {
                     Log.e(TAG, "Error retrieving thumbnail: ${e.message}", e)
                     null
@@ -454,8 +566,9 @@ class LocalMediaRepository(
         }
 
     /**
-     * This function queries the MediaStore for media files that have a display name starting with
-     * "JCA". It returns the URI and date added for the most recently added file.
+     * This function queries the MediaStore for media files that belong to this app and are stored in
+     * the standard camera directory. It returns the URI and date added for the most recently
+     * added file.
      *
      * @param contentResolver The [ContentResolver] to query the MediaStore.
      * @param collectionUri The [Uri] of the media collection to query (e.g., [MediaStore.Images.Media.EXTERNAL_CONTENT_URI] or [MediaStore.Video.Media.EXTERNAL_CONTENT_URI]).
@@ -465,14 +578,31 @@ class LocalMediaRepository(
         contentResolver: ContentResolver,
         collectionUri: Uri
     ): Pair<Uri, Long>? {
-        val projection = arrayOf(
+        val projection = mutableListOf(
             MediaStore.MediaColumns._ID,
-            MediaStore.MediaColumns.DATE_ADDED
+            MediaStore.MediaColumns.DATE_ADDED,
+            MediaStore.MediaColumns.DISPLAY_NAME
         )
 
-        // Filter by filenames starting with "JCA"
-        val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?"
-        val selectionArgs = arrayOf("JCA%")
+        val selection: String
+        val selectionArgs: Array<String>
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            projection.add(MediaStore.MediaColumns.RELATIVE_PATH)
+            projection.add(MediaStore.MediaColumns.OWNER_PACKAGE_NAME)
+
+            // Primary Filter: Relative Path + App Ownership
+            selection = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ? AND " +
+                "${MediaStore.MediaColumns.OWNER_PACKAGE_NAME} = ?"
+            selectionArgs = arrayOf(
+                "${filePathGenerator.baseRelativePath}%",
+                context.packageName
+            )
+        } else {
+            // Legacy Filter: Filename Prefix
+            selection = "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?"
+            selectionArgs = arrayOf("${filePathGenerator.prefix}%")
+        }
 
         // Sort the results so that the most recently added media appears first.
         val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} DESC"
@@ -480,7 +610,7 @@ class LocalMediaRepository(
         // Perform the query on the MediaStore.
         contentResolver.query(
             collectionUri,
-            projection,
+            projection.toTypedArray(),
             selection,
             selectionArgs,
             sortOrder
@@ -499,5 +629,27 @@ class LocalMediaRepository(
             }
         }
         return null
+    }
+}
+
+private fun mediaStoreChangesFlow(contentResolver: ContentResolver): Flow<Unit> = callbackFlow {
+    val observer = object : ContentObserver(null) {
+        override fun onChange(selfChange: Boolean, uri: Uri?) {
+            trySend(Unit).ignoreResult()
+        }
+    }
+    contentResolver.registerContentObserver(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        true,
+        observer
+    )
+    contentResolver.registerContentObserver(
+        MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+        true,
+        observer
+    )
+
+    awaitClose {
+        contentResolver.unregisterContentObserver(observer)
     }
 }

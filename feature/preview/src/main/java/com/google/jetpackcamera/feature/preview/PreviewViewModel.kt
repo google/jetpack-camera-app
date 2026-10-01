@@ -184,13 +184,6 @@ class PreviewViewModel @Inject constructor(
 
     val imageWellController: ImageWellController = ImageWellControllerImpl(
         mediaRepository = mediaRepository,
-        updateLastCapturedMediaCallback = {
-            viewModelScope.launch {
-                trackedCaptureUiState.update { old ->
-                    old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
-                }
-            }
-        },
         coroutineContext = viewModelScope.coroutineContext
     )
 
@@ -221,7 +214,6 @@ class PreviewViewModel @Inject constructor(
             }
         },
         captureEvents = incomingCaptureEvents,
-        imageWellController = imageWellController,
         onImageCached = { uri ->
             viewModelScope.launch {
                 mediaRepository.setCurrentMedia(
@@ -255,6 +247,15 @@ class PreviewViewModel @Inject constructor(
             }
 
             launch {
+                mediaRepository.lastCapturedMedia
+                    .collect { media ->
+                        trackedCaptureUiState.update { old ->
+                            old.copy(recentCapturedMedia = media)
+                        }
+                    }
+            }
+
+            launch {
                 cameraSystemRepository.currentCameraState
                     .map { it.lowLightBoostState }
                     .distinctUntilChanged()
@@ -266,7 +267,8 @@ class PreviewViewModel @Inject constructor(
                                 SnackbarData(
                                     cookie = "LowLightBoost-$cookieInt",
                                     stringResource = R.string.low_light_boost_error_toast_message,
-                                    withDismissAction = true
+                                    withDismissAction = true,
+                                    isError = true
                                 )
                             )
                         }
@@ -283,42 +285,42 @@ class PreviewViewModel @Inject constructor(
     }
 
     private fun showSnackbarForCaptureEvent(event: CaptureEvent) {
-        val stringRes = when (event) {
+        val snackbarInfo = when (event) {
             is ImageCaptureEvent.ImageCaptureExternalUnsupported ->
-                StateAdapterR.string.toast_image_capture_external_unsupported
+                StateAdapterR.string.toast_image_capture_external_unsupported to true
 
             is VideoCaptureEvent.VideoCaptureExternalUnsupported ->
-                StateAdapterR.string.toast_video_capture_external_unsupported
+                StateAdapterR.string.toast_video_capture_external_unsupported to true
 
             is ImageCaptureEvent.SingleImageSaved,
             is ImageCaptureEvent.SequentialImageSaved ->
-                StateAdapterR.string.toast_image_capture_success
+                StateAdapterR.string.toast_image_capture_success to false
 
             is ImageCaptureEvent.SingleImageCaptureError,
             is ImageCaptureEvent.SequentialImageCaptureError ->
-                StateAdapterR.string.toast_capture_failure
+                StateAdapterR.string.toast_capture_failure to true
 
             is VideoCaptureEvent.VideoSaved ->
-                StateAdapterR.string.toast_video_capture_success
+                StateAdapterR.string.toast_video_capture_success to false
 
             is VideoCaptureEvent.VideoCaptureError ->
-                StateAdapterR.string.toast_video_capture_failure
+                StateAdapterR.string.toast_video_capture_failure to true
 
             else -> null
         }
 
-        stringRes?.let { res ->
+        snackbarInfo?.let { (res, isError) ->
             val cookieInt = snackBarController.incrementAndGetSnackBarCount()
             val prefix = when (event) {
                 is ImageCaptureEvent -> "Image"
                 is VideoCaptureEvent -> "Video"
-                else -> "Capture"
             }
             snackBarController.addSnackBarData(
                 SnackbarData(
                     cookie = "$prefix-$cookieInt",
                     stringResource = res,
-                    withDismissAction = true
+                    withDismissAction = true,
+                    isError = isError
                 )
             )
         }

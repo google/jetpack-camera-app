@@ -29,12 +29,10 @@ import kotlinx.coroutines.launch
  * Implementation of [ImageWellController] that handles image well actions.
  *
  * @param mediaRepository The [MediaRepository] for accessing media.
- * @param updateLastCapturedMediaCallback Callback to update the last captured media.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class ImageWellControllerImpl(
     private val mediaRepository: MediaRepository,
-    private val updateLastCapturedMediaCallback: () -> Unit,
     coroutineContext: CoroutineContext
 ) : ImageWellController {
     private val job = Job(parent = coroutineContext[Job.Key])
@@ -43,9 +41,6 @@ class ImageWellControllerImpl(
         scope.launch {
             mediaRepository.setCurrentMedia(mediaDescriptor)
         }
-    }
-    override fun updateLastCapturedMedia() {
-        updateLastCapturedMediaCallback()
     }
 
     /**
