@@ -668,17 +668,11 @@ fun TestableSnackbar(
         modifier = modifier
             .size(20.dp)
     ) {
-        val context = LocalContext.current
+        val message = stringResource(id = snackbarToShow.stringResource)
+        val actionLabel = snackbarToShow.actionLabelRes?.let { stringResource(id = it) }
         LaunchedEffect(snackbarToShow) {
-            val message = context.getString(snackbarToShow.stringResource)
             Log.d(TAG, "Snackbar Displayed with message: $message")
             try {
-                val actionLabel = if (snackbarToShow.actionLabelRes == null) {
-                    null
-                } else {
-                    context.getString(snackbarToShow.actionLabelRes!!)
-                }
-
                 // Convert SnackbarData into SnackbarVisuals so SnackbarHost can receive it
                 val visuals = CustomSnackbarVisuals(
                     message = message,
