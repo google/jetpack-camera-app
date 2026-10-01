@@ -82,6 +82,22 @@ fun PermissionTemplate(
     }
 }
 
+/**
+ * Displays the request screen for a single [PermissionEnum] and routes the request button based
+ * on the permission's current state.
+ *
+ * The screen is skipped automatically via [onDismissPermission] once any component permission is
+ * granted, or when an optional permission has already been declined. For mandatory permissions
+ * the user previously declined, the button opens the system app settings and the rationale text
+ * is shown. For optional permissions, a second press after a request that was denied permanently
+ * dismisses the screen instead of requesting again.
+ *
+ * @param permissionEnum The permission being requested.
+ * @param permissionStates The state of the system permissions that make up [permissionEnum].
+ * @param onDismissPermission Called when the screen should advance past this permission.
+ * @param onOpenAppSettings Called to open the system app settings for a declined permission.
+ * @param modifier The [Modifier] to be applied to the layout.
+ */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 internal fun PermissionTemplate(

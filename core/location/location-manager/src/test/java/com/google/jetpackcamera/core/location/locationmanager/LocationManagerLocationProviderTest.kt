@@ -18,6 +18,7 @@ package com.google.jetpackcamera.core.location.locationmanager
 import android.Manifest
 import android.app.Application
 import android.content.Context
+import android.content.ContextWrapper
 import android.location.Location
 import android.location.LocationManager
 import android.os.SystemClock
@@ -625,6 +626,22 @@ class LocationManagerLocationProviderTest {
         cancelLocationUpdates()
         ShadowLooper.idleMainLooper(10L, TimeUnit.MINUTES)
 
+        assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
+    }
+
+    @Test
+    fun locationServiceUnavailable_doesNotCrashAndReturnsNull() {
+        grantLocationPermissions()
+        val noLocationContext = object : ContextWrapper(context) {
+            override fun getSystemService(name: String): Any? =
+                if (name == LOCATION_SERVICE) null else super.getSystemService(name)
+        }
+
+        val provider = LocationManagerLocationProvider(noLocationContext)
+        updatesJob = CoroutineScope(Dispatchers.Main).launch { provider.runLocationUpdates() }
+        ShadowLooper.idleMainLooper()
+
+        assertThat(provider.getCurrentLocation()).isNull()
         assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
     }
 }

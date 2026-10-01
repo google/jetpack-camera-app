@@ -134,24 +134,22 @@ class PermissionsViewModel @Inject constructor(
 fun getRequestablePermissions(
     permissionStates: MultiplePermissionsState,
     requestedPermissions: Set<String> = emptySet()
-): List<PermissionEnum> = buildSet {
-    for (permissionState in permissionStates.permissions) {
-        val permission = PermissionEnum.fromString(permissionState.permission)
-        val componentStates = permission.getPermissions().mapNotNull { permStr ->
-            permissionStates.permissions.firstOrNull { it.permission == permStr }
+): List<PermissionEnum> = permissionStates.permissions
+    .map { PermissionEnum.fromString(it.permission) }
+    .distinct()
+    .filter { permission ->
+        val componentStates = permissionStates.permissions.filter {
+            it.permission in permission.getPermissions()
         }
         val isAnyGranted = componentStates.any { it.status.isGranted }
-        if (!isAnyGranted) {
-            if (!permission.isOptional()) {
-                add(permission)
-            } else {
+        when {
+            isAnyGranted -> false
+            !permission.isOptional() -> true
+            else -> {
                 val wasPreviouslyHandled =
                     permission.name in requestedPermissions ||
                         componentStates.any { it.status.shouldShowRationale }
-                if (!wasPreviouslyHandled) {
-                    add(permission)
-                }
+                !wasPreviouslyHandled
             }
         }
     }
-}.toList()
