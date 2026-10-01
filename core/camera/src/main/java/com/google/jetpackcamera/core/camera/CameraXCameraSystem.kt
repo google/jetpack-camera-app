@@ -50,6 +50,7 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraEffectTarget
+import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -163,10 +164,28 @@ class CameraXCameraSystem(
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
         val debugSettings = cameraAppSettings.debugSettings
-        cameraProvider = configureAndGetCameraProvider(
-            context = application,
-            singleLensMode = debugSettings.singleLensMode
-        )
+        cameraProvider = try {
+            configureAndGetCameraProvider(
+                context = application,
+                singleLensMode = debugSettings.singleLensMode
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize CameraProvider", e)
+            systemConstraints = CameraSystemConstraints(
+                availableLenses = emptyList(),
+                concurrentCamerasSupported = false,
+                perLensConstraints = emptyMap()
+            )
+            _systemConstraints.value = systemConstraints
+            currentSettings.value = cameraAppSettings
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.FatalCameraError
+                )
+            }
+            return
+        }
 
         // updates values for available cameras
         val availableCameraLenses =
@@ -176,6 +195,16 @@ class CameraXCameraSystem(
             ).filter {
                 cameraProvider.hasCamera(it.toCameraSelector())
             }
+
+        if (availableCameraLenses.isEmpty()) {
+            Log.w(TAG, "No available cameras detected during initialization")
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.CameraRemoved
+                )
+            }
+        }
 
         // verify the initial camera exists
         val settingsWithVerifiedLens =
@@ -400,6 +429,28 @@ class CameraXCameraSystem(
             handleLowLightBoostErrors()
         }
 
+        if (!this@CameraXCameraSystem::cameraProvider.isInitialized) {
+            Log.e(TAG, "CameraProvider is not initialized; emitting FatalCameraError.")
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.FatalCameraError
+                )
+            }
+            kotlinx.coroutines.awaitCancellation()
+        }
+
+        if (systemConstraints.availableLenses.isEmpty()) {
+            Log.e(TAG, "No available cameras on device; emitting CameraRemoved error.")
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.CameraRemoved
+                )
+            }
+            kotlinx.coroutines.awaitCancellation()
+        }
+
         val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
         currentSettings
             .filterNotNull()
@@ -415,11 +466,21 @@ class CameraXCameraSystem(
 
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
-                        val cameraConstraints = checkNotNull(
+                        val cameraConstraints =
                             systemConstraints.forCurrentLens(currentCameraSettings)
-                        ) {
-                            "Could not retrieve constraints for " +
-                                "${currentCameraSettings.cameraLensFacing}"
+                        if (cameraConstraints == null) {
+                            Log.e(
+                                TAG,
+                                "Could not retrieve constraints for " +
+                                    "${currentCameraSettings.cameraLensFacing}"
+                            )
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    isCameraRunning = false,
+                                    cameraError = CameraError.CameraRemoved
+                                )
+                            }
+                            return@map null
                         }
 
                         val resolvedStabilizationMode = resolveStabilizationMode(
@@ -449,7 +510,7 @@ class CameraXCameraSystem(
                     ConcurrentCameraMode.DUAL -> {
                         val primaryFacing = currentCameraSettings.cameraLensFacing
                         val secondaryFacing = primaryFacing.flip()
-                        cameraProvider.availableConcurrentCameraInfos.firstNotNullOf {
+                        cameraProvider.availableConcurrentCameraInfos.firstNotNullOfOrNull {
                             var primaryCameraInfo: CameraInfo? = null
                             var secondaryCameraInfo: CameraInfo? = null
                             it.forEach { cameraInfo ->
@@ -469,11 +530,21 @@ class CameraXCameraSystem(
                                     )
                                 }
                             }
+                        } ?: run {
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    isCameraRunning = false,
+                                    cameraError = CameraError.StreamConfigError
+                                )
+                            }
+                            null
                         }
                     }
                 }
-            }.distinctUntilChanged()
+            }
+            .distinctUntilChanged()
             .collectLatest { sessionSettings ->
+                if (sessionSettings == null) return@collectLatest
                 coroutineScope {
                     with(
                         CameraSessionContext(
@@ -516,6 +587,12 @@ class CameraXCameraSystem(
                     }
                 }
             }
+    }
+
+    override fun clearCameraError() {
+        currentCameraState.update { old ->
+            old.copy(cameraError = null)
+        }
     }
 
     private fun resolveStabilizationMode(

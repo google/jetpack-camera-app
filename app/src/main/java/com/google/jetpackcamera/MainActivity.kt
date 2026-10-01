@@ -172,7 +172,8 @@ class MainActivity : ComponentActivity() {
                                     onFirstFrameCaptureCompleted = {
                                         firstFrameComplete?.complete(Unit)
                                     },
-                                    onCaptureEvent = captureEventCallback
+                                    onCaptureEvent = captureEventCallback,
+                                    onCloseCamera = ::finish
                                 )
                             }
                         }

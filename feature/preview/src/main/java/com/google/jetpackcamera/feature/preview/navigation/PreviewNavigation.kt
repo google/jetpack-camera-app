@@ -105,7 +105,8 @@ fun NavGraphBuilder.previewScreen(
     onFirstFrameCaptureCompleted: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
-    onCaptureEvent: (CaptureEvent) -> Unit
+    onCaptureEvent: (CaptureEvent) -> Unit,
+    onCloseCamera: () -> Unit = {}
 ) {
     composable(
         route = FULL_ROUTE_DEF,
@@ -134,7 +135,8 @@ fun NavGraphBuilder.previewScreen(
             onNavigateToPostCapture = onNavigateToPostCapture,
             onRequestWindowColorMode = onRequestWindowColorMode,
             onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-            onCaptureEvent = onCaptureEvent
+            onCaptureEvent = onCaptureEvent,
+            onCloseCamera = onCloseCamera
         )
     }
 }
