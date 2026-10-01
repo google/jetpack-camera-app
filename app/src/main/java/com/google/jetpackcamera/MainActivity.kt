@@ -156,6 +156,8 @@ class MainActivity : ComponentActivity() {
                                     captureUris = captureUris,
                                     debugSettings = debugSettings,
                                     openAppSettings = ::openAppSettings,
+                                    onStoragePermissionGranted =
+                                    viewModel::refreshLastCapturedMedia,
                                     onRequestWindowColorMode = { colorMode ->
                                         // Window color mode APIs require API level 26+
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.feature.preview
 
-import android.Manifest
-import android.os.Build
 import android.util.Log
 import android.util.Range
 import androidx.activity.compose.BackHandler
@@ -67,10 +65,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
 import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
@@ -137,7 +131,6 @@ private const val TAG = "PreviewScreen"
 /**
  * Screen used for the Preview feature.
  */
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PreviewScreen(
     onNavigateToSettings: () -> Unit,
@@ -235,17 +228,6 @@ fun PreviewScreen(
             screenFlashController = viewModel.screenFlashController,
             zoomController = viewModel.zoomController
         )
-        val readStoragePermission: PermissionState = rememberPermissionState(
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-
-        LaunchedEffect(readStoragePermission.status) {
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P ||
-                readStoragePermission.status.isGranted
-            ) {
-                viewModel.imageWellController.updateLastCapturedMedia()
-            }
-        }
     }
 }
 
