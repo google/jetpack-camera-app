@@ -58,6 +58,7 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
  * @param externalCapturesCallback Callback for getting external capture information.
  * @property captureEvents Channel for sending capture-related events.
  * @param imageWellController Controller for managing the image well UI.
+ * @param locationProvider Provider for geographical location data.
  * @param onImageCached Callback invoked when an image is saved to cache.
  * @param onVideoCached Callback invoked when a video is saved to cache.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
