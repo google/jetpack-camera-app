@@ -43,7 +43,9 @@ class MainActivityViewModel @Inject constructor(
     )
 
     /** See [MediaRepository.refreshLastCapturedMedia]. */
-    fun refreshLastCapturedMedia() = mediaRepository.refreshLastCapturedMedia()
+    fun refreshLastCapturedMedia() {
+        mediaRepository.refreshLastCapturedMedia()
+    }
 }
 
 sealed interface MainActivityUiState {
