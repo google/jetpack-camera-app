@@ -15,32 +15,21 @@
  */
 package com.google.jetpackcamera.ui.uistate.capture
 
-import androidx.annotation.StringRes
 import com.google.jetpackcamera.model.CameraError
 
 /**
- * Defines the UI state for the camera error alert dialog.
+ * Defines the UI state for camera errors.
  */
 sealed interface CameraErrorUiState {
-    /** No error dialog should be shown. */
+    /** No camera error is active. */
     data object Hidden : CameraErrorUiState
 
     /**
-     * An error dialog should be shown.
+     * A camera error is active.
      *
-     * @property error The underlying [CameraError].
-     * @property titleResId The string resource ID for the dialog title.
-     * @property bodyResId The optional string resource ID for the dialog body message.
-     * @property confirmButtonTextResId The string resource ID for the confirm button.
-     * @property shouldExitAppOnConfirm Whether confirming the dialog should close the camera activity.
+     * @property error The active [CameraError].
      */
-    data class Showing(
-        val error: CameraError,
-        @StringRes val titleResId: Int,
-        @StringRes val bodyResId: Int?,
-        @StringRes val confirmButtonTextResId: Int,
-        val shouldExitAppOnConfirm: Boolean
-    ) : CameraErrorUiState
+    data class Showing(val error: CameraError) : CameraErrorUiState
 
     companion object
 }

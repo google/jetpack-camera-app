@@ -71,7 +71,7 @@ sealed interface CaptureUiState {
      * @property zoomControlUiState The UI state for the zoom control buttons.
      * @property hdrUiState The UI state for the HDR setting.
      * @property focusMeteringUiState The UI state for focus and metering.
-     * @property cameraErrorUiState The UI state for the camera error alert dialog.
+     * @property cameraErrorUiState The UI state for camera errors.
      */
     data class Ready(
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),

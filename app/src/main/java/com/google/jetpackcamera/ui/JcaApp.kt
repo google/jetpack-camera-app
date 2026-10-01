@@ -62,7 +62,8 @@ fun JcaApp(
     onFirstFrameCaptureCompleted: () -> Unit,
     openAppSettings: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCloseCamera: () -> Unit = {}
 ) {
     JetpackCameraNavHost(
         modifier = modifier,
@@ -73,7 +74,8 @@ fun JcaApp(
         onOpenAppSettings = openAppSettings,
         onRequestWindowColorMode = onRequestWindowColorMode,
         onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-        onCaptureEvent = onCaptureEvent
+        onCaptureEvent = onCaptureEvent,
+        onCloseCamera = onCloseCamera
     )
 }
 
@@ -89,6 +91,7 @@ private fun JetpackCameraNavHost(
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
+    onCloseCamera: () -> Unit = {},
     navController: NavHostController = rememberNavController()
 ) {
     CameraPermissionGuard(navController)
@@ -126,7 +129,8 @@ private fun JetpackCameraNavHost(
             onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
             onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
             onNavigateToPostCapture = { navController.navigate(POST_CAPTURE_ROUTE) },
-            onCaptureEvent = onCaptureEvent
+            onCaptureEvent = onCaptureEvent,
+            onCloseCamera = onCloseCamera
         )
 
         composable(

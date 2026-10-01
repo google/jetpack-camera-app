@@ -197,8 +197,7 @@ class PreviewViewModel @Inject constructor(
     val cameraController: CameraController = CameraControllerImpl(
         cameraSystemProvider = cameraSystemRepository::getCameraSystem,
         captureUiState = captureUiState,
-        coroutineContext = viewModelScope.coroutineContext,
-        trackedCaptureUiState = trackedCaptureUiState
+        coroutineContext = viewModelScope.coroutineContext
     )
 
     val captureController: CaptureController = CaptureControllerImpl(
@@ -252,23 +251,6 @@ class PreviewViewModel @Inject constructor(
                             cameraSystemRepository.getCameraSystem()
                         )
                         oldCameraAppSettings = new
-                    }
-            }
-
-            launch {
-                cameraSystemRepository.currentCameraState
-                    .map { it.isCameraRunning }
-                    .distinctUntilChanged()
-                    .collect { isCameraRunning ->
-                        if (isCameraRunning) {
-                            trackedCaptureUiState.update { old ->
-                                if (old.acknowledgedCameraError != null) {
-                                    old.copy(acknowledgedCameraError = null)
-                                } else {
-                                    old
-                                }
-                            }
-                        }
                     }
             }
 

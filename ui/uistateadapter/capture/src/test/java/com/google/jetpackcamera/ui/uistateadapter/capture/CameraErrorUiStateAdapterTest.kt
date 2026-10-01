@@ -25,55 +25,13 @@ class CameraErrorUiStateAdapterTest {
 
     @Test
     fun from_whenNoCameraError_returnsHidden() {
-        val state = CameraErrorUiState.from(
-            cameraState = CameraState(cameraError = null),
-            acknowledgedError = null
-        )
+        val state = CameraErrorUiState.from(CameraState(cameraError = null))
         assertThat(state).isEqualTo(CameraErrorUiState.Hidden)
     }
 
     @Test
-    fun from_whenErrorMatchesAcknowledgedError_returnsHidden() {
-        val state = CameraErrorUiState.from(
-            cameraState = CameraState(cameraError = CameraError.CameraInUse),
-            acknowledgedError = CameraError.CameraInUse
-        )
-        assertThat(state).isEqualTo(CameraErrorUiState.Hidden)
-    }
-
-    @Test
-    fun from_whenDifferentErrorOccursAfterAcknowledgement_returnsShowing() {
-        val state = CameraErrorUiState.from(
-            cameraState = CameraState(cameraError = CameraError.FatalCameraError),
-            acknowledgedError = CameraError.CameraInUse
-        )
-        assertThat(state).isInstanceOf(CameraErrorUiState.Showing::class.java)
-        val showing = state as CameraErrorUiState.Showing
-        assertThat(showing.error).isEqualTo(CameraError.FatalCameraError)
-        assertThat(showing.shouldExitAppOnConfirm).isTrue()
-    }
-
-    @Test
-    fun from_cameraInUse_isRecoverableAndDoesNotExitApp() {
-        val state = CameraErrorUiState.from(
-            cameraState = CameraState(cameraError = CameraError.CameraInUse),
-            acknowledgedError = null
-        ) as CameraErrorUiState.Showing
-
-        assertThat(state.titleResId).isEqualTo(R.string.picker_camera_error_in_use_title)
-        assertThat(state.bodyResId).isEqualTo(R.string.picker_camera_error_in_use_body)
-        assertThat(state.shouldExitAppOnConfirm).isFalse()
-    }
-
-    @Test
-    fun from_cameraDisabledByPolicy_exitsApp() {
-        val state = CameraErrorUiState.from(
-            cameraState = CameraState(cameraError = CameraError.CameraDisabledByPolicy),
-            acknowledgedError = null
-        ) as CameraErrorUiState.Showing
-
-        assertThat(state.titleResId).isEqualTo(R.string.picker_camera_error_disabled_title)
-        assertThat(state.bodyResId).isEqualTo(R.string.picker_camera_error_disabled_body)
-        assertThat(state.shouldExitAppOnConfirm).isTrue()
+    fun from_whenCameraErrorPresent_returnsShowing() {
+        val state = CameraErrorUiState.from(CameraState(cameraError = CameraError.CameraInUse))
+        assertThat(state).isEqualTo(CameraErrorUiState.Showing(CameraError.CameraInUse))
     }
 }
