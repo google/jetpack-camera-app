@@ -19,6 +19,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
+import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +31,8 @@ import kotlinx.coroutines.flow.stateIn
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    settingsRepository: SettingsRepository
+    settingsRepository: SettingsRepository,
+    private val mediaRepository: MediaRepository
 ) : ViewModel() {
     val uiState: StateFlow<MainActivityUiState> = settingsRepository.defaultCameraAppSettings.map {
         Success(it)
@@ -39,6 +41,9 @@ class MainActivityViewModel @Inject constructor(
         initialValue = Loading,
         started = SharingStarted.WhileSubscribed(5_000)
     )
+
+    /** See [MediaRepository.refreshLastCapturedMedia]. */
+    fun refreshLastCapturedMedia() = mediaRepository.refreshLastCapturedMedia()
 }
 
 sealed interface MainActivityUiState {
