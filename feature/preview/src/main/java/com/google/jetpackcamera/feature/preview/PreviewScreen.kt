@@ -18,6 +18,7 @@ package com.google.jetpackcamera.feature.preview
 import android.util.Log
 import android.util.Range
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -66,6 +67,7 @@ import androidx.tracing.Trace
 import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -87,7 +89,7 @@ import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.PreviewLayout
-import com.google.jetpackcamera.ui.components.capture.R
+import com.google.jetpackcamera.ui.components.capture.R as CaptureComponentsR
 import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
 import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
@@ -112,6 +114,7 @@ import com.google.jetpackcamera.ui.debug.DebugOverlay
 import com.google.jetpackcamera.ui.debug.DebugUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -136,6 +139,7 @@ fun PreviewScreen(
     modifier: Modifier = Modifier,
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
+    onCloseCamera: () -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PreviewScreen")
@@ -212,6 +216,7 @@ fun PreviewScreen(
             onNavigateToSettings = onNavigateToSettings,
             onRequestWindowColorMode = onRequestWindowColorMode,
             onNavigatePostCapture = onNavigateToPostCapture,
+            onCloseCamera = onCloseCamera,
             debugUiState = debugUiState,
             snackBarUiState = snackBarUiState,
             debugController = viewModel.debugController,
@@ -235,6 +240,7 @@ private fun ContentScreen(
     onNavigateToSettings: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onNavigatePostCapture: () -> Unit = {},
+    onCloseCamera: () -> Unit = {},
     debugUiState: DebugUiState = DebugUiState.Disabled,
     snackBarUiState: SnackBarUiState = SnackBarUiState.Disabled,
     debugController: DebugController? = null,
@@ -756,18 +762,22 @@ private fun ContentScreen(
     val cameraErrorState = remember {
         derivedStateOf { currentCaptureUiStateProvider().cameraErrorUiState }
     }
-    val activity = LocalContext.current as? android.app.Activity
-    val errorDialogLambda = remember(cameraErrorState, cameraController, activity) {
+    val errorDialogLambda = remember(cameraErrorState, cameraController, onCloseCamera) {
         @Composable { modifier: Modifier ->
-            CameraErrorDialog(
-                modifier = modifier,
-                cameraErrorUiState = cameraErrorState.value,
-                onDismissError = { cameraController?.dismissCameraError() },
-                onExitApp = {
-                    cameraController?.dismissCameraError()
-                    activity?.finish()
-                }
-            )
+            val showingState = cameraErrorState.value as? CameraErrorUiState.Showing
+            val dialogResources = showingState?.error?.toDialogResources()
+            if (dialogResources != null) {
+                CameraErrorDialog(
+                    title = stringResource(dialogResources.titleResId),
+                    body = stringResource(dialogResources.bodyResId),
+                    confirmButtonText = stringResource(R.string.camera_error_dialog_ok),
+                    onConfirm = {
+                        cameraController?.dismissCameraError()
+                        onCloseCamera()
+                    },
+                    modifier = modifier
+                )
+            }
         }
     }
 
@@ -799,6 +809,56 @@ private fun ContentScreen(
     )
 }
 
+/**
+ * String resource IDs for displaying a [CameraErrorDialog].
+ *
+ * @property titleResId The string resource ID for the dialog title.
+ * @property bodyResId The string resource ID for the dialog body.
+ */
+internal data class CameraErrorDialogResources(
+    @StringRes val titleResId: Int,
+    @StringRes val bodyResId: Int
+)
+
+/**
+ * Maps a [CameraError] to its [CameraErrorDialogResources], or `null` if no dialog should be shown.
+ */
+internal fun CameraError.toDialogResources(): CameraErrorDialogResources? = when (this) {
+    CameraError.CameraInUse -> CameraErrorDialogResources(
+        titleResId = R.string.camera_error_in_use_title,
+        bodyResId = R.string.camera_error_in_use_body
+    )
+    CameraError.MaxCamerasInUse -> CameraErrorDialogResources(
+        titleResId = R.string.camera_error_max_in_use_title,
+        bodyResId = R.string.camera_error_max_in_use_body
+    )
+    CameraError.OtherRecoverableError -> CameraErrorDialogResources(
+        titleResId = R.string.camera_error_recoverable_title,
+        bodyResId = R.string.camera_error_recoverable_body
+    )
+    CameraError.StreamConfigError -> CameraErrorDialogResources(
+        titleResId = R.string.camera_error_stream_config_title,
+        bodyResId = R.string.camera_error_stream_config_body
+    )
+    CameraError.CameraDisabledByPolicy -> CameraErrorDialogResources(
+        titleResId = R.string.camera_error_disabled_title,
+        bodyResId = R.string.camera_error_disabled_body
+    )
+    CameraError.CameraSensorPrivacyDisabled -> null
+    CameraError.FatalCameraError -> CameraErrorDialogResources(
+        titleResId = R.string.camera_error_fatal_title,
+        bodyResId = R.string.camera_error_fatal_body
+    )
+    CameraError.DoNotDisturbEnabled -> CameraErrorDialogResources(
+        titleResId = R.string.camera_error_dnd_title,
+        bodyResId = R.string.camera_error_dnd_body
+    )
+    CameraError.CameraRemoved -> CameraErrorDialogResources(
+        titleResId = R.string.camera_error_removed_title,
+        bodyResId = R.string.camera_error_removed_body
+    )
+}
+
 @Composable
 private fun LoadingScreen(modifier: Modifier = Modifier) {
     Column(
@@ -809,7 +869,7 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         CircularProgressIndicator(modifier = Modifier.size(50.dp))
-        Text(text = stringResource(R.string.camera_not_ready), color = Color.White)
+        Text(text = stringResource(CaptureComponentsR.string.camera_not_ready), color = Color.White)
     }
 }
 

@@ -269,7 +269,7 @@ interface CameraSystem {
     /**
      * Clears any currently active camera error from [CameraState].
      */
-    fun clearCameraError() {}
+    fun clearCameraError()
 
     /**
      * Represents the events required for screen flash.

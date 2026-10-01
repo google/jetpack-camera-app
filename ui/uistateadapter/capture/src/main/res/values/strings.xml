@@ -34,25 +34,4 @@
     <string name="toast_hdr_video_unsupported_on_lens">HDR video not supported by current lens</string>
     <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be bound simultaneously</string>
     <string name="toast_llb_disabled_by_hdr">Low Light Boost is disabled when HDR is active</string>
-
-    <!-- Camera Error Dialog Strings (Photo Picker Spec) -->
-    <string name="picker_camera_error_dialog_ok">OK</string>
-    <string name="picker_camera_error_in_use_title">Can\u2019t use camera</string>
-    <string name="picker_camera_error_in_use_body">The camera is being used by another app</string>
-    <string name="picker_camera_error_max_in_use_title">Can\u2019t use camera</string>
-    <string name="picker_camera_error_max_in_use_body">Close one or more apps that are using the camera</string>
-    <string name="picker_camera_error_recoverable_title">Can\u2019t use camera</string>
-    <string name="picker_camera_error_recoverable_body">Try again later</string>
-    <string name="picker_camera_error_stream_config_title">Something went wrong</string>
-    <string name="picker_camera_error_stream_config_body">Camera isn\u2019t available</string>
-    <string name="picker_camera_error_disabled_title">Camera blocked by your IT admin</string>
-    <string name="picker_camera_error_disabled_body">Contact them if you have any questions</string>
-    <string name="picker_camera_error_sensor_privacy_title">Can\u2019t use camera</string>
-    <string name="picker_camera_error_sensor_privacy_body">Try again later</string>
-    <string name="picker_camera_error_fatal_title">Something went wrong</string>
-    <string name="picker_camera_error_fatal_body">Camera isn\u2019t available</string>
-    <string name="picker_camera_error_dnd_title">Can\u2019t use camera</string>
-    <string name="picker_camera_error_dnd_body">Turn off Do Not Disturb and open the camera again</string>
-    <string name="picker_camera_error_removed_title">Camera not found</string>
-    <string name="picker_camera_error_removed_body">Check if the camera is connected</string>
 </resources>

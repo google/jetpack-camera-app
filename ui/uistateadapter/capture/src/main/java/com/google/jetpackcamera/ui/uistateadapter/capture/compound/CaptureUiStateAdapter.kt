@@ -195,10 +195,7 @@ fun captureUiState(
                 roundedVideoRecordingState
             ),
             screenFlashUiState = ScreenFlashUiState.from(trackedUiState),
-            cameraErrorUiState = CameraErrorUiState.from(
-                roundedCameraState,
-                trackedUiState.acknowledgedCameraError
-            )
+            cameraErrorUiState = CameraErrorUiState.from(roundedCameraState)
         )
     }
 }

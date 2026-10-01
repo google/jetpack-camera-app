@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.ui.uistate.capture
 
 import com.google.jetpackcamera.data.media.MediaDescriptor
-import com.google.jetpackcamera.model.CameraError
 
 /**
  * Data class to track UI-specific states within the PreviewViewModel.
@@ -34,6 +33,5 @@ data class TrackedCaptureUiState(
     val debugHidingComponents: Boolean = false,
     val recentCapturedMedia: MediaDescriptor = MediaDescriptor.None,
     val lastBlinkTimeStamp: Long = 0,
-    val screenFlashUiState: ScreenFlashUiState = ScreenFlashUiState(),
-    val acknowledgedCameraError: CameraError? = null
+    val screenFlashUiState: ScreenFlashUiState = ScreenFlashUiState()
 )

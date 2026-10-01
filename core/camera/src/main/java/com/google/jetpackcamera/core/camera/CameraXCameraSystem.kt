@@ -557,9 +557,9 @@ class CameraXCameraSystem(
                     }
                 }
             }
-            .filterNotNull()
             .distinctUntilChanged()
             .collectLatest { sessionSettings ->
+                if (sessionSettings == null) return@collectLatest
                 coroutineScope {
                     with(
                         CameraSessionContext(

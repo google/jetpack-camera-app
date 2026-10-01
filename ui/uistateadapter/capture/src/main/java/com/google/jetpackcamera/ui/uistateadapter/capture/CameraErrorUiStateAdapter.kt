@@ -16,85 +16,10 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.core.camera.CameraState
-import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 
 /**
- * Maps [CameraState.cameraError] and [acknowledgedError] into a [CameraErrorUiState].
+ * Maps [CameraState.cameraError] into a [CameraErrorUiState].
  */
-fun CameraErrorUiState.Companion.from(
-    cameraState: CameraState,
-    acknowledgedError: CameraError?
-): CameraErrorUiState {
-    val error = cameraState.cameraError ?: return CameraErrorUiState.Hidden
-    if (error == acknowledgedError) {
-        return CameraErrorUiState.Hidden
-    }
-
-    val okButton = R.string.picker_camera_error_dialog_ok
-    return when (error) {
-        CameraError.CameraInUse -> CameraErrorUiState.Showing(
-            error = error,
-            titleResId = R.string.picker_camera_error_in_use_title,
-            bodyResId = R.string.picker_camera_error_in_use_body,
-            confirmButtonTextResId = okButton,
-            shouldExitAppOnConfirm = false
-        )
-        CameraError.MaxCamerasInUse -> CameraErrorUiState.Showing(
-            error = error,
-            titleResId = R.string.picker_camera_error_max_in_use_title,
-            bodyResId = R.string.picker_camera_error_max_in_use_body,
-            confirmButtonTextResId = okButton,
-            shouldExitAppOnConfirm = false
-        )
-        CameraError.OtherRecoverableError -> CameraErrorUiState.Showing(
-            error = error,
-            titleResId = R.string.picker_camera_error_recoverable_title,
-            bodyResId = R.string.picker_camera_error_recoverable_body,
-            confirmButtonTextResId = okButton,
-            shouldExitAppOnConfirm = false
-        )
-        CameraError.StreamConfigError -> CameraErrorUiState.Showing(
-            error = error,
-            titleResId = R.string.picker_camera_error_stream_config_title,
-            bodyResId = R.string.picker_camera_error_stream_config_body,
-            confirmButtonTextResId = okButton,
-            shouldExitAppOnConfirm = true
-        )
-        CameraError.CameraDisabledByPolicy -> CameraErrorUiState.Showing(
-            error = error,
-            titleResId = R.string.picker_camera_error_disabled_title,
-            bodyResId = R.string.picker_camera_error_disabled_body,
-            confirmButtonTextResId = okButton,
-            shouldExitAppOnConfirm = true
-        )
-        CameraError.CameraSensorPrivacyDisabled -> CameraErrorUiState.Showing(
-            error = error,
-            titleResId = R.string.picker_camera_error_sensor_privacy_title,
-            bodyResId = R.string.picker_camera_error_sensor_privacy_body,
-            confirmButtonTextResId = okButton,
-            shouldExitAppOnConfirm = true
-        )
-        CameraError.FatalCameraError -> CameraErrorUiState.Showing(
-            error = error,
-            titleResId = R.string.picker_camera_error_fatal_title,
-            bodyResId = R.string.picker_camera_error_fatal_body,
-            confirmButtonTextResId = okButton,
-            shouldExitAppOnConfirm = true
-        )
-        CameraError.DoNotDisturbEnabled -> CameraErrorUiState.Showing(
-            error = error,
-            titleResId = R.string.picker_camera_error_dnd_title,
-            bodyResId = R.string.picker_camera_error_dnd_body,
-            confirmButtonTextResId = okButton,
-            shouldExitAppOnConfirm = true
-        )
-        CameraError.CameraRemoved -> CameraErrorUiState.Showing(
-            error = error,
-            titleResId = R.string.picker_camera_error_removed_title,
-            bodyResId = R.string.picker_camera_error_removed_body,
-            confirmButtonTextResId = okButton,
-            shouldExitAppOnConfirm = true
-        )
-    }
-}
+fun CameraErrorUiState.Companion.from(cameraState: CameraState): CameraErrorUiState =
+    cameraState.cameraError?.let { CameraErrorUiState.Showing(it) } ?: CameraErrorUiState.Hidden

@@ -19,7 +19,7 @@ package com.google.jetpackcamera.model
  * Domain representation of camera errors surfaced by CameraX or Android system services.
  */
 sealed interface CameraError {
-    /** Whether the user can stay on the camera screen (wait/retry) vs. exiting the activity. */
+    /** Whether CameraX considers this a recoverable error and will automatically retry opening the camera. */
     val isRecoverable: Boolean
 
     // --- CameraX StateError codes (1..8) ---
