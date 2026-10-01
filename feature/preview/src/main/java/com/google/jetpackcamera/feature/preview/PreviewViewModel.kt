@@ -184,13 +184,6 @@ class PreviewViewModel @Inject constructor(
 
     val imageWellController: ImageWellController = ImageWellControllerImpl(
         mediaRepository = mediaRepository,
-        updateLastCapturedMediaCallback = {
-            viewModelScope.launch {
-                trackedCaptureUiState.update { old ->
-                    old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
-                }
-            }
-        },
         coroutineContext = viewModelScope.coroutineContext
     )
 
@@ -221,7 +214,6 @@ class PreviewViewModel @Inject constructor(
             }
         },
         captureEvents = incomingCaptureEvents,
-        imageWellController = imageWellController,
         onImageCached = { uri ->
             viewModelScope.launch {
                 mediaRepository.setCurrentMedia(
@@ -251,6 +243,15 @@ class PreviewViewModel @Inject constructor(
                             cameraSystemRepository.getCameraSystem()
                         )
                         oldCameraAppSettings = new
+                    }
+            }
+
+            launch {
+                mediaRepository.lastCapturedMedia
+                    .collect { media ->
+                        trackedCaptureUiState.update { old ->
+                            old.copy(recentCapturedMedia = media)
+                        }
                     }
             }
 
@@ -312,7 +313,6 @@ class PreviewViewModel @Inject constructor(
             val prefix = when (event) {
                 is ImageCaptureEvent -> "Image"
                 is VideoCaptureEvent -> "Video"
-                else -> "Capture"
             }
             snackBarController.addSnackBarData(
                 SnackbarData(

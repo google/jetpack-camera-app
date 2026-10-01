@@ -25,6 +25,11 @@ class JcaFilePathGenerator : FilePathGenerator {
         private val RELATIVE_OUTPUT_PATH: String =
             "${Environment.DIRECTORY_DCIM}${File.separator}Camera"
     }
+
+    override val prefix: String = "JCA"
+
+    override val baseRelativePath: String = RELATIVE_OUTPUT_PATH
+
     override val relativeImageOutputPath: String = RELATIVE_OUTPUT_PATH
 
     override val relativeVideoOutputPath: String = RELATIVE_OUTPUT_PATH
@@ -64,7 +69,7 @@ class JcaFilePathGenerator : FilePathGenerator {
 
     override fun generateImageFilename(suffixText: String?, fileExtension: String?): String {
         return constructFilename(
-            "JCA-photo",
+            "$prefix-photo",
             createTimestamp().toString(),
             suffixText,
             fileExtension
@@ -73,7 +78,7 @@ class JcaFilePathGenerator : FilePathGenerator {
 
     override fun generateVideoFilename(suffixText: String?, fileExtension: String?): String {
         return constructFilename(
-            "JCA-recording",
+            "$prefix-recording",
             createTimestamp().toString(),
             suffixText,
             fileExtension
