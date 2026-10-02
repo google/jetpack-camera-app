@@ -290,7 +290,7 @@ class LocationManagerLocationProviderTest {
         launchLocationUpdates()
         ShadowLooper.idleMainLooper()
 
-        // A 5m fix stops the warmup early.
+        // A 5m fix stops the updates early.
         deliver(createLocation(accuracy = 5f, elapsedRealtimeNanos = baseTimeNanos))
         assertThat(locationProvider.getCurrentLocation()?.accuracy).isEqualTo(5f)
 
@@ -476,7 +476,7 @@ class LocationManagerLocationProviderTest {
 
     @Suppress("DEPRECATION")
     @Test
-    fun locationUpdate_rejectedAccurateFix_doesNotStopWarmup() {
+    fun locationUpdate_rejectedAccurateFix_doesNotStopUpdates() {
         grantLocationPermissions()
         locationProvider.refreshIntervalMs = 500L
         val baseTimeNanos = SystemClock.elapsedRealtimeNanos()
@@ -503,7 +503,7 @@ class LocationManagerLocationProviderTest {
 
     @Suppress("DEPRECATION")
     @Test
-    fun locationUpdate_staleFix_isIgnoredAndDoesNotStopWarmup() {
+    fun locationUpdate_staleFix_isIgnoredAndDoesNotStopUpdates() {
         grantLocationPermissions()
         launchLocationUpdates()
         ShadowLooper.idleMainLooper()
@@ -598,14 +598,14 @@ class LocationManagerLocationProviderTest {
 
     @Suppress("DEPRECATION")
     @Test
-    fun runLocationUpdates_warmupTimeout_stopsAndRestartsAfterRefreshInterval() {
+    fun runLocationUpdates_acquisitionTimeout_stopsAndRestartsAfterRefreshInterval() {
         grantLocationPermissions()
         locationProvider.refreshIntervalMs = 500L
 
         launchLocationUpdates()
         ShadowLooper.idleMainLooper()
 
-        // An 80m fix does not meet the accuracy threshold, so the warmup continues.
+        // An 80m fix does not meet the accuracy threshold, so updates continue.
         deliver(createLocation(provider = LocationManager.NETWORK_PROVIDER, accuracy = 80f))
         assertThat(shadowLocationManager.locationUpdateListeners).isNotEmpty()
 

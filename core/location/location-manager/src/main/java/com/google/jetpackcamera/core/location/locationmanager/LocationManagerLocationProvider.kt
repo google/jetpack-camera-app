@@ -40,7 +40,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withTimeoutOrNull
 
 private const val TAG = "LocationManagerLocationProvider"
-private const val WARMUP_TIMEOUT_MS = 60_000L
+private const val ACQUISITION_TIMEOUT_MS = 60_000L
 private const val ACCURACY_THRESHOLD_METERS = 50f
 private const val SIGNIFICANT_ACCURACY_DELTA_METERS = 20f
 private const val LOCATION_UPDATE_INTERVAL_MS = 1_000L
@@ -72,7 +72,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
     // Written from the main looper; read from any thread by capture via getCurrentLocation().
     private val cachedLocation = AtomicReference<Location?>(null)
     private val isUpdating = AtomicBoolean(false)
-    private val activeWarmupDeferred = AtomicReference<CompletableDeferred<Unit>?>(null)
+    private val accurateFixDeferred = AtomicReference<CompletableDeferred<Unit>?>(null)
 
     // Interval between periodic refresh cycles (5 minutes by default, configurable for testing)
     internal var refreshIntervalMs: Long = REFRESH_INTERVAL_MS
@@ -99,18 +99,18 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
     }
 
     /**
-     * Runs a warmup session every [refreshIntervalMs] until cancelled. Each cycle re-checks
+     * Runs a location update session every [refreshIntervalMs] until cancelled. Each cycle re-checks
      * permissions and enabled providers, so changes made mid-session are applied on the next cycle.
      */
     override suspend fun runLocationUpdates() = coroutineScope {
         while (isActive) {
-            runWarmupSession()
+            runUpdateSession()
             delay(refreshIntervalMs)
         }
     }
 
     @SuppressLint("MissingPermission")
-    private suspend fun runWarmupSession() {
+    private suspend fun runUpdateSession() {
         val locationManager = locationManager ?: return
         if (!hasAnyLocationPermission()) return
 
@@ -122,8 +122,8 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         val activeProviders = getActiveProviders()
         if (activeProviders.isEmpty()) return
 
-        val warmupCompleted = CompletableDeferred<Unit>()
-        activeWarmupDeferred.set(warmupCompleted)
+        val accurateFixReceived = CompletableDeferred<Unit>()
+        accurateFixDeferred.set(accurateFixReceived)
 
         val request = LocationRequestCompat.Builder(LOCATION_UPDATE_INTERVAL_MS)
             .setMinUpdateIntervalMillis(LOCATION_UPDATE_INTERVAL_MS)
@@ -151,7 +151,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         }
 
         if (registeredCount == 0) {
-            activeWarmupDeferred.set(null)
+            accurateFixDeferred.set(null)
             return
         }
 
@@ -159,11 +159,11 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         Log.d(TAG, "Started location updates across $registeredCount providers")
 
         try {
-            withTimeoutOrNull(WARMUP_TIMEOUT_MS) {
-                warmupCompleted.await()
+            withTimeoutOrNull(ACQUISITION_TIMEOUT_MS) {
+                accurateFixReceived.await()
             }
         } finally {
-            activeWarmupDeferred.set(null)
+            accurateFixDeferred.set(null)
             stopHardwareUpdates()
         }
     }
@@ -234,9 +234,9 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
             }
         }
 
-        // A rejected fix leaves the cache unchanged, so it must not end the warmup session.
+        // A rejected fix leaves the cache unchanged, so it must not end the update session.
         if (accepted && location.accuracy <= ACCURACY_THRESHOLD_METERS) {
-            activeWarmupDeferred.get()?.complete(Unit)
+            accurateFixDeferred.get()?.complete(Unit)
             stopHardwareUpdates()
         }
     }
