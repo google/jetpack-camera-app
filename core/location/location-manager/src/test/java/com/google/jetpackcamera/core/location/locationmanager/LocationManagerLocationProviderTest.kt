@@ -87,16 +87,17 @@ class LocationManagerLocationProviderTest {
         if (coarse) app.grantPermissions(Manifest.permission.ACCESS_COARSE_LOCATION)
     }
 
+    /** Creates a fix. A null [accuracy] leaves the fix without accuracy, so hasAccuracy() is false. */
     private fun createLocation(
         provider: String = LocationManager.GPS_PROVIDER,
         latitude: Double = 37.4220,
         longitude: Double = -122.0841,
-        accuracy: Float = 10f,
+        accuracy: Float? = 10f,
         elapsedRealtimeNanos: Long = SystemClock.elapsedRealtimeNanos()
     ) = Location(provider).apply {
         this.latitude = latitude
         this.longitude = longitude
-        this.accuracy = accuracy
+        accuracy?.let { this.accuracy = it }
         this.elapsedRealtimeNanos = elapsedRealtimeNanos
     }
 
@@ -518,6 +519,72 @@ class LocationManagerLocationProviderTest {
 
         assertThat(shadowLocationManager.locationUpdateListeners).isNotEmpty()
         assertThat(locationProvider.getCurrentLocation()).isNull()
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun locationUpdate_fixWithoutAccuracy_isCachedAndDoesNotStopUpdates() {
+        grantLocationPermissions()
+        launchLocationUpdates()
+        ShadowLooper.idleMainLooper()
+
+        deliver(createLocation(accuracy = null))
+
+        assertThat(locationProvider.getCurrentLocation()?.hasAccuracy()).isFalse()
+        assertThat(shadowLocationManager.locationUpdateListeners).isNotEmpty()
+    }
+
+    @Test
+    fun locationUpdate_withinTwoMinutes_fixWithoutAccuracyDoesNotReplaceFixWithAccuracy() {
+        grantLocationPermissions()
+        locationProvider.refreshIntervalMs = 500L
+        val baseTimeNanos = SystemClock.elapsedRealtimeNanos()
+
+        launchLocationUpdates()
+        ShadowLooper.idleMainLooper()
+
+        deliver(createLocation(accuracy = 30f, elapsedRealtimeNanos = baseTimeNanos))
+        ShadowLooper.idleMainLooper(500L, TimeUnit.MILLISECONDS)
+
+        // Newer and from the same provider, but its accuracy is unknown.
+        deliver(
+            createLocation(
+                latitude = 37.4230,
+                longitude = -122.0850,
+                accuracy = null,
+                elapsedRealtimeNanos = baseTimeNanos + TimeUnit.SECONDS.toNanos(10)
+            )
+        )
+
+        val current = locationProvider.getCurrentLocation()
+        assertThat(current?.accuracy).isEqualTo(30f)
+        assertThat(current?.latitude).isEqualTo(37.4220)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun locationUpdate_withinTwoMinutes_fixWithAccuracyReplacesFixWithoutAccuracy() {
+        grantLocationPermissions()
+        val baseTimeNanos = SystemClock.elapsedRealtimeNanos()
+
+        launchLocationUpdates()
+        ShadowLooper.idleMainLooper()
+
+        deliver(createLocation(accuracy = null, elapsedRealtimeNanos = baseTimeNanos))
+        // Older than the cached fix and from another provider, but its accuracy is known.
+        deliver(
+            createLocation(
+                provider = LocationManager.NETWORK_PROVIDER,
+                accuracy = 40f,
+                elapsedRealtimeNanos = baseTimeNanos - TimeUnit.SECONDS.toNanos(10)
+            )
+        )
+
+        val current = locationProvider.getCurrentLocation()
+        assertThat(current?.accuracy).isEqualTo(40f)
+        assertThat(current?.provider).isEqualTo(LocationManager.NETWORK_PROVIDER)
+        // 40m is within the 50m threshold, so the session ends.
+        assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
     }
 
     @Test
