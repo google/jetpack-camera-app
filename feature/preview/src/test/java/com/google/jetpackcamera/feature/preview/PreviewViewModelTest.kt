@@ -361,7 +361,7 @@ class PreviewViewModelTest {
         }
 
     @Test
-    fun locationWarmup_withLocationProviderPresent_triggersUpdates() =
+    fun locationUpdates_withLocationProviderPresent_triggersUpdates() =
         runTest(StandardTestDispatcher()) {
             val fakeLocation = FakeLocationProvider()
             val vm = PreviewViewModel(
@@ -375,16 +375,16 @@ class PreviewViewModelTest {
                 defaultSaveMode = SaveMode.Immediate
             )
             assertThat(fakeLocation.isUpdatesRunning).isFalse()
-            vm.startLocationWarmup()
+            vm.startLocationUpdates()
             advanceUntilIdle()
             assertThat(fakeLocation.isUpdatesRunning).isTrue()
-            vm.stopLocationWarmup()
+            vm.stopLocationUpdates()
             advanceUntilIdle()
             assertThat(fakeLocation.isUpdatesRunning).isFalse()
         }
 
     @Test
-    fun locationWarmup_withLocationProviderEmpty_doesNotThrow() =
+    fun locationUpdates_withLocationProviderEmpty_doesNotThrow() =
         runTest(StandardTestDispatcher()) {
             val vm = PreviewViewModel(
                 cameraSystemRepository = cameraSystemRepository,
@@ -397,12 +397,12 @@ class PreviewViewModelTest {
                 defaultSaveMode = SaveMode.Immediate
             )
             // Verify safe no-op when provider is absent
-            vm.startLocationWarmup()
-            vm.stopLocationWarmup()
+            vm.startLocationUpdates()
+            vm.stopLocationUpdates()
         }
 
     @Test
-    fun locationWarmup_locationSettingToggled_startsAndStopsUpdates() =
+    fun locationUpdates_locationSettingToggled_startsAndStopsUpdates() =
         runTest(StandardTestDispatcher()) {
             val fakeLocation = FakeLocationProvider()
             val settingsRepo = FakeSettingsRepository(CameraAppSettings(locationEnabled = false))
@@ -416,7 +416,7 @@ class PreviewViewModelTest {
             )
             advanceUntilIdle()
 
-            vm.startLocationWarmup()
+            vm.startLocationUpdates()
             advanceUntilIdle()
             assertThat(fakeLocation.isUpdatesRunning).isFalse()
 
@@ -461,7 +461,7 @@ class PreviewViewModelTest {
         }
 
     @Test
-    fun locationWarmup_videoRecordingStarts_cancelsLocationUpdates() =
+    fun locationUpdates_videoRecordingStarts_cancelsLocationUpdates() =
         runTest(StandardTestDispatcher()) {
             val fakeLocation = FakeLocationProvider()
             val vm = PreviewViewModel(
@@ -476,7 +476,7 @@ class PreviewViewModelTest {
             )
             advanceUntilIdle()
 
-            vm.startLocationWarmup()
+            vm.startLocationUpdates()
             advanceUntilIdle()
             assertThat(fakeLocation.isUpdatesRunning).isTrue()
 
@@ -494,7 +494,7 @@ class PreviewViewModelTest {
         }
 
     @Test
-    fun locationWarmup_videoRecordingStarting_cancelsLocationUpdates() =
+    fun locationUpdates_videoRecordingStarting_cancelsLocationUpdates() =
         runTest(StandardTestDispatcher()) {
             val fakeLocation = FakeLocationProvider()
             val vm = PreviewViewModel(
@@ -509,7 +509,7 @@ class PreviewViewModelTest {
             )
             advanceUntilIdle()
 
-            vm.startLocationWarmup()
+            vm.startLocationUpdates()
             advanceUntilIdle()
             assertThat(fakeLocation.isUpdatesRunning).isTrue()
 
@@ -521,7 +521,7 @@ class PreviewViewModelTest {
         }
 
     @Test
-    fun locationWarmup_videoRecordingStops_resumesLocationUpdatesIfPreviewActive() =
+    fun locationUpdates_videoRecordingStops_resumesLocationUpdatesIfPreviewActive() =
         runTest(StandardTestDispatcher()) {
             val fakeLocation = FakeLocationProvider()
             val vm = PreviewViewModel(
@@ -536,7 +536,7 @@ class PreviewViewModelTest {
             )
             advanceUntilIdle()
 
-            vm.startLocationWarmup()
+            vm.startLocationUpdates()
             advanceUntilIdle()
             assertThat(fakeLocation.isUpdatesRunning).isTrue()
 
@@ -562,7 +562,7 @@ class PreviewViewModelTest {
         }
 
     @Test
-    fun locationWarmup_videoRecordingStops_doesNotResumeIfPreviewInactive() =
+    fun locationUpdates_videoRecordingStops_doesNotResumeIfPreviewInactive() =
         runTest(StandardTestDispatcher()) {
             val fakeLocation = FakeLocationProvider()
             val vm = PreviewViewModel(
@@ -577,7 +577,7 @@ class PreviewViewModelTest {
             )
             advanceUntilIdle()
 
-            vm.startLocationWarmup()
+            vm.startLocationUpdates()
             advanceUntilIdle()
             assertThat(fakeLocation.isUpdatesRunning).isTrue()
 
@@ -593,7 +593,7 @@ class PreviewViewModelTest {
             advanceUntilIdle()
             assertThat(fakeLocation.isUpdatesRunning).isFalse()
 
-            vm.stopLocationWarmup()
+            vm.stopLocationUpdates()
             advanceUntilIdle()
 
             cameraSystem.setCurrentCameraState(
@@ -606,7 +606,7 @@ class PreviewViewModelTest {
         }
 
     @Test
-    fun locationWarmup_startWhileVideoRecording_doesNotTriggerUpdates() =
+    fun locationUpdates_startWhileVideoRecording_doesNotTriggerUpdates() =
         runTest(StandardTestDispatcher()) {
             val fakeLocation = FakeLocationProvider()
             val vm = PreviewViewModel(
@@ -632,7 +632,7 @@ class PreviewViewModelTest {
             )
             advanceUntilIdle()
 
-            vm.startLocationWarmup()
+            vm.startLocationUpdates()
             advanceUntilIdle()
             assertThat(fakeLocation.isUpdatesRunning).isFalse()
 

@@ -150,9 +150,9 @@ fun PreviewScreen(
 
     LifecycleStartEffect(Unit) {
         viewModel.cameraController.startCamera()
-        viewModel.startLocationWarmup()
+        viewModel.startLocationUpdates()
         onStopOrDispose {
-            viewModel.stopLocationWarmup()
+            viewModel.stopLocationUpdates()
             viewModel.cameraController.stopCamera()
         }
     }

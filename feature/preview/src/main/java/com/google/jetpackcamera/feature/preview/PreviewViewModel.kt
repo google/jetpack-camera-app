@@ -252,16 +252,16 @@ class PreviewViewModel @Inject constructor(
     private var isPreviewActive = false
 
     /**
-     * Initiates location hardware warmup to acquire a fresh fix before capture.
+     * Starts location updates so a recent fix is available at capture time.
      *
      * Called when the preview screen becomes visible. Safe no-op if no [LocationProvider] is bound,
      * if location tagging is disabled in settings, or if video recording is active.
      */
-    fun startLocationWarmup() {
+    fun startLocationUpdates() {
         isPreviewActive = true
         locationUpdatesJob?.cancel()
         locationUpdatesJob = null
-        updateLocationWarmup()
+        syncLocationUpdates()
     }
 
     /**
@@ -269,12 +269,12 @@ class PreviewViewModel @Inject constructor(
      *
      * Called when preview is paused or disposed to conserve battery. Safe no-op if no [LocationProvider] is bound.
      */
-    fun stopLocationWarmup() {
+    fun stopLocationUpdates() {
         isPreviewActive = false
-        updateLocationWarmup()
+        syncLocationUpdates()
     }
 
-    private fun updateLocationWarmup() {
+    private fun syncLocationUpdates() {
         val provider = locationProvider.getOrNull()
         if (isPreviewActive &&
             isLocationEnabled &&
@@ -307,7 +307,7 @@ class PreviewViewModel @Inject constructor(
                     .collect { new ->
                         if (isLocationEnabled != new.locationEnabled) {
                             isLocationEnabled = new.locationEnabled
-                            updateLocationWarmup()
+                            syncLocationUpdates()
                         }
                         oldCameraAppSettings.applyDiffs(
                             new,
@@ -360,7 +360,7 @@ class PreviewViewModel @Inject constructor(
                     }
                     .distinctUntilChanged()
                     .collect {
-                        updateLocationWarmup()
+                        syncLocationUpdates()
                     }
             }
         }
