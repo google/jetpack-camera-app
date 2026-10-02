@@ -32,9 +32,9 @@ import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataSto
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
-import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LOCATION_TAG
 import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CANCEL_TAG
 import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG
+import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LOCATION_TAG
 import com.google.jetpackcamera.settings.ui.DIALOG_LOCATION_PERMISSION_RATIONALE_TAG
 import java.util.Optional
 import kotlinx.coroutines.CoroutineScope
