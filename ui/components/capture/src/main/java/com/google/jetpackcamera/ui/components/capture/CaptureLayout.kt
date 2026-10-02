@@ -47,7 +47,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -142,12 +141,7 @@ fun PreviewLayout(
             sheetContent = {
                 quickSettingsOverlay(Modifier)
             },
-            snackbarHost = {
-                SnackbarHost(
-                    hostState = scaffoldState.snackbarHostState,
-                    modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
-                )
-            }
+            snackbarHost = {}
         ) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
                 Column {
@@ -195,7 +189,13 @@ fun PreviewLayout(
                             quickSettingsToggleButton = quickSettingsButton,
                             captureModeToggleSwitch = captureModeToggle,
                             zoomControls = zoomLevelDisplay,
-                            elapsedTimeDisplay = elapsedTimeDisplay
+                            elapsedTimeDisplay = elapsedTimeDisplay,
+                            snackbarHost = { modifier ->
+                                PillSnackbarHost(
+                                    snackbarHostState = scaffoldState.snackbarHostState,
+                                    modifier = modifier
+                                )
+                            }
                         )
                     }
                     // controls overlay
@@ -235,11 +235,14 @@ private fun VerticalMaterialControls(
     flipCameraButton: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable (Modifier) -> Unit
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                snackbarHost(Modifier)
+
                 elapsedTimeDisplay(Modifier)
 
                 // zoom controls row

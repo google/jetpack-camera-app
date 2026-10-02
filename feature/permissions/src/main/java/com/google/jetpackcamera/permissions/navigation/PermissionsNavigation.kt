@@ -17,6 +17,7 @@ package com.google.jetpackcamera.permissions.navigation
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.NavType
@@ -78,6 +79,8 @@ fun NavGraphBuilder.permissionsScreen(
         )
     }
 }
+
+fun NavDestination.isPermissionsRoute(): Boolean = route?.substringBefore('?') == BASE_ROUTE_DEF
 
 fun NavOptionsBuilder.popUpToPermissions() {
     popUpTo(BASE_ROUTE_DEF) {

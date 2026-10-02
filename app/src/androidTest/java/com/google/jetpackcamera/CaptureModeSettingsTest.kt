@@ -32,6 +32,10 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
+import com.google.jetpackcamera.settings.model.OptionVisibility
+import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
@@ -58,6 +62,7 @@ import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForCaptureModeToggleState
 import com.google.jetpackcamera.utils.waitForNodeWithTag
 import com.google.jetpackcamera.utils.waitForNodeWithTagToDisappear
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -73,6 +78,12 @@ internal class CaptureModeSettingsTest {
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiDevice = UiDevice.getInstance(instrumentation)
+
+    @After
+    fun tearDown() {
+        AppModule.testCameraFeaturePolicy = null
+    }
+
     private fun ComposeTestRule.checkCaptureModeSettingState(captureMode: CaptureMode? = null) =
         visitQuickSettings {
             captureMode?.let {
@@ -157,11 +168,8 @@ internal class CaptureModeSettingsTest {
                 // should not be able to switch between capture modes
                 onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertDoesNotExist()
             }
-            // verify switch is disabled and locked on video only
-            assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
-            assertThat(
-                composeTestRule.getCaptureModeToggleState()
-            ).isEqualTo(CaptureMode.VIDEO_ONLY)
+            // verify switch is removed when mode switching is not supported
+            composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
 
             // set concurrent camera mode back to off in settings
             composeTestRule.setConcurrentCameraModeInSettings(ConcurrentCameraMode.OFF)
@@ -228,30 +236,36 @@ internal class CaptureModeSettingsTest {
 
     @Test
     fun hdr_supports_video_only() {
-        runMainActivityScenarioTest {
-            composeTestRule.waitForCaptureButton()
+        AppModule.testCameraFeaturePolicy = CameraFeaturePolicy(
+            imageFormat = SettingConfig(
+                defaultValue = ImageOutputFormat.JPEG,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+        try {
+            runMainActivityScenarioTest {
+                composeTestRule.waitForCaptureButton()
 
-            // Switch to VIDEO_ONLY first since STANDARD doesn't support HDR
-            composeTestRule.setCaptureMode(CaptureMode.VIDEO_ONLY)
-            composeTestRule.setHdrEnabled(true)
+                // Switch to VIDEO_ONLY first since STANDARD doesn't support HDR
+                composeTestRule.setCaptureMode(CaptureMode.VIDEO_ONLY)
+                composeTestRule.setHdrEnabled(true)
 
-            // check that switch is disabled and only supports video
-            composeTestRule.waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
-            // should not be able use capture toggle
-            assume().that(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
-            assume().that(composeTestRule.getCaptureModeToggleState())
-                .isEqualTo(CaptureMode.VIDEO_ONLY)
+                // check that switch is removed when mode switching is not supported
+                composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
 
-            composeTestRule.visitQuickSettings {
-                // capture mode should be video only
-                assertThat(getCurrentCaptureMode()).isEqualTo(CaptureMode.VIDEO_ONLY)
-                onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertDoesNotExist()
+                composeTestRule.visitQuickSettings {
+                    // capture mode should be video only
+                    assertThat(getCurrentCaptureMode()).isEqualTo(CaptureMode.VIDEO_ONLY)
+                    onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertDoesNotExist()
+                }
+                composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
+
+                composeTestRule.setHdrEnabled(false)
+                // Remains VIDEO_ONLY since we explicitly switched to it
+                composeTestRule.checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
             }
-            assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
-
-            composeTestRule.setHdrEnabled(false)
-            // Remains VIDEO_ONLY since we explicitly switched to it
-            composeTestRule.checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
+        } finally {
+            AppModule.testCameraFeaturePolicy = null
         }
     }
 
@@ -326,7 +340,7 @@ internal class CaptureModeSettingsTest {
     }
 
     @Test
-    fun image_intent_disables_capture_mode_toggle() {
+    fun image_intent_removes_capture_mode_toggle() {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(PICTURES_DIR_PATH, timeStamp, "jpg")
         val result =
@@ -338,10 +352,7 @@ internal class CaptureModeSettingsTest {
                 composeTestRule.visitQuickSettings {
                     checkCaptureModeSettingState(CaptureMode.IMAGE_ONLY)
                 }
-                assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
-                assertThat(
-                    composeTestRule.getCaptureModeToggleState()
-                ).isEqualTo(CaptureMode.IMAGE_ONLY)
+                composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
 
                 uiDevice.pressBack()
             }
@@ -370,7 +381,7 @@ internal class CaptureModeSettingsTest {
     }
 
     @Test
-    fun video_intent_disables_capture_mode_toggle() {
+    fun video_intent_removes_capture_mode_toggle() {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(MOVIES_DIR_PATH, timeStamp, "mp4")
         val result =
@@ -382,10 +393,7 @@ internal class CaptureModeSettingsTest {
                 composeTestRule.visitQuickSettings {
                     checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
                 }
-                assertThat(composeTestRule.isCaptureModeToggleEnabled()).isFalse()
-                assertThat(
-                    composeTestRule.getCaptureModeToggleState()
-                ).isEqualTo(CaptureMode.VIDEO_ONLY)
+                composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
 
                 uiDevice.pressBack()
             }
