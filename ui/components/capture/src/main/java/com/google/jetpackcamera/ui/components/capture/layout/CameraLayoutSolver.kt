@@ -38,6 +38,21 @@ import kotlin.math.min
  * passes rather than a fixed sequence of adjustments, and it verifies every frame simultaneously
  * before accepting a candidate.
  *
+ * ## Where the stack sits
+ *
+ * The stack is positioned from the bottom of the window. Its preferred position caps the bottom
+ * row's height above the bottom of the window, so a navigation bar taller than the cap allows, such
+ * as 3-button navigation, takes its height out of the bottom padding rather than raising the
+ * controls. The stack leaves that position only to resolve a collision, or by a small incidental
+ * lift when that lift puts the primary frame flush with the top bar. A frame that would need a
+ * larger lift is shifted down instead. When a collision does force the stack up, it rises to the
+ * lowest collision-free position the search finds and at most the same incidental lift beyond it.
+ *
+ * A tall frame that cannot clear the stack from above may enclose it instead: the frame starts at
+ * the top bar, or a few dp below it behind the top-start control, and its bottom edge runs below
+ * the bottom row. Only when no enclosing position is clean does the frame expand to the top of the
+ * window.
+ *
  * ## Runtime cost
  *
  * The solve runs once per window geometry, not per frame. The escalating passes exit as soon as a
@@ -80,7 +95,22 @@ object CameraLayoutSolver {
     /** Step between candidate gap values in the repair sweep. */
     private const val GAP_SWEEP_STEP = 2
 
-    /** Extra lift allowed when the tall frame already clears everything. */
+    /**
+     * Largest lift that still counts as incidental.
+     *
+     * Measured from the preferred bottom padding, it bounds the lift accepted to put the primary
+     * frame back flush with the top bar, the highest padding at which the tall frame may enclose
+     * the stack, and the lift the repair search may spend when the tall frame already clears every
+     * control. When a collision forces the stack up, it also bounds how far the stack may rise
+     * beyond the lowest collision-free position. A layout that needs more lift shifts the frame
+     * down instead.
+     *
+     * On the reference windows, putting the primary frame flush takes a lift of 4 dp on a 412 x 925
+     * window and 6 dp on a 411 x 914 window, where the designs keep it flush, and 18 dp on a
+     * 360 x 740 window, where the design shifts the frame down instead. A 384 x 824 window needs
+     * 15 dp above its lowest collision-free position to place the primary frame directly below the
+     * top-start control. Every value from 15 to 17 reproduces all four.
+     */
     private const val INCIDENTAL_LIFT_BUDGET = 16
 
     /**
@@ -91,16 +121,17 @@ object CameraLayoutSolver {
      * of any shape. Without a ceiling the worst window measured cost 677,000 evaluations, which is
      * roughly a second of a stalled UI thread.
      *
-     * Measured on a desktop JVM, an evaluation costs about 1.5 us:
+     * Measured on a desktop JVM, an evaluation costs about 1.3 to 2 us:
      *
-     * | case                                      | evaluations | wall clock |
-     * |-------------------------------------------|-------------|------------|
-     * | typical phone, solves on the first attempt | 1           | 26 us      |
-     * | worst supported window in the sweep        | 1,055       | 1.6 ms     |
-     * | this budget                                | 5,000       | ~6 ms      |
+     * | case                                    | evaluations | wall clock |
+     * |-----------------------------------------|-------------|------------|
+     * | window that solves on the first attempt | 1           | 4 us       |
+     * | 412 x 925 phone, one padding sweep      | 24          | 48 us      |
+     * | worst supported window in the sweep     | 938         | 1.8 ms     |
+     * | this budget                             | 5,000       | ~6 ms      |
      *
-     * 5,000 leaves nearly five times the headroom over the worst supported window while capping a
-     * pathological one below a single frame at 60 Hz. An earlier revision used 20,000, which
+     * 5,000 leaves more than five times the headroom over the worst supported window while capping
+     * a pathological one below a single frame at 60 Hz. An earlier revision used 20,000, which
      * measured at 25 ms: still bounded, but a frame and a half of jank for geometry we do not
      * support anyway.
      *
@@ -169,61 +200,98 @@ object CameraLayoutSolver {
         // clearance margin above the toolbar.
         val minToolbarHeight = max(0f, spec.minInteractiveTouchTarget.value - clearance)
 
-        val effectiveBottomZone = max(navInset, window.gestureInset.value)
-        val gestureDemand = effectiveBottomZone - navInset
-        val normalMinPadding =
+        // The padding floor keeps the toolbar out of the bottom gesture zone. A visible navigation
+        // bar that extends above that zone already keeps it out, so only the control clearance
+        // margin is required between the toolbar and the navigation bar.
+        val minBottomPadding = if (navInset > window.gestureInset.value) {
+            clearance.roundToJs()
+        } else {
+            val gestureDemand = window.gestureInset.value - navInset
             max(spec.bottomPadding.min.value, gestureDemand.roundToJsFloat()).roundToJs()
-        // When a visible navigation bar already extends above the bottom gesture zone, only the
-        // control clearance margin is required between the toolbar and the navigation bar.
-        val compactBandMinPadding =
-            if (navInset > window.gestureInset.value) clearance.roundToJs() else normalMinPadding
+        }
 
         // Derived bounds for the toolbar-compaction band:
         // - compactBandMin: smallest black bar that can fit minToolbarHeight + clearance + padding.
-        // - compactBandMax: black bar where the full nominalToolbarHeight already fits with normal
-        //   bottom padding, so no compaction is needed.
-        val compactBandMin = minToolbarHeight + clearance + compactBandMinPadding
-        val compactBandMax = nominalToolbarHeight + clearance + normalMinPadding
-        val isCompactBand = useCompaction && !requiresImmersive &&
+        // - compactBandMax: black bar where the full nominalToolbarHeight already fits with the
+        //   minimum bottom padding, so no compaction is needed.
+        val compactBandMin = minToolbarHeight + clearance + minBottomPadding
+        val compactBandMax = nominalToolbarHeight + clearance + minBottomPadding
+        val inCompactBand = useCompaction && !requiresImmersive &&
             blackBarBelowTallest >= compactBandMin && blackBarBelowTallest < compactBandMax
 
-        val minBottomPadding: Int = if (isCompactBand) compactBandMinPadding else normalMinPadding
+        val compactToolbarHeight = max(
+            minToolbarHeight,
+            min(nominalToolbarHeight, floor(blackBarBelowTallest - clearance - minBottomPadding))
+        )
 
-        val toolbarHeight: Float = if (isCompactBand) {
-            max(
-                minToolbarHeight,
-                min(
-                    nominalToolbarHeight,
-                    floor(blackBarBelowTallest - clearance - minBottomPadding)
-                )
-            )
-        } else {
-            nominalToolbarHeight
-        }
+        // The preferred padding keeps the bottom row at the same height above the bottom of the
+        // window in every navigation mode: a navigation bar taller than the anchor allows takes
+        // its height out of the padding instead of raising the controls.
+        val designedPadding = spec.bottomPadding.preferred.value.roundToJs()
+        val preferredPadding = spec.bottomRowAnchor?.let { anchor ->
+            max(minBottomPadding, min(designedPadding, (anchor.value - navInset).roundToJs()))
+        } ?: designedPadding
 
-        val preferredPadding = spec.bottomPadding.preferred.value.roundToJs()
         val preferredGaps = IntArray(spec.rows.size) {
             spec.rows[it].gapAbove.preferred.value.roundToJs()
         }
 
-        // --- Pass 0: try the preferred spacing ------------------------------------------------
+        // The highest padding the stack may reach while its lift still counts as incidental.
+        val incidentalLiftCeiling = max(minBottomPadding, preferredPadding) + INCIDENTAL_LIFT_BUDGET
 
-        val context = SolveContext(
+        fun contextFor(toolbar: Float) = SolveContext(
             spec = spec,
             window = window,
             clearance = clearance,
             topInset = topInset,
             navTop = navTop,
             requiresImmersive = requiresImmersive,
-            toolbarHeight = toolbarHeight,
+            toolbarHeight = toolbar,
             minBottomPadding = minBottomPadding,
+            enclosureMaxPadding = incidentalLiftCeiling,
             windowHeight = h,
             windowWidth = w
         )
 
-        var best = context.evaluate(preferredPadding, preferredGaps)
-        var lifted = false
+        // --- Pass 0: try the preferred spacing ------------------------------------------------
+
         var evaluations = 1
+        var best = contextFor(nominalToolbarHeight).evaluate(preferredPadding, preferredGaps)
+
+        // Compaction only exists to fit the toolbar below a tall frame that is flush with the
+        // window top. If the full-height toolbar already lays out cleanly, the tall frame found
+        // another position and there is nothing to compact. The decision is still made once per
+        // window and applies to every aspect ratio.
+        val isCompactBand = inCompactBand && (best == null || best.collisions.isNotEmpty())
+        val toolbarHeight = if (isCompactBand) compactToolbarHeight else nominalToolbarHeight
+        val context = contextFor(toolbarHeight)
+        if (isCompactBand) {
+            evaluations++
+            best = context.evaluate(preferredPadding, preferredGaps)
+        }
+        var lifted = false
+
+        // --- Incidental lift to keep the primary frame flush -----------------------------------
+        // The preferred spacing is clean, but the primary frame had to shift down to clear the
+        // controls. A small lift of the stack is worth it only if it puts the frame back flush
+        // with the top bar. Beyond the incidental budget the stack keeps its preferred position
+        // and the frame keeps its shifted position.
+
+        val firstPass = best
+        val primaryId = spec.viewfinders.first().id
+        val primaryFlush = { candidate: Candidate ->
+            candidate.frames.getValue(primaryId).first <= topInset + 0.05f
+        }
+        if (firstPass != null && firstPass.collisions.isEmpty() && !primaryFlush(firstPass)) {
+            val search = RepairSearch(context, preferredPadding, preferredGaps)
+            search.sweepPadding(minBottomPadding, incidentalLiftCeiling, allowTightDaylight = false)
+            evaluations += search.evaluations
+            val flushed = search.best
+            if (flushed != null && primaryFlush(flushed)) {
+                lifted = flushed.bottomPadding > preferredPadding
+                best = flushed
+            }
+        }
 
         // --- Escalating repair, cheapest and least invasive first -----------------------------
 
@@ -308,7 +376,14 @@ object CameraLayoutSolver {
             }
 
             evaluations += search.evaluations
-            val repaired = search.best
+            // A collision decides how far the stack has to rise, and the incidental budget bounds
+            // how much further it may go. The search ranks frames first, so with the full
+            // CameraLayoutSpec.maxStackLift available it would otherwise spend all of it to keep a
+            // frame flush, where the layout prefers to shift the frame down.
+            val lowestClean = search.lowestAcceptablePadding
+            val repaired = lowestClean?.let {
+                search.bestAtOrBelow(max(incidentalLiftCeiling, it + INCIDENTAL_LIFT_BUDGET))
+            }
             if (repaired != null) {
                 lifted = repaired.bottomPadding > preferredPadding
                 best = repaired
@@ -341,6 +416,13 @@ object CameraLayoutSolver {
     // Candidate evaluation
     // -----------------------------------------------------------------------------------------
 
+    /**
+     * The top-start control's keep-out band as one frame sees it. A frame top collides with the
+     * control when it lies between [behindLimit] and [bottom] plus the clearance: lower than the
+     * control's visible top less the minimum gap, but not yet clear below it.
+     */
+    private class TopStartKeepOut(val bottom: Float, val behindLimit: Float)
+
     private class SolveContext(
         val spec: CameraLayoutSpec,
         val window: CameraWindow,
@@ -350,12 +432,72 @@ object CameraLayoutSolver {
         val requiresImmersive: Boolean,
         val toolbarHeight: Float,
         val minBottomPadding: Int,
+        /**
+         * Highest bottom padding at which a tall frame may enclose the stack: the preferred
+         * padding plus [INCIDENTAL_LIFT_BUDGET].
+         *
+         * Enclosing is what lets the stack keep its preferred position on screens where the tall
+         * frame cannot clear it from above. Offering it to a stack that has been lifted further
+         * would let the repair search raise the stack by up to [CameraLayoutSpec.maxStackLift]
+         * only to keep the primary frame flush, where the layout prefers to shift the frame down.
+         * Because the limit depends only on a candidate's padding, every pass places a given
+         * candidate identically.
+         */
+        val enclosureMaxPadding: Int,
         val windowHeight: Float,
         val windowWidth: Float
     ) {
         val enforceFixedTopStart: Boolean =
             spec.topStartPlacement == TopStartPlacement.FIXED_BELOW_TOP_BAR
         val fixedTopStartBottom: Float = topInset + spec.topStartHeight.value
+
+        /**
+         * Lowest frame top that still passes behind the top-start control rather than bisecting
+         * it: the control's visible top, less the minimum edge gap. Without a fixed control there
+         * is nothing to pass behind, so a frame top must sit flush below the top bar.
+         */
+        val behindTopStartLimit: Float = if (enforceFixedTopStart) {
+            topInset + max(0f, spec.topStartVisibleInset.value - spec.topStartMinEdgeGap.value)
+        } else {
+            topInset
+        }
+
+        /**
+         * Whether a [PlacementPolicy.BINARY_TOP_EDGE] frame of [rawHeight] has any position that
+         * starts below the top bar, high enough to pass behind the top-start control, and ends
+         * clear of the navigation bar. Only such a frame can enclose the control stack instead of
+         * expanding to the top of the window.
+         */
+        fun canEncloseStack(rawHeight: Float): Boolean {
+            val maxBottom = if (requiresImmersive) windowHeight else navTop
+            return topInset + rawHeight <= min(maxBottom, behindTopStartLimit + rawHeight) + 0.05f
+        }
+
+        /**
+         * Whether a [PlacementPolicy.BINARY_TOP_EDGE] frame of [rawHeight] still clears the
+         * bottom-most row when it starts below the top bar. The 0.05 guard absorbs float noise at
+         * the exact boundary.
+         */
+        private fun fitsBelowTopBar(rawHeight: Float): Boolean {
+            val maxBottom = if (requiresImmersive) windowHeight else navTop
+            return (topInset + rawHeight) <=
+                (maxBottom - minBottomPadding - toolbarHeight - clearance + 0.05f)
+        }
+
+        /**
+         * Lowest top at which [slot] counts as passing behind the top-start control rather than
+         * colliding with it.
+         *
+         * Only a tall frame that cannot clear the stack from above gets the allowance, because that
+         * is the one frame whose enclosing position depends on it. Every other frame is either
+         * flush with the top bar or clear of the control's keep-out band.
+         */
+        private fun behindLimitFor(slot: ViewfinderSlot, rawHeight: Float): Float =
+            if (slot.policy == PlacementPolicy.BINARY_TOP_EDGE && !fitsBelowTopBar(rawHeight)) {
+                behindTopStartLimit
+            } else {
+                topInset
+            }
 
         /**
          * Builds the control stack for one candidate spacing and places every frame against it.
@@ -392,21 +534,25 @@ object CameraLayoutSolver {
             val collisions = ArrayList<Collision>()
             val hardCollisions = ArrayList<Collision>()
             var minClearance = Float.POSITIVE_INFINITY
+            val mayEnclose = bottomPadding <= enclosureMaxPadding
 
             for (slot in spec.viewfinders) {
                 val rawHeight = windowWidth / slot.aspectRatio
-                val topStartBottom = effectiveTopStartBottom(slot, rawHeight, bands, frames)
-                val placed = place(slot, rawHeight, obstacles, frames, topStartBottom)
+                val keepOut = TopStartKeepOut(
+                    bottom = effectiveTopStartBottom(slot, rawHeight, bands, frames),
+                    behindLimit = behindLimitFor(slot, rawHeight)
+                )
+                val placed = place(slot, rawHeight, obstacles, frames, keepOut, mayEnclose)
                 frames[slot.id] = placed
                 collisions += intrusions(
                     slot.id,
                     placed,
                     obstacles,
                     clearance - COLLISION_TEST_SLACK,
-                    topStartBottom
+                    keepOut
                 )
-                hardCollisions += intrusions(slot.id, placed, obstacles, 0f, topStartBottom)
-                minClearance = min(minClearance, edgeClearance(placed, obstacles, topStartBottom))
+                hardCollisions += intrusions(slot.id, placed, obstacles, 0f, keepOut)
+                minClearance = min(minClearance, edgeClearance(placed, obstacles, keepOut))
             }
 
             return Candidate(
@@ -445,13 +591,19 @@ object CameraLayoutSolver {
             }
         }
 
-        /** Places one frame according to its policy, then resolves any collision. */
+        /**
+         * Places one frame according to its policy, then resolves any collision.
+         *
+         * @param mayEnclose whether a [PlacementPolicy.BINARY_TOP_EDGE] frame may enclose the
+         *   stack at this candidate's padding. See [enclosureMaxPadding].
+         */
         private fun place(
             slot: ViewfinderSlot,
             rawHeight: Float,
             obstacles: List<Obstacle>,
             placed: Map<String, Pair<Float, Float>>,
-            topStartBottom: Float
+            keepOut: TopStartKeepOut,
+            mayEnclose: Boolean
         ): Pair<Float, Float> = when (slot.policy) {
             PlacementPolicy.TOP_ALIGNED_PREFER_OBSTACLE_EDGE -> {
                 val rawBottom = topInset + rawHeight
@@ -471,10 +623,10 @@ object CameraLayoutSolver {
                 minimax(
                     rawHeight,
                     topInset,
-                    cappedBottom(rawHeight, topInset, navTop, topStartBottom),
+                    cappedBottom(rawHeight, topInset, navTop, keepOut.bottom),
                     preferred,
                     obstacles,
-                    topStartBottom
+                    keepOut
                 )
             }
 
@@ -493,31 +645,56 @@ object CameraLayoutSolver {
                 minimax(
                     rawHeight,
                     topInset,
-                    cappedBottom(rawHeight, topInset, navTop, topStartBottom),
+                    cappedBottom(rawHeight, topInset, navTop, keepOut.bottom),
                     preferred,
                     obstacles,
-                    topStartBottom
+                    keepOut
                 )
             }
 
             PlacementPolicy.BINARY_TOP_EDGE -> {
                 val maxBottom = if (requiresImmersive) windowHeight else navTop
-                // Would the frame still clear the bottom-most row if it started below the top bar?
-                // The 0.05 guard absorbs float noise at the exact boundary.
-                val fitsBelowTopBar = (topInset + rawHeight) <=
-                    (maxBottom - minBottomPadding - toolbarHeight - clearance + 0.05f)
-                if (!fitsBelowTopBar) {
-                    // Expand to the very top of the window. Partial overlap with the top bar is
-                    // never used: it reads as a mistake rather than a decision.
-                    0f to quantize(rawHeight)
+                if (!fitsBelowTopBar(rawHeight)) {
+                    // The frame cannot clear the stack from above, but it may still sit below the
+                    // top bar if it encloses the controls instead, staying high enough to pass
+                    // behind the top-start control and low enough to clear the navigation bar.
+                    val lowestBottom = min(maxBottom, keepOut.behindLimit + rawHeight)
+                    val enclosing = if (mayEnclose && canEncloseStack(rawHeight)) {
+                        minimax(
+                            rawHeight,
+                            topInset,
+                            lowestBottom,
+                            topInset + rawHeight,
+                            obstacles,
+                            keepOut
+                        )
+                    } else {
+                        null
+                    }
+                    if (
+                        enclosing != null &&
+                        intrusions(
+                            slot.id,
+                            enclosing,
+                            obstacles,
+                            clearance - COLLISION_TEST_SLACK,
+                            keepOut
+                        ).isEmpty()
+                    ) {
+                        enclosing
+                    } else {
+                        // Expand to the very top of the window. Partial overlap with the top bar is
+                        // never used: it reads as a mistake rather than a decision.
+                        0f to quantize(rawHeight)
+                    }
                 } else {
                     minimax(
                         rawHeight,
                         topInset,
-                        cappedBottom(rawHeight, topInset, maxBottom, topStartBottom),
+                        cappedBottom(rawHeight, topInset, maxBottom, keepOut.bottom),
                         topInset + rawHeight,
                         obstacles,
-                        topStartBottom
+                        keepOut
                     )
                 }
             }
@@ -530,6 +707,10 @@ object CameraLayoutSolver {
          * The eye compares dead space above the frame against dead space below it, and the top bar
          * band reads as black whether or not it holds icons. A frame allowed to drift freely ends
          * up looking bottom-justified even when it is technically collision-free.
+         *
+         * The navigation bar reads as black for the same reason, so the band below the frame is
+         * measured to the bottom of the window rather than to the top of the navigation bar.
+         * [maxBottom] still keeps the frame itself clear of the navigation bar.
          *
          * The top-justified position always stays reachable, even on a device already past the
          * balance point.
@@ -546,7 +727,7 @@ object CameraLayoutSolver {
             } else {
                 minTop
             }
-            val balancedTop = max(firstShiftedTop, (maxBottom - rawHeight) / 2f)
+            val balancedTop = max(firstShiftedTop, (windowHeight - rawHeight) / 2f)
             return max(minTop + rawHeight, min(maxBottom, balancedTop + rawHeight))
         }
 
@@ -564,7 +745,7 @@ object CameraLayoutSolver {
             maxBottom: Float,
             preferredBottom: Float,
             obstacles: List<Obstacle>,
-            topStartBottom: Float
+            keepOut: TopStartKeepOut
         ): Pair<Float, Float> {
             val lowerBound = min(maxBottom, minTop + rawHeight)
             val upperBound = maxBottom
@@ -575,7 +756,7 @@ object CameraLayoutSolver {
             candidates += upperBound
 
             if (enforceFixedTopStart) {
-                val afterTopStart = quantize(topStartBottom + clearance + rawHeight)
+                val afterTopStart = quantize(keepOut.bottom + clearance + rawHeight)
                 if (afterTopStart >= lowerBound && afterTopStart <= upperBound) {
                     candidates += afterTopStart
                 }
@@ -602,13 +783,7 @@ object CameraLayoutSolver {
             var bestBottom = lowerBound
             var bestCost = Float.POSITIVE_INFINITY
             for (candidate in candidates) {
-                val cost = penalty(
-                    candidate,
-                    rawHeight,
-                    preferredBottom,
-                    obstacles,
-                    topStartBottom
-                )
+                val cost = penalty(candidate, rawHeight, preferredBottom, obstacles, keepOut)
                 if (cost < bestCost) {
                     bestCost = cost
                     bestBottom = candidate
@@ -623,7 +798,7 @@ object CameraLayoutSolver {
             rawHeight: Float,
             preferredBottom: Float,
             obstacles: List<Obstacle>,
-            topStartBottom: Float
+            keepOut: TopStartKeepOut
         ): Float {
             val top = bottom - rawHeight
             var total = 0f
@@ -641,9 +816,9 @@ object CameraLayoutSolver {
                 }
             }
             if (enforceFixedTopStart) {
-                val keepOutBottom = topStartBottom + clearance
-                if (top > topInset + 0.05f && top < keepOutBottom) {
-                    val depth = min(top - topInset, keepOutBottom - top)
+                val keepOutBottom = keepOut.bottom + clearance
+                if (top > keepOut.behindLimit + 0.05f && top < keepOutBottom) {
+                    val depth = min(top - keepOut.behindLimit, keepOutBottom - top)
                     total += INTRUSION_COST + 8f * depth * depth
                 }
             }
@@ -656,7 +831,7 @@ object CameraLayoutSolver {
             frame: Pair<Float, Float>,
             obstacles: List<Obstacle>,
             margin: Float,
-            topStartBottom: Float
+            keepOut: TopStartKeepOut
         ): List<Collision> {
             val result = obstacles.filter { obstacle ->
                 val lo = obstacle.top - margin
@@ -665,8 +840,8 @@ object CameraLayoutSolver {
             }.mapTo(ArrayList()) { Collision(viewfinderId, it.id) }
             if (
                 enforceFixedTopStart &&
-                frame.first > topInset + 0.05f &&
-                frame.first < topStartBottom + margin
+                frame.first > keepOut.behindLimit + 0.05f &&
+                frame.first < keepOut.bottom + margin
             ) {
                 result += Collision(viewfinderId, "topStartContent")
             }
@@ -676,7 +851,7 @@ object CameraLayoutSolver {
         private fun edgeClearance(
             frame: Pair<Float, Float>,
             obstacles: List<Obstacle>,
-            topStartBottom: Float
+            keepOut: TopStartKeepOut
         ): Float {
             var smallest = Float.POSITIVE_INFINITY
             for (obstacle in obstacles) {
@@ -688,9 +863,9 @@ object CameraLayoutSolver {
                     if (distance < smallest) smallest = distance
                 }
             }
-            if (enforceFixedTopStart && frame.first > topInset + 0.05f) {
-                if (frame.first <= topStartBottom) return 0f
-                val distance = frame.first - topStartBottom
+            if (enforceFixedTopStart && frame.first > keepOut.behindLimit + 0.05f) {
+                if (frame.first <= keepOut.bottom) return 0f
+                val distance = frame.first - keepOut.bottom
                 if (distance < smallest) smallest = distance
             }
             return smallest
@@ -708,6 +883,11 @@ object CameraLayoutSolver {
      * strict: keep frames flush with the top bar first, then avoid moving the stack, then stay near
      * the designed spacing. A weighted sum would let a large regression in an important term be
      * bought off by small improvements in unimportant ones.
+     *
+     * [best] is the top-ranked candidate over everything visited, and the pruning and early exits
+     * below are built around it. The solver may instead take [bestAtOrBelow] to cap how far the
+     * stack rises. That only chooses among candidates already visited, so it never changes what the
+     * search evaluates.
      */
     private class RepairSearch(
         private val context: SolveContext,
@@ -717,6 +897,30 @@ object CameraLayoutSolver {
         var best: Candidate? = null
             private set
         private var bestScore: List<Float>? = null
+
+        /** The top-ranked acceptable candidate at each padding, under the ranking [best] uses. */
+        private val bestByPadding = HashMap<Int, Pair<Candidate, List<Float>>>()
+
+        /** The lowest padding at which any acceptable candidate was found, or null if none was. */
+        val lowestAcceptablePadding: Int?
+            get() = bestByPadding.keys.minOrNull()
+
+        /**
+         * The top-ranked acceptable candidate with a padding no higher than [maxPadding], or null
+         * if there is none. This is [best] whenever [best] qualifies. Otherwise equal ranks
+         * resolve to the lower padding.
+         */
+        fun bestAtOrBelow(maxPadding: Int): Candidate? {
+            val overall = best ?: return null
+            if (overall.bottomPadding <= maxPadding) return overall
+            var pick: Pair<Candidate, List<Float>>? = null
+            for (padding in bestByPadding.keys.sorted()) {
+                if (padding > maxPadding) break
+                val entry = bestByPadding.getValue(padding)
+                if (pick == null || isBetter(entry.second, pick.second)) pick = entry
+            }
+            return pick?.first
+        }
 
         /** Evaluations spent so far, across every rung. */
         var evaluations = 0
@@ -739,6 +943,42 @@ object CameraLayoutSolver {
         private fun rowClear(edge: Float, rowTop: Float, rowBottom: Float, clr: Float): Boolean =
             edge <= rowTop - clr || edge >= rowBottom + clr
 
+        /**
+         * Bottom edges at which the 9:16 frame encloses the stack from just below the top bar, or
+         * null when it has no such position. The pruning below has to admit these, or it would
+         * skip paddings that placement accepts.
+         */
+        private val enclosed916Bottoms: ClosedFloatingPointRange<Float>? = run {
+            val raw916H = context.windowWidth / (9f / 16f)
+            if (!context.canEncloseStack(raw916H)) return@run null
+            val maxBottom = if (context.requiresImmersive) context.windowHeight else context.navTop
+            val highest = min(maxBottom, context.behindTopStartLimit + raw916H)
+            min(highest, context.topInset + raw916H)..highest
+        }
+
+        /** The enclosed 9:16 bottom edges placement may use at [padding], or null. */
+        private fun enclosed916At(padding: Int): ClosedFloatingPointRange<Float>? =
+            if (padding <= context.enclosureMaxPadding) enclosed916Bottoms else null
+
+        /**
+         * Whether a row leaves at least one bottom edge in [range] clear of it. False when there
+         * is no range.
+         *
+         * This is a per-row necessary condition, which is what pruning needs: it can let through a
+         * stack whose rows block the range jointly, and [consider] then rejects it, but it never
+         * rejects a stack that has a clean enclosed position.
+         */
+        private fun leavesEnclosureRoom(
+            range: ClosedFloatingPointRange<Float>?,
+            rowTop: Float,
+            rowBottom: Float,
+            clr: Float
+        ): Boolean {
+            if (range == null) return false
+            return rowClear(range.start, rowTop, rowBottom, clr) ||
+                rowClear(range.endInclusive, rowTop, rowBottom, clr)
+        }
+
         fun sweepPadding(from: Int, to: Int, allowTightDaylight: Boolean) {
             if (!context.enforceFixedTopStart || rows.size != 4) {
                 for (padding in from..to) {
@@ -760,7 +1000,8 @@ object CameraLayoutSolver {
             val forcedFlush916 = !context.requiresImmersive && !fitsBelowTopBar
             val raw34Bottom = context.topInset + raw34H
             val firstShiftedTop34 = max(context.topInset, context.fixedTopStartBottom + clr)
-            val dropCap34 = max(firstShiftedTop34, (context.navTop - raw34H) / 2f) + raw34H
+            val dropCap34 =
+                max(firstShiftedTop34, (context.windowHeight - raw34H) / 2f) + raw34H
             val maxBot34 = max(raw34Bottom, min(context.navTop, dropCap34))
             val minShiftedBot34 = min(maxBot34, firstShiftedTop34 + raw34H)
 
@@ -780,20 +1021,18 @@ object CameraLayoutSolver {
                 val nzBot = sTop - preferredGaps[2]
                 val nzTop = nzBot - h3
                 if (nzTop < context.topInset) break
-                if (
-                    forcedFlush916 && !(
-                        rowClear(raw916H, lTop, lBot, clr) &&
-                            rowClear(raw916H, mTop, mBot, clr) &&
-                            rowClear(raw916H, sTop, sBot, clr) &&
-                            rowClear(raw916H, nzTop, nzBot, clr)
-                        )
-                ) {
-                    continue
-                }
                 fun clear4(b: Float): Boolean = rowClear(b, lTop, lBot, clr) &&
                     rowClear(b, mTop, mBot, clr) &&
                     rowClear(b, sTop, sBot, clr) &&
                     rowClear(b, nzTop, nzBot, clr)
+                if (forcedFlush916 && !clear4(raw916H)) {
+                    val enclosure = enclosed916At(padding)
+                    val enclosable = leavesEnclosureRoom(enclosure, lTop, lBot, clr) &&
+                        leavesEnclosureRoom(enclosure, mTop, mBot, clr) &&
+                        leavesEnclosureRoom(enclosure, sTop, sBot, clr) &&
+                        leavesEnclosureRoom(enclosure, nzTop, nzBot, clr)
+                    if (!enclosable) continue
+                }
 
                 var canPlace34 = clear4(raw34Bottom)
                 val bestPrimaryTop = best?.frames?.get(CameraViewfinderIds.RATIO_3_4)?.first
@@ -839,6 +1078,7 @@ object CameraLayoutSolver {
             val raw34Bottom = context.topInset + raw34H
             val raw916Bottom = (if (forcedFlush916) 0f else context.topInset) + raw916H
             val check916Raw = !context.requiresImmersive
+            val enclosedBottom916 = context.topInset + raw916H
 
             val h0 = context.toolbarHeight
             val h1 = rows[1].height.value
@@ -864,21 +1104,30 @@ object CameraLayoutSolver {
                 val lTop = lBot - h0
                 if (lTop - 8f - h1 - 8f - h2 - 8f - h3 < context.topInset) break
                 if (!rowClear(raw34Bottom, lTop, lBot, clr)) continue
-                if (check916Raw && !rowClear(raw916Bottom, lTop, lBot, clr)) continue
+                // A 9:16 frame that cannot clear the stack from above has a second zero-drop
+                // position when it may enclose the stack: flush below the top bar.
+                val enclosable916 = forcedFlush916 && enclosed916At(padding) != null
+                val lFlush = rowClear(raw916Bottom, lTop, lBot, clr)
+                val lEnclosed = enclosable916 && rowClear(enclosedBottom916, lTop, lBot, clr)
+                if (check916Raw && !lFlush && !lEnclosed) continue
 
                 var foundAtPad = false
                 for (v0 in g0) {
                     val mBot = lTop - v0
                     val mTop = mBot - h1
                     if (!rowClear(raw34Bottom, mTop, mBot, clr)) continue
-                    if (check916Raw && !rowClear(raw916Bottom, mTop, mBot, clr)) continue
+                    val mFlush = lFlush && rowClear(raw916Bottom, mTop, mBot, clr)
+                    val mEnclosed = lEnclosed && rowClear(enclosedBottom916, mTop, mBot, clr)
+                    if (check916Raw && !mFlush && !mEnclosed) continue
                     working[0] = v0
 
                     for (v1 in g1) {
                         val sBot = mTop - v1
                         val sTop = sBot - h2
                         if (!rowClear(raw34Bottom, sTop, sBot, clr)) continue
-                        if (check916Raw && !rowClear(raw916Bottom, sTop, sBot, clr)) continue
+                        val sFlush = mFlush && rowClear(raw916Bottom, sTop, sBot, clr)
+                        val sEnclosed = mEnclosed && rowClear(enclosedBottom916, sTop, sBot, clr)
+                        if (check916Raw && !sFlush && !sEnclosed) continue
                         working[1] = v1
 
                         for (v2 in g2) {
@@ -886,7 +1135,10 @@ object CameraLayoutSolver {
                             val nzTop = nzBot - h3
                             if (nzTop < context.topInset) continue
                             if (!rowClear(raw34Bottom, nzTop, nzBot, clr)) continue
-                            if (check916Raw && !rowClear(raw916Bottom, nzTop, nzBot, clr)) continue
+                            val nzFlush = sFlush && rowClear(raw916Bottom, nzTop, nzBot, clr)
+                            val nzEnclosed =
+                                sEnclosed && rowClear(enclosedBottom916, nzTop, nzBot, clr)
+                            if (check916Raw && !nzFlush && !nzEnclosed) continue
                             if (evaluations >= EVALUATION_BUDGET) break
                             working[2] = v2
                             consider(padding, working, allowTightDaylight = false)
@@ -944,7 +1196,8 @@ object CameraLayoutSolver {
             val forcedFlush916 = !context.requiresImmersive && !fitsBelowTopBar
             val raw34Bottom = context.topInset + raw34H
             val firstShiftedTop34 = max(context.topInset, context.fixedTopStartBottom + clr)
-            val dropCap34 = max(firstShiftedTop34, (context.navTop - raw34H) / 2f) + raw34H
+            val dropCap34 =
+                max(firstShiftedTop34, (context.windowHeight - raw34H) / 2f) + raw34H
             val maxBot34 = max(raw34Bottom, min(context.navTop, dropCap34))
             val minShiftedBot34 = min(maxBot34, firstShiftedTop34 + raw34H)
 
@@ -958,20 +1211,30 @@ object CameraLayoutSolver {
                 val lBot = context.navTop - padding
                 val lTop = lBot - h0
                 if (lTop - 8f - h1 - 8f - h2 - 8f - h3 < context.topInset) break
-                if (forcedFlush916 && !rowClear(raw916H, lTop, lBot, clr)) continue
+                // Track the two places a 9:16 that cannot clear the stack from above may land:
+                // flush with the window top, or enclosing the stack.
+                val enclosure = enclosed916At(padding)
+                val lFlush = rowClear(raw916H, lTop, lBot, clr)
+                val lEnclosed = leavesEnclosureRoom(enclosure, lTop, lBot, clr)
+                if (forcedFlush916 && !lFlush && !lEnclosed) continue
 
                 for (v0 in g0) {
                     val mBot = lTop - v0
                     val mTop = mBot - h1
                     if (mTop - 8f - h2 - 8f - h3 < context.topInset) continue
-                    if (forcedFlush916 && !rowClear(raw916H, mTop, mBot, clr)) continue
+                    val mFlush = lFlush && rowClear(raw916H, mTop, mBot, clr)
+                    val mEnclosed = lEnclosed && leavesEnclosureRoom(enclosure, mTop, mBot, clr)
+                    if (forcedFlush916 && !mFlush && !mEnclosed) continue
                     working[0] = v0
 
                     for (v1 in g1) {
                         val sBot = mTop - v1
                         val sTop = sBot - h2
                         if (sTop - 8f - h3 < context.topInset) continue
-                        if (forcedFlush916 && !rowClear(raw916H, sTop, sBot, clr)) continue
+                        val sFlush = mFlush && rowClear(raw916H, sTop, sBot, clr)
+                        val sEnclosed =
+                            mEnclosed && leavesEnclosureRoom(enclosure, sTop, sBot, clr)
+                        if (forcedFlush916 && !sFlush && !sEnclosed) continue
 
                         fun clear3Rows(b: Float): Boolean = rowClear(b, lTop, lBot, clr) &&
                             rowClear(b, mTop, mBot, clr) &&
@@ -1006,7 +1269,10 @@ object CameraLayoutSolver {
                             val nzBot = sTop - v2
                             val nzTop = nzBot - h3
                             if (nzTop < context.topInset) continue
-                            if (forcedFlush916 && !rowClear(raw916H, nzTop, nzBot, clr)) continue
+                            val nzFlush = sFlush && rowClear(raw916H, nzTop, nzBot, clr)
+                            val nzEnclosed =
+                                sEnclosed && leavesEnclosureRoom(enclosure, nzTop, nzBot, clr)
+                            if (forcedFlush916 && !nzFlush && !nzEnclosed) continue
                             working[2] = v2
                             consider(padding, working, allowTightDaylight)
                         }
@@ -1082,6 +1348,10 @@ object CameraLayoutSolver {
             if (current == null || isBetter(ranked, current)) {
                 bestScore = ranked
                 best = candidate
+            }
+            val atPadding = bestByPadding[padding]
+            if (atPadding == null || isBetter(ranked, atPadding.second)) {
+                bestByPadding[padding] = candidate to ranked
             }
         }
 

@@ -277,11 +277,9 @@ class CameraLayoutSolverPropertyTest {
         // control.
         Grid.inScope().forEach { window ->
             val solution = solutionFor(window)
-            val bottomLimit = if (solution.requiresImmersive) {
-                window.height.value
-            } else {
-                window.height.value - window.navInset.value
-            }
+            // The navigation bar reads as black, so the band below a frame is measured to the
+            // bottom of the window, matching the solver's top-weighting cap.
+            val bottomLimit = window.height.value
             val firstShiftedTop = if (
                 spec.topStartPlacement == TopStartPlacement.FIXED_BELOW_TOP_BAR
             ) {
@@ -332,15 +330,16 @@ class CameraLayoutSolverPropertyTest {
      *
      * | evaluations | windows |
      * |-------------|---------|
-     * | 1           | 897     |
-     * | 2 to 10     | 120     |
-     * | 11 to 100   | 545     |
-     * | over 1000   | 6       |
+     * | 1           | 354     |
+     * | 2 to 10     | 256     |
+     * | 11 to 100   | 944     |
+     * | 101 to 1000 | 14      |
+     * | over 1000   | 0       |
      *
-     * So the designed layout already fits on 57% of supported windows with no search at all, and
-     * only 6 windows in 1,568 ever pay for a full gap sweep. That is worth stating explicitly,
-     * because the shape of this distribution is the reason the search is not worth optimising
-     * further: the expensive path is rare and already bounded.
+     * So 1,554 of 1,568 supported windows cost at most 100 evaluations, and none costs more than
+     * 1,000. That is worth stating explicitly, because the shape of this distribution is the
+     * reason the search is not worth optimising further: the expensive path is rare and already
+     * bounded.
      */
     @Test
     fun supportedGeometryIsSolvedWithinAKnownEvaluationBound() {
@@ -356,10 +355,10 @@ class CameraLayoutSolverPropertyTest {
             }
         }
 
-        // One full gap sweep is 9 x 9 x 13 = 1,053 candidates, and the worst supported window costs
-        // exactly one of those plus the padding sweep that preceded it. The bound is the measured
-        // worst case with a little headroom, not a target: it is here so that a change which makes
-        // the search enter the gap sweep at more than one padding fails loudly.
+        // A gap sweep at a single padding is at most 9 x 9 x 13 = 1,053 candidates, and the worst
+        // supported window costs 938. The bound is that measured worst case with a little
+        // headroom, not a target: it is here so that a change which makes the search markedly
+        // more expensive fails loudly.
         assertWithMessage("worst window %s cost %s evaluations", worstWindow?.describe(), worst)
             .that(worst)
             .isAtMost(1_100)

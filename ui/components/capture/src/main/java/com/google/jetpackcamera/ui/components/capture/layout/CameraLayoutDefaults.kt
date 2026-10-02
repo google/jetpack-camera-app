@@ -90,8 +90,19 @@ object CameraLayoutDefaults {
     /** Preferred padding below the bottom toolbar. */
     val BottomPadding = 30.dp
 
-    /** Floor for the padding below the bottom toolbar. */
+    /**
+     * Floor for the padding below the bottom toolbar. Above a navigation bar that extends higher
+     * than the bottom gesture zone, the floor is [MinControlClearance] instead.
+     */
     val MinBottomPadding = 8.dp
+
+    /**
+     * Highest the bottom toolbar's lower edge sits above the bottom of the window at the preferred
+     * padding: [BottomPadding] above a 24.dp gesture navigation bar. A 48.dp 3-button navigation
+     * bar reduces the padding to 6.dp instead of raising the controls, so both navigation modes
+     * prefer the same control positions.
+     */
+    val BottomRowAnchor = 54.dp
 
     /** Required daylight between a viewfinder edge and any control row. */
     val MinControlClearance = 4.dp
@@ -103,10 +114,19 @@ object CameraLayoutDefaults {
     val MaxStackLift = 72.dp
 
     /**
-     * Reserved height below the top bar for the top-start control (`8.dp` top offset + `40.dp`
-     * button height) when [TopStartPlacement.FIXED_BELOW_TOP_BAR] is active.
+     * Reserved height below the top bar for the top-start control's 48.dp touch target when
+     * [TopStartPlacement.FIXED_BELOW_TOP_BAR] is active.
      */
     val TopStartHeight = 48.dp
+
+    /** Inset of the 40.dp visible top-start button within its 48.dp touch target. */
+    val TopStartVisibleInset = 4.dp
+
+    /**
+     * Minimum gap between a viewfinder top edge that passes behind the top-start button and the
+     * button's visible top.
+     */
+    val TopStartMinEdgeGap = 1.dp
 
     // Relative cost of a viewfinder edge intruding on each row. The shutter is the control the user
     // reaches for without looking, so it is protected hardest; the mode switcher is the most
@@ -210,11 +230,14 @@ object CameraLayoutDefaults {
         minControlClearance = MinControlClearance,
         minInteractiveTouchTarget = minInteractiveTouchTarget,
         bottomPadding = GapRange(MinBottomPadding, BottomPadding),
+        bottomRowAnchor = BottomRowAnchor,
         maxStackLift = MaxStackLift,
         enforceTopWeighting = true,
         toolbarCompaction = toolbarCompaction,
         topStartPlacement = topStartPlacement,
         topStartHeight = topStartHeight,
+        topStartVisibleInset = TopStartVisibleInset,
+        topStartMinEdgeGap = TopStartMinEdgeGap,
         groupingRule = GroupingRule(
             rowId = CameraRowIds.CAPTURE_ROW,
             tightenedGapAbove = ZoomToCaptureGroupedGap

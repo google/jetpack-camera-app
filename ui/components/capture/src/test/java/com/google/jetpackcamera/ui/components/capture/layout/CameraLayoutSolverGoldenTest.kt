@@ -15,19 +15,20 @@
  */
 package com.google.jetpackcamera.ui.components.capture.layout
 
+import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
 /**
- * Pins [CameraLayoutSolver] to the reference implementation the layout design was reviewed against.
+ * Pins [CameraLayoutSolver] to the layouts the design was reviewed against.
  *
  * The design was validated interactively in a browser prototype before any of this code existed,
- * and the layouts that prototype produced are what reviewers actually signed off on. The fixture in
- * `test/resources/layout/solver_golden.txt` is a verbatim capture of those solutions for every
- * device window in the evaluation set, so it travels with the repository and these tests need
- * nothing external to run. A refactor that quietly changes where the shutter button lands fails
- * here rather than in someone's hands.
+ * and the fixture in `test/resources/layout/solver_golden.txt` began as a verbatim capture of that
+ * prototype's solutions for every device window in the evaluation set. Cases whose layout later
+ * changed on purpose were regenerated from this solver, and the fixture header lists each change.
+ * The fixture travels with the repository, so these tests need nothing external to run. A refactor
+ * that quietly changes where the shutter button lands fails here rather than in someone's hands.
  *
  * The solver deliberately differs from the prototype in two respects, neither of which is visible
  * in this fixture: it refuses to enter the compact-toolbar band when the compacted toolbar would
@@ -146,6 +147,66 @@ class CameraLayoutSolverGoldenTest {
             assertWithMessage("%s collisions", case.label)
                 .that(solution.collisions)
                 .isEmpty()
+        }
+    }
+
+    /**
+     * The design reference for a 360 x 740 window, checked independently of the fixture so that
+     * regenerating the fixture cannot quietly lose it.
+     *
+     * Both navigation modes share one layout. The full-height toolbar stays where gesture
+     * navigation puts it, the primary frame shifts down to clear the top-start control and the
+     * controls, the square frame centres in the primary frame's area before shifting down, and the
+     * tall frame passes behind the top-start control with its bottom edge below the bottom row.
+     */
+    @Test
+    fun window360x740MatchesTheDesignReference() {
+        val spec = CameraLayoutDefaults.spec()
+        val topInset = 48f
+        listOf(24f, 48f).forEach { navInset ->
+            val window = CameraWindow(
+                width = 360.dp,
+                height = 740.dp,
+                topInset = topInset.dp,
+                navInset = navInset.dp,
+                gestureInset = 16.dp
+            )
+            val solution = CameraLayoutSolver.solve(spec, window)
+            val label = "nav $navInset"
+
+            assertWithMessage("%s collisions", label).that(solution.collisions).isEmpty()
+            assertWithMessage("%s toolbar height", label)
+                .that(solution.toolbarHeight)
+                .isEqualTo(CameraLayoutDefaults.BottomToolbarHeight)
+
+            fun assertBand(bands: Map<String, DpRange>, id: String, top: Float, bottom: Float) {
+                val band = bands.getValue(id)
+                assertWithMessage("%s %s top", label, id)
+                    .that(band.top.value.toDouble())
+                    .isWithin(tolerance).of(top.toDouble())
+                assertWithMessage("%s %s bottom", label, id)
+                    .that(band.bottom.value.toDouble())
+                    .isWithin(tolerance).of(bottom.toDouble())
+            }
+            assertBand(solution.rowBands, CameraRowIds.ZOOM_BAR, 376f, 424f)
+            assertBand(solution.rowBands, CameraRowIds.CAPTURE_ROW, 456f, 542f)
+            assertBand(solution.rowBands, CameraRowIds.MODE_SWITCHER, 566f, 598f)
+            assertBand(solution.rowBands, CameraRowIds.BOTTOM_TOOLBAR, 622f, 686f)
+            assertBand(solution.viewfinders, CameraViewfinderIds.RATIO_3_4, 122f, 602f)
+            assertBand(solution.viewfinders, CameraViewfinderIds.RATIO_1_1, 186f, 546f)
+
+            // The reference draws the tall frame 1 dp above the top-start control's visible top.
+            // Any top from the top bar down to that limit passes behind the control.
+            val tall = solution.viewfinders.getValue(CameraViewfinderIds.RATIO_9_16)
+            val behindTopStartLimit = topInset + CameraLayoutDefaults.TopStartVisibleInset.value -
+                CameraLayoutDefaults.TopStartMinEdgeGap.value
+            assertWithMessage("%s 9:16 top", label).that(tall.top.value).isAtLeast(topInset)
+            assertWithMessage("%s 9:16 top", label)
+                .that(tall.top.value)
+                .isAtMost(behindTopStartLimit)
+            assertWithMessage("%s 9:16 height", label)
+                .that((tall.bottom - tall.top).value.toDouble())
+                .isWithin(tolerance).of(640.0)
         }
     }
 

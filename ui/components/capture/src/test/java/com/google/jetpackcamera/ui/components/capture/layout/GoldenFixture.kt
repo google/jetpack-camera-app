@@ -36,7 +36,8 @@ internal data class GoldenCase(
 }
 
 /**
- * Loads the golden fixture captured from the reference prototype.
+ * Loads the golden fixture: solutions first captured from the reference prototype, with the cases
+ * whose layout later changed on purpose regenerated from [CameraLayoutSolver].
  *
  * The fixture is plain delimited text rather than JSON so that reading it needs no parser
  * dependency, and so that a change to the layout contract shows up as a readable diff in review.
@@ -53,7 +54,7 @@ internal object GoldenFixture {
                     .firstOrNull { it.path.endsWith("src/test/resources$RESOURCE") }
                     ?.inputStream()
         ) {
-            "Missing golden fixture at $RESOURCE. Regenerate it with scratch/solver_extract."
+            "Missing golden fixture at $RESOURCE."
         }
         return stream.bufferedReader().useLines { lines ->
             lines.map { it.trim() }
