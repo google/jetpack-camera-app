@@ -168,6 +168,25 @@ enum class ToolbarCompaction {
 }
 
 /**
+ * How the top-start control slot (such as the close button) is positioned relative to the top bar
+ * and the active viewfinder.
+ */
+enum class TopStartPlacement {
+    /**
+     * Keep the top-start control at a fixed window coordinate immediately below the top bar across
+     * all aspect ratios, enforcing a top-edge keep-out zone so a downward-shifted viewfinder never
+     * bisects the control.
+     */
+    FIXED_BELOW_TOP_BAR,
+
+    /**
+     * Attach the top-start control to the top-start corner of the active viewfinder so it moves
+     * vertically with the preview frame.
+     */
+    VIEWFINDER_TOP_START
+}
+
+/**
  * Pulls a row closer to the row above it when no viewfinder border runs between them.
  *
  * On mid-height screens a frame edge often lands below the identified row, putting that row inside
@@ -187,11 +206,16 @@ data class GroupingRule(val rowId: String, val tightenedGapAbove: Dp)
  * @param rows control rows, bottom-up.
  * @param viewfinders the frames that must all be placed against the same stationary [rows].
  * @param minControlClearance required daylight between any viewfinder edge and any control row.
+ * @param minInteractiveTouchTarget minimum interactive touch target height for compacted controls.
  * @param bottomPadding padding below the bottom-most row, between the two bounds given.
  * @param maxStackLift how far the solver may raise the whole stack as a last resort.
  * @param enforceTopWeighting cap a downward shift so the black band above a frame never exceeds the
  *   band below it.
  * @param toolbarCompaction strategy for the mid-height toolbar case.
+ * @param topStartPlacement how the top-start control is positioned relative to the top bar and
+ *   viewfinder.
+ * @param topStartHeight reserved height below the top bar for the top-start control when
+ *   [topStartPlacement] is [TopStartPlacement.FIXED_BELOW_TOP_BAR].
  * @param groupingRule optional visual grouping adjustment applied while ranking repair candidates.
  */
 data class CameraLayoutSpec(
@@ -203,6 +227,8 @@ data class CameraLayoutSpec(
     val maxStackLift: Dp = 72.dp,
     val enforceTopWeighting: Boolean = true,
     val toolbarCompaction: ToolbarCompaction = ToolbarCompaction.COMPACT_TOOLBAR,
+    val topStartPlacement: TopStartPlacement = TopStartPlacement.FIXED_BELOW_TOP_BAR,
+    val topStartHeight: Dp = 48.dp,
     val groupingRule: GroupingRule? = null
 ) {
     init {

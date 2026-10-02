@@ -136,6 +136,19 @@ class CameraLayoutSolverGoldenTest {
         }
     }
 
+    @Test
+    fun viewfinderTopStartModeIsCollisionFreeAcrossEvaluationSet() {
+        val spec = CameraLayoutDefaults.spec(
+            topStartPlacement = TopStartPlacement.VIEWFINDER_TOP_START
+        )
+        cases.forEach { case ->
+            val solution = CameraLayoutSolver.solve(spec, case.window)
+            assertWithMessage("%s collisions", case.label)
+                .that(solution.collisions)
+                .isEmpty()
+        }
+    }
+
     private fun forEachCase(block: (GoldenCase, CameraLayoutSolution) -> Unit) {
         val spec = CameraLayoutDefaults.spec()
         cases.forEach { case -> block(case, CameraLayoutSolver.solve(spec, case.window)) }

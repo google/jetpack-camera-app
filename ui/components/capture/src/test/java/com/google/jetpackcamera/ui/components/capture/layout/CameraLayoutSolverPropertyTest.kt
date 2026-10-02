@@ -272,7 +272,9 @@ class CameraLayoutSolverPropertyTest {
     @Test
     fun aDownwardShiftIsNeverBottomJustified() {
         // A frame allowed to drift freely ends up looking bottom-heavy even when it is technically
-        // collision free. The black band above a frame must never exceed the band below it.
+        // collision free. The black band above a frame must never exceed the band below it unless
+        // the frame is pinned to the minimum shifted position required to clear the fixed top-start
+        // control.
         Grid.inScope().forEach { window ->
             val solution = solutionFor(window)
             val bottomLimit = if (solution.requiresImmersive) {
@@ -280,10 +282,17 @@ class CameraLayoutSolverPropertyTest {
             } else {
                 window.height.value - window.navInset.value
             }
+            val firstShiftedTop = if (
+                spec.topStartPlacement == TopStartPlacement.FIXED_BELOW_TOP_BAR
+            ) {
+                window.topInset.value + spec.topStartHeight.value + spec.minControlClearance.value
+            } else {
+                window.topInset.value
+            }
             solution.viewfinders.forEach { (id, band) ->
                 val above = band.top.value
                 val below = bottomLimit - band.bottom.value
-                if (above > window.topInset.value + 0.05f) {
+                if (above > firstShiftedTop + 0.05f) {
                     assertWithMessage(
                         "%s black above=%s below=%s at %s",
                         id,
@@ -294,6 +303,21 @@ class CameraLayoutSolverPropertyTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun viewfinderTopStartPlacementIsAlsoCollisionFreeAcrossInScopeGrid() {
+        val vfSpec = CameraLayoutDefaults.spec(
+            topStartPlacement = TopStartPlacement.VIEWFINDER_TOP_START
+        )
+        val failures = Grid.inScope()
+            .map { it to CameraLayoutSolver.solve(vfSpec, it) }
+            .filter { (_, solution) -> solution.collisions.isNotEmpty() }
+            .map { (window, solution) -> "${window.describe()} -> ${solution.collisions}" }
+            .take(10)
+            .toList()
+
+        assertThat(failures).isEmpty()
     }
 
     /**
