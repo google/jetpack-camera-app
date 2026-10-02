@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -32,7 +33,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
+import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
+import com.google.jetpackcamera.ui.components.capture.layout.TopStartPlacement
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -229,6 +237,132 @@ class CaptureLayoutPositionTest {
     }
 
     /**
+     * Verifies that [PreviewLayout] supports both [TopStartPlacement.FIXED_BELOW_TOP_BAR] (default,
+     * where `topStartContent` stays anchored directly below the top bar across aspect ratios) and
+     * [TopStartPlacement.VIEWFINDER_TOP_START] (where `topStartContent` tracks the active
+     * viewfinder's top edge).
+     */
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Config(qualifiers = "w412dp-h915dp")
+    @Test
+    fun topStartContent_supportsFixedBelowTopBarAndViewfinderTopStart() {
+        var aspectRatio by mutableStateOf(3f / 4f)
+        var placement by mutableStateOf(TopStartPlacement.FIXED_BELOW_TOP_BAR)
+
+        composeTestRule.setContent {
+            PreviewLayout(
+                viewfinder = { vfModifier ->
+                    Box(
+                        vfModifier
+                            .testTag(VIEWFINDER_TAG)
+                            .fillMaxWidth()
+                            .height(412.dp / aspectRatio)
+                    )
+                },
+                topStartContent = { topStartModifier ->
+                    Box(
+                        topStartModifier
+                            .testTag(TOP_START_TAG)
+                            .size(48.dp)
+                    )
+                },
+                topStartPlacement = placement,
+                captureButton = {
+                    Box(
+                        Modifier
+                            .testTag(CAPTURE_BUTTON_TAG)
+                            .size(CAPTURE_BUTTON_SIZE)
+                    )
+                },
+                imageWell = {},
+                flipCameraButton = {},
+                zoomLevelDisplay = {},
+                elapsedTimeDisplay = {},
+                quickSettingsButton = {},
+                indicatorRow = {},
+                captureModeToggle = {},
+                quickSettingsOverlay = {},
+                debugOverlay = {},
+                debugVisibilityWrapper = { it() },
+                screenFlashOverlay = {},
+                snackBar = { _, _ -> }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        val topStartFixed34 = topOf(TOP_START_TAG)
+        val vfTop34 = topOf(VIEWFINDER_TAG)
+        assertThat(topStartFixed34).isWithin(TOLERANCE).of(48f)
+        assertThat(vfTop34).isWithin(TOLERANCE).of(48f)
+
+        // Switching to 1:1 under FIXED_BELOW_TOP_BAR moves the viewfinder down, but keeps
+        // topStartContent stationary at 48dp below the top bar.
+        aspectRatio = 1f
+        composeTestRule.waitForIdle()
+        val topStartFixed11 = topOf(TOP_START_TAG)
+        val vfTop11 = topOf(VIEWFINDER_TAG)
+        assertThat(topStartFixed11).isEqualTo(topStartFixed34)
+        assertThat(vfTop11).isGreaterThan(topStartFixed11 + 48f)
+
+        // Switching to VIEWFINDER_TOP_START aligns topStartContent with the 1:1 viewfinder top.
+        placement = TopStartPlacement.VIEWFINDER_TOP_START
+        composeTestRule.waitForIdle()
+        val topStartVf11 = topOf(TOP_START_TAG)
+        val vfTop11ViewfinderMode = topOf(VIEWFINDER_TAG)
+        assertThat(topStartVf11).isWithin(TOLERANCE).of(vfTop11ViewfinderMode)
+        assertThat(topStartVf11).isGreaterThan(topStartFixed11)
+    }
+
+    /**
+     * Verifies that when the adaptive solver compacts the bottom toolbar (e.g. on an S9 with
+     * 3-button navigation where `toolbarHeight = 44.dp`), [ToggleSwitch] and
+     * [ToggleQuickSettingsButton] scale down uniformly in both width and height.
+     */
+    @Test
+    fun bottomToolbarControls_scaleProportionally_whenToolbarIsCompacted() {
+        val s9ThreeButtonWindow = CameraWindow(
+            width = 360.dp,
+            height = 740.dp,
+            topInset = 48.dp,
+            navInset = 48.dp,
+            gestureInset = 24.dp
+        )
+        val compactSolution = CameraLayoutSolver.solve(
+            spec = CameraLayoutDefaults.spec(),
+            window = s9ThreeButtonWindow
+        )
+        assertThat(compactSolution.toolbarHeight.value).isWithin(TOLERANCE).of(44f)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalCameraLayoutSolution provides compactSolution) {
+                Box {
+                    ToggleSwitch(
+                        checked = false,
+                        onCheckedChange = {},
+                        modifier = Modifier.testTag(TOGGLE_SWITCH_TAG)
+                    )
+                    ToggleQuickSettingsButton(
+                        isOpen = false,
+                        onClick = {}
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val expectedScale = 44f / 64f
+        val switchBounds =
+            composeTestRule.onNodeWithTag(TOGGLE_SWITCH_TAG).getUnclippedBoundsInRoot()
+        assertThat(switchBounds.width.value).isWithin(TOLERANCE).of(116f * expectedScale)
+        assertThat(switchBounds.height.value).isWithin(TOLERANCE).of(64f * expectedScale)
+
+        val quickSettingsBounds =
+            composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).getUnclippedBoundsInRoot()
+        assertThat(quickSettingsBounds.width.value).isWithin(TOLERANCE).of(48f * expectedScale)
+        assertThat(quickSettingsBounds.height.value).isWithin(TOLERANCE).of(56f * expectedScale)
+    }
+
+    /**
      * On a short 16:9 portrait handheld (360x640dp), the adaptive solver enters immersive mode
      * and places the control stack at the golden reference coordinates (captureRow = 380..466dp,
      * centered 80dp button at 383dp) while keeping the zoom bar on screen.
@@ -248,6 +382,8 @@ class CaptureLayoutPositionTest {
         const val CAPTURE_BUTTON_TAG = "test_capture_button"
         const val ZOOM_BAR_TAG = "test_zoom_bar"
         const val VIEWFINDER_TAG = "test_viewfinder"
+        const val TOP_START_TAG = "test_top_start"
+        const val TOGGLE_SWITCH_TAG = "test_toggle_switch"
         val CAPTURE_BUTTON_SIZE = 80.dp
         val ZOOM_BAR_HEIGHT = 48.dp
         val CAROUSEL_HEIGHT = 32.dp
@@ -256,7 +392,7 @@ class CaptureLayoutPositionTest {
 
         /**
          * Solver preferred spacing on 360x800dp:
-         * 800 - 30 (bottom padding) - 64 (toolbar) - 24 - 32 (mode switcher) - 24 - 86 (capture row)
+         * 800 - 30 (bottom padding) - 64 (toolbar) - 24 - 32 (mode switcher) - 24 - 86 (capture)
          * places the top of the 86dp shutter row at 540dp, and the centered 80dp capture button at
          * 543dp.
          */

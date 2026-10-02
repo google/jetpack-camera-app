@@ -80,6 +80,7 @@ import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
 import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
 import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
+import com.google.jetpackcamera.ui.components.capture.layout.TopStartPlacement
 
 /**
  * Height of the shutter row (capture button, image well and flip camera button) as specified by
@@ -160,10 +161,14 @@ private val LOWER_SECTION_HORIZONTAL_PADDING = 16.dp
  * never moves the surrounding controls.
  * @param quickSettingsOverlay the quick settings overlay composable
  * @param debugOverlay the debug overlay composable
- * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug settings
+ * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug
+ * settings
  * @param screenFlashOverlay the screen flash overlay composable
  * @param snackBar the snack bar composable for showing messages
- * @param topStartContent optional composable content aligned to the top-start of the viewfinder
+ * @param topStartContent optional composable content placed at the top-start of the capture screen
+ * @param topStartPlacement controls whether [topStartContent] stays fixed directly below the top
+ * status/indicator bar ([TopStartPlacement.FIXED_BELOW_TOP_BAR], default) or tracks the top-start
+ * corner of the active viewfinder ([TopStartPlacement.VIEWFINDER_TOP_START])
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Suppress("DEPRECATION")
@@ -192,7 +197,8 @@ fun PreviewLayout(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
-    topStartContent: @Composable (Modifier) -> Unit = {}
+    topStartContent: @Composable (Modifier) -> Unit = {},
+    topStartPlacement: TopStartPlacement = TopStartPlacement.FIXED_BELOW_TOP_BAR
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
@@ -238,6 +244,7 @@ fun PreviewLayout(
                         windowHeight = maxHeight,
                         viewfinder = viewfinder,
                         topStartContent = topStartContent,
+                        topStartPlacement = topStartPlacement,
                         indicatorRow = indicatorRow,
                         elapsedTimeDisplay = elapsedTimeDisplay,
                         zoomControls = zoomLevelDisplay,
@@ -335,6 +342,7 @@ fun PreviewLayout(
 
 private enum class CaptureSlotId {
     Viewfinder,
+    TopStartContent,
     TopBar,
     ElapsedTime,
     ZoomBar,
@@ -350,6 +358,7 @@ private fun AdaptivePortraitCaptureLayout(
     windowHeight: Dp,
     viewfinder: @Composable (Modifier) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit,
+    topStartPlacement: TopStartPlacement,
     indicatorRow: @Composable (Modifier) -> Unit,
     elapsedTimeDisplay: @Composable (Modifier) -> Unit,
     zoomControls: @Composable (Modifier) -> Unit,
@@ -393,8 +402,11 @@ private fun AdaptivePortraitCaptureLayout(
     // contractually the row's *reserved* height, so that showing or hiding a row's content never
     // moves the rows around it. Measuring the children and re-solving would both break that
     // guarantee and turn the solve into a per-measure-pass cost.
-    val spec = remember(minTouchTarget) {
-        CameraLayoutDefaults.spec(minInteractiveTouchTarget = minTouchTarget)
+    val spec = remember(minTouchTarget, topStartPlacement) {
+        CameraLayoutDefaults.spec(
+            minInteractiveTouchTarget = minTouchTarget,
+            topStartPlacement = topStartPlacement
+        )
     }
     val solution = remember(spec, window) { CameraLayoutSolver.solve(spec, window) }
 
@@ -406,7 +418,10 @@ private fun AdaptivePortraitCaptureLayout(
             content = {
                 Box(modifier = Modifier.layoutId(CaptureSlotId.Viewfinder)) {
                     viewfinder(Modifier)
-                    topStartContent(Modifier.align(Alignment.TopStart))
+                }
+
+                Box(modifier = Modifier.layoutId(CaptureSlotId.TopStartContent)) {
+                    topStartContent(Modifier)
                 }
 
                 Box(
@@ -532,6 +547,9 @@ private fun AdaptivePortraitCaptureLayout(
             val topBarPlaceable = measurables
                 .firstOrNull { it.layoutId == CaptureSlotId.TopBar }
                 ?.measure(fullWidthLooseHeight)
+            val topStartPlaceable = measurables
+                .firstOrNull { it.layoutId == CaptureSlotId.TopStartContent }
+                ?.measure(looseConstraints)
             val elapsedTimePlaceable = measurables
                 .firstOrNull { it.layoutId == CaptureSlotId.ElapsedTime }
                 ?.measure(looseConstraints)
@@ -546,16 +564,32 @@ private fun AdaptivePortraitCaptureLayout(
                 .firstOrNull { it.layoutId == CaptureSlotId.Viewfinder }
                 ?.measure(looseConstraints)
 
+            val activeVfTopDp = viewfinderPlaceable?.let { vf ->
+                if (vf.height in 1 until constraints.maxHeight) {
+                    val ratio = vf.width.toFloat() / vf.height.toFloat()
+                    solution.viewfinderBandFor(ratio, spec.viewfinders)?.top
+                } else {
+                    null
+                }
+            }
+
             layout(constraints.maxWidth, constraints.maxHeight) {
                 viewfinderPlaceable?.let { vf ->
-                    val vfY = if (vf.height in 1 until constraints.maxHeight) {
-                        val ratio = vf.width.toFloat() / vf.height.toFloat()
-                        solution.viewfinderBandFor(ratio, spec.viewfinders)?.top?.roundToPx() ?: 0
-                    } else {
-                        0
-                    }
+                    val vfY = activeVfTopDp?.roundToPx() ?: 0
                     val vfX = (constraints.maxWidth - vf.width) / 2
                     vf.placeRelative(vfX, vfY)
+                }
+
+                topStartPlaceable?.let { topStart ->
+                    val topStartX = viewfinderPlaceable?.let { vf ->
+                        (constraints.maxWidth - vf.width) / 2
+                    } ?: 0
+                    val topStartY = when (topStartPlacement) {
+                        TopStartPlacement.FIXED_BELOW_TOP_BAR -> topBarHeight.roundToPx()
+                        TopStartPlacement.VIEWFINDER_TOP_START ->
+                            activeVfTopDp?.roundToPx() ?: topBarHeight.roundToPx()
+                    }
+                    topStart.placeRelative(topStartX, topStartY)
                 }
 
                 topBarPlaceable?.placeRelative(0, 0)
