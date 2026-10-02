@@ -69,9 +69,9 @@ import com.google.jetpackcamera.settings.ui.ConcurrentCameraSetting
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
-import com.google.jetpackcamera.settings.ui.LOCATION_PERMISSION_DIALOG_CANCEL_BTN_TAG
-import com.google.jetpackcamera.settings.ui.LOCATION_PERMISSION_DIALOG_CONFIRM_BTN_TAG
-import com.google.jetpackcamera.settings.ui.LOCATION_PERMISSION_RATIONALE_DIALOG_TAG
+import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CANCEL_TAG
+import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG
+import com.google.jetpackcamera.settings.ui.DIALOG_LOCATION_PERMISSION_RATIONALE_TAG
 import com.google.jetpackcamera.settings.ui.LocationSetting
 import com.google.jetpackcamera.settings.ui.LowLightBoostPrioritySetting
 import com.google.jetpackcamera.settings.ui.MaxVideoDurationSetting
@@ -454,7 +454,7 @@ fun LocationPermissionRationaleDialog(
     modifier: Modifier = Modifier
 ) {
     AlertDialog(
-        modifier = modifier.testTag(LOCATION_PERMISSION_RATIONALE_DIALOG_TAG),
+        modifier = modifier.testTag(DIALOG_LOCATION_PERMISSION_RATIONALE_TAG),
         onDismissRequest = onDismiss,
         title = {
             Text(text = stringResource(R.string.location_permission_dialog_title))
@@ -464,7 +464,7 @@ fun LocationPermissionRationaleDialog(
         },
         confirmButton = {
             TextButton(
-                modifier = Modifier.testTag(LOCATION_PERMISSION_DIALOG_CONFIRM_BTN_TAG),
+                modifier = Modifier.testTag(BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG),
                 onClick = onConfirm
             ) {
                 Text(text = stringResource(R.string.location_permission_dialog_open_settings))
@@ -472,7 +472,7 @@ fun LocationPermissionRationaleDialog(
         },
         dismissButton = {
             TextButton(
-                modifier = Modifier.testTag(LOCATION_PERMISSION_DIALOG_CANCEL_BTN_TAG),
+                modifier = Modifier.testTag(BTN_LOCATION_PERMISSION_DIALOG_CANCEL_TAG),
                 onClick = onDismiss
             ) {
                 Text(text = stringResource(R.string.location_permission_dialog_cancel))
