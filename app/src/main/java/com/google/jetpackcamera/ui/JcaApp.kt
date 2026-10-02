@@ -25,6 +25,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -61,6 +63,7 @@ fun JcaApp(
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
     openAppSettings: () -> Unit,
+    onStoragePermissionGranted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -71,6 +74,7 @@ fun JcaApp(
         captureUris = captureUris,
         debugSettings = debugSettings,
         onOpenAppSettings = openAppSettings,
+        onStoragePermissionGranted = onStoragePermissionGranted,
         onRequestWindowColorMode = onRequestWindowColorMode,
         onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
         onCaptureEvent = onCaptureEvent
@@ -86,12 +90,14 @@ private fun JetpackCameraNavHost(
     captureUris: List<Uri>,
     debugSettings: DebugSettings,
     onOpenAppSettings: () -> Unit,
+    onStoragePermissionGranted: () -> Unit,
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
     CameraPermissionGuard(navController)
+    StoragePermissionGuard(onStoragePermissionGranted)
 
     NavHost(
         navController = navController,
@@ -189,6 +195,30 @@ private fun CameraPermissionGuard(navController: NavHostController) {
                     inclusive = true
                 }
             }
+        }
+    }
+}
+
+/**
+ * Invokes [onStoragePermissionGranted] whenever storage permission becomes granted on API levels
+ * that require it to read the MediaStore (<= P).
+ *
+ * Unlike [CameraPermissionGuard], this does not navigate. Storage permission is optional, but the
+ * MediaStore does not send a change notification when permission is granted, so data that was
+ * queried before the grant (e.g. the last captured media) must be refreshed explicitly.
+ */
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+private fun StoragePermissionGuard(onStoragePermissionGranted: () -> Unit) {
+    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) return
+
+    val storagePermissionState =
+        rememberPermissionState(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    val currentOnStoragePermissionGranted by rememberUpdatedState(onStoragePermissionGranted)
+
+    LaunchedEffect(storagePermissionState.status) {
+        if (storagePermissionState.status.isGranted) {
+            currentOnStoragePermissionGranted()
         }
     }
 }

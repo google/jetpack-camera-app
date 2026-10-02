@@ -26,6 +26,10 @@ class FakeFilePathGenerator : FilePathGenerator {
             "${Environment.DIRECTORY_DCIM}${File.separator}Camera"
     }
 
+    override val prefix: String = "JCA"
+
+    override val baseRelativePath: String = RELATIVE_OUTPUT_PATH
+
     override val relativeImageOutputPath: String = RELATIVE_OUTPUT_PATH
 
     override val relativeVideoOutputPath: String = RELATIVE_OUTPUT_PATH
@@ -63,7 +67,7 @@ class FakeFilePathGenerator : FilePathGenerator {
 
     override fun generateImageFilename(suffixText: String?, fileExtension: String?): String {
         return constructFilename(
-            "JCA-test-photo",
+            "$prefix-test-photo",
             createTimestamp().toString(),
             suffixText,
             fileExtension
@@ -72,7 +76,7 @@ class FakeFilePathGenerator : FilePathGenerator {
 
     override fun generateVideoFilename(suffixText: String?, fileExtension: String?): String {
         return constructFilename(
-            "JCA-test-recording",
+            "$prefix-test-recording",
             createTimestamp().toString(),
             suffixText,
             fileExtension

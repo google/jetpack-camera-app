@@ -30,7 +30,6 @@ import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.controller.CaptureController
-import com.google.jetpackcamera.ui.controller.ImageWellController
 import com.google.jetpackcamera.ui.controller.impl.Utils.nextSaveLocation
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlin.coroutines.CoroutineContext
@@ -57,7 +56,6 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
  * @param externalCaptureMode Mode for external capture requests.
  * @param externalCapturesCallback Callback for getting external capture information.
  * @property captureEvents Channel for sending capture-related events.
- * @param imageWellController Controller for managing the image well UI.
  * @param locationProvider Provider for geographical location data.
  * @param onImageCached Callback invoked when an image is saved to cache.
  * @param onVideoCached Callback invoked when a video is saved to cache.
@@ -70,7 +68,6 @@ class CaptureControllerImpl(
     private val externalCaptureMode: ExternalCaptureMode,
     private val externalCapturesCallback: () -> Pair<SaveLocation, IntProgress?>,
     override val captureEvents: Channel<CaptureEvent>,
-    private val imageWellController: ImageWellController? = null,
     private val locationProvider: LocationProvider? = null,
     private val onImageCached: ((Uri) -> Unit)? = null,
     private val onVideoCached: ((Uri) -> Unit)? = null,
@@ -118,9 +115,7 @@ class CaptureControllerImpl(
                             ImageCaptureEvent.SingleImageSaved(savedUri)
                         }
                     }
-                    if (saveLocation !is SaveLocation.Cache) {
-                        imageWellController?.updateLastCapturedMedia()
-                    } else {
+                    if (saveLocation is SaveLocation.Cache) {
                         savedUri?.let { uri ->
                             onImageCached?.invoke(uri)
                         }
@@ -167,9 +162,7 @@ class CaptureControllerImpl(
                                 VideoCaptureEvent.VideoSaved(it.savedUri)
                             }
 
-                            if (saveLocation !is SaveLocation.Cache) {
-                                imageWellController?.updateLastCapturedMedia()
-                            } else {
+                            if (saveLocation is SaveLocation.Cache) {
                                 onVideoCached?.invoke(it.savedUri)
                             }
 
