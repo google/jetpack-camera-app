@@ -228,7 +228,9 @@ class PreviewViewModel @Inject constructor(
                 override fun getCurrentLocation() =
                     if (isLocationEnabled) provider.getCurrentLocation() else null
 
-                override suspend fun runLocationUpdates() = provider.runLocationUpdates()
+                override suspend fun runLocationUpdates() {
+                    provider.runLocationUpdates()
+                }
             }
         },
         onImageCached = { uri ->
