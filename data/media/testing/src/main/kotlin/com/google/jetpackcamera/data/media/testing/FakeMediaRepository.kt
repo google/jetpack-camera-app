@@ -57,7 +57,7 @@ class FakeMediaRepository : MediaRepository {
     }
     var deleteMediaHandler: (MediaDescriptor.Content) -> Boolean = { true }
 
-    override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
+    override fun setCurrentMedia(pendingMedia: MediaDescriptor) {
         _currentMedia.update { pendingMedia }
     }
 

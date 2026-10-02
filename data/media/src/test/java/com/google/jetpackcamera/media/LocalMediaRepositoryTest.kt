@@ -658,6 +658,29 @@ class LocalMediaRepositoryTest {
     }
 
     @Test
+    fun deleteMedia_missingCachedCurrentMedia_fallsBackToLastCapturedMedia() = runTest {
+        val imageValues = createContentValues(
+            displayName = "${filePathGenerator.prefix}_Saved.jpg",
+            dateAdded = 6000L
+        )
+        fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+        val savedMedia = repository.lastCapturedMedia.value
+
+        val missingCachedMedia = MediaDescriptor.Content.Image(
+            Uri.parse("file:///non_existent_cache/missing.jpg"),
+            thumbnail = null,
+            isCached = true
+        )
+        repository.setCurrentMedia(missingCachedMedia)
+        assertThat(repository.currentMedia.value).isEqualTo(missingCachedMedia)
+
+        assertThat(repository.deleteMedia(missingCachedMedia)).isFalse()
+
+        assertThat(repository.currentMedia.value).isEqualTo(savedMedia)
+    }
+
+    @Test
     fun lastCapturedMedia_videoIsNewer_returnsVideo() = runTest {
         val imageValues = createContentValues(
             displayName = "${filePathGenerator.prefix}_Image.jpg",

@@ -53,6 +53,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -81,6 +82,9 @@ class PostCaptureViewModel @Inject constructor(
     private val _uiEvents = Channel<PostCaptureEvent>()
     val uiEvents: ReceiveChannel<PostCaptureEvent> = _uiEvents
 
+    @Volatile
+    private var isDeletingOrDeleted = false
+
     /**
      * This flow maps the latest [MediaRepository.currentMedia] and its loaded [Media] counterpart to a [Pair]
      *
@@ -89,6 +93,7 @@ class PostCaptureViewModel @Inject constructor(
      */
     private val loadedMediaFlow: StateFlow<Pair<MediaDescriptor, Media>> =
         mediaRepository.currentMedia
+            .filter { !isDeletingOrDeleted }
             .map { mediaDescriptor -> mediaDescriptor to mediaRepository.load(mediaDescriptor) }
             .distinctUntilChanged().stateIn(
                 scope = viewModelScope,
@@ -170,7 +175,7 @@ class PostCaptureViewModel @Inject constructor(
     // todo(kc): improve cache cleanup strategy
     override fun onCleared() {
         releasePlayer()
-        val mediaDescriptor: MediaDescriptor = loadedMediaFlow.value.first
+        val mediaDescriptor: MediaDescriptor = mediaRepository.currentMedia.value
 
         if (mediaDescriptor is MediaDescriptor.Content && mediaDescriptor.isCached) {
             viewModelScope.launch(NonCancellable) {
@@ -371,12 +376,14 @@ class PostCaptureViewModel @Inject constructor(
      */
     private suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
         viewModelScope.async {
+            isDeletingOrDeleted = true
             val result = try {
                 mediaRepository.deleteMedia(mediaDescriptor)
             } catch (e: Exception) {
                 false
             }
             if (!result) {
+                isDeletingOrDeleted = false
                 val cookieInt = snackBarController.incrementAndGetSnackBarCount()
                 val cookie = "MediaDelete-$cookieInt"
                 snackBarController.addSnackBarData(

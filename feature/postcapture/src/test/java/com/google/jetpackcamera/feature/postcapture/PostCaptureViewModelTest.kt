@@ -195,6 +195,20 @@ internal class PostCaptureViewModelTest {
     }
 
     @Test
+    fun onCleared_beforeLoadCompletes_deletesCachedMedia() = runTest(testDispatcher) {
+        // Arrange: set cached media without advancing dispatcher so loadedMediaFlow has not loaded yet
+        mediaRepository.setCurrentMedia(testCacheImageDesc)
+
+        // Act
+        callOnCleared(viewModel)
+        advanceUntilIdle()
+        testExternalScope.advanceUntilIdle()
+
+        // Assert
+        assertThat(mediaRepository.currentMedia.value).isEqualTo(MediaDescriptor.None)
+    }
+
+    @Test
     fun onCleared_deleteCachedMediaFails_mediaNotCleared() = runTest(testDispatcher) {
         // Arrange
         mediaRepository.setCurrentMedia(testCacheImageDesc)

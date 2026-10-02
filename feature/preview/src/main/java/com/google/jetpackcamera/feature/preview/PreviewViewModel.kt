@@ -208,18 +208,14 @@ class PreviewViewModel @Inject constructor(
         },
         captureEvents = incomingCaptureEvents,
         onImageCached = { uri ->
-            viewModelScope.launch {
-                mediaRepository.setCurrentMedia(
-                    MediaDescriptor.Content.Image(uri, null, true)
-                )
-            }
+            mediaRepository.setCurrentMedia(
+                MediaDescriptor.Content.Image(uri, null, true)
+            )
         },
         onVideoCached = { uri ->
-            viewModelScope.launch {
-                mediaRepository.setCurrentMedia(
-                    MediaDescriptor.Content.Video(uri, null, true)
-                )
-            }
+            mediaRepository.setCurrentMedia(
+                MediaDescriptor.Content.Video(uri, null, true)
+            )
         },
         coroutineContext = viewModelScope.coroutineContext
     )
