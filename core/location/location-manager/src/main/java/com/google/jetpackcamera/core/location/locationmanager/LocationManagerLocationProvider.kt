@@ -235,7 +235,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         }
 
         // A rejected fix leaves the cache unchanged, so it must not end the update session.
-        if (accepted && location.accuracy <= ACCURACY_THRESHOLD_METERS) {
+        if (accepted && location.accuracyOrMax <= ACCURACY_THRESHOLD_METERS) {
             accurateFixDeferred.get()?.complete(Unit)
             stopHardwareUpdates()
         }
@@ -247,7 +247,8 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
      * A fix more than 2 minutes newer always wins, which prevents coordinate anchoring when
      * travelling. Within the 2-minute window, a fix is accepted if it is more accurate, if it is
      * newer and at least as accurate, or if it is newer, from the same provider, and no more than
-     * [SIGNIFICANT_ACCURACY_DELTA_METERS] less accurate.
+     * [SIGNIFICANT_ACCURACY_DELTA_METERS] less accurate. A fix that does not report accuracy
+     * ranks below any fix that does.
      *
      * @param newLoc Candidate fix received from a platform location provider.
      * @param currentLoc The currently cached fix, or `null`.
@@ -265,7 +266,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         if (isSignificantlyOlder) return false
 
         val isNewer = timeDeltaNanos > 0
-        val accuracyDelta = newLoc.accuracy - currentLoc.accuracy
+        val accuracyDelta = newLoc.accuracyOrMax - currentLoc.accuracyOrMax
         val isMoreAccurate = accuracyDelta < 0f
         val isLessAccurate = accuracyDelta > 0f
         val isSignificantlyLessAccurate = accuracyDelta > SIGNIFICANT_ACCURACY_DELTA_METERS
@@ -278,6 +279,14 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
             else -> false
         }
     }
+
+    /**
+     * The horizontal accuracy of this fix in meters, or [Float.MAX_VALUE] if the fix does not
+     * report one. [Location.getAccuracy] returns 0 when no accuracy is set, which would otherwise
+     * rank the fix as the most accurate possible.
+     */
+    private val Location.accuracyOrMax: Float
+        get() = if (hasAccuracy()) accuracy else Float.MAX_VALUE
 
     private fun isValidLocation(location: Location): Boolean {
         if (location.latitude.isNaN() || location.longitude.isNaN()) return false
