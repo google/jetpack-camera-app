@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
@@ -133,6 +134,15 @@ class LocalMediaRepository(
                 }
             }
             .distinctUntilChanged()
+            .onEach { mediaDescriptor ->
+                _currentMedia.update { current ->
+                    if ((current as? MediaDescriptor.Content)?.isCached == true) {
+                        current
+                    } else {
+                        mediaDescriptor
+                    }
+                }
+            }
             .stateIn(
                 scope = repositoryScope,
                 started = SharingStarted.Eagerly,
@@ -311,7 +321,9 @@ class LocalMediaRepository(
             result
         }
         if (finalResult && currentMedia.value == mediaDescriptor) {
-            setCurrentMedia(MediaDescriptor.None)
+            setCurrentMedia(
+                if (mediaDescriptor.isCached) lastCapturedMedia.value else MediaDescriptor.None
+            )
         }
         return finalResult
     }

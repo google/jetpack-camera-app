@@ -44,13 +44,11 @@ import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
-import com.google.jetpackcamera.ui.controller.ImageWellController
 import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.ZoomController
 import com.google.jetpackcamera.ui.controller.impl.CameraControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.CaptureControllerImpl
-import com.google.jetpackcamera.ui.controller.impl.ImageWellControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.QuickSettingsControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.ScreenFlashControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.SnackBarControllerImpl
@@ -179,11 +177,6 @@ class PreviewViewModel @Inject constructor(
     val zoomController: ZoomController = ZoomControllerImpl(
         cameraSystemProvider = cameraSystemRepository::getCameraSystem,
         trackedCaptureUiState = trackedCaptureUiState,
-        coroutineContext = viewModelScope.coroutineContext
-    )
-
-    val imageWellController: ImageWellController = ImageWellControllerImpl(
-        mediaRepository = mediaRepository,
         coroutineContext = viewModelScope.coroutineContext
     )
 
