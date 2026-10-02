@@ -33,9 +33,9 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LOCATION_TAG
-import com.google.jetpackcamera.settings.ui.LOCATION_PERMISSION_DIALOG_CANCEL_BTN_TAG
-import com.google.jetpackcamera.settings.ui.LOCATION_PERMISSION_DIALOG_CONFIRM_BTN_TAG
-import com.google.jetpackcamera.settings.ui.LOCATION_PERMISSION_RATIONALE_DIALOG_TAG
+import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CANCEL_TAG
+import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG
+import com.google.jetpackcamera.settings.ui.DIALOG_LOCATION_PERMISSION_RATIONALE_TAG
 import java.util.Optional
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -130,9 +130,9 @@ class SettingsScreenTest {
         // The system no longer prompts after a denial, so the second toggle shows the dialog.
         clickLocationSwitch()
         assertThat(launchCount).isEqualTo(1)
-        composeTestRule.onNodeWithTag(LOCATION_PERMISSION_RATIONALE_DIALOG_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DIALOG_LOCATION_PERMISSION_RATIONALE_TAG).assertIsDisplayed()
 
-        composeTestRule.onNodeWithTag(LOCATION_PERMISSION_DIALOG_CONFIRM_BTN_TAG).performClick()
+        composeTestRule.onNodeWithTag(BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG).performClick()
         assertThat(openAppSettingsCalled).isTrue()
     }
 
@@ -148,9 +148,9 @@ class SettingsScreenTest {
 
         clickLocationSwitch()
         clickLocationSwitch()
-        composeTestRule.onNodeWithTag(LOCATION_PERMISSION_DIALOG_CANCEL_BTN_TAG).performClick()
+        composeTestRule.onNodeWithTag(BTN_LOCATION_PERMISSION_DIALOG_CANCEL_TAG).performClick()
 
-        composeTestRule.onNodeWithTag(LOCATION_PERMISSION_RATIONALE_DIALOG_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DIALOG_LOCATION_PERMISSION_RATIONALE_TAG).assertDoesNotExist()
         assertThat(openAppSettingsCalled).isFalse()
     }
 
@@ -168,7 +168,7 @@ class SettingsScreenTest {
         clickLocationSwitch()
 
         assertThat(launchCount).isEqualTo(2)
-        composeTestRule.onNodeWithTag(LOCATION_PERMISSION_RATIONALE_DIALOG_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DIALOG_LOCATION_PERMISSION_RATIONALE_TAG).assertDoesNotExist()
     }
 
     @Test
@@ -184,7 +184,7 @@ class SettingsScreenTest {
         clickLocationSwitch()
 
         assertThat(launchCount).isEqualTo(0)
-        composeTestRule.onNodeWithTag(LOCATION_PERMISSION_RATIONALE_DIALOG_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DIALOG_LOCATION_PERMISSION_RATIONALE_TAG).assertDoesNotExist()
     }
 }
 
