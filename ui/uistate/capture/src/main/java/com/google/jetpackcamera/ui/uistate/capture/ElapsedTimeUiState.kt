@@ -34,10 +34,8 @@ sealed interface ElapsedTimeUiState {
      * @param elapsedTimeNanos The elapsed time in nanoseconds.
      * @param isPaused Whether the recording is currently paused.
      */
-    data class Enabled(
-        val elapsedTimeNanos: Long,
-        val isPaused: Boolean = false
-    ) : ElapsedTimeUiState
+    data class Enabled(val elapsedTimeNanos: Long, val isPaused: Boolean = false) :
+        ElapsedTimeUiState
 
     companion object
 }

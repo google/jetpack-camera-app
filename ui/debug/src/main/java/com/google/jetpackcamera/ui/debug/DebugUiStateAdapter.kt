@@ -55,24 +55,22 @@ fun debugUiState(
     debugSettings: DebugSettings,
     cameraPropertiesJSON: Flow<String?> = flowOf(null),
     trackedCaptureUiState: StateFlow<TrackedCaptureUiState>
-): Flow<DebugUiState> {
-    return combine(
-        currentSettings.filterNotNull(),
-        systemConstraints.filterNotNull(),
-        currentCameraState,
-        cameraPropertiesJSON,
-        trackedCaptureUiState
-    ) { cameraAppSettings, systemConstraints, cameraState, propertiesJSON, trackedUiState ->
-        DebugUiState.from(
-            systemConstraints,
-            cameraAppSettings,
-            cameraState,
-            trackedUiState.isDebugOverlayOpen,
-            trackedUiState.debugHidingComponents,
-            debugSettings,
-            propertiesJSON ?: ""
-        )
-    }
+): Flow<DebugUiState> = combine(
+    currentSettings.filterNotNull(),
+    systemConstraints.filterNotNull(),
+    currentCameraState,
+    cameraPropertiesJSON,
+    trackedCaptureUiState
+) { cameraAppSettings, systemConstraints, cameraState, propertiesJSON, trackedUiState ->
+    DebugUiState.from(
+        systemConstraints,
+        cameraAppSettings,
+        cameraState,
+        trackedUiState.isDebugOverlayOpen,
+        trackedUiState.debugHidingComponents,
+        debugSettings,
+        propertiesJSON ?: ""
+    )
 }
 
 /**
