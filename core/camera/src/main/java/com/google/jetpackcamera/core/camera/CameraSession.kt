@@ -25,6 +25,7 @@ import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
+import android.location.Location
 import android.os.Build
 import android.os.SystemClock
 import android.provider.MediaStore
@@ -871,6 +872,7 @@ private fun getPendingRecording(
     filePathGenerator: FilePathGenerator,
     captureTypeSuffix: String,
     saveLocation: SaveLocation,
+    location: Location?,
     onVideoRecord: (OnVideoRecordEvent) -> Unit
 ): PendingRecording? {
     Log.d(TAG, "getPendingRecording")
@@ -884,7 +886,9 @@ private fun getPendingRecording(
                     )?.let { pfd ->
                         videoCaptureUseCase.output.prepareRecording(
                             context,
-                            FileDescriptorOutputOptions.Builder(pfd).build()
+                            FileDescriptorOutputOptions.Builder(pfd)
+                                .setLocation(location)
+                                .build()
                         )
                     } ?: run {
                         onVideoRecord(
@@ -906,7 +910,9 @@ private fun getPendingRecording(
             } else {
                 if (saveLocation.locationUri.scheme == "file") {
                     saveLocation.locationUri.path?.let { path ->
-                        val fileOutputOptions = FileOutputOptions.Builder(File(path)).build()
+                        val fileOutputOptions = FileOutputOptions.Builder(File(path))
+                            .setLocation(location)
+                            .build()
                         videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
                     } ?: run {
                         onVideoRecord(
@@ -968,6 +974,7 @@ private fun getPendingRecording(
                 )
                     .setDurationLimitMillis(maxDurationMillis)
                     .setContentValues(contentValues)
+                    .setLocation(location)
                     .build()
             videoCaptureUseCase.output.prepareRecording(context, mediaStoreOutput)
         }
@@ -988,6 +995,7 @@ private fun getPendingRecording(
                 // 3. Build FileOutputOptions with the File object
                 val fileOutputOptions = FileOutputOptions.Builder(tempFile)
                     .setDurationLimitMillis(maxDurationMillis)
+                    .setLocation(location)
                     .build()
 
                 // 4. Prepare the recording
@@ -1178,6 +1186,7 @@ private suspend fun runVideoRecording(
     maxDurationMillis: Long,
     transientSettings: StateFlow<TransientSessionSettings?>,
     saveLocation: SaveLocation,
+    location: Location?,
     videoControlEvents: Channel<VideoCaptureControlEvent>,
     onVideoRecord: (OnVideoRecordEvent) -> Unit,
     filePathGenerator: FilePathGenerator
@@ -1191,6 +1200,7 @@ private suspend fun runVideoRecording(
         filePathGenerator,
         captureTypeSuffix,
         saveLocation,
+        location,
         onVideoRecord
     )?.let {
         startVideoRecordingInternal(
@@ -1258,6 +1268,7 @@ internal suspend fun processVideoControlEvents(
                     event.maxVideoDuration,
                     transientSettings,
                     event.saveLocation,
+                    event.location,
                     videoCaptureControlEvents,
                     event.onVideoRecord,
                     filePathGenerator
