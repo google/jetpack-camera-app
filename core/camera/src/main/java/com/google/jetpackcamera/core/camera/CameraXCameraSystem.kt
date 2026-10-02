@@ -572,14 +572,8 @@ class CameraXCameraSystem(
         location: Location?,
         onCaptureStarted: (() -> Unit)
     ): ImageCapture.OutputFileResults = imageCaptureUseCase?.let { imageCaptureUseCase ->
-        val metadata = ImageCapture.Metadata()
-        if (location != null) {
-            try {
-                metadata.location = location
-            } catch (e: IllegalArgumentException) {
-                // location coordinates are out of bounds, nullify
-                metadata.location = null
-            }
+        val metadata = ImageCapture.Metadata().apply {
+            this.location = location?.takeIfInBounds()
         }
         val (outputFileOptions, closeable) = when (saveLocation) {
             is SaveLocation.Default -> {
@@ -669,7 +663,7 @@ class CameraXCameraSystem(
                 saveLocation = saveLocation,
                 maxVideoDuration = currentSettings.value?.maxVideoDurationMillis
                     ?: UNLIMITED_VIDEO_DURATION,
-                location = location,
+                location = location?.takeIfInBounds(),
                 onVideoRecord = onVideoRecord
             )
         )

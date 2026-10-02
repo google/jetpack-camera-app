@@ -283,14 +283,15 @@ class PreviewViewModel @Inject constructor(
     }
 
     private fun updateLocationWarmup() {
+        val provider = locationProvider.getOrNull()
         if (isPreviewActive &&
             isLocationEnabled &&
-            locationProvider.isPresent &&
+            provider != null &&
             !isVideoRecordingActive()
         ) {
             if (locationUpdatesJob == null) {
                 locationUpdatesJob = viewModelScope.launch {
-                    locationProvider.get().runLocationUpdates()
+                    provider.runLocationUpdates()
                 }
             }
         } else {

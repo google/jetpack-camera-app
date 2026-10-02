@@ -886,17 +886,9 @@ private fun getPendingRecording(
                     )?.let { pfd ->
                         videoCaptureUseCase.output.prepareRecording(
                             context,
-                            FileDescriptorOutputOptions.Builder(
-                                pfd
-                            ).let { b ->
-                                if (location != null) {
-                                    b.setLocation(
-                                        location
-                                    )
-                                } else {
-                                    b
-                                }
-                            }.build()
+                            FileDescriptorOutputOptions.Builder(pfd)
+                                .setLocation(location)
+                                .build()
                         )
                     } ?: run {
                         onVideoRecord(
@@ -919,7 +911,7 @@ private fun getPendingRecording(
                 if (saveLocation.locationUri.scheme == "file") {
                     saveLocation.locationUri.path?.let { path ->
                         val fileOutputOptions = FileOutputOptions.Builder(File(path))
-                            .let { b -> if (location != null) b.setLocation(location) else b }
+                            .setLocation(location)
                             .build()
                         videoCaptureUseCase.output.prepareRecording(context, fileOutputOptions)
                     } ?: run {
@@ -982,7 +974,7 @@ private fun getPendingRecording(
                 )
                     .setDurationLimitMillis(maxDurationMillis)
                     .setContentValues(contentValues)
-                    .let { b -> if (location != null) b.setLocation(location) else b }
+                    .setLocation(location)
                     .build()
             videoCaptureUseCase.output.prepareRecording(context, mediaStoreOutput)
         }
@@ -1003,7 +995,7 @@ private fun getPendingRecording(
                 // 3. Build FileOutputOptions with the File object
                 val fileOutputOptions = FileOutputOptions.Builder(tempFile)
                     .setDurationLimitMillis(maxDurationMillis)
-                    .let { b -> if (location != null) b.setLocation(location) else b }
+                    .setLocation(location)
                     .build()
 
                 // 4. Prepare the recording
