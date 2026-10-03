@@ -346,6 +346,7 @@ class CameraXCameraSystem(
                 .tryApplyImageFormatConstraints()
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
+                .tryApplyVideoOnlyForConcurrentCamera()
                 .tryApplyConcurrentCameraModeConstraints()
                 .tryApplyFlashModeConstraints()
                 .tryApplyCaptureModeConstraints()
@@ -938,6 +939,33 @@ class CameraXCameraSystem(
                 }
         }
 
+    /**
+     * Concurrent camera only supports [CaptureMode.VIDEO_ONLY], which
+     * [tryApplyConcurrentCameraModeConstraints] requires. When concurrent camera is requested
+     * while the capture mode is unrestricted ([CaptureMode.STANDARD]), this switches to
+     * [CaptureMode.VIDEO_ONLY] so that the request is not rejected.
+     *
+     * The capture mode is left unchanged if concurrent camera would be rejected for another
+     * reason, or if the capture mode is already restricted, e.g. to [CaptureMode.IMAGE_ONLY] by an
+     * image capture intent.
+     */
+    private fun CameraAppSettings.tryApplyVideoOnlyForConcurrentCamera(): CameraAppSettings {
+        if (concurrentCameraMode == ConcurrentCameraMode.OFF ||
+            captureMode != CaptureMode.STANDARD
+        ) {
+            return this
+        }
+        val videoOnly = copy(captureMode = CaptureMode.VIDEO_ONLY)
+        return if (
+            videoOnly.tryApplyConcurrentCameraModeConstraints().concurrentCameraMode ==
+            concurrentCameraMode
+        ) {
+            videoOnly
+        } else {
+            this
+        }
+    }
+
     private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedVideoQualitiesMap) {
@@ -1112,6 +1140,7 @@ class CameraXCameraSystem(
     override suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
         updateSettings { old ->
             old?.copy(concurrentCameraMode = concurrentCameraMode)
+                ?.tryApplyVideoOnlyForConcurrentCamera()
                 ?.tryApplyConcurrentCameraModeConstraints()
                 ?.tryApplyCaptureModeConstraints()
         }
