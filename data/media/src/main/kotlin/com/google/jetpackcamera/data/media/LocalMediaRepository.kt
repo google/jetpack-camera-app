@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
@@ -133,6 +134,15 @@ class LocalMediaRepository(
                 }
             }
             .distinctUntilChanged()
+            .onEach { mediaDescriptor ->
+                _currentMedia.update { current ->
+                    if ((current as? MediaDescriptor.Content)?.isCached == true) {
+                        current
+                    } else {
+                        mediaDescriptor
+                    }
+                }
+            }
             .stateIn(
                 scope = repositoryScope,
                 started = SharingStarted.Eagerly,
@@ -167,7 +177,7 @@ class LocalMediaRepository(
      *
      * @param pendingMedia The [MediaDescriptor] to set as current.
      */
-    override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
+    override fun setCurrentMedia(pendingMedia: MediaDescriptor) {
         _currentMedia.update { pendingMedia }
     }
 
@@ -295,7 +305,8 @@ class LocalMediaRepository(
      *   cached file and deleted directly using [deleteCachedMedia].
      * - Otherwise, the media is deleted from the MediaStore using the [ContentResolver].
      *
-     * If the deleted media was the currently active media, [currentMedia] is reset to [MediaDescriptor.None].
+     * If the deleted media was the currently active media, [currentMedia] falls back to
+     * [lastCapturedMedia] when `isCached` is `true`, or resets to [MediaDescriptor.None] otherwise.
      *
      * @param mediaDescriptor The [MediaDescriptor.Content] of the media to delete.
      * @return `true` if the media was successfully deleted, `false` otherwise.
@@ -310,8 +321,10 @@ class LocalMediaRepository(
                 }
             result
         }
-        if (finalResult && currentMedia.value == mediaDescriptor) {
-            setCurrentMedia(MediaDescriptor.None)
+        if ((finalResult || mediaDescriptor.isCached) && currentMedia.value == mediaDescriptor) {
+            setCurrentMedia(
+                if (mediaDescriptor.isCached) lastCapturedMedia.value else MediaDescriptor.None
+            )
         }
         return finalResult
     }

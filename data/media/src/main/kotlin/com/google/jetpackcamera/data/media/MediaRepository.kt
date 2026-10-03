@@ -43,7 +43,7 @@ interface MediaRepository {
      */
     fun refreshLastCapturedMedia()
 
-    suspend fun setCurrentMedia(pendingMedia: MediaDescriptor)
+    fun setCurrentMedia(pendingMedia: MediaDescriptor)
 
     suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean
 

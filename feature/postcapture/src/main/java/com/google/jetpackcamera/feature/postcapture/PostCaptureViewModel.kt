@@ -43,7 +43,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,6 +52,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -81,6 +81,9 @@ class PostCaptureViewModel @Inject constructor(
     private val _uiEvents = Channel<PostCaptureEvent>()
     val uiEvents: ReceiveChannel<PostCaptureEvent> = _uiEvents
 
+    @Volatile
+    private var isDeletingOrDeleted = false
+
     /**
      * This flow maps the latest [MediaRepository.currentMedia] and its loaded [Media] counterpart to a [Pair]
      *
@@ -89,10 +92,11 @@ class PostCaptureViewModel @Inject constructor(
      */
     private val loadedMediaFlow: StateFlow<Pair<MediaDescriptor, Media>> =
         mediaRepository.currentMedia
+            .filter { !isDeletingOrDeleted }
             .map { mediaDescriptor -> mediaDescriptor to mediaRepository.load(mediaDescriptor) }
             .distinctUntilChanged().stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(),
+                started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = (MediaDescriptor.None to Media.None)
             )
     private val _postCaptureUiState =
@@ -170,7 +174,7 @@ class PostCaptureViewModel @Inject constructor(
     // todo(kc): improve cache cleanup strategy
     override fun onCleared() {
         releasePlayer()
-        val mediaDescriptor: MediaDescriptor = loadedMediaFlow.value.first
+        val mediaDescriptor: MediaDescriptor = mediaRepository.currentMedia.value
 
         if (mediaDescriptor is MediaDescriptor.Content && mediaDescriptor.isCached) {
             viewModelScope.launch(NonCancellable) {
@@ -369,33 +373,34 @@ class PostCaptureViewModel @Inject constructor(
      *
      * @param mediaDescriptor the [MediaDescriptor] of the media to be deleted.
      */
-    private suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
-        viewModelScope.async {
-            val result = try {
-                mediaRepository.deleteMedia(mediaDescriptor)
-            } catch (e: Exception) {
-                false
-            }
-            if (!result) {
-                val cookieInt = snackBarController.incrementAndGetSnackBarCount()
-                val cookie = "MediaDelete-$cookieInt"
-                snackBarController.addSnackBarData(
-                    SnackbarData(
-                        cookie = cookie,
-                        stringResource = when (mediaDescriptor) {
-                            is MediaDescriptor.Content.Image ->
-                                R.string.snackbar_delete_image_failure
+    private suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
+        isDeletingOrDeleted = true
+        val result = try {
+            mediaRepository.deleteMedia(mediaDescriptor)
+        } catch (e: Exception) {
+            false
+        }
+        if (!result) {
+            isDeletingOrDeleted = false
+            val cookieInt = snackBarController.incrementAndGetSnackBarCount()
+            val cookie = "MediaDelete-$cookieInt"
+            snackBarController.addSnackBarData(
+                SnackbarData(
+                    cookie = cookie,
+                    stringResource = when (mediaDescriptor) {
+                        is MediaDescriptor.Content.Image ->
+                            R.string.snackbar_delete_image_failure
 
-                            is MediaDescriptor.Content.Video ->
-                                R.string.snackbar_delete_video_failure
-                        },
-                        isError = true,
-                        withDismissAction = true
-                    )
+                        is MediaDescriptor.Content.Video ->
+                            R.string.snackbar_delete_video_failure
+                    },
+                    isError = true,
+                    withDismissAction = true
                 )
-            }
-            result
-        }.await()
+            )
+        }
+        return result
+    }
 
     /**
      * Sends a [ShareMedia] event to the UI to initiate sharing of the currently loaded media.
