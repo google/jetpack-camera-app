@@ -43,7 +43,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -97,7 +96,7 @@ class PostCaptureViewModel @Inject constructor(
             .map { mediaDescriptor -> mediaDescriptor to mediaRepository.load(mediaDescriptor) }
             .distinctUntilChanged().stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(),
+                started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = (MediaDescriptor.None to Media.None)
             )
     private val _postCaptureUiState =
@@ -374,35 +373,34 @@ class PostCaptureViewModel @Inject constructor(
      *
      * @param mediaDescriptor the [MediaDescriptor] of the media to be deleted.
      */
-    private suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
-        viewModelScope.async {
-            isDeletingOrDeleted = true
-            val result = try {
-                mediaRepository.deleteMedia(mediaDescriptor)
-            } catch (e: Exception) {
-                false
-            }
-            if (!result) {
-                isDeletingOrDeleted = false
-                val cookieInt = snackBarController.incrementAndGetSnackBarCount()
-                val cookie = "MediaDelete-$cookieInt"
-                snackBarController.addSnackBarData(
-                    SnackbarData(
-                        cookie = cookie,
-                        stringResource = when (mediaDescriptor) {
-                            is MediaDescriptor.Content.Image ->
-                                R.string.snackbar_delete_image_failure
+    private suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
+        isDeletingOrDeleted = true
+        val result = try {
+            mediaRepository.deleteMedia(mediaDescriptor)
+        } catch (e: Exception) {
+            false
+        }
+        if (!result) {
+            isDeletingOrDeleted = false
+            val cookieInt = snackBarController.incrementAndGetSnackBarCount()
+            val cookie = "MediaDelete-$cookieInt"
+            snackBarController.addSnackBarData(
+                SnackbarData(
+                    cookie = cookie,
+                    stringResource = when (mediaDescriptor) {
+                        is MediaDescriptor.Content.Image ->
+                            R.string.snackbar_delete_image_failure
 
-                            is MediaDescriptor.Content.Video ->
-                                R.string.snackbar_delete_video_failure
-                        },
-                        isError = true,
-                        withDismissAction = true
-                    )
+                        is MediaDescriptor.Content.Video ->
+                            R.string.snackbar_delete_video_failure
+                    },
+                    isError = true,
+                    withDismissAction = true
                 )
-            }
-            result
-        }.await()
+            )
+        }
+        return result
+    }
 
     /**
      * Sends a [ShareMedia] event to the UI to initiate sharing of the currently loaded media.
