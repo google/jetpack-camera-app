@@ -87,20 +87,24 @@ object CameraLayoutDefaults {
     /** Floor for any inter-row gap under compression. */
     val MinGap = 8.dp
 
-    /** Preferred padding below the bottom toolbar. */
+    /**
+     * Preferred padding below the bottom toolbar in an immersive window, or when the spec sets no
+     * bottom row anchor. Otherwise [BottomRowAnchor] sets the preferred padding.
+     */
     val BottomPadding = 30.dp
 
     /**
-     * Floor for the padding below the bottom toolbar. Above a navigation bar that extends higher
-     * than the bottom gesture zone, the floor is [MinControlClearance] instead.
+     * Floor for the padding below the bottom toolbar, raised where needed to keep the toolbar out
+     * of the bottom gesture zone. Above a navigation bar at least as tall as the gesture zone, such
+     * as 3-button navigation, the floor is [MinControlClearance] instead.
      */
     val MinBottomPadding = 8.dp
 
     /**
-     * Highest the bottom toolbar's lower edge sits above the bottom of the window at the preferred
-     * padding: [BottomPadding] above a 24.dp gesture navigation bar. A 48.dp 3-button navigation
-     * bar reduces the padding to 6.dp instead of raising the controls, so both navigation modes
-     * prefer the same control positions.
+     * Height of the bottom toolbar's lower edge above the bottom of the window at the preferred
+     * padding. The navigation bar only changes the padding: 30.dp above a 24.dp gesture bar, 38.dp
+     * above a 16.dp gesture bar, 6.dp above a 48.dp 3-button bar, and 54.dp when no bar is
+     * reported, so every navigation configuration prefers the same control positions.
      */
     val BottomRowAnchor = 54.dp
 

@@ -40,8 +40,11 @@ data class DpRange(val top: Dp, val bottom: Dp) {
  * @param width window width.
  * @param height window height.
  * @param topInset status bar or display cutout depth, whichever is deeper.
- * @param navInset navigation bar height, reported even when the bar is currently hidden.
- * @param gestureInset bottom system gesture zone depth.
+ * @param navInset navigation bar height, reported even when the bar is currently hidden. This
+ *   varies on a single device: AOSP reports 48 dp for 3-button navigation, and 24 dp for gesture
+ *   navigation from Android 13 (16 dp on Android 10 to 12L).
+ * @param gestureInset bottom system gesture zone depth. AOSP reports 32 dp for gesture navigation
+ *   and the full bar height for 3-button navigation, where the bar covers the zone.
  * @param cornerRadius hardware display corner radius, used to keep the preview corners concentric
  *   with the bezel. Does not affect vertical placement.
  */
@@ -50,7 +53,7 @@ data class CameraWindow(
     val height: Dp,
     val topInset: Dp,
     val navInset: Dp,
-    val gestureInset: Dp = 24.dp,
+    val gestureInset: Dp = 32.dp,
     val cornerRadius: Dp = 0.dp
 ) {
     init {
@@ -213,15 +216,17 @@ data class GroupingRule(val rowId: String, val tightenedGapAbove: Dp)
  * @param viewfinders the frames that must all be placed against the same stationary [rows].
  * @param minControlClearance required daylight between any viewfinder edge and any control row.
  * @param minInteractiveTouchTarget minimum interactive touch target height for compacted controls.
- * @param bottomPadding padding below the bottom-most row, between the two bounds given. Above a
- *   visible navigation bar that extends higher than the bottom gesture zone, the floor is
- *   [minControlClearance] instead of [GapRange.min], because the navigation bar already keeps the
- *   row out of the gesture zone.
- * @param bottomRowAnchor highest the bottom edge of the bottom-most row may sit above the bottom of
- *   the window at the preferred padding. A navigation bar taller than
- *   `bottomRowAnchor - bottomPadding.preferred`, such as 3-button navigation, reduces the preferred
- *   padding instead of raising the controls, so gesture and 3-button navigation prefer the same
- *   control positions. Null measures the preferred padding from the navigation bar alone.
+ * @param bottomPadding padding below the bottom-most row. [GapRange.min] is the floor, raised where
+ *   needed to keep the row out of the bottom gesture zone. Above a visible navigation bar at least
+ *   as tall as the gesture zone, such as 3-button navigation, the floor is [minControlClearance]
+ *   instead, because the bar already keeps the row out of the zone. [GapRange.preferred] is the
+ *   preferred padding when [bottomRowAnchor] is null and in an immersive window.
+ * @param bottomRowAnchor height of the bottom edge of the bottom-most row above the bottom of the
+ *   window at the preferred padding. The preferred padding is this height minus the navigation bar
+ *   height, never below the [bottomPadding] floor, so the bar only changes the padding and every
+ *   navigation configuration prefers the same control positions. An immersive window keeps
+ *   [GapRange.preferred] of [bottomPadding], capped at this height. Null measures the preferred
+ *   padding from the navigation bar alone.
  * @param maxStackLift how far above the preferred padding the solver searches for a collision-free
  *   layout when the tallest frame collides. The stack rises only as far as the lowest
  *   collision-free position found, plus a small incidental lift.

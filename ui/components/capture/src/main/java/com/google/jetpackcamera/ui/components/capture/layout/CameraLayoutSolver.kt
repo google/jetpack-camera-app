@@ -40,13 +40,16 @@ import kotlin.math.min
  *
  * ## Where the stack sits
  *
- * The stack is positioned from the bottom of the window. Its preferred position caps the bottom
- * row's height above the bottom of the window, so a navigation bar taller than the cap allows, such
- * as 3-button navigation, takes its height out of the bottom padding rather than raising the
- * controls. The stack leaves that position only to resolve a collision, or by a small incidental
- * lift when that lift puts the primary frame flush with the top bar. A frame that would need a
- * larger lift is shifted down instead. When a collision does force the stack up, it rises to the
- * lowest collision-free position the search finds and at most the same incidental lift beyond it.
+ * The stack is positioned from the bottom of the window. Its preferred position holds the bottom
+ * row at a fixed height above the bottom of the window, so the height of the navigation bar only
+ * changes the bottom padding: a taller bar, such as 3-button navigation, takes its height out of
+ * the padding, and a shorter bar, or none, adds the difference to it. The preferred position is
+ * therefore the same in every navigation configuration. An immersive window, which hides its bar
+ * to fit a tall frame, keeps the designed padding instead. The stack leaves the preferred position
+ * only to resolve a collision, or by a small incidental lift when that lift puts the primary frame
+ * flush with the top bar. A frame that would need a larger lift is shifted down instead. When a
+ * collision does force the stack up, it rises to the lowest collision-free position the search
+ * finds and at most the same incidental lift beyond it.
  *
  * A tall frame that cannot clear the stack from above may enclose it instead: the frame starts at
  * the top bar, or a few dp below it behind the top-start control, and its bottom edge runs below
@@ -127,10 +130,10 @@ object CameraLayoutSolver {
      * |-----------------------------------------|-------------|------------|
      * | window that solves on the first attempt | 1           | 4 us       |
      * | 412 x 925 phone, one padding sweep      | 24          | 48 us      |
-     * | worst supported window in the sweep     | 938         | 1.8 ms     |
+     * | worst supported window in the sweep     | 587         | 1.2 ms     |
      * | this budget                             | 5,000       | ~6 ms      |
      *
-     * 5,000 leaves more than five times the headroom over the worst supported window while capping
+     * 5,000 leaves more than eight times the headroom over the worst supported window while capping
      * a pathological one below a single frame at 60 Hz. An earlier revision used 20,000, which
      * measured at 25 ms: still bounded, but a frame and a half of jank for geometry we do not
      * support anyway.
@@ -201,9 +204,10 @@ object CameraLayoutSolver {
         val minToolbarHeight = max(0f, spec.minInteractiveTouchTarget.value - clearance)
 
         // The padding floor keeps the toolbar out of the bottom gesture zone. A visible navigation
-        // bar that extends above that zone already keeps it out, so only the control clearance
-        // margin is required between the toolbar and the navigation bar.
-        val minBottomPadding = if (navInset > window.gestureInset.value) {
+        // bar that covers that zone already keeps it out, so only the control clearance margin is
+        // required between the toolbar and the navigation bar. The test is inclusive because
+        // 3-button navigation reports a gesture zone exactly as tall as the bar itself.
+        val minBottomPadding = if (navInset > 0f && navInset >= window.gestureInset.value) {
             clearance.roundToJs()
         } else {
             val gestureDemand = window.gestureInset.value - navInset
@@ -225,11 +229,19 @@ object CameraLayoutSolver {
         )
 
         // The preferred padding keeps the bottom row at the same height above the bottom of the
-        // window in every navigation mode: a navigation bar taller than the anchor allows takes
-        // its height out of the padding instead of raising the controls.
+        // window in every navigation configuration. The bottom inset varies on a single device:
+        // 48 dp for 3-button navigation, 24 dp or 16 dp for gesture navigation depending on the
+        // platform release, and zero when no bar is reported. A taller bar takes its height out of
+        // the padding and a shorter one adds the difference to it. An immersive window has hidden
+        // its bar, so it keeps the designed padding, capped at the anchor.
         val designedPadding = spec.bottomPadding.preferred.value.roundToJs()
         val preferredPadding = spec.bottomRowAnchor?.let { anchor ->
-            max(minBottomPadding, min(designedPadding, (anchor.value - navInset).roundToJs()))
+            val anchoredPadding = (anchor.value - navInset).roundToJs()
+            if (requiresImmersive) {
+                max(minBottomPadding, min(designedPadding, anchoredPadding))
+            } else {
+                max(minBottomPadding, anchoredPadding)
+            }
         } ?: designedPadding
 
         val preferredGaps = IntArray(spec.rows.size) {
