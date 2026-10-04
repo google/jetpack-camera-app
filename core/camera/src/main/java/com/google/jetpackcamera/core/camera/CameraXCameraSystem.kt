@@ -466,6 +466,8 @@ class CameraXCameraSystem(
             kotlinx.coroutines.awaitCancellation()
         }
 
+        clearCameraError()
+
         val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
         currentSettings
             .filterNotNull()

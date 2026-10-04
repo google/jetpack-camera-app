@@ -15,12 +15,23 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -51,6 +62,7 @@ class CameraErrorDialogTest {
         composeTestRule.onNodeWithTag(CAMERA_ERROR_DIALOG_TITLE_TAG)
             .assertIsDisplayed()
             .assertTextEquals("Can't use camera")
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
         composeTestRule.onNodeWithTag(CAMERA_ERROR_DIALOG_BODY_TAG)
             .assertIsDisplayed()
             .assertTextEquals("The camera is being used by another app")
@@ -76,5 +88,33 @@ class CameraErrorDialogTest {
 
         composeTestRule.onNodeWithTag(CAMERA_ERROR_DIALOG_TITLE_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(CAMERA_ERROR_DIALOG_BODY_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun cameraErrorDialog_whenOnDismissRequestIsNull_allowsTopStartClicksToPassThrough() {
+        var topStartClicked = false
+        composeTestRule.setContent {
+            MaterialTheme {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .size(48.dp)
+                            .clickable { topStartClicked = true }
+                            .testTag("btn_top_start_close")
+                    )
+                    CameraErrorDialog(
+                        title = "Can't use camera",
+                        body = "The camera is being used by another app",
+                        confirmButtonText = "OK",
+                        onConfirm = {},
+                        onDismissRequest = null
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag("btn_top_start_close").performClick()
+        assertThat(topStartClicked).isTrue()
     }
 }

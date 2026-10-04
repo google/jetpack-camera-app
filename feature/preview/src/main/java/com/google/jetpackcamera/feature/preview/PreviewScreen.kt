@@ -425,6 +425,21 @@ private fun ContentScreen(
         }
     }
 
+    val cameraErrorState = remember {
+        derivedStateOf { currentCaptureUiStateProvider().cameraErrorUiState }
+    }
+    val isErrorDialogShowing by remember {
+        derivedStateOf {
+            (cameraErrorState.value as? CameraErrorUiState.Showing)
+                ?.error?.toDialogResources() != null
+        }
+    }
+    LaunchedEffect(isErrorDialogShowing) {
+        if (isErrorDialogShowing && scaffoldState.bottomSheetState.isVisible) {
+            scaffoldState.bottomSheetState.hide()
+        }
+    }
+
     val previewDisplayState = remember {
         derivedStateOf {
             currentCaptureUiStateProvider().previewDisplayUiState
@@ -436,6 +451,7 @@ private fun ContentScreen(
         }
     }
     val viewfinderLambda = remember(
+        isErrorDialogShowing,
         previewDisplayState,
         focusMeteringState,
         onFlipCamera,
@@ -445,16 +461,18 @@ private fun ContentScreen(
         onRequestWindowColorMode
     ) {
         @Composable { modifier: Modifier ->
-            PreviewDisplay(
-                modifier = modifier,
-                previewDisplayUiState = previewDisplayState.value,
-                onFlipCamera = onFlipCamera,
-                onTapToFocus = onTapToFocusLambda,
-                onScaleZoom = { zoomRatio -> onScaleZoomLambda(zoomRatio) },
-                surfaceRequest = surfaceRequest,
-                onRequestWindowColorMode = onRequestWindowColorMode,
-                focusMeteringUiState = focusMeteringState.value
-            )
+            if (!isErrorDialogShowing) {
+                PreviewDisplay(
+                    modifier = modifier,
+                    previewDisplayUiState = previewDisplayState.value,
+                    onFlipCamera = onFlipCamera,
+                    onTapToFocus = onTapToFocusLambda,
+                    onScaleZoom = { zoomRatio -> onScaleZoomLambda(zoomRatio) },
+                    surfaceRequest = surfaceRequest,
+                    onRequestWindowColorMode = onRequestWindowColorMode,
+                    focusMeteringUiState = focusMeteringState.value
+                )
+            }
         }
     }
 
@@ -674,9 +692,11 @@ private fun ContentScreen(
         }
     }
 
-    val debugVisibilityWrapperLambda = remember(debugUiState) {
+    val debugVisibilityWrapperLambda = remember(debugUiState, isErrorDialogShowing) {
         @Composable { content: @Composable () -> Unit ->
-            if (debugUiState !is DebugUiState.Enabled || !debugUiState.debugHidingComponents) {
+            if (!isErrorDialogShowing &&
+                (debugUiState !is DebugUiState.Enabled || !debugUiState.debugHidingComponents)
+            ) {
                 content()
             }
             Unit
@@ -759,9 +779,6 @@ private fun ContentScreen(
         }
     }
 
-    val cameraErrorState = remember {
-        derivedStateOf { currentCaptureUiStateProvider().cameraErrorUiState }
-    }
     val errorDialogLambda = remember(cameraErrorState, cameraController, onCloseCamera) {
         @Composable { modifier: Modifier ->
             val showingState = cameraErrorState.value as? CameraErrorUiState.Showing
@@ -785,6 +802,7 @@ private fun ContentScreen(
         modifier = modifier,
         scaffoldState = scaffoldState,
         onDismissQuickSettings = onDismissQuickSettings,
+        isErrorDialogShowing = isErrorDialogShowing,
         hdrIndicator = hdrIndicatorLambda,
         flashModeIndicator = flashModeIndicatorLambda,
         videoQualityIndicator = videoQualityIndicatorLambda,
@@ -879,6 +897,7 @@ private fun LayoutWrapper(
     modifier: Modifier = Modifier,
     scaffoldState: BottomSheetScaffoldState,
     onDismissQuickSettings: () -> Unit = {},
+    isErrorDialogShowing: Boolean = false,
     viewfinder: @Composable (modifier: Modifier) -> Unit,
     captureButton: @Composable (modifier: Modifier) -> Unit,
     flipCameraButton: @Composable (modifier: Modifier) -> Unit,
@@ -917,16 +936,18 @@ private fun LayoutWrapper(
         captureModeToggle = captureModeToggle,
         quickSettingsOverlay = quickSettingsOverlay,
         indicatorRow = { modifier ->
-            CutoutAwareRow(
-                modifier = modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalSpacing = 8.dp
-            ) {
-                flashModeIndicator(Modifier)
-                hdrIndicator(Modifier)
-                videoQualityIndicator(Modifier)
-                stabilizationIndicator(Modifier)
+            if (!isErrorDialogShowing) {
+                CutoutAwareRow(
+                    modifier = modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalSpacing = 8.dp
+                ) {
+                    flashModeIndicator(Modifier)
+                    hdrIndicator(Modifier)
+                    videoQualityIndicator(Modifier)
+                    stabilizationIndicator(Modifier)
+                }
             }
         },
         debugOverlay = { modifier ->

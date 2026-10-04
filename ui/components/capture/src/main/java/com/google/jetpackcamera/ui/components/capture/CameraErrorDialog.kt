@@ -17,7 +17,6 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,10 +36,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -52,8 +52,8 @@ import androidx.compose.ui.unit.dp
  * @param body Optional body text.
  * @param confirmButtonText Text for the confirm button.
  * @param onConfirm Called when the confirm button is tapped.
- * @param modifier The [Modifier] to be applied to the scrim.
- * @param onDismissRequest Called on back press or scrim tap. Pass `null` to make the dialog
+ * @param modifier The [Modifier] to be applied to the dialog container.
+ * @param onDismissRequest Called on back press or backdrop tap. Pass `null` to make the dialog
  * non-dismissible.
  */
 @Composable
@@ -65,15 +65,20 @@ fun CameraErrorDialog(
     modifier: Modifier = Modifier,
     onDismissRequest: (() -> Unit)? = null
 ) {
-    BackHandler(enabled = true) { onDismissRequest?.invoke() }
+    BackHandler(enabled = onDismissRequest != null) { onDismissRequest?.invoke() }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.32f))
-            .pointerInput(onDismissRequest) {
-                detectTapGestures { onDismissRequest?.invoke() }
-            }
+            .then(
+                if (onDismissRequest != null) {
+                    Modifier.pointerInput(onDismissRequest) {
+                        detectTapGestures { onDismissRequest() }
+                    }
+                } else {
+                    Modifier
+                }
+            )
             .testTag(CAMERA_ERROR_DIALOG_TAG),
         contentAlignment = Alignment.Center
     ) {
@@ -104,7 +109,9 @@ fun CameraErrorDialog(
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.testTag(CAMERA_ERROR_DIALOG_TITLE_TAG)
+                    modifier = Modifier
+                        .semantics { heading() }
+                        .testTag(CAMERA_ERROR_DIALOG_TITLE_TAG)
                 )
                 body?.let {
                     Spacer(modifier = Modifier.height(16.dp))
