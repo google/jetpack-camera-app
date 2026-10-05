@@ -17,6 +17,7 @@ package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
 import android.content.Context
+import android.location.Location
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -25,6 +26,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
+import com.google.jetpackcamera.core.location.LocationProvider
 import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
@@ -562,6 +564,38 @@ class PreviewViewModelTest {
         }
 
     @Test
+    fun locationUpdates_providerThrows_doesNotCrashAndRestartsOnNextTrigger() =
+        runTest(StandardTestDispatcher()) {
+            val failingLocation = FailingLocationProvider()
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(locationEnabled = true)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(failingLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            advanceUntilIdle()
+
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(failingLocation.runCount).isEqualTo(1)
+
+            // A recording pauses location updates, and its end restarts them.
+            cameraSystem.setCurrentCameraState(
+                CameraState(videoRecordingState = VideoRecordingState.Starting())
+            )
+            advanceUntilIdle()
+            cameraSystem.setCurrentCameraState(
+                CameraState(videoRecordingState = VideoRecordingState.Inactive())
+            )
+            advanceUntilIdle()
+            assertThat(failingLocation.runCount).isEqualTo(2)
+        }
+
+    @Test
     fun locationUpdates_videoRecordingStops_doesNotResumeIfPreviewInactive() =
         runTest(StandardTestDispatcher()) {
             val fakeLocation = FakeLocationProvider()
@@ -658,3 +692,15 @@ private fun assertIsReady(viewFinderUiState: CaptureUiState): CaptureUiState.Rea
             "PreviewUiState expected to be Ready, but was ${viewFinderUiState::class}"
         )
     }
+
+private class FailingLocationProvider : LocationProvider {
+    var runCount = 0
+        private set
+
+    override fun getCurrentLocation(): Location? = null
+
+    override suspend fun runLocationUpdates() {
+        runCount++
+        throw IllegalStateException("Location hardware unavailable")
+    }
+}

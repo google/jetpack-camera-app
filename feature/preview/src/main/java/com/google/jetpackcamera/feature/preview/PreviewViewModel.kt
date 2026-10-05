@@ -75,6 +75,7 @@ import kotlin.jvm.optionals.getOrNull
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -283,9 +284,17 @@ class PreviewViewModel @Inject constructor(
             provider != null &&
             !isVideoRecordingActive()
         ) {
-            if (locationUpdatesJob == null) {
+            if (locationUpdatesJob?.isActive != true) {
                 locationUpdatesJob = viewModelScope.launch {
-                    provider.runLocationUpdates()
+                    try {
+                        provider.runLocationUpdates()
+                    } catch (e: Exception) {
+                        // Location is optional metadata, so a provider failure is logged and must
+                        // not crash the camera. Rethrows if this coroutine was cancelled. The job
+                        // ends and restarts on the next sync.
+                        ensureActive()
+                        Log.e(TAG, "Location updates failed", e)
+                    }
                 }
             }
         } else {
@@ -305,6 +314,8 @@ class PreviewViewModel @Inject constructor(
             launch {
                 var oldCameraAppSettings: CameraAppSettings =
                     cameraSystemRepository.getInitialDefaultCameraAppSettings()
+                isLocationEnabled = oldCameraAppSettings.locationEnabled
+                syncLocationUpdates()
                 settingsRepository.defaultCameraAppSettings
                     .collect { new ->
                         if (isLocationEnabled != new.locationEnabled) {

@@ -24,6 +24,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
+import com.google.jetpackcamera.core.location.LocationProvider
 import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -82,7 +83,8 @@ class CaptureControllerImplTest {
             Pair(SaveLocation.Default, null)
         },
         onImageCached: ((Uri) -> Unit)? = null,
-        onVideoCached: ((Uri) -> Unit)? = null
+        onVideoCached: ((Uri) -> Unit)? = null,
+        locationProvider: LocationProvider? = fakeLocationProvider
     ): CaptureControllerImpl {
         return CaptureControllerImpl(
             trackedCaptureUiState = trackedCaptureUiState,
@@ -93,7 +95,7 @@ class CaptureControllerImplTest {
             captureEvents = captureEvents,
             onImageCached = onImageCached,
             onVideoCached = onVideoCached,
-            locationProvider = fakeLocationProvider,
+            locationProvider = locationProvider,
             coroutineContext = testScope.coroutineContext
         )
     }
@@ -349,6 +351,30 @@ class CaptureControllerImplTest {
         assertThat(fakeCameraSystem.lastVideoRecordingLocation).isNull()
     }
 
+    @Test
+    fun captureImage_locationProviderThrows_capturesWithoutLocation() = runCameraTest {
+        val controller = createCaptureController(locationProvider = ThrowingLocationProvider())
+
+        controller.captureImage(contentResolver)
+        advanceUntilIdle()
+
+        val event = captureEvents.receive()
+        assertThat(event).isInstanceOf(ImageCaptureEvent.SingleImageSaved::class.java)
+        assertThat(fakeCameraSystem.lastPictureTakenLocation).isNull()
+    }
+
+    @Test
+    fun startVideoRecording_locationProviderThrows_recordsWithoutLocation() = runCameraTest {
+        val controller = createCaptureController(locationProvider = ThrowingLocationProvider())
+
+        controller.startVideoRecording()
+        advanceUntilIdle()
+
+        val event = captureEvents.receive()
+        assertThat(event).isInstanceOf(VideoCaptureEvent.VideoSaved::class.java)
+        assertThat(fakeCameraSystem.lastVideoRecordingLocation).isNull()
+    }
+
     private fun runCameraTest(testBody: suspend TestScope.() -> Unit) = runTest(testDispatcher) {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             fakeCameraSystem.initialize(DEFAULT_CAMERA_APP_SETTINGS) {}
@@ -387,4 +413,11 @@ private class TestCameraSystem(private val delegate: FakeCameraSystem) :
             onVideoRecord(OnVideoRecordEvent.OnVideoRecorded(savedVideoUri))
         }
     }
+}
+
+private class ThrowingLocationProvider : LocationProvider {
+    override fun getCurrentLocation(): android.location.Location? =
+        throw IllegalStateException("Location unavailable")
+
+    override suspend fun runLocationUpdates() {}
 }

@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.controller.impl
 
 import android.content.ContentResolver
+import android.location.Location
 import android.net.Uri
 import android.util.Log
 import androidx.tracing.traceAsync
@@ -46,6 +47,17 @@ import kotlinx.coroutines.launch
 private const val TAG = "CaptureButtonControllerImpl"
 
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
+
+/**
+ * Returns the current location, or `null` if the provider throws. Location is optional metadata,
+ * so a provider failure must not fail the capture.
+ */
+private fun LocationProvider.currentLocationOrNull(): Location? = try {
+    getCurrentLocation()
+} catch (e: Exception) {
+    Log.w(TAG, "Failed to get location; capturing without it", e)
+    null
+}
 
 /**
  * Implementation of [CaptureController] that interacts with [CameraSystem].
@@ -98,7 +110,7 @@ class CaptureControllerImpl(
                     cameraSystemProvider().takePicture(
                         contentResolver,
                         saveLocation,
-                        locationProvider?.getCurrentLocation()
+                        locationProvider?.currentLocationOrNull()
                     ) {
                         trackedCaptureUiState.update { old ->
                             old.copy(lastBlinkTimeStamp = System.currentTimeMillis())
@@ -151,7 +163,7 @@ class CaptureControllerImpl(
             try {
                 cameraSystemProvider().startVideoRecording(
                     saveLocation,
-                    locationProvider?.getCurrentLocation()
+                    locationProvider?.currentLocationOrNull()
                 ) {
                     when (it) {
                         is OnVideoRecordEvent.OnVideoRecorded -> {
