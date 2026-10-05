@@ -496,8 +496,7 @@ private fun ContentScreen(
             FlipCameraButton(
                 modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
                 onClick = onFlipCamera,
-                flipLensUiState = flipLensState.value,
-                enabledCondition = flipLensState.value is FlipLensUiState.Available
+                flipLensUiState = flipLensState.value
             )
         }
     }

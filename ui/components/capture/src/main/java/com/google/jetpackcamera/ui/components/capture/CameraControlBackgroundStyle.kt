@@ -30,12 +30,18 @@ internal enum class CameraControlBackgroundStyle {
     WHITE_20
 }
 
+/**
+ * Container background color corresponding to this control style variant.
+ */
 internal val CameraControlBackgroundStyle.containerColor: Color
     get() = when (this) {
         CameraControlBackgroundStyle.BLACK_60 -> Color.Black.copy(alpha = 0.6f)
         CameraControlBackgroundStyle.WHITE_20 -> Color.White.copy(alpha = 0.2f)
     }
 
+/**
+ * Container background color for disabled controls under this style variant.
+ */
 internal val CameraControlBackgroundStyle.disabledContainerColor: Color
     get() = when (this) {
         CameraControlBackgroundStyle.BLACK_60 -> Color.Black.copy(alpha = 0.2f)
