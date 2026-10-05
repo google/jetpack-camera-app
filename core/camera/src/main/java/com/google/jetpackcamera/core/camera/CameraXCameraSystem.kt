@@ -200,10 +200,32 @@ class CameraXCameraSystem(
                     val selector = lensFacing.toCameraSelector()
                     selector.filter(availableCameraInfos).firstOrNull()?.let { camInfo ->
                         val videoCapabilities = Recorder.getVideoCapabilities(camInfo)
-                        val supportedDynamicRanges =
+                        val reportedDynamicRanges =
                             videoCapabilities.supportedDynamicRanges
                                 .mapNotNull(CXDynamicRange::toSupportedAppDynamicRange)
                                 .toSet()
+                        // TODO(#457): Move this check into the constraints repository alongside
+                        //  the cached feature combination checks from the Feature Group API
+                        //  adoption, instead of special-casing the capability here.
+                        // CameraX reports the dynamic ranges from the camera's dynamic range
+                        // profiles map, but only enables 10-bit stream combinations when the
+                        // camera also advertises the DYNAMIC_RANGE_TEN_BIT capability. Some
+                        // devices publish 10-bit profiles without that capability, so binding
+                        // an HDR VideoCapture fails even though HLG10 is reported as supported.
+                        val supportedDynamicRanges =
+                            if (camInfo.isTenBitDynamicRangeSupported) {
+                                reportedDynamicRanges
+                            } else {
+                                reportedDynamicRanges.filter { it == DynamicRange.SDR }.toSet()
+                            }
+                        if (supportedDynamicRanges != reportedDynamicRanges) {
+                            Log.w(
+                                TAG,
+                                "$lensFacing camera reports $reportedDynamicRanges but does " +
+                                    "not advertise the DYNAMIC_RANGE_TEN_BIT capability. " +
+                                    "Restricting dynamic ranges to $supportedDynamicRanges."
+                            )
+                        }
                         val supportedVideoQualitiesMap =
                             buildMap {
                                 for (dynamicRange in supportedDynamicRanges) {
