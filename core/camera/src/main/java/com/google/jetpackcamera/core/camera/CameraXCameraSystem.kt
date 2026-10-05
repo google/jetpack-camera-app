@@ -217,7 +217,7 @@ class CameraXCameraSystem(
                             if (camInfo.isTenBitDynamicRangeSupported) {
                                 reportedDynamicRanges
                             } else {
-                                reportedDynamicRanges.filter { it == DynamicRange.SDR }.toSet()
+                                setOf(DynamicRange.SDR)
                             }
                         if (supportedDynamicRanges != reportedDynamicRanges) {
                             Log.w(
