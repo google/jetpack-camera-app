@@ -199,6 +199,11 @@ class ConcurrentCameraTest {
             // Enable concurrent camera in settings
             setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
 
+            // The concurrent camera session starts asynchronously after returning from
+            // settings. The capture button is disabled until it is running, so wait for it
+            // before pressing.
+            waitForCaptureButton()
+
             longClickForVideoRecordingCheckingElapsedTime()
 
             waitForSnackbarWithText(
