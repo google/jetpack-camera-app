@@ -903,11 +903,9 @@ class CameraXCameraSystem(
             return this
         }
         val videoOnly = copy(captureMode = CaptureMode.VIDEO_ONLY)
-        return if (
-            videoOnly.tryApplyConcurrentCameraModeConstraints().concurrentCameraMode ==
-            concurrentCameraMode
-        ) {
-            videoOnly
+        val coercedSettings = videoOnly.tryApplyConcurrentCameraModeConstraints()
+        return if (coercedSettings.concurrentCameraMode == concurrentCameraMode) {
+            coercedSettings
         } else {
             this
         }
