@@ -204,9 +204,10 @@ class CameraXCameraSystem(
                             videoCapabilities.supportedDynamicRanges
                                 .mapNotNull(CXDynamicRange::toSupportedAppDynamicRange)
                                 .toSet()
-                        // TODO(#457): Move this check into the constraints repository alongside
-                        //  the cached feature combination checks from the Feature Group API
-                        //  adoption, instead of special-casing the capability here.
+                        // TODO(temcguir): Move this check into the constraints repository
+                        //  alongside the cached feature combination checks from the Feature
+                        //  Group API adoption, instead of special-casing the capability here.
+                        //  See https://github.com/google/jetpack-camera-app/issues/457.
                         // CameraX reports the dynamic ranges from the camera's dynamic range
                         // profiles map, but only enables 10-bit stream combinations when the
                         // camera also advertises the DYNAMIC_RANGE_TEN_BIT capability. Some
