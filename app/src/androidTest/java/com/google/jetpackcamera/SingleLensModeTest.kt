@@ -52,7 +52,7 @@ class SingleLensModeTest(private val lensFacing: String) {
     }
 
     @Test
-    fun singleLensMode_flipCameraButtonDisabled() {
+    fun singleLensMode_flipCameraButtonDoesNotExist() {
         val pm = InstrumentationRegistry.getInstrumentation().targetContext.packageManager
 
         // The GMD API 28 and 34 emulators report having a front camera but don't actually work with it.

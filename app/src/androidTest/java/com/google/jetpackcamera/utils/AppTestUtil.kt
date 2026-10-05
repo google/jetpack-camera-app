@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.utils
 
 import android.app.Instrumentation
+import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.database.Cursor
 import android.net.Uri
@@ -196,4 +197,13 @@ fun mediaStoreInsertedFlow(
             emit(it.toPair())
         }
     }
+}
+
+/**
+ * Checks whether the device has both front and back cameras available to support flipping.
+ */
+internal fun hasFrontAndBackCameras(): Boolean {
+    val pm = InstrumentationRegistry.getInstrumentation().targetContext.packageManager
+    return pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT) &&
+        pm.hasSystemFeature(PackageManager.FEATURE_CAMERA)
 }

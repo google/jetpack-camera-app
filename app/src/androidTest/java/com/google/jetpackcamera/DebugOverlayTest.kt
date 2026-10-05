@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera
 
-import android.content.pm.PackageManager
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -39,6 +38,7 @@ import com.google.jetpackcamera.ui.debug.PHYSICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.debug.ZOOM_RATIO_TAG
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra
+import com.google.jetpackcamera.utils.hasFrontAndBackCameras
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
@@ -66,14 +66,10 @@ class DebugOverlayTest {
 
     @Test
     fun hideComponentsButton_togglesUiVisibility() {
-        val pm = InstrumentationRegistry.getInstrumentation().targetContext.packageManager
-        val hasMultipleCameras = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT) &&
-            pm.hasSystemFeature(PackageManager.FEATURE_CAMERA)
-
         runMainActivityScenarioTest(debugExtra) {
             composeTestRule.waitForCaptureButton()
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
-            if (hasMultipleCameras) {
+            if (hasFrontAndBackCameras()) {
                 composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
             } else {
                 composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
@@ -97,7 +93,7 @@ class DebugOverlayTest {
             composeTestRule.onNodeWithTag(BTN_DEBUG_HIDE_COMPONENTS_TAG).performClick()
 
             composeTestRule.waitForNodeWithTag(CAPTURE_BUTTON)
-            if (hasMultipleCameras) {
+            if (hasFrontAndBackCameras()) {
                 composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
             } else {
                 composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
