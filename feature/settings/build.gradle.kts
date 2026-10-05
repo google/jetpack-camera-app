@@ -59,6 +59,7 @@ android {
 
     @Suppress("UnstableApiUsage")
     testOptions {
+        unitTests.isIncludeAndroidResources = true
         managedDevices {
             localDevices {
                 create("pixel2Api28") {
@@ -94,6 +95,9 @@ dependencies {
 
     // Compose - Testing
     androidTestImplementation(libs.compose.junit)
+    debugImplementation(libs.compose.test.manifest)
+    testImplementation(libs.compose.test.manifest)
+    testImplementation(libs.compose.junit)
 
     // Testing
     testImplementation(libs.junit)
@@ -104,6 +108,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(project(":core:settings:datastore-prefs"))
     testImplementation(project(":core:settings:datastore-prefs:testing"))
+    testImplementation(project(":data:settings:testing"))
     testImplementation(libs.androidx.datastore.preferences)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

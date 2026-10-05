@@ -26,7 +26,13 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         maven {
-            setUrl("https://androidx.dev/snapshots/latest/artifacts/repository")
+            setUrl("https://androidx.dev/snapshots/builds/16438909/artifacts/repository")
+            mavenContent {
+                snapshotsOnly()
+            }
+            content {
+                includeGroupAndSubgroups("androidx")
+            }
         }
         google()
         mavenCentral()
@@ -72,3 +78,9 @@ include(":core:settings:datastore-prefs")
 include(":core:settings:datastore-prefs:testing")
 include(":ui:debug")
 include(":ui:debug:testing")
+include(":core:location")
+include(":core:location:location-di")
+include(":core:location:testing")
+include(":core:settings:datastore-proto")
+include(":core:model-proto")
+include(":core:settings:settings-proto")

@@ -256,7 +256,7 @@ internal fun HdrRow(
         enumMapper = { hdrEnabled ->
             if (hdrEnabled) CameraDynamicRange.HDR else CameraDynamicRange.SDR
         },
-        isItemEnabled = { isSupported }
+        isItemEnabled = { item -> !item.value || isSupported }
     )
 }
 

@@ -16,6 +16,9 @@
 package com.google.jetpackcamera.settings
 
 import android.Manifest
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -23,7 +26,6 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.core.camera.effects.SingleStreamEffectKey
 import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
 import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
 import com.google.jetpackcamera.model.CaptureMode
@@ -35,6 +37,9 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
+import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,8 +47,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -92,6 +99,9 @@ internal class CameraAppSettingsViewModelTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
     private lateinit var testFile: File
     private lateinit var testDataStore: DataStore<Preferences>
     private lateinit var datastoreScope: CoroutineScope
@@ -115,9 +125,7 @@ internal class CameraAppSettingsViewModelTest {
         val settingsRepository = LocalSettingsRepository(
             settingsDataSource = settingsDataSource
         )
-        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-            updateSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
-        }
+        val constraintsRepository = FakeConstraintsRepository(TYPICAL_SYSTEM_CONSTRAINTS)
         settingsViewModel = SettingsViewModel(
             settingsRepository,
             constraintsRepository
@@ -142,6 +150,26 @@ internal class CameraAppSettingsViewModelTest {
         assertThat(uiState).isEqualTo(
             TYPICAL_SETTINGS_UISTATE
         )
+    }
+
+    /**
+     * Verifies that the settings UI state stays loading, rather than showing an empty screen,
+     * until the camera system constraints become available.
+     */
+    @Test
+    fun settingsUiState_whenConstraintsUnavailable_isLoading() = runTest(StandardTestDispatcher()) {
+        val constraintsRepository = FakeConstraintsRepository()
+        val customViewModel = SettingsViewModel(FakeSettingsRepository(), constraintsRepository)
+        backgroundScope.launch { customViewModel.settingsUiState.collect {} }
+        advanceUntilIdle()
+
+        assertThat(customViewModel.settingsUiState.value).isEqualTo(SettingsUiState.Loading)
+
+        constraintsRepository.setSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+        advanceUntilIdle()
+
+        assertThat(customViewModel.settingsUiState.value)
+            .isInstanceOf(SettingsUiState.Enabled::class.java)
     }
 
     @Test
@@ -250,9 +278,7 @@ internal class CameraAppSettingsViewModelTest {
         val settingsRepository = LocalSettingsRepository(
             settingsDataSource = settingsDataSource
         )
-        val constraintsRepository = SettableConstraintsRepositoryImpl().apply {
-            updateSystemConstraints(systemConstraints)
-        }
+        val constraintsRepository = FakeConstraintsRepository(systemConstraints)
         return SettingsViewModel(settingsRepository, constraintsRepository).apply {
             setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
         }
@@ -288,9 +314,10 @@ internal class CameraAppSettingsViewModelTest {
      */
     @Test
     fun concurrentCamera_whenCameraEffectIsActive_isDisabled() = runTest(StandardTestDispatcher()) {
+        val testEffectId = com.google.jetpackcamera.model.CameraEffectId("fake_effect")
         // Set selected_camera_effect to a non-empty value first
         testDataStore.edit { prefs ->
-            prefs[stringPreferencesKey("selected_camera_effect")] = SingleStreamEffectKey.id.value
+            prefs[stringPreferencesKey("selected_camera_effect")] = testEffectId.value
         }
 
         val customViewModel = createViewModelWithConstraints(
@@ -298,7 +325,7 @@ internal class CameraAppSettingsViewModelTest {
                 concurrentCamerasSupported = true,
                 perLensConstraints =
                 TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.mapValues { (_, constraints) ->
-                    constraints.copy(supportedEffects = setOf(SingleStreamEffectKey.id))
+                    constraints.copy(supportedEffects = setOf(testEffectId))
                 }
             )
         )
@@ -551,6 +578,19 @@ internal class CameraAppSettingsViewModelTest {
             (cameraEffectUiState as CameraEffectUiState.Disabled).disabledRationale
         assertThat(disabledRationale)
             .isInstanceOf(DisabledRationale.UltraHdrUnsupportedRationale::class.java)
+    }
+
+    @Test
+    fun settingsScreen_defaultSlots_rendersDefaultSections() {
+        Dispatchers.resetMain()
+        composeTestRule.setContent {
+            SettingsScreen(
+                versionInfo = VersionInfoHolder(versionName = "1.0.0", buildType = "debug"),
+                onNavigateBack = {},
+                viewModel = settingsViewModel
+            )
+        }
+        composeTestRule.onNodeWithTag(BTN_OPEN_DIALOG_SETTING_FLASH_TAG).assertIsDisplayed()
     }
 }
 

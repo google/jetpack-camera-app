@@ -18,6 +18,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.android.legacy.kapt)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.compose.screenshot)
 }
 
 android {
@@ -27,6 +28,8 @@ android {
             minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
         }
     }
+
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
@@ -97,6 +100,8 @@ dependencies {
     // noinspection TestManifestGradleConfiguration: required for release build unit tests
     testImplementation(libs.compose.test.manifest)
     testImplementation(libs.compose.junit)
+    screenshotTestImplementation(libs.screenshot.validation.api)
+    screenshotTestImplementation(libs.compose.ui.tooling)
 
     // Testing
     testImplementation(libs.junit)

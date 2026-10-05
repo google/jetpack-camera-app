@@ -39,7 +39,6 @@ import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -77,6 +76,7 @@ import androidx.compose.ui.unit.dp
  * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug settings
  * @param screenFlashOverlay the screen flash overlay composable
  * @param snackBar the snack bar composable for showing messages
+ * @param topStartContent optional composable content aligned to the top-start of the viewfinder
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,7 +102,8 @@ fun PreviewLayout(
     debugOverlay: @Composable (Modifier) -> Unit,
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (Modifier) -> Unit,
-    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit
+    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    topStartContent: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
@@ -129,17 +130,15 @@ fun PreviewLayout(
             sheetContent = {
                 quickSettingsOverlay(Modifier)
             },
-            snackbarHost = {
-                SnackbarHost(
-                    hostState = scaffoldState.snackbarHostState,
-                    modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
-                )
-            }
+            snackbarHost = {}
         ) { paddingValues ->
             Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
                 Column {
                     indicatorRow(Modifier.statusBarsPadding())
-                    viewfinder(Modifier)
+                    Box {
+                        viewfinder(Modifier)
+                        topStartContent(Modifier.align(Alignment.TopStart))
+                    }
                 }
 
                 Box(
@@ -157,7 +156,13 @@ fun PreviewLayout(
                             quickSettingsToggleButton = quickSettingsButton,
                             captureModeToggleSwitch = captureModeToggle,
                             zoomControls = zoomLevelDisplay,
-                            elapsedTimeDisplay = elapsedTimeDisplay
+                            elapsedTimeDisplay = elapsedTimeDisplay,
+                            snackbarHost = { modifier ->
+                                PillSnackbarHost(
+                                    snackbarHostState = scaffoldState.snackbarHostState,
+                                    modifier = modifier
+                                )
+                            }
                         )
                     }
                     // controls overlay
@@ -197,11 +202,14 @@ private fun VerticalMaterialControls(
     flipCameraButton: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable (Modifier) -> Unit
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                snackbarHost(Modifier)
+
                 elapsedTimeDisplay(Modifier)
 
                 // zoom controls row

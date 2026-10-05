@@ -55,9 +55,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -69,12 +71,19 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarVisuals
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -108,6 +117,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -119,6 +129,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.controller.SnackBarController
+import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
@@ -141,7 +152,222 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 
-private const val TAG = "PreviewScreen"
+private const val TAG = "CaptureScreenComponents"
+
+private val SnackbarMinHeight = 48.dp
+private val SnackbarHorizontalMargin = 16.dp
+private val SnackbarVerticalMargin = 8.dp
+private val SnackbarStartPadding = 12.dp
+private val SnackbarEndPaddingTextOnly = 16.dp
+private val SnackbarEndPaddingAction = 8.dp
+private val SnackbarVerticalPadding = 12.dp
+private val SnackbarIconSize = 24.dp
+private val SnackbarIconToTextSpacing = 10.dp
+private val SnackbarTextToActionSpacing = 8.dp
+private val SnackbarElevation = 6.dp
+
+/**
+ * A custom [SnackbarHost] that displays snackbars with a pill shape and a leading status icon.
+ *
+ * @param snackbarHostState the [SnackbarHostState] for the host.
+ * @param modifier the modifier for this component.
+ */
+@Composable
+fun PillSnackbarHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifier) {
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = modifier.testTag(SNACKBAR_NODE_TAG)
+    ) { data ->
+        PillSnackbar(
+            visuals = data.visuals,
+            onAction = data::performAction,
+            onDismiss = data::dismiss,
+            modifier = Modifier.padding(
+                horizontal = SnackbarHorizontalMargin,
+                vertical = SnackbarVerticalMargin
+            )
+        )
+    }
+}
+
+@Composable
+internal fun PillSnackbar(
+    visuals: SnackbarVisuals,
+    onAction: () -> Unit = {},
+    onDismiss: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val isError = (visuals as? CustomSnackbarVisuals)?.isError ?: false
+    val containerColor = if (isError) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.inverseSurface
+    }
+    val contentColor = if (isError) {
+        MaterialTheme.colorScheme.onError
+    } else {
+        MaterialTheme.colorScheme.inverseOnSurface
+    }
+    val endPadding = when {
+        visuals.withDismissAction -> 0.dp
+        visuals.actionLabel != null -> SnackbarEndPaddingAction
+        else -> SnackbarEndPaddingTextOnly
+    }
+
+    Surface(
+        modifier = modifier.heightIn(min = SnackbarMinHeight),
+        shape = CircleShape,
+        color = containerColor,
+        contentColor = contentColor,
+        shadowElevation = SnackbarElevation
+    ) {
+        Row(
+            modifier = Modifier.padding(start = SnackbarStartPadding, end = endPadding),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .padding(
+                        top = SnackbarVerticalPadding,
+                        bottom = SnackbarVerticalPadding,
+                        end = if (visuals.actionLabel != null) SnackbarTextToActionSpacing else 0.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(SnackbarIconToTextSpacing)
+            ) {
+                Icon(
+                    painter = painterResource(
+                        if (isError) R.drawable.ic_error_filled else R.drawable.ic_info_filled
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier.size(SnackbarIconSize)
+                )
+                Text(
+                    text = visuals.message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            visuals.actionLabel?.let { label ->
+                TextButton(
+                    onClick = onAction,
+                    colors = ButtonDefaults.textButtonColors(contentColor = contentColor)
+                ) {
+                    Text(text = label)
+                }
+            }
+            if (visuals.withDismissAction) {
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_close),
+                        contentDescription = stringResource(
+                            R.string.snackbar_dismiss_content_description
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreviewPillSnackbar(
+    message: String,
+    isError: Boolean = true,
+    withDismissAction: Boolean = false,
+    actionLabel: String? = null,
+    modifier: Modifier = Modifier
+) {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        PillSnackbar(
+            visuals = CustomSnackbarVisuals(
+                message = message,
+                actionLabel = actionLabel,
+                withDismissAction = withDismissAction,
+                duration = SnackbarDuration.Short,
+                isError = isError
+            ),
+            modifier = modifier.padding(
+                horizontal = SnackbarHorizontalMargin,
+                vertical = SnackbarVerticalMargin
+            )
+        )
+    }
+}
+
+@Preview
+@Composable
+internal fun PillSnackbarErrorMessageOnlyPreview() {
+    PreviewPillSnackbar(
+        message = "Image capture failed",
+        isError = true,
+        withDismissAction = false
+    )
+}
+
+@Preview
+@Composable
+internal fun PillSnackbarErrorWithDismissPreview() {
+    PreviewPillSnackbar(
+        message = "Image capture failed",
+        isError = true,
+        withDismissAction = true
+    )
+}
+
+@Preview
+@Composable
+internal fun PillSnackbarErrorWithActionPreview() {
+    PreviewPillSnackbar(
+        message = "Image capture failed",
+        isError = true,
+        withDismissAction = false,
+        actionLabel = "Retry"
+    )
+}
+
+@Preview
+@Composable
+internal fun PillSnackbarInfoWithDismissPreview() {
+    PreviewPillSnackbar(
+        message = "Image saved",
+        isError = false,
+        withDismissAction = true
+    )
+}
+
+@Preview(widthDp = 412)
+@Composable
+internal fun PillSnackbarLongMessagePreview() {
+    PreviewPillSnackbar(
+        message = "An error occurred when running low light boost and the message is very long " +
+            "so it wraps across two lines before truncating with an ellipsis.",
+        isError = true,
+        withDismissAction = true
+    )
+}
+
+@Preview(locale = "ar")
+@Composable
+internal fun PillSnackbarRtlPreview() {
+    PreviewPillSnackbar(
+        message = "Image capture failed",
+        isError = true,
+        withDismissAction = true
+    )
+}
+
+@Preview(fontScale = 2f, widthDp = 412)
+@Composable
+internal fun PillSnackbarLargeFontPreview() {
+    PreviewPillSnackbar(
+        message = "Image capture failed",
+        isError = true,
+        withDismissAction = true
+    )
+}
 private const val BLINK_TIME = 100L
 private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
 private const val FOCUS_INDICATOR_FAILURE_DELAY = 500L
@@ -194,7 +420,7 @@ fun ElapsedTimeText(
                     contentDescription = accessibilityText
                 }
                 .defaultMinSize(minWidth = 72.dp, minHeight = 32.dp)
-                .background(color = Color(0xFFED0000), shape = CircleShape)
+                .background(color = CaptureTokens.RecordingRed, shape = CircleShape)
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -430,7 +656,7 @@ fun CaptureModeToggleButton(
  * @param modifier the modifier for this component.
  * @param snackbarToShow the [SnackbarData] to show.
  * @param snackbarHostState the [SnackbarHostState] for this component.
- * @param onSnackbarResult the callback for the snackbar result.
+ * @param snackBarController the [SnackBarController] for this component.
  */
 @Composable
 fun TestableSnackbar(
@@ -444,22 +670,22 @@ fun TestableSnackbar(
         modifier = modifier
             .size(20.dp)
     ) {
-        val context = LocalContext.current
+        val message = stringResource(id = snackbarToShow.stringResource)
+        val actionLabel = snackbarToShow.actionLabelRes?.let { stringResource(id = it) }
         LaunchedEffect(snackbarToShow) {
-            val message = context.getString(snackbarToShow.stringResource)
             Log.d(TAG, "Snackbar Displayed with message: $message")
             try {
-                val result =
-                    snackbarHostState.showSnackbar(
-                        message = message,
-                        duration = snackbarToShow.duration,
-                        withDismissAction = snackbarToShow.withDismissAction,
-                        actionLabel = if (snackbarToShow.actionLabelRes == null) {
-                            null
-                        } else {
-                            context.getString(snackbarToShow.actionLabelRes!!)
-                        }
-                    )
+                // Convert SnackbarData into SnackbarVisuals so SnackbarHost can receive it
+                val visuals = CustomSnackbarVisuals(
+                    message = message,
+                    actionLabel = actionLabel,
+                    withDismissAction = snackbarToShow.withDismissAction,
+                    duration = snackbarToShow.duration,
+                    isError = snackbarToShow.isError
+                )
+
+                val result = snackbarHostState.showSnackbar(visuals)
+
                 when (result) {
                     SnackbarResult.ActionPerformed,
                     SnackbarResult.Dismissed -> snackBarController.onSnackBarResult(
