@@ -243,6 +243,32 @@ class PermissionsViewModelTest {
     }
 
     @Test
+    fun dismissPermission_mandatoryPermission_isRequestedAgainWhenNotGranted() = runTest {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.permissionsUiState.collect()
+        }
+        viewModel.dismissPermission(PermissionEnum.CAMERA)
+        advanceUntilIdle()
+
+        viewModel.updatePermissionStates(
+            FakeMultiplePermissionsState(
+                permissions = listOf(
+                    FakePermissionState(
+                        android.Manifest.permission.CAMERA,
+                        PermissionStatus.Denied(false)
+                    )
+                )
+            )
+        )
+        advanceUntilIdle()
+
+        val uiState = viewModel.permissionsUiState.value
+        assertThat(uiState).isEqualTo(PermissionsUiState.PermissionsNeeded(PermissionEnum.CAMERA))
+        assertThat(permissionsRepository.requestedPermissions.first())
+            .doesNotContain(PermissionEnum.CAMERA.name)
+    }
+
+    @Test
     fun dismissPermission_marksPermissionRequestedInRepository() = runTest {
         viewModel.dismissPermission(PermissionEnum.LOCATION)
         advanceUntilIdle()

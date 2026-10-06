@@ -16,10 +16,13 @@
 package com.google.jetpackcamera.permissions
 
 import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -32,6 +35,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -75,7 +79,7 @@ class PermissionsScreenTest {
     }
 
     @Test
-    fun whenLocationPermanentlyDenied_clickingAgain_invokesDismissPermission() {
+    fun whenLocationRequestShowsNoPrompt_clickingAgain_requestsAgainWithoutDismissing() {
         var dismissCalled = false
         var launchCount = 0
 
@@ -106,9 +110,12 @@ class PermissionsScreenTest {
         assertThat(launchCount).isEqualTo(1)
         assertThat(dismissCalled).isFalse()
 
-        // Second click when permanently silenced: skips/dismisses optional permission cleanly
+        // Advancing after a request that ends without a grant is handled by the request result
+        // callback (see optionalPermissionRequest_endsWithoutGrant_dismissesPermission), so a
+        // second click requests again.
         composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON).performClick()
-        assertThat(dismissCalled).isTrue()
+        assertThat(launchCount).isEqualTo(2)
+        assertThat(dismissCalled).isFalse()
     }
 
     @Test
@@ -192,6 +199,62 @@ class PermissionsScreenTest {
         // Click on Location: must launch location request and not be skipped
         composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON).performClick()
         assertThat(locationLaunchCount).isEqualTo(1)
+    }
+
+    @Test
+    fun optionalPermissionRequest_endsWithoutGrant_dismissesPermission() {
+        var dismissCalled = false
+        lateinit var activity: ComponentActivity
+        composeTestRule.setContent {
+            activity = LocalContext.current as ComponentActivity
+            PermissionTemplate(
+                permissionEnum = PermissionEnum.LOCATION,
+                onDismissPermission = { dismissCalled = true },
+                onOpenAppSettings = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON).performClick()
+        // Rationale stays false, as after a dismissed prompt or one the system did not show.
+        deliverPermissionResult(activity, granted = false)
+
+        assertThat(dismissCalled).isTrue()
+    }
+
+    @Test
+    fun mandatoryPermissionRequest_endsWithoutGrant_doesNotDismissPermission() {
+        var dismissCalled = false
+        lateinit var activity: ComponentActivity
+        composeTestRule.setContent {
+            activity = LocalContext.current as ComponentActivity
+            PermissionTemplate(
+                permissionEnum = PermissionEnum.CAMERA,
+                onDismissPermission = { dismissCalled = true },
+                onOpenAppSettings = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON).performClick()
+        deliverPermissionResult(activity, granted = false)
+
+        assertThat(dismissCalled).isFalse()
+    }
+
+    /** Answers the last runtime permission request made by [activity]. */
+    @Suppress("DEPRECATION")
+    private fun deliverPermissionResult(activity: ComponentActivity, granted: Boolean) {
+        composeTestRule.waitForIdle()
+        val request = checkNotNull(shadowOf(activity).lastRequestedPermission) {
+            "No permission request was made"
+        }
+        val result =
+            if (granted) PackageManager.PERMISSION_GRANTED else PackageManager.PERMISSION_DENIED
+        activity.onRequestPermissionsResult(
+            request.requestCode,
+            request.requestedPermissions,
+            IntArray(request.requestedPermissions.size) { result }
+        )
+        composeTestRule.waitForIdle()
     }
 
     @Test

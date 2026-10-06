@@ -307,6 +307,20 @@ class SettingsViewModel @Inject constructor(
         grantedPermissions.update { permissions }
     }
 
+    /**
+     * Updates the granted state of the permissions in [multiplePermissionsState] and leaves the
+     * state of all other permissions unchanged.
+     *
+     * @param multiplePermissionsState The current state of a subset of the app's permissions.
+     */
+    @OptIn(ExperimentalPermissionsApi::class)
+    fun updateGrantedPermissions(multiplePermissionsState: MultiplePermissionsState) {
+        val states = multiplePermissionsState.permissions
+        val updatedPermissions = states.map { it.permission }.toSet()
+        val grantedInUpdate = states.filter { it.status.isGranted }.map { it.permission }
+        grantedPermissions.update { current -> current - updatedPermissions + grantedInUpdate }
+    }
+
     private fun getStabilizationUiState(
         systemConstraints: CameraSystemConstraints,
         cameraAppSettings: CameraAppSettings

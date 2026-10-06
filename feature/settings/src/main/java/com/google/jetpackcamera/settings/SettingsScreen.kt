@@ -40,7 +40,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -319,7 +321,8 @@ fun DefaultRecordingSettings(
  *
  * @param versionInfo The [VersionInfoHolder] containing app version information.
  * @param viewModel The [SettingsViewModel] providing the settings state.
- * @param locationPermissionStates The [MultiplePermissionsState] for location permissions.
+ * @param rememberLocationPermissionsState Creates the [MultiplePermissionsState] for the location
+ * permissions. Its argument must be called with the result of each location permission request.
  * @param onOpenAppSettings Optional callback when user chooses to open system app settings.
  */
 @OptIn(ExperimentalPermissionsApi::class)
@@ -327,12 +330,17 @@ fun DefaultRecordingSettings(
 fun DefaultAppSettings(
     versionInfo: VersionInfoHolder,
     viewModel: SettingsViewModel = hiltViewModel(),
-    locationPermissionStates: MultiplePermissionsState = rememberMultiplePermissionsState(
-        permissions = listOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
+    rememberLocationPermissionsState: @Composable (
+        onPermissionsResult: (Map<String, Boolean>) -> Unit
+    ) -> MultiplePermissionsState = { onPermissionsResult ->
+        rememberMultiplePermissionsState(
+            permissions = listOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ),
+            onPermissionsResult = onPermissionsResult
         )
-    ),
+    },
     onOpenAppSettings: (() -> Unit)? = null
 ) {
     val uiState by viewModel.settingsUiState.collectAsState()
@@ -350,12 +358,43 @@ fun DefaultAppSettings(
     var hasAttemptedLocationRequest by rememberSaveable { mutableStateOf(false) }
     var pendingLocationEnable by rememberSaveable { mutableStateOf(false) }
 
+    // Whether a rationale could be shown when the current location request was launched, or null
+    // when no request is in progress.
+    var rationaleAtLaunch by remember { mutableStateOf<Boolean?>(null) }
+    var deniedRequestCount by remember { mutableIntStateOf(0) }
+
+    val locationPermissionStates = rememberLocationPermissionsState { results ->
+        if (results.values.none { it }) {
+            deniedRequestCount++
+        } else {
+            rationaleAtLaunch = null
+        }
+    }
     val hasLocationPermission = locationPermissionStates.permissions.any { it.status.isGranted }
+    val canShowLocationRationale =
+        locationPermissionStates.permissions.any { it.status.shouldShowRationale }
+
+    // Report location grants to the view model directly, so the toggle reflects a grant from this
+    // section without waiting for the screen-level permission state to refresh.
+    LaunchedEffect(locationPermissionStates.permissions.map { it.status }) {
+        viewModel.updateGrantedPermissions(locationPermissionStates)
+    }
 
     LaunchedEffect(hasLocationPermission) {
         if (hasLocationPermission && pendingLocationEnable) {
             viewModel.setLocationEnabled(true)
             pendingLocationEnable = false
+        }
+    }
+
+    // A request that ends without a grant, with no rationale available before or after it, was
+    // either dismissed or denied by the system without a prompt because the user denied it
+    // permanently earlier. In both cases, explain how to enable location from app settings.
+    LaunchedEffect(deniedRequestCount) {
+        val rationaleBeforeRequest = rationaleAtLaunch ?: return@LaunchedEffect
+        rationaleAtLaunch = null
+        if (!rationaleBeforeRequest && !canShowLocationRationale) {
+            showLocationRationaleDialog = true
         }
     }
 
@@ -369,12 +408,11 @@ fun DefaultAppSettings(
                     viewModel.setLocationEnabled(true)
                 } else {
                     pendingLocationEnable = true
-                    val canShowRationale =
-                        locationPermissionStates.permissions.any { it.status.shouldShowRationale }
                     // After a request has been denied without a rationale, the system no longer
                     // shows the prompt, so direct the user to app settings instead.
-                    if (canShowRationale || !hasAttemptedLocationRequest) {
+                    if (canShowLocationRationale || !hasAttemptedLocationRequest) {
                         hasAttemptedLocationRequest = true
+                        rationaleAtLaunch = canShowLocationRationale
                         locationPermissionStates.launchMultiplePermissionRequest()
                     } else {
                         showLocationRationaleDialog = true
