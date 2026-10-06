@@ -16,20 +16,39 @@
 package com.google.jetpackcamera.data.media.testing
 
 import android.net.Uri
+import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class FakeMediaRepository : MediaRepository {
     private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
-
     override val currentMedia = _currentMedia.asStateFlow()
 
-    var loadHandler: (MediaDescriptor) -> Media = { Media.None }
+    private val _lastCapturedMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
+    override val lastCapturedMedia: StateFlow<MediaDescriptor> = _lastCapturedMedia.asStateFlow()
+
+    var refreshLastCapturedMediaCount = 0
+        private set
+
+    override fun refreshLastCapturedMedia() {
+        refreshLastCapturedMediaCount++
+    }
+
+    var loadHandler: (MediaDescriptor) -> Media = { mediaDescriptor ->
+        when (mediaDescriptor) {
+            is MediaDescriptor.Content.Image -> Media.Image(
+                createBitmap(1, 1)
+            )
+            is MediaDescriptor.Content.Video -> Media.Video(mediaDescriptor.uri)
+            else -> Media.None
+        }
+    }
     var saveToMediaStoreHandler: (MediaDescriptor.Content) -> Uri? = { mediaDescriptor ->
         when (mediaDescriptor) {
             is MediaDescriptor.Content.Image -> "img.jpg".toUri()
@@ -40,10 +59,6 @@ class FakeMediaRepository : MediaRepository {
 
     override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
         _currentMedia.update { pendingMedia }
-    }
-
-    override suspend fun getLastCapturedMedia(): MediaDescriptor {
-        return MediaDescriptor.None
     }
 
     override suspend fun load(mediaDescriptor: MediaDescriptor): Media {
@@ -66,5 +81,10 @@ class FakeMediaRepository : MediaRepository {
     }
 
     override suspend fun copyToUri(mediaDescriptor: MediaDescriptor.Content, destinationUri: Uri) {
+    }
+
+    // Helper for testing
+    fun setLastCapturedMedia(mediaDescriptor: MediaDescriptor) {
+        _lastCapturedMedia.value = mediaDescriptor
     }
 }

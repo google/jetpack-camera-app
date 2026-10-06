@@ -20,6 +20,7 @@ import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
 import android.os.Build
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -152,6 +153,41 @@ val CameraInfo.isOpticalStabilizationSupported: Boolean
         ?.contains(
             CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON
         ) ?: false
+
+/**
+ * Checks if the camera advertises the 10-bit dynamic range output capability
+ * ([CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT]).
+ *
+ * This is the capability CameraX requires before it will bind any 10-bit (HDR) stream
+ * combination. Always `false` below API 33, where 10-bit dynamic range profiles do not exist.
+ */
+internal val CameraCharacteristics.isTenBitDynamicRangeSupported: Boolean
+    get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
+            ?.contains(
+                CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT
+            ) ?: false
+
+internal fun CameraCharacteristics.filterSupportedVideoDynamicRanges(
+    lensFacing: LensFacing,
+    reportedDynamicRanges: Set<DynamicRange>
+): Set<DynamicRange> {
+    val supportedDynamicRanges =
+        if (isTenBitDynamicRangeSupported) {
+            reportedDynamicRanges
+        } else {
+            setOf(DynamicRange.SDR)
+        }
+    if (supportedDynamicRanges != reportedDynamicRanges) {
+        Log.w(
+            TAG,
+            "$lensFacing camera reports $reportedDynamicRanges but does " +
+                "not advertise the DYNAMIC_RANGE_TEN_BIT capability. " +
+                "Restricting dynamic ranges to $supportedDynamicRanges."
+        )
+    }
+    return supportedDynamicRanges
+}
 
 @OptIn(ExperimentalCamera2Interop::class)
 suspend fun CameraInfo.getLowLightBoostAvailability(

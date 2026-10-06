@@ -15,22 +15,36 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.content.Context
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
+import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import org.junit.Before
@@ -245,5 +259,86 @@ class CaptureScreenComponentsTest {
         composeTestRule.onNodeWithTag(FOCUS_METERING_INDICATOR_TAG)
             .assertContentDescriptionEquals("Focused")
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun pillSnackbar_dismissButtonClick_callsOnDismissAndUsesStringResource() {
+        var dismissed = false
+        val dismissDescription =
+            ApplicationProvider.getApplicationContext<Context>().getString(
+                R.string.snackbar_dismiss_content_description
+            )
+
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) {
+                PillSnackbar(
+                    visuals = CustomSnackbarVisuals(
+                        message = "Image capture failed",
+                        actionLabel = null,
+                        withDismissAction = true,
+                        duration = SnackbarDuration.Short,
+                        isError = true
+                    ),
+                    onDismiss = { dismissed = true }
+                )
+            }
+        }
+
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+        composeTestRule.onNodeWithText("Image capture failed").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(dismissDescription)
+            .assertIsDisplayed()
+            .performClick()
+        assertThat(dismissed).isTrue()
+    }
+
+    @Test
+    fun pillSnackbar_actionButtonClick_callsOnAction() {
+        var actionPerformed = false
+
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) {
+                PillSnackbar(
+                    visuals = CustomSnackbarVisuals(
+                        message = "Image capture failed",
+                        actionLabel = "Retry",
+                        withDismissAction = false,
+                        duration = SnackbarDuration.Short,
+                        isError = true
+                    ),
+                    onAction = { actionPerformed = true }
+                )
+            }
+        }
+
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+        composeTestRule.onNodeWithText("Retry")
+            .assertIsDisplayed()
+            .performClick()
+        assertThat(actionPerformed).isTrue()
+    }
+
+    @Test
+    fun pillSnackbar_statusIcon_hasNoContentDescription() {
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) {
+                PillSnackbar(
+                    visuals = CustomSnackbarVisuals(
+                        message = "Image saved",
+                        actionLabel = null,
+                        withDismissAction = false,
+                        duration = SnackbarDuration.Short,
+                        isError = false
+                    )
+                )
+            }
+        }
+
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+        composeTestRule.onNodeWithText("Image saved").assertIsDisplayed()
+        composeTestRule.onAllNodes(
+            SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
+            useUnmergedTree = true
+        ).assertCountEquals(0)
     }
 }
