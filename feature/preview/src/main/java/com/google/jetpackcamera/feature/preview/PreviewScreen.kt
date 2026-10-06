@@ -304,12 +304,12 @@ private fun ContentScreen(
         scope.launch { scaffoldState.bottomSheetState.hide() }
     }
 
-    val onDismissQuickSettings: () -> Unit = remember(scope, scaffoldState.bottomSheetState) {
-        {
-            scope.launch { scaffoldState.bottomSheetState.hide() }
-            Unit
+    val onDismissQuickSettings: () -> Unit =
+        remember<() -> Unit>(scope, scaffoldState.bottomSheetState) {
+            {
+                scope.launch { scaffoldState.bottomSheetState.hide() }
+            }
         }
-    }
 
     var initialRecordingSettings by remember { mutableStateOf<InitialRecordingSettings?>(null) }
     LaunchedEffect(videoRecordingState.value) {

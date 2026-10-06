@@ -159,13 +159,16 @@ class PostCaptureViewModel @Inject constructor(
             loadedMediaFlow.map { it.second is Media.Video }
                 .distinctUntilChanged()
                 .collectLatest { isVideoMedia ->
-                    if (isVideoMedia) {
-                        if (player == null) {
-                            initPlayer()
+                    when {
+                        isVideoMedia -> {
+                            if (player == null) {
+                                initPlayer()
+                            }
                         }
-                    } else if (player != null) {
-                        releasePlayer()
-                        player = null
+                        player != null -> {
+                            releasePlayer()
+                            player = null
+                        }
                     }
                 }
         }
@@ -183,7 +186,6 @@ class PostCaptureViewModel @Inject constructor(
                 }
             }
         }
-        super.onCleared()
     }
 
     private fun updatePlayerState(commands: Player.Commands?) {
