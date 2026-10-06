@@ -46,7 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 /**
- * In-hierarchy modal dialog for camera errors. Callers provide the copy.
+ * In-hierarchy dialog for camera errors. Callers provide the copy.
  *
  * @param title The dialog title.
  * @param body Optional body text.
@@ -54,7 +54,8 @@ import androidx.compose.ui.unit.dp
  * @param onConfirm Called when the confirm button is tapped.
  * @param modifier The [Modifier] to be applied to the dialog container.
  * @param onDismissRequest Called on back press or backdrop tap. Pass `null` to make the dialog
- * non-dismissible.
+ * non-dismissible. When `null`, touches outside the dialog card are not consumed, so callers
+ * are responsible for hiding or disabling any content behind the dialog.
  */
 @Composable
 fun CameraErrorDialog(
