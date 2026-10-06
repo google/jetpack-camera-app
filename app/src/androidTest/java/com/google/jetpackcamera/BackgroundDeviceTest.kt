@@ -36,6 +36,7 @@ import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
+import com.google.jetpackcamera.utils.assumeFlipCameraAvailable
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.visitQuickSettings
 import com.google.jetpackcamera.utils.visitSettingDialog
@@ -87,6 +88,8 @@ class BackgroundDeviceTest {
     fun flipCamera_then_background_foreground() = runMainActivityScenarioTest {
         // Wait for the capture button to be displayed
         composeTestRule.waitForCaptureButton()
+
+        composeTestRule.assumeFlipCameraAvailable()
 
         // Click the flip camera button
         composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON)

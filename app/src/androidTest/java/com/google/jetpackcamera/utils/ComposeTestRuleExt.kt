@@ -452,12 +452,9 @@ fun ComposeTestRule.isHdrEnabled(): Boolean {
 }
 
 fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
-    onNodeWithTag(
-        FLIP_CAMERA_BUTTON
-    ).fetchSemanticsNode(
-        "Flip camera button is not visible on main screen."
-    ).let { node ->
-        for (description in node.config[SemanticsProperties.ContentDescription]) {
+    val flipNodes = onAllNodesWithTag(FLIP_CAMERA_BUTTON).fetchSemanticsNodes()
+    if (flipNodes.isNotEmpty()) {
+        for (description in flipNodes.first().config[SemanticsProperties.ContentDescription]) {
             when (description) {
                 getResString(CaptureR.string.quick_settings_front_camera_description) ->
                     return LensFacing.FRONT
@@ -467,6 +464,19 @@ fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
             }
         }
         throw AssertionError("Unable to determine lens facing from flip camera button")
+    }
+    return visitSettingsScreen {
+        checkComponentStateDescriptionState(BTN_SWITCH_SETTING_LENS_FACING_TAG) { description ->
+            when (description) {
+                getResString(SettingsR.string.default_facing_camera_description_front) ->
+                    LensFacing.FRONT
+
+                getResString(SettingsR.string.default_facing_camera_description_back) ->
+                    LensFacing.BACK
+
+                else -> null
+            }
+        }
     }
 }
 

@@ -204,6 +204,7 @@ fun mediaStoreInsertedFlow(
  */
 internal fun hasFrontAndBackCameras(): Boolean {
     val pm = InstrumentationRegistry.getInstrumentation().targetContext.packageManager
-    return pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT) &&
+    return !isEmulatorWithFakeFrontCamera &&
+        pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT) &&
         pm.hasSystemFeature(PackageManager.FEATURE_CAMERA)
 }
