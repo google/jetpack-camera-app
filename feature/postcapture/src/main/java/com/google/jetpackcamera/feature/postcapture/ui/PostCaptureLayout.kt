@@ -18,11 +18,15 @@ package com.google.jetpackcamera.feature.postcapture.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.union
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -31,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.google.jetpackcamera.ui.components.capture.PillSnackbarHost
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PostCaptureLayout(
     modifier: Modifier = Modifier,
@@ -43,16 +48,22 @@ fun PostCaptureLayout(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // The *IgnoringVisibility insets keep reporting the bar sizes while the status bar is hidden on
+    // this screen, so the controls do not move when it is hidden or transiently revealed.
+    // safeContent is deliberately avoided: it includes the gesture insets, which would pull the
+    // left/right buttons inward.
     Scaffold(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility
+            .union(WindowInsets.displayCutout)
     ) { paddingValues ->
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .padding(paddingValues)
         ) {
             // Layer 1: Media Surface
-            // Occupies the full screen background
+            // Occupies the full screen background (intentionally unpadded so media renders
+            // edge-to-edge behind the system bars).
             mediaSurface(
                 Modifier
                     .fillMaxSize()
@@ -60,11 +71,12 @@ fun PostCaptureLayout(
             )
 
             // Layer 2: PostCapture Controls
-            // Uses SpaceBetween to push two rows to the absolute edges
+            // Uses SpaceBetween to push two rows to the absolute edges, inset once by the
+            // Scaffold's contentWindowInsets.
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .safeContentPadding(),
+                    .padding(paddingValues),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 // Top Bar Area
