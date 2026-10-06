@@ -26,6 +26,7 @@ import android.util.Range
 import androidx.annotation.OptIn
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
+import androidx.camera.camera2.interop.cameraCharacteristics
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange as CXDynamicRange
@@ -200,10 +201,24 @@ class CameraXCameraSystem(
                     val selector = lensFacing.toCameraSelector()
                     selector.filter(availableCameraInfos).firstOrNull()?.let { camInfo ->
                         val videoCapabilities = Recorder.getVideoCapabilities(camInfo)
-                        val supportedDynamicRanges =
+                        val reportedDynamicRanges =
                             videoCapabilities.supportedDynamicRanges
                                 .mapNotNull(CXDynamicRange::toSupportedAppDynamicRange)
                                 .toSet()
+                        // TODO(temcguir): Move this check into the constraints repository
+                        //  alongside the cached feature combination checks from the Feature
+                        //  Group API adoption, instead of special-casing the capability here.
+                        //  See https://github.com/google/jetpack-camera-app/issues/457.
+                        // CameraX reports the dynamic ranges from the camera's dynamic range
+                        // profiles map, but only enables 10-bit stream combinations when the
+                        // camera also advertises the DYNAMIC_RANGE_TEN_BIT capability. Some
+                        // devices publish 10-bit profiles without that capability, so binding
+                        // an HDR VideoCapture fails even though HLG10 is reported as supported.
+                        val supportedDynamicRanges =
+                            camInfo.cameraCharacteristics.filterSupportedVideoDynamicRanges(
+                                lensFacing = lensFacing,
+                                reportedDynamicRanges = reportedDynamicRanges
+                            )
                         val supportedVideoQualitiesMap =
                             buildMap {
                                 for (dynamicRange in supportedDynamicRanges) {
