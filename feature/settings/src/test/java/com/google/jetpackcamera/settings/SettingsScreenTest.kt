@@ -39,6 +39,7 @@ import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CANCE
 import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LOCATION_TAG
 import com.google.jetpackcamera.settings.ui.DIALOG_LOCATION_PERMISSION_RATIONALE_TAG
+import com.google.jetpackcamera.settings.ui.LocationSetting
 import java.util.Optional
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -296,6 +297,52 @@ class SettingsScreenTest {
 
         assertThat(launchCount).isEqualTo(0)
         composeTestRule.onNodeWithTag(DIALOG_LOCATION_PERMISSION_RATIONALE_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun locationPermissionDenied_toggle_thenGrant_enablesLocationSetting() {
+        val settingsViewModel = createSettingsViewModel()
+        val fine = FakePermissionState(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            PermissionStatus.Denied(shouldShowRationale = false)
+        )
+        val coarse = FakePermissionState(
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            PermissionStatus.Denied(shouldShowRationale = false)
+        )
+        val permissionStates = FakeMultiplePermissionsState(
+            permissions = listOf(fine, coarse),
+            onLaunch = {
+                fine.status = PermissionStatus.Granted
+                coarse.status = PermissionStatus.Granted
+                locationPermissionsResult(
+                    mapOf(fine.permission to true, coarse.permission to true)
+                )
+            }
+        )
+        setAppSettingsContent(
+            locationPermissionStates = permissionStates,
+            settingsViewModel = settingsViewModel
+        )
+
+        clickLocationSwitch()
+
+        composeTestRule.waitUntil(5_000) {
+            (settingsViewModel.settingsUiState.value as? SettingsUiState.Enabled)
+                ?.locationUiState is LocationUiState.Enabled.On
+        }
+    }
+
+    @Test
+    fun locationSetting_whenHidden_isNotDisplayed() {
+        composeTestRule.setContent {
+            LocationSetting(
+                locationUiState = LocationUiState.Hidden,
+                onLocationToggled = {}
+            )
+        }
+
+        composeTestRule.onNodeWithTag(BTN_SWITCH_SETTING_LOCATION_TAG).assertDoesNotExist()
     }
 }
 

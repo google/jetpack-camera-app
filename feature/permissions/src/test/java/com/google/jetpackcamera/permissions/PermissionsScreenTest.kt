@@ -26,11 +26,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.lifecycle.SavedStateHandle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.permissions.navigation.PermissionsRoute
 import com.google.jetpackcamera.permissions.ui.PermissionTemplate
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON
+import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -283,5 +286,68 @@ class PermissionsScreenTest {
         fineLocationState.status = PermissionStatus.Granted
         composeTestRule.waitForIdle()
         assertThat(dismissed).isTrue()
+    }
+
+    @Test
+    fun mandatoryPermission_whenRationaleShouldBeShown_clickingButton_opensAppSettings() {
+        var openAppSettingsCalled = false
+        val cameraState = FakePermissionState(
+            permission = Manifest.permission.CAMERA,
+            status = PermissionStatus.Denied(shouldShowRationale = true)
+        )
+        val permissionStates = FakeMultiplePermissionsState(
+            permissions = listOf(cameraState),
+            shouldShowRationale = true
+        )
+
+        composeTestRule.setContent {
+            PermissionTemplate(
+                permissionEnum = PermissionEnum.CAMERA,
+                permissionStates = permissionStates,
+                onDismissPermission = {},
+                onOpenAppSettings = { openAppSettingsCalled = true }
+            )
+        }
+
+        composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON).performClick()
+        assertThat(openAppSettingsCalled).isTrue()
+    }
+
+    @Test
+    fun permissionsScreen_whenPermissionGranted_updatesViewModelAndInvokesAllPermissionsGranted() {
+        var allGrantedCalled = false
+        val cameraState = FakePermissionState(
+            permission = Manifest.permission.CAMERA,
+            status = PermissionStatus.Denied(shouldShowRationale = false)
+        )
+        val permissionStates = FakeMultiplePermissionsState(
+            permissions = listOf(cameraState)
+        )
+        val viewModel = PermissionsViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(
+                    PermissionsRoute.ARG_REQUESTABLE_PERMISSIONS to
+                        arrayOf(Manifest.permission.CAMERA)
+                )
+            ),
+            settingsRepository = FakeSettingsRepository(),
+            permissionsRepository = FakePermissionsRepository()
+        )
+
+        composeTestRule.setContent {
+            PermissionsScreen(
+                permissionStates = permissionStates,
+                onAllPermissionsGranted = { allGrantedCalled = true },
+                onOpenAppSettings = {},
+                viewModel = viewModel
+            )
+        }
+
+        composeTestRule.waitForIdle()
+        assertThat(allGrantedCalled).isFalse()
+
+        cameraState.status = PermissionStatus.Granted
+        composeTestRule.waitForIdle()
+        assertThat(allGrantedCalled).isTrue()
     }
 }
