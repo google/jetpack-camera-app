@@ -222,16 +222,48 @@ class LocationManagerLocationProviderTest {
 
     @Suppress("DEPRECATION")
     @Test
-    fun runLocationUpdates_permissionGrantedMidSession_registersOnNextCycle() {
-        locationProvider.refreshIntervalMs = 500L
-
+    fun runLocationUpdates_permissionGrantedMidSession_registersAfterRetryInterval() {
         launchLocationUpdates()
         ShadowLooper.idleMainLooper()
         assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
 
         grantLocationPermissions()
-        ShadowLooper.idleMainLooper(500L, TimeUnit.MILLISECONDS)
+        ShadowLooper.idleMainLooper(15L, TimeUnit.SECONDS)
 
+        assertThat(shadowLocationManager.locationUpdateListeners).isNotEmpty()
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun runLocationUpdates_systemLocationEnabledMidSession_registersAfterRetryInterval() {
+        grantLocationPermissions()
+        shadowLocationManager.setLocationEnabled(false)
+        launchLocationUpdates()
+        ShadowLooper.idleMainLooper()
+        assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
+
+        shadowLocationManager.setLocationEnabled(true)
+        ShadowLooper.idleMainLooper(14L, TimeUnit.SECONDS)
+        assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
+
+        ShadowLooper.idleMainLooper(1L, TimeUnit.SECONDS)
+        assertThat(shadowLocationManager.locationUpdateListeners).isNotEmpty()
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun runLocationUpdates_afterCompletedSession_waitsRefreshIntervalNotRetryInterval() {
+        grantLocationPermissions()
+        launchLocationUpdates()
+        ShadowLooper.idleMainLooper()
+
+        deliver(createLocation(accuracy = 10f))
+        assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
+
+        ShadowLooper.idleMainLooper(15L, TimeUnit.SECONDS)
+        assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
+
+        ShadowLooper.idleMainLooper(5L, TimeUnit.MINUTES)
         assertThat(shadowLocationManager.locationUpdateListeners).isNotEmpty()
     }
 
