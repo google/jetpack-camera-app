@@ -38,6 +38,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
+@Suppress("OPT_IN_ARGUMENT_IS_NOT_MARKER")
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalCoroutinesApi::class)
 class PermissionsViewModelTest {
 
@@ -275,5 +276,10 @@ class PermissionsViewModelTest {
 
         val requested = permissionsRepository.requestedPermissions.first()
         assertThat(requested).contains(PermissionEnum.LOCATION.name)
+    }
+
+    @Test
+    fun locationPermissionEnum_hasNoMandatoryRationaleBody() {
+        assertThat(PermissionEnum.LOCATION.getRationaleBodyTextResId()).isNull()
     }
 }

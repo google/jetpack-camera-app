@@ -170,7 +170,7 @@ enum class PermissionEnum : PermissionInfoProvider {
 
     companion object {
         fun fromString(permission: String): PermissionEnum =
-            entries.firstOrNull { it.getPermissions().contains(permission) }
+            entries.firstOrNull { permission in it.getPermissions() }
                 ?: throw IllegalArgumentException("Unknown permission: $permission")
     }
 }
