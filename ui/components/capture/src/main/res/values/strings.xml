@@ -157,4 +157,7 @@
     <string name="capture_mode_standard_default">Standard</string>
     <string name="capture_mode_photo_default">Photo</string>
     <string name="capture_mode_video_default">Video</string>
+
+    <!-- Snackbar -->
+    <string name="snackbar_dismiss_content_description">Dismiss</string>
 </resources>
