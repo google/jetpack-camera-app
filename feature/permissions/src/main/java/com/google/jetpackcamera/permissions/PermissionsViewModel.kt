@@ -135,7 +135,7 @@ class PermissionsViewModel @Inject constructor(
  * - optional permissions that have not yet been denied by the user
  */
 @OptIn(ExperimentalPermissionsApi::class)
-fun getRequestablePermissions(
+internal fun getRequestablePermissions(
     permissionStates: MultiplePermissionsState,
     requestedPermissions: Set<String> = emptySet()
 ): List<PermissionEnum> = permissionStates.permissions
