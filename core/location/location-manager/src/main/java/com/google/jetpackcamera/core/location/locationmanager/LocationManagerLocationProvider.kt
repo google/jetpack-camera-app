@@ -46,6 +46,7 @@ private const val SIGNIFICANT_ACCURACY_DELTA_METERS = 20f
 private const val LOCATION_UPDATE_INTERVAL_MS = 1_000L
 private const val LOCATION_UPDATE_MIN_DISTANCE_METERS = 0f
 private val REFRESH_INTERVAL_MS = TimeUnit.MINUTES.toMillis(5)
+private val RETRY_INTERVAL_MS = TimeUnit.SECONDS.toMillis(15)
 private val STALE_LOCATION_THRESHOLD_NANOS = TimeUnit.MINUTES.toNanos(30)
 private val SIGNIFICANT_TIME_DELTA_NANOS = TimeUnit.MINUTES.toNanos(2)
 
@@ -77,6 +78,10 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
     // Interval between periodic refresh cycles (5 minutes by default, configurable for testing)
     internal var refreshIntervalMs: Long = REFRESH_INTERVAL_MS
 
+    // Interval before retrying when a cycle could not register any provider, for example because
+    // system location was off (15 seconds by default, configurable for testing)
+    internal var retryIntervalMs: Long = RETRY_INTERVAL_MS
+
     private val locationListener = object : LocationListenerCompat {
         override fun onLocationChanged(location: Location) {
             handleLocationUpdate(location)
@@ -101,18 +106,26 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
     /**
      * Runs a location update session every [refreshIntervalMs] until cancelled. Each cycle re-checks
      * permissions and enabled providers, so changes made mid-session are applied on the next cycle.
+     * A cycle that cannot register any provider is retried after the shorter [retryIntervalMs], so
+     * turning on system location or granting permission takes effect quickly.
      */
     override suspend fun runLocationUpdates() = coroutineScope {
         while (isActive) {
-            runUpdateSession()
-            delay(refreshIntervalMs)
+            val sessionRan = runUpdateSession()
+            delay(if (sessionRan) refreshIntervalMs else retryIntervalMs)
         }
     }
 
+    /**
+     * Registers the active providers and waits for an accurate fix or [ACQUISITION_TIMEOUT_MS].
+     *
+     * @return `true` if at least one provider was registered, `false` if the session could not
+     * start.
+     */
     @SuppressLint("MissingPermission")
-    private suspend fun runUpdateSession() {
-        val locationManager = locationManager ?: return
-        if (!hasAnyLocationPermission()) return
+    private suspend fun runUpdateSession(): Boolean {
+        val locationManager = locationManager ?: return false
+        if (!hasAnyLocationPermission()) return false
 
         // Pre-seed cache with last known location if available
         getBestLastKnownLocation()?.let { lastKnown ->
@@ -120,7 +133,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         }
 
         val activeProviders = getActiveProviders()
-        if (activeProviders.isEmpty()) return
+        if (activeProviders.isEmpty()) return false
 
         val accurateFixReceived = CompletableDeferred<Unit>()
         accurateFixDeferred.set(accurateFixReceived)
@@ -152,12 +165,14 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
 
         if (registeredCount == 0) {
             accurateFixDeferred.set(null)
-            return
+            return false
         }
 
         isUpdating.set(true)
         Log.d(TAG, "Started location updates across $registeredCount providers")
 
+        // Updates are stopped only here: on an accurate fix (handleLocationUpdate completes
+        // accurateFixReceived), on timeout, or on cancellation.
         try {
             withTimeoutOrNull(ACQUISITION_TIMEOUT_MS) {
                 accurateFixReceived.await()
@@ -166,6 +181,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
             accurateFixDeferred.set(null)
             stopHardwareUpdates()
         }
+        return true
     }
 
     @SuppressLint("MissingPermission")
@@ -189,13 +205,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
             if (hasFine) add(LocationManager.GPS_PROVIDER)
             add(LocationManager.NETWORK_PROVIDER)
             if (hasFine) add(LocationManager.PASSIVE_PROVIDER)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                LocationManagerCompat.hasProvider(
-                    locationManager,
-                    LocationManager.FUSED_PROVIDER
-                ) &&
-                locationManager.isProviderEnabled(LocationManager.FUSED_PROVIDER)
-            ) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 add(LocationManager.FUSED_PROVIDER)
             }
         }.filter { LocationManagerCompat.hasProvider(locationManager, it) }
@@ -235,9 +245,9 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         }
 
         // A rejected fix leaves the cache unchanged, so it must not end the update session.
+        // Completing the deferred resumes runUpdateSession(), which stops the updates.
         if (accepted && location.accuracyOrMax <= ACCURACY_THRESHOLD_METERS) {
             accurateFixDeferred.get()?.complete(Unit)
-            stopHardwareUpdates()
         }
     }
 

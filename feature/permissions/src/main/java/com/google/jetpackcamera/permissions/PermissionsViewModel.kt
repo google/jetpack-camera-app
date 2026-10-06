@@ -80,17 +80,21 @@ class PermissionsViewModel @Inject constructor(
     }
 
     /**
-     * Dismisses [permission] without granting it.
+     * Advances past [permission].
      *
-     * The permission is removed from the current queue, excluded for the rest of this session,
-     * and recorded as requested in [PermissionsRepository] so it is not shown again.
+     * The permission is removed from the current queue. An optional permission is also excluded
+     * for the rest of this session and recorded as requested in [PermissionsRepository] so it is
+     * not shown again. A mandatory permission is only removed from the queue, so it is requested
+     * again if it is not granted.
      *
-     * @param permission The permission the user chose to skip.
+     * @param permission The permission to advance past.
      */
     internal fun dismissPermission(permission: PermissionEnum) {
-        dismissedPermissions.add(permission)
-        viewModelScope.launch {
-            permissionsRepository.markPermissionRequested(permission.name)
+        if (permission.isOptional()) {
+            dismissedPermissions.add(permission)
+            viewModelScope.launch {
+                permissionsRepository.markPermissionRequested(permission.name)
+            }
         }
         permissionQueue.update { queue ->
             queue.filter { it != permission }
