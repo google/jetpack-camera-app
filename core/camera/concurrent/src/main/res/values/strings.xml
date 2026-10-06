@@ -15,6 +15,6 @@
   ~ limitations under the License.
   -->
 <resources>
-    <string name="capture_mode_concurrent_dual">Dual</string>
-    <string name="quick_settings_title_concurrent_dual_settings">Dual video settings</string>
+    <string name="capture_mode_concurrent_dual" description="Label for the concurrent dual-camera video recording option in the camera mode carousel at the bottom of the preview screen. [CHAR LIMIT=30]">Dual</string>
+    <string name="quick_settings_title_concurrent_dual_settings" description="Title header at the top of the quick settings bottom sheet when concurrent dual-camera video recording is active. [CHAR LIMIT=40]">Dual video settings</string>
 </resources>
