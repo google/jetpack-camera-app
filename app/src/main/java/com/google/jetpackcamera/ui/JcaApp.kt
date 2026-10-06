@@ -65,6 +65,7 @@ fun JcaApp(
     openAppSettings: () -> Unit,
     onStoragePermissionGranted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
+    isDarkTheme: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     JetpackCameraNavHost(
@@ -77,7 +78,8 @@ fun JcaApp(
         onStoragePermissionGranted = onStoragePermissionGranted,
         onRequestWindowColorMode = onRequestWindowColorMode,
         onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-        onCaptureEvent = onCaptureEvent
+        onCaptureEvent = onCaptureEvent,
+        isDarkTheme = isDarkTheme
     )
 }
 
@@ -94,8 +96,19 @@ private fun JetpackCameraNavHost(
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
+    isDarkTheme: Boolean = true,
     navController: NavHostController = rememberNavController()
 ) {
+    // A single owner for system bar visibility, driven by the destination that is currently on top
+    // of the back stack. This must live above the NavHost: during a transition both the outgoing
+    // and the incoming destination are composed, so a per-screen effect would let the outgoing
+    // screen's cleanup run last and undo the incoming screen's request.
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    SystemBarsPolicyEffect(
+        systemBarsPolicyFor(backStackEntry?.destination?.route),
+        isDarkTheme = isDarkTheme
+    )
+
     CameraPermissionGuard(navController)
     StoragePermissionGuard(onStoragePermissionGranted)
 
