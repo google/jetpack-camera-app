@@ -23,7 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -47,17 +47,17 @@ class CaptureModeCarouselTest {
 
     private val defaultOption = CaptureSubModeOption(
         id = CaptureSubModeId.DEFAULT,
-        labelResId = R.string.capture_mode_photo_default
+        labelResId = R.string.quick_settings_text_capture_mode_image_only
     )
     private val secondId = CaptureSubModeId("submode_two")
     private val secondOption = CaptureSubModeOption(
         id = secondId,
-        labelResId = R.string.capture_mode_video_default
+        labelResId = R.string.quick_settings_text_capture_mode_video_only
     )
     private val thirdId = CaptureSubModeId("submode_three")
     private val thirdOption = CaptureSubModeOption(
         id = thirdId,
-        labelResId = R.string.capture_mode_standard_default
+        labelResId = R.string.quick_settings_text_capture_mode_standard
     )
 
     @Test

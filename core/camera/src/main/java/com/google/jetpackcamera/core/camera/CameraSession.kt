@@ -798,6 +798,7 @@ private fun createPreviewUseCase(
  * called on the main thread, so this is applied separately before the group is bound.
  */
 @MainThread
+@Suppress("UsePropertyAccessSyntax")
 internal fun UseCaseGroup.attachPreviewSurfaceProvider(
     surfaceRequests: MutableStateFlow<SurfaceRequest?>
 ) {
