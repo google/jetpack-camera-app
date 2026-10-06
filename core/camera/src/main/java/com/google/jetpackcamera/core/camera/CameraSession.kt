@@ -805,6 +805,7 @@ private fun createPreviewUseCase(
  */
 @InternalCameraApi
 @MainThread
+@Suppress("UsePropertyAccessSyntax")
 fun UseCaseGroup.attachPreviewSurfaceProvider(surfaceRequests: MutableStateFlow<SurfaceRequest?>) {
     useCases.filterIsInstance<Preview>().forEach { preview ->
         preview.setSurfaceProvider { surfaceRequest ->
