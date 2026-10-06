@@ -94,9 +94,9 @@ class SettingsScreenTest {
 
     private fun setAppSettingsContent(
         locationPermissionStates: MultiplePermissionsState,
+        settingsViewModel: SettingsViewModel = createSettingsViewModel(),
         onOpenAppSettings: () -> Unit = {}
-    ): SettingsViewModel {
-        val settingsViewModel = createSettingsViewModel()
+    ) {
         composeTestRule.setContent {
             // DefaultAppSettings emits sibling rows, so it needs a layout parent.
             Column {
@@ -114,7 +114,6 @@ class SettingsScreenTest {
         composeTestRule.waitUntil(5_000) {
             settingsViewModel.settingsUiState.value is SettingsUiState.Enabled
         }
-        return settingsViewModel
     }
 
     /**
@@ -217,8 +216,10 @@ class SettingsScreenTest {
 
     @Test
     fun locationPermissionGranted_isReportedToViewModel() {
-        val settingsViewModel = setAppSettingsContent(
-            locationPermissionStates = locationPermissionStates(status = PermissionStatus.Granted)
+        val settingsViewModel = createSettingsViewModel()
+        setAppSettingsContent(
+            locationPermissionStates = locationPermissionStates(status = PermissionStatus.Granted),
+            settingsViewModel = settingsViewModel
         )
 
         composeTestRule.waitUntil(5_000) {
@@ -229,8 +230,10 @@ class SettingsScreenTest {
 
     @Test
     fun updateGrantedPermissions_leavesPermissionsOutsideTheUpdateUnchanged() {
-        val settingsViewModel = setAppSettingsContent(
-            locationPermissionStates = locationPermissionStates(status = PermissionStatus.Granted)
+        val settingsViewModel = createSettingsViewModel()
+        setAppSettingsContent(
+            locationPermissionStates = locationPermissionStates(status = PermissionStatus.Granted),
+            settingsViewModel = settingsViewModel
         )
         settingsViewModel.setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
 
@@ -238,11 +241,10 @@ class SettingsScreenTest {
             locationPermissionStates(status = PermissionStatus.Granted)
         )
 
-        composeTestRule.waitUntil(5_000) {
-            val state = settingsViewModel.settingsUiState.value as? SettingsUiState.Enabled
-            state?.locationUiState is LocationUiState.Enabled &&
-                state.audioUiState is AudioUiState.Enabled
-        }
+        composeTestRule.waitForIdle()
+        val state = settingsViewModel.settingsUiState.value as SettingsUiState.Enabled
+        assertThat(state.locationUiState).isInstanceOf(LocationUiState.Enabled::class.java)
+        assertThat(state.audioUiState).isInstanceOf(AudioUiState.Enabled::class.java)
     }
 
     @Test
