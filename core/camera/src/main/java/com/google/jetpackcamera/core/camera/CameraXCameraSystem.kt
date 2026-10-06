@@ -26,6 +26,7 @@ import android.util.Range
 import androidx.annotation.OptIn
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
+import androidx.camera.camera2.interop.cameraCharacteristics
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange as CXDynamicRange
@@ -214,19 +215,10 @@ class CameraXCameraSystem(
                         // devices publish 10-bit profiles without that capability, so binding
                         // an HDR VideoCapture fails even though HLG10 is reported as supported.
                         val supportedDynamicRanges =
-                            if (camInfo.isTenBitDynamicRangeSupported) {
-                                reportedDynamicRanges
-                            } else {
-                                setOf(DynamicRange.SDR)
-                            }
-                        if (supportedDynamicRanges != reportedDynamicRanges) {
-                            Log.w(
-                                TAG,
-                                "$lensFacing camera reports $reportedDynamicRanges but does " +
-                                    "not advertise the DYNAMIC_RANGE_TEN_BIT capability. " +
-                                    "Restricting dynamic ranges to $supportedDynamicRanges."
+                            camInfo.cameraCharacteristics.filterSupportedVideoDynamicRanges(
+                                lensFacing = lensFacing,
+                                reportedDynamicRanges = reportedDynamicRanges
                             )
-                        }
                         val supportedVideoQualitiesMap =
                             buildMap {
                                 for (dynamicRange in supportedDynamicRanges) {
