@@ -21,25 +21,32 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -56,6 +63,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.takeOrElse
 
 /**
  * The base layout for the camera capture screen.
@@ -79,7 +88,8 @@ import androidx.compose.ui.unit.dp
  * @param snackBar the snack bar composable for showing messages
  * @param topStartContent optional composable content aligned to the top-start of the viewfinder
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Suppress("DEPRECATION")
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
@@ -131,16 +141,31 @@ fun PreviewLayout(
             sheetContent = {
                 quickSettingsOverlay(Modifier)
             },
-            snackbarHost = {
-                SnackbarHost(
-                    hostState = scaffoldState.snackbarHostState,
-                    modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
-                )
-            }
-        ) { paddingValues ->
+            snackbarHost = {}
+        ) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
                 Column {
-                    indicatorRow(Modifier.statusBarsPadding())
+                    // The indicator row occupies the top bar real estate in the hidden status bar
+                    // region. We size the top bar to accommodate any top display cutout or the
+                    // minimum interactive touch target (defaulting to 48dp), while CutoutAwareRow
+                    // shifts individual indicator icons around any intersecting cutout bounds.
+                    val cutoutTopInset =
+                        WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+                    val minTouchTarget =
+                        LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
+                    val topBarHeight = max(cutoutTopInset, minTouchTarget)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(topBarHeight)
+                            .windowInsetsPadding(
+                                WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
+                            )
+                            .padding(horizontal = 16.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        indicatorRow(Modifier)
+                    }
                     Box {
                         viewfinder(Modifier)
                         topStartContent(Modifier.align(Alignment.TopStart))
@@ -150,8 +175,10 @@ fun PreviewLayout(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
-                        .safeDrawingPadding()
+                        .windowInsetsPadding(
+                            WindowInsets.systemBarsIgnoringVisibility
+                                .union(WindowInsets.displayCutout)
+                        )
 
                 ) {
                     debugVisibilityWrapper {
@@ -162,7 +189,13 @@ fun PreviewLayout(
                             quickSettingsToggleButton = quickSettingsButton,
                             captureModeToggleSwitch = captureModeToggle,
                             zoomControls = zoomLevelDisplay,
-                            elapsedTimeDisplay = elapsedTimeDisplay
+                            elapsedTimeDisplay = elapsedTimeDisplay,
+                            snackbarHost = { modifier ->
+                                PillSnackbarHost(
+                                    snackbarHostState = scaffoldState.snackbarHostState,
+                                    modifier = modifier
+                                )
+                            }
                         )
                     }
                     // controls overlay
@@ -202,11 +235,14 @@ private fun VerticalMaterialControls(
     flipCameraButton: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable (Modifier) -> Unit
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                snackbarHost(Modifier)
+
                 elapsedTimeDisplay(Modifier)
 
                 // zoom controls row

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -149,7 +150,7 @@ internal fun PermissionTemplate(
         if (!permissionStates.shouldShowRationale || permissionEnum.isOptional()) {
             stringResource(id = permissionEnum.getPermissionBodyTextResId())
         } else {
-            stringResource(id = permissionEnum.getRationaleBodyTextResId()!!)
+            stringResource(id = checkNotNull(permissionEnum.getRationaleBodyTextResId()))
         },
         requestButtonText =
         if (!permissionStates.shouldShowRationale || permissionEnum.isOptional()) {
@@ -175,7 +176,11 @@ fun PermissionTemplate(
     requestButtonText: String
 ) {
     Column(
-        modifier = modifier.background(MaterialTheme.colorScheme.primary),
+        // The background is applied before the inset padding so that it still extends behind the
+        // system bars, while the content itself stays clear of them.
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.primary)
+            .safeDrawingPadding(),
         verticalArrangement = Arrangement.Bottom
     ) {
         // permission image / top half
