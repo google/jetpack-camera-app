@@ -23,6 +23,7 @@ import android.os.Build
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
+import androidx.camera.camera2.interop.cameraCharacteristics
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
@@ -161,10 +162,9 @@ val CameraInfo.isOpticalStabilizationSupported: Boolean
  * combination. Always `false` below API 33, where 10-bit dynamic range profiles do not exist.
  */
 val CameraInfo.isTenBitDynamicRangeSupported: Boolean
-    @OptIn(ExperimentalCamera2Interop::class)
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-        Camera2CameraInfo.from(this)
-            .getCameraCharacteristic(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
+        cameraCharacteristics
+            .get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
             ?.contains(
                 CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT
             ) ?: false
