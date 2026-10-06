@@ -17,6 +17,9 @@ package com.google.jetpackcamera.settings
 
 import android.Manifest
 import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -86,10 +89,13 @@ class SettingsScreenTest {
         onLaunch = onLaunch
     )
 
+    // Result callback passed by DefaultAppSettings when it creates the location permission state.
+    private var locationPermissionsResult: (Map<String, Boolean>) -> Unit = {}
+
     private fun setAppSettingsContent(
         locationPermissionStates: MultiplePermissionsState,
         onOpenAppSettings: () -> Unit = {}
-    ) {
+    ): SettingsViewModel {
         val settingsViewModel = createSettingsViewModel()
         composeTestRule.setContent {
             // DefaultAppSettings emits sibling rows, so it needs a layout parent.
@@ -97,7 +103,10 @@ class SettingsScreenTest {
                 DefaultAppSettings(
                     versionInfo = VersionInfoHolder("1.0", "debug"),
                     viewModel = settingsViewModel,
-                    locationPermissionStates = locationPermissionStates,
+                    rememberLocationPermissionsState = { onPermissionsResult ->
+                        locationPermissionsResult = onPermissionsResult
+                        locationPermissionStates
+                    },
                     onOpenAppSettings = onOpenAppSettings
                 )
             }
@@ -105,6 +114,31 @@ class SettingsScreenTest {
         composeTestRule.waitUntil(5_000) {
             settingsViewModel.settingsUiState.value is SettingsUiState.Enabled
         }
+        return settingsViewModel
+    }
+
+    /**
+     * Returns a location permission state whose request sets both permissions to [statusAfter] and
+     * then reports a denied result, as the platform does when a request ends without a grant.
+     */
+    private fun deniedLocationRequest(
+        statusBefore: PermissionStatus,
+        statusAfter: PermissionStatus,
+        onLaunch: () -> Unit = {}
+    ): MultiplePermissionsState {
+        val fine = FakePermissionState(Manifest.permission.ACCESS_FINE_LOCATION, statusBefore)
+        val coarse = FakePermissionState(Manifest.permission.ACCESS_COARSE_LOCATION, statusBefore)
+        return FakeMultiplePermissionsState(
+            permissions = listOf(fine, coarse),
+            onLaunch = {
+                onLaunch()
+                fine.status = statusAfter
+                coarse.status = statusAfter
+                locationPermissionsResult(
+                    mapOf(fine.permission to false, coarse.permission to false)
+                )
+            }
+        )
     }
 
     private fun clickLocationSwitch() {
@@ -134,6 +168,81 @@ class SettingsScreenTest {
 
         composeTestRule.onNodeWithTag(BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG).performClick()
         assertThat(openAppSettingsCalled).isTrue()
+    }
+
+    @Test
+    fun locationPermanentlyDenied_requestEndsWithoutPrompt_showsRationaleDialogOnFirstToggle() {
+        var launchCount = 0
+        setAppSettingsContent(
+            locationPermissionStates = deniedLocationRequest(
+                statusBefore = PermissionStatus.Denied(shouldShowRationale = false),
+                statusAfter = PermissionStatus.Denied(shouldShowRationale = false),
+                onLaunch = { launchCount++ }
+            )
+        )
+
+        clickLocationSwitch()
+
+        assertThat(launchCount).isEqualTo(1)
+        composeTestRule.onNodeWithTag(DIALOG_LOCATION_PERMISSION_RATIONALE_TAG).assertIsDisplayed()
+    }
+
+    @Test
+    fun locationDeniedForFirstTime_doesNotShowRationaleDialog() {
+        setAppSettingsContent(
+            locationPermissionStates = deniedLocationRequest(
+                statusBefore = PermissionStatus.Denied(shouldShowRationale = false),
+                statusAfter = PermissionStatus.Denied(shouldShowRationale = true)
+            )
+        )
+
+        clickLocationSwitch()
+
+        composeTestRule.onNodeWithTag(DIALOG_LOCATION_PERMISSION_RATIONALE_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun locationDeniedAfterRationale_doesNotShowRationaleDialog() {
+        setAppSettingsContent(
+            locationPermissionStates = deniedLocationRequest(
+                statusBefore = PermissionStatus.Denied(shouldShowRationale = true),
+                statusAfter = PermissionStatus.Denied(shouldShowRationale = false)
+            )
+        )
+
+        clickLocationSwitch()
+
+        composeTestRule.onNodeWithTag(DIALOG_LOCATION_PERMISSION_RATIONALE_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun locationPermissionGranted_isReportedToViewModel() {
+        val settingsViewModel = setAppSettingsContent(
+            locationPermissionStates = locationPermissionStates(status = PermissionStatus.Granted)
+        )
+
+        composeTestRule.waitUntil(5_000) {
+            (settingsViewModel.settingsUiState.value as? SettingsUiState.Enabled)
+                ?.locationUiState is LocationUiState.Enabled
+        }
+    }
+
+    @Test
+    fun updateGrantedPermissions_leavesPermissionsOutsideTheUpdateUnchanged() {
+        val settingsViewModel = setAppSettingsContent(
+            locationPermissionStates = locationPermissionStates(status = PermissionStatus.Granted)
+        )
+        settingsViewModel.setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
+
+        settingsViewModel.updateGrantedPermissions(
+            locationPermissionStates(status = PermissionStatus.Granted)
+        )
+
+        composeTestRule.waitUntil(5_000) {
+            val state = settingsViewModel.settingsUiState.value as? SettingsUiState.Enabled
+            state?.locationUiState is LocationUiState.Enabled &&
+                state.audioUiState is AudioUiState.Enabled
+        }
     }
 
     @Test
@@ -204,7 +313,9 @@ private class FakeMultiplePermissionsState(
 @OptIn(ExperimentalPermissionsApi::class)
 private class FakePermissionState(
     override val permission: String,
-    override val status: PermissionStatus
+    status: PermissionStatus
 ) : PermissionState {
+    override var status: PermissionStatus by mutableStateOf(status)
+
     override fun launchPermissionRequest() {}
 }

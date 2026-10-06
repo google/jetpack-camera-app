@@ -35,11 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,7 +57,12 @@ import com.google.jetpackcamera.permissions.R
 /**
  * Template for a single page for the permissions Screen
  *
+ * When the request for an optional permission ends without a grant, [onDismissPermission] is
+ * called so the optional permission is only requested once.
+ *
  * @param permissionEnum a [PermissionEnum] representing the target permission
+ * @param onDismissPermission Called when the screen should advance past this permission.
+ * @param onOpenAppSettings Called to open the system app settings for a declined permission.
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -72,7 +73,15 @@ fun PermissionTemplate(
     onOpenAppSettings: () -> Unit
 ) {
     key(permissionEnum) {
-        val permissionStates = rememberMultiplePermissionsState(permissionEnum.getPermissions())
+        val permissionStates =
+            rememberMultiplePermissionsState(permissionEnum.getPermissions()) { results ->
+                // An optional permission is requested once. If the request ends without a grant,
+                // whether denied, dismissed, or denied by the system without a prompt, advance.
+                // The user can enable it later from settings.
+                if (permissionEnum.isOptional() && results.values.none { it }) {
+                    onDismissPermission()
+                }
+            }
         PermissionTemplate(
             modifier = modifier,
             permissionEnum = permissionEnum,
@@ -90,8 +99,8 @@ fun PermissionTemplate(
  * The screen is skipped automatically via [onDismissPermission] once any component permission is
  * granted, or when an optional permission has already been declined. For mandatory permissions
  * the user previously declined, the button opens the system app settings and the rationale text
- * is shown. For optional permissions, a second press after a request that was denied permanently
- * dismisses the screen instead of requesting again.
+ * is shown. Optional permissions are requested once; the caller advances when that request ends
+ * without a grant.
  *
  * @param permissionEnum The permission being requested.
  * @param permissionStates The state of the system permissions that make up [permissionEnum].
@@ -108,8 +117,6 @@ internal fun PermissionTemplate(
     onOpenAppSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var hasAttemptedRequest by rememberSaveable(permissionEnum) { mutableStateOf(false) }
-
     val isAnyGranted = permissionStates.permissions.any { it.status.isGranted }
     val canShowRationale =
         permissionStates.shouldShowRationale ||
@@ -126,19 +133,10 @@ internal fun PermissionTemplate(
         modifier = modifier,
         testTag = permissionEnum.getTestTag(),
         onRequestPermission = {
-            if (permissionEnum.isOptional()) {
-                if (hasAttemptedRequest && !canShowRationale) {
-                    onDismissPermission()
-                } else {
-                    hasAttemptedRequest = true
-                    permissionStates.launchMultiplePermissionRequest()
-                }
+            if (!permissionEnum.isOptional() && permissionStates.shouldShowRationale) {
+                onOpenAppSettings()
             } else {
-                if (permissionStates.shouldShowRationale) {
-                    onOpenAppSettings()
-                } else {
-                    permissionStates.launchMultiplePermissionRequest()
-                }
+                permissionStates.launchMultiplePermissionRequest()
             }
         },
         painter = permissionEnum.getPainter(),
