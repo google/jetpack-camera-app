@@ -228,8 +228,9 @@ fun CaptureModeCarousel(
     }
 
     // Keep the row in sync with the externally selected sub-mode. A change to the set of items
-    // snaps the row; a change to only the selection animates it.
-    LaunchedEffect(geometry, selectedIndex) {
+    // snaps the row; a change to only the selection (or a rejected commit after settling) animates
+    // it back to the selected item.
+    LaunchedEffect(geometry, selectedIndex, scrollState.isSettling) {
         val target = geometry.centers[selectedIndex]
         if (scrollState.geometry !== geometry) {
             scrollState.geometry = geometry
@@ -239,7 +240,16 @@ fun CaptureModeCarousel(
             !scrollState.isSettling &&
             scrollState.position != target
         ) {
-            settleTo(selectedIndex, initialVelocity = 0f, commit = false)
+            androidx.compose.runtime.withFrameNanos {}
+            val currentSelectedIndex =
+                ids.indexOf(currentUiState.selectedSubMode).coerceAtLeast(0)
+            if (!scrollState.isDragging &&
+                !scrollState.isSettling &&
+                currentSelectedIndex == selectedIndex &&
+                scrollState.position != target
+            ) {
+                settleTo(selectedIndex, initialVelocity = 0f, commit = false)
+            }
         }
     }
 

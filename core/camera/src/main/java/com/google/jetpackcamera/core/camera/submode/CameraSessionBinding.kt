@@ -54,6 +54,6 @@ sealed interface CameraSessionBinding {
      * @param sessionScope The active camera session context provided by `:core:camera`.
      */
     fun interface Custom : CameraSessionBinding {
-        suspend fun runSession(sessionScope: Any)
+        suspend fun runSession(sessionScope: CameraSessionScope)
     }
 }

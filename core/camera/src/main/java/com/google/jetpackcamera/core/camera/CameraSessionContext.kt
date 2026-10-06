@@ -20,6 +20,7 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
+import com.google.jetpackcamera.core.camera.submode.CameraSessionScope
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
 import com.google.jetpackcamera.core.common.FilePathGenerator
@@ -50,6 +51,6 @@ internal data class CameraSessionContext(
     val lowLightBoostEffectProvider: LowLightBoostEffectProvider? = null,
     val cameraEffectProviders: Map<CameraEffectFeatureKey, Provider<CameraEffectProvider>> =
         emptyMap(),
-    val captureSubModeProviders: Map<CaptureSubModeFeatureKey, Provider<CaptureSubModeProvider>> =
+    val captureSubModeProviders: Map<CaptureSubModeFeatureKey, CaptureSubModeProvider> =
         emptyMap()
-)
+) : CameraSessionScope

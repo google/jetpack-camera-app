@@ -18,6 +18,7 @@ package com.google.jetpackcamera.settings.model
 import android.util.Range
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraEffectTarget
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
@@ -128,7 +129,8 @@ data class CameraConstraints(
     val supportedZoomRange: Range<Float>?,
     val unsupportedStabilizationFpsMap: Map<StabilizationMode, Set<Int>>,
     val supportedTestPatterns: Set<TestPattern>,
-    val supportedCaptureSubModes: Set<CaptureSubModeId> = emptySet()
+    val supportedCaptureSubModes: Set<CaptureSubModeId> = emptySet(),
+    val defaultCaptureSubModes: Map<CaptureMode, CaptureSubModeId> = emptyMap()
 ) {
     val StabilizationMode.unsupportedFpsSet
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()

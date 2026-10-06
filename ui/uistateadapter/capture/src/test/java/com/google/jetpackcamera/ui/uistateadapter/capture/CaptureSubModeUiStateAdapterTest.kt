@@ -249,4 +249,90 @@ class CaptureSubModeUiStateAdapterTest {
 
         assertThat(uiState).isEqualTo(CaptureSubModeUiState.Unavailable)
     }
+
+    @Test
+    fun from_whenVideoRecordingStarting_returnsUnavailable() {
+        val backConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[
+            LensFacing.BACK
+        ]!!.copy(
+            supportedCaptureSubModes = setOf(CaptureSubModeId.DEFAULT, concurrentId)
+        )
+        val systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+            perLensConstraints = mapOf(LensFacing.BACK to backConstraints),
+            captureSubModeDescriptors = mapOf(concurrentId to concurrentDescriptor)
+        )
+
+        val uiState = CaptureSubModeUiState.from(
+            systemConstraints = systemConstraints,
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                cameraLensFacing = LensFacing.BACK,
+                captureMode = CaptureMode.VIDEO_ONLY
+            ),
+            videoRecordingState = VideoRecordingState.Starting()
+        )
+
+        assertThat(uiState).isEqualTo(CaptureSubModeUiState.Unavailable)
+    }
+
+    @Test
+    fun from_whenDefaultOverrideIsOnlySubModeForParent_returnsUnavailable() {
+        val backConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[
+            LensFacing.BACK
+        ]!!.copy(
+            supportedCaptureSubModes = setOf(nightModeId),
+            defaultCaptureSubModes = mapOf(CaptureMode.IMAGE_ONLY to nightModeId)
+        )
+        val systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+            perLensConstraints = mapOf(LensFacing.BACK to backConstraints),
+            captureSubModeDescriptors = mapOf(nightModeId to nightDescriptor)
+        )
+
+        val uiState = CaptureSubModeUiState.from(
+            systemConstraints = systemConstraints,
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                cameraLensFacing = LensFacing.BACK,
+                captureMode = CaptureMode.IMAGE_ONLY,
+                captureSubModeId = CaptureSubModeId.DEFAULT,
+                activeCaptureSubModeId = nightModeId
+            ),
+            videoRecordingState = VideoRecordingState.Inactive()
+        )
+
+        assertThat(uiState).isEqualTo(CaptureSubModeUiState.Unavailable)
+    }
+
+    @Test
+    fun from_whenDefaultOverrideAndSecondarySubModeSupported_excludesDefaultOverrideFromPills() {
+        val backConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[
+            LensFacing.BACK
+        ]!!.copy(
+            supportedCaptureSubModes = setOf(nightModeId, portraitId),
+            defaultCaptureSubModes = mapOf(CaptureMode.IMAGE_ONLY to nightModeId)
+        )
+        val systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+            perLensConstraints = mapOf(LensFacing.BACK to backConstraints),
+            captureSubModeDescriptors = mapOf(
+                nightModeId to nightDescriptor,
+                portraitId to portraitDescriptor
+            )
+        )
+
+        val uiState = CaptureSubModeUiState.from(
+            systemConstraints = systemConstraints,
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                cameraLensFacing = LensFacing.BACK,
+                captureMode = CaptureMode.IMAGE_ONLY,
+                captureSubModeId = CaptureSubModeId.DEFAULT,
+                activeCaptureSubModeId = nightModeId
+            ),
+            videoRecordingState = VideoRecordingState.Inactive()
+        )
+
+        assertThat(uiState).isInstanceOf(CaptureSubModeUiState.Available::class.java)
+        val available = uiState as CaptureSubModeUiState.Available
+        assertThat(available.selectedSubMode).isEqualTo(CaptureSubModeId.DEFAULT)
+        assertThat(available.availableSubModes.map { it.value.id })
+            .containsExactly(portraitId, CaptureSubModeId.DEFAULT)
+            .inOrder()
+    }
 }

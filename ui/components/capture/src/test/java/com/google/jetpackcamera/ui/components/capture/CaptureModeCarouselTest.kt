@@ -184,6 +184,29 @@ class CaptureModeCarouselTest {
         assertThat(callbackInvoked).isFalse()
     }
 
+    @Test
+    fun carousel_whenSelectionRejected_snapsBackToSelectedItem() {
+        var attemptedId: CaptureSubModeId? = null
+        val uiState = availableState(CaptureSubModeId.DEFAULT)
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureModeCarousel(
+                    uiState = uiState,
+                    onSelectSubMode = { attemptedId = it }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(captureSubModeOptionTag(secondId)).performClick()
+        composeTestRule.waitForIdle()
+
+        assertThat(attemptedId).isEqualTo(secondId)
+        composeTestRule.onNodeWithTag(captureSubModeOptionTag(CaptureSubModeId.DEFAULT))
+            .assertIsSelected()
+        composeTestRule.onNodeWithTag(captureSubModeOptionTag(secondId))
+            .assertIsNotSelected()
+    }
+
     private fun availableState(selected: CaptureSubModeId) = CaptureSubModeUiState.Available(
         selectedSubMode = selected,
         availableSubModes = listOf(

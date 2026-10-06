@@ -185,7 +185,7 @@ internal suspend fun runSingleCameraSession(
                 val baseSelector = currentTransientSettings.primaryLensFacing
                     .toCameraSelector()
                 val activeSubModeProvider = sessionSettings.activeCaptureSubMode?.let { key ->
-                    captureSubModeProviders[key]?.get()
+                    captureSubModeProviders[key]
                 }
                 // Resolving the selector (e.g. querying extension availability) and its
                 // CameraInfo can issue blocking camera metadata queries, so this is kept off the
@@ -1345,7 +1345,8 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 }
                 val logicalCameraId = try {
                     session.device.id
-                } catch (_: Exception) {
+                } catch (_: RuntimeException) {
+                    // CameraDevice.getId() can throw if the device is closing during teardown.
                     targetCameraLogicalId
                 }
 

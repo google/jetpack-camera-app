@@ -42,6 +42,7 @@ import com.google.jetpackcamera.model.VideoQuality
 data class CameraAppSettings(
     val captureMode: CaptureMode = CaptureMode.STANDARD,
     val captureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
+    val activeCaptureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
     val darkMode: DarkMode = DarkMode.DARK,
     val flashMode: FlashMode = FlashMode.OFF,

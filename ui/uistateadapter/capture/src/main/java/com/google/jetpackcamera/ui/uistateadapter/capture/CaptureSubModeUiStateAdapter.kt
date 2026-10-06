@@ -53,7 +53,7 @@ fun CaptureSubModeUiState.Companion.from(
     externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard,
     cameraFeaturePolicy: CameraFeaturePolicy? = null
 ): CaptureSubModeUiState {
-    if (videoRecordingState is VideoRecordingState.Active ||
+    if (videoRecordingState !is VideoRecordingState.Inactive ||
         externalCaptureMode != ExternalCaptureMode.Standard
     ) {
         return CaptureSubModeUiState.Unavailable
@@ -63,10 +63,11 @@ fun CaptureSubModeUiState.Companion.from(
         ?: return CaptureSubModeUiState.Unavailable
 
     val parentCaptureMode = cameraAppSettings.captureMode
+    val defaultOverrideId = currentLensConstraints.defaultCaptureSubModes[parentCaptureMode]
 
     val matchingSubModeDescriptors = currentLensConstraints.supportedCaptureSubModes
         .asSequence()
-        .filter { it != CaptureSubModeId.DEFAULT }
+        .filter { it != CaptureSubModeId.DEFAULT && it != defaultOverrideId }
         .mapNotNull { id -> systemConstraints.captureSubModeDescriptors[id] }
         .filter { descriptor -> descriptor.parentCaptureMode == parentCaptureMode }
         .filter { descriptor ->

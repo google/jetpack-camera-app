@@ -93,10 +93,12 @@ fun captureUiState(
             roundVideoRecordingState(videoRecordingState, timePrecision)
         val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
 
-        val activeSubModeId = cameraAppSettings.captureSubModeId
+        val activeSubModeId = cameraAppSettings.activeCaptureSubModeId
             .takeIf { it != CaptureSubModeId.DEFAULT }
         val subModePolicy = activeSubModeId?.let { systemConstraints.captureSubModePolicies[it] }
-        val subModeQuickSettingsTitleResId = activeSubModeId?.let {
+        val explicitSubModeId = cameraAppSettings.captureSubModeId
+            .takeIf { it != CaptureSubModeId.DEFAULT }
+        val subModeQuickSettingsTitleResId = explicitSubModeId?.let {
             systemConstraints.captureSubModeDescriptors[it]?.quickSettingsTitleResId
         }
         val effectiveFeaturePolicy = when {

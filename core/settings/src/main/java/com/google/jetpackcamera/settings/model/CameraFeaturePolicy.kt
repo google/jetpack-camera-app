@@ -153,7 +153,10 @@ private fun <T : Any> enforceSetting(currentValue: T, config: SettingConfig<T>?)
             if (currentValue in visibility.enabledOptions) currentValue else config.defaultValue
     }
 
-private fun <T : Any> SettingConfig<T>.permits(value: T): Boolean = when (visibility) {
+/**
+ * Returns `true` if [value] is permitted by this [SettingConfig]'s [visibility] restriction.
+ */
+fun <T : Any> SettingConfig<T>.permits(value: T): Boolean = when (visibility) {
     is OptionVisibility.Visible -> true
     is OptionVisibility.Hidden -> value == defaultValue
     is OptionVisibility.Only -> value in visibility.enabledOptions
