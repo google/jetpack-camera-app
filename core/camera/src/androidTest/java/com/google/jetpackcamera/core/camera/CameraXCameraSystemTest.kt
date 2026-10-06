@@ -19,16 +19,12 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
-<<<<<<< HEAD
-import androidx.camera.core.CameraInfo
-import androidx.camera.lifecycle.ProcessCameraProvider
-=======
 import androidx.camera.camera2.interop.cameraCharacteristics
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
->>>>>>> origin/main
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
