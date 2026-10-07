@@ -41,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -236,23 +237,26 @@ fun CaptureModeCarousel(
     // it back to the selected item.
     LaunchedEffect(geometry, selectedIndex, scrollState.isSettling) {
         val target = geometry.centers[selectedIndex]
-        if (scrollState.geometry !== geometry) {
-            scrollState.geometry = geometry
-            scrollState.settleJob?.cancel()
-            scrollState.position = target
-        } else if (!scrollState.isDragging &&
-            !scrollState.isSettling &&
-            scrollState.position != target
-        ) {
-            androidx.compose.runtime.withFrameNanos {}
-            val currentSelectedIndex =
-                ids.indexOf(currentUiState.selectedSubMode).coerceAtLeast(0)
-            if (!scrollState.isDragging &&
+        when {
+            scrollState.geometry !== geometry -> {
+                scrollState.geometry = geometry
+                scrollState.settleJob?.cancel()
+                scrollState.position = target
+            }
+
+            !scrollState.isDragging &&
                 !scrollState.isSettling &&
-                currentSelectedIndex == selectedIndex &&
-                scrollState.position != target
-            ) {
-                settleTo(selectedIndex, initialVelocity = 0f, commit = false)
+                scrollState.position != target -> {
+                withFrameNanos {}
+                val currentSelectedIndex =
+                    ids.indexOf(currentUiState.selectedSubMode).coerceAtLeast(0)
+                if (!scrollState.isDragging &&
+                    !scrollState.isSettling &&
+                    currentSelectedIndex == selectedIndex &&
+                    scrollState.position != target
+                ) {
+                    settleTo(selectedIndex, initialVelocity = 0f, commit = false)
+                }
             }
         }
     }
@@ -317,7 +321,7 @@ fun CaptureModeCarousel(
             modifier = Modifier.fillMaxSize(),
             itemModifier = { index ->
                 Modifier
-                    .testTag(captureSubModeOptionTag(ids[index]))
+                    .testTag(ids[index].carouselOptionTag)
                     .selectable(
                         selected = index == centeredIndex,
                         enabled = isEnabled(index),

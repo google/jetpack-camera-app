@@ -1324,7 +1324,7 @@ context(CameraSessionContext)
 suspend fun processVideoControlEvents(
     videoCapture: VideoCapture<Recorder>?,
     captureTypeSuffix: String
-) = coroutineScope {
+): Unit = coroutineScope {
     for (event in videoCaptureControlEvents) {
         when (event) {
             is VideoCaptureControlEvent.StartRecordingEvent -> {
