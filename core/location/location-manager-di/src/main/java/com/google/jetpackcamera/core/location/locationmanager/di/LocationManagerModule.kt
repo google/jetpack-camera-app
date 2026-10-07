@@ -32,6 +32,12 @@ import javax.inject.Singleton
  * [android.location.LocationManager] backed geotagging depend on this module, while the optional
  * contract declared in `:core:location:location-di` keeps location features dormant for
  * applications that do not.
+ *
+ * Including this module merges [android.Manifest.permission.ACCESS_COARSE_LOCATION] into the app
+ * manifest. To obtain precise location, declare
+ * [android.Manifest.permission.ACCESS_FINE_LOCATION] in the app manifest and request it at runtime
+ * together with [android.Manifest.permission.ACCESS_COARSE_LOCATION]; no other changes are needed.
+ * See [LocationManagerLocationProvider] for details.
  */
 @Module
 @InstallIn(SingletonComponent::class)
