@@ -26,6 +26,7 @@ import android.util.Range
 import androidx.annotation.OptIn
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
+import androidx.camera.camera2.interop.cameraCharacteristics
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange as CXDynamicRange
@@ -50,6 +51,7 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraEffectTarget
+import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
@@ -163,10 +165,28 @@ class CameraXCameraSystem(
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
         val debugSettings = cameraAppSettings.debugSettings
-        cameraProvider = configureAndGetCameraProvider(
-            context = application,
-            singleLensMode = debugSettings.singleLensMode
-        )
+        cameraProvider = try {
+            configureAndGetCameraProvider(
+                context = application,
+                singleLensMode = debugSettings.singleLensMode
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize CameraProvider", e)
+            systemConstraints = CameraSystemConstraints(
+                availableLenses = emptyList(),
+                concurrentCamerasSupported = false,
+                perLensConstraints = emptyMap()
+            )
+            _systemConstraints.value = systemConstraints
+            currentSettings.value = cameraAppSettings
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.FatalCameraError
+                )
+            }
+            return
+        }
 
         // updates values for available cameras
         val availableCameraLenses =
@@ -176,6 +196,16 @@ class CameraXCameraSystem(
             ).filter {
                 cameraProvider.hasCamera(it.toCameraSelector())
             }
+
+        if (availableCameraLenses.isEmpty()) {
+            Log.w(TAG, "No available cameras detected during initialization")
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.CameraRemoved
+                )
+            }
+        }
 
         // verify the initial camera exists
         val settingsWithVerifiedLens =
@@ -200,10 +230,24 @@ class CameraXCameraSystem(
                     val selector = lensFacing.toCameraSelector()
                     selector.filter(availableCameraInfos).firstOrNull()?.let { camInfo ->
                         val videoCapabilities = Recorder.getVideoCapabilities(camInfo)
-                        val supportedDynamicRanges =
+                        val reportedDynamicRanges =
                             videoCapabilities.supportedDynamicRanges
                                 .mapNotNull(CXDynamicRange::toSupportedAppDynamicRange)
                                 .toSet()
+                        // TODO(temcguir): Move this check into the constraints repository
+                        //  alongside the cached feature combination checks from the Feature
+                        //  Group API adoption, instead of special-casing the capability here.
+                        //  See https://github.com/google/jetpack-camera-app/issues/457.
+                        // CameraX reports the dynamic ranges from the camera's dynamic range
+                        // profiles map, but only enables 10-bit stream combinations when the
+                        // camera also advertises the DYNAMIC_RANGE_TEN_BIT capability. Some
+                        // devices publish 10-bit profiles without that capability, so binding
+                        // an HDR VideoCapture fails even though HLG10 is reported as supported.
+                        val supportedDynamicRanges =
+                            camInfo.cameraCharacteristics.filterSupportedVideoDynamicRanges(
+                                lensFacing = lensFacing,
+                                reportedDynamicRanges = reportedDynamicRanges
+                            )
                         val supportedVideoQualitiesMap =
                             buildMap {
                                 for (dynamicRange in supportedDynamicRanges) {
@@ -400,6 +444,30 @@ class CameraXCameraSystem(
             handleLowLightBoostErrors()
         }
 
+        if (!this@CameraXCameraSystem::cameraProvider.isInitialized) {
+            Log.e(TAG, "CameraProvider is not initialized; emitting FatalCameraError.")
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.FatalCameraError
+                )
+            }
+            kotlinx.coroutines.awaitCancellation()
+        }
+
+        if (systemConstraints.availableLenses.isEmpty()) {
+            Log.e(TAG, "No available cameras on device; emitting CameraRemoved error.")
+            currentCameraState.update { old ->
+                old.copy(
+                    isCameraRunning = false,
+                    cameraError = CameraError.CameraRemoved
+                )
+            }
+            kotlinx.coroutines.awaitCancellation()
+        }
+
+        clearCameraError()
+
         val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
         currentSettings
             .filterNotNull()
@@ -415,11 +483,21 @@ class CameraXCameraSystem(
 
                 when (currentCameraSettings.concurrentCameraMode) {
                     ConcurrentCameraMode.OFF -> {
-                        val cameraConstraints = checkNotNull(
+                        val cameraConstraints =
                             systemConstraints.forCurrentLens(currentCameraSettings)
-                        ) {
-                            "Could not retrieve constraints for " +
-                                "${currentCameraSettings.cameraLensFacing}"
+                        if (cameraConstraints == null) {
+                            Log.e(
+                                TAG,
+                                "Could not retrieve constraints for " +
+                                    "${currentCameraSettings.cameraLensFacing}"
+                            )
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    isCameraRunning = false,
+                                    cameraError = CameraError.CameraRemoved
+                                )
+                            }
+                            return@map null
                         }
 
                         val resolvedStabilizationMode = resolveStabilizationMode(
@@ -449,7 +527,7 @@ class CameraXCameraSystem(
                     ConcurrentCameraMode.DUAL -> {
                         val primaryFacing = currentCameraSettings.cameraLensFacing
                         val secondaryFacing = primaryFacing.flip()
-                        cameraProvider.availableConcurrentCameraInfos.firstNotNullOf {
+                        cameraProvider.availableConcurrentCameraInfos.firstNotNullOfOrNull {
                             var primaryCameraInfo: CameraInfo? = null
                             var secondaryCameraInfo: CameraInfo? = null
                             it.forEach { cameraInfo ->
@@ -469,11 +547,21 @@ class CameraXCameraSystem(
                                     )
                                 }
                             }
+                        } ?: run {
+                            currentCameraState.update { old ->
+                                old.copy(
+                                    isCameraRunning = false,
+                                    cameraError = CameraError.StreamConfigError
+                                )
+                            }
+                            null
                         }
                     }
                 }
-            }.distinctUntilChanged()
+            }
+            .distinctUntilChanged()
             .collectLatest { sessionSettings ->
+                if (sessionSettings == null) return@collectLatest
                 coroutineScope {
                     with(
                         CameraSessionContext(
@@ -516,6 +604,12 @@ class CameraXCameraSystem(
                     }
                 }
             }
+    }
+
+    override fun clearCameraError() {
+        currentCameraState.update { old ->
+            old.copy(cameraError = null)
+        }
     }
 
     private fun resolveStabilizationMode(
