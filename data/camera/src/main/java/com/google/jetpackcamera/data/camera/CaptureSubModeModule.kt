@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.data.camera
 
-import androidx.annotation.VisibleForTesting
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
 import com.google.jetpackcamera.model.CaptureMode
@@ -53,10 +52,6 @@ interface CaptureSubModeModule {
         >
 
     companion object {
-        @Volatile
-        @VisibleForTesting
-        var testDefaultCaptureSubModes: Map<CaptureMode, CaptureSubModeFeatureKey>? = null
-
         @Provides
         @Singleton
         fun provideCaptureSubModeProviderMap(
@@ -82,8 +77,7 @@ interface CaptureSubModeModule {
                     @JvmSuppressWildcards CaptureSubModeFeatureKey
                     >
                 > = emptySet()
-        ): Map<CaptureMode, CaptureSubModeFeatureKey> = entries.associate { it.key to it.value } +
-            multiboundMap +
-            (testDefaultCaptureSubModes ?: emptyMap())
+        ): Map<CaptureMode, CaptureSubModeFeatureKey> =
+            entries.associate { it.key to it.value } + multiboundMap
     }
 }

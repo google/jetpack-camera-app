@@ -94,10 +94,10 @@ class CaptureModeCarouselTest {
         }
 
         composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(CaptureSubModeId.DEFAULT))
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
             .assertIsDisplayed()
             .assertIsSelected()
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(secondId))
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag)
             .assertIsDisplayed()
             .assertIsNotSelected()
     }
@@ -107,12 +107,12 @@ class CaptureModeCarouselTest {
         var selectedId: CaptureSubModeId? = null
         setStatefulContent(initialSelection = secondId) { selectedId = it }
 
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(thirdId)).performClick()
+        composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).performClick()
         composeTestRule.waitForIdle()
 
         assertThat(selectedId).isEqualTo(thirdId)
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(thirdId)).assertIsSelected()
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(secondId)).assertIsNotSelected()
+        composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).assertIsSelected()
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag).assertIsNotSelected()
     }
 
     @Test
@@ -121,7 +121,7 @@ class CaptureModeCarouselTest {
         setStatefulContent(initialSelection = CaptureSubModeId.DEFAULT) { selectedId = it }
         composeTestRule.mainClock.autoAdvance = false
 
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(secondId)).performClick()
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag).performClick()
         composeTestRule.mainClock.advanceTimeByFrame()
         assertThat(selectedId).isNull()
 
@@ -145,7 +145,7 @@ class CaptureModeCarouselTest {
         }
         composeTestRule.waitForIdle()
         assertThat(selectedId).isEqualTo(CaptureSubModeId.DEFAULT)
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(CaptureSubModeId.DEFAULT))
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
             .assertIsSelected()
     }
 
@@ -178,8 +178,8 @@ class CaptureModeCarouselTest {
         uiState = availableState(thirdId)
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(thirdId)).assertIsSelected()
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(CaptureSubModeId.DEFAULT))
+        composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).assertIsSelected()
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
             .assertIsNotSelected()
         assertThat(callbackInvoked).isFalse()
     }
@@ -197,13 +197,13 @@ class CaptureModeCarouselTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(secondId)).performClick()
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag).performClick()
         composeTestRule.waitForIdle()
 
         assertThat(attemptedId).isEqualTo(secondId)
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(CaptureSubModeId.DEFAULT))
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
             .assertIsSelected()
-        composeTestRule.onNodeWithTag(captureSubModeOptionTag(secondId))
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag)
             .assertIsNotSelected()
     }
 

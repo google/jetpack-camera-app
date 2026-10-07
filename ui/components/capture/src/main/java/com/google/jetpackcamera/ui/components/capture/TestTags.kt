@@ -24,7 +24,10 @@ internal const val CAPTURE_BUTTON_RING_BORDER = "CaptureButtonRingBorder"
 const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
 const val CAPTURE_MODE_CAROUSEL = "CaptureModeCarousel"
 
-fun captureSubModeOptionTag(id: CaptureSubModeId): String = "CaptureSubModeOption_${id.value}"
+/** Test tag of the [CaptureModeCarousel] option that selects this sub-mode. */
+val CaptureSubModeId.carouselOptionTag: String
+    get() = "CaptureSubModeOption_$value"
+
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
 const val SNACKBAR_NODE_TAG = "SnackbarNodeTag"
 
