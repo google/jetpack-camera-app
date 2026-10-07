@@ -743,18 +743,20 @@ class CameraXCameraSystemTest {
         // Act. Enter the sub-mode.
         cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
 
-        // Assert. The policy replaces the aspect ratio.
+        // Assert. The policy replaces the aspect ratio, and the replaced value is recorded.
         var settings = cameraSystem.getCurrentSettings().value!!
         assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
         assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        assertThat(settings.captureSubModeOverrides).isNotNull()
 
         // Act. Leave the sub-mode.
         cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
 
-        // Assert. The previous aspect ratio is restored.
+        // Assert. The previous aspect ratio is restored, and the record is cleared.
         settings = cameraSystem.getCurrentSettings().value!!
         assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
         assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+        assertThat(settings.captureSubModeOverrides).isNull()
     }
 
     @Test

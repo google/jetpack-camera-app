@@ -841,12 +841,11 @@ private fun createPreviewUseCase(
  * called on the main thread, so this is applied separately before the group is bound.
  */
 @MainThread
-@Suppress("UsePropertyAccessSyntax")
 internal fun UseCaseGroup.attachPreviewSurfaceProvider(
     surfaceRequests: MutableStateFlow<SurfaceRequest?>
 ) {
     useCases.filterIsInstance<Preview>().forEach { preview ->
-        preview.setSurfaceProvider { surfaceRequest ->
+        preview.surfaceProvider = Preview.SurfaceProvider { surfaceRequest ->
             surfaceRequests.update { surfaceRequest }
         }
     }

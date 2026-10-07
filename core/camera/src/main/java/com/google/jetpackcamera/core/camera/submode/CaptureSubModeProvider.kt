@@ -61,6 +61,9 @@ interface CaptureSubModeProvider {
      * Returns true if this sub-mode can remain active under the given [settings],
      * [systemConstraints], and [externalCaptureMode]. When false, the camera system reverts
      * `captureSubModeId` to [com.google.jetpackcamera.model.CaptureSubModeId.DEFAULT].
+     *
+     * This may be called more than once for a single settings change, so it must not have side
+     * effects.
      */
     fun isCompatibleWith(
         settings: CameraAppSettings,

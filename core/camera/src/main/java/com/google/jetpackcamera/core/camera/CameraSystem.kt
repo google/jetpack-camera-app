@@ -272,7 +272,7 @@ interface CameraSystem {
      *
      * @param captureSubModeId The [CaptureSubModeId] to set.
      */
-    fun setCaptureSubMode(captureSubModeId: CaptureSubModeId)
+    suspend fun setCaptureSubMode(captureSubModeId: CaptureSubModeId)
 
     /**
      * Clears any currently active camera error from [CameraState].
