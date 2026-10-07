@@ -18,7 +18,7 @@ package com.google.jetpackcamera.core.camera.concurrent
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
 import com.google.jetpackcamera.model.CaptureSubModeId
 
-val CONCURRENT_SUB_MODE_ID = CaptureSubModeId("concurrent_dual")
+val CONCURRENT_SUB_MODE_ID: CaptureSubModeId = CaptureSubModeId("concurrent_dual")
 
 object ConcurrentCameraSubModeKey : CaptureSubModeFeatureKey {
     override val id: CaptureSubModeId = CONCURRENT_SUB_MODE_ID
