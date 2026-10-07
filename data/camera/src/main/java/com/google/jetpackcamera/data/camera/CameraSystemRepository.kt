@@ -34,6 +34,7 @@ interface CameraSystemRepository {
 
     /**
      * A [StateFlow] emitting the current [CameraSystemConstraints] supported by the device.
+     * Accessing it starts initialization if it hasn't started yet.
      */
     val systemConstraints: StateFlow<CameraSystemConstraints?>
 
@@ -56,6 +57,12 @@ interface CameraSystemRepository {
      * Returns the initialized [CameraSystem], suspending until initialization completes.
      */
     suspend fun getCameraSystem(): CameraSystem
+
+    /**
+     * Returns the default [CameraAppSettings] read when the camera system was initialized,
+     * suspending until initialization completes.
+     */
+    suspend fun getInitialDefaultCameraAppSettings(): CameraAppSettings
 
     /**
      * Returns supported MIME types once initialized.

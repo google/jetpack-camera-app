@@ -35,6 +35,13 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
  * @param hdrUiState The UI state for the HDR setting.
  * @return A [QuickSettingsUiState.Available] instance containing the consolidated states.
  */
+// TODO: Consider returning QuickSettingsUiState.Unavailable if all option rows (aspectRatio,
+//       captureMode, flashMode, hdr) are Unavailable due to policy restrictions or device constraints.
+//       In a follow-up, coordinate with PreviewScreen to support optional onNavigateToSettings:
+//       1. Has quick settings + onNavigateToSettings: open Quick Settings with "More settings".
+//       2. Has quick settings + no onNavigateToSettings: open Quick Settings without "More settings".
+//       3. No quick settings + onNavigateToSettings: skip bottom sheet and call onNavigateToSettings().
+//       4. No quick settings + no onNavigateToSettings: hide the button altogether.
 fun QuickSettingsUiState.Companion.from(
     captureModeUiState: CaptureModeUiState,
     flashModeUiState: FlashModeUiState,

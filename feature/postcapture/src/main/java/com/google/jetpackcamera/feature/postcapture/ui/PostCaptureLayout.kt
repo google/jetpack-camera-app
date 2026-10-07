@@ -28,14 +28,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
+import com.google.jetpackcamera.ui.components.capture.PillSnackbarHost
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -57,13 +55,7 @@ fun PostCaptureLayout(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility
-            .union(WindowInsets.displayCutout),
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
-            )
-        }
+            .union(WindowInsets.displayCutout)
     ) { paddingValues ->
         Box(
             modifier = modifier
@@ -96,27 +88,34 @@ fun PostCaptureLayout(
                 }
 
                 // Bottom Bar Area
-                // Using a Row with SpaceBetween to separate negative (left) from positive (right) actions
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Negative actions on the left
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        deleteButton(Modifier)
-                    }
+                    PillSnackbarHost(snackbarHostState = snackbarHostState)
 
-                    // Positive actions on the right
+                    // Using a Row with SpaceBetween to separate negative (left) from positive (right) actions
                     Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.End
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        saveButton(Modifier)
-                        shareButton(Modifier)
+                        // Negative actions on the left
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            deleteButton(Modifier)
+                        }
+
+                        // Positive actions on the right
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            saveButton(Modifier)
+                            shareButton(Modifier)
+                        }
                     }
                 }
             }

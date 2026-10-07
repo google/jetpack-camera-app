@@ -65,4 +65,11 @@ interface SettingsRepository {
     suspend fun updateAudioEnabled(isAudioEnabled: Boolean)
 
     suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
+
+    /**
+     * Updates the user preference for enabling or disabling location geotagging.
+     *
+     * @param locationEnabled `true` to record geographic coordinates with captured media, `false` otherwise.
+     */
+    suspend fun updateLocationEnabled(locationEnabled: Boolean)
 }
