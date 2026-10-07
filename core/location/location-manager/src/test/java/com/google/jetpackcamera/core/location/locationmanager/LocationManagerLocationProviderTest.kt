@@ -682,6 +682,29 @@ class LocationManagerLocationProviderTest {
 
     @Suppress("DEPRECATION")
     @Test
+    fun runLocationUpdates_overlappingSessions_cancellingOneKeepsOtherRegistered() {
+        grantLocationPermissions()
+
+        launchLocationUpdates()
+        val otherSession = CoroutineScope(Dispatchers.Main).launch {
+            locationProvider.runLocationUpdates()
+        }
+        ShadowLooper.idleMainLooper()
+        assertThat(shadowLocationManager.getLocationUpdateListeners(LocationManager.GPS_PROVIDER))
+            .hasSize(2)
+
+        cancelLocationUpdates()
+        ShadowLooper.idleMainLooper()
+
+        assertThat(shadowLocationManager.getLocationUpdateListeners(LocationManager.GPS_PROVIDER))
+            .hasSize(1)
+        otherSession.cancel()
+        ShadowLooper.idleMainLooper()
+        assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
     fun runLocationUpdates_accurateFix_stopsAndRestartsAfterRefreshInterval() {
         grantLocationPermissions()
         locationProvider.refreshIntervalMs = 500L

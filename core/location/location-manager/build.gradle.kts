@@ -48,6 +48,7 @@ dependencies {
     implementation(project(":core:location"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.atomicfu)
 
     // Testing
     testImplementation(libs.junit)
