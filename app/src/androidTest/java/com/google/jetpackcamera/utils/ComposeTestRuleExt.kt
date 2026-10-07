@@ -78,7 +78,7 @@ import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.SNACKBAR_NODE_TAG
-import com.google.jetpackcamera.ui.components.capture.captureSubModeOptionTag
+import com.google.jetpackcamera.ui.components.capture.carouselOptionTag
 import com.google.jetpackcamera.ui.uistateadapter.capture.R
 import org.junit.AssumptionViolatedException
 
@@ -744,8 +744,8 @@ fun ComposeTestRule.selectConcurrentCameraSubMode(enabled: Boolean) {
         waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
     }
 
-    val concurrentOptionTag = captureSubModeOptionTag(CONCURRENT_SUB_MODE_ID)
-    val defaultOptionTag = captureSubModeOptionTag(CaptureSubModeId.DEFAULT)
+    val concurrentOptionTag = CONCURRENT_SUB_MODE_ID.carouselOptionTag
+    val defaultOptionTag = CaptureSubModeId.DEFAULT.carouselOptionTag
     val isSupported = onAllNodesWithTag(concurrentOptionTag).fetchSemanticsNodes().isNotEmpty()
 
     if (!isSupported) {

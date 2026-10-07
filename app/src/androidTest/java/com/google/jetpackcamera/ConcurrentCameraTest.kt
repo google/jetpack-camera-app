@@ -35,7 +35,7 @@ import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
-import com.google.jetpackcamera.ui.components.capture.captureSubModeOptionTag
+import com.google.jetpackcamera.ui.components.capture.carouselOptionTag
 import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
@@ -67,7 +67,7 @@ class ConcurrentCameraTest {
     fun concurrentCameraMode_canBeEnabled() = runConcurrentCameraScenarioTest {
         with(composeTestRule) {
             selectConcurrentCameraSubMode(enabled = true)
-            onNodeWithTag(captureSubModeOptionTag(CONCURRENT_SUB_MODE_ID))
+            onNodeWithTag(CONCURRENT_SUB_MODE_ID.carouselOptionTag)
                 .assertExists()
                 .assertIsSelected()
 
@@ -82,7 +82,7 @@ class ConcurrentCameraTest {
         with(composeTestRule) {
             selectConcurrentCameraSubMode(enabled = true)
             selectConcurrentCameraSubMode(enabled = false)
-            onNodeWithTag(captureSubModeOptionTag(CaptureSubModeId.DEFAULT))
+            onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
                 .assertExists()
                 .assertIsSelected()
         }
@@ -160,7 +160,7 @@ class ConcurrentCameraTest {
             }
 
             val isSupported = composeTestRule
-                .onAllNodesWithTag(captureSubModeOptionTag(CONCURRENT_SUB_MODE_ID))
+                .onAllNodesWithTag(CONCURRENT_SUB_MODE_ID.carouselOptionTag)
                 .fetchSemanticsNodes()
                 .isNotEmpty()
 
