@@ -370,6 +370,33 @@ class CaptureModeCarouselTest {
     }
 
     @Test
+    fun carousel_whenAnimationsDisabled_commitsTappedItemWithoutAnimating() {
+        var selectedId: CaptureSubModeId? = null
+        composeTestRule.setContent {
+            var uiState by remember { mutableStateOf(availableState(secondId)) }
+            MaterialTheme {
+                CompositionLocalProvider(LocalDisableAnimations provides true) {
+                    CaptureModeCarousel(
+                        uiState = uiState,
+                        onSelectSubMode = {
+                            selectedId = it
+                            uiState = availableState(it)
+                        }
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).performClick()
+        // Far shorter than the settle spring, which takes several hundred milliseconds.
+        composeTestRule.mainClock.advanceTimeBy(SNAP_COMMIT_WINDOW_MS)
+
+        assertThat(selectedId).isEqualTo(thirdId)
+    }
+
+    @Test
     fun carousel_whenOverlapWithViewfinderChanges_togglesLabelShadow() {
         val viewfinderBounds = mutableStateOf(Rect.Zero)
         composeTestRule.setContent {
@@ -470,5 +497,6 @@ class CaptureModeCarouselTest {
         const val DRAG_DISTANCE_PX = 40f
         const val CONFIRMATION_DELAY_MS = 300L
         const val LARGE_BOUNDS_PX = 10_000f
+        const val SNAP_COMMIT_WINDOW_MS = 50L
     }
 }

@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
@@ -214,8 +216,14 @@ fun CaptureModeCarousel(
     val state = remember(anchors) {
         AnchoredDraggableState(initialValue = selectedId, anchors = anchors)
     }
-    val settleSpec = remember {
-        spring<Float>(dampingRatio = SETTLE_DAMPING_RATIO, stiffness = SETTLE_STIFFNESS)
+    // Settling, flinging, and tapping snap to the target item when animations are disabled.
+    val disableAnimations = LocalDisableAnimations.current
+    val settleSpec: AnimationSpec<Float> = remember(disableAnimations) {
+        if (disableAnimations) {
+            snap()
+        } else {
+            spring(dampingRatio = SETTLE_DAMPING_RATIO, stiffness = SETTLE_STIFFNESS)
+        }
     }
 
     val interactionSource = remember { MutableInteractionSource() }

@@ -26,9 +26,22 @@ import dagger.multibindings.Multibinds
 import javax.inject.Provider
 import javax.inject.Singleton
 
+/**
+ * Declares the multibindings through which optional modules contribute capture sub-modes.
+ *
+ * All bindings are declared with [Multibinds] so that they resolve to empty collections when no
+ * sub-mode module is included in the build.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 interface CaptureSubModeModule {
+    /**
+     * Set of [CaptureSubModeProvider]s keyed by [CaptureSubModeFeatureKey], contributed by optional
+     * sub-mode modules via `@IntoSet`.
+     *
+     * Each provider is wrapped in a [Provider] so that it is only instantiated when the camera
+     * system first needs it.
+     */
     @Multibinds
     fun captureSubModeProviderEntries(): Set<
         Map.Entry<
@@ -37,12 +50,22 @@ interface CaptureSubModeModule {
             >
         >
 
+    /**
+     * Map of [CaptureMode] to the [CaptureSubModeFeatureKey] that the app binds as that mode's
+     * default sub-mode, contributed via `@IntoMap`.
+     *
+     * Entries here take precedence over [defaultCaptureSubModeEntries] for the same [CaptureMode].
+     */
     @Multibinds
     fun defaultCaptureSubModes(): Map<
         CaptureMode,
         @JvmSuppressWildcards CaptureSubModeFeatureKey
         >
 
+    /**
+     * Set-based alternative to [defaultCaptureSubModes] that lets a module contribute a default
+     * via `@IntoSet` without defining a `@MapKey` annotation for [CaptureMode].
+     */
     @Multibinds
     fun defaultCaptureSubModeEntries(): Set<
         Map.Entry<
@@ -52,6 +75,10 @@ interface CaptureSubModeModule {
         >
 
     companion object {
+        /**
+         * Collapses [captureSubModeProviderEntries] into a map keyed by
+         * [CaptureSubModeFeatureKey]. If two entries share a key, the last one wins.
+         */
         @Provides
         @Singleton
         fun provideCaptureSubModeProviderMap(
@@ -65,6 +92,14 @@ interface CaptureSubModeModule {
         ): Map<CaptureSubModeFeatureKey, Provider<CaptureSubModeProvider>> =
             entries.associate { it.key to it.value }
 
+        /**
+         * Merges the two default sub-mode bindings into a single map. When both bind the same
+         * [CaptureMode], the entry from [multiboundMap] wins.
+         *
+         * @param multiboundMap the contents of [defaultCaptureSubModes].
+         * @param entries the contents of [defaultCaptureSubModeEntries].
+         * @return the default [CaptureSubModeFeatureKey] for each [CaptureMode] that has one.
+         */
         fun resolveDefaultCaptureSubModes(
             multiboundMap: Map<
                 CaptureMode,
