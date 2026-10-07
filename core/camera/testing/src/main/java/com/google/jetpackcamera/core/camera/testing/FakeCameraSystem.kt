@@ -40,7 +40,6 @@ import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,23 +63,13 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     var isLensFacingFront = false
 
-    private val _lastPictureTakenLocation = AtomicReference<Location?>(null)
-
     /** The most recent [Location] passed to [takePicture], or `null` if none was provided. */
-    var lastPictureTakenLocation: Location?
-        get() = _lastPictureTakenLocation.get()
-        set(value) {
-            _lastPictureTakenLocation.set(value)
-        }
-
-    private val _lastVideoRecordingLocation = AtomicReference<Location?>(null)
+    var lastPictureTakenLocation: Location? = null
+        private set
 
     /** The most recent [Location] passed to [startVideoRecording], or `null` if none was provided. */
-    var lastVideoRecordingLocation: Location?
-        get() = _lastVideoRecordingLocation.get()
-        set(value) {
-            _lastVideoRecordingLocation.set(value)
-        }
+    var lastVideoRecordingLocation: Location? = null
+        private set
 
     private var isScreenFlash = true
     private var screenFlashEvents = Channel<CameraSystem.ScreenFlashEvent>(capacity = UNLIMITED)
