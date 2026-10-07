@@ -99,8 +99,8 @@ class SettingsViewModel @Inject constructor(
                 locationUiState = if (locationProvider.isPresent) {
                     getLocationUiState(
                         updatedSettings.locationEnabled,
-                        grantedPerms.contains(Manifest.permission.ACCESS_FINE_LOCATION) ||
-                            grantedPerms.contains(Manifest.permission.ACCESS_COARSE_LOCATION)
+                        Manifest.permission.ACCESS_FINE_LOCATION in grantedPerms ||
+                            Manifest.permission.ACCESS_COARSE_LOCATION in grantedPerms
                     )
                 } else {
                     LocationUiState.Hidden
