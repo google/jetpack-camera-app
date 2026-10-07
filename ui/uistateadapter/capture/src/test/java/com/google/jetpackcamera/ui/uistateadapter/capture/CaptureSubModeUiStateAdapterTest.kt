@@ -344,7 +344,7 @@ class CaptureSubModeUiStateAdapterTest {
             CaptureMode.VIDEO_ONLY to R.string.capture_mode_video_default
         )
 
-        expectedDefaultLabels.forEach { (parentCaptureMode, expectedLabelResId) ->
+        for ((parentCaptureMode, expectedLabelResId) in expectedDefaultLabels) {
             val subModeId = CaptureSubModeId("sub_mode_for_$parentCaptureMode")
             val backConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[
                 LensFacing.BACK

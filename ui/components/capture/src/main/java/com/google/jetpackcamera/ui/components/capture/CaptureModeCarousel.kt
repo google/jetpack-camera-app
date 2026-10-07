@@ -172,7 +172,9 @@ fun CaptureModeCarousel(
     val anchoredIndices = items.indices.filter { isEnabled(it) || it == selectedIndex }
     val anchors = remember(geometry, anchoredIndices) {
         DraggableAnchors {
-            anchoredIndices.forEach { index -> ids[index] at -geometry.centers[index] }
+            for (index in anchoredIndices) {
+                ids[index] at -geometry.centers[index]
+            }
         }
     }
 
