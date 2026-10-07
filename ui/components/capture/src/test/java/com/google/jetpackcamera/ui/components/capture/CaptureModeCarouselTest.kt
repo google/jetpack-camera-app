@@ -16,21 +16,28 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasParent
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.text.TextLayoutResult
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.ui.uistate.DisableRationale
@@ -362,6 +369,48 @@ class CaptureModeCarouselTest {
         composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).assertIsSelected()
     }
 
+    @Test
+    fun carousel_whenOverlapWithViewfinderChanges_togglesLabelShadow() {
+        val viewfinderBounds = mutableStateOf(Rect.Zero)
+        composeTestRule.setContent {
+            MaterialTheme {
+                CompositionLocalProvider(LocalOverlapTargetBounds provides viewfinderBounds) {
+                    OverlapAwareStyleProvider {
+                        CaptureModeCarousel(
+                            uiState = availableState(CaptureSubModeId.DEFAULT),
+                            onSelectSubMode = {}
+                        )
+                    }
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(labelShadow(secondId)).isNull()
+
+        viewfinderBounds.value = Rect(0f, 0f, LARGE_BOUNDS_PX, LARGE_BOUNDS_PX)
+        composeTestRule.waitForIdle()
+
+        assertThat(labelShadow(secondId)).isNotNull()
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+            .assertIsSelected()
+
+        viewfinderBounds.value = Rect.Zero
+        composeTestRule.waitForIdle()
+
+        assertThat(labelShadow(secondId)).isNull()
+    }
+
+    /** Returns the shadow of the interactive label for [id]. */
+    private fun labelShadow(id: CaptureSubModeId): Shadow? {
+        val textNode = composeTestRule
+            .onNode(hasParent(hasTestTag(id.carouselOptionTag)), useUnmergedTree = true)
+            .fetchSemanticsNode()
+        val layoutResults = mutableListOf<TextLayoutResult>()
+        textNode.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layoutResults)
+        return layoutResults.single().layoutInput.style.shadow
+    }
+
     private fun availableState(selected: CaptureSubModeId) = CaptureSubModeUiState.Available(
         selectedSubMode = selected,
         availableSubModes = listOf(
@@ -420,5 +469,6 @@ class CaptureModeCarouselTest {
         const val SETTLE_TIMEOUT_MS = 2_000L
         const val DRAG_DISTANCE_PX = 40f
         const val CONFIRMATION_DELAY_MS = 300L
+        const val LARGE_BOUNDS_PX = 10_000f
     }
 }
