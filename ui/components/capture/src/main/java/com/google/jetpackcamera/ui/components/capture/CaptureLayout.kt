@@ -86,6 +86,7 @@ import androidx.compose.ui.unit.takeOrElse
  * @param screenFlashOverlay the screen flash overlay composable
  * @param snackBar the snack bar composable for showing messages
  * @param topStartContent optional composable content aligned to the top-start of the viewfinder
+ * @param errorDialog the camera error alert dialog composable
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Suppress("DEPRECATION")
@@ -114,7 +115,8 @@ fun PreviewLayout(
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
-    captureModeCarousel: @Composable (Modifier) -> Unit = {}
+    captureModeCarousel: @Composable (Modifier) -> Unit = {},
+    errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
@@ -222,6 +224,7 @@ fun PreviewLayout(
                             )
                     )
                 }
+                errorDialog(Modifier)
             }
         }
     }
