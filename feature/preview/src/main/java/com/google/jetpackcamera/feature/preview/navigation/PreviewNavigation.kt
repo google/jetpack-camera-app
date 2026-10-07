@@ -41,6 +41,8 @@ object PreviewRoute {
     internal const val ARG_REVIEW_AFTER_CAPTURE: String = "reviewAfterCapture"
     internal const val ARG_CAPTURE_URIS: String = "captureUris"
     internal const val ARG_DEBUG_SETTINGS: String = "debugSettings"
+
+    override fun toString(): String = BASE_ROUTE_DEF
 }
 
 private const val BASE_ROUTE_DEF: String = "preview"
@@ -105,7 +107,8 @@ fun NavGraphBuilder.previewScreen(
     onFirstFrameCaptureCompleted: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
-    onCaptureEvent: (CaptureEvent) -> Unit
+    onCaptureEvent: (CaptureEvent) -> Unit,
+    onCloseCamera: () -> Unit = {}
 ) {
     composable(
         route = FULL_ROUTE_DEF,
@@ -134,7 +137,8 @@ fun NavGraphBuilder.previewScreen(
             onNavigateToPostCapture = onNavigateToPostCapture,
             onRequestWindowColorMode = onRequestWindowColorMode,
             onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-            onCaptureEvent = onCaptureEvent
+            onCaptureEvent = onCaptureEvent,
+            onCloseCamera = onCloseCamera
         )
     }
 }

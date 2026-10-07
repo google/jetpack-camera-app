@@ -65,7 +65,9 @@ fun JcaApp(
     openAppSettings: () -> Unit,
     onStoragePermissionGranted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
-    modifier: Modifier = Modifier
+    isDarkTheme: Boolean = true,
+    modifier: Modifier = Modifier,
+    onCloseCamera: () -> Unit = {}
 ) {
     JetpackCameraNavHost(
         modifier = modifier,
@@ -77,7 +79,9 @@ fun JcaApp(
         onStoragePermissionGranted = onStoragePermissionGranted,
         onRequestWindowColorMode = onRequestWindowColorMode,
         onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-        onCaptureEvent = onCaptureEvent
+        onCaptureEvent = onCaptureEvent,
+        isDarkTheme = isDarkTheme,
+        onCloseCamera = onCloseCamera
     )
 }
 
@@ -94,8 +98,20 @@ private fun JetpackCameraNavHost(
     onRequestWindowColorMode: (Int) -> Unit,
     onFirstFrameCaptureCompleted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
+    isDarkTheme: Boolean = true,
+    onCloseCamera: () -> Unit = {},
     navController: NavHostController = rememberNavController()
 ) {
+    // A single owner for system bar visibility, driven by the destination that is currently on top
+    // of the back stack. This must live above the NavHost: during a transition both the outgoing
+    // and the incoming destination are composed, so a per-screen effect would let the outgoing
+    // screen's cleanup run last and undo the incoming screen's request.
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    SystemBarsPolicyEffect(
+        systemBarsPolicyFor(backStackEntry?.destination?.route),
+        isDarkTheme = isDarkTheme
+    )
+
     CameraPermissionGuard(navController)
     StoragePermissionGuard(onStoragePermissionGranted)
 
@@ -132,7 +148,8 @@ private fun JetpackCameraNavHost(
             onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
             onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
             onNavigateToPostCapture = { navController.navigate(POST_CAPTURE_ROUTE) },
-            onCaptureEvent = onCaptureEvent
+            onCaptureEvent = onCaptureEvent,
+            onCloseCamera = onCloseCamera
         )
 
         composable(
