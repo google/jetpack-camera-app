@@ -16,10 +16,12 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -31,9 +33,11 @@ import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureSubModeId
+import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeOption
 import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
+import kotlinx.coroutines.delay
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -199,12 +203,163 @@ class CaptureModeCarouselTest {
 
         composeTestRule.onNodeWithTag(secondId.carouselOptionTag).performClick()
         composeTestRule.waitForIdle()
-
         assertThat(attemptedId).isEqualTo(secondId)
+
+        // The selection never follows the commit, so the row returns once the wait expires.
+        composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
+        composeTestRule.waitForIdle()
+
         composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
             .assertIsSelected()
         composeTestRule.onNodeWithTag(secondId.carouselOptionTag)
             .assertIsNotSelected()
+    }
+
+    @Test
+    fun carousel_whenSelectionFollowsAfterDelay_staysOnCommittedItem() {
+        val selections = mutableListOf<CaptureSubModeId>()
+        composeTestRule.setContent {
+            var uiState by remember { mutableStateOf(availableState(CaptureSubModeId.DEFAULT)) }
+            var pendingSelection by remember { mutableStateOf<CaptureSubModeId?>(null) }
+            // Delivers each commit back as the selection after a delay, like a camera round trip
+            // that takes several frames.
+            LaunchedEffect(pendingSelection) {
+                val id = pendingSelection ?: return@LaunchedEffect
+                delay(CONFIRMATION_DELAY_MS)
+                uiState = availableState(id)
+            }
+            MaterialTheme {
+                CaptureModeCarousel(
+                    uiState = uiState,
+                    onSelectSubMode = {
+                        selections += it
+                        pendingSelection = it
+                    }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag).performClick()
+        composeTestRule.waitForIdle()
+        assertThat(selections).containsExactly(secondId)
+
+        // Shortly before the selection follows, the row is still on the committed item.
+        composeTestRule.mainClock.advanceTimeBy(CONFIRMATION_DELAY_MS - 50)
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag).assertIsSelected()
+
+        composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
+        composeTestRule.waitForIdle()
+
+        assertThat(selections).containsExactly(secondId)
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag).assertIsSelected()
+    }
+
+    @Test
+    fun carousel_whenTouchedWhileSettling_cancelsSettleWithoutCommitting() {
+        val selections = mutableListOf<CaptureSubModeId>()
+        setStatefulContent(initialSelection = CaptureSubModeId.DEFAULT) { selections += it }
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).performClick()
+        composeTestRule.mainClock.advanceTimeByFrame()
+        // A touch while settling starts a drag immediately, which takes over from the settle.
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput { down(center) }
+        composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
+
+        assertThat(selections).isEmpty()
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput { up() }
+        composeTestRule.mainClock.autoAdvance = true
+        composeTestRule.waitForIdle()
+        assertThat(selections).doesNotContain(thirdId)
+    }
+
+    @Test
+    fun carousel_whenItemsChangeWhileSettling_cancelsSettleAndCentersSelection() {
+        var uiState by mutableStateOf(availableState(CaptureSubModeId.DEFAULT))
+        val selections = mutableListOf<CaptureSubModeId>()
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureModeCarousel(uiState = uiState, onSelectSubMode = { selections += it })
+            }
+        }
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).performClick()
+        composeTestRule.mainClock.advanceTimeByFrame()
+        uiState = twoItemState(CaptureSubModeId.DEFAULT)
+        composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
+
+        assertThat(selections).isEmpty()
+        composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+            .assertIsSelected()
+    }
+
+    @Test
+    fun carousel_whenItemsChangeDuringDrag_endsDragAndStaysDraggable() {
+        var uiState by mutableStateOf(availableState(CaptureSubModeId.DEFAULT))
+        val selections = mutableListOf<CaptureSubModeId>()
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureModeCarousel(
+                    uiState = uiState,
+                    onSelectSubMode = {
+                        selections += it
+                        uiState = twoItemState(it)
+                    }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput {
+            down(center)
+            moveBy(Offset(-(viewConfiguration.touchSlop + DRAG_DISTANCE_PX), 0f))
+        }
+        uiState = twoItemState(CaptureSubModeId.DEFAULT)
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput {
+            moveBy(Offset(-DRAG_DISTANCE_PX, 0f))
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        // The change to the items ended the drag, so the rest of the gesture selects nothing.
+        assertThat(selections).isEmpty()
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+            .assertIsSelected()
+
+        // A new gesture still drags the row.
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput { swipeLeft() }
+        composeTestRule.waitForIdle()
+        assertThat(selections).containsExactly(secondId)
+    }
+
+    @Test
+    fun carousel_whenFlickedTowardsDisabledItem_skipsToNextEnabledItem() {
+        val selections = mutableListOf<CaptureSubModeId>()
+        composeTestRule.setContent {
+            var uiState by remember {
+                mutableStateOf(stateWithDisabledSecondItem(CaptureSubModeId.DEFAULT))
+            }
+            MaterialTheme {
+                CaptureModeCarousel(
+                    uiState = uiState,
+                    onSelectSubMode = {
+                        selections += it
+                        uiState = stateWithDisabledSecondItem(it)
+                    }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput {
+            swipeLeft(startX = centerX, endX = centerX - 60f, durationMillis = 40)
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(selections).containsExactly(thirdId)
+        composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).assertIsSelected()
     }
 
     private fun availableState(selected: CaptureSubModeId) = CaptureSubModeUiState.Available(
@@ -215,6 +370,29 @@ class CaptureModeCarouselTest {
             SingleSelectableUiState.SelectableUi(thirdOption)
         )
     )
+
+    private fun twoItemState(selected: CaptureSubModeId) = CaptureSubModeUiState.Available(
+        selectedSubMode = selected,
+        availableSubModes = listOf(
+            SingleSelectableUiState.SelectableUi(defaultOption),
+            SingleSelectableUiState.SelectableUi(secondOption)
+        )
+    )
+
+    private fun stateWithDisabledSecondItem(selected: CaptureSubModeId) =
+        CaptureSubModeUiState.Available(
+            selectedSubMode = selected,
+            availableSubModes = listOf(
+                SingleSelectableUiState.SelectableUi(defaultOption),
+                SingleSelectableUiState.Disabled(
+                    secondOption,
+                    object : DisableRationale {
+                        override val reasonTextResId: Int = 0
+                    }
+                ),
+                SingleSelectableUiState.SelectableUi(thirdOption)
+            )
+        )
 
     /**
      * Sets a carousel whose ui state follows the selections it reports, mirroring how the
@@ -240,5 +418,7 @@ class CaptureModeCarouselTest {
 
     private companion object {
         const val SETTLE_TIMEOUT_MS = 2_000L
+        const val DRAG_DISTANCE_PX = 40f
+        const val CONFIRMATION_DELAY_MS = 300L
     }
 }
