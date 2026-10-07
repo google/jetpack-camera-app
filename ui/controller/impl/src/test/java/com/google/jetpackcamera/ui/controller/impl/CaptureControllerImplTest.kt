@@ -396,7 +396,7 @@ private class TestCameraSystem(private val delegate: FakeCameraSystem) :
         location: android.location.Location?,
         onCaptureStarted: () -> Unit
     ): ImageCapture.OutputFileResults {
-        delegate.takePicture(contentResolver, saveLocation, location, onCaptureStarted)
+        val unused = delegate.takePicture(contentResolver, saveLocation, location, onCaptureStarted)
         return ImageCapture.OutputFileResults(savedImageUri)
     }
 
