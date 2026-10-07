@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.di
+package com.google.jetpackcamera
 
 import android.app.Application
 import android.content.Context
@@ -29,6 +29,10 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.data.camera.CameraLaunchConfigProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.camera.CameraXCameraSystemRepository
+import com.google.jetpackcamera.di.DefaultCoroutineScope
+import com.google.jetpackcamera.di.DefaultDispatcher
+import com.google.jetpackcamera.di.DefaultFilePathGenerator
+import com.google.jetpackcamera.di.IODispatcher
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import dagger.Module
