@@ -61,6 +61,18 @@ private val SIGNIFICANT_TIME_DELTA_NANOS = TimeUnit.MINUTES.toNanos(2)
  * 60-second hardware timeout to conserve battery, and periodically refreshes the location
  * fix every 5 minutes during extended preview sessions.
  *
+ * ## Permissions
+ * This module declares [Manifest.permission.ACCESS_COARSE_LOCATION], which is sufficient for
+ * approximate location from the network and fused providers. To obtain precise location, the app
+ * must declare [Manifest.permission.ACCESS_FINE_LOCATION] in its own manifest and request it at
+ * runtime together with [Manifest.permission.ACCESS_COARSE_LOCATION]. No other integration is
+ * required: permissions are re-checked on every update cycle, and the GPS provider is registered
+ * automatically once precise location is granted.
+ *
+ * Declaring [Manifest.permission.ACCESS_FINE_LOCATION] does not upgrade an existing approximate
+ * grant. Users who previously granted approximate location keep it until the app requests
+ * precise location again or the user changes the grant in system settings.
+ *
  * @param context Application context used to retrieve location services and verify permissions.
  */
 class LocationManagerLocationProvider(private val context: Context) : LocationProvider {
@@ -74,6 +86,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
     private val cachedLocation = AtomicReference<Location?>(null)
     private val isUpdating = AtomicBoolean(false)
     private val accurateFixDeferred = AtomicReference<CompletableDeferred<Unit>?>(null)
+    private val hasCheckedPreciseLocationDeclaration = AtomicBoolean(false)
 
     // Interval between periodic refresh cycles (5 minutes by default, configurable for testing)
     internal var refreshIntervalMs: Long = REFRESH_INTERVAL_MS
@@ -110,10 +123,50 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
      * turning on system location or granting permission takes effect quickly.
      */
     override suspend fun runLocationUpdates() = coroutineScope {
+        logIfPreciseLocationNotDeclared()
         while (isActive) {
             val sessionRan = runUpdateSession()
             delay(if (sessionRan) refreshIntervalMs else retryIntervalMs)
         }
+    }
+
+    /**
+     * Logs once per provider instance if the app manifest does not declare
+     * [Manifest.permission.ACCESS_FINE_LOCATION]. A missing declaration is a supported
+     * configuration, so this is informational only; it makes approximate-only behavior visible to
+     * integrators who expected precise location.
+     */
+    private fun logIfPreciseLocationNotDeclared() {
+        if (hasCheckedPreciseLocationDeclaration.getAndSet(true)) return
+        if (!isPermissionDeclared(Manifest.permission.ACCESS_FINE_LOCATION)) {
+            Log.i(
+                TAG,
+                "ACCESS_FINE_LOCATION is not declared in the app manifest; location is limited " +
+                    "to approximate accuracy."
+            )
+        }
+    }
+
+    private fun isPermissionDeclared(permission: String): Boolean {
+        val packageInfo = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(
+                    context.packageName,
+                    PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong())
+                )
+            } else {
+                // The int-flags overload is deprecated on API 33+ but is the only option below it.
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(
+                    context.packageName,
+                    PackageManager.GET_PERMISSIONS
+                )
+            }
+        } catch (e: PackageManager.NameNotFoundException) {
+            Log.w(TAG, "Unable to read declared permissions", e)
+            return false
+        }
+        return packageInfo.requestedPermissions?.contains(permission) == true
     }
 
     /**
@@ -122,7 +175,6 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
      * @return `true` if at least one provider was registered, `false` if the session could not
      * start.
      */
-    @SuppressLint("MissingPermission")
     private suspend fun runUpdateSession(): Boolean {
         val locationManager = locationManager ?: return false
         if (!hasAnyLocationPermission()) return false
@@ -184,16 +236,24 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         return true
     }
 
-    @SuppressLint("MissingPermission")
     private fun stopHardwareUpdates() {
         val locationManager = locationManager ?: return
         if (isUpdating.getAndSet(false)) {
-            LocationManagerCompat.removeUpdates(locationManager, locationListener)
+            removeLocationUpdates(locationManager)
             Log.d(TAG, "Stopped location updates across all providers.")
         }
     }
 
+    /**
+     * Unregisters [locationListener] from all providers. Unregistering must succeed even if
+     * permission was revoked after registration, so it is intentionally not gated on a permission
+     * check. The platform does not require a location permission to remove a listener.
+     */
     @SuppressLint("MissingPermission")
+    private fun removeLocationUpdates(locationManager: LocationManager) {
+        LocationManagerCompat.removeUpdates(locationManager, locationListener)
+    }
+
     private fun getBestLastKnownLocation(): Location? {
         val locationManager = locationManager ?: return null
         if (!isLocationAvailable()) return null
