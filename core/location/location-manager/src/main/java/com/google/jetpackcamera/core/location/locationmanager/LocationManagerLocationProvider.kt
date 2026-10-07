@@ -31,8 +31,7 @@ import androidx.core.location.LocationManagerCompat
 import androidx.core.location.LocationRequestCompat
 import com.google.jetpackcamera.core.location.LocationProvider
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -82,11 +81,10 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
     private val locationManager: LocationManager? =
         ContextCompat.getSystemService(context, LocationManager::class.java)
 
-    // Written from the main looper; read from any thread by capture via getCurrentLocation().
-    private val cachedLocation = AtomicReference<Location?>(null)
-    private val isUpdating = AtomicBoolean(false)
-    private val accurateFixDeferred = AtomicReference<CompletableDeferred<Unit>?>(null)
-    private val hasCheckedPreciseLocationDeclaration = AtomicBoolean(false)
+    // Written by session listeners on the main looper; read from any thread by capture via
+    // getCurrentLocation(). Updated only with compare-and-set.
+    private val cachedLocation = atomic<Location?>(null)
+    private val hasCheckedPreciseLocationDeclaration = atomic(false)
 
     // Interval between periodic refresh cycles (5 minutes by default, configurable for testing)
     internal var refreshIntervalMs: Long = REFRESH_INTERVAL_MS
@@ -95,18 +93,12 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
     // system location was off (15 seconds by default, configurable for testing)
     internal var retryIntervalMs: Long = RETRY_INTERVAL_MS
 
-    private val locationListener = object : LocationListenerCompat {
-        override fun onLocationChanged(location: Location) {
-            handleLocationUpdate(location)
-        }
-    }
-
     override fun getCurrentLocation(): Location? {
         if (!isLocationAvailable()) {
             return null
         }
 
-        val location = cachedLocation.get()
+        val location = cachedLocation.value
         if (location != null && isValidLocation(location) && !isStale(location)) {
             return location
         }
@@ -187,8 +179,15 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         val activeProviders = getActiveProviders()
         if (activeProviders.isEmpty()) return false
 
+        // The listener and deferred are scoped to this session, so overlapping sessions cannot
+        // complete or unregister each other.
         val accurateFixReceived = CompletableDeferred<Unit>()
-        accurateFixDeferred.set(accurateFixReceived)
+        val listener = LocationListenerCompat { location ->
+            // A rejected fix leaves the cache unchanged, so it must not end the session.
+            if (cacheIfBetter(location) && location.accuracyOrMax <= ACCURACY_THRESHOLD_METERS) {
+                accurateFixReceived.complete(Unit)
+            }
+        }
 
         val request = LocationRequestCompat.Builder(LOCATION_UPDATE_INTERVAL_MS)
             .setMinUpdateIntervalMillis(LOCATION_UPDATE_INTERVAL_MS)
@@ -196,62 +195,52 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
             .setQuality(LocationRequestCompat.QUALITY_HIGH_ACCURACY)
             .build()
 
-        var registeredCount = 0
-        for (provider in activeProviders) {
-            try {
-                LocationManagerCompat.requestLocationUpdates(
-                    locationManager,
-                    provider,
-                    request,
-                    locationListener,
-                    Looper.getMainLooper()
-                )
-                registeredCount++
-                Log.d(TAG, "Registered location updates for provider: $provider")
-            } catch (e: SecurityException) {
-                Log.e(TAG, "SecurityException requesting updates for $provider", e)
-            } catch (e: IllegalArgumentException) {
-                Log.e(TAG, "IllegalArgumentException requesting updates for $provider", e)
-            }
-        }
-
-        if (registeredCount == 0) {
-            accurateFixDeferred.set(null)
-            return false
-        }
-
-        isUpdating.set(true)
-        Log.d(TAG, "Started location updates across $registeredCount providers")
-
-        // Updates are stopped only here: on an accurate fix (handleLocationUpdate completes
-        // accurateFixReceived), on timeout, or on cancellation.
+        // Registration is inside the try so the listener is removed even if registering a later
+        // provider throws. Updates stop on an accurate fix, on timeout, or on cancellation.
         try {
+            var registeredCount = 0
+            for (provider in activeProviders) {
+                try {
+                    LocationManagerCompat.requestLocationUpdates(
+                        locationManager,
+                        provider,
+                        request,
+                        listener,
+                        Looper.getMainLooper()
+                    )
+                    registeredCount++
+                    Log.d(TAG, "Registered location updates for provider: $provider")
+                } catch (e: SecurityException) {
+                    Log.e(TAG, "SecurityException requesting updates for $provider", e)
+                } catch (e: IllegalArgumentException) {
+                    Log.e(TAG, "IllegalArgumentException requesting updates for $provider", e)
+                }
+            }
+            if (registeredCount == 0) return false
+
+            Log.d(TAG, "Started location updates across $registeredCount providers")
             withTimeoutOrNull(ACQUISITION_TIMEOUT_MS) {
                 accurateFixReceived.await()
             }
         } finally {
-            accurateFixDeferred.set(null)
-            stopHardwareUpdates()
+            removeLocationUpdates(locationManager, listener)
         }
+        Log.d(TAG, "Stopped location updates across all providers.")
         return true
     }
 
-    private fun stopHardwareUpdates() {
-        val locationManager = locationManager ?: return
-        if (isUpdating.getAndSet(false)) {
-            removeLocationUpdates(locationManager)
-            Log.d(TAG, "Stopped location updates across all providers.")
-        }
-    }
-
     /**
-     * Unregisters [locationListener] from all providers. Unregistering must succeed even if
-     * permission was revoked after registration, so it is intentionally not gated on a permission
-     * check. The platform does not require a location permission to remove a listener.
+     * Unregisters [listener] from all providers. Unregistering must succeed even if permission was
+     * revoked after registration, so it is intentionally not gated on a permission check. The
+     * platform does not require a location permission to remove a listener, and removing a
+     * listener that is not registered is a no-op.
      */
     @SuppressLint("MissingPermission")
-    private fun removeLocationUpdates(locationManager: LocationManager) {
-        LocationManagerCompat.removeUpdates(locationManager, locationListener)
+    private fun removeLocationUpdates(
+        locationManager: LocationManager,
+        listener: LocationListenerCompat
+    ) {
+        LocationManagerCompat.removeUpdates(locationManager, listener)
     }
 
     private fun getBestLastKnownLocation(): Location? {
@@ -286,28 +275,26 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         return bestLocation
     }
 
-    private fun handleLocationUpdate(location: Location) {
-        if (!isValidLocation(location) || isStale(location)) return
+    /**
+     * Replaces the cached fix with [location] if it is valid, fresh, and better than the current
+     * fix.
+     *
+     * @return `true` if [location] was stored, `false` if it was rejected.
+     */
+    private fun cacheIfBetter(location: Location): Boolean {
+        if (!isValidLocation(location) || isStale(location)) return false
 
-        var accepted = false
         while (true) {
-            val oldLoc = cachedLocation.get()
-            if (!isBetterLocation(location, oldLoc)) break
+            val oldLoc = cachedLocation.value
+            if (!isBetterLocation(location, oldLoc)) return false
             if (cachedLocation.compareAndSet(oldLoc, location)) {
-                accepted = true
                 Log.d(
                     TAG,
                     "Updated cached location: provider=${location.provider}, " +
                         "acc=${location.accuracy}m"
                 )
-                break
+                return true
             }
-        }
-
-        // A rejected fix leaves the cache unchanged, so it must not end the update session.
-        // Completing the deferred resumes runUpdateSession(), which stops the updates.
-        if (accepted && location.accuracyOrMax <= ACCURACY_THRESHOLD_METERS) {
-            accurateFixDeferred.get()?.complete(Unit)
         }
     }
 
