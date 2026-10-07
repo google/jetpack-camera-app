@@ -275,6 +275,11 @@ interface CameraSystem {
     fun setCaptureSubMode(captureSubModeId: CaptureSubModeId)
 
     /**
+     * Clears any currently active camera error from [CameraState].
+     */
+    fun clearCameraError()
+
+    /**
      * Represents the events required for screen flash.
      */
     data class ScreenFlashEvent(val type: Type, val onComplete: () -> Unit) {
