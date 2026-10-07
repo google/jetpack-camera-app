@@ -271,10 +271,7 @@ class LocationManagerLocationProviderTest {
 
     @Test
     fun getCurrentLocation_withoutPermission_returnsNull() {
-        shadowLocationManager.setLastKnownLocation(
-            LocationManager.GPS_PROVIDER,
-            createLocation()
-        )
+        shadowLocationManager.simulateLocation(createLocation())
 
         assertThat(locationProvider.getCurrentLocation()).isNull()
     }
@@ -296,19 +293,16 @@ class LocationManagerLocationProviderTest {
     @Test
     fun getCurrentLocation_coarseOnly_ignoresGpsAndPassiveLastKnownLocations() {
         grantLocationPermissions(fine = false, coarse = true)
-        shadowLocationManager.setLastKnownLocation(
-            LocationManager.GPS_PROVIDER,
+        shadowLocationManager.simulateLocation(
             createLocation(provider = LocationManager.GPS_PROVIDER)
         )
-        shadowLocationManager.setLastKnownLocation(
-            LocationManager.PASSIVE_PROVIDER,
+        shadowLocationManager.simulateLocation(
             createLocation(provider = LocationManager.PASSIVE_PROVIDER)
         )
 
         assertThat(locationProvider.getCurrentLocation()).isNull()
 
-        shadowLocationManager.setLastKnownLocation(
-            LocationManager.NETWORK_PROVIDER,
+        shadowLocationManager.simulateLocation(
             createLocation(provider = LocationManager.NETWORK_PROVIDER, accuracy = 30f)
         )
 
@@ -753,6 +747,7 @@ class LocationManagerLocationProviderTest {
         assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun locationServiceUnavailable_doesNotCrashAndReturnsNull() {
         grantLocationPermissions()
@@ -776,7 +771,7 @@ class LocationManagerLocationProviderTest {
     }
 
     private fun preciseLocationNotDeclaredLogs() = ShadowLog.getLogsForTag(PROVIDER_TAG)
-        .filter { it.type == Log.INFO && it.msg.contains("ACCESS_FINE_LOCATION is not declared") }
+        .filter { it.type == Log.INFO && "ACCESS_FINE_LOCATION is not declared" in it.msg }
 
     @Test
     fun runLocationUpdates_fineLocationNotDeclared_logsOnce() {
