@@ -14,5 +14,13 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<manifest package="com.google.jetpackcamera.core.location.locationmanager">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.google.jetpackcamera.core.location.locationmanager">
+    <!--
+    This module requires only approximate location. To obtain precise location, declare
+    ACCESS_FINE_LOCATION in the app manifest and request it at runtime together with
+    ACCESS_COARSE_LOCATION. No other changes are needed: the provider registers the GPS provider
+    automatically when precise location is granted.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 </manifest>

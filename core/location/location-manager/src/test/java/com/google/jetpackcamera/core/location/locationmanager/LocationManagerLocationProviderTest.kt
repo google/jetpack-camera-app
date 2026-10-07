@@ -22,6 +22,7 @@ import android.content.ContextWrapper
 import android.location.Location
 import android.location.LocationManager
 import android.os.SystemClock
+import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
@@ -36,6 +37,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowLocationManager
+import org.robolectric.shadows.ShadowLog
 import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
@@ -742,5 +744,61 @@ class LocationManagerLocationProviderTest {
 
         assertThat(provider.getCurrentLocation()).isNull()
         assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
+    }
+
+    private fun setDeclaredPermissions(vararg permissions: String) {
+        shadowOf(context.packageManager)
+            .getInternalMutablePackageInfo(context.packageName)
+            .requestedPermissions = arrayOf(*permissions)
+    }
+
+    private fun preciseLocationNotDeclaredLogs() = ShadowLog.getLogsForTag(PROVIDER_TAG)
+        .filter { it.type == Log.INFO && it.msg.contains("ACCESS_FINE_LOCATION is not declared") }
+
+    @Test
+    fun runLocationUpdates_fineLocationNotDeclared_logsOnce() {
+        setDeclaredPermissions(Manifest.permission.ACCESS_COARSE_LOCATION)
+        grantLocationPermissions(fine = false)
+
+        launchLocationUpdates()
+        ShadowLooper.idleMainLooper()
+        launchLocationUpdates()
+        ShadowLooper.idleMainLooper()
+
+        assertThat(preciseLocationNotDeclaredLogs()).hasSize(1)
+    }
+
+    @Test
+    fun runLocationUpdates_fineLocationDeclared_doesNotLog() {
+        setDeclaredPermissions(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+        grantLocationPermissions()
+
+        launchLocationUpdates()
+        ShadowLooper.idleMainLooper()
+
+        assertThat(preciseLocationNotDeclaredLogs()).isEmpty()
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun runLocationUpdates_fineLocationNotDeclaredAndCoarseGranted_registersNetworkOnly() {
+        setDeclaredPermissions(Manifest.permission.ACCESS_COARSE_LOCATION)
+        grantLocationPermissions(fine = false)
+
+        launchLocationUpdates()
+        ShadowLooper.idleMainLooper()
+
+        assertThat(shadowLocationManager.getLocationUpdateListeners(LocationManager.GPS_PROVIDER))
+            .isEmpty()
+        assertThat(
+            shadowLocationManager.getLocationUpdateListeners(LocationManager.NETWORK_PROVIDER)
+        ).isNotEmpty()
+    }
+
+    private companion object {
+        const val PROVIDER_TAG = "LocationManagerLocationProvider"
     }
 }
