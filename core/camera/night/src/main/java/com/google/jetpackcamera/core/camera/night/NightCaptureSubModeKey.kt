@@ -18,7 +18,7 @@ package com.google.jetpackcamera.core.camera.night
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
 import com.google.jetpackcamera.model.CaptureSubModeId
 
-val NIGHT_SUB_MODE_ID = CaptureSubModeId("night")
+val NIGHT_SUB_MODE_ID: CaptureSubModeId = CaptureSubModeId("night")
 
 object NightCaptureSubModeKey : CaptureSubModeFeatureKey {
     override val id: CaptureSubModeId = NIGHT_SUB_MODE_ID
