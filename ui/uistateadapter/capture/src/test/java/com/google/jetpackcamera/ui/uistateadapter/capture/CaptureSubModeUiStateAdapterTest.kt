@@ -335,4 +335,72 @@ class CaptureSubModeUiStateAdapterTest {
             .containsExactly(portraitId, CaptureSubModeId.DEFAULT)
             .inOrder()
     }
+
+    @Test
+    fun from_labelsDefaultOptionAfterParentCaptureMode() {
+        val expectedDefaultLabels = mapOf(
+            CaptureMode.STANDARD to R.string.capture_mode_standard_default,
+            CaptureMode.IMAGE_ONLY to R.string.capture_mode_photo_default,
+            CaptureMode.VIDEO_ONLY to R.string.capture_mode_video_default
+        )
+
+        expectedDefaultLabels.forEach { (parentCaptureMode, expectedLabelResId) ->
+            val subModeId = CaptureSubModeId("sub_mode_for_$parentCaptureMode")
+            val backConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[
+                LensFacing.BACK
+            ]!!.copy(
+                supportedCaptureSubModes = setOf(CaptureSubModeId.DEFAULT, subModeId)
+            )
+            val systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                perLensConstraints = mapOf(LensFacing.BACK to backConstraints),
+                captureSubModeDescriptors = mapOf(
+                    subModeId to CaptureSubModeDescriptor(
+                        id = subModeId,
+                        parentCaptureMode = parentCaptureMode,
+                        labelResId = 1004
+                    )
+                )
+            )
+
+            val uiState = CaptureSubModeUiState.from(
+                systemConstraints = systemConstraints,
+                cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    cameraLensFacing = LensFacing.BACK,
+                    captureMode = parentCaptureMode
+                ),
+                videoRecordingState = VideoRecordingState.Inactive()
+            ) as CaptureSubModeUiState.Available
+
+            val defaultOption = uiState.availableSubModes
+                .map { it.value }
+                .single { it.id == CaptureSubModeId.DEFAULT }
+            assertThat(defaultOption.labelResId).isEqualTo(expectedLabelResId)
+        }
+    }
+
+    @Test
+    fun from_whenSelectedSubModeNotOffered_selectsDefault() {
+        val backConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[
+            LensFacing.BACK
+        ]!!.copy(
+            supportedCaptureSubModes = setOf(CaptureSubModeId.DEFAULT, nightModeId)
+        )
+        val systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+            perLensConstraints = mapOf(LensFacing.BACK to backConstraints),
+            captureSubModeDescriptors = mapOf(nightModeId to nightDescriptor)
+        )
+
+        val uiState = CaptureSubModeUiState.from(
+            systemConstraints = systemConstraints,
+            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                cameraLensFacing = LensFacing.BACK,
+                captureMode = CaptureMode.IMAGE_ONLY,
+                captureSubModeId = portraitId
+            ),
+            videoRecordingState = VideoRecordingState.Inactive()
+        )
+
+        val available = uiState as CaptureSubModeUiState.Available
+        assertThat(available.selectedSubMode).isEqualTo(CaptureSubModeId.DEFAULT)
+    }
 }
