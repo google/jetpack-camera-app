@@ -110,4 +110,25 @@ class PolicyOverridesTest {
         assertThat(restored.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
         assertThat(restored.dynamicRange).isEqualTo(DynamicRange.HLG10)
     }
+
+    @Test
+    fun recordsOfTheSameEnforcement_areEqual() {
+        val (enforced, overrides) = enforce(restrictivePolicy, userSettings)
+
+        val sameRecord = PolicyOverrides(userSettings, enforced)
+
+        assertThat(sameRecord).isEqualTo(overrides)
+        assertThat(sameRecord.hashCode()).isEqualTo(overrides.hashCode())
+    }
+
+    @Test
+    fun recordsOfDifferentEnforcements_areNotEqual() {
+        val (_, overrides) = enforce(restrictivePolicy, userSettings)
+        val (_, otherOverrides) = enforce(
+            restrictivePolicy,
+            userSettings.copy(aspectRatio = AspectRatio.NINE_SIXTEEN)
+        )
+
+        assertThat(otherOverrides).isNotEqualTo(overrides)
+    }
 }

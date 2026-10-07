@@ -80,7 +80,11 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
-private val CarouselHeight = 80.dp
+/**
+ * Height of [CaptureModeCarousel], and of the slot that [PreviewLayout] reserves for it so that
+ * showing or hiding the carousel does not move the surrounding controls.
+ */
+internal val CaptureModeCarouselHeight = 50.dp
 private val PillHeight = 32.dp
 private val ItemHorizontalPadding = 20.dp
 private val ItemMinWidth = 80.dp
@@ -100,10 +104,10 @@ private const val SETTLE_STIFFNESS = 380f
  *
  * When [uiState] is [CaptureSubModeUiState.Unavailable], this composable does not render.
  * When [uiState] is [CaptureSubModeUiState.Available], the sub-mode labels are laid out in a
- * horizontal row inside an `80.dp` tall touch container. The row scrolls so that the selected
- * sub-mode is horizontally centered. A pill fixed at the center of the carousel highlights the
- * centered label, and its width interpolates between the widths of neighbouring labels while
- * the row moves.
+ * horizontal row inside a [CaptureModeCarouselHeight] tall touch container. The row scrolls so
+ * that the selected sub-mode is horizontally centered. A pill fixed at the center of the carousel
+ * highlights the centered label, and its width interpolates between the widths of neighbouring
+ * labels while the row moves.
  *
  * Dragging moves the row with the pointer. On release, the row settles on the nearest enabled
  * item (or the next item in the swipe direction for a flick). Tapping an item scrolls it to the
@@ -272,7 +276,7 @@ fun CaptureModeCarousel(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(CarouselHeight)
+            .height(CaptureModeCarouselHeight)
             .testTag(CAPTURE_MODE_CAROUSEL)
             .selectableGroup()
             .draggable(

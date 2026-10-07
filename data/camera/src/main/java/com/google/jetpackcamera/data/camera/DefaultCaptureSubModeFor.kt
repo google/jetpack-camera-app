@@ -15,12 +15,12 @@
  */
 package com.google.jetpackcamera.data.camera
 
-import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
 import com.google.jetpackcamera.model.CaptureMode
 import dagger.MapKey
 
 /**
- * Dagger [MapKey] for binding a registered [CaptureSubModeFeatureKey] as the default capture
+ * Dagger [MapKey] for binding a registered
+ * [com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey] as the default capture
  * sub-mode for a parent [CaptureMode].
  *
  * Example usage in a Hilt module:

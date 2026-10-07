@@ -294,7 +294,7 @@ private fun VerticalMaterialControls(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .defaultMinSize(minHeight = 50.dp),
+                        .height(CaptureModeCarouselHeight),
                     contentAlignment = Alignment.Center
                 ) {
                     captureModeCarousel(Modifier)

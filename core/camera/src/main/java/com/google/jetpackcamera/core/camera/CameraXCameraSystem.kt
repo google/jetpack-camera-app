@@ -144,15 +144,6 @@ class CameraXCameraSystem(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
 
-    /**
-     * Guards writes to [currentSettings] together with [activeSubModeOverrides], which
-     * [tryApplyCaptureSubModeConstraints] reads and updates while computing new settings.
-     */
-    private val settingsLock = Any()
-
-    /** The values replaced by the active capture sub-mode's policy, restored when it ends. */
-    private var activeSubModeOverrides: ActiveSubModeOverrides? = null
-
     private val registeredSubModes: Map<CaptureSubModeId, RegisteredSubMode> by lazy {
         buildMap {
             for ((key, providerRef) in captureSubModeProviders) {
@@ -194,18 +185,6 @@ class CameraXCameraSystem(
 
     private val subModeProviderMap: Map<CaptureSubModeFeatureKey, CaptureSubModeProvider> by lazy {
         registeredSubModes.values.associate { it.key to it.provider }
-    }
-
-    /**
-     * Replaces [currentSettings] with the result of [transform].
-     *
-     * Unlike `MutableStateFlow.update`, [transform] runs exactly once, so it may update
-     * [activeSubModeOverrides]. All writes to [currentSettings] must go through this function.
-     */
-    private inline fun updateSettings(transform: (CameraAppSettings?) -> CameraAppSettings?) {
-        synchronized(settingsLock) {
-            currentSettings.value = transform(currentSettings.value)
-        }
     }
 
     // Could be improved by setting initial value only when camera is initialized
@@ -441,8 +420,7 @@ class CameraXCameraSystem(
 
         _systemConstraints.value = systemConstraints
 
-        updateSettings {
-            activeSubModeOverrides = null
+        currentSettings.value =
             settingsWithVerifiedLens
                 .tryApplyDynamicRangeConstraints()
                 .tryApplyAspectRatioForExternalCapture(settingsWithVerifiedLens.captureMode)
@@ -454,7 +432,6 @@ class CameraXCameraSystem(
                 .tryApplyVideoQualityConstraints()
                 .tryApplyTestPatternConstraints()
                 .tryApplyCaptureSubModeConstraints()
-        }
         if (debugSettings.isDebugModeEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
@@ -842,13 +819,13 @@ class CameraXCameraSystem(
     }
 
     override fun changeZoomRatio(newZoomState: CameraZoomRatio) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.tryApplyNewZoomRatio(newZoomState) ?: old
         }
     }
 
     override fun setTestPattern(newTestPattern: TestPattern) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(debugSettings = old.debugSettings.copy(testPattern = newTestPattern)) ?: old
         }
     }
@@ -858,7 +835,7 @@ class CameraXCameraSystem(
         // TODO: Handle lens flipping during recording when only one lens supports HDR.
         // We should define the expected behavior (e.g., disable flip button, stop recording with error,
         // or fallback to SDR mid-recording if supported by CameraX).
-        updateSettings { old ->
+        currentSettings.update { old ->
             if (systemConstraints.availableLenses.contains(lensFacing)) {
                 old?.copy(cameraLensFacing = lensFacing)
                     ?.tryApplyDynamicRangeConstraints()
@@ -1078,10 +1055,11 @@ class CameraXCameraSystem(
      * with these settings, resolves the effective provider (including any per-lens default override
      * for [CameraAppSettings.captureMode]), and enforces its [CaptureSubModeProvider.featurePolicy].
      *
-     * The values replaced by the policy are recorded when a sub-mode becomes active, and are
-     * restored when it ends (see [PolicyOverrides]).
+     * The values replaced by the policy are recorded in [CameraAppSettings.captureSubModeOverrides]
+     * when a sub-mode becomes active, and are restored when it ends (see [PolicyOverrides]).
      *
-     * Must only be called from [updateSettings], which guards [activeSubModeOverrides].
+     * This has no side effects, so it is safe to call from `MutableStateFlow.update`, which may
+     * run its function more than once.
      */
     private fun CameraAppSettings.tryApplyCaptureSubModeConstraints(): CameraAppSettings {
         val explicitProvider = if (captureSubModeId != CaptureSubModeId.DEFAULT) {
@@ -1103,15 +1081,15 @@ class CameraXCameraSystem(
         val targetSubModeId = explicitProvider?.descriptor?.id
             ?: settings.defaultCaptureSubModeIdForLens()
 
-        val previousOverrides = activeSubModeOverrides
-        val isContinuingSameProvider = previousOverrides != null &&
-            previousOverrides.subModeId == targetSubModeId &&
+        // The override record belongs to activeCaptureSubModeId, which is set together with it.
+        val isContinuingSameProvider = settings.captureSubModeOverrides != null &&
+            settings.activeCaptureSubModeId == targetSubModeId &&
             settings.resolveCaptureSubModeProvider(targetSubModeId) != null
 
-        if (previousOverrides != null && !isContinuingSameProvider) {
+        if (!isContinuingSameProvider) {
             // The sub-mode that replaced these values has ended. Restore them before evaluating the
             // next provider, then check that the restored values are supported by the current lens.
-            settings = settings.restoreActiveSubModeOverrides()
+            settings = settings.restoreCaptureSubModeOverrides()
         }
 
         val resolvedProvider = settings.resolveCaptureSubModeProvider(
@@ -1135,19 +1113,22 @@ class CameraXCameraSystem(
             .tryApplyImageFormatConstraints()
             .tryApplyFlashModeConstraints()
             .tryApplyVideoQualityConstraints()
-            .copy(activeCaptureSubModeId = resolvedSubModeId)
 
-        if (activeSubModeOverrides == null) {
-            activeSubModeOverrides =
-                ActiveSubModeOverrides(resolvedSubModeId, PolicyOverrides(settings, enforced))
-        }
-        return enforced
+        return enforced.copy(
+            activeCaptureSubModeId = resolvedSubModeId,
+            // Keep the record from when a continuing sub-mode became active.
+            captureSubModeOverrides = settings.captureSubModeOverrides
+                ?: PolicyOverrides(beforeEnforcement = settings, afterEnforcement = enforced)
+        )
     }
 
-    private fun CameraAppSettings.restoreActiveSubModeOverrides(): CameraAppSettings {
-        val previousOverrides = activeSubModeOverrides ?: return this
-        activeSubModeOverrides = null
-        return previousOverrides.overrides.restore(this)
+    /**
+     * Restores the values recorded in [CameraAppSettings.captureSubModeOverrides] and clears the
+     * record. Returns these settings unchanged if there is no record.
+     */
+    private fun CameraAppSettings.restoreCaptureSubModeOverrides(): CameraAppSettings {
+        val overrides = captureSubModeOverrides ?: return this
+        return overrides.restore(copy(captureSubModeOverrides = null))
             .tryApplyDynamicRangeConstraints()
             .tryApplyImageFormatConstraints()
             .tryApplyFlashModeConstraints()
@@ -1190,7 +1171,7 @@ class CameraXCameraSystem(
     override fun getCurrentSettings() = currentSettings.asStateFlow()
 
     override fun setFlashMode(flashMode: FlashMode) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(flashMode = flashMode)
                 ?.tryApplyDynamicRangeConstraints()
                 ?.tryApplyImageFormatConstraints()
@@ -1203,27 +1184,27 @@ class CameraXCameraSystem(
             imageCaptureUseCase?.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(aspectRatio = aspectRatio)
                 ?.tryApplyCaptureSubModeConstraints()
         }
     }
 
     override suspend fun setVideoQuality(videoQuality: VideoQuality) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(videoQuality = videoQuality)
                 ?.tryApplyVideoQualityConstraints()
         }
     }
 
     override suspend fun setLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(lowLightBoostPriority = lowLightBoostPriority)
         }
     }
 
     override suspend fun setCameraEffect(cameraEffect: CameraEffectId) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(selectedCameraEffect = cameraEffect)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyCaptureModeConstraints()
@@ -1233,7 +1214,7 @@ class CameraXCameraSystem(
     }
 
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(dynamicRange = dynamicRange)
                 ?.tryApplyDynamicRangeConstraints()
                 ?.tryApplyCaptureModeConstraints()
@@ -1242,13 +1223,13 @@ class CameraXCameraSystem(
     }
 
     override fun setDeviceRotation(deviceRotation: DeviceRotation) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(deviceRotation = deviceRotation)
         }
     }
 
     override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(imageFormat = imageFormat)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyCaptureModeConstraints()
@@ -1257,7 +1238,7 @@ class CameraXCameraSystem(
     }
 
     override suspend fun setMaxVideoDuration(durationInMillis: Long) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(
                 maxVideoDurationMillis = durationInMillis
             )
@@ -1265,29 +1246,29 @@ class CameraXCameraSystem(
     }
 
     override suspend fun setStabilizationMode(stabilizationMode: StabilizationMode) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(stabilizationMode = stabilizationMode)
         }
     }
 
     override suspend fun setTargetFrameRate(targetFrameRate: Int) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(targetFrameRate = targetFrameRate)?.tryApplyFrameRateConstraints()
         }
     }
 
     override suspend fun setAudioEnabled(isAudioEnabled: Boolean) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             old?.copy(audioEnabled = isAudioEnabled)
         }
     }
 
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
-        updateSettings { old ->
+        currentSettings.update { old ->
             val base = if (old != null && old.captureMode != captureMode) {
                 // Restore values replaced by an ending sub-mode before the new capture mode applies
                 // its own defaults, so that those defaults take precedence.
-                old.restoreActiveSubModeOverrides().copy(
+                old.restoreCaptureSubModeOverrides().copy(
                     captureMode = captureMode,
                     captureSubModeId = CaptureSubModeId.DEFAULT
                 )
@@ -1302,8 +1283,8 @@ class CameraXCameraSystem(
         }
     }
 
-    override fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {
-        updateSettings { old ->
+    override suspend fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {
+        currentSettings.update { old ->
             old?.copy(captureSubModeId = captureSubModeId)
                 ?.tryApplyCaptureSubModeParent()
                 ?.tryApplyCaptureSubModeConstraints()
@@ -1318,6 +1299,8 @@ class CameraXCameraSystem(
      * Returns these settings unchanged if the capture mode is not [CaptureMode.STANDARD] (an
      * explicitly selected capture mode is never overridden), if the sub-mode has no registered
      * provider, or if the sub-mode would still be unavailable after switching.
+     *
+     * Like [tryApplyCaptureSubModeConstraints], this has no side effects.
      */
     private fun CameraAppSettings.tryApplyCaptureSubModeParent(): CameraAppSettings {
         if (captureSubModeId == CaptureSubModeId.DEFAULT || captureMode != CaptureMode.STANDARD) {
@@ -1328,18 +1311,12 @@ class CameraXCameraSystem(
         if (parentCaptureMode == null || parentCaptureMode == captureMode) {
             return this
         }
-        val base = activeSubModeOverrides?.overrides?.restore(this)
-            ?.tryApplyDynamicRangeConstraints()
-            ?.tryApplyImageFormatConstraints()
-            ?.tryApplyFlashModeConstraints()
-            ?.tryApplyVideoQualityConstraints()
-            ?: this
-        val adopted = base.copy(captureMode = parentCaptureMode)
+        val adopted = restoreCaptureSubModeOverrides()
+            .copy(captureMode = parentCaptureMode)
             .tryApplyDynamicRangeConstraints()
             .tryApplyAspectRatioForExternalCapture(parentCaptureMode)
             .tryApplyImageFormatConstraints()
         return if (adopted.resolveCaptureSubModeProvider(captureSubModeId) != null) {
-            activeSubModeOverrides = null
             adopted
         } else {
             this
@@ -1385,10 +1362,4 @@ class CameraXCameraSystem(
 private data class RegisteredSubMode(
     val key: CaptureSubModeFeatureKey,
     val provider: CaptureSubModeProvider
-)
-
-/** The [PolicyOverrides] recorded when the capture sub-mode [subModeId] became active. */
-private data class ActiveSubModeOverrides(
-    val subModeId: CaptureSubModeId,
-    val overrides: PolicyOverrides
 )
