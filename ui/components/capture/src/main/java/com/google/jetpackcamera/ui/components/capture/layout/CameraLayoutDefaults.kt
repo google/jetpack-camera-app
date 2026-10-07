@@ -87,11 +87,26 @@ object CameraLayoutDefaults {
     /** Floor for any inter-row gap under compression. */
     val MinGap = 8.dp
 
-    /** Preferred padding below the bottom toolbar. */
+    /**
+     * Preferred padding below the bottom toolbar in an immersive window, or when the spec sets no
+     * bottom row anchor. Otherwise [BottomRowAnchor] sets the preferred padding.
+     */
     val BottomPadding = 30.dp
 
-    /** Floor for the padding below the bottom toolbar. */
+    /**
+     * Floor for the padding below the bottom toolbar, raised where needed to keep the toolbar out
+     * of the bottom gesture zone. Above a navigation bar at least as tall as the gesture zone, such
+     * as 3-button navigation, the floor is [MinControlClearance] instead.
+     */
     val MinBottomPadding = 8.dp
+
+    /**
+     * Height of the bottom toolbar's lower edge above the bottom of the window at the preferred
+     * padding. The navigation bar only changes the padding: 30.dp above a 24.dp gesture bar, 38.dp
+     * above a 16.dp gesture bar, 6.dp above a 48.dp 3-button bar, and 54.dp when no bar is
+     * reported, so every navigation configuration prefers the same control positions.
+     */
+    val BottomRowAnchor = 54.dp
 
     /** Required daylight between a viewfinder edge and any control row. */
     val MinControlClearance = 4.dp
@@ -103,10 +118,19 @@ object CameraLayoutDefaults {
     val MaxStackLift = 72.dp
 
     /**
-     * Reserved height below the top bar for the top-start control (`8.dp` top offset + `40.dp`
-     * button height) when [TopStartPlacement.FIXED_BELOW_TOP_BAR] is active.
+     * Reserved height below the top bar for the top-start control's 48.dp touch target when
+     * [TopStartPlacement.FIXED_BELOW_TOP_BAR] is active.
      */
     val TopStartHeight = 48.dp
+
+    /** Inset of the 40.dp visible top-start button within its 48.dp touch target. */
+    val TopStartVisibleInset = 4.dp
+
+    /**
+     * Minimum gap between a viewfinder top edge that passes behind the top-start button and the
+     * button's visible top.
+     */
+    val TopStartMinEdgeGap = 1.dp
 
     // Relative cost of a viewfinder edge intruding on each row. The shutter is the control the user
     // reaches for without looking, so it is protected hardest; the mode switcher is the most
@@ -210,11 +234,14 @@ object CameraLayoutDefaults {
         minControlClearance = MinControlClearance,
         minInteractiveTouchTarget = minInteractiveTouchTarget,
         bottomPadding = GapRange(MinBottomPadding, BottomPadding),
+        bottomRowAnchor = BottomRowAnchor,
         maxStackLift = MaxStackLift,
         enforceTopWeighting = true,
         toolbarCompaction = toolbarCompaction,
         topStartPlacement = topStartPlacement,
         topStartHeight = topStartHeight,
+        topStartVisibleInset = TopStartVisibleInset,
+        topStartMinEdgeGap = TopStartMinEdgeGap,
         groupingRule = GroupingRule(
             rowId = CameraRowIds.CAPTURE_ROW,
             tightenedGapAbove = ZoomToCaptureGroupedGap

@@ -40,8 +40,11 @@ data class DpRange(val top: Dp, val bottom: Dp) {
  * @param width window width.
  * @param height window height.
  * @param topInset status bar or display cutout depth, whichever is deeper.
- * @param navInset navigation bar height, reported even when the bar is currently hidden.
- * @param gestureInset bottom system gesture zone depth.
+ * @param navInset navigation bar height, reported even when the bar is currently hidden. This
+ *   varies on a single device: AOSP reports 48 dp for 3-button navigation, and 24 dp for gesture
+ *   navigation from Android 13 (16 dp on Android 10 to 12L).
+ * @param gestureInset bottom system gesture zone depth. AOSP reports 32 dp for gesture navigation
+ *   and the full bar height for 3-button navigation, where the bar covers the zone.
  * @param cornerRadius hardware display corner radius, used to keep the preview corners concentric
  *   with the bezel. Does not affect vertical placement.
  */
@@ -50,7 +53,7 @@ data class CameraWindow(
     val height: Dp,
     val topInset: Dp,
     val navInset: Dp,
-    val gestureInset: Dp = 24.dp,
+    val gestureInset: Dp = 32.dp,
     val cornerRadius: Dp = 0.dp
 ) {
     init {
@@ -124,6 +127,12 @@ enum class PlacementPolicy {
      * Either sit flush below the top bar, or expand all the way to the top of the window. Partial
      * overlap with the top bar is never used, because a frame that starts part-way into the top bar
      * reads as a mistake rather than a decision.
+     *
+     * A frame too tall to clear the control stack from above first tries to enclose the stack
+     * instead, with its bottom edge below the bottom-most row. Its top edge then stays at the top
+     * bar or passes behind a fixed top-start control, no lower than
+     * [CameraLayoutSpec.topStartMinEdgeGap] above the control's visible top. The frame expands to
+     * the top of the window only when no enclosing position clears every control.
      *
      * This is the `9:16` behaviour.
      */
@@ -207,15 +216,32 @@ data class GroupingRule(val rowId: String, val tightenedGapAbove: Dp)
  * @param viewfinders the frames that must all be placed against the same stationary [rows].
  * @param minControlClearance required daylight between any viewfinder edge and any control row.
  * @param minInteractiveTouchTarget minimum interactive touch target height for compacted controls.
- * @param bottomPadding padding below the bottom-most row, between the two bounds given.
- * @param maxStackLift how far the solver may raise the whole stack as a last resort.
+ * @param bottomPadding padding below the bottom-most row. [GapRange.min] is the floor, raised where
+ *   needed to keep the row out of the bottom gesture zone. Above a visible navigation bar at least
+ *   as tall as the gesture zone, such as 3-button navigation, the floor is [minControlClearance]
+ *   instead, because the bar already keeps the row out of the zone. [GapRange.preferred] is the
+ *   preferred padding when [bottomRowAnchor] is null and in an immersive window.
+ * @param bottomRowAnchor height of the bottom edge of the bottom-most row above the bottom of the
+ *   window at the preferred padding. The preferred padding is this height minus the navigation bar
+ *   height, never below the [bottomPadding] floor, so the bar only changes the padding and every
+ *   navigation configuration prefers the same control positions. An immersive window keeps
+ *   [GapRange.preferred] of [bottomPadding], capped at this height. Null measures the preferred
+ *   padding from the navigation bar alone.
+ * @param maxStackLift how far above the preferred padding the solver searches for a collision-free
+ *   layout when the tallest frame collides. The stack rises only as far as the lowest
+ *   collision-free position found, plus a small incidental lift.
  * @param enforceTopWeighting cap a downward shift so the black band above a frame never exceeds the
- *   band below it.
+ *   band below it, measured to the bottom of the window.
  * @param toolbarCompaction strategy for the mid-height toolbar case.
  * @param topStartPlacement how the top-start control is positioned relative to the top bar and
  *   viewfinder.
  * @param topStartHeight reserved height below the top bar for the top-start control when
  *   [topStartPlacement] is [TopStartPlacement.FIXED_BELOW_TOP_BAR].
+ * @param topStartVisibleInset inset of the visible top-start control within its reserved slot. A
+ *   viewfinder's top edge may pass behind the control as long as it stays at least
+ *   [topStartMinEdgeGap] above the visible control.
+ * @param topStartMinEdgeGap minimum gap between a viewfinder edge passing behind the top-start
+ *   control and the control's visible bounds.
  * @param groupingRule optional visual grouping adjustment applied while ranking repair candidates.
  */
 data class CameraLayoutSpec(
@@ -224,11 +250,14 @@ data class CameraLayoutSpec(
     val minControlClearance: Dp = 4.dp,
     val minInteractiveTouchTarget: Dp = 48.dp,
     val bottomPadding: GapRange = GapRange(8.dp, 30.dp),
+    val bottomRowAnchor: Dp? = 54.dp,
     val maxStackLift: Dp = 72.dp,
     val enforceTopWeighting: Boolean = true,
     val toolbarCompaction: ToolbarCompaction = ToolbarCompaction.COMPACT_TOOLBAR,
     val topStartPlacement: TopStartPlacement = TopStartPlacement.FIXED_BELOW_TOP_BAR,
     val topStartHeight: Dp = 48.dp,
+    val topStartVisibleInset: Dp = 4.dp,
+    val topStartMinEdgeGap: Dp = 1.dp,
     val groupingRule: GroupingRule? = null
 ) {
     init {

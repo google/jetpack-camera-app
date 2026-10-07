@@ -38,9 +38,9 @@ class CameraLayoutSolverPropertyTest {
      * A synthetic sweep of portrait window geometries.
      *
      * Bounds are chosen to bracket the real world generously rather than to describe it: widths
-     * from a small phone to a large one, heights from a 16:9 handset to a tall flagship, top insets
-     * from a slim status bar to a deep cutout, and navigation insets covering hidden, gesture and
-     * three-button.
+     * from a small phone to a large one, heights from a 16:9 handset to a tall flagship, and top
+     * insets from a slim status bar to a deep cutout. Bottom insets are swept as the pairs a device
+     * reports, see [bottomInsets].
      *
      * Sweeping width and height independently also produces combinations no handheld has, such as
      * `480x760`, which is wider than 16:9. Those are tablets, foldable inner displays or
@@ -53,7 +53,26 @@ class CameraLayoutSolverPropertyTest {
         val widths = (320..480 step 20).map { it.toFloat() }
         val heights = (600..1160 step 40).map { it.toFloat() }
         val topInsets = listOf(24f, 30f, 36f, 42f, 48f, 54f, 60f)
-        val navInsets = listOf(0f, 16f, 24f, 48f)
+
+        /**
+         * Navigation bar heights, each paired with the bottom gesture zone reported alongside it.
+         *
+         * The two are not independent, so they are not swept independently. Gesture navigation
+         * reports a 24 dp bar, or 16 dp before Android 13, over a 32 dp gesture zone, and 3-button
+         * navigation reports a 48 dp bar with a gesture zone of the same height. The sweep also
+         * covers a window that reports no bar, with the gesture navigation zone.
+         */
+        val bottomInsets = listOf(0f to 32f, 16f to 32f, 24f to 32f, 48f to 48f)
+
+        /**
+         * The gesture zone an immersive window is modeled with.
+         *
+         * A window too short to fit the tall frame above its bar is immersive. The bar is hidden,
+         * so the toolbar alone has to clear the gesture zone. The immersive reference layouts
+         * were captured with a 24 dp zone, and the immersive floor for the taller zones a device
+         * reports is not settled, so immersive windows keep that zone.
+         */
+        private const val IMMERSIVE_GESTURE_INSET = 24f
 
         /**
          * Real portrait handhelds run from 16:9 to roughly 21:9.
@@ -75,14 +94,19 @@ class CameraLayoutSolverPropertyTest {
             for (w in widths) {
                 for (h in heights) {
                     for (top in topInsets) {
-                        for (nav in navInsets) {
+                        for ((nav, gesture) in bottomInsets) {
+                            val immersive = w / (9f / 16f) > h - nav
                             yield(
                                 CameraWindow(
                                     width = w.dp,
                                     height = h.dp,
                                     topInset = top.dp,
                                     navInset = nav.dp,
-                                    gestureInset = 24.dp
+                                    gestureInset = if (immersive) {
+                                        IMMERSIVE_GESTURE_INSET.dp
+                                    } else {
+                                        gesture.dp
+                                    }
                                 )
                             )
                         }
@@ -91,7 +115,7 @@ class CameraLayoutSolverPropertyTest {
             }
         }
 
-        val size = widths.size * heights.size * topInsets.size * navInsets.size
+        val size = widths.size * heights.size * topInsets.size * bottomInsets.size
 
         /** Every window in the sweep, in scope or not. For invariants that must hold regardless. */
         fun everyWindow(): Sequence<CameraWindow> = all()
@@ -277,11 +301,9 @@ class CameraLayoutSolverPropertyTest {
         // control.
         Grid.inScope().forEach { window ->
             val solution = solutionFor(window)
-            val bottomLimit = if (solution.requiresImmersive) {
-                window.height.value
-            } else {
-                window.height.value - window.navInset.value
-            }
+            // The navigation bar reads as black, so the band below a frame is measured to the
+            // bottom of the window, matching the solver's top-weighting cap.
+            val bottomLimit = window.height.value
             val firstShiftedTop = if (
                 spec.topStartPlacement == TopStartPlacement.FIXED_BELOW_TOP_BAR
             ) {
@@ -332,15 +354,16 @@ class CameraLayoutSolverPropertyTest {
      *
      * | evaluations | windows |
      * |-------------|---------|
-     * | 1           | 897     |
-     * | 2 to 10     | 120     |
-     * | 11 to 100   | 545     |
-     * | over 1000   | 6       |
+     * | 1           | 363     |
+     * | 2 to 10     | 248     |
+     * | 11 to 100   | 947     |
+     * | 101 to 1000 | 10      |
+     * | over 1000   | 0       |
      *
-     * So the designed layout already fits on 57% of supported windows with no search at all, and
-     * only 6 windows in 1,568 ever pay for a full gap sweep. That is worth stating explicitly,
-     * because the shape of this distribution is the reason the search is not worth optimising
-     * further: the expensive path is rare and already bounded.
+     * So 1,558 of 1,568 supported windows cost at most 100 evaluations, and none costs more than
+     * 1,000. That is worth stating explicitly, because the shape of this distribution is the
+     * reason the search is not worth optimising further: the expensive path is rare and already
+     * bounded.
      */
     @Test
     fun supportedGeometryIsSolvedWithinAKnownEvaluationBound() {
@@ -356,13 +379,13 @@ class CameraLayoutSolverPropertyTest {
             }
         }
 
-        // One full gap sweep is 9 x 9 x 13 = 1,053 candidates, and the worst supported window costs
-        // exactly one of those plus the padding sweep that preceded it. The bound is the measured
-        // worst case with a little headroom, not a target: it is here so that a change which makes
-        // the search enter the gap sweep at more than one padding fails loudly.
+        // A gap sweep at a single padding is at most 9 x 9 x 13 = 1,053 candidates, and the worst
+        // supported window costs 587. The bound is that measured worst case with a little
+        // headroom, not a target: it is here so that a change which makes the search markedly
+        // more expensive fails loudly.
         assertWithMessage("worst window %s cost %s evaluations", worstWindow?.describe(), worst)
             .that(worst)
-            .isAtMost(1_100)
+            .isAtMost(650)
 
         // Well under EVALUATION_BUDGET, which matters for correctness and not just speed: a solve
         // that exhausts the budget returns the best layout found so far rather than the best one
@@ -414,5 +437,6 @@ class CameraLayoutSolverPropertyTest {
     }
 
     private fun CameraWindow.describe() =
-        "${width.value}x${height.value} top=${topInset.value} nav=${navInset.value}"
+        "${width.value}x${height.value} top=${topInset.value} nav=${navInset.value} " +
+            "gesture=${gestureInset.value}"
 }
