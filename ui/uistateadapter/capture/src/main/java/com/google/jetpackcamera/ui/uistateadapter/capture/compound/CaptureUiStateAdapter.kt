@@ -97,6 +97,10 @@ fun captureUiState(
         val activeSubModeId = cameraAppSettings.activeCaptureSubModeId
             .takeIf { it != CaptureSubModeId.DEFAULT }
         val subModePolicy = activeSubModeId?.let { systemConstraints.captureSubModePolicies[it] }
+        // The Quick Settings title intentionally follows the user's explicit selection, not the
+        // active sub-mode. When a default sub-mode override is active, the user still selected the
+        // parent capture mode, so the parent title is kept. The feature policy above still uses
+        // the active sub-mode so that the controls match what the camera is running.
         val explicitSubModeId = cameraAppSettings.captureSubModeId
             .takeIf { it != CaptureSubModeId.DEFAULT }
         val subModeQuickSettingsTitleResId = explicitSubModeId?.let {
