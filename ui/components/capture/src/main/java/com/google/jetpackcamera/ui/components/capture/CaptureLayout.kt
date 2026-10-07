@@ -291,11 +291,13 @@ private fun VerticalMaterialControls(
                     }
                 }
 
-                Box(
+                // Reports whether the carousel is drawn over the viewfinder, so that its labels
+                // can add a shadow for legibility.
+                OverlapAwareStyleProvider(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(CaptureModeCarouselHeight),
-                    contentAlignment = Alignment.Center
+                    overlapThreshold = 0.5f
                 ) {
                     captureModeCarousel(Modifier)
                 }

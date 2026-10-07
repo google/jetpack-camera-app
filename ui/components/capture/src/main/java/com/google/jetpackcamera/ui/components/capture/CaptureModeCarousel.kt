@@ -50,6 +50,7 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.Layout
@@ -84,8 +85,13 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 internal val CaptureModeCarouselHeight = 50.dp
 private val PillHeight = 32.dp
-private val ItemHorizontalPadding = 20.dp
-private val ItemMinWidth = 80.dp
+private val ItemHorizontalPadding = 12.dp
+private val ItemMinWidth = 72.dp
+private val ItemSpacing = 4.dp
+
+/** Shadow behind unselected labels while the carousel is drawn over the viewfinder. */
+private val OverViewfinderTextShadowBlur = 4.dp
+private val OverViewfinderTextShadowOffsetY = 1.dp
 
 private const val DISABLED_CONTENT_ALPHA = 0.38f
 private const val SETTLE_DAMPING_RATIO = 0.8f
@@ -113,6 +119,9 @@ private const val SELECTION_CONFIRMATION_TIMEOUT_MS = 500L
  * that the resulting camera reconfiguration does not interrupt the scroll animation. If the
  * selected sub-mode in [uiState] does not change to the committed sub-mode shortly afterwards, the
  * row returns to the selected sub-mode.
+ *
+ * When the carousel is drawn over the viewfinder, as reported by [OverlapAwareStyleProvider], the
+ * unselected labels are drawn with a dark shadow so that they stay legible on bright scenes.
  */
 @Composable
 fun CaptureModeCarousel(
@@ -136,12 +145,33 @@ fun CaptureModeCarousel(
     val selectedTextStyle = baseTextStyle.copy(fontWeight = FontWeight.SemiBold)
 
     val density = LocalDensity.current
+    val isOverViewfinder =
+        LocalCameraControlBackgroundStyle.current == CameraControlBackgroundStyle.BLACK_60
+    // The shadow does not affect text size, so it is applied only when drawing. Measuring with
+    // the shadow-free style keeps the geometry, and therefore the drag state, unchanged when the
+    // overlap changes.
+    val unselectedDrawStyle = remember(unselectedTextStyle, isOverViewfinder, density) {
+        if (isOverViewfinder) {
+            with(density) {
+                unselectedTextStyle.copy(
+                    shadow = Shadow(
+                        color = Color.Black,
+                        offset = Offset(0f, OverViewfinderTextShadowOffsetY.toPx()),
+                        blurRadius = OverViewfinderTextShadowBlur.toPx()
+                    )
+                )
+            }
+        } else {
+            unselectedTextStyle
+        }
+    }
+
     val textMeasurer = rememberTextMeasurer()
     val geometry = remember(ids, labels, unselectedTextStyle, selectedTextStyle, density) {
         val horizontalPaddingPx = with(density) { ItemHorizontalPadding.toPx() }
         val minWidthPx = with(density) { ItemMinWidth.toPx() }
         CarouselGeometry(
-            FloatArray(labels.size) { index ->
+            widths = FloatArray(labels.size) { index ->
                 val textWidth = max(
                     textMeasurer.measure(
                         text = labels[index],
@@ -157,7 +187,8 @@ fun CaptureModeCarousel(
                     ).size.width
                 )
                 max(textWidth + 2 * horizontalPaddingPx, minWidthPx)
-            }
+            },
+            spacing = with(density) { ItemSpacing.toPx() }
         )
     }
 
@@ -260,7 +291,7 @@ fun CaptureModeCarousel(
             labels = labels,
             geometry = geometry,
             position = position,
-            textStyle = unselectedTextStyle,
+            textStyle = unselectedDrawStyle,
             contentColor = { index ->
                 if (isEnabled(index)) {
                     unselectedContentColor
@@ -362,13 +393,16 @@ private fun CarouselRow(
     }
 }
 
-/** Slot widths and centers of the carousel items, in pixels along the scroll axis. */
-private class CarouselGeometry(val widths: FloatArray) {
+/**
+ * Slot widths and centers of the carousel items, in pixels along the scroll axis. Adjacent slots
+ * are separated by [spacing].
+ */
+private class CarouselGeometry(val widths: FloatArray, spacing: Float) {
     val centers: FloatArray = FloatArray(widths.size).also { centers ->
         var start = 0f
         widths.forEachIndexed { index, width ->
             centers[index] = start + width / 2f
-            start += width
+            start += width + spacing
         }
     }
 
