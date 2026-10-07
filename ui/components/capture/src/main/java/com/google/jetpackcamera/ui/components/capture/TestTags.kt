@@ -22,11 +22,11 @@ import com.google.jetpackcamera.model.CaptureSubModeId
 const val CAPTURE_BUTTON = "CaptureButton"
 internal const val CAPTURE_BUTTON_RING_BORDER = "CaptureButtonRingBorder"
 const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
-const val CAPTURE_MODE_CAROUSEL = "CaptureModeCarousel"
+const val CAPTURE_MODE_CAROUSEL = "carousel_capture_mode"
 
 /** Test tag of the [CaptureModeCarousel] option that selects this sub-mode. */
 val CaptureSubModeId.carouselOptionTag: String
-    get() = "CaptureSubModeOption_$value"
+    get() = "carousel_capture_mode_option_$value"
 
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
 const val SNACKBAR_NODE_TAG = "SnackbarNodeTag"

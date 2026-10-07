@@ -354,11 +354,33 @@ internal class CaptureUiStateAdapterTest {
         assertThat(quickSettings.titleResId).isNull()
     }
 
+    @Test
+    fun captureUiState_defaultOverrideActive_keepsParentQuickSettingsTitle() = runTest {
+        setActiveSubMode(
+            subModePolicy = CameraFeaturePolicy(
+                aspectRatio = SettingConfig(AspectRatio.ONE_ONE, OptionVisibility.Hidden)
+            ),
+            selectedSubModeId = CaptureSubModeId.DEFAULT
+        )
+
+        val state = assertIsReady(createCaptureUiStateFlow(cameraFeaturePolicy = null).first())
+
+        val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
+        assertThat(quickSettings.titleResId).isNull()
+        // The active override's policy still applies even though its title does not.
+        assertThat(state.aspectRatioUiState).isEqualTo(AspectRatioUiState.Unavailable)
+    }
+
     /**
-     * Registers a test sub-mode with [subModePolicy] and makes it the selected and active
-     * sub-mode.
+     * Registers a test sub-mode with [subModePolicy] and makes it the active sub-mode.
+     *
+     * @param selectedSubModeId the sub-mode the user explicitly selected. Pass
+     * [CaptureSubModeId.DEFAULT] to simulate the test sub-mode running as a default override.
      */
-    private suspend fun setActiveSubMode(subModePolicy: CameraFeaturePolicy) {
+    private suspend fun setActiveSubMode(
+        subModePolicy: CameraFeaturePolicy,
+        selectedSubModeId: CaptureSubModeId = TEST_SUB_MODE_ID
+    ) {
         cameraSystem.setSystemConstraints(
             TYPICAL_SYSTEM_CONSTRAINTS.copy(
                 captureSubModeDescriptors = mapOf(
@@ -375,7 +397,7 @@ internal class CaptureUiStateAdapterTest {
         cameraSystem.initialize(
             DEFAULT_CAMERA_APP_SETTINGS.copy(
                 captureMode = CaptureMode.IMAGE_ONLY,
-                captureSubModeId = TEST_SUB_MODE_ID,
+                captureSubModeId = selectedSubModeId,
                 activeCaptureSubModeId = TEST_SUB_MODE_ID
             )
         ) {}
