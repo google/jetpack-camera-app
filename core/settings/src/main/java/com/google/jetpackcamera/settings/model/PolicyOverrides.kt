@@ -15,21 +15,44 @@
  */
 package com.google.jetpackcamera.settings.model
 
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
+
 /**
  * Records the [CameraAppSettings] values that [CameraFeaturePolicy.enforceRestrictions] replaced,
  * so that they can be restored when the policy no longer applies (for example, when the user
  * leaves a capture sub-mode).
  *
+ * The restored values are [CameraAppSettings.aspectRatio], [CameraAppSettings.flashMode],
+ * [CameraAppSettings.imageFormat], and [CameraAppSettings.dynamicRange].
  * [CameraAppSettings.captureMode] is not restored. A capture mode change ends a sub-mode rather
  * than being a value that the sub-mode overrides.
  *
- * @param beforeEnforcement The settings before the policy was enforced.
- * @param afterEnforcement The settings returned by [CameraFeaturePolicy.enforceRestrictions].
+ * Instances are compared by value.
  */
-class PolicyOverrides(
-    private val beforeEnforcement: CameraAppSettings,
-    private val afterEnforcement: CameraAppSettings
+@ConsistentCopyVisibility
+data class PolicyOverrides private constructor(
+    private val aspectRatio: OverriddenValue<AspectRatio>,
+    private val flashMode: OverriddenValue<FlashMode>,
+    private val imageFormat: OverriddenValue<ImageOutputFormat>,
+    private val dynamicRange: OverriddenValue<DynamicRange>
 ) {
+    /**
+     * @param beforeEnforcement The settings before the policy was enforced.
+     * @param afterEnforcement The settings returned by [CameraFeaturePolicy.enforceRestrictions].
+     */
+    constructor(beforeEnforcement: CameraAppSettings, afterEnforcement: CameraAppSettings) : this(
+        aspectRatio = OverriddenValue(beforeEnforcement.aspectRatio, afterEnforcement.aspectRatio),
+        flashMode = OverriddenValue(beforeEnforcement.flashMode, afterEnforcement.flashMode),
+        imageFormat = OverriddenValue(beforeEnforcement.imageFormat, afterEnforcement.imageFormat),
+        dynamicRange = OverriddenValue(
+            beforeEnforcement.dynamicRange,
+            afterEnforcement.dynamicRange
+        )
+    )
+
     /**
      * Returns [settings] with each overridden value set back to its value before enforcement.
      *
@@ -37,28 +60,14 @@ class PolicyOverrides(
      * changed since enforcement (for example, by the user) are kept.
      */
     fun restore(settings: CameraAppSettings): CameraAppSettings = settings.copy(
-        aspectRatio = restoreValue(
-            current = settings.aspectRatio,
-            before = beforeEnforcement.aspectRatio,
-            enforced = afterEnforcement.aspectRatio
-        ),
-        flashMode = restoreValue(
-            current = settings.flashMode,
-            before = beforeEnforcement.flashMode,
-            enforced = afterEnforcement.flashMode
-        ),
-        imageFormat = restoreValue(
-            current = settings.imageFormat,
-            before = beforeEnforcement.imageFormat,
-            enforced = afterEnforcement.imageFormat
-        ),
-        dynamicRange = restoreValue(
-            current = settings.dynamicRange,
-            before = beforeEnforcement.dynamicRange,
-            enforced = afterEnforcement.dynamicRange
-        )
+        aspectRatio = aspectRatio.restore(settings.aspectRatio),
+        flashMode = flashMode.restore(settings.flashMode),
+        imageFormat = imageFormat.restore(settings.imageFormat),
+        dynamicRange = dynamicRange.restore(settings.dynamicRange)
     )
-}
 
-private fun <T> restoreValue(current: T, before: T, enforced: T): T =
-    if (current == enforced) before else current
+    /** A setting's value before enforcement, and the value that the policy set. */
+    private data class OverriddenValue<T>(val before: T, val enforced: T) {
+        fun restore(current: T): T = if (current == enforced) before else current
+    }
+}
