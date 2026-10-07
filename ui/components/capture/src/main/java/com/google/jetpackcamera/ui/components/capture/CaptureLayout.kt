@@ -377,7 +377,7 @@ private fun AdaptivePortraitCaptureLayout(
     val rawGestureInset = WindowInsets.systemGestures
         .asPaddingValues()
         .calculateBottomPadding()
-    val effectiveGestureInset = max(24.dp, rawGestureInset)
+    val effectiveGestureInset = max(32.dp, rawGestureInset)
     val minTouchTarget = LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
     val topBarHeight = max(cutoutTopInset, minTouchTarget)
 
@@ -587,7 +587,7 @@ private fun AdaptivePortraitCaptureLayout(
                     val topStartY = when (topStartPlacement) {
                         TopStartPlacement.FIXED_BELOW_TOP_BAR -> topBarHeight.roundToPx()
                         TopStartPlacement.VIEWFINDER_TOP_START ->
-                            activeVfTopDp?.roundToPx() ?: topBarHeight.roundToPx()
+                            max(topBarHeight, activeVfTopDp ?: topBarHeight).roundToPx()
                     }
                     topStart.placeRelative(topStartX, topStartY)
                 }

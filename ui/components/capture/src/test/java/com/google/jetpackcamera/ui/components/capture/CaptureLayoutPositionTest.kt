@@ -314,24 +314,24 @@ class CaptureLayoutPositionTest {
     }
 
     /**
-     * Verifies that when the adaptive solver compacts the bottom toolbar (e.g. on an S9 with
-     * 3-button navigation where `toolbarHeight = 44.dp`), [ToggleSwitch] and
+     * Verifies that when the adaptive solver compacts the bottom toolbar (e.g. on a 460x920dp
+     * window with 3-button navigation where `toolbarHeight = 46.dp`), [ToggleSwitch] and
      * [ToggleQuickSettingsButton] scale down uniformly in both width and height.
      */
     @Test
     fun bottomToolbarControls_scaleProportionally_whenToolbarIsCompacted() {
-        val s9ThreeButtonWindow = CameraWindow(
-            width = 360.dp,
-            height = 740.dp,
-            topInset = 48.dp,
+        val compactBandWindow = CameraWindow(
+            width = 460.dp,
+            height = 920.dp,
+            topInset = 42.dp,
             navInset = 48.dp,
-            gestureInset = 24.dp
+            gestureInset = 48.dp
         )
         val compactSolution = CameraLayoutSolver.solve(
             spec = CameraLayoutDefaults.spec(),
-            window = s9ThreeButtonWindow
+            window = compactBandWindow
         )
-        assertThat(compactSolution.toolbarHeight.value).isWithin(TOLERANCE).of(44f)
+        assertThat(compactSolution.toolbarHeight.value).isWithin(TOLERANCE).of(46f)
 
         composeTestRule.setContent {
             CompositionLocalProvider(LocalCameraLayoutSolution provides compactSolution) {
@@ -350,7 +350,7 @@ class CaptureLayoutPositionTest {
         }
         composeTestRule.waitForIdle()
 
-        val expectedScale = 44f / 64f
+        val expectedScale = 46f / 64f
         val switchBounds =
             composeTestRule.onNodeWithTag(TOGGLE_SWITCH_TAG).getUnclippedBoundsInRoot()
         assertThat(switchBounds.width.value).isWithin(TOLERANCE).of(116f * expectedScale)
@@ -363,19 +363,68 @@ class CaptureLayoutPositionTest {
     }
 
     /**
-     * On a short 16:9 portrait handheld (360x640dp), the adaptive solver enters immersive mode
-     * and places the control stack at the golden reference coordinates (captureRow = 380..466dp,
-     * centered 80dp button at 383dp) while keeping the zoom bar on screen.
+     * On a short 16:9 portrait handheld (360x640dp), the adaptive solver places the control stack
+     * at captureRow = 366..452dp (centered 80dp button at 369dp) while keeping the zoom bar on
+     * screen, and keeps `topStartContent` below the top bar even when a full-bleed 9:16 viewfinder
+     * starts at y = 0 in [TopStartPlacement.VIEWFINDER_TOP_START] mode.
      */
+    @OptIn(ExperimentalMaterial3Api::class)
     @Config(qualifiers = "w360dp-h640dp")
     @Test
     fun controlStack_onShort16By9Phone_matchesGoldenSolverPlacement() {
-        composeTestRule.setContent { TestCaptureLayout() }
+        composeTestRule.setContent {
+            PreviewLayout(
+                viewfinder = { vfModifier ->
+                    Box(
+                        vfModifier
+                            .testTag(VIEWFINDER_TAG)
+                            .fillMaxWidth()
+                            .height(640.dp)
+                    )
+                },
+                topStartContent = { topStartModifier ->
+                    Box(
+                        topStartModifier
+                            .testTag(TOP_START_TAG)
+                            .size(48.dp)
+                    )
+                },
+                topStartPlacement = TopStartPlacement.VIEWFINDER_TOP_START,
+                captureButton = {
+                    Box(
+                        Modifier
+                            .testTag(CAPTURE_BUTTON_TAG)
+                            .size(CAPTURE_BUTTON_SIZE)
+                    )
+                },
+                imageWell = {},
+                flipCameraButton = {},
+                zoomLevelDisplay = {
+                    Box(
+                        Modifier
+                            .testTag(ZOOM_BAR_TAG)
+                            .fillMaxWidth()
+                            .height(ZOOM_BAR_HEIGHT)
+                    )
+                },
+                elapsedTimeDisplay = {},
+                quickSettingsButton = {},
+                indicatorRow = {},
+                captureModeToggle = {},
+                quickSettingsOverlay = {},
+                debugOverlay = {},
+                debugVisibilityWrapper = { it() },
+                screenFlashOverlay = {},
+                snackBar = { _, _ -> }
+            )
+        }
         composeTestRule.waitForIdle()
 
         assertThat(rootHeight()).isWithin(TOLERANCE).of(640f)
         assertThat(topOf(CAPTURE_BUTTON_TAG)).isWithin(TOLERANCE).of(EXPECTED_16_9_BUTTON_TOP)
         assertThat(topOf(ZOOM_BAR_TAG)).isAtLeast(0f)
+        assertThat(topOf(VIEWFINDER_TAG)).isWithin(TOLERANCE).of(0f)
+        assertThat(topOf(TOP_START_TAG)).isWithin(TOLERANCE).of(48f)
     }
 
     private companion object {
@@ -391,19 +440,20 @@ class CaptureLayoutPositionTest {
         val SHORT_SCREEN_HEIGHT = 500.dp
 
         /**
-         * Solver preferred spacing on 360x800dp:
-         * 800 - 30 (bottom padding) - 64 (toolbar) - 24 - 32 (mode switcher) - 24 - 86 (capture)
-         * places the top of the 86dp shutter row at 540dp, and the centered 80dp capture button at
-         * 543dp.
+         * Solver spacing on 360x800dp:
+         * 800 - 38 (resolved bottom padding) - 64 (toolbar) - 24 - 32 (mode switcher) - 24 - 86
+         * (capture) places the top of the 86dp shutter row at 532dp, and the centered 80dp capture
+         * button at 535dp.
          */
-        const val EXPECTED_TALL_BUTTON_TOP = 543f
+        const val EXPECTED_TALL_BUTTON_TOP = 535f
 
         /**
-         * Golden solver placement on compact_16_9 (360x640dp):
-         * Immersive mode frees the navigation bar so the stack sits at captureRow = 380..466dp,
-         * placing the centered 80dp capture button at 383dp.
+         * Solver placement on 360x640dp (with zero navigation bar inset in Robolectric):
+         * 640 - 44 (resolved bottom padding, 4dp below the 3:4 frame at 48..528dp) - 64 (toolbar)
+         * - 24 - 32 (mode switcher) - 24 - 86 (capture) places the shutter row at 366..452dp, and
+         * the centered 80dp capture button at 369dp.
          */
-        const val EXPECTED_16_9_BUTTON_TOP = 383f
+        const val EXPECTED_16_9_BUTTON_TOP = 369f
 
         /**
          * Compressed spacing on 360x500dp (wider than 16:9 split-screen fallback):
