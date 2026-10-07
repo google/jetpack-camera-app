@@ -79,6 +79,7 @@ dependencies {
 
     // AndroidX Core KTX
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
 
     // Accompanist - Permissions
     implementation(libs.accompanist.permissions)

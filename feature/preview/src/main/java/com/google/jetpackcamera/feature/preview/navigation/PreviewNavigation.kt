@@ -15,11 +15,8 @@
  */
 package com.google.jetpackcamera.feature.preview.navigation
 
-import android.Manifest
 import android.net.Uri
-import android.os.Build
 import androidx.compose.animation.fadeIn
-import androidx.compose.runtime.LaunchedEffect
 import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavController
@@ -28,9 +25,6 @@ import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.jetpackcamera.feature.preview.PreviewScreen
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_CAPTURE_URIS
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute.ARG_DEBUG_SETTINGS
@@ -63,7 +57,7 @@ fun NavController.navigateToPreview(
     externalCaptureMode: ExternalCaptureMode? = null,
     captureUris: List<Uri>? = null,
     debugSettings: DebugSettings? = null,
-    saveMode: Boolean? = null,
+    shouldReviewAfterCapture: Boolean? = null,
     builder: (NavOptionsBuilder.() -> Unit) = {}
 ) {
     var route = BASE_ROUTE_DEF // Start with the base route
@@ -78,7 +72,7 @@ fun NavController.navigateToPreview(
             ).serializeAsValue(it)}"
         )
     }
-    saveMode?.let {
+    shouldReviewAfterCapture?.let {
         queryParams.add(
             "${ARG_REVIEW_AFTER_CAPTURE}=${
                 NavType.BoolType.serializeAsValue(it)}"
@@ -104,7 +98,6 @@ fun NavController.navigateToPreview(
     this.navigate(route, builder)
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
 fun NavGraphBuilder.previewScreen(
     externalCaptureMode: ExternalCaptureMode,
     shouldCacheReview: Boolean,
@@ -114,8 +107,8 @@ fun NavGraphBuilder.previewScreen(
     onFirstFrameCaptureCompleted: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
-    onNavigateToPermissions: () -> Unit,
-    onCaptureEvent: (CaptureEvent) -> Unit
+    onCaptureEvent: (CaptureEvent) -> Unit,
+    onCloseCamera: () -> Unit = {}
 ) {
     composable(
         route = FULL_ROUTE_DEF,
@@ -139,36 +132,14 @@ fun NavGraphBuilder.previewScreen(
         ),
         enterTransition = { fadeIn() }
     ) {
-        val permissionStates = rememberMultiplePermissionsState(
-            permissions =
-            buildList {
-                add(Manifest.permission.CAMERA)
-                add(Manifest.permission.RECORD_AUDIO)
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    add(Manifest.permission.READ_EXTERNAL_STORAGE)
-                }
-            }
-        )
-        // Automatically navigate to permissions screen when camera permission revoked
-        LaunchedEffect(key1 = permissionStates.permissions[0].status) {
-            if (!permissionStates.permissions[0].status.isGranted) {
-                onNavigateToPermissions()
-            }
-        }
         PreviewScreen(
             onNavigateToSettings = onNavigateToSettings,
             onNavigateToPostCapture = onNavigateToPostCapture,
             onRequestWindowColorMode = onRequestWindowColorMode,
             onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
-            onCaptureEvent = onCaptureEvent
+            onCaptureEvent = onCaptureEvent,
+            onCloseCamera = onCloseCamera
         )
-    }
-}
-
-fun NavOptionsBuilder.popUpToPreview() {
-    popUpTo(BASE_ROUTE_DEF) {
-        inclusive = true
     }
 }
 

@@ -38,9 +38,9 @@ import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.model.VideoCaptureEvent
-import com.google.jetpackcamera.settings.SettableConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
@@ -75,7 +75,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -91,8 +90,8 @@ class PreviewViewModel @Inject constructor(
     private val cameraSystemRepository: CameraSystemRepository,
     private val savedStateHandle: SavedStateHandle,
     private val defaultSaveMode: SaveMode,
+    private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy(),
     private val settingsRepository: SettingsRepository,
-    private val constraintsRepository: SettableConstraintsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {
     private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
@@ -124,7 +123,8 @@ class PreviewViewModel @Inject constructor(
 
     val captureUiState: StateFlow<CaptureUiState> = captureUiState(
         currentSettings = cameraSystemRepository.currentSettings,
-        systemConstraints = constraintsRepository.systemConstraints,
+        cameraFeaturePolicy = cameraFeaturePolicy,
+        systemConstraints = cameraSystemRepository.systemConstraints,
         currentCameraState = cameraSystemRepository.currentCameraState,
         trackedCaptureUiState = trackedCaptureUiState,
         externalCaptureMode = externalCaptureMode
@@ -136,7 +136,7 @@ class PreviewViewModel @Inject constructor(
         )
     val debugUiState: StateFlow<DebugUiState> = debugUiState(
         currentSettings = cameraSystemRepository.currentSettings,
-        systemConstraints = constraintsRepository.systemConstraints,
+        systemConstraints = cameraSystemRepository.systemConstraints,
         currentCameraState = cameraSystemRepository.currentCameraState,
         debugSettings = debugSettings,
         cameraPropertiesJSON = cameraSystemRepository.cameraPropertiesJSON,
@@ -184,13 +184,6 @@ class PreviewViewModel @Inject constructor(
 
     val imageWellController: ImageWellController = ImageWellControllerImpl(
         mediaRepository = mediaRepository,
-        updateLastCapturedMediaCallback = {
-            viewModelScope.launch {
-                trackedCaptureUiState.update { old ->
-                    old.copy(recentCapturedMedia = mediaRepository.getLastCapturedMedia())
-                }
-            }
-        },
         coroutineContext = viewModelScope.coroutineContext
     )
 
@@ -221,7 +214,6 @@ class PreviewViewModel @Inject constructor(
             }
         },
         captureEvents = incomingCaptureEvents,
-        imageWellController = imageWellController,
         onImageCached = { uri ->
             viewModelScope.launch {
                 mediaRepository.setCurrentMedia(
@@ -242,21 +234,24 @@ class PreviewViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             launch {
-                cameraSystemRepository.systemConstraints
-                    .filterNotNull()
-                    .collect { constraints ->
-                        constraintsRepository.updateSystemConstraints(constraints)
+                var oldCameraAppSettings: CameraAppSettings =
+                    cameraSystemRepository.getInitialDefaultCameraAppSettings()
+                settingsRepository.defaultCameraAppSettings
+                    .collect { new ->
+                        oldCameraAppSettings.applyDiffs(
+                            new,
+                            cameraSystemRepository.getCameraSystem()
+                        )
+                        oldCameraAppSettings = new
                     }
             }
 
             launch {
-                var oldCameraAppSettings: CameraAppSettings? = null
-                settingsRepository.defaultCameraAppSettings
-                    .collect { new ->
-                        oldCameraAppSettings?.apply {
-                            applyDiffs(new, cameraSystemRepository.getCameraSystem())
+                mediaRepository.lastCapturedMedia
+                    .collect { media ->
+                        trackedCaptureUiState.update { old ->
+                            old.copy(recentCapturedMedia = media)
                         }
-                        oldCameraAppSettings = new
                     }
             }
 
@@ -272,7 +267,8 @@ class PreviewViewModel @Inject constructor(
                                 SnackbarData(
                                     cookie = "LowLightBoost-$cookieInt",
                                     stringResource = R.string.low_light_boost_error_toast_message,
-                                    withDismissAction = true
+                                    withDismissAction = true,
+                                    isError = true
                                 )
                             )
                         }
@@ -289,42 +285,42 @@ class PreviewViewModel @Inject constructor(
     }
 
     private fun showSnackbarForCaptureEvent(event: CaptureEvent) {
-        val stringRes = when (event) {
+        val snackbarInfo = when (event) {
             is ImageCaptureEvent.ImageCaptureExternalUnsupported ->
-                StateAdapterR.string.toast_image_capture_external_unsupported
+                StateAdapterR.string.toast_image_capture_external_unsupported to true
 
             is VideoCaptureEvent.VideoCaptureExternalUnsupported ->
-                StateAdapterR.string.toast_video_capture_external_unsupported
+                StateAdapterR.string.toast_video_capture_external_unsupported to true
 
             is ImageCaptureEvent.SingleImageSaved,
             is ImageCaptureEvent.SequentialImageSaved ->
-                StateAdapterR.string.toast_image_capture_success
+                StateAdapterR.string.toast_image_capture_success to false
 
             is ImageCaptureEvent.SingleImageCaptureError,
             is ImageCaptureEvent.SequentialImageCaptureError ->
-                StateAdapterR.string.toast_capture_failure
+                StateAdapterR.string.toast_capture_failure to true
 
             is VideoCaptureEvent.VideoSaved ->
-                StateAdapterR.string.toast_video_capture_success
+                StateAdapterR.string.toast_video_capture_success to false
 
             is VideoCaptureEvent.VideoCaptureError ->
-                StateAdapterR.string.toast_video_capture_failure
+                StateAdapterR.string.toast_video_capture_failure to true
 
             else -> null
         }
 
-        stringRes?.let { res ->
+        snackbarInfo?.let { (res, isError) ->
             val cookieInt = snackBarController.incrementAndGetSnackBarCount()
             val prefix = when (event) {
                 is ImageCaptureEvent -> "Image"
                 is VideoCaptureEvent -> "Video"
-                else -> "Capture"
             }
             snackBarController.addSnackBarData(
                 SnackbarData(
                     cookie = "$prefix-$cookieInt",
                     stringResource = res,
-                    withDismissAction = true
+                    withDismissAction = true,
+                    isError = isError
                 )
             )
         }

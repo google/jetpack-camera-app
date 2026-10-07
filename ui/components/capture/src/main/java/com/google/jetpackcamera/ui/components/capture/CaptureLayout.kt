@@ -50,7 +50,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -169,6 +168,7 @@ private val LOWER_SECTION_HORIZONTAL_PADDING = 16.dp
  * @param topStartPlacement controls whether [topStartContent] stays fixed directly below the top
  * status/indicator bar ([TopStartPlacement.FIXED_BELOW_TOP_BAR], default) or tracks the top-start
  * corner of the active viewfinder ([TopStartPlacement.VIEWFINDER_TOP_START])
+ * @param errorDialog the camera error alert dialog composable
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Suppress("DEPRECATION")
@@ -198,7 +198,8 @@ fun PreviewLayout(
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
-    topStartPlacement: TopStartPlacement = TopStartPlacement.FIXED_BELOW_TOP_BAR
+    topStartPlacement: TopStartPlacement = TopStartPlacement.FIXED_BELOW_TOP_BAR,
+    errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
@@ -225,12 +226,7 @@ fun PreviewLayout(
             sheetContent = {
                 quickSettingsOverlay(Modifier)
             },
-            snackbarHost = {
-                SnackbarHost(
-                    hostState = scaffoldState.snackbarHostState,
-                    modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
-                )
-            }
+            snackbarHost = {}
         ) {
             BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color.Black)) {
                 // The adaptive portrait solver targets portrait handhelds (16:9 and taller, where
@@ -254,7 +250,13 @@ fun PreviewLayout(
                         captureModeCarousel = captureModeCarousel,
                         quickSettingsToggleButton = quickSettingsButton,
                         captureModeToggleSwitch = captureModeToggle,
-                        debugVisibilityWrapper = debugVisibilityWrapper
+                        debugVisibilityWrapper = debugVisibilityWrapper,
+                        snackbarHost = { modifier ->
+                            PillSnackbarHost(
+                                snackbarHostState = scaffoldState.snackbarHostState,
+                                modifier = modifier
+                            )
+                        }
                     )
                     Box(
                         modifier = Modifier
@@ -309,7 +311,13 @@ fun PreviewLayout(
                                 captureModeToggleSwitch = captureModeToggle,
                                 captureModeCarousel = captureModeCarousel,
                                 zoomControls = zoomLevelDisplay,
-                                elapsedTimeDisplay = elapsedTimeDisplay
+                                elapsedTimeDisplay = elapsedTimeDisplay,
+                                snackbarHost = { modifier ->
+                                    PillSnackbarHost(
+                                        snackbarHostState = scaffoldState.snackbarHostState,
+                                        modifier = modifier
+                                    )
+                                }
                             )
                         }
                         snackBar(Modifier, scaffoldState.snackbarHostState)
@@ -335,6 +343,7 @@ fun PreviewLayout(
                             )
                     )
                 }
+                errorDialog(Modifier)
             }
         }
     }
@@ -368,7 +377,8 @@ private fun AdaptivePortraitCaptureLayout(
     captureModeCarousel: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
-    debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit)
+    debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
+    snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     val cutoutTopInset = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
     val navInset = WindowInsets.navigationBarsIgnoringVisibility
@@ -439,10 +449,11 @@ private fun AdaptivePortraitCaptureLayout(
                 }
 
                 debugVisibilityWrapper {
-                    Box(
+                    Column(
                         modifier = Modifier.layoutId(CaptureSlotId.ElapsedTime),
-                        contentAlignment = Alignment.Center
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        snackbarHost(Modifier)
                         elapsedTimeDisplay(Modifier)
                     }
 
@@ -624,7 +635,8 @@ private fun VerticalMaterialControls(
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
     captureModeCarousel: @Composable (Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable (Modifier) -> Unit
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
@@ -700,6 +712,8 @@ private fun VerticalMaterialControls(
 
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                snackbarHost(Modifier)
+
                 elapsedTimeDisplay(Modifier)
 
                 // zoom controls row
