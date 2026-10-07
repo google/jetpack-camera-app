@@ -260,7 +260,8 @@ class PreviewViewModel @Inject constructor(
      * Starts location updates so a recent fix is available at capture time.
      *
      * Called when the preview screen becomes visible. Safe no-op if no [LocationProvider] is bound,
-     * if location tagging is disabled in settings, or if video recording is active.
+     * if location tagging is disabled in settings, or if video recording is active. Calling this
+     * while updates are already running has no effect; the current session continues.
      */
     fun startLocationUpdates() {
         isPreviewActive.value = true

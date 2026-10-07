@@ -52,6 +52,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -679,6 +680,35 @@ class PreviewViewModelTest {
             assertThat(fakeLocation.isUpdatesRunning).isTrue()
         }
 
+    @Test
+    fun locationUpdates_startWhileRunning_doesNotRestartSession() =
+        runTest(StandardTestDispatcher()) {
+            val countingLocation = CountingLocationProvider()
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(locationEnabled = true)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(countingLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            advanceUntilIdle()
+
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(countingLocation.runCount).isEqualTo(1)
+
+            vm.stopLocationUpdates()
+            advanceUntilIdle()
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(countingLocation.runCount).isEqualTo(2)
+        }
+
     private fun TestScope.startCameraUntilRunning(viewModel: PreviewViewModel? = null) {
         (viewModel ?: previewViewModel).cameraController.startCamera()
         advanceUntilIdle()
@@ -702,5 +732,17 @@ private class FailingLocationProvider : LocationProvider {
     override suspend fun runLocationUpdates() {
         runCount++
         throw IllegalStateException("Location hardware unavailable")
+    }
+}
+
+private class CountingLocationProvider : LocationProvider {
+    var runCount = 0
+        private set
+
+    override fun getCurrentLocation(): Location? = null
+
+    override suspend fun runLocationUpdates() {
+        runCount++
+        awaitCancellation()
     }
 }
