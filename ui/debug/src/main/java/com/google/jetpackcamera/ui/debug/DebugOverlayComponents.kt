@@ -37,6 +37,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledIconToggleButton
@@ -49,7 +50,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -450,7 +450,7 @@ private fun SetZoomRatioDialog(onChangeZoomRatio: (Float) -> Unit, onClose: () -
 
 @Composable
 private fun SetVideoBitrateDialog(onSetTargetVideoBitrate: (Int?) -> Unit, onClose: () -> Unit) {
-    var videoBitrateText by rememberSaveable { mutableStateOf("") }
+    val videoBitrateState = rememberTextFieldState()
     BackHandler(onBack = { onClose() })
     Box(
         modifier = Modifier
@@ -462,8 +462,7 @@ private fun SetVideoBitrateDialog(onSetTargetVideoBitrate: (Int?) -> Unit, onClo
             Text(text = stringResource(R.string.debug_set_video_bitrate_dialog_prompt))
             TextField(
                 modifier = Modifier.testTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD),
-                value = videoBitrateText,
-                onValueChange = { videoBitrateText = it },
+                state = videoBitrateState,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
             Button(
@@ -471,7 +470,7 @@ private fun SetVideoBitrateDialog(onSetTargetVideoBitrate: (Int?) -> Unit, onClo
                     DEBUG_OVERLAY_SET_VIDEO_BITRATE_CONFIRM_BUTTON
                 ),
                 onClick = {
-                    val trimmed = videoBitrateText.trim()
+                    val trimmed = videoBitrateState.text.toString().trim()
                     if (trimmed.isEmpty()) {
                         onSetTargetVideoBitrate(null)
                     } else {
