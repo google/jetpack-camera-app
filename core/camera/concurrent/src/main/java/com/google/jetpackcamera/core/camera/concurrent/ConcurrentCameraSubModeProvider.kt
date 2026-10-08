@@ -47,7 +47,14 @@ import com.google.jetpackcamera.settings.model.SettingConfig
  * camera session and restricts dynamic range to SDR and flash to standard modes (excluding
  * Low Light Boost).
  */
-class ConcurrentCameraSubModeProvider : CaptureSubModeProvider {
+class ConcurrentCameraSubModeProvider internal constructor(
+    private val availableConcurrentCameraInfos: (ProcessCameraProvider) -> List<List<CameraInfo>>
+) : CaptureSubModeProvider {
+
+    constructor() : this(
+        availableConcurrentCameraInfos = { it.availableConcurrentCameraInfos }
+    )
+
     override val descriptor = CaptureSubModeDescriptor(
         id = CONCURRENT_SUB_MODE_ID,
         parentCaptureMode = CaptureMode.VIDEO_ONLY,
@@ -75,7 +82,7 @@ class ConcurrentCameraSubModeProvider : CaptureSubModeProvider {
         context: Context,
         cameraProvider: ProcessCameraProvider,
         cameraInfo: CameraInfo
-    ): Boolean = cameraProvider.availableConcurrentCameraInfos.any { group ->
+    ): Boolean = availableConcurrentCameraInfos(cameraProvider).any { group ->
         group.map { it.appLensFacing }.toSet() == setOf(LensFacing.FRONT, LensFacing.BACK)
     }
 

@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:kotlin.OptIn(InternalCameraApi::class)
+
 package com.google.jetpackcamera.core.camera.concurrent
 
 import android.Manifest
@@ -24,9 +26,27 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
+import com.google.jetpackcamera.core.camera.CameraSessionContext
+import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.core.camera.InternalCameraApi
+import com.google.jetpackcamera.core.camera.PerpetualSessionSettings
+import com.google.jetpackcamera.core.camera.TransientSessionSettings
 import com.google.jetpackcamera.core.camera.appLensFacing
+import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraError
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DeviceRotation
+import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.TestPattern
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,5 +84,116 @@ class ConcurrentCameraSessionTest {
         )
 
         assertThat(actualSupported).isEqualTo(expectedSupported)
+
+        val hasFrontAndBack =
+            cameraProvider.availableCameraInfos.map { it.appLensFacing }.toSet() ==
+                setOf(LensFacing.FRONT, LensFacing.BACK)
+        if (hasFrontAndBack) {
+            val providerWithInjectedPair = ConcurrentCameraSubModeProvider(
+                availableConcurrentCameraInfos = { listOf(it.availableCameraInfos) }
+            )
+            assertThat(
+                providerWithInjectedPair.isSupported(
+                    context = context,
+                    cameraProvider = cameraProvider,
+                    cameraInfo = firstCameraInfo
+                )
+            ).isTrue()
+        }
     }
+
+    @Test
+    fun sessionBinding_whenNoConcurrentCamerasAvailable_reportsStreamConfigError(): Unit =
+        runBlocking {
+            val cameraProvider = ProcessCameraProvider.awaitInstance(context)
+            assume()
+                .withMessage("Device supports concurrent cameras, skip empty-pair error test.")
+                .that(cameraProvider.availableConcurrentCameraInfos)
+                .isEmpty()
+
+            val sessionContext = createTestSessionContext(cameraProvider)
+            val provider = ConcurrentCameraSubModeProvider()
+            val sessionJob = launch(Dispatchers.Main) {
+                provider.sessionBinding.runSession(sessionContext)
+            }
+
+            try {
+                val errorState = withTimeout(5_000) {
+                    sessionContext.currentCameraState.first {
+                        it.cameraError == CameraError.StreamConfigError
+                    }
+                }
+                assertThat(errorState.isCameraRunning).isFalse()
+            } finally {
+                sessionJob.cancel()
+            }
+        }
+
+    @Test
+    fun runConcurrentCameraSession_withCandidatePair_bindsOrReportsError(): Unit = runBlocking {
+        val cameraProvider = ProcessCameraProvider.awaitInstance(context)
+        val hasFrontAndBack =
+            cameraProvider.availableCameraInfos.map { it.appLensFacing }.toSet() ==
+                setOf(LensFacing.FRONT, LensFacing.BACK)
+        assume()
+            .withMessage("Device does not have both front and back cameras, skip the test.")
+            .that(hasFrontAndBack)
+            .isTrue()
+
+        val sessionContext = createTestSessionContext(cameraProvider)
+        val sessionJob = launch(Dispatchers.Main) {
+            with(sessionContext) {
+                runConcurrentCameraSession(
+                    sessionSettings = PerpetualSessionSettings.CustomSession(
+                        subModeKey = ConcurrentCameraSubModeKey,
+                        aspectRatio = AspectRatio.NINE_SIXTEEN,
+                        captureMode = CaptureMode.VIDEO_ONLY
+                    ),
+                    cameraConstraints = null,
+                    availableConcurrentCameraInfos = listOf(cameraProvider.availableCameraInfos)
+                )
+            }
+        }
+
+        try {
+            if (cameraProvider.availableConcurrentCameraInfos.isEmpty()) {
+                val errorState = withTimeout(5_000) {
+                    sessionContext.currentCameraState.first {
+                        it.cameraError == CameraError.StreamConfigError
+                    }
+                }
+                assertThat(errorState.isCameraRunning).isFalse()
+            } else {
+                withTimeout(5_000) {
+                    sessionContext.surfaceRequests.first { it != null }
+                }
+            }
+        } finally {
+            sessionJob.cancel()
+        }
+    }
+
+    private fun createTestSessionContext(
+        cameraProvider: ProcessCameraProvider
+    ): CameraSessionContext = CameraSessionContext(
+        context = context,
+        cameraProvider = cameraProvider,
+        backgroundDispatcher = Dispatchers.Default,
+        screenFlashEvents = Channel(Channel.UNLIMITED),
+        filePathGenerator = FakeFilePathGenerator(),
+        focusMeteringEvents = Channel(Channel.UNLIMITED),
+        videoCaptureControlEvents = Channel(Channel.UNLIMITED),
+        currentCameraState = MutableStateFlow(CameraState()),
+        surfaceRequests = MutableStateFlow(null),
+        transientSettings = MutableStateFlow(
+            TransientSessionSettings(
+                isAudioEnabled = true,
+                deviceRotation = DeviceRotation.Natural,
+                flashMode = FlashMode.OFF,
+                primaryLensFacing = LensFacing.BACK,
+                zoomRatios = emptyMap(),
+                testPattern = TestPattern.Off
+            )
+        )
+    )
 }

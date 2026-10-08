@@ -60,11 +60,12 @@ import kotlinx.coroutines.withContext
 
 private const val TAG = "ConcurrentCameraSession"
 
-context(CameraSessionContext)
 @SuppressLint("RestrictedApi")
-internal suspend fun runConcurrentCameraSession(
+internal suspend fun CameraSessionContext.runConcurrentCameraSession(
     sessionSettings: PerpetualSessionSettings.CustomSession,
-    cameraConstraints: CameraConstraints?
+    cameraConstraints: CameraConstraints?,
+    availableConcurrentCameraInfos: List<List<CameraInfo>> =
+        cameraProvider.availableConcurrentCameraInfos
 ) = coroutineScope {
     // The camera pair is resolved from the primary lens facing, so rebind whenever it changes
     // (e.g. when the user flips the camera).
@@ -76,7 +77,7 @@ internal suspend fun runConcurrentCameraSession(
             val primaryFacing = initialTransientSettings.primaryLensFacing
             val secondaryFacing = primaryFacing.flip()
             val cameraPair =
-                cameraProvider.availableConcurrentCameraInfos.firstNotNullOfOrNull { group ->
+                availableConcurrentCameraInfos.firstNotNullOfOrNull { group ->
                     var primary: CameraInfo? = null
                     var secondary: CameraInfo? = null
                     for (cameraInfo in group) {
