@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera.night
 
 import android.content.Context
+import android.util.Log
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.extensions.ExtensionMode
@@ -36,8 +37,11 @@ import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+
+private const val TAG = "NightSubModeProvider"
 
 /**
  * [CaptureSubModeProvider] for the Night Mode CameraX extension under [CaptureMode.IMAGE_ONLY].
@@ -106,9 +110,14 @@ class NightCaptureSubModeProvider internal constructor(
         context: Context,
         cameraProvider: ProcessCameraProvider,
         cameraInfo: CameraInfo
-    ): Boolean {
+    ): Boolean = try {
         val extensionsManager = getExtensionsManager(cameraProvider)
-        return isNightAvailable(extensionsManager, cameraInfo.cameraSelector)
+        isNightAvailable(extensionsManager, cameraInfo.cameraSelector)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w(TAG, "Failed to query Night extension availability", e)
+        false
     }
 
     override fun isCompatibleWith(
@@ -122,10 +131,17 @@ class NightCaptureSubModeProvider internal constructor(
     @Suppress("DEPRECATION")
     override val sessionBinding =
         CameraSessionBinding.SingleCamera { cameraProvider, baseSelector ->
-            val extensionsManager = getExtensionsManager(cameraProvider)
-            if (isNightAvailable(extensionsManager, baseSelector)) {
-                enableNightSelector(extensionsManager, baseSelector)
-            } else {
+            try {
+                val extensionsManager = getExtensionsManager(cameraProvider)
+                if (isNightAvailable(extensionsManager, baseSelector)) {
+                    enableNightSelector(extensionsManager, baseSelector)
+                } else {
+                    baseSelector
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to resolve Night extension CameraSelector", e)
                 baseSelector
             }
         }
