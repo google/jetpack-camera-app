@@ -630,7 +630,10 @@ private suspend fun updateCamera2RequestOptions(
 }
 
 @InternalCameraApi
-fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
+fun CameraSessionContext.applyDeviceRotation(
+    deviceRotation: DeviceRotation,
+    useCaseGroup: UseCaseGroup
+) {
     val targetRotation = deviceRotation.toUiSurfaceRotation()
     useCaseGroup.useCases.forEach {
         when (it) {
@@ -748,7 +751,7 @@ private fun createImageUseCase(
 }
 
 @InternalCameraApi
-fun createVideoUseCase(
+fun CameraSessionContext.createVideoUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     targetFrameRate: Int,

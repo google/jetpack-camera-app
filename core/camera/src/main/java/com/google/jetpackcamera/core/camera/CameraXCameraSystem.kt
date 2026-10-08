@@ -620,7 +620,7 @@ class CameraXCameraSystem(
                 if (sessionSettings == null) return@collectLatest
                 coroutineScope {
                     val currentLensConstraints =
-                        systemConstraints.forCurrentLens(currentSettings.value!!)
+                        currentSettings.value?.let { systemConstraints.forCurrentLens(it) }
                     with(
                         CameraSessionContext(
                             context = application,

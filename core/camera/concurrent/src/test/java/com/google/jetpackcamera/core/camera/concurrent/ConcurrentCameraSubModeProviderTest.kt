@@ -24,13 +24,17 @@ import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.OptionVisibility
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class ConcurrentCameraSubModeProviderTest {
 
     private val provider = ConcurrentCameraSubModeProvider()
 
     @Test
     fun descriptor_hasExpectedProperties() {
+        assertThat(ConcurrentCameraSubModeKey.id).isEqualTo(CONCURRENT_SUB_MODE_ID)
         assertThat(provider.descriptor.id).isEqualTo(CONCURRENT_SUB_MODE_ID)
         assertThat(provider.descriptor.parentCaptureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
         assertThat(provider.descriptor.quickSettingsTitleResId)
