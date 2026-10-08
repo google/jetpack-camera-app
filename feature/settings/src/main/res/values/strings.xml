@@ -15,267 +15,267 @@
   ~ limitations under the License.
   -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" xmlns:tools="http://schemas.android.com/tools">
-    <!-- Top app bar title for the camera settings screen. [CHAR LIMIT=30] -->
+    <!-- Top app bar title for the camera settings screen. [CHAR LIMIT=NONE] -->
     <string name="settings_title">Settings</string>
     <!-- Accessibility label for the back navigation button in the settings top app bar. [CHAR LIMIT=NONE] -->
     <string name="nav_back_accessibility">Navigate back</string>
 
-    <!-- Section header on the settings screen for default camera configuration options. "Camera" is a generic term. [CHAR LIMIT=40] -->
+    <!-- Section header on the settings screen for default camera configuration options. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="section_title_camera_settings">Default Camera Settings</string>
-    <!-- Section header on the settings screen for default video recording configuration options. [CHAR LIMIT=40] -->
+    <!-- Section header on the settings screen for default video recording configuration options. [CHAR LIMIT=NONE] -->
     <string name="section_title_recording_settings">Default Recording Settings</string>
 
-    <!-- Section header on the settings screen for general application settings. [CHAR LIMIT=40] -->
+    <!-- Section header on the settings screen for general application settings. [CHAR LIMIT=NONE] -->
     <string name="section_title_app_settings">App Settings</string>
-    <!-- Section header on the settings screen for software version and build information. [CHAR LIMIT=40] -->
+    <!-- Section header on the settings screen for software version and build information. [CHAR LIMIT=NONE] -->
     <string name="section_title_software_info">Software Information</string>
 
-    <!-- Title of the setting toggle that sets the front-facing camera as the default lens on startup. "Camera" is a generic term. [CHAR LIMIT=50] -->
+    <!-- Title of the setting toggle that sets the front-facing camera as the default lens on startup. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="default_facing_camera_title">Default to Front Camera</string>
     <!-- Accessibility state description (read aloud by screen readers, never shown visually) for the "Default to Front Camera" switch on the settings screen when the front-facing camera is the default. Noun phrase naming the selected lens. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="default_facing_camera_description_front">Front camera</string>
     <!-- Accessibility state description (read aloud by screen readers, never shown visually) for the "Default to Front Camera" switch on the settings screen when the rear-facing camera is the default. Noun phrase naming the selected lens. "Back" refers to the rear-facing camera on the back of the device, not the navigation action to go back. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="default_facing_camera_description_back">Back camera</string>
 
-    <!-- Title of the setting dialog and row for configuring the app dark mode theme. [CHAR LIMIT=40] -->
+    <!-- Title of the setting dialog and row for configuring the app dark mode theme. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_title">Set Dark Mode</string>
 
-    <!-- Radio option label in the "Set Dark Mode" dialog on the settings screen that turns the dark theme on. "On" is a state value (dark mode is on), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=25] -->
+    <!-- Radio option label in the "Set Dark Mode" dialog on the settings screen that turns the dark theme on. "On" is a state value (dark mode is on), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_selector_dark">On</string>
-    <!-- Radio option label in the "Set Dark Mode" dialog on the settings screen that turns the dark theme off (the light theme is used). "Off" is a state value (dark mode is off), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=25] -->
+    <!-- Radio option label in the "Set Dark Mode" dialog on the settings screen that turns the dark theme off (the light theme is used). "Off" is a state value (dark mode is off), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_selector_light">Off</string>
-    <!-- Radio option label in the "Set Dark Mode" dialog on the settings screen that makes the app follow the device's system-wide dark theme setting. "System" means "use the system setting" (as in Android's "System default" theme option), not a technical component. [CHAR LIMIT=25] -->
+    <!-- Radio option label in the "Set Dark Mode" dialog on the settings screen that makes the app follow the device's system-wide dark theme setting. "System" means "use the system setting" (as in Android's "System default" theme option), not a technical component. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_selector_system">System</string>
 
-    <!-- Subtitle under the "Set Dark Mode" row on the settings screen showing the current selection when the dark theme is on. "On" is a state value (dark mode is on), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=30] -->
+    <!-- Subtitle under the "Set Dark Mode" row on the settings screen showing the current selection when the dark theme is on. "On" is a state value (dark mode is on), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_description_dark">On</string>
-    <!-- Subtitle under the "Set Dark Mode" row on the settings screen showing the current selection when the dark theme is off (the light theme is used). "Off" is a state value (dark mode is off), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=30] -->
+    <!-- Subtitle under the "Set Dark Mode" row on the settings screen showing the current selection when the dark theme is off (the light theme is used). "Off" is a state value (dark mode is off), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_description_light">Off</string>
-    <!-- Subtitle under the "Set Dark Mode" row on the settings screen showing the current selection when the app follows the device's system-wide dark theme setting. "System" means "use the system setting" (as in Android's "System default" theme option), not a technical component. [CHAR LIMIT=30] -->
+    <!-- Subtitle under the "Set Dark Mode" row on the settings screen showing the current selection when the app follows the device's system-wide dark theme setting. "System" means "use the system setting" (as in Android's "System default" theme option), not a technical component. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_description_system">System</string>
 
-    <!-- Title of the setting dialog and row for configuring the default camera flash mode. [CHAR LIMIT=40] -->
+    <!-- Title of the setting dialog and row for configuring the default camera flash mode. [CHAR LIMIT=NONE] -->
     <string name="flash_mode_title">Set Flash Mode</string>
 
-    <!-- Option label in the Flash Mode setting dialog for automatic flash. [CHAR LIMIT=25] -->
+    <!-- Option label in the Flash Mode setting dialog for automatic flash. [CHAR LIMIT=NONE] -->
     <string name="flash_mode_selector_auto">Auto</string>
-    <!-- Option label in the Flash Mode setting dialog for flash always on. [CHAR LIMIT=25] -->
+    <!-- Option label in the Flash Mode setting dialog for flash always on. [CHAR LIMIT=NONE] -->
     <string name="flash_mode_selector_on">On</string>
-    <!-- Option label in the Flash Mode setting dialog for flash off. [CHAR LIMIT=25] -->
+    <!-- Option label in the Flash Mode setting dialog for flash off. [CHAR LIMIT=NONE] -->
     <string name="flash_mode_selector_off">Off</string>
-    <!-- Radio option label in the "Set Flash Mode" dialog on the settings screen for Low Light Boost, a camera feature that brightens the preview and photos in dim light instead of firing the flash. "Low Light Boost" is a feature name; translate it consistently everywhere it appears in the app. [CHAR LIMIT=35] -->
+    <!-- Radio option label in the "Set Flash Mode" dialog on the settings screen for Low Light Boost, a camera feature that brightens the preview and photos in dim light instead of firing the flash. "Low Light Boost" is a feature name; translate it consistently everywhere it appears in the app. [CHAR LIMIT=NONE] -->
     <string name="flash_mode_selector_llb">Low Light Boost</string>
 
-    <!-- Subtitle under the Flash Mode setting row when flash is set to automatic. [CHAR LIMIT=45] -->
+    <!-- Subtitle under the Flash Mode setting row when flash is set to automatic. [CHAR LIMIT=NONE] -->
     <string name="flash_mode_description_auto">Flash is set to Auto</string>
-    <!-- Subtitle under the Flash Mode setting row when flash is set to always on. [CHAR LIMIT=45] -->
+    <!-- Subtitle under the Flash Mode setting row when flash is set to always on. [CHAR LIMIT=NONE] -->
     <string name="flash_mode_description_on">Flash is On</string>
-    <!-- Subtitle under the Flash Mode setting row when flash is turned off. [CHAR LIMIT=45] -->
+    <!-- Subtitle under the Flash Mode setting row when flash is turned off. [CHAR LIMIT=NONE] -->
     <string name="flash_mode_description_off">Flash is Off</string>
-    <!-- Subtitle under the Flash Mode setting row when Low Light Boost is selected. [CHAR LIMIT=45] -->
+    <!-- Subtitle under the Flash Mode setting row when Low Light Boost is selected. [CHAR LIMIT=NONE] -->
     <string name="flash_mode_description_llb">Using Low Light Boost</string>
 
-    <!-- Title of the setting toggle for enabling or disabling audio recording in videos. [CHAR LIMIT=40] -->
+    <!-- Title of the setting toggle for enabling or disabling audio recording in videos. [CHAR LIMIT=NONE] -->
     <string name="audio_title">Enable Audio</string>
 
-    <!-- Subtitle under the Enable Audio setting when audio recording is enabled. [CHAR LIMIT=60] -->
+    <!-- Subtitle under the Enable Audio setting when audio recording is enabled. [CHAR LIMIT=NONE] -->
     <string name="audio_selector_on">Recordings will start with audio enabled</string>
-    <!-- Subtitle under the Enable Audio setting when videos start muted. [CHAR LIMIT=60] -->
+    <!-- Subtitle under the Enable Audio setting when videos start muted. [CHAR LIMIT=NONE] -->
     <string name="audio_selector_off">Recordings will start muted</string>
 
-    <!-- Title of the setting toggle for enabling concurrent dual-camera recording. "Camera" is a generic term. [CHAR LIMIT=45] -->
+    <!-- Title of the setting toggle for enabling concurrent dual-camera recording. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="concurrent_camera_title">Enable Concurrent Camera</string>
-    <!-- Subtitle under the Concurrent Camera setting when dual-camera recording is enabled. [CHAR LIMIT=60] -->
+    <!-- Subtitle under the Concurrent Camera setting when dual-camera recording is enabled. [CHAR LIMIT=NONE] -->
     <string name="concurrent_camera_description_on">Record from multiple cameras concurrently</string>
-    <!-- Subtitle under the Concurrent Camera setting when single-camera recording is used. [CHAR LIMIT=60] -->
+    <!-- Subtitle under the Concurrent Camera setting when single-camera recording is used. [CHAR LIMIT=NONE] -->
     <string name="concurrent_camera_description_off">Record from a single camera</string>
 
-    <!-- Title of the setting dialog and row for selecting the camera stream configuration mode. "Camera" is a generic term. [CHAR LIMIT=40] -->
+    <!-- Title of the setting dialog and row for selecting the camera stream configuration mode. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="stream_config_title">Set Camera Effect</string>
 
-    <!-- Radio option label in the "Set Camera Effect" dialog on the settings screen meaning that no camera effect is applied (the camera uses its normal multi-stream configuration). "None" means "no effect" and should agree grammatically with "effect" in the target language. [CHAR LIMIT=35] -->
+    <!-- Radio option label in the "Set Camera Effect" dialog on the settings screen meaning that no camera effect is applied (the camera uses its normal multi-stream configuration). "None" means "no effect" and should agree grammatically with "effect" in the target language. [CHAR LIMIT=NONE] -->
     <string name="stream_config_selector_multi_stream">None</string>
-    <!-- Radio option label in the "Set Camera Effect" dialog on the settings screen for the single-stream camera effect, a technical mode in which the camera preview and the captured photo or video share one image stream instead of separate streams. "Single Stream" is a feature name; translate it the same way as the "Single Stream" subtitle (stream_config_description_single_stream). [CHAR LIMIT=35] -->
+    <!-- Radio option label in the "Set Camera Effect" dialog on the settings screen for the single-stream camera effect, a technical mode in which the camera preview and the captured photo or video share one image stream instead of separate streams. "Single Stream" is a feature name; translate it the same way as the "Single Stream" subtitle (stream_config_description_single_stream). [CHAR LIMIT=NONE] -->
     <string name="stream_config_selector_single_stream">Single Stream Effect</string>
 
-    <!-- Subtitle under the "Set Camera Effect" row on the settings screen when no camera effect is selected. "None" means "no effect" and should agree grammatically with "effect" in the target language. [CHAR LIMIT=35] -->
+    <!-- Subtitle under the "Set Camera Effect" row on the settings screen when no camera effect is selected. "None" means "no effect" and should agree grammatically with "effect" in the target language. [CHAR LIMIT=NONE] -->
     <string name="stream_config_description_multi_stream">None</string>
-    <!-- Subtitle under the "Set Camera Effect" row on the settings screen when the single-stream camera effect is selected. "Single Stream" is a feature name for a technical mode in which the camera preview and the captured photo or video share one image stream; translate it the same way as in "Single Stream Effect" (stream_config_selector_single_stream). [CHAR LIMIT=35] -->
+    <!-- Subtitle under the "Set Camera Effect" row on the settings screen when the single-stream camera effect is selected. "Single Stream" is a feature name for a technical mode in which the camera preview and the captured photo or video share one image stream; translate it the same way as in "Single Stream Effect" (stream_config_selector_single_stream). [CHAR LIMIT=NONE] -->
     <string name="stream_config_description_single_stream">Single Stream</string>
 
-    <!-- Title of the setting dialog and row for choosing Low Light Boost implementation priority. [CHAR LIMIT=50] -->
+    <!-- Title of the setting dialog and row for choosing Low Light Boost implementation priority. [CHAR LIMIT=NONE] -->
     <string name="low_light_boost_priority_title">Set Low Light Boost Priority</string>
 
-    <!-- Radio option label in the "Set Low Light Boost Priority" dialog on the settings screen. Selects the camera hardware's auto-exposure (AE) implementation of Low Light Boost. "AE" is the standard camera abbreviation for auto-exposure; keep "AE" if that abbreviation is used in the target language. "Mode" is a noun. [CHAR LIMIT=35] -->
+    <!-- Radio option label in the "Set Low Light Boost Priority" dialog on the settings screen. Selects the camera hardware's auto-exposure (AE) implementation of Low Light Boost. "AE" is the standard camera abbreviation for auto-exposure; keep "AE" if that abbreviation is used in the target language. "Mode" is a noun. [CHAR LIMIT=NONE] -->
     <string name="low_light_boost_priority_selector_ae_mode">AE Mode</string>
-    <!-- Radio option label in the "Set Low Light Boost Priority" dialog on the settings screen. Selects the software camera-effect implementation of Low Light Boost (as opposed to the hardware AE mode). "Camera Effect" is the same concept as in the "Set Camera Effect" setting title; translate consistently. "Camera" is a generic term. [CHAR LIMIT=35] -->
+    <!-- Radio option label in the "Set Low Light Boost Priority" dialog on the settings screen. Selects the software camera-effect implementation of Low Light Boost (as opposed to the hardware AE mode). "Camera Effect" is the same concept as in the "Set Camera Effect" setting title; translate consistently. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="low_light_boost_priority_selector_camera_effect">Camera Effect</string>
 
-    <!-- Subtitle under the Low Light Boost Priority setting row when AE Mode is prioritized. [CHAR LIMIT=120] -->
+    <!-- Subtitle under the Low Light Boost Priority setting row when AE Mode is prioritized. [CHAR LIMIT=NONE] -->
     <string name="low_light_boost_priority_description_ae_mode">Prioritizing Low Light Boost AE Mode when multiple options are available</string>
-    <!-- Subtitle under the Low Light Boost Priority setting row when Camera Effect is prioritized. [CHAR LIMIT=120] -->
+    <!-- Subtitle under the Low Light Boost Priority setting row when Camera Effect is prioritized. [CHAR LIMIT=NONE] -->
     <string name="low_light_boost_priority_description_camera_effect">Prioritizing Low Light Boost camera effect when multiple options are available</string>
 
-    <!-- Title of the setting dialog and row for selecting the camera aspect ratio. [CHAR LIMIT=40] -->
+    <!-- Title of the setting dialog and row for selecting the camera aspect ratio. [CHAR LIMIT=NONE] -->
     <string name="aspect_ratio_title">Set Aspect Ratio</string>
 
     <string name="aspect_ratio_selector_9_16" translatable="false">9:16</string>
     <string name="aspect_ratio_selector_3_4" translatable="false">3:4</string>
     <string name="aspect_ratio_selector_1_1" translatable="false">1:1</string>
 
-    <!-- Subtitle under the Aspect Ratio setting row when 9:16 is selected. [CHAR LIMIT=40] -->
+    <!-- Subtitle under the Aspect Ratio setting row when 9:16 is selected. [CHAR LIMIT=NONE] -->
     <string name="aspect_ratio_description_9_16" tools:ignore="HardCodedNumber">Aspect Ratio is 9:16</string>
-    <!-- Subtitle under the Aspect Ratio setting row when 3:4 is selected. [CHAR LIMIT=40] -->
+    <!-- Subtitle under the Aspect Ratio setting row when 3:4 is selected. [CHAR LIMIT=NONE] -->
     <string name="aspect_ratio_description_3_4" tools:ignore="HardCodedNumber">Aspect Ratio is 3:4</string>
-    <!-- Subtitle under the Aspect Ratio setting row when 1:1 is selected. [CHAR LIMIT=40] -->
+    <!-- Subtitle under the Aspect Ratio setting row when 1:1 is selected. [CHAR LIMIT=NONE] -->
     <string name="aspect_ratio_description_1_1" tools:ignore="HardCodedNumber">Aspect Ratio is 1:1</string>
 
-    <!-- Title of the setting dialog and row for configuring video stabilization. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=45] -->
+    <!-- Title of the setting dialog and row for configuring video stabilization. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="video_stabilization_title">Set Video Stabilization</string>
 
-    <!-- Option label in the Video Stabilization dialog for automatic stabilization. [CHAR LIMIT=30] -->
+    <!-- Option label in the Video Stabilization dialog for automatic stabilization. [CHAR LIMIT=NONE] -->
     <string name="stabilization_selector_auto">Auto</string>
-    <!-- Option label in the Video Stabilization dialog to enable preview and video stabilization. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=30] -->
+    <!-- Option label in the Video Stabilization dialog to enable preview and video stabilization. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_selector_on">On</string>
-    <!-- Option label in the Video Stabilization dialog for high-quality video-only stabilization. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=30] -->
+    <!-- Option label in the Video Stabilization dialog for high-quality video-only stabilization. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_selector_high_quality">High Quality</string>
-    <!-- Option label in the Video Stabilization dialog for optical image stabilization (OIS). The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=30] -->
+    <!-- Option label in the Video Stabilization dialog for optical image stabilization (OIS). The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_selector_optical">Optical</string>
-    <!-- Option label in the Video Stabilization dialog to disable stabilization. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=30] -->
+    <!-- Option label in the Video Stabilization dialog to disable stabilization. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_selector_off">Off</string>
 
-    <!-- Helper description in the Video Stabilization dialog explaining the Auto stabilization option. [CHAR LIMIT=120] -->
+    <!-- Helper description in the Video Stabilization dialog explaining the Auto stabilization option. [CHAR LIMIT=NONE] -->
     <string name="stabilization_selector_auto_info">Stabilization automatically turned on when device configuration supports it.</string>
-    <!-- Helper description in the Video Stabilization dialog explaining the On stabilization option. [CHAR LIMIT=100] -->
+    <!-- Helper description in the Video Stabilization dialog explaining the On stabilization option. [CHAR LIMIT=NONE] -->
     <string name="stabilization_selector_on_info">Both preview and video streams stabilized.</string>
-    <!-- Helper description in the Video Stabilization dialog explaining the High Quality stabilization option. [CHAR LIMIT=140] -->
+    <!-- Helper description in the Video Stabilization dialog explaining the High Quality stabilization option. [CHAR LIMIT=NONE] -->
     <string name="stabilization_selector_high_quality_info">Video stream stabilized, but preview might not be. Ensures highest-quality recordings.</string>
-    <!-- Helper description in the Video Stabilization dialog explaining the Optical (OIS) stabilization option. [CHAR LIMIT=100] -->
+    <!-- Helper description in the Video Stabilization dialog explaining the Optical (OIS) stabilization option. [CHAR LIMIT=NONE] -->
     <string name="stabilization_selector_optical_info">All streams are stabilized by OIS hardware only.</string>
 
-    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to On. [CHAR LIMIT=45] -->
+    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to On. [CHAR LIMIT=NONE] -->
     <string name="stabilization_description_on">Stabilization On</string>
-    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to Optical. [CHAR LIMIT=45] -->
+    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to Optical. [CHAR LIMIT=NONE] -->
     <string name="stabilization_description_optical">Stabilization Optical</string>
-    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to High Quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=45] -->
+    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to High Quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_description_high_quality">Stabilization High Quality</string>
-    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to Auto. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=45] -->
+    <!-- Subtitle under the Video Stabilization setting row when stabilization is set to Auto. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_description_auto">Stabilization Auto</string>
-    <!-- Subtitle under the Video Stabilization setting row when stabilization is turned Off. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=45] -->
+    <!-- Subtitle under the Video Stabilization setting row when stabilization is turned Off. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_description_off">Stabilization Off</string>
 
-    <!-- Title of the setting dialog and row for selecting the target video frame rate (FPS). [CHAR LIMIT=40] -->
+    <!-- Title of the setting dialog and row for selecting the target video frame rate (FPS). [CHAR LIMIT=NONE] -->
     <string name="fps_title">Set Frame Rate</string>
 
-    <!-- Subtitle under the Frame Rate setting row when frame rate is set to automatic. [CHAR LIMIT=40] -->
+    <!-- Subtitle under the Frame Rate setting row when frame rate is set to automatic. [CHAR LIMIT=NONE] -->
     <string name="fps_description_auto">Auto Frame Rate</string>
-    <!-- Subtitle under the "Set Frame Rate" row on the settings screen showing the selected fixed video frame rate. %1$d is the frame rate in frames per second (15, 30 or 60), e.g. "60 fps". "fps" is the abbreviation for frames per second; use the standard abbreviation in the target language. [CHAR LIMIT=25] -->
+    <!-- Subtitle under the "Set Frame Rate" row on the settings screen showing the selected fixed video frame rate. %1$d is the frame rate in frames per second (15, 30 or 60), e.g. "60 fps". "fps" is the abbreviation for frames per second; use the standard abbreviation in the target language. [CHAR LIMIT=NONE] -->
     <string name="fps_description"><xliff:g id="fps" example="60">%1$d</xliff:g> fps</string>
 
-    <!-- Option label in the Set Frame Rate dialog for automatic frame rate selection. [CHAR LIMIT=25] -->
+    <!-- Option label in the Set Frame Rate dialog for automatic frame rate selection. [CHAR LIMIT=NONE] -->
     <string name="fps_selector_auto">Auto</string>
 
-    <!-- Footnote text in the "Set Frame Rate" dialog on the settings screen explaining that changing the frame rate may change which video stabilization options are available. Keep the leading asterisk (*), which marks the text as a footnote. [CHAR LIMIT=100] -->
+    <!-- Footnote text in the "Set Frame Rate" dialog on the settings screen explaining that changing the frame rate may change which video stabilization options are available. Keep the leading asterisk (*), which marks the text as a footnote. [CHAR LIMIT=NONE] -->
     <string name="fps_stabilization_disclaimer">*Available stabilization modes may change due to selected frame rate.</string>
-    <!-- Footnote text in the "Set Video Stabilization" dialog on the settings screen explaining that some devices support stabilization on only one of the front or rear camera lenses. Keep the leading asterisk (*), which marks the text as a footnote. [CHAR LIMIT=100] -->
+    <!-- Footnote text in the "Set Video Stabilization" dialog on the settings screen explaining that some devices support stabilization on only one of the front or rear camera lenses. Keep the leading asterisk (*), which marks the text as a footnote. [CHAR LIMIT=NONE] -->
     <string name="lens_stabilization_disclaimer">*Some devices may not support stabilization on both lenses.</string>
 
-    <!-- Title of the setting dialog and row for selecting the maximum video recording duration. [CHAR LIMIT=45] -->
+    <!-- Title of the setting dialog and row for selecting the maximum video recording duration. [CHAR LIMIT=NONE] -->
     <string name="duration_title">Set Maximum Video Duration</string>
-    <!-- Option label and subtitle indicating there is no time limit for video recordings. [CHAR LIMIT=40] -->
+    <!-- Option label and subtitle indicating there is no time limit for video recordings. [CHAR LIMIT=NONE] -->
     <string name="duration_description_none">Unlimited duration</string>
-    <!-- Option label and subtitle showing the maximum video duration in seconds (e.g. 10 seconds). [CHAR LIMIT=35] -->
+    <!-- Option label and subtitle showing the maximum video duration in seconds (e.g. 10 seconds). [CHAR LIMIT=NONE] -->
     <string name="duration_description_seconds" tools:ignore="PluralsCandidate"><xliff:g id="seconds" example="10">%1$d</xliff:g> seconds</string>
 
-    <!-- Title of the setting dialog and row for selecting the video recording resolution/quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=40] -->
+    <!-- Title of the setting dialog and row for selecting the video recording resolution/quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="video_quality_title">Set Video Quality</string>
-    <!-- Option label and subtitle for automatic video quality selection. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=20] -->
+    <!-- Option label and subtitle for automatic video quality selection. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="video_quality_value_auto">Auto</string>
-    <!-- Option label and subtitle for Standard Definition (480p) video quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=20] -->
+    <!-- Option label and subtitle for Standard Definition (480p) video quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="video_quality_value_sd">SD</string>
-    <!-- Option label and subtitle for High Definition (720p) video quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=20] -->
+    <!-- Option label and subtitle for High Definition (720p) video quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="video_quality_value_hd">HD</string>
-    <!-- Option label and subtitle for Full High Definition (1080p) video quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=20] -->
+    <!-- Option label and subtitle for Full High Definition (1080p) video quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="video_quality_value_fhd">FHD</string>
-    <!-- Option label and subtitle for Ultra High Definition (4K/2160p) video quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=20] -->
+    <!-- Option label and subtitle for Ultra High Definition (4K/2160p) video quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="video_quality_value_uhd">UHD</string>
 
-    <!-- Helper description in the Set Video Quality dialog for the Auto option. [CHAR LIMIT=80] -->
+    <!-- Helper description in the Set Video Quality dialog for the Auto option. [CHAR LIMIT=NONE] -->
     <string name="video_quality_value_auto_info">Video quality automatically selected by the device.</string>
-    <!-- Helper description in the "Set Video Quality" dialog for the SD option. "480p" is a technical video resolution identifier; keep it as is. [CHAR LIMIT=80] -->
+    <!-- Helper description in the "Set Video Quality" dialog for the SD option. "480p" is a technical video resolution identifier; keep it as is. [CHAR LIMIT=NONE] -->
     <string name="video_quality_value_sd_info">Standard Definition (SD) 480p video quality.</string>
-    <!-- Helper description in the "Set Video Quality" dialog for the HD option. "720p" is a technical video resolution identifier; keep it as is. [CHAR LIMIT=80] -->
+    <!-- Helper description in the "Set Video Quality" dialog for the HD option. "720p" is a technical video resolution identifier; keep it as is. [CHAR LIMIT=NONE] -->
     <string name="video_quality_value_hd_info">High Definition (HD) 720p video quality.</string>
-    <!-- Helper description in the "Set Video Quality" dialog for the FHD option. "1080p" is a technical video resolution identifier; keep it as is. [CHAR LIMIT=80] -->
+    <!-- Helper description in the "Set Video Quality" dialog for the FHD option. "1080p" is a technical video resolution identifier; keep it as is. [CHAR LIMIT=NONE] -->
     <string name="video_quality_value_fhd_info">Full High Definition (FHD) 1080p video quality.</string>
-    <!-- Helper description in the "Set Video Quality" dialog for the UHD option. "2160p" is a technical video resolution identifier; keep it as is. [CHAR LIMIT=80] -->
+    <!-- Helper description in the "Set Video Quality" dialog for the UHD option. "2160p" is a technical video resolution identifier; keep it as is. [CHAR LIMIT=NONE] -->
     <string name="video_quality_value_uhd_info">Ultra High Definition (UHD) 2160p video quality.</string>
 
-    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the device hardware does not support the setting. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Stabilization" or "Flash", so the full sentence reads e.g. "Stabilization is unsupported by the device". [CHAR LIMIT=80] -->
+    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the device hardware does not support the setting. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Stabilization" or "Flash", so the full sentence reads e.g. "Stabilization is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="device_unsupported"><xliff:g id="setting_name" example="Stabilization">%1$s</xliff:g> is unsupported by the device</string>
-    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the setting is not available at the selected video frame rate. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Low Light Boost" or "Stabilization"; %2$d is the selected frame rate in frames per second (15, 30 or 60), where "fps" is the abbreviation for frames per second. Full sentence reads e.g. "Stabilization is unsupported at 60 fps". [CHAR LIMIT=80] -->
+    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the setting is not available at the selected video frame rate. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Low Light Boost" or "Stabilization"; %2$d is the selected frame rate in frames per second (15, 30 or 60), where "fps" is the abbreviation for frames per second. Full sentence reads e.g. "Stabilization is unsupported at 60 fps". [CHAR LIMIT=NONE] -->
     <string name="fps_unsupported"><xliff:g id="setting_name" example="Stabilization">%1$s</xliff:g> is unsupported at <xliff:g id="fps" example="60">%2$d</xliff:g> fps</string>
-    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the setting conflicts with the currently selected video stabilization mode. %1$s is the name of the disabled setting or lens, a capitalized noun phrase such as "Frame rate" or "Rear lens", so the full sentence reads e.g. "Frame rate is unsupported by the current stabilization". [CHAR LIMIT=80] -->
+    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the setting conflicts with the currently selected video stabilization mode. %1$s is the name of the disabled setting or lens, a capitalized noun phrase such as "Frame rate" or "Rear lens", so the full sentence reads e.g. "Frame rate is unsupported by the current stabilization". [CHAR LIMIT=NONE] -->
     <string name="stabilization_unsupported"><xliff:g id="setting_name" example="Frame rate">%1$s</xliff:g> is unsupported by the current stabilization</string>
-    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the rear-facing camera lens does not support the setting. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Flash" or "Frame rate", so the full sentence reads e.g. "Flash is unsupported by the rear lens". [CHAR LIMIT=80] -->
+    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the rear-facing camera lens does not support the setting. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Flash" or "Frame rate", so the full sentence reads e.g. "Flash is unsupported by the rear lens". [CHAR LIMIT=NONE] -->
     <string name="rear_lens_unsupported"><xliff:g id="setting_name" example="Stabilization">%1$s</xliff:g> is unsupported by the rear lens</string>
-    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the front-facing camera lens does not support the setting. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Flash" or "Frame rate", so the full sentence reads e.g. "Flash is unsupported by the front lens". [CHAR LIMIT=80] -->
+    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the front-facing camera lens does not support the setting. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Flash" or "Frame rate", so the full sentence reads e.g. "Flash is unsupported by the front lens". [CHAR LIMIT=NONE] -->
     <string name="front_lens_unsupported"><xliff:g id="setting_name" example="Stabilization">%1$s</xliff:g> is unsupported by the front lens</string>
-    <!-- Subtitle under a disabled setting row or option on the settings screen, shown in place of the normal subtitle, explaining that the setting or lens conflicts with the currently selected video quality (resolution). %1$s is a capitalized noun phrase such as "Front lens", "Rear lens" or "Video quality", so the full sentence reads e.g. "Front lens is unsupported by the current video quality". [CHAR LIMIT=80] -->
+    <!-- Subtitle under a disabled setting row or option on the settings screen, shown in place of the normal subtitle, explaining that the setting or lens conflicts with the currently selected video quality (resolution). %1$s is a capitalized noun phrase such as "Front lens", "Rear lens" or "Video quality", so the full sentence reads e.g. "Front lens is unsupported by the current video quality". [CHAR LIMIT=NONE] -->
     <string name="video_quality_unsupported"><xliff:g id="setting_name" example="Front lens">%1$s</xliff:g> is unsupported by the current video quality</string>
-    <!-- Subtitle under the disabled "Enable Audio" switch row on the settings screen, shown when the microphone permission has not been granted. %1$s is the name of the disabled setting, a capitalized noun phrase (currently "Microphone"), so the full sentence reads "Microphone requires permission to record audio". [CHAR LIMIT=80] -->
+    <!-- Subtitle under the disabled "Enable Audio" switch row on the settings screen, shown when the microphone permission has not been granted. %1$s is the name of the disabled setting, a capitalized noun phrase (currently "Microphone"), so the full sentence reads "Microphone requires permission to record audio". [CHAR LIMIT=NONE] -->
     <string name="permission_record_audio_unsupported"><xliff:g id="setting_name" example="Microphone">%1$s</xliff:g> requires permission to record audio</string>
 
-    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the setting cannot be used while the "Enable Concurrent Camera" (two cameras recording at once) setting is on. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Stabilization", "Low Light Boost" or "Stream configuration", so the full sentence reads e.g. "Stream configuration is unsupported when Concurrent Camera is active". "Concurrent Camera" is the setting name; translate it as in concurrent_camera_title. "Camera" is a generic term. [CHAR LIMIT=100] -->
+    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the setting cannot be used while the "Enable Concurrent Camera" (two cameras recording at once) setting is on. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Stabilization", "Low Light Boost" or "Stream configuration", so the full sentence reads e.g. "Stream configuration is unsupported when Concurrent Camera is active". "Concurrent Camera" is the setting name; translate it as in concurrent_camera_title. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="concurrent_camera_enabled"><xliff:g id="setting_name" example="Stream configuration">%1$s</xliff:g> is unsupported when Concurrent Camera is active</string>
-    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the setting cannot be used while Ultra HDR photo capture is on. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Stream configuration", so the full sentence reads e.g. "Stream configuration is unsupported when Ultra HDR is enabled". "Ultra HDR" is the name of an Android photo format and should not be translated. [CHAR LIMIT=90] -->
+    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the setting cannot be used while Ultra HDR photo capture is on. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Stream configuration", so the full sentence reads e.g. "Stream configuration is unsupported when Ultra HDR is enabled". "Ultra HDR" is the name of an Android photo format and should not be translated. [CHAR LIMIT=NONE] -->
     <string name="ultra_hdr_enabled"><xliff:g id="setting_name" example="Stream configuration">%1$s</xliff:g> is unsupported when Ultra HDR is enabled</string>
 
-    <!-- Capitalized noun phrase for Video Stabilization, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for Video Stabilization, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="stabilization_rationale_prefix">Stabilization</string>
-    <!-- Capitalized noun phrase for the Frame Rate (frames per second) setting, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device" or "%1$s is unsupported by the rear lens". Translate as the same term used in the "Set Frame Rate" title (fps_title). [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for the Frame Rate (frames per second) setting, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device" or "%1$s is unsupported by the rear lens". Translate as the same term used in the "Set Frame Rate" title (fps_title). [CHAR LIMIT=NONE] -->
     <string name="fps_rationale_prefix">Frame rate</string>
-    <!-- Capitalized noun phrase for Flash, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for Flash, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="flash_rationale_prefix">Flash</string>
-    <!-- Capitalized noun phrase for Flash On mode, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for Flash On mode, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="flash_on_rationale_prefix">Flash On</string>
-    <!-- Capitalized noun phrase for Flash Auto mode, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for Flash Auto mode, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="flash_auto_rationale_prefix">Flash Auto</string>
-    <!-- Capitalized noun phrase for Low Light Boost mode, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for Low Light Boost mode, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="flash_llb_rationale_prefix">Low Light Boost</string>
 
-    <!-- Capitalized noun phrase for Video Quality, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for Video Quality, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="video_quality_rationale_prefix">Video quality</string>
-    <!-- Phrase substituted into disabled setting rationale messages referring to the currently selected dynamic range. [CHAR LIMIT=45] -->
+    <!-- Phrase substituted into disabled setting rationale messages referring to the currently selected dynamic range. [CHAR LIMIT=NONE] -->
     <string name="video_quality_rationale_suffix_default">the current dynamic range</string>
-    <!-- Abbreviation for Standard Dynamic Range substituted into disabled setting rationale messages. [CHAR LIMIT=20] -->
+    <!-- Abbreviation for Standard Dynamic Range substituted into disabled setting rationale messages. [CHAR LIMIT=NONE] -->
     <string name="video_quality_rationale_suffix_sdr">SDR</string>
 
-    <!-- Capitalized noun phrase for the front-facing camera lens, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for the front-facing camera lens, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="front_lens_rationale_prefix">Front lens</string>
-    <!-- Capitalized noun phrase for the rear-facing camera lens, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for the rear-facing camera lens, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="rear_lens_rationale_prefix">Rear lens</string>
-    <!-- Capitalized noun phrase for fixed frame rate options, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for fixed frame rate options, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="no_fixed_fps_rationale_prefix">Fixed frame rate</string>
 
-    <!-- Capitalized noun naming the microphone, substituted as the grammatical subject (%1$s) of the disabled setting rationale sentence "%1$s requires permission to record audio" under the "Enable Audio" switch on the settings screen, so the full sentence reads "Microphone requires permission to record audio". Translate as a noun, not an imperative verb. [CHAR LIMIT=35] -->
+    <!-- Capitalized noun naming the microphone, substituted as the grammatical subject (%1$s) of the disabled setting rationale sentence "%1$s requires permission to record audio" under the "Enable Audio" switch on the settings screen, so the full sentence reads "Microphone requires permission to record audio". Translate as a noun, not an imperative verb. [CHAR LIMIT=NONE] -->
     <string name="mute_audio_rationale_prefix">Microphone</string>
-    <!-- Capitalized noun phrase for Concurrent Camera mode, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". "Camera" is a generic term. [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for Concurrent Camera mode, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="concurrent_camera_rationale_prefix">Concurrent camera</string>
 
-    <!-- Subtitle under the disabled "Enable Concurrent Camera" switch row on the settings screen explaining that concurrent (dual) camera recording cannot be turned on while a video stabilization mode is selected. %1$s is always "Concurrent camera" (concurrent_camera_rationale_prefix), so the full sentence reads "Concurrent camera is unsupported when Video Stabilization is enabled". "Video Stabilization" is the setting name; translate it as in video_stabilization_title. [CHAR LIMIT=100] -->
+    <!-- Subtitle under the disabled "Enable Concurrent Camera" switch row on the settings screen explaining that concurrent (dual) camera recording cannot be turned on while a video stabilization mode is selected. %1$s is always "Concurrent camera" (concurrent_camera_rationale_prefix), so the full sentence reads "Concurrent camera is unsupported when Video Stabilization is enabled". "Video Stabilization" is the setting name; translate it as in video_stabilization_title. [CHAR LIMIT=NONE] -->
     <string name="stabilization_active_unsupported"><xliff:g id="setting_name" example="Concurrent camera">%1$s</xliff:g> is unsupported when Video Stabilization is enabled</string>
-    <!-- Subtitle under the disabled "Enable Concurrent Camera" switch row on the settings screen explaining that concurrent (dual) camera recording cannot be turned on while a fixed (non-automatic) video frame rate is selected. %1$s is always "Concurrent camera" (concurrent_camera_rationale_prefix), so the full sentence reads "Concurrent camera is unsupported when a fixed frame rate is selected". [CHAR LIMIT=100] -->
+    <!-- Subtitle under the disabled "Enable Concurrent Camera" switch row on the settings screen explaining that concurrent (dual) camera recording cannot be turned on while a fixed (non-automatic) video frame rate is selected. %1$s is always "Concurrent camera" (concurrent_camera_rationale_prefix), so the full sentence reads "Concurrent camera is unsupported when a fixed frame rate is selected". [CHAR LIMIT=NONE] -->
     <string name="fixed_fps_active_unsupported"><xliff:g id="setting_name" example="Concurrent camera">%1$s</xliff:g> is unsupported when a fixed frame rate is selected</string>
-    <!-- Subtitle under the disabled "Enable Concurrent Camera" switch row on the settings screen explaining that concurrent (dual) camera recording cannot be turned on while the Low Light Boost flash mode is selected. %1$s is always "Concurrent camera" (concurrent_camera_rationale_prefix), so the full sentence reads "Concurrent camera is unsupported when Low Light Boost is active". "Low Light Boost" is a feature name; translate it consistently. [CHAR LIMIT=90] -->
+    <!-- Subtitle under the disabled "Enable Concurrent Camera" switch row on the settings screen explaining that concurrent (dual) camera recording cannot be turned on while the Low Light Boost flash mode is selected. %1$s is always "Concurrent camera" (concurrent_camera_rationale_prefix), so the full sentence reads "Concurrent camera is unsupported when Low Light Boost is active". "Low Light Boost" is a feature name; translate it consistently. [CHAR LIMIT=NONE] -->
     <string name="flash_llb_active_unsupported"><xliff:g id="setting_name" example="Concurrent camera">%1$s</xliff:g> is unsupported when Low Light Boost is active</string>
-    <!-- Subtitle under the disabled "Enable Concurrent Camera" switch row on the settings screen explaining that concurrent (dual) camera recording cannot be turned on while HDR (HDR video or Ultra HDR photo) is on. %1$s is always "Concurrent camera" (concurrent_camera_rationale_prefix), so the full sentence reads "Concurrent camera is unsupported when HDR is active". "HDR" (high dynamic range) is normally left untranslated. [CHAR LIMIT=80] -->
+    <!-- Subtitle under the disabled "Enable Concurrent Camera" switch row on the settings screen explaining that concurrent (dual) camera recording cannot be turned on while HDR (HDR video or Ultra HDR photo) is on. %1$s is always "Concurrent camera" (concurrent_camera_rationale_prefix), so the full sentence reads "Concurrent camera is unsupported when HDR is active". "HDR" (high dynamic range) is normally left untranslated. [CHAR LIMIT=NONE] -->
     <string name="hdr_active_unsupported"><xliff:g id="setting_name" example="Concurrent camera">%1$s</xliff:g> is unsupported when HDR is active</string>
-    <!-- Subtitle under the disabled "Enable Concurrent Camera" switch row on the settings screen explaining that concurrent (dual) camera recording cannot be turned on while the "Single Stream" camera effect is selected. "Single Stream" is the camera effect name; translate it as in stream_config_description_single_stream. "Camera" is a generic term. [CHAR LIMIT=80] -->
+    <!-- Subtitle under the disabled "Enable Concurrent Camera" switch row on the settings screen explaining that concurrent (dual) camera recording cannot be turned on while the "Single Stream" camera effect is selected. "Single Stream" is the camera effect name; translate it as in stream_config_description_single_stream. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="concurrent_camera_stream_config_unsupported">Single Stream does not support concurrent camera</string>
-    <!-- Capitalized noun phrase for Stream Configuration, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=35] -->
+    <!-- Capitalized noun phrase for Stream Configuration, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="stream_config_rationale_prefix">Stream configuration</string>
 
-    <!-- Label for the app version row in the Software Information section of settings. [CHAR LIMIT=30] -->
+    <!-- Label for the app version row in the Software Information section of settings. [CHAR LIMIT=NONE] -->
     <string name="version_info_title">Version</string>
 </resources>

@@ -15,12 +15,12 @@
   ~ limitations under the License.
   -->
 <resources>
-    <!-- Button label on the permissions screen to request access to a required permission. [CHAR LIMIT=30] -->
+    <!-- Button label on the permissions screen to request access to a required permission. [CHAR LIMIT=NONE] -->
     <string name="request_permission">Allow Access</string>
-    <!-- Button label on the permissions screen to open the system app settings page. [CHAR LIMIT=30] -->
+    <!-- Button label on the permissions screen to open the system app settings page. [CHAR LIMIT=NONE] -->
     <string name="navigate_to_settings">Open App Settings</string>
 
-    <!-- Title of the permission prompt screen asking the user to enable camera access. "Camera" is a generic term. [CHAR LIMIT=40] -->
+    <!-- Title of the permission prompt screen asking the user to enable camera access. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="camera_permission_screen_title">Enable Camera</string>
     <!-- Rationale text explaining why the app needs camera permission to function. [CHAR LIMIT=NONE] -->
     <string name="camera_permission_required_rationale">Please provide permission to access the camera. It is necessary for this app to function.</string>
@@ -29,14 +29,14 @@
     <!-- Accessibility content description for the camera icon on the camera permission screen. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="camera_permission_accessibility_text">Camera</string>
 
-    <!-- Title of the permission prompt screen asking the user to enable microphone access for audio recording. [CHAR LIMIT=40] -->
+    <!-- Title of the permission prompt screen asking the user to enable microphone access for audio recording. [CHAR LIMIT=NONE] -->
     <string name="microphone_permission_screen_title">Enable Audio Recording</string>
     <!-- Rationale text explaining why the app requests microphone permission when recording video. [CHAR LIMIT=NONE] -->
     <string name="microphone_permission_required_rationale">Please provide permission to enable audio in video recording. Videos will be muted if this permission is denied.</string>
     <!-- Accessibility content description for the microphone icon on the microphone permission screen. [CHAR LIMIT=NONE] -->
     <string name="microphone_permission_accessibility_text">Microphone</string>
 
-    <!-- Title of the permission prompt screen asking the user to allow writing to external storage. [CHAR LIMIT=50] -->
+    <!-- Title of the permission prompt screen asking the user to allow writing to external storage. [CHAR LIMIT=NONE] -->
     <string name="write_storage_permission_screen_title">Allow App to Write External Storage</string>
     <!-- Rationale text explaining why the app needs external storage write permission to save photos and videos. [CHAR LIMIT=NONE] -->
     <string name="write_storage_permission_required_rationale">Please provide permission to write to external storage. You will be unable to save captured images or videos if this permission is denied.</string>

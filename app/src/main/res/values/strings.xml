@@ -17,6 +17,6 @@
 <resources>
     <string name="app_name_full" translatable="false">Jetpack Camera</string>
     <string name="app_name_short" translatable="false">JCA</string>
-    <!-- Text shown on the splash/loading screen while the camera application is initializing. [CHAR LIMIT=30] -->
+    <!-- Text shown on the splash/loading screen while the camera application is initializing. [CHAR LIMIT=NONE] -->
     <string name="jca_loading">Loading App…</string>
 </resources>

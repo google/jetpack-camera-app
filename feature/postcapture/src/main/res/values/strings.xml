@@ -17,12 +17,12 @@
 <resources>
     <!-- Accessibility content description for the captured photo preview in the post-capture viewer. [CHAR LIMIT=NONE] -->
     <string name="post_capture_image_description">An image captured by the camera</string>
-    <!-- Message displayed in the post-capture viewer when no captured photo or video is available to preview. [CHAR LIMIT=40] -->
+    <!-- Message displayed in the post-capture viewer when no captured photo or video is available to preview. [CHAR LIMIT=NONE] -->
     <string name="no_media_available">No Media Available</string>
-    <!-- Status message displayed while a captured video is loading in the post-capture video player. [CHAR LIMIT=40] -->
+    <!-- Status message displayed while a captured video is loading in the post-capture video player. [CHAR LIMIT=NONE] -->
     <string name="loading_video_text">Loading video…</string>
 
-    <!-- Error message displayed when the post-capture viewer fails to load the captured photo or video. [CHAR LIMIT=40] -->
+    <!-- Error message displayed when the post-capture viewer fails to load the captured photo or video. [CHAR LIMIT=NONE] -->
     <string name="error_loading_media">Error loading media</string>
     <!-- Accessibility label for the button that closes the post-capture viewer and returns to the camera preview. [CHAR LIMIT=NONE] -->
     <string name="button_exit_description">Exit Post Capture</string>
@@ -47,6 +47,6 @@
     <!-- Snackbar error message shown when deleting a captured video fails. [CHAR LIMIT=60] -->
     <string name="snackbar_delete_video_failure">Video failed to delete</string>
 
-    <!-- Title of the system share chooser dialog when sharing a captured photo or video. [CHAR LIMIT=40] -->
+    <!-- Title of the system share chooser dialog when sharing a captured photo or video. [CHAR LIMIT=NONE] -->
     <string name="title_share_media_chooser">Share Media</string>
 </resources>
