@@ -177,6 +177,22 @@ class FakeCameraSystemTest {
             .isEqualTo(CaptureMode.VIDEO_ONLY)
     }
 
+    @Test
+    fun setTargetVideoBitrate_updatesDebugSettings() = runTest(testDispatcher) {
+        initAndRunCamera()
+        cameraSystem.setTargetVideoBitrate(10_000_000)
+        advanceUntilIdle()
+        Truth.assertThat(
+            cameraSystem.getCurrentSettings().value?.debugSettings?.targetVideoBitrate
+        ).isEqualTo(10_000_000)
+
+        cameraSystem.setTargetVideoBitrate(0)
+        advanceUntilIdle()
+        Truth.assertThat(
+            cameraSystem.getCurrentSettings().value?.debugSettings?.targetVideoBitrate
+        ).isNull()
+    }
+
     private fun TestScope.initAndRunCamera() {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             cameraSystem.initialize(

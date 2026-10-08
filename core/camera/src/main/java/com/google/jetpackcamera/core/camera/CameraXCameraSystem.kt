@@ -520,7 +520,14 @@ class CameraXCameraSystem(
                             dynamicRange = currentCameraSettings.dynamicRange,
                             videoQuality = currentCameraSettings.videoQuality,
                             imageFormat = currentCameraSettings.imageFormat,
-                            lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority
+                            lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority,
+                            targetVideoBitrate = if (
+                                currentCameraSettings.debugSettings.isDebugModeEnabled
+                            ) {
+                                currentCameraSettings.debugSettings.targetVideoBitrate
+                            } else {
+                                null
+                            }
                         )
                     }
 
@@ -771,6 +778,16 @@ class CameraXCameraSystem(
     override fun setTestPattern(newTestPattern: TestPattern) {
         currentSettings.update { old ->
             old?.copy(debugSettings = old.debugSettings.copy(testPattern = newTestPattern)) ?: old
+        }
+    }
+
+    override fun setTargetVideoBitrate(bitrate: Int?) {
+        currentSettings.update { old ->
+            old?.copy(
+                debugSettings = old.debugSettings.copy(
+                    targetVideoBitrate = bitrate?.takeIf { it > 0 }
+                )
+            ) ?: old
         }
     }
 

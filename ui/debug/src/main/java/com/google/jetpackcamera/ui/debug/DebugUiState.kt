@@ -69,6 +69,8 @@ sealed interface DebugUiState {
          *   preview.
          * @property availableTestPatterns The set of test patterns supported by the current camera
          *   device.
+         * @property targetVideoBitrate The custom target video encoding bitrate in bits per second
+         *   (bps), or `null` if using the default bitrate.
          */
         data class Open(
             override val currentPhysicalCameraId: String? = null,
@@ -78,7 +80,8 @@ sealed interface DebugUiState {
             val cameraPropertiesJSON: String = "",
             val videoResolution: Size? = null,
             val selectedTestPattern: TestPattern = TestPattern.Off,
-            val availableTestPatterns: Set<TestPattern> = setOf(TestPattern.Off)
+            val availableTestPatterns: Set<TestPattern> = setOf(TestPattern.Off),
+            val targetVideoBitrate: Int? = null
         ) : Enabled
     }
 

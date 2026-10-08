@@ -88,11 +88,56 @@ class CameraLaunchConfigTest {
     }
 
     @Test
+    fun toDebugSettings_mapsVideoBitrateCorrectly() {
+        // Positive int extra when debug mode is enabled
+        val intBitrateIntent = Intent().apply {
+            putExtra(KEY_DEBUG_MODE, true)
+            putExtra(KEY_DEBUG_VIDEO_BITRATE, 10_000_000)
+        }
+        assertThat(intBitrateIntent.toDebugSettings().targetVideoBitrate).isEqualTo(10_000_000)
+
+        // Positive string extra when debug mode is enabled
+        val stringBitrateIntent = Intent().apply {
+            putExtra(KEY_DEBUG_MODE, true)
+            putExtra(KEY_DEBUG_VIDEO_BITRATE, "8000000")
+        }
+        assertThat(stringBitrateIntent.toDebugSettings().targetVideoBitrate).isEqualTo(8_000_000)
+
+        // Ignored when debug mode is disabled
+        val debugDisabledIntent = Intent().apply {
+            putExtra(KEY_DEBUG_MODE, false)
+            putExtra(KEY_DEBUG_VIDEO_BITRATE, 10_000_000)
+        }
+        assertThat(debugDisabledIntent.toDebugSettings().targetVideoBitrate).isNull()
+
+        // Zero or negative values fall back to null
+        val zeroBitrateIntent = Intent().apply {
+            putExtra(KEY_DEBUG_MODE, true)
+            putExtra(KEY_DEBUG_VIDEO_BITRATE, 0)
+        }
+        assertThat(zeroBitrateIntent.toDebugSettings().targetVideoBitrate).isNull()
+
+        val negativeBitrateIntent = Intent().apply {
+            putExtra(KEY_DEBUG_MODE, true)
+            putExtra(KEY_DEBUG_VIDEO_BITRATE, -500)
+        }
+        assertThat(negativeBitrateIntent.toDebugSettings().targetVideoBitrate).isNull()
+
+        // Malformed string extra falls back to null
+        val invalidStringBitrateIntent = Intent().apply {
+            putExtra(KEY_DEBUG_MODE, true)
+            putExtra(KEY_DEBUG_VIDEO_BITRATE, "invalid")
+        }
+        assertThat(invalidStringBitrateIntent.toDebugSettings().targetVideoBitrate).isNull()
+    }
+
+    @Test
     fun cameraLaunchConfigProvider_setIntent_updatesConfigFromIntent() {
         val provider = CameraLaunchConfigProvider()
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
             putExtra(KEY_DEBUG_MODE, true)
             putExtra(KEY_DEBUG_SINGLE_LENS_MODE, "back")
+            putExtra(KEY_DEBUG_VIDEO_BITRATE, 12_000_000)
         }
         provider.setIntent(intent)
 
@@ -101,7 +146,8 @@ class CameraLaunchConfigTest {
                 externalCaptureMode = ExternalCaptureMode.ImageCapture,
                 debugSettings = DebugSettings(
                     isDebugModeEnabled = true,
-                    singleLensMode = LensFacing.BACK
+                    singleLensMode = LensFacing.BACK,
+                    targetVideoBitrate = 12_000_000
                 )
             )
         )

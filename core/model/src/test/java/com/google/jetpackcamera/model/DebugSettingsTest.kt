@@ -34,7 +34,8 @@ class DebugSettingsTest {
         val original = DebugSettings(
             isDebugModeEnabled = true,
             singleLensMode = LensFacing.FRONT,
-            testPattern = TestPattern.ColorBars
+            testPattern = TestPattern.ColorBars,
+            targetVideoBitrate = 10_000_000
         )
         val encoded = original.encodeAsString()
         val parsed = DebugSettings.parseFromString(encoded)
@@ -46,7 +47,8 @@ class DebugSettingsTest {
         val original = DebugSettings(
             isDebugModeEnabled = true,
             singleLensMode = LensFacing.BACK,
-            testPattern = TestPattern.SolidColor(10u, 20u, 30u, 40u)
+            testPattern = TestPattern.SolidColor(10u, 20u, 30u, 40u),
+            targetVideoBitrate = 5_000_000
         )
         val encoded = original.encodeAsString()
         val parsed = DebugSettings.parseFromString(encoded)
@@ -70,5 +72,27 @@ class DebugSettingsTest {
             "debug:true;lens:BACK;pattern:SolidColor(1,2,3)"
         )
         assertEquals(DebugSettings(true, LensFacing.BACK, TestPattern.Off), parsedInvalidSolidColor)
+
+        // Invalid or non-positive bitrate should fall back to null
+        val parsedZeroBitrate = DebugSettings.parseFromString(
+            "debug:true;lens:BACK;pattern:Off;bitrate:0"
+        )
+        assertEquals(DebugSettings(true, LensFacing.BACK, TestPattern.Off, null), parsedZeroBitrate)
+
+        val parsedNegativeBitrate = DebugSettings.parseFromString(
+            "debug:true;lens:BACK;pattern:Off;bitrate:-1000"
+        )
+        assertEquals(
+            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null),
+            parsedNegativeBitrate
+        )
+
+        val parsedMalformedBitrate = DebugSettings.parseFromString(
+            "debug:true;lens:BACK;pattern:Off;bitrate:not_a_number"
+        )
+        assertEquals(
+            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null),
+            parsedMalformedBitrate
+        )
     }
 }

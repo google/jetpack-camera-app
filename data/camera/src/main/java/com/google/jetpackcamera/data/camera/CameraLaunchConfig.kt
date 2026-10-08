@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.asStateFlow
 private const val TAG = "CameraLaunchConfig"
 internal const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
 internal const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
+internal const val KEY_DEBUG_VIDEO_BITRATE = "KEY_DEBUG_VIDEO_BITRATE"
 
 /**
  * Retained configuration options supplied at launch (such as from intent extras).
@@ -57,9 +58,9 @@ internal fun Intent.toExternalCaptureMode(): ExternalCaptureMode = when (action)
 /**
  * Parses [DebugSettings] from an [Intent].
  */
-internal fun Intent.toDebugSettings(): DebugSettings = DebugSettings(
-    isDebugModeEnabled = getBooleanExtra(KEY_DEBUG_MODE, false),
-    singleLensMode = getStringExtra(KEY_DEBUG_SINGLE_LENS_MODE)?.let {
+internal fun Intent.toDebugSettings(): DebugSettings {
+    val isDebugModeEnabled = getBooleanExtra(KEY_DEBUG_MODE, false)
+    val singleLensMode = getStringExtra(KEY_DEBUG_SINGLE_LENS_MODE)?.let {
         when (it.lowercase()) {
             "back" -> LensFacing.BACK
             "front" -> LensFacing.FRONT
@@ -72,7 +73,31 @@ internal fun Intent.toDebugSettings(): DebugSettings = DebugSettings(
             }
         }
     }
-)
+    val targetVideoBitrate = if (isDebugModeEnabled && hasExtra(KEY_DEBUG_VIDEO_BITRATE)) {
+        val intExtra = getIntExtra(KEY_DEBUG_VIDEO_BITRATE, 0)
+        val parsedBitrate = if (intExtra != 0) {
+            intExtra
+        } else {
+            getStringExtra(KEY_DEBUG_VIDEO_BITRATE)?.toIntOrNull() ?: 0
+        }
+        if (parsedBitrate > 0) {
+            parsedBitrate
+        } else {
+            Log.e(
+                TAG,
+                "Invalid debug video bitrate argument. Value must be a positive integer."
+            )
+            null
+        }
+    } else {
+        null
+    }
+    return DebugSettings(
+        isDebugModeEnabled = isDebugModeEnabled,
+        singleLensMode = singleLensMode,
+        targetVideoBitrate = targetVideoBitrate
+    )
+}
 
 /**
  * Activity-retained provider that manages [CameraLaunchConfig] reactively.

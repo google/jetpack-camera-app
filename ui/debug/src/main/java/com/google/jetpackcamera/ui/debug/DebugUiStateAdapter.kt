@@ -145,6 +145,7 @@ private fun getEnabledDebugUiState(
         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
         selectedTestPattern = cameraAppSettings.debugSettings.testPattern,
         availableTestPatterns = availableTestPatterns,
+        targetVideoBitrate = cameraAppSettings.debugSettings.targetVideoBitrate,
         currentPrimaryZoomRatio = cameraState.zoomRatios[cameraAppSettings.cameraLensFacing],
         debugHidingComponents = debugHidingComponents
     )

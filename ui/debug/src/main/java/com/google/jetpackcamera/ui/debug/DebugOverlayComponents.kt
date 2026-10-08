@@ -49,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -127,7 +128,7 @@ private fun ToggleVisibilityButton(
     val stateDescption = if (isHidingComponents) {
         stringResource(id = R.string.debug_hide_components_desc)
     } else {
-        stringResource(R.string.debug_show_components_desc)
+        stringResource(id = R.string.debug_show_components_desc)
     }
 
     IconButton(
@@ -178,6 +179,7 @@ fun DebugOverlay(
                     modifier = Modifier,
                     onChangeZoomRatio = onChangeZoomRatio,
                     onSetTestPattern = debugController::setTestPattern,
+                    onSetTargetVideoBitrate = debugController::setTargetVideoBitrate,
                     toggleIsOpen = debugController::toggleDebugOverlay,
                     debugUiState = it
                 )
@@ -228,6 +230,7 @@ private fun DebugDialogContainer(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (Float) -> Unit,
     onSetTestPattern: (TestPattern) -> Unit,
+    onSetTargetVideoBitrate: (Int?) -> Unit,
     toggleIsOpen: () -> Unit,
     debugUiState: DebugUiState.Enabled.Open
 ) {
@@ -279,6 +282,11 @@ private fun DebugDialogContainer(
                         availableTestPatterns = debugUiState.availableTestPatterns,
                         onClose = { selectedDialog = SelectedDialog.None }
                     )
+
+                SelectedDialog.SetVideoBitrate ->
+                    SetVideoBitrateDialog(onSetTargetVideoBitrate) {
+                        selectedDialog = SelectedDialog.None
+                    }
             }
         }
     }
@@ -315,6 +323,22 @@ private fun DebugDialogOptionsMenuDialog(
             )
         }
 
+        Row {
+            Text(stringResource(R.string.debug_text_video_bitrate_prefix))
+            val bitrate = debugUiState.targetVideoBitrate
+            val videoBitrateText = if (bitrate == null || bitrate <= 0) {
+                stringResource(R.string.debug_text_video_bitrate_default)
+            } else {
+                stringResource(R.string.debug_text_video_bitrate_bps, bitrate)
+            }
+            Text(
+                modifier = Modifier.testTag(
+                    DEBUG_OVERLAY_VIDEO_BITRATE_TAG
+                ),
+                text = videoBitrateText
+            )
+        }
+
         // show camera properties json button
         Button(
             modifier = Modifier.testTag(
@@ -337,6 +361,18 @@ private fun DebugDialogOptionsMenuDialog(
             }
         ) {
             Text(text = "Set Zoom Ratio")
+        }
+
+        // set video bitrate
+        Button(
+            modifier = Modifier.testTag(
+                DEBUG_OVERLAY_SET_VIDEO_BITRATE_BUTTON
+            ),
+            onClick = {
+                onMoveToComponent(SelectedDialog.SetVideoBitrate)
+            }
+        ) {
+            Text(text = stringResource(R.string.debug_set_video_bitrate_btn_text))
         }
 
         // set test pattern
@@ -413,6 +449,51 @@ private fun SetZoomRatioDialog(onChangeZoomRatio: (Float) -> Unit, onClose: () -
 }
 
 @Composable
+private fun SetVideoBitrateDialog(onSetTargetVideoBitrate: (Int?) -> Unit, onClose: () -> Unit) {
+    var videoBitrateText by rememberSaveable { mutableStateOf("") }
+    BackHandler(onBack = { onClose() })
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .noIndicationClickable(onClick = onClose),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = stringResource(R.string.debug_set_video_bitrate_dialog_prompt))
+            TextField(
+                modifier = Modifier.testTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD),
+                value = videoBitrateText,
+                onValueChange = { videoBitrateText = it },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+            Button(
+                modifier = Modifier.testTag(
+                    DEBUG_OVERLAY_SET_VIDEO_BITRATE_CONFIRM_BUTTON
+                ),
+                onClick = {
+                    val trimmed = videoBitrateText.trim()
+                    if (trimmed.isEmpty()) {
+                        onSetTargetVideoBitrate(null)
+                    } else {
+                        val newBitrate = trimmed.toIntOrNull()
+                        if (newBitrate == null || newBitrate < 0) {
+                            Log.d(TAG, "Video bitrate should be a non-negative integer")
+                        } else if (newBitrate == 0) {
+                            onSetTargetVideoBitrate(null)
+                        } else {
+                            onSetTargetVideoBitrate(newBitrate)
+                        }
+                    }
+                    onClose()
+                }
+            ) {
+                Text(text = stringResource(R.string.debug_dialog_confirm_btn_text))
+            }
+        }
+    }
+}
+
+@Composable
 private fun SetTestPatternDialog(
     onSetTestPattern: (TestPattern) -> Unit,
     selectedTestPattern: TestPattern,
@@ -468,5 +549,6 @@ private enum class SelectedDialog {
     None,
     CameraJSON,
     SetZoom,
-    SetTestPattern
+    SetTestPattern,
+    SetVideoBitrate
 }
