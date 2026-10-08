@@ -18,6 +18,7 @@ package com.google.jetpackcamera.settings.model
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DebugSettings
@@ -40,6 +41,15 @@ import com.google.jetpackcamera.model.VideoQuality
  */
 data class CameraAppSettings(
     val captureMode: CaptureMode = CaptureMode.STANDARD,
+    val captureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
+    val activeCaptureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
+    // TODO: Move runtime state such as this out of CameraAppSettings, which also holds persisted
+    //  user preferences.
+    /**
+     * The values replaced by the policy of [activeCaptureSubModeId], restored when that sub-mode
+     * ends. Set by the camera system while a sub-mode is active; not a user preference.
+     */
+    val captureSubModeOverrides: PolicyOverrides? = null,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
     val darkMode: DarkMode = DarkMode.DARK,
     val flashMode: FlashMode = FlashMode.OFF,
