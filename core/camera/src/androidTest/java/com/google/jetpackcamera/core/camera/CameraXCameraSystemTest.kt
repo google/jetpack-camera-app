@@ -1151,8 +1151,8 @@ class CameraXCameraSystemTest {
     }
 
     @Test
-    fun setCaptureSubMode_whenSwitchingBetweenSubModesWithConflictingOverrides_activatesSecond():
-        Unit = runBlocking {
+    fun setCaptureSubMode_switchingSubModesWithConflictingOverrides_activatesSecond(): Unit =
+        runBlocking {
         val secondaryKey = object : CaptureSubModeFeatureKey {
             override val id = SECOND_FAKE_CAPTURE_SUB_MODE_ID
         }
