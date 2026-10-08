@@ -58,6 +58,7 @@ class NightCaptureSubModeProvider internal constructor(
             manager.isExtensionAvailable(selector, ExtensionMode.NIGHT)
         },
         enableNightSelector = { manager, selector ->
+            @Suppress("DEPRECATION")
             manager.getExtensionEnabledCameraSelector(selector, ExtensionMode.NIGHT)
         }
     )
