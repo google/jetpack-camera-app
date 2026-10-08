@@ -17,6 +17,7 @@ package com.google.jetpackcamera.core.camera.night
 
 import android.content.Context
 import androidx.camera.core.CameraInfo
+import androidx.camera.core.CameraSelector
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -38,9 +39,29 @@ import com.google.jetpackcamera.settings.model.SettingConfig
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class NightCaptureSubModeProvider(
-    private val applicationContext: Context
+/**
+ * [CaptureSubModeProvider] for the Night Mode CameraX extension under [CaptureMode.IMAGE_ONLY].
+ *
+ * Queries [ExtensionsManager] for [ExtensionMode.NIGHT] support per camera lens, transforms the
+ * [CameraSelector] when Night Mode is active, and restricts dynamic range to SDR, image output
+ * format to JPEG, and flash to standard modes (excluding Low Light Boost).
+ */
+class NightCaptureSubModeProvider internal constructor(
+    private val applicationContext: Context,
+    private val isNightAvailable: (ExtensionsManager, CameraSelector) -> Boolean,
+    private val enableNightSelector: (ExtensionsManager, CameraSelector) -> CameraSelector
 ) : CaptureSubModeProvider {
+
+    constructor(applicationContext: Context) : this(
+        applicationContext = applicationContext,
+        isNightAvailable = { manager, selector ->
+            manager.isExtensionAvailable(selector, ExtensionMode.NIGHT)
+        },
+        enableNightSelector = { manager, selector ->
+            manager.getExtensionEnabledCameraSelector(selector, ExtensionMode.NIGHT)
+        }
+    )
+
     private val mutex = Mutex()
     private var cachedExtensionsManager: ExtensionsManager? = null
 
@@ -86,10 +107,7 @@ class NightCaptureSubModeProvider(
         cameraInfo: CameraInfo
     ): Boolean {
         val extensionsManager = getExtensionsManager(cameraProvider)
-        return extensionsManager.isExtensionAvailable(
-            cameraInfo.cameraSelector,
-            ExtensionMode.NIGHT
-        )
+        return isNightAvailable(extensionsManager, cameraInfo.cameraSelector)
     }
 
     override fun isCompatibleWith(
@@ -104,11 +122,8 @@ class NightCaptureSubModeProvider(
     override val sessionBinding =
         CameraSessionBinding.SingleCamera { cameraProvider, baseSelector ->
             val extensionsManager = getExtensionsManager(cameraProvider)
-            if (extensionsManager.isExtensionAvailable(baseSelector, ExtensionMode.NIGHT)) {
-                extensionsManager.getExtensionEnabledCameraSelector(
-                    baseSelector,
-                    ExtensionMode.NIGHT
-                )
+            if (isNightAvailable(extensionsManager, baseSelector)) {
+                enableNightSelector(extensionsManager, baseSelector)
             } else {
                 baseSelector
             }
