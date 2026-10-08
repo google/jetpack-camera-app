@@ -145,8 +145,8 @@ class ConcurrentCameraSessionTest {
         }
 
     @Test
-    fun runConcurrentCameraSession_withCandidatePair_attemptsBindOrReportsStreamConfigError():
-        Unit = runBlocking {
+    fun runConcurrentCameraSession_withCandidatePair_bindsOrReportsStreamConfigError(): Unit =
+        runBlocking {
         val cameraProvider = ProcessCameraProvider.awaitInstance(context)
         val firstCameraInfo = cameraProvider.availableCameraInfos.firstOrNull()
         assume()
@@ -195,8 +195,8 @@ class ConcurrentCameraSessionTest {
 
     @SuppressLint("Recycle")
     @Test
-    fun runConcurrentCameraSession_whenBound_updatesCameraStateAndSurfaceRequest():
-        Unit = runBlocking {
+    fun runConcurrentCameraSession_whenBound_updatesCameraStateAndSurfaceRequest(): Unit =
+        runBlocking {
         val cameraProvider = ProcessCameraProvider.awaitInstance(context)
         val firstCameraInfo = cameraProvider.availableCameraInfos.firstOrNull()
         assume()
