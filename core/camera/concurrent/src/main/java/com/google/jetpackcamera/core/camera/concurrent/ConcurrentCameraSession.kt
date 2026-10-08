@@ -20,10 +20,13 @@ package com.google.jetpackcamera.core.camera.concurrent
 import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState as CXCameraState
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.TorchState
+import androidx.camera.core.UseCaseGroup
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.CameraSessionContext
 import com.google.jetpackcamera.core.camera.InternalCameraApi
@@ -48,6 +51,7 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraConstraints
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -65,7 +69,16 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
     sessionSettings: PerpetualSessionSettings.CustomSession,
     cameraConstraints: CameraConstraints?,
     availableConcurrentCameraInfos: List<List<CameraInfo>> =
-        cameraProvider.availableConcurrentCameraInfos
+        cameraProvider.availableConcurrentCameraInfos,
+    bindConcurrentCameras: suspend (
+        List<Pair<CameraSelector, CompositionSettings>>,
+        UseCaseGroup,
+        suspend CoroutineScope.(List<Camera>) -> Unit
+    ) -> Unit = { cameraConfigs, useCaseGroup, block ->
+        cameraProvider.runWithConcurrent(cameraConfigs, useCaseGroup) { concurrentCamera ->
+            block(concurrentCamera.cameras)
+        }
+    }
 ) = coroutineScope {
     // The camera pair is resolved from the primary lens facing, so rebind whenever it changes
     // (e.g. when the user flips the camera).
@@ -162,10 +175,10 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                     )
                 )
 
-                cameraProvider.runWithConcurrent(cameraConfigs, useCaseGroup) { concurrentCamera ->
+                bindConcurrentCameras(cameraConfigs, useCaseGroup) { cameras ->
                     Log.d(TAG, "Concurrent camera session started")
                     // todo: concurrent camera only ever lists one camera
-                    val primaryCamera = concurrentCamera.cameras.first {
+                    val primaryCamera = cameras.first {
                         it.cameraInfo.appLensFacing == primaryCameraInfo.appLensFacing
                     }
 
