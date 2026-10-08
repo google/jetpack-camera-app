@@ -34,4 +34,6 @@
     <string name="debug_set_video_bitrate_dialog_prompt">Enter and confirm video bitrate in bps (leave empty for default)</string>
     <!-- Button label to confirm the input value in a debug overlay dialog. [CHAR LIMIT=20] -->
     <string name="debug_dialog_confirm_btn_text">Confirm</string>
+    <!-- Action label to close or dismiss a debug overlay dialog. [CHAR LIMIT=20] -->
+    <string name="debug_dialog_close_btn_text">Close</string>
 </resources>

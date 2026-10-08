@@ -451,11 +451,15 @@ private fun SetZoomRatioDialog(onChangeZoomRatio: (Float) -> Unit, onClose: () -
 @Composable
 private fun SetVideoBitrateDialog(onSetTargetVideoBitrate: (Int?) -> Unit, onClose: () -> Unit) {
     val videoBitrateState = rememberTextFieldState()
+    var isError by remember { mutableStateOf(false) }
     BackHandler(onBack = { onClose() })
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .noIndicationClickable(onClick = onClose),
+            .noIndicationClickable(
+                onClickLabel = stringResource(R.string.debug_dialog_close_btn_text),
+                onClick = onClose
+            ),
         contentAlignment = Alignment.Center
     ) {
         val scrollState = rememberScrollState()
@@ -463,10 +467,15 @@ private fun SetVideoBitrateDialog(onSetTargetVideoBitrate: (Int?) -> Unit, onClo
             modifier = Modifier.verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = stringResource(R.string.debug_set_video_bitrate_dialog_prompt))
             TextField(
                 modifier = Modifier.testTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD),
                 state = videoBitrateState,
+                label = {
+                    Text(
+                        text = stringResource(R.string.debug_set_video_bitrate_dialog_prompt)
+                    )
+                },
+                isError = isError,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
             Button(
@@ -478,16 +487,20 @@ private fun SetVideoBitrateDialog(onSetTargetVideoBitrate: (Int?) -> Unit, onClo
                     val newBitrate = trimmed.toIntOrNull()
                     when {
                         trimmed.isEmpty() || newBitrate == 0 -> {
+                            isError = false
                             onSetTargetVideoBitrate(null)
+                            onClose()
                         }
                         newBitrate == null || newBitrate < 0 -> {
+                            isError = true
                             Log.d(TAG, "Video bitrate should be a non-negative integer")
                         }
                         else -> {
+                            isError = false
                             onSetTargetVideoBitrate(newBitrate)
+                            onClose()
                         }
                     }
-                    onClose()
                 }
             ) {
                 Text(text = stringResource(R.string.debug_dialog_confirm_btn_text))
@@ -542,9 +555,13 @@ private fun SetTestPatternDialog(
 }
 
 @Composable
-private fun Modifier.noIndicationClickable(onClick: () -> Unit): Modifier = this.clickable(
+private fun Modifier.noIndicationClickable(
+    onClickLabel: String? = null,
+    onClick: () -> Unit
+): Modifier = this.clickable(
     interactionSource = remember { MutableInteractionSource() },
     indication = null,
+    onClickLabel = onClickLabel,
     onClick = onClick
 )
 
