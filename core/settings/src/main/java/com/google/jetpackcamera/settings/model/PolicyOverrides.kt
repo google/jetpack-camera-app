@@ -51,7 +51,12 @@ data class PolicyOverrides private constructor(
             beforeEnforcement.dynamicRange,
             afterEnforcement.dynamicRange
         )
-    )
+    ) {
+        require(beforeEnforcement.captureMode == afterEnforcement.captureMode) {
+            "PolicyOverrides does not support overriding captureMode; sub-mode feature policies " +
+                "must not modify captureMode."
+        }
+    }
 
     /**
      * Returns [settings] with each overridden value set back to its value before enforcement.

@@ -185,13 +185,10 @@ private fun <T : Any> intersectSetting(
 ): SettingConfig<T>? {
     if (base == null) return overlay
     if (overlay == null) return base
+    if (!isSettingCompatible(base, overlay)) return base
     return when (val overlayVis = overlay.visibility) {
         is OptionVisibility.Hidden -> SettingConfig(
-            defaultValue = if (overlay.permits(base.defaultValue)) {
-                base.defaultValue
-            } else {
-                overlay.defaultValue
-            },
+            defaultValue = overlay.defaultValue,
             visibility = OptionVisibility.Hidden
         )
         is OptionVisibility.Visible -> when (base.visibility) {
@@ -202,21 +199,14 @@ private fun <T : Any> intersectSetting(
             )
         }
         is OptionVisibility.Only -> when (val baseVis = base.visibility) {
-            is OptionVisibility.Hidden -> SettingConfig(
-                defaultValue = if (base.defaultValue in overlayVis.enabledOptions) {
-                    base.defaultValue
-                } else {
-                    overlay.defaultValue
-                },
-                visibility = OptionVisibility.Hidden
-            )
+            is OptionVisibility.Hidden -> base
             is OptionVisibility.Visible -> overlay
             is OptionVisibility.Only -> {
                 val common = baseVis.enabledOptions intersect overlayVis.enabledOptions
                 val resolvedDefault = when {
                     overlay.defaultValue in common -> overlay.defaultValue
                     base.defaultValue in common -> base.defaultValue
-                    else -> common.firstOrNull() ?: overlay.defaultValue
+                    else -> common.first()
                 }
                 SettingConfig(
                     defaultValue = resolvedDefault,
