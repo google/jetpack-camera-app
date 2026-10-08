@@ -18,9 +18,12 @@ package com.google.jetpackcamera.settings.model
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeDescriptor
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.LensFacing
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -130,5 +133,60 @@ class PolicyOverridesTest {
         )
 
         assertThat(otherOverrides).isNotEqualTo(overrides)
+    }
+
+    @Test
+    fun subModeModelAndConstraints_preserveValuesAndDefaults() {
+        val subModeId = CaptureSubModeId("night")
+        assertThat(CaptureSubModeId.DEFAULT.value).isEqualTo("default")
+        assertThat(subModeId.value).isEqualTo("night")
+
+        val descriptor = CaptureSubModeDescriptor(
+            id = subModeId,
+            parentCaptureMode = CaptureMode.IMAGE_ONLY,
+            labelResId = 42,
+            sortOrder = 50,
+            quickSettingsTitleResId = 99
+        )
+        val defaultDescriptor = CaptureSubModeDescriptor(
+            id = subModeId,
+            parentCaptureMode = CaptureMode.IMAGE_ONLY,
+            labelResId = 42
+        )
+        assertThat(descriptor.id).isEqualTo(subModeId)
+        assertThat(descriptor.parentCaptureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
+        assertThat(descriptor.labelResId).isEqualTo(42)
+        assertThat(descriptor.sortOrder).isEqualTo(50)
+        assertThat(descriptor.quickSettingsTitleResId).isEqualTo(99)
+        assertThat(defaultDescriptor.sortOrder).isEqualTo(100)
+        assertThat(defaultDescriptor.quickSettingsTitleResId).isNull()
+
+        val (_, overrides) = enforce(restrictivePolicy, userSettings)
+        val settingsWithSubMode = DEFAULT_CAMERA_APP_SETTINGS.copy(
+            captureSubModeId = subModeId,
+            activeCaptureSubModeId = subModeId,
+            captureSubModeOverrides = overrides
+        )
+        assertThat(settingsWithSubMode.captureSubModeId).isEqualTo(subModeId)
+        assertThat(settingsWithSubMode.activeCaptureSubModeId).isEqualTo(subModeId)
+        assertThat(settingsWithSubMode.captureSubModeOverrides).isEqualTo(overrides)
+
+        val backConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints
+            .getValue(LensFacing.BACK)
+            .copy(
+                supportedCaptureSubModes = setOf(subModeId),
+                defaultCaptureSubModes = mapOf(CaptureMode.IMAGE_ONLY to subModeId)
+            )
+        val systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+            perLensConstraints = mapOf(LensFacing.BACK to backConstraints),
+            captureSubModeDescriptors = mapOf(subModeId to descriptor),
+            captureSubModePolicies = mapOf(subModeId to restrictivePolicy)
+        )
+        assertThat(systemConstraints.captureSubModeDescriptors).containsEntry(subModeId, descriptor)
+        assertThat(systemConstraints.captureSubModePolicies)
+            .containsEntry(subModeId, restrictivePolicy)
+        assertThat(backConstraints.supportedCaptureSubModes).containsExactly(subModeId)
+        assertThat(backConstraints.defaultCaptureSubModes)
+            .containsEntry(CaptureMode.IMAGE_ONLY, subModeId)
     }
 }
