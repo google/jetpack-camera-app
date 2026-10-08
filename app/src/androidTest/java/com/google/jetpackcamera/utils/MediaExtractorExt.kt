@@ -21,6 +21,7 @@ import java.nio.ByteBuffer
 
 private const val MICROS_PER_SECOND = 1_000_000L
 private const val BITS_PER_BYTE = 8L
+private const val DEFAULT_AUDIO_MAX_SAMPLE_SIZE = 64 * 1024
 
 /**
  * Returns the average bitrate, in bits per second, of the first video track in the media file at
@@ -31,16 +32,24 @@ private const val BITS_PER_BYTE = 8L
  * from MP4 video tracks and [android.media.MediaMetadataRetriever.METADATA_KEY_BITRATE] includes
  * the audio track.
  */
-fun getVideoTrackBitrate(path: String): Long {
+fun getVideoTrackBitrate(path: String): Long = getTrackBitrate(path, "video/")
+
+/**
+ * Returns the average bitrate, in bits per second, of the first audio track in the media file at
+ * [path], computed from the total size of the encoded audio samples divided by the track duration.
+ */
+fun getAudioTrackBitrate(path: String): Long = getTrackBitrate(path, "audio/")
+
+private fun getTrackBitrate(path: String, mimePrefix: String): Long {
     val extractor = MediaExtractor()
     try {
         extractor.setDataSource(path)
         val trackIndex = checkNotNull(
             (0 until extractor.trackCount).firstOrNull { index ->
                 extractor.getTrackFormat(index).getString(MediaFormat.KEY_MIME)
-                    ?.startsWith("video/") == true
+                    ?.startsWith(mimePrefix) == true
             }
-        ) { "No video track found in $path" }
+        ) { "No $mimePrefix track found in $path" }
         val format = extractor.getTrackFormat(trackIndex)
         extractor.selectTrack(trackIndex)
 
@@ -62,7 +71,7 @@ fun getVideoTrackBitrate(path: String): Long {
         } else {
             lastSampleTimeUs - firstSampleTimeUs
         }
-        check(durationUs > 0) { "Invalid video track duration ($durationUs us) in $path" }
+        check(durationUs > 0) { "Invalid $mimePrefix track duration ($durationUs us) in $path" }
         return totalBytes * BITS_PER_BYTE * MICROS_PER_SECOND / durationUs
     } finally {
         extractor.release()
@@ -70,10 +79,10 @@ fun getVideoTrackBitrate(path: String): Long {
 }
 
 /**
- * Returns a buffer size large enough to hold any encoded sample of this video track.
+ * Returns a buffer size large enough to hold any encoded sample of this track.
  *
  * Uses [MediaFormat.KEY_MAX_INPUT_SIZE] when present, otherwise the size of an uncompressed
- * YUV 4:2:0 frame, which bounds the size of any encoded frame.
+ * YUV 4:2:0 frame for video tracks or [DEFAULT_AUDIO_MAX_SAMPLE_SIZE] for audio tracks.
  */
 private fun MediaFormat.getMaxSampleSize(): Int {
     val maxInputSize = if (containsKey(MediaFormat.KEY_MAX_INPUT_SIZE)) {
@@ -81,7 +90,12 @@ private fun MediaFormat.getMaxSampleSize(): Int {
     } else {
         0
     }
-    val rawFrameSize =
+    val rawFrameSize = if (
+        containsKey(MediaFormat.KEY_WIDTH) && containsKey(MediaFormat.KEY_HEIGHT)
+    ) {
         getInteger(MediaFormat.KEY_WIDTH) * getInteger(MediaFormat.KEY_HEIGHT) * 3 / 2
+    } else {
+        DEFAULT_AUDIO_MAX_SAMPLE_SIZE
+    }
     return maxOf(maxInputSize, rawFrameSize)
 }

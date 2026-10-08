@@ -90,6 +90,18 @@ fun CameraSystemConstraints.getSupportedMimeTypes(): Map<LensFacing, Set<String>
 }
 
 /**
+ * Defines the default bitrate and supported encoder bitrate range in bits per second (bps).
+ *
+ * @property defaultBitrate The default encoding bitrate in bps, or `null` if unknown.
+ * @property supportedRange The range of bitrates in bps supported by the encoder, or `null` if
+ *   unknown.
+ */
+data class BitrateConstraints(
+    val defaultBitrate: Int? = null,
+    val supportedRange: Range<Int>? = null
+)
+
+/**
  * Defines the capabilities and limitations for a single camera lens.
  *
  * Encapsulates constraints for video and image capture, including stabilization,
@@ -105,6 +117,8 @@ fun CameraSystemConstraints.getSupportedMimeTypes(): Map<LensFacing, Set<String>
  * @property supportedZoomRange Optional [Range] of floats for zoom ratios. Null if zoom is not supported.
  * @property unsupportedStabilizationFpsMap Map of [StabilizationMode] to a set of frame rates (FPS) that are unsupported with that mode.
  * @property supportedTestPatterns Set of [TestPattern] values supported by this lens, used for debugging.
+ * @property videoBitrateConstraintsMap Map of [DynamicRange] and [VideoQuality] to [BitrateConstraints], populated for debugging.
+ * @property audioBitrateConstraints Optional [BitrateConstraints] for audio encoding, populated for debugging.
  */
 data class CameraConstraints(
     val supportedStabilizationModes: Set<StabilizationMode>,
@@ -118,7 +132,10 @@ data class CameraConstraints(
     val supportedFlashModes: Set<FlashMode>,
     val supportedZoomRange: Range<Float>?,
     val unsupportedStabilizationFpsMap: Map<StabilizationMode, Set<Int>>,
-    val supportedTestPatterns: Set<TestPattern>
+    val supportedTestPatterns: Set<TestPattern>,
+    val videoBitrateConstraintsMap: Map<DynamicRange, Map<VideoQuality, BitrateConstraints>> =
+        emptyMap(),
+    val audioBitrateConstraints: BitrateConstraints? = null
 ) {
     val StabilizationMode.unsupportedFpsSet
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()

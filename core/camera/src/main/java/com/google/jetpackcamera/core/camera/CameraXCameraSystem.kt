@@ -75,6 +75,7 @@ import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.ZoomStrategy
+import com.google.jetpackcamera.settings.model.BitrateConstraints
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -306,6 +307,13 @@ class CameraXCameraSystem(
                         } else {
                             setOf(TestPattern.Off)
                         }
+                        val (videoBitrateConstraintsMap, audioBitrateConstraints) =
+                            if (debugSettings.isDebugModeEnabled) {
+                                camInfo.getBitrateConstraints(supportedVideoQualitiesMap)
+                            } else {
+                                emptyMap<DynamicRange, Map<VideoQuality, BitrateConstraints>>() to
+                                    null
+                            }
 
                         put(
                             lensFacing,
@@ -329,7 +337,9 @@ class CameraXCameraSystem(
                                 supportedFlashModes = supportedFlashModes,
                                 supportedZoomRange = supportedZoomRange,
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap,
-                                supportedTestPatterns = supportedTestPatterns
+                                supportedTestPatterns = supportedTestPatterns,
+                                videoBitrateConstraintsMap = videoBitrateConstraintsMap,
+                                audioBitrateConstraints = audioBitrateConstraints
                             )
                         )
                     }
@@ -525,6 +535,13 @@ class CameraXCameraSystem(
                                 currentCameraSettings.debugSettings.isDebugModeEnabled
                             ) {
                                 currentCameraSettings.debugSettings.targetVideoBitrate
+                            } else {
+                                null
+                            },
+                            targetAudioBitrate = if (
+                                currentCameraSettings.debugSettings.isDebugModeEnabled
+                            ) {
+                                currentCameraSettings.debugSettings.targetAudioBitrate
                             } else {
                                 null
                             }
@@ -786,6 +803,16 @@ class CameraXCameraSystem(
             old?.copy(
                 debugSettings = old.debugSettings.copy(
                     targetVideoBitrate = bitrate?.takeIf { it > 0 }
+                )
+            ) ?: old
+        }
+    }
+
+    override fun setTargetAudioBitrate(bitrate: Int?) {
+        currentSettings.update { old ->
+            old?.copy(
+                debugSettings = old.debugSettings.copy(
+                    targetAudioBitrate = bitrate?.takeIf { it > 0 }
                 )
             ) ?: old
         }

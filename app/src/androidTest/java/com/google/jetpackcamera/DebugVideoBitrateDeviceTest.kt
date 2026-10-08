@@ -32,9 +32,11 @@ import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.truth.TruthJUnit.assume
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_AUDIO_BITRATE_TAG
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_BUTTON
-import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_VIDEO_BITRATE_BUTTON
-import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_VIDEO_BITRATE_CONFIRM_BUTTON
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_AUDIO_BITRATE_TEXT_FIELD
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_BITRATE_BUTTON
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_BITRATE_CONFIRM_BUTTON
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_VIDEO_BITRATE_TAG
 import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
@@ -43,6 +45,7 @@ import com.google.jetpackcamera.utils.VIDEO_PREFIX
 import com.google.jetpackcamera.utils.debugExtra
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.doesMediaExist
+import com.google.jetpackcamera.utils.getAudioTrackBitrate
 import com.google.jetpackcamera.utils.getSingleImageCaptureIntent
 import com.google.jetpackcamera.utils.getTestUri
 import com.google.jetpackcamera.utils.getVideoTrackBitrate
@@ -57,7 +60,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Device tests verifying that the debug target video bitrate is applied to recorded videos.
+ * Device tests verifying that the debug target video and audio bitrates are applied to recorded
+ * videos.
  *
  * Encoders treat the target bitrate as a rate-control hint, short clips are noisy, and CameraX
  * clamps the target to the encoder's supported range. Codecs that implement the platform's video
@@ -88,65 +92,102 @@ class DebugVideoBitrateDeviceTest {
     }
 
     @Test
-    fun targetBitrate_viaIntentExtra_controlsRecordedVideoBitrate() {
-        val lowBitrate = recordVideoAndMeasureBitrate(
-            extras = debugBitrateExtras(LOW_TARGET_BITRATE_BPS)
+    fun targetBitrate_viaIntentExtra_controlsRecordedVideoAndAudioBitrates() {
+        val lowBitrates = recordVideoAndMeasureBitrates(
+            extras = debugBitrateExtras(
+                videoBitrateBps = LOW_TARGET_VIDEO_BITRATE_BPS,
+                audioBitrateBps = LOW_TARGET_AUDIO_BITRATE_BPS
+            )
         )
-        val highBitrate = recordVideoAndMeasureBitrate(
-            extras = debugBitrateExtras(HIGH_TARGET_BITRATE_BPS)
+        val highBitrates = recordVideoAndMeasureBitrates(
+            extras = debugBitrateExtras(
+                videoBitrateBps = HIGH_TARGET_VIDEO_BITRATE_BPS,
+                audioBitrateBps = HIGH_TARGET_AUDIO_BITRATE_BPS
+            )
         )
 
-        assertWithMessage("Bitrate with high debug target should exceed bitrate with low target")
-            .that(highBitrate)
-            .isGreaterThan(lowBitrate.scaledBy(MIN_SEPARATION_FACTOR))
-        assertWithMessage("Bitrate with low debug target should be near the target")
-            .that(lowBitrate)
-            .isAtMost(LOW_TARGET_BITRATE_BPS.toLong() * BITRATE_TOLERANCE_FACTOR)
-        assertWithMessage("Bitrate with high debug target should be near the target")
-            .that(highBitrate)
-            .isAtMost(HIGH_TARGET_BITRATE_BPS.toLong() * BITRATE_TOLERANCE_FACTOR)
+        assertWithMessage("Video bitrate with high target should exceed bitrate with low target")
+            .that(highBitrates.videoBitrate)
+            .isGreaterThan(lowBitrates.videoBitrate.scaledBy(MIN_SEPARATION_FACTOR))
+        assertWithMessage("Video bitrate with low target should be near the target")
+            .that(lowBitrates.videoBitrate)
+            .isAtMost(LOW_TARGET_VIDEO_BITRATE_BPS.toLong() * BITRATE_TOLERANCE_FACTOR)
+        assertWithMessage("Video bitrate with high target should be near the target")
+            .that(highBitrates.videoBitrate)
+            .isAtMost(HIGH_TARGET_VIDEO_BITRATE_BPS.toLong() * BITRATE_TOLERANCE_FACTOR)
+
+        assertWithMessage("Audio bitrate with high target should exceed bitrate with low target")
+            .that(highBitrates.audioBitrate)
+            .isGreaterThan(lowBitrates.audioBitrate.scaledBy(MIN_SEPARATION_FACTOR))
+        assertWithMessage("Audio bitrate with low target should be near the target")
+            .that(lowBitrates.audioBitrate)
+            .isAtMost(LOW_TARGET_AUDIO_BITRATE_BPS.toLong() * BITRATE_TOLERANCE_FACTOR)
+        assertWithMessage("Audio bitrate with high target should be near the target")
+            .that(highBitrates.audioBitrate)
+            .isAtMost(HIGH_TARGET_AUDIO_BITRATE_BPS.toLong() * BITRATE_TOLERANCE_FACTOR)
     }
 
     @Test
     fun targetBitrate_viaIntentExtra_isIgnoredWhenDebugModeDisabled() {
-        val lowBitrate = recordVideoAndMeasureBitrate(
-            extras = debugBitrateExtras(LOW_TARGET_BITRATE_BPS)
+        val lowBitrates = recordVideoAndMeasureBitrates(
+            extras = debugBitrateExtras(
+                videoBitrateBps = LOW_TARGET_VIDEO_BITRATE_BPS,
+                audioBitrateBps = LOW_TARGET_AUDIO_BITRATE_BPS
+            )
         )
-        val ignoredBitrate = recordVideoAndMeasureBitrate(
-            extras = Bundle().apply { putInt(KEY_DEBUG_VIDEO_BITRATE, LOW_TARGET_BITRATE_BPS) }
+        val ignoredBitrates = recordVideoAndMeasureBitrates(
+            extras = Bundle().apply {
+                putInt(KEY_DEBUG_VIDEO_BITRATE, LOW_TARGET_VIDEO_BITRATE_BPS)
+                putInt(KEY_DEBUG_AUDIO_BITRATE, LOW_TARGET_AUDIO_BITRATE_BPS)
+            }
         )
 
-        assertWithMessage("Bitrate extra should be ignored when debug mode is disabled")
-            .that(ignoredBitrate)
-            .isGreaterThan(lowBitrate.scaledBy(MIN_SEPARATION_FACTOR))
+        assertWithMessage("Video bitrate extra should be ignored when debug mode is disabled")
+            .that(ignoredBitrates.videoBitrate)
+            .isGreaterThan(lowBitrates.videoBitrate.scaledBy(MIN_SEPARATION_FACTOR))
+        assertWithMessage("Audio bitrate extra should be ignored when debug mode is disabled")
+            .that(ignoredBitrates.audioBitrate)
+            .isGreaterThan(lowBitrates.audioBitrate.scaledBy(MIN_SEPARATION_FACTOR))
     }
 
     @Test
-    fun lowTargetBitrate_viaDebugOverlay_reducesRecordedVideoBitrate() {
-        val defaultBitrate = recordVideoAndMeasureBitrate(extras = debugExtra)
-        val lowBitrate = recordVideoAndMeasureBitrate(extras = debugExtra) {
-            setVideoBitrateViaDebugOverlay(LOW_TARGET_BITRATE_BPS)
+    fun lowTargetBitrate_viaDebugOverlay_reducesRecordedVideoAndAudioBitrates() {
+        val defaultBitrates = recordVideoAndMeasureBitrates(extras = debugExtra)
+        val lowBitrates = recordVideoAndMeasureBitrates(extras = debugExtra) {
+            setBitratesViaDebugOverlay(
+                videoBitrateBps = LOW_TARGET_VIDEO_BITRATE_BPS,
+                audioBitrateBps = LOW_TARGET_AUDIO_BITRATE_BPS
+            )
         }
 
-        assertWithMessage("Bitrate with low debug target should be lower than default bitrate")
-            .that(defaultBitrate)
-            .isGreaterThan(lowBitrate.scaledBy(MIN_SEPARATION_FACTOR))
-        assertWithMessage("Bitrate with low debug target should be near the target")
-            .that(lowBitrate)
-            .isAtMost(LOW_TARGET_BITRATE_BPS.toLong() * BITRATE_TOLERANCE_FACTOR)
+        assertWithMessage("Video bitrate with low target should be lower than default bitrate")
+            .that(defaultBitrates.videoBitrate)
+            .isGreaterThan(lowBitrates.videoBitrate.scaledBy(MIN_SEPARATION_FACTOR))
+        assertWithMessage("Video bitrate with low target should be near the target")
+            .that(lowBitrates.videoBitrate)
+            .isAtMost(LOW_TARGET_VIDEO_BITRATE_BPS.toLong() * BITRATE_TOLERANCE_FACTOR)
+
+        assertWithMessage("Audio bitrate with low target should be lower than default bitrate")
+            .that(defaultBitrates.audioBitrate)
+            .isGreaterThan(lowBitrates.audioBitrate.scaledBy(MIN_SEPARATION_FACTOR))
+        assertWithMessage("Audio bitrate with low target should be near the target")
+            .that(lowBitrates.audioBitrate)
+            .isAtMost(LOW_TARGET_AUDIO_BITRATE_BPS.toLong() * BITRATE_TOLERANCE_FACTOR)
     }
+
+    private data class RecordedBitrates(val videoBitrate: Long, val audioBitrate: Long)
 
     /**
      * Records a video to an explicit file URI via [MediaStore.ACTION_VIDEO_CAPTURE], returns the
-     * measured bitrate of its video track, and deletes the recorded file.
+     * measured bitrates of its video and audio tracks, and deletes the recorded file.
      *
      * @param extras extras passed to the activity.
      * @param beforeRecording actions to perform after the camera is ready and before recording.
      */
-    private fun recordVideoAndMeasureBitrate(
+    private fun recordVideoAndMeasureBitrates(
         extras: Bundle,
         beforeRecording: () -> Unit = {}
-    ): Long {
+    ): RecordedBitrates {
         val timeStamp = System.currentTimeMillis()
         val uri = getTestUri(MOVIES_DIR_PATH, timeStamp, "mp4")
         try {
@@ -164,46 +205,64 @@ class DebugVideoBitrateDeviceTest {
             assertThat(result.resultCode).isEqualTo(Activity.RESULT_OK)
             assertThat(doesMediaExist(uri, VIDEO_PREFIX)).isTrue()
 
-            val bitrate = getVideoTrackBitrate(checkNotNull(uri.path))
-            Log.d(TAG, "Measured video bitrate: $bitrate bps for extras: $extras")
-            return bitrate
+            val filePath = checkNotNull(uri.path)
+            val videoBitrate = getVideoTrackBitrate(filePath)
+            val audioBitrate = getAudioTrackBitrate(filePath)
+            Log.d(
+                TAG,
+                "Measured bitrates (video=$videoBitrate bps, audio=$audioBitrate bps) " +
+                    "for extras: $extras"
+            )
+            return RecordedBitrates(videoBitrate = videoBitrate, audioBitrate = audioBitrate)
         } finally {
             deleteFilesInDirAfterTimestamp(MOVIES_DIR_PATH, instrumentation, timeStamp)
         }
     }
 
-    private fun setVideoBitrateViaDebugOverlay(bitrateBps: Int) {
+    private fun setBitratesViaDebugOverlay(videoBitrateBps: Int, audioBitrateBps: Int) {
         composeTestRule.onNodeWithTag(DEBUG_OVERLAY_BUTTON).performClick()
-        composeTestRule.waitForNodeWithTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_BUTTON)
-        composeTestRule.onNodeWithTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_BUTTON).performClick()
+        composeTestRule.waitForNodeWithTag(DEBUG_OVERLAY_SET_BITRATE_BUTTON)
+        composeTestRule.onNodeWithTag(DEBUG_OVERLAY_SET_BITRATE_BUTTON).performClick()
 
         composeTestRule.waitForNodeWithTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD)
         composeTestRule.onNodeWithTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD)
-            .performTextInput(bitrateBps.toString())
-        composeTestRule.onNodeWithTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_CONFIRM_BUTTON)
+            .performTextInput(videoBitrateBps.toString())
+        composeTestRule.onNodeWithTag(DEBUG_OVERLAY_SET_AUDIO_BITRATE_TEXT_FIELD)
+            .performTextInput(audioBitrateBps.toString())
+        composeTestRule.onNodeWithTag(DEBUG_OVERLAY_SET_BITRATE_CONFIRM_BUTTON)
             .performClick()
 
-        // Wait for the debug menu to reflect the new bitrate, then close the debug overlay.
-        composeTestRule.waitForNodeWithTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_BUTTON)
+        // Wait for the debug menu to reflect the new bitrates, then close the debug overlay.
+        composeTestRule.waitForNodeWithTag(DEBUG_OVERLAY_SET_BITRATE_BUTTON)
         composeTestRule.onNodeWithTag(DEBUG_OVERLAY_VIDEO_BITRATE_TAG, useUnmergedTree = true)
-            .assertTextEquals("$bitrateBps bps")
+            .assertTextEquals("$videoBitrateBps bps")
+        composeTestRule.onNodeWithTag(DEBUG_OVERLAY_AUDIO_BITRATE_TAG, useUnmergedTree = true)
+            .assertTextEquals("$audioBitrateBps bps")
         uiDevice.pressBack()
-        composeTestRule.waitForNodeWithTagToDisappear(DEBUG_OVERLAY_SET_VIDEO_BITRATE_BUTTON)
+        composeTestRule.waitForNodeWithTagToDisappear(DEBUG_OVERLAY_SET_BITRATE_BUTTON)
     }
 
-    private fun debugBitrateExtras(bitrateBps: Int): Bundle =
-        Bundle(debugExtra).apply { putInt(KEY_DEBUG_VIDEO_BITRATE, bitrateBps) }
+    private fun debugBitrateExtras(videoBitrateBps: Int, audioBitrateBps: Int): Bundle =
+        Bundle(debugExtra).apply {
+            putInt(KEY_DEBUG_VIDEO_BITRATE, videoBitrateBps)
+            putInt(KEY_DEBUG_AUDIO_BITRATE, audioBitrateBps)
+        }
 
     private fun Long.scaledBy(factor: Double): Long = (this * factor).toLong()
 
     private companion object {
         const val TAG = "DebugVideoBitrateTest"
         const val KEY_DEBUG_VIDEO_BITRATE = "KEY_DEBUG_VIDEO_BITRATE"
+        const val KEY_DEBUG_AUDIO_BITRATE = "KEY_DEBUG_AUDIO_BITRATE"
         const val RECORDING_DURATION_MILLIS = 3_000L
 
         // Above the codec minimum-quality floor at 1080p and well below the default bitrate.
-        const val LOW_TARGET_BITRATE_BPS = 6_000_000
-        const val HIGH_TARGET_BITRATE_BPS = 24_000_000
+        const val LOW_TARGET_VIDEO_BITRATE_BPS = 6_000_000
+        const val HIGH_TARGET_VIDEO_BITRATE_BPS = 24_000_000
+
+        // Within the AAC encoder's supported range and well below/above the 192 kbps default.
+        const val LOW_TARGET_AUDIO_BITRATE_BPS = 32_000
+        const val HIGH_TARGET_AUDIO_BITRATE_BPS = 256_000
 
         // Minimum ratio between measured bitrates that are expected to differ.
         const val MIN_SEPARATION_FACTOR = 1.5

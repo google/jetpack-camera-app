@@ -35,7 +35,8 @@ class DebugSettingsTest {
             isDebugModeEnabled = true,
             singleLensMode = LensFacing.FRONT,
             testPattern = TestPattern.ColorBars,
-            targetVideoBitrate = 10_000_000
+            targetVideoBitrate = 10_000_000,
+            targetAudioBitrate = 128_000
         )
         val encoded = original.encodeAsString()
         val parsed = DebugSettings.parseFromString(encoded)
@@ -48,7 +49,8 @@ class DebugSettingsTest {
             isDebugModeEnabled = true,
             singleLensMode = LensFacing.BACK,
             testPattern = TestPattern.SolidColor(10u, 20u, 30u, 40u),
-            targetVideoBitrate = 5_000_000
+            targetVideoBitrate = 5_000_000,
+            targetAudioBitrate = 96_000
         )
         val encoded = original.encodeAsString()
         val parsed = DebugSettings.parseFromString(encoded)
@@ -77,26 +79,26 @@ class DebugSettingsTest {
             DebugSettings(true, LensFacing.BACK, TestPattern.Off)
         )
 
-        // Invalid or non-positive bitrate should fall back to null
+        // Invalid or non-positive video or audio bitrate should fall back to null
         val parsedZeroBitrate = DebugSettings.parseFromString(
-            "debug:true;lens:BACK;pattern:Off;bitrate:0"
+            "debug:true;lens:BACK;pattern:Off;bitrate:0;audioBitrate:0"
         )
         assertThat(parsedZeroBitrate).isEqualTo(
-            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null)
+            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null, null)
         )
 
         val parsedNegativeBitrate = DebugSettings.parseFromString(
-            "debug:true;lens:BACK;pattern:Off;bitrate:-1000"
+            "debug:true;lens:BACK;pattern:Off;bitrate:-1000;audioBitrate:-500"
         )
         assertThat(parsedNegativeBitrate).isEqualTo(
-            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null)
+            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null, null)
         )
 
         val parsedMalformedBitrate = DebugSettings.parseFromString(
-            "debug:true;lens:BACK;pattern:Off;bitrate:not_a_number"
+            "debug:true;lens:BACK;pattern:Off;bitrate:not_a_number;audioBitrate:invalid"
         )
         assertThat(parsedMalformedBitrate).isEqualTo(
-            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null)
+            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null, null)
         )
     }
 }

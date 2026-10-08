@@ -28,7 +28,8 @@ const val DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD = "DebugOverlaySetZoomRatioTex
 const val DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON = "DebugOverlaySetZoomRatioSetButton"
 const val DEBUG_OVERLAY_VIDEO_RESOLUTION_TAG = "DebugOverlayVideoResolutionTag"
 const val DEBUG_OVERLAY_VIDEO_BITRATE_TAG = "text_debug_overlay_video_bitrate"
-const val DEBUG_OVERLAY_SET_VIDEO_BITRATE_BUTTON = "btn_debug_overlay_set_video_bitrate"
+const val DEBUG_OVERLAY_AUDIO_BITRATE_TAG = "text_debug_overlay_audio_bitrate"
+const val DEBUG_OVERLAY_SET_BITRATE_BUTTON = "btn_debug_overlay_set_bitrate"
 const val DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD = "text_field_debug_overlay_set_video_bitrate"
-const val DEBUG_OVERLAY_SET_VIDEO_BITRATE_CONFIRM_BUTTON =
-    "btn_debug_overlay_set_video_bitrate_confirm"
+const val DEBUG_OVERLAY_SET_AUDIO_BITRATE_TEXT_FIELD = "text_field_debug_overlay_set_audio_bitrate"
+const val DEBUG_OVERLAY_SET_BITRATE_CONFIRM_BUTTON = "btn_debug_overlay_set_bitrate_confirm"

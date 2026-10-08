@@ -37,7 +37,8 @@ class DebugSettingsNavTypeTest {
             isDebugModeEnabled = true,
             singleLensMode = LensFacing.FRONT,
             testPattern = TestPattern.SolidColor(255u, 128u, 64u, 32u),
-            targetVideoBitrate = 8_000_000
+            targetVideoBitrate = 8_000_000,
+            targetAudioBitrate = 128_000
         )
         val serialized = DebugSettingsNavType.serializeAsValue(original)
         val parsed = DebugSettingsNavType.parseValue(serialized)

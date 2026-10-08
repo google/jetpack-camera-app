@@ -27,12 +27,15 @@ package com.google.jetpackcamera.model
  * @param testPattern Configures the sensor test pattern mode for the camera preview.
  * @param targetVideoBitrate Configures a custom target video encoding bitrate in bits per
  *                           second (bps). If `null`, the default bitrate is used.
+ * @param targetAudioBitrate Configures a custom target audio encoding bitrate in bits per
+ *                           second (bps). If `null`, the default bitrate is used.
  */
 data class DebugSettings(
     val isDebugModeEnabled: Boolean = false,
     val singleLensMode: LensFacing? = null,
     val testPattern: TestPattern = TestPattern.Off,
-    val targetVideoBitrate: Int? = null
+    val targetVideoBitrate: Int? = null,
+    val targetAudioBitrate: Int? = null
 ) {
     companion object {
         /**
@@ -44,6 +47,7 @@ data class DebugSettings(
             var singleLensMode: LensFacing? = null
             var testPattern: TestPattern = TestPattern.Off
             var targetVideoBitrate: Int? = null
+            var targetAudioBitrate: Int? = null
 
             for (part in parts) {
                 val kv = part.split(":")
@@ -53,6 +57,8 @@ data class DebugSettings(
                         "lens" -> singleLensMode = enumValues<LensFacing>()
                             .firstOrNull { it.name == kv[1] }
                         "bitrate" -> targetVideoBitrate = kv[1].toIntOrNull()?.takeIf { it > 0 }
+                        "audioBitrate" ->
+                            targetAudioBitrate = kv[1].toIntOrNull()?.takeIf { it > 0 }
                         "pattern" -> {
                             testPattern = when (kv[1]) {
                                 "Off" -> TestPattern.Off
@@ -103,7 +109,8 @@ data class DebugSettings(
                 isDebugModeEnabled = isDebugModeEnabled,
                 singleLensMode = singleLensMode,
                 testPattern = testPattern,
-                targetVideoBitrate = targetVideoBitrate
+                targetVideoBitrate = targetVideoBitrate,
+                targetAudioBitrate = targetAudioBitrate
             )
         }
 
@@ -118,7 +125,9 @@ data class DebugSettings(
                 else -> pattern.toString()
             }
             val bitrateStr = targetVideoBitrate?.takeIf { it > 0 }?.toString() ?: ""
-            return "debug:$isDebugModeEnabled;lens:$lensStr;pattern:$patternStr;bitrate:$bitrateStr"
+            val audioBitrateStr = targetAudioBitrate?.takeIf { it > 0 }?.toString() ?: ""
+            return "debug:$isDebugModeEnabled;lens:$lensStr;pattern:$patternStr;" +
+                "bitrate:$bitrateStr;audioBitrate:$audioBitrateStr"
         }
     }
 }

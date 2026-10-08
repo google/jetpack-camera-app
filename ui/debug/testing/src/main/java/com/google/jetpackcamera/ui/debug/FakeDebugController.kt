@@ -24,12 +24,14 @@ import com.google.jetpackcamera.model.TestPattern
  * @param toggleDebugOverlayAction The action to perform when [toggleDebugOverlay] is called.
  * @param setTestPatternAction The action to perform when [setTestPattern] is called.
  * @param setTargetVideoBitrateAction The action to perform when [setTargetVideoBitrate] is called.
+ * @param setTargetAudioBitrateAction The action to perform when [setTargetAudioBitrate] is called.
  */
 class FakeDebugController(
     var toggleDebugHidingComponentsAction: () -> Unit = {},
     var toggleDebugOverlayAction: () -> Unit = {},
     var setTestPatternAction: (TestPattern) -> Unit = {},
-    var setTargetVideoBitrateAction: (Int?) -> Unit = {}
+    var setTargetVideoBitrateAction: (Int?) -> Unit = {},
+    var setTargetAudioBitrateAction: (Int?) -> Unit = {}
 ) : DebugController {
     override fun toggleDebugHidingComponents() {
         toggleDebugHidingComponentsAction()
@@ -45,5 +47,9 @@ class FakeDebugController(
 
     override fun setTargetVideoBitrate(bitrate: Int?) {
         setTargetVideoBitrateAction(bitrate)
+    }
+
+    override fun setTargetAudioBitrate(bitrate: Int?) {
+        setTargetAudioBitrateAction(bitrate)
     }
 }

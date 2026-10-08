@@ -25,8 +25,9 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_BUTTON
-import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_VIDEO_BITRATE_BUTTON
-import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_VIDEO_BITRATE_CONFIRM_BUTTON
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_AUDIO_BITRATE_TEXT_FIELD
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_BITRATE_BUTTON
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_BITRATE_CONFIRM_BUTTON
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
@@ -134,7 +135,7 @@ class ExternalAutomationCompatibilityTest {
     }
 
     @Test
-    fun verifyUiAutomator_canFindDebugVideoBitrateDialogControls() {
+    fun verifyUiAutomator_canFindDebugBitrateDialogControls() {
         runMainActivityScenarioTest(debugExtra) {
             // Open debug menu using UI Automator
             val debugButton = device.wait(
@@ -144,28 +145,34 @@ class ExternalAutomationCompatibilityTest {
             assertWithMessage("Debug overlay button not found").that(debugButton).isNotNull()
             debugButton.click()
 
-            // Click "Set Video Bitrate" button using UI Automator
+            // Click "Set Bitrate" button using UI Automator
             val setBitrateButton = device.wait(
-                Until.findObject(By.res(DEBUG_OVERLAY_SET_VIDEO_BITRATE_BUTTON)),
+                Until.findObject(By.res(DEBUG_OVERLAY_SET_BITRATE_BUTTON)),
                 DEFAULT_TIMEOUT_MILLIS
             )
-            assertWithMessage("Set Video Bitrate button not found")
+            assertWithMessage("Set Bitrate button not found")
                 .that(setBitrateButton)
                 .isNotNull()
             setBitrateButton.click()
 
-            // Verify the video bitrate dialog text field is visible to UI Automator
-            val textField = device.wait(
+            // Verify the video and audio bitrate dialog text fields are visible to UI Automator
+            val videoTextField = device.wait(
                 Until.findObject(By.res(DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD)),
                 DEFAULT_TIMEOUT_MILLIS
             )
             assertWithMessage(
                 "Video bitrate text field not found by UI Automator"
-            ).that(textField).isNotNull()
+            ).that(videoTextField).isNotNull()
+
+            val audioTextField =
+                device.findObject(By.res(DEBUG_OVERLAY_SET_AUDIO_BITRATE_TEXT_FIELD))
+            assertWithMessage(
+                "Audio bitrate text field not found by UI Automator"
+            ).that(audioTextField).isNotNull()
 
             // Verify the confirm button is visible to UI Automator
             val confirmButton =
-                device.findObject(By.res(DEBUG_OVERLAY_SET_VIDEO_BITRATE_CONFIRM_BUTTON))
+                device.findObject(By.res(DEBUG_OVERLAY_SET_BITRATE_CONFIRM_BUTTON))
             assertWithMessage(
                 "Confirm button not found by UI Automator"
             ).that(confirmButton).isNotNull()

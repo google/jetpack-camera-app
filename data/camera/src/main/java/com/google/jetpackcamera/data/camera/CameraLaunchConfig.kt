@@ -31,6 +31,7 @@ private const val TAG = "CameraLaunchConfig"
 internal const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
 internal const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
 internal const val KEY_DEBUG_VIDEO_BITRATE = "KEY_DEBUG_VIDEO_BITRATE"
+internal const val KEY_DEBUG_AUDIO_BITRATE = "KEY_DEBUG_AUDIO_BITRATE"
 
 /**
  * Retained configuration options supplied at launch (such as from intent extras).
@@ -73,32 +74,43 @@ internal fun Intent.toDebugSettings(): DebugSettings {
             }
         }
     }
-    val targetVideoBitrate = if (isDebugModeEnabled && hasExtra(KEY_DEBUG_VIDEO_BITRATE)) {
-        val intExtra = getIntExtra(KEY_DEBUG_VIDEO_BITRATE, 0)
-        val longExtra = getLongExtra(KEY_DEBUG_VIDEO_BITRATE, 0L)
-        val parsedBitrate = when {
-            intExtra != 0 -> intExtra
-            longExtra in 1L..Int.MAX_VALUE.toLong() -> longExtra.toInt()
-            longExtra != 0L -> 0
-            else -> getStringExtra(KEY_DEBUG_VIDEO_BITRATE)?.toIntOrNull() ?: 0
-        }
-        if (parsedBitrate > 0) {
-            parsedBitrate
-        } else {
-            Log.e(
-                TAG,
-                "Invalid debug video bitrate argument. Value must be a positive integer."
-            )
-            null
-        }
+    val targetVideoBitrate = if (isDebugModeEnabled) {
+        parseDebugBitrateExtra(KEY_DEBUG_VIDEO_BITRATE, "video")
+    } else {
+        null
+    }
+    val targetAudioBitrate = if (isDebugModeEnabled) {
+        parseDebugBitrateExtra(KEY_DEBUG_AUDIO_BITRATE, "audio")
     } else {
         null
     }
     return DebugSettings(
         isDebugModeEnabled = isDebugModeEnabled,
         singleLensMode = singleLensMode,
-        targetVideoBitrate = targetVideoBitrate
+        targetVideoBitrate = targetVideoBitrate,
+        targetAudioBitrate = targetAudioBitrate
     )
+}
+
+private fun Intent.parseDebugBitrateExtra(key: String, label: String): Int? {
+    if (!hasExtra(key)) return null
+    val intExtra = getIntExtra(key, 0)
+    val longExtra = getLongExtra(key, 0L)
+    val parsedBitrate = when {
+        intExtra != 0 -> intExtra
+        longExtra in 1L..Int.MAX_VALUE.toLong() -> longExtra.toInt()
+        longExtra != 0L -> 0
+        else -> getStringExtra(key)?.toIntOrNull() ?: 0
+    }
+    return if (parsedBitrate > 0) {
+        parsedBitrate
+    } else {
+        Log.e(
+            TAG,
+            "Invalid debug $label bitrate argument. Value must be a positive integer."
+        )
+        null
+    }
 }
 
 /**

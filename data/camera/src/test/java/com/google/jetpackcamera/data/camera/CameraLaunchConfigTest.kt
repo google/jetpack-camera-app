@@ -88,54 +88,68 @@ class CameraLaunchConfigTest {
     }
 
     @Test
-    fun toDebugSettings_mapsVideoBitrateCorrectly() {
-        // Positive int extra when debug mode is enabled
+    fun toDebugSettings_mapsVideoAndAudioBitratesCorrectly() {
+        // Positive int extras when debug mode is enabled
         val intBitrateIntent = Intent().apply {
             putExtra(KEY_DEBUG_MODE, true)
             putExtra(KEY_DEBUG_VIDEO_BITRATE, 10_000_000)
+            putExtra(KEY_DEBUG_AUDIO_BITRATE, 128_000)
         }
         assertThat(intBitrateIntent.toDebugSettings().targetVideoBitrate).isEqualTo(10_000_000)
+        assertThat(intBitrateIntent.toDebugSettings().targetAudioBitrate).isEqualTo(128_000)
 
-        // Positive long extra when debug mode is enabled
+        // Positive long extras when debug mode is enabled
         val longBitrateIntent = Intent().apply {
             putExtra(KEY_DEBUG_MODE, true)
             putExtra(KEY_DEBUG_VIDEO_BITRATE, 15_000_000L)
+            putExtra(KEY_DEBUG_AUDIO_BITRATE, 96_000L)
         }
         assertThat(longBitrateIntent.toDebugSettings().targetVideoBitrate).isEqualTo(15_000_000)
+        assertThat(longBitrateIntent.toDebugSettings().targetAudioBitrate).isEqualTo(96_000)
 
-        // Positive string extra when debug mode is enabled
+        // Positive string extras when debug mode is enabled
         val stringBitrateIntent = Intent().apply {
             putExtra(KEY_DEBUG_MODE, true)
             putExtra(KEY_DEBUG_VIDEO_BITRATE, "8000000")
+            putExtra(KEY_DEBUG_AUDIO_BITRATE, "64000")
         }
         assertThat(stringBitrateIntent.toDebugSettings().targetVideoBitrate).isEqualTo(8_000_000)
+        assertThat(stringBitrateIntent.toDebugSettings().targetAudioBitrate).isEqualTo(64_000)
 
         // Ignored when debug mode is disabled
         val debugDisabledIntent = Intent().apply {
             putExtra(KEY_DEBUG_MODE, false)
             putExtra(KEY_DEBUG_VIDEO_BITRATE, 10_000_000)
+            putExtra(KEY_DEBUG_AUDIO_BITRATE, 128_000)
         }
         assertThat(debugDisabledIntent.toDebugSettings().targetVideoBitrate).isNull()
+        assertThat(debugDisabledIntent.toDebugSettings().targetAudioBitrate).isNull()
 
         // Zero or negative values fall back to null
         val zeroBitrateIntent = Intent().apply {
             putExtra(KEY_DEBUG_MODE, true)
             putExtra(KEY_DEBUG_VIDEO_BITRATE, 0)
+            putExtra(KEY_DEBUG_AUDIO_BITRATE, 0)
         }
         assertThat(zeroBitrateIntent.toDebugSettings().targetVideoBitrate).isNull()
+        assertThat(zeroBitrateIntent.toDebugSettings().targetAudioBitrate).isNull()
 
         val negativeBitrateIntent = Intent().apply {
             putExtra(KEY_DEBUG_MODE, true)
             putExtra(KEY_DEBUG_VIDEO_BITRATE, -500)
+            putExtra(KEY_DEBUG_AUDIO_BITRATE, -500)
         }
         assertThat(negativeBitrateIntent.toDebugSettings().targetVideoBitrate).isNull()
+        assertThat(negativeBitrateIntent.toDebugSettings().targetAudioBitrate).isNull()
 
-        // Malformed string extra falls back to null
+        // Malformed string extras fall back to null
         val invalidStringBitrateIntent = Intent().apply {
             putExtra(KEY_DEBUG_MODE, true)
             putExtra(KEY_DEBUG_VIDEO_BITRATE, "invalid")
+            putExtra(KEY_DEBUG_AUDIO_BITRATE, "invalid")
         }
         assertThat(invalidStringBitrateIntent.toDebugSettings().targetVideoBitrate).isNull()
+        assertThat(invalidStringBitrateIntent.toDebugSettings().targetAudioBitrate).isNull()
     }
 
     @Test
@@ -145,6 +159,7 @@ class CameraLaunchConfigTest {
             putExtra(KEY_DEBUG_MODE, true)
             putExtra(KEY_DEBUG_SINGLE_LENS_MODE, "back")
             putExtra(KEY_DEBUG_VIDEO_BITRATE, 12_000_000)
+            putExtra(KEY_DEBUG_AUDIO_BITRATE, 128_000)
         }
         provider.setIntent(intent)
 
@@ -154,7 +169,8 @@ class CameraLaunchConfigTest {
                 debugSettings = DebugSettings(
                     isDebugModeEnabled = true,
                     singleLensMode = LensFacing.BACK,
-                    targetVideoBitrate = 12_000_000
+                    targetVideoBitrate = 12_000_000,
+                    targetAudioBitrate = 128_000
                 )
             )
         )

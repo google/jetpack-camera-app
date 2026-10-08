@@ -49,7 +49,8 @@ internal sealed interface PerpetualSessionSettings {
         val videoQuality: VideoQuality,
         val imageFormat: ImageOutputFormat,
         val lowLightBoostPriority: LowLightBoostPriority,
-        val targetVideoBitrate: Int? = null
+        val targetVideoBitrate: Int? = null,
+        val targetAudioBitrate: Int? = null
     ) : PerpetualSessionSettings
 
     /**

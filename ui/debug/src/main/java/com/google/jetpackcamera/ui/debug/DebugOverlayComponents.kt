@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.debug
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -37,6 +38,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -65,6 +67,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.settings.model.BitrateConstraints
 import kotlin.math.abs
 
 private const val TAG = "DebugOverlayComponents"
@@ -180,6 +183,7 @@ fun DebugOverlay(
                     onChangeZoomRatio = onChangeZoomRatio,
                     onSetTestPattern = debugController::setTestPattern,
                     onSetTargetVideoBitrate = debugController::setTargetVideoBitrate,
+                    onSetTargetAudioBitrate = debugController::setTargetAudioBitrate,
                     toggleIsOpen = debugController::toggleDebugOverlay,
                     debugUiState = it
                 )
@@ -231,6 +235,7 @@ private fun DebugDialogContainer(
     onChangeZoomRatio: (Float) -> Unit,
     onSetTestPattern: (TestPattern) -> Unit,
     onSetTargetVideoBitrate: (Int?) -> Unit,
+    onSetTargetAudioBitrate: (Int?) -> Unit,
     toggleIsOpen: () -> Unit,
     debugUiState: DebugUiState.Enabled.Open
 ) {
@@ -283,10 +288,13 @@ private fun DebugDialogContainer(
                         onClose = { selectedDialog = SelectedDialog.None }
                     )
 
-                SelectedDialog.SetVideoBitrate ->
-                    SetVideoBitrateDialog(onSetTargetVideoBitrate) {
-                        selectedDialog = SelectedDialog.None
-                    }
+                SelectedDialog.SetBitrate ->
+                    SetBitrateDialog(
+                        debugUiState = debugUiState,
+                        onSetTargetVideoBitrate = onSetTargetVideoBitrate,
+                        onSetTargetAudioBitrate = onSetTargetAudioBitrate,
+                        onClose = { selectedDialog = SelectedDialog.None }
+                    )
             }
         }
     }
@@ -323,21 +331,17 @@ private fun DebugDialogOptionsMenuDialog(
             )
         }
 
-        Row {
-            Text(stringResource(R.string.debug_text_video_bitrate_prefix))
-            val bitrate = debugUiState.targetVideoBitrate
-            val videoBitrateText = if (bitrate == null || bitrate <= 0) {
-                stringResource(R.string.debug_text_video_bitrate_default)
-            } else {
-                stringResource(R.string.debug_text_video_bitrate_bps, bitrate)
-            }
-            Text(
-                modifier = Modifier.testTag(
-                    DEBUG_OVERLAY_VIDEO_BITRATE_TAG
-                ),
-                text = videoBitrateText
-            )
-        }
+        TargetBitrateRow(
+            prefixResId = R.string.debug_text_video_bitrate_prefix,
+            targetBitrate = debugUiState.targetVideoBitrate,
+            tag = DEBUG_OVERLAY_VIDEO_BITRATE_TAG
+        )
+
+        TargetBitrateRow(
+            prefixResId = R.string.debug_text_audio_bitrate_prefix,
+            targetBitrate = debugUiState.targetAudioBitrate,
+            tag = DEBUG_OVERLAY_AUDIO_BITRATE_TAG
+        )
 
         // show camera properties json button
         Button(
@@ -363,16 +367,16 @@ private fun DebugDialogOptionsMenuDialog(
             Text(text = "Set Zoom Ratio")
         }
 
-        // set video bitrate
+        // set video and audio bitrate
         Button(
             modifier = Modifier.testTag(
-                DEBUG_OVERLAY_SET_VIDEO_BITRATE_BUTTON
+                DEBUG_OVERLAY_SET_BITRATE_BUTTON
             ),
             onClick = {
-                onMoveToComponent(SelectedDialog.SetVideoBitrate)
+                onMoveToComponent(SelectedDialog.SetBitrate)
             }
         ) {
-            Text(text = stringResource(R.string.debug_set_video_bitrate_btn_text))
+            Text(text = stringResource(R.string.debug_set_bitrate_btn_text))
         }
 
         // set test pattern
@@ -384,6 +388,22 @@ private fun DebugDialogOptionsMenuDialog(
         ) {
             Text(text = "Set Test Pattern")
         }
+    }
+}
+
+@Composable
+private fun TargetBitrateRow(@StringRes prefixResId: Int, targetBitrate: Int?, tag: String) {
+    Row {
+        Text(stringResource(prefixResId))
+        val bitrateText = if (targetBitrate == null || targetBitrate <= 0) {
+            stringResource(R.string.debug_text_bitrate_default)
+        } else {
+            stringResource(R.string.debug_text_bitrate_bps, targetBitrate)
+        }
+        Text(
+            modifier = Modifier.testTag(tag),
+            text = bitrateText
+        )
     }
 }
 
@@ -449,9 +469,20 @@ private fun SetZoomRatioDialog(onChangeZoomRatio: (Float) -> Unit, onClose: () -
 }
 
 @Composable
-private fun SetVideoBitrateDialog(onSetTargetVideoBitrate: (Int?) -> Unit, onClose: () -> Unit) {
-    val videoBitrateState = rememberTextFieldState()
-    var isError by remember { mutableStateOf(false) }
+private fun SetBitrateDialog(
+    debugUiState: DebugUiState.Enabled.Open,
+    onSetTargetVideoBitrate: (Int?) -> Unit,
+    onSetTargetAudioBitrate: (Int?) -> Unit,
+    onClose: () -> Unit
+) {
+    val videoBitrateState = rememberTextFieldState(
+        initialText = debugUiState.targetVideoBitrate?.takeIf { it > 0 }?.toString() ?: ""
+    )
+    val audioBitrateState = rememberTextFieldState(
+        initialText = debugUiState.targetAudioBitrate?.takeIf { it > 0 }?.toString() ?: ""
+    )
+    var isVideoError by remember { mutableStateOf(false) }
+    var isAudioError by remember { mutableStateOf(false) }
     BackHandler(onBack = { onClose() })
     Box(
         modifier = Modifier
@@ -465,47 +496,107 @@ private fun SetVideoBitrateDialog(onSetTargetVideoBitrate: (Int?) -> Unit, onClo
         val scrollState = rememberScrollState()
         Column(
             modifier = Modifier.verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TextField(
-                modifier = Modifier.testTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD),
+            BitrateTextField(
                 state = videoBitrateState,
-                label = {
-                    Text(
-                        text = stringResource(R.string.debug_set_video_bitrate_dialog_prompt)
-                    )
-                },
-                isError = isError,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                labelResId = R.string.debug_set_video_bitrate_dialog_prompt,
+                bitrateConstraints = debugUiState.videoBitrateConstraints,
+                isError = isVideoError,
+                testTag = DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD
+            )
+            BitrateTextField(
+                state = audioBitrateState,
+                labelResId = R.string.debug_set_audio_bitrate_dialog_prompt,
+                bitrateConstraints = debugUiState.audioBitrateConstraints,
+                isError = isAudioError,
+                testTag = DEBUG_OVERLAY_SET_AUDIO_BITRATE_TEXT_FIELD
             )
             Button(
                 modifier = Modifier.testTag(
-                    DEBUG_OVERLAY_SET_VIDEO_BITRATE_CONFIRM_BUTTON
+                    DEBUG_OVERLAY_SET_BITRATE_CONFIRM_BUTTON
                 ),
                 onClick = {
-                    val trimmed = videoBitrateState.text.toString().trim()
-                    val newBitrate = trimmed.toIntOrNull()
-                    when {
-                        trimmed.isEmpty() || newBitrate == 0 -> {
-                            isError = false
-                            onSetTargetVideoBitrate(null)
-                            onClose()
-                        }
-                        newBitrate == null || newBitrate < 0 -> {
-                            isError = true
-                            Log.d(TAG, "Video bitrate should be a non-negative integer")
-                        }
-                        else -> {
-                            isError = false
-                            onSetTargetVideoBitrate(newBitrate)
-                            onClose()
-                        }
+                    val videoResult = parseBitrateInput(videoBitrateState.text)
+                    val audioResult = parseBitrateInput(audioBitrateState.text)
+                    isVideoError = videoResult is BitrateInputResult.Invalid
+                    isAudioError = audioResult is BitrateInputResult.Invalid
+                    if (videoResult is BitrateInputResult.Valid &&
+                        audioResult is BitrateInputResult.Valid
+                    ) {
+                        onSetTargetVideoBitrate(videoResult.bitrate)
+                        onSetTargetAudioBitrate(audioResult.bitrate)
+                        onClose()
+                    } else {
+                        Log.d(TAG, "Bitrate values should be non-negative integers")
                     }
                 }
             ) {
                 Text(text = stringResource(R.string.debug_dialog_confirm_btn_text))
             }
         }
+    }
+}
+
+@Composable
+private fun BitrateTextField(
+    state: TextFieldState,
+    @StringRes labelResId: Int,
+    bitrateConstraints: BitrateConstraints?,
+    isError: Boolean,
+    testTag: String
+) {
+    val defaultBitrate = bitrateConstraints?.defaultBitrate
+    val supportedRange = bitrateConstraints?.supportedRange
+    TextField(
+        modifier = Modifier.testTag(testTag),
+        state = state,
+        label = {
+            Text(text = stringResource(labelResId))
+        },
+        supportingText = if (defaultBitrate != null || supportedRange != null) {
+            {
+                Column {
+                    if (defaultBitrate != null) {
+                        Text(
+                            text = stringResource(
+                                R.string.debug_bitrate_default_hint,
+                                defaultBitrate
+                            )
+                        )
+                    }
+                    if (supportedRange != null) {
+                        Text(
+                            text = stringResource(
+                                R.string.debug_bitrate_range_hint,
+                                supportedRange.lower,
+                                supportedRange.upper
+                            )
+                        )
+                    }
+                }
+            }
+        } else {
+            null
+        },
+        isError = isError,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+    )
+}
+
+private sealed interface BitrateInputResult {
+    data class Valid(val bitrate: Int?) : BitrateInputResult
+    data object Invalid : BitrateInputResult
+}
+
+private fun parseBitrateInput(text: CharSequence): BitrateInputResult {
+    val trimmed = text.toString().trim()
+    val parsed = trimmed.toIntOrNull()
+    return when {
+        trimmed.isEmpty() || parsed == 0 -> BitrateInputResult.Valid(null)
+        parsed == null || parsed < 0 -> BitrateInputResult.Invalid
+        else -> BitrateInputResult.Valid(parsed)
     }
 }
 
@@ -570,5 +661,5 @@ private enum class SelectedDialog {
     CameraJSON,
     SetZoom,
     SetTestPattern,
-    SetVideoBitrate
+    SetBitrate
 }
