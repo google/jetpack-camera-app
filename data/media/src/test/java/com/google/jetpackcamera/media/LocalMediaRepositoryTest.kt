@@ -595,6 +595,162 @@ class LocalMediaRepositoryTest {
     }
 
     @Test
+    fun lastCapturedMedia_updatesCurrentMediaWhenNotCached() = runTest {
+        val imageValues = createContentValues(
+            displayName = "${filePathGenerator.prefix}_Image_New.jpg",
+            dateAdded = 6000L
+        )
+        val imageUrl =
+            fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
+
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+
+        val current = repository.currentMedia.value
+        assertThat(current).isInstanceOf(MediaDescriptor.Content.Image::class.java)
+        assertThat((current as MediaDescriptor.Content.Image).uri).isEqualTo(imageUrl)
+        assertThat(current).isEqualTo(repository.lastCapturedMedia.value)
+    }
+
+    @Test
+    fun lastCapturedMedia_doesNotOverwriteCachedCurrentMedia() = runTest {
+        val cachedMedia = MediaDescriptor.Content.Image(
+            Uri.parse("file:///cache/temp.jpg"),
+            thumbnail = null,
+            isCached = true
+        )
+        repository.setCurrentMedia(cachedMedia)
+
+        val imageValues = createContentValues(
+            displayName = "${filePathGenerator.prefix}_Image_New.jpg",
+            dateAdded = 6000L
+        )
+        fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+
+        assertThat(repository.currentMedia.value).isEqualTo(cachedMedia)
+    }
+
+    @Test
+    fun deleteMedia_cachedCurrentMedia_fallsBackToLastCapturedMedia() = runTest {
+        val imageValues = createContentValues(
+            displayName = "${filePathGenerator.prefix}_Saved.jpg",
+            dateAdded = 6000L
+        )
+        fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+        val savedMedia = repository.lastCapturedMedia.value
+
+        val cacheDir = ApplicationProvider.getApplicationContext<Context>().cacheDir
+        if (!cacheDir.exists()) cacheDir.mkdirs()
+        val tempFile = File(cacheDir, "temp_cached_image.jpg")
+        tempFile.createNewFile()
+        val cachedMedia = MediaDescriptor.Content.Image(
+            Uri.fromFile(tempFile),
+            thumbnail = null,
+            isCached = true
+        )
+        repository.setCurrentMedia(cachedMedia)
+        assertThat(repository.currentMedia.value).isEqualTo(cachedMedia)
+
+        assertThat(repository.deleteMedia(cachedMedia)).isTrue()
+
+        assertThat(repository.currentMedia.value).isEqualTo(savedMedia)
+    }
+
+    @Test
+    fun deleteMedia_missingCachedCurrentMedia_keepsCurrentMedia() = runTest {
+        val imageValues = createContentValues(
+            displayName = "${filePathGenerator.prefix}_Saved.jpg",
+            dateAdded = 6000L
+        )
+        fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+
+        val missingCachedMedia = MediaDescriptor.Content.Image(
+            Uri.parse("file:///non_existent_cache/missing.jpg"),
+            thumbnail = null,
+            isCached = true
+        )
+        repository.setCurrentMedia(missingCachedMedia)
+        assertThat(repository.currentMedia.value).isEqualTo(missingCachedMedia)
+
+        assertThat(repository.deleteMedia(missingCachedMedia)).isFalse()
+
+        assertThat(repository.currentMedia.value).isEqualTo(missingCachedMedia)
+    }
+
+    @Test
+    fun clearCurrentCachedMedia_cachedCurrentMedia_deletesFileAndFallsBackToLastCapturedMedia() =
+        runTest {
+            val imageValues = createContentValues(
+                displayName = "${filePathGenerator.prefix}_Saved.jpg",
+                dateAdded = 6000L
+            )
+            fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
+            contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+            val savedMedia = repository.lastCapturedMedia.value
+
+            val cacheDir = ApplicationProvider.getApplicationContext<Context>().cacheDir
+            if (!cacheDir.exists()) cacheDir.mkdirs()
+            val tempFile = File(cacheDir, "temp_clear_cached_image.jpg")
+            tempFile.createNewFile()
+            val cachedMedia = MediaDescriptor.Content.Image(
+                Uri.fromFile(tempFile),
+                thumbnail = null,
+                isCached = true
+            )
+            repository.setCurrentMedia(cachedMedia)
+            assertThat(repository.currentMedia.value).isEqualTo(cachedMedia)
+
+            repository.clearCurrentCachedMedia()
+
+            assertThat(tempFile.exists()).isFalse()
+            assertThat(repository.currentMedia.value).isEqualTo(savedMedia)
+        }
+
+    @Test
+    fun clearCurrentCachedMedia_missingCachedCurrentMedia_fallsBackToLastCapturedMedia() = runTest {
+        val imageValues = createContentValues(
+            displayName = "${filePathGenerator.prefix}_Saved.jpg",
+            dateAdded = 6000L
+        )
+        fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+        val savedMedia = repository.lastCapturedMedia.value
+
+        val missingCachedMedia = MediaDescriptor.Content.Image(
+            Uri.parse("file:///non_existent_cache/missing.jpg"),
+            thumbnail = null,
+            isCached = true
+        )
+        repository.setCurrentMedia(missingCachedMedia)
+        assertThat(repository.currentMedia.value).isEqualTo(missingCachedMedia)
+
+        repository.clearCurrentCachedMedia()
+
+        assertThat(repository.currentMedia.value).isEqualTo(savedMedia)
+    }
+
+    @Test
+    fun clearCurrentCachedMedia_nonCachedCurrentMedia_doesNothing() = runTest {
+        val returnedUri = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues()
+        )!!
+        val savedMedia = MediaDescriptor.Content.Image(
+            returnedUri,
+            thumbnail = null,
+            isCached = false
+        )
+        repository.setCurrentMedia(savedMedia)
+
+        repository.clearCurrentCachedMedia()
+
+        assertThat(repository.currentMedia.value).isEqualTo(savedMedia)
+        assertThat(fakeContentProvider.get(returnedUri)).isNotNull()
+    }
+
+    @Test
     fun lastCapturedMedia_videoIsNewer_returnsVideo() = runTest {
         val imageValues = createContentValues(
             displayName = "${filePathGenerator.prefix}_Image.jpg",

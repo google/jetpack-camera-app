@@ -57,8 +57,18 @@ class FakeMediaRepository : MediaRepository {
     }
     var deleteMediaHandler: (MediaDescriptor.Content) -> Boolean = { true }
 
-    override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
+    override fun setCurrentMedia(pendingMedia: MediaDescriptor) {
         _currentMedia.update { pendingMedia }
+    }
+
+    override fun clearCurrentCachedMedia() {
+        val mediaDescriptor = currentMedia.value
+        if (mediaDescriptor is MediaDescriptor.Content && mediaDescriptor.isCached) {
+            deleteMediaHandler(mediaDescriptor)
+            _currentMedia.update { current ->
+                if (current == mediaDescriptor) _lastCapturedMedia.value else current
+            }
+        }
     }
 
     override suspend fun load(mediaDescriptor: MediaDescriptor): Media {
@@ -67,8 +77,18 @@ class FakeMediaRepository : MediaRepository {
 
     override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
         val result = deleteMediaHandler(mediaDescriptor)
-        if (result && mediaDescriptor == currentMedia.value) {
-            _currentMedia.update { MediaDescriptor.None }
+        if (result) {
+            _currentMedia.update { current ->
+                if (current == mediaDescriptor) {
+                    if (mediaDescriptor.isCached) {
+                        _lastCapturedMedia.value
+                    } else {
+                        MediaDescriptor.None
+                    }
+                } else {
+                    current
+                }
+            }
         }
         return result
     }
@@ -86,5 +106,12 @@ class FakeMediaRepository : MediaRepository {
     // Helper for testing
     fun setLastCapturedMedia(mediaDescriptor: MediaDescriptor) {
         _lastCapturedMedia.value = mediaDescriptor
+        _currentMedia.update { current ->
+            if ((current as? MediaDescriptor.Content)?.isCached == true) {
+                current
+            } else {
+                mediaDescriptor
+            }
+        }
     }
 }

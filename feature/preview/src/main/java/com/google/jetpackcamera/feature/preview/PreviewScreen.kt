@@ -104,7 +104,6 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndica
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
-import com.google.jetpackcamera.ui.controller.ImageWellController
 import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.ZoomController
@@ -223,7 +222,6 @@ fun PreviewScreen(
             snackBarController = viewModel.snackBarController,
             quickSettingsController = viewModel.quickSettingsController,
             captureController = viewModel.captureController,
-            imageWellController = viewModel.imageWellController,
             cameraController = viewModel.cameraController,
             screenFlashController = viewModel.screenFlashController,
             zoomController = viewModel.zoomController
@@ -247,7 +245,6 @@ private fun ContentScreen(
     quickSettingsController: QuickSettingsController? = null,
     snackBarController: SnackBarController? = null,
     captureController: CaptureController? = null,
-    imageWellController: ImageWellController? = null,
     cameraController: CameraController? = null,
     screenFlashController: ScreenFlashController? = null,
     zoomController: ZoomController? = null
@@ -314,12 +311,12 @@ private fun ContentScreen(
         scope.launch { scaffoldState.bottomSheetState.hide() }
     }
 
-    val onDismissQuickSettings: () -> Unit = remember(scope, scaffoldState.bottomSheetState) {
-        {
-            scope.launch { scaffoldState.bottomSheetState.hide() }
-            Unit
+    val onDismissQuickSettings: () -> Unit =
+        remember<() -> Unit>(scope, scaffoldState.bottomSheetState) {
+            {
+                scope.launch { scaffoldState.bottomSheetState.hide() }
+            }
         }
-    }
 
     var initialRecordingSettings by remember { mutableStateOf<InitialRecordingSettings?>(null) }
     LaunchedEffect(videoRecordingState.value) {
@@ -759,7 +756,6 @@ private fun ContentScreen(
     val imageWellLambda = remember(
         externalCaptureModeState,
         imageWellState,
-        imageWellController,
         onNavigatePostCapture
     ) {
         @Composable { modifier: Modifier ->
@@ -768,10 +764,7 @@ private fun ContentScreen(
                     ImageWell(
                         modifier = modifier,
                         imageWellUiState = contentState,
-                        onClick = {
-                            imageWellController?.imageWellToRepository(contentState.mediaDescriptor)
-                            onNavigatePostCapture()
-                        }
+                        onClick = onNavigatePostCapture
                     )
                 }
             }
