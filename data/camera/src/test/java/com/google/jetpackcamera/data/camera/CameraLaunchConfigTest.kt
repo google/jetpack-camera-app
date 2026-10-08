@@ -96,6 +96,13 @@ class CameraLaunchConfigTest {
         }
         assertThat(intBitrateIntent.toDebugSettings().targetVideoBitrate).isEqualTo(10_000_000)
 
+        // Positive long extra when debug mode is enabled
+        val longBitrateIntent = Intent().apply {
+            putExtra(KEY_DEBUG_MODE, true)
+            putExtra(KEY_DEBUG_VIDEO_BITRATE, 15_000_000L)
+        }
+        assertThat(longBitrateIntent.toDebugSettings().targetVideoBitrate).isEqualTo(15_000_000)
+
         // Positive string extra when debug mode is enabled
         val stringBitrateIntent = Intent().apply {
             putExtra(KEY_DEBUG_MODE, true)

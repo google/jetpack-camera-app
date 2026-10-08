@@ -75,10 +75,12 @@ internal fun Intent.toDebugSettings(): DebugSettings {
     }
     val targetVideoBitrate = if (isDebugModeEnabled && hasExtra(KEY_DEBUG_VIDEO_BITRATE)) {
         val intExtra = getIntExtra(KEY_DEBUG_VIDEO_BITRATE, 0)
-        val parsedBitrate = if (intExtra != 0) {
-            intExtra
-        } else {
-            getStringExtra(KEY_DEBUG_VIDEO_BITRATE)?.toIntOrNull() ?: 0
+        val longExtra = getLongExtra(KEY_DEBUG_VIDEO_BITRATE, 0L)
+        val parsedBitrate = when {
+            intExtra != 0 -> intExtra
+            longExtra in 1L..Int.MAX_VALUE.toLong() -> longExtra.toInt()
+            longExtra != 0L -> 0
+            else -> getStringExtra(KEY_DEBUG_VIDEO_BITRATE)?.toIntOrNull() ?: 0
         }
         if (parsedBitrate > 0) {
             parsedBitrate

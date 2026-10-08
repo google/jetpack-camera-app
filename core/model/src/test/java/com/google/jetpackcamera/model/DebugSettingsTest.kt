@@ -17,7 +17,6 @@ package com.google.jetpackcamera.model
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.DebugSettings.Companion.encodeAsString
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DebugSettingsTest {
@@ -27,7 +26,7 @@ class DebugSettingsTest {
         val original = DebugSettings()
         val encoded = original.encodeAsString()
         val parsed = DebugSettings.parseFromString(encoded)
-        assertEquals(original, parsed)
+        assertThat(parsed).isEqualTo(original)
     }
 
     @Test
@@ -40,7 +39,7 @@ class DebugSettingsTest {
         )
         val encoded = original.encodeAsString()
         val parsed = DebugSettings.parseFromString(encoded)
-        assertEquals(original, parsed)
+        assertThat(parsed).isEqualTo(original)
     }
 
     @Test
@@ -53,26 +52,30 @@ class DebugSettingsTest {
         )
         val encoded = original.encodeAsString()
         val parsed = DebugSettings.parseFromString(encoded)
-        assertEquals(original, parsed)
+        assertThat(parsed).isEqualTo(original)
     }
 
     @Test
     fun parseFromString_malformedString_returnsDefaultOrSafeValues() {
         // Empty string should fall back to defaults safely
         val parsedEmpty = DebugSettings.parseFromString("")
-        assertEquals(DebugSettings(false, null, TestPattern.Off), parsedEmpty)
+        assertThat(parsedEmpty).isEqualTo(DebugSettings(false, null, TestPattern.Off))
 
         // Invalid pattern name should fall back to TestPattern.Off
         val parsedInvalidPattern = DebugSettings.parseFromString(
             "debug:true;lens:BACK;pattern:InvalidPattern"
         )
-        assertEquals(DebugSettings(true, LensFacing.BACK, TestPattern.Off), parsedInvalidPattern)
+        assertThat(parsedInvalidPattern).isEqualTo(
+            DebugSettings(true, LensFacing.BACK, TestPattern.Off)
+        )
 
         // Malformed SolidColor (missing channel) should fall back to TestPattern.Off
         val parsedInvalidSolidColor = DebugSettings.parseFromString(
             "debug:true;lens:BACK;pattern:SolidColor(1,2,3)"
         )
-        assertEquals(DebugSettings(true, LensFacing.BACK, TestPattern.Off), parsedInvalidSolidColor)
+        assertThat(parsedInvalidSolidColor).isEqualTo(
+            DebugSettings(true, LensFacing.BACK, TestPattern.Off)
+        )
 
         // Invalid or non-positive bitrate should fall back to null
         val parsedZeroBitrate = DebugSettings.parseFromString(
