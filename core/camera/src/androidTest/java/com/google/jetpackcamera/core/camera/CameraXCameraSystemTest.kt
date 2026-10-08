@@ -1109,6 +1109,108 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun setCaptureSubMode_whenSwitchingBetweenSubModesWithConflictingOverrides_activatesSecond():
+        Unit = runBlocking {
+        val secondaryKey = object : CaptureSubModeFeatureKey {
+            override val id = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+        }
+        // First provider forces aspectRatio = ONE_ONE.
+        val firstProvider = FakeCaptureSubModeProvider(
+            featurePolicy = CameraFeaturePolicy(
+                aspectRatio = SettingConfig(AspectRatio.ONE_ONE, OptionVisibility.Hidden)
+            )
+        )
+        // Second provider forces aspectRatio = NINE_SIXTEEN and is incompatible with ONE_ONE.
+        val secondProvider = FakeCaptureSubModeProvider(
+            featurePolicy = CameraFeaturePolicy(
+                aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden)
+            ),
+            subModeId = SECOND_FAKE_CAPTURE_SUB_MODE_ID,
+            isCompatiblePredicate = { settings -> settings.aspectRatio != AspectRatio.ONE_ONE }
+        )
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.IMAGE_ONLY,
+                aspectRatio = AspectRatio.THREE_FOUR
+            ),
+            extraCaptureSubModeProviders = mapOf(
+                FakeCaptureSubModeFeatureKey to Provider { firstProvider },
+                secondaryKey to Provider { secondProvider }
+            )
+        )
+
+        // Activate first sub-mode -> forces 1:1.
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+        var settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+
+        // Switch directly to second sub-mode -> first sub-mode's 1:1 override is restored to 3:4
+        // before evaluating secondProvider, so secondProvider is accepted and enforces 9:16.
+        cameraSystem.setCaptureSubMode(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+        settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.activeCaptureSubModeId).isEqualTo(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+        // Return to DEFAULT -> original 3:4 is restored.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+        settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+        assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+    }
+
+    @Test
+    fun startCamera_withSingleCameraSubMode_transformsCameraSelector(): Unit = runBlocking {
+        var transformInvoked = false
+        val provider = FakeCaptureSubModeProvider(
+            featurePolicy = CameraFeaturePolicy(),
+            sessionBinding = CameraSessionBinding.SingleCamera { _, baseSelector ->
+                transformInvoked = true
+                baseSelector
+            }
+        )
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.IMAGE_ONLY
+            ),
+            captureSubModeProvider = provider,
+            defaultCaptureSubModes = mapOf(
+                CaptureMode.IMAGE_ONLY to FakeCaptureSubModeFeatureKey
+            )
+        )
+
+        cameraSystem.startCameraAndWaitUntilRunning()
+        assertThat(transformInvoked).isTrue()
+    }
+
+    @Test
+    fun startCamera_withCustomSessionSubMode_invokesCustomRunSession(): Unit = runBlocking {
+        val customSessionStarted = CompletableDeferred<Boolean>()
+        val provider = FakeCaptureSubModeProvider(
+            featurePolicy = CameraFeaturePolicy(),
+            sessionBinding = CameraSessionBinding.Custom {
+                customSessionStarted.complete(true)
+                kotlinx.coroutines.awaitCancellation()
+            }
+        )
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.IMAGE_ONLY
+            ),
+            captureSubModeProvider = provider,
+            defaultCaptureSubModes = mapOf(
+                CaptureMode.IMAGE_ONLY to FakeCaptureSubModeFeatureKey
+            )
+        )
+
+        cameraJob = cameraSystemScope.launch { cameraSystem.runCamera() }
+        assertThat(withTimeout(GENERAL_TIMEOUT_MS) { customSessionStarted.await() }).isTrue()
+    }
+
+    @Test
     fun switchConcurrentCameraMode_toDual_updatesAspectRatio(): Unit = runBlocking {
         // Arrange. Start with STANDARD mode and 4:3 aspect ratio
         val cameraSystem =
@@ -1163,7 +1265,9 @@ private class FakeCaptureSubModeProvider(
     override val featurePolicy: CameraFeaturePolicy,
     subModeId: CaptureSubModeId = FAKE_CAPTURE_SUB_MODE_ID,
     private val supportedLenses: Set<LensFacing> = setOf(LensFacing.FRONT, LensFacing.BACK),
-    private val isCompatiblePredicate: (CameraAppSettings) -> Boolean = { true }
+    private val isCompatiblePredicate: (CameraAppSettings) -> Boolean = { true },
+    override val sessionBinding: CameraSessionBinding =
+        CameraSessionBinding.SingleCamera { _, baseSelector -> baseSelector }
 ) : CaptureSubModeProvider {
     override val descriptor = CaptureSubModeDescriptor(
         id = subModeId,
@@ -1183,9 +1287,6 @@ private class FakeCaptureSubModeProvider(
         externalCaptureMode: ExternalCaptureMode
     ): Boolean = super.isCompatibleWith(settings, systemConstraints, externalCaptureMode) &&
         isCompatiblePredicate(settings)
-
-    override val sessionBinding =
-        CameraSessionBinding.SingleCamera { _, baseSelector -> baseSelector }
 }
 
 class FakeImagePostProcessor(val shouldError: Boolean = false) : ImagePostProcessor {

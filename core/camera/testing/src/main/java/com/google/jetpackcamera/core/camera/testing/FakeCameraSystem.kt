@@ -297,7 +297,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     override suspend fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {
         currentSettings.update { old ->
-            old.copy(captureSubModeId = captureSubModeId)
+            old.copy(
+                captureSubModeId = captureSubModeId,
+                activeCaptureSubModeId = captureSubModeId
+            )
         }
     }
 
