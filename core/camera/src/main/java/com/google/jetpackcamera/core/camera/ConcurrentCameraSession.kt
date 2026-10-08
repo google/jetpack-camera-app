@@ -39,7 +39,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 private const val TAG = "ConcurrentCameraSession"
 
@@ -62,35 +61,31 @@ internal suspend fun runConcurrentCameraSession(
         .first()
 
     try {
-        // Camera info lookup and use case construction can block, so they are kept off the calling
-        // (typically main) thread.
-        val useCaseGroup = withContext(backgroundDispatcher) {
-            val videoCapture = if (sessionSettings.captureMode != CaptureMode.IMAGE_ONLY) {
-                createVideoUseCase(
-                    cameraProvider.getCameraInfo(
-                        initialTransientSettings.primaryLensFacing.toCameraSelector()
-                    ),
-                    sessionSettings.aspectRatio,
-                    TARGET_FPS_AUTO,
-                    StabilizationMode.OFF,
-                    DynamicRange.SDR,
-                    VideoQuality.UNSPECIFIED,
-                    backgroundDispatcher
-                )
-            } else {
-                null
-            }
-
-            createUseCaseGroup(
-                cameraInfo = sessionSettings.primaryCameraInfo,
-                initialTransientSettings = initialTransientSettings,
-                stabilizationMode = StabilizationMode.OFF,
-                aspectRatio = sessionSettings.aspectRatio,
-                imageFormat = ImageOutputFormat.JPEG,
-                captureMode = sessionSettings.captureMode,
-                videoCaptureUseCase = videoCapture
+        val videoCapture = if (sessionSettings.captureMode != CaptureMode.IMAGE_ONLY) {
+            createVideoUseCase(
+                cameraProvider.getCameraInfo(
+                    initialTransientSettings.primaryLensFacing.toCameraSelector()
+                ),
+                sessionSettings.aspectRatio,
+                TARGET_FPS_AUTO,
+                StabilizationMode.OFF,
+                DynamicRange.SDR,
+                VideoQuality.UNSPECIFIED,
+                backgroundDispatcher
             )
-        }.apply { attachPreviewSurfaceProvider(surfaceRequests) }
+        } else {
+            null
+        }
+
+        val useCaseGroup = createUseCaseGroup(
+            cameraInfo = sessionSettings.primaryCameraInfo,
+            initialTransientSettings = initialTransientSettings,
+            stabilizationMode = StabilizationMode.OFF,
+            aspectRatio = sessionSettings.aspectRatio,
+            imageFormat = ImageOutputFormat.JPEG,
+            captureMode = sessionSettings.captureMode,
+            videoCaptureUseCase = videoCapture
+        ).apply { attachPreviewSurfaceProvider(surfaceRequests) }
 
         val cameraConfigs = listOf(
             Pair(
