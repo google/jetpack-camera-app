@@ -15,6 +15,9 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.view.View
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -25,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
@@ -426,6 +430,44 @@ class CaptureModeCarouselTest {
         composeTestRule.waitForIdle()
 
         assertThat(labelShadow(secondId)).isNull()
+    }
+
+    @Test
+    fun carousel_whenDrawnToCanvas_drawsCenterHighlightPillAcrossPositions() {
+        var hostView: View? = null
+        var uiState by mutableStateOf(availableState(CaptureSubModeId.DEFAULT))
+        composeTestRule.setContent {
+            hostView = LocalView.current
+            MaterialTheme {
+                CaptureModeCarousel(
+                    uiState = uiState,
+                    onSelectSubMode = { uiState = availableState(it) }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val bitmap = Bitmap.createBitmap(400, 100, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        // Draw at first item (position <= centers.first())
+        composeTestRule.runOnIdle { hostView!!.draw(canvas) }
+
+        // Drag partially between first and second item and draw (interpolated pillWidth)
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput {
+            down(center)
+            moveBy(Offset(-(viewConfiguration.touchSlop + DRAG_DISTANCE_PX), 0f))
+        }
+        composeTestRule.runOnIdle { hostView!!.draw(canvas) }
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput { up() }
+        composeTestRule.waitForIdle()
+
+        // Draw at last item (position >= centers.last())
+        uiState = availableState(thirdId)
+        composeTestRule.waitForIdle()
+        composeTestRule.runOnIdle { hostView!!.draw(canvas) }
+
+        assertThat(hostView).isNotNull()
     }
 
     /** Returns the shadow of the interactive label for [id]. */

@@ -620,9 +620,7 @@ private fun ContentScreen(
         @Composable { modifier: Modifier ->
             CaptureModeCarousel(
                 uiState = captureSubModeState.value,
-                onSelectSubMode = { subModeId ->
-                    quickSettingsController?.setCaptureSubMode(subModeId)
-                },
+                onSelectSubMode = { quickSettingsController?.setCaptureSubMode(it) },
                 modifier = modifier
             )
         }
@@ -931,7 +929,7 @@ private fun LayoutWrapper(
     pauseToggleButton: @Composable (modifier: Modifier) -> Unit,
     audioToggleButton: @Composable (modifier: Modifier) -> Unit,
     captureModeToggle: @Composable (modifier: Modifier) -> Unit,
-    captureModeCarousel: @Composable (modifier: Modifier) -> Unit = {},
+    captureModeCarousel: @Composable (modifier: Modifier) -> Unit,
     imageWell: @Composable (modifier: Modifier) -> Unit,
     quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
     debugOverlay: @Composable (
