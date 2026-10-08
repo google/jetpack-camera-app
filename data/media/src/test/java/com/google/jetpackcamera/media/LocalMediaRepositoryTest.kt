@@ -658,14 +658,13 @@ class LocalMediaRepositoryTest {
     }
 
     @Test
-    fun deleteMedia_missingCachedCurrentMedia_fallsBackToLastCapturedMedia() = runTest {
+    fun deleteMedia_missingCachedCurrentMedia_keepsCurrentMedia() = runTest {
         val imageValues = createContentValues(
             displayName = "${filePathGenerator.prefix}_Saved.jpg",
             dateAdded = 6000L
         )
         fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
         contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
-        val savedMedia = repository.lastCapturedMedia.value
 
         val missingCachedMedia = MediaDescriptor.Content.Image(
             Uri.parse("file:///non_existent_cache/missing.jpg"),
@@ -677,7 +676,7 @@ class LocalMediaRepositoryTest {
 
         assertThat(repository.deleteMedia(missingCachedMedia)).isFalse()
 
-        assertThat(repository.currentMedia.value).isEqualTo(savedMedia)
+        assertThat(repository.currentMedia.value).isEqualTo(missingCachedMedia)
     }
 
     @Test
@@ -708,6 +707,29 @@ class LocalMediaRepositoryTest {
             assertThat(tempFile.exists()).isFalse()
             assertThat(repository.currentMedia.value).isEqualTo(savedMedia)
         }
+
+    @Test
+    fun clearCurrentCachedMedia_missingCachedCurrentMedia_fallsBackToLastCapturedMedia() = runTest {
+        val imageValues = createContentValues(
+            displayName = "${filePathGenerator.prefix}_Saved.jpg",
+            dateAdded = 6000L
+        )
+        fakeContentProvider.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageValues)!!
+        contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
+        val savedMedia = repository.lastCapturedMedia.value
+
+        val missingCachedMedia = MediaDescriptor.Content.Image(
+            Uri.parse("file:///non_existent_cache/missing.jpg"),
+            thumbnail = null,
+            isCached = true
+        )
+        repository.setCurrentMedia(missingCachedMedia)
+        assertThat(repository.currentMedia.value).isEqualTo(missingCachedMedia)
+
+        repository.clearCurrentCachedMedia()
+
+        assertThat(repository.currentMedia.value).isEqualTo(savedMedia)
+    }
 
     @Test
     fun clearCurrentCachedMedia_nonCachedCurrentMedia_doesNothing() = runTest {

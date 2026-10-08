@@ -305,6 +305,9 @@ class LocalMediaRepository(
             repositoryScope.launch {
                 if (!deleteMedia(mediaDescriptor)) {
                     Log.e(TAG, "Failed to delete media from cache: ${mediaDescriptor.uri}")
+                    _currentMedia.update { current ->
+                        if (current == mediaDescriptor) lastCapturedMedia.value else current
+                    }
                 }
             }
         }
@@ -332,12 +335,18 @@ class LocalMediaRepository(
                 } else {
                     deleteCachedMedia(mediaDescriptor.uri)
                 }
-            if ((finalResult || mediaDescriptor.isCached) &&
-                currentMedia.value == mediaDescriptor
-            ) {
-                setCurrentMedia(
-                    if (mediaDescriptor.isCached) lastCapturedMedia.value else MediaDescriptor.None
-                )
+            if (finalResult) {
+                _currentMedia.update { current ->
+                    if (current == mediaDescriptor) {
+                        if (mediaDescriptor.isCached) {
+                            lastCapturedMedia.value
+                        } else {
+                            MediaDescriptor.None
+                        }
+                    } else {
+                        current
+                    }
+                }
             }
             finalResult
         }.await()
