@@ -620,7 +620,9 @@ private fun ContentScreen(
         @Composable { modifier: Modifier ->
             CaptureModeCarousel(
                 uiState = captureSubModeState.value,
-                onSelectSubMode = { quickSettingsController?.setCaptureSubMode(it) },
+                onSelectSubMode = { subModeId ->
+                    quickSettingsController?.setCaptureSubMode(subModeId)
+                },
                 modifier = modifier
             )
         }
