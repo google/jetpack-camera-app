@@ -38,6 +38,7 @@ import com.google.jetpackcamera.ui.debug.PHYSICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.debug.ZOOM_RATIO_TAG
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra
+import com.google.jetpackcamera.utils.hasFrontAndBackCameras
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
@@ -68,7 +69,11 @@ class DebugOverlayTest {
         runMainActivityScenarioTest(debugExtra) {
             composeTestRule.waitForCaptureButton()
             composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
-            composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
+            if (hasFrontAndBackCameras()) {
+                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
+            } else {
+                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
+            }
             composeTestRule.onNodeWithTag(DEBUG_OVERLAY_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(LOGICAL_CAMERA_ID_TAG).assertExists()
             composeTestRule.onNodeWithTag(PHYSICAL_CAMERA_ID_TAG).assertExists()
@@ -88,7 +93,11 @@ class DebugOverlayTest {
             composeTestRule.onNodeWithTag(BTN_DEBUG_HIDE_COMPONENTS_TAG).performClick()
 
             composeTestRule.waitForNodeWithTag(CAPTURE_BUTTON)
-            composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
+            if (hasFrontAndBackCameras()) {
+                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertExists()
+            } else {
+                composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
+            }
             composeTestRule.onNodeWithTag(DEBUG_OVERLAY_BUTTON).assertExists()
             composeTestRule.onNodeWithTag(LOGICAL_CAMERA_ID_TAG).assertExists()
             composeTestRule.onNodeWithTag(PHYSICAL_CAMERA_ID_TAG).assertExists()
