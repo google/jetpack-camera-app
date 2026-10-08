@@ -61,13 +61,21 @@ class FakeMediaRepository : MediaRepository {
         _currentMedia.update { pendingMedia }
     }
 
+    override fun clearCurrentCachedMedia() {
+        val mediaDescriptor = currentMedia.value
+        if (mediaDescriptor is MediaDescriptor.Content && mediaDescriptor.isCached) {
+            deleteMediaHandler(mediaDescriptor)
+            _currentMedia.update { _lastCapturedMedia.value }
+        }
+    }
+
     override suspend fun load(mediaDescriptor: MediaDescriptor): Media {
         return loadHandler(mediaDescriptor)
     }
 
     override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
         val result = deleteMediaHandler(mediaDescriptor)
-        if (result && mediaDescriptor == currentMedia.value) {
+        if ((result || mediaDescriptor.isCached) && mediaDescriptor == currentMedia.value) {
             _currentMedia.update {
                 if (mediaDescriptor.isCached) _lastCapturedMedia.value else MediaDescriptor.None
             }

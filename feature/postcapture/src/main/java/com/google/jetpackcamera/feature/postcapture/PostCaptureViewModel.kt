@@ -42,7 +42,6 @@ import com.google.jetpackcamera.ui.uistateadapter.postcapture.from
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -177,15 +176,7 @@ class PostCaptureViewModel @Inject constructor(
     // todo(kc): improve cache cleanup strategy
     override fun onCleared() {
         releasePlayer()
-        val mediaDescriptor: MediaDescriptor = mediaRepository.currentMedia.value
-
-        if (mediaDescriptor is MediaDescriptor.Content && mediaDescriptor.isCached) {
-            viewModelScope.launch(NonCancellable) {
-                if (!mediaRepository.deleteMedia(mediaDescriptor)) {
-                    Log.e(TAG, "Failed to delete media from cache: ${mediaDescriptor.uri}")
-                }
-            }
-        }
+        mediaRepository.clearCurrentCachedMedia()
     }
 
     private fun updatePlayerState(commands: Player.Commands?) {

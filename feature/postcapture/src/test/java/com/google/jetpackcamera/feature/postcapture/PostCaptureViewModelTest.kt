@@ -209,8 +209,9 @@ internal class PostCaptureViewModelTest {
     }
 
     @Test
-    fun onCleared_deleteCachedMediaFails_mediaNotCleared() = runTest(testDispatcher) {
+    fun onCleared_deleteCachedMediaFails_fallsBackToLastCapturedMedia() = runTest(testDispatcher) {
         // Arrange
+        mediaRepository.setLastCapturedMedia(testImageDesc)
         mediaRepository.setCurrentMedia(testCacheImageDesc)
         mediaRepository.deleteMediaHandler = { false } // Simulate failure
         advanceUntilIdle()
@@ -220,9 +221,8 @@ internal class PostCaptureViewModelTest {
         testExternalScope.advanceUntilIdle() // Run the external scope job
 
         // Assert
-        // The ViewModel should have attempted to delete, but the fake repository
-        // should not have cleared the media on failure.
-        assertThat(mediaRepository.currentMedia.value).isEqualTo(testCacheImageDesc)
+        // Even if deleting the cached file fails, currentMedia should fall back to lastCapturedMedia.
+        assertThat(mediaRepository.currentMedia.value).isEqualTo(testImageDesc)
     }
 
     @Test
