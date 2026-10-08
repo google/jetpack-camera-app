@@ -814,6 +814,31 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun setImageFormatAndDynamicRange_inCaptureSubMode_keepsPolicyValues(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the image format and dynamic range.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    imageFormat = SettingConfig(ImageOutputFormat.JPEG, OptionVisibility.Hidden),
+                    dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act.
+        cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+        cameraSystem.setDynamicRange(DynamicRange.HLG10)
+
+        // Assert. The sub-mode stays active and its policy values are kept.
+        val settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        assertThat(settings.dynamicRange).isEqualTo(DynamicRange.SDR)
+    }
+
+    @Test
     fun initialize_offersHdrVideoOnlyWithTenBitCapability(): Unit = runBlocking {
         // Arrange.
         val cameraSystem = createAndInitCameraXCameraSystem()
@@ -1248,6 +1273,23 @@ class CameraXCameraSystemTest {
 
         // Clean-up.
         settingsCheck.cancel()
+    }
+
+    @Test
+    fun setConcurrentCameraMode_toDual_switchesToVideoOnlyOnlyIfAccepted(): Unit = runBlocking {
+        // Arrange.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = CameraAppSettings(captureMode = CaptureMode.STANDARD)
+        )
+
+        // Act.
+        cameraSystem.setConcurrentCameraMode(ConcurrentCameraMode.DUAL)
+
+        // Assert. The capture mode is only switched if the device accepts dual concurrent camera.
+        val settings = cameraSystem.getCurrentSettings().value!!
+        val dualAccepted = settings.concurrentCameraMode == ConcurrentCameraMode.DUAL
+        assertThat(settings.captureMode)
+            .isEqualTo(if (dualAccepted) CaptureMode.VIDEO_ONLY else CaptureMode.STANDARD)
     }
 }
 
