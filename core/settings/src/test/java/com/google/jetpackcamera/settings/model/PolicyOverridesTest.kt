@@ -171,13 +171,22 @@ class PolicyOverridesTest {
         assertThat(settingsWithSubMode.activeCaptureSubModeId).isEqualTo(subModeId)
         assertThat(settingsWithSubMode.captureSubModeOverrides).isEqualTo(overrides)
 
-        val backConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints
-            .getValue(LensFacing.BACK)
-            .copy(
-                supportedCaptureSubModes = setOf(subModeId),
-                defaultCaptureSubModes = mapOf(CaptureMode.IMAGE_ONLY to subModeId)
-            )
-        val systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+        val backConstraints = CameraConstraints(
+            supportedStabilizationModes = emptySet(),
+            supportedFixedFrameRates = emptySet(),
+            supportedDynamicRanges = setOf(DynamicRange.SDR),
+            supportedVideoQualitiesMap = emptyMap(),
+            supportedImageFormatsMap = emptyMap(),
+            supportedIlluminants = emptySet(),
+            supportedFlashModes = setOf(FlashMode.OFF),
+            supportedZoomRange = null,
+            unsupportedStabilizationFpsMap = emptyMap(),
+            supportedTestPatterns = emptySet(),
+            supportedCaptureSubModes = setOf(subModeId),
+            defaultCaptureSubModes = mapOf(CaptureMode.IMAGE_ONLY to subModeId)
+        )
+        val systemConstraints = CameraSystemConstraints(
+            availableLenses = listOf(LensFacing.BACK),
             perLensConstraints = mapOf(LensFacing.BACK to backConstraints),
             captureSubModeDescriptors = mapOf(subModeId to descriptor),
             captureSubModePolicies = mapOf(subModeId to restrictivePolicy)
