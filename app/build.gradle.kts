@@ -198,6 +198,11 @@ dependencies {
     implementation(project(":core:camera:postprocess:postprocess-di"))
     implementation(project(":core:camera:low-light-playservices"))
     implementation(project(":core:camera:effects:single-stream"))
+
+    // Location implementations
+    implementation(project(":core:location"))
+    implementation(project(":core:location:location-di"))
+    implementation(project(":core:location:location-manager-di"))
 }
 
 // Allow references to generated code

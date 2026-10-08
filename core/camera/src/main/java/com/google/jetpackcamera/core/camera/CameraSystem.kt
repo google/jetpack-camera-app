@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.content.ContentResolver
+import android.location.Location
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.model.AspectRatio
@@ -74,12 +75,14 @@ interface CameraSystem {
      *
      * @param contentResolver The [ContentResolver] to use for saving the image.
      * @param saveLocation The location to save the captured image.
+     * @param location The geographic [Location] to attach to image EXIF metadata, or `null` to omit.
      * @param onCaptureStarted A callback that is invoked when the capture starts.
      * @return An [ImageCapture.OutputFileResults] object containing the result of the capture.
      */
     suspend fun takePicture(
         contentResolver: ContentResolver,
         saveLocation: SaveLocation,
+        location: Location? = null,
         onCaptureStarted: (() -> Unit) = {}
     ): ImageCapture.OutputFileResults
 
@@ -87,10 +90,12 @@ interface CameraSystem {
      * Starts video recording.
      *
      * @param saveLocation The location to save the recorded video.
+     * @param location The geographic [Location] to attach to video ISO-6709 metadata, or `null` to omit.
      * @param onVideoRecord A callback to handle video recording events.
      */
     suspend fun startVideoRecording(
         saveLocation: SaveLocation,
+        location: Location? = null,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
 
