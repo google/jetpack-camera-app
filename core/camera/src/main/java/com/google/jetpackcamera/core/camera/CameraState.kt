@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.net.Uri
+import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.StabilizationMode
@@ -37,6 +38,7 @@ import com.google.jetpackcamera.model.VideoQuality
  * @param debugInfo Information for debugging purposes.
  * @param videoQualityInfo Information about the current video quality.
  * @param focusState The current focus state of the camera.
+ * @param cameraError The current camera error, if any.
  */
 data class CameraState(
     val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
@@ -49,7 +51,8 @@ data class CameraState(
     val lowLightBoostState: LowLightBoostState = LowLightBoostState.Inactive,
     val debugInfo: DebugInfo = DebugInfo(null, null),
     val videoQualityInfo: VideoQualityInfo = VideoQualityInfo(VideoQuality.UNSPECIFIED, 0, 0),
-    val focusState: FocusState = FocusState.Unspecified
+    val focusState: FocusState = FocusState.Unspecified,
+    val cameraError: CameraError? = null
 )
 
 /**
