@@ -53,6 +53,12 @@ internal sealed interface PerpetualSessionSettings {
         val activeCaptureSubMode: CaptureSubModeFeatureKey? = null
     ) : PerpetualSessionSettings
 
+    data class CustomSession(
+        val subModeKey: CaptureSubModeFeatureKey,
+        override val aspectRatio: AspectRatio,
+        override val captureMode: CaptureMode
+    ) : PerpetualSessionSettings
+
     /**
      * @property captureMode is always [com.google.jetpackcamera.model.CaptureMode.VIDEO_ONLY] in Concurrent Camera mode.
      * Concurrent Camera currently only supports video capture

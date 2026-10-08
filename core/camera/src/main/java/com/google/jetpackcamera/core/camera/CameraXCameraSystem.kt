@@ -596,21 +596,31 @@ class CameraXCameraSystem(
                             it.id == currentCameraSettings.selectedCameraEffect
                         }
 
-                        val activeCaptureSubMode =
-                            registeredSubModes[currentCameraSettings.activeCaptureSubModeId]?.key
-
-                        PerpetualSessionSettings.SingleCamera(
-                            aspectRatio = currentCameraSettings.aspectRatio,
-                            captureMode = currentCameraSettings.captureMode,
-                            activeCameraEffect = activeCameraEffect,
-                            targetFrameRate = currentCameraSettings.targetFrameRate,
-                            stabilizationMode = resolvedStabilizationMode,
-                            dynamicRange = currentCameraSettings.dynamicRange,
-                            videoQuality = currentCameraSettings.videoQuality,
-                            imageFormat = currentCameraSettings.imageFormat,
-                            lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority,
-                            activeCaptureSubMode = activeCaptureSubMode
-                        )
+                        val activeSubMode =
+                            registeredSubModes[currentCameraSettings.activeCaptureSubModeId]
+                        val activeSubModeBinding = activeSubMode?.provider?.sessionBinding
+                        if (activeSubMode != null &&
+                            activeSubModeBinding is CameraSessionBinding.Custom
+                        ) {
+                            PerpetualSessionSettings.CustomSession(
+                                subModeKey = activeSubMode.key,
+                                aspectRatio = currentCameraSettings.aspectRatio,
+                                captureMode = currentCameraSettings.captureMode
+                            )
+                        } else {
+                            PerpetualSessionSettings.SingleCamera(
+                                aspectRatio = currentCameraSettings.aspectRatio,
+                                captureMode = currentCameraSettings.captureMode,
+                                activeCameraEffect = activeCameraEffect,
+                                targetFrameRate = currentCameraSettings.targetFrameRate,
+                                stabilizationMode = resolvedStabilizationMode,
+                                dynamicRange = currentCameraSettings.dynamicRange,
+                                videoQuality = currentCameraSettings.videoQuality,
+                                imageFormat = currentCameraSettings.imageFormat,
+                                lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority,
+                                activeCaptureSubMode = activeSubMode?.key
+                            )
+                        }
                     }
 
                     ConcurrentCameraMode.DUAL -> {
@@ -678,6 +688,12 @@ class CameraXCameraSystem(
                                         imageCaptureUseCase = imageCapture
                                     }
                                 )
+
+                                is PerpetualSessionSettings.CustomSession -> {
+                                    val runner = captureSubModeProviders[sessionSettings.subModeKey]
+                                        ?.sessionBinding as? CameraSessionBinding.Custom
+                                    runner?.runSession(this)
+                                }
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
@@ -1150,43 +1166,43 @@ class CameraXCameraSystem(
      * run its function more than once.
      */
     private fun CameraAppSettings.tryApplyCaptureSubModeConstraints(): CameraAppSettings {
-        val explicitProvider = if (captureSubModeId != CaptureSubModeId.DEFAULT) {
-            resolveCaptureSubModeProvider(captureSubModeId)
+        val requestedSubModeId = if (captureSubModeId != CaptureSubModeId.DEFAULT) {
+            captureSubModeId
+        } else {
+            defaultCaptureSubModeIdForLens()
+        }
+
+        // The override record belongs to activeCaptureSubModeId, which is set together with it.
+        val isContinuingSameProvider = captureSubModeOverrides != null &&
+            activeCaptureSubModeId == requestedSubModeId &&
+            resolveCaptureSubModeProvider(requestedSubModeId) != null
+
+        val baseSettings = if (isContinuingSameProvider) {
+            this
+        } else {
+            // The sub-mode that replaced these values has ended. Restore them before evaluating the
+            // next provider, then check that the restored values are supported by the current lens.
+            restoreCaptureSubModeOverrides()
+        }
+
+        val explicitProvider = if (baseSettings.captureSubModeId != CaptureSubModeId.DEFAULT) {
+            baseSettings.resolveCaptureSubModeProvider(baseSettings.captureSubModeId)
         } else {
             null
         }
         val selectedSlotId = if (explicitProvider != null) {
-            captureSubModeId
+            baseSettings.captureSubModeId
         } else {
             CaptureSubModeId.DEFAULT
         }
-        var settings = if (captureSubModeId == selectedSlotId) {
-            this
+        val settings = if (baseSettings.captureSubModeId == selectedSlotId) {
+            baseSettings
         } else {
-            copy(captureSubModeId = selectedSlotId)
+            baseSettings.copy(captureSubModeId = selectedSlotId)
         }
 
-        val targetSubModeId = explicitProvider?.descriptor?.id
-            ?: settings.defaultCaptureSubModeIdForLens()
-
-        // The override record belongs to activeCaptureSubModeId, which is set together with it.
-        val isContinuingSameProvider = settings.captureSubModeOverrides != null &&
-            settings.activeCaptureSubModeId == targetSubModeId &&
-            settings.resolveCaptureSubModeProvider(targetSubModeId) != null
-
-        if (!isContinuingSameProvider) {
-            // The sub-mode that replaced these values has ended. Restore them before evaluating the
-            // next provider, then check that the restored values are supported by the current lens.
-            settings = settings.restoreCaptureSubModeOverrides()
-        }
-
-        val resolvedProvider = settings.resolveCaptureSubModeProvider(
-            if (selectedSlotId != CaptureSubModeId.DEFAULT) {
-                selectedSlotId
-            } else {
-                settings.defaultCaptureSubModeIdForLens()
-            }
-        )
+        val resolvedProvider = explicitProvider
+            ?: settings.resolveCaptureSubModeProvider(settings.defaultCaptureSubModeIdForLens())
         val resolvedSubModeId = resolvedProvider?.descriptor?.id ?: CaptureSubModeId.DEFAULT
 
         if (resolvedProvider == null) {

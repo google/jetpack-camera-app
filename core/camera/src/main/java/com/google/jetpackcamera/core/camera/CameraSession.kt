@@ -201,20 +201,18 @@ internal suspend fun runSingleCameraSession(
                 cameraProvider.unbindAll()
                 val baseSelector = currentTransientSettings.primaryLensFacing
                     .toCameraSelector()
-                val activeSubModeProvider = sessionSettings.activeCaptureSubMode?.let { key ->
-                    captureSubModeProviders[key]
-                }
 
                 try {
                     // Resolving the selector (e.g. querying extension availability) and its
                     // CameraInfo can issue blocking camera metadata queries, so this is kept off
                     // the calling (typically main) thread.
                     val (currentCameraSelector, cameraInfo) = withContext(backgroundDispatcher) {
-                        val selector = when (val binding = activeSubModeProvider?.sessionBinding) {
-                            is CameraSessionBinding.SingleCamera ->
-                                binding.transformCameraSelector(cameraProvider, baseSelector)
-                            else -> baseSelector
-                        }
+                        val activeBinding = sessionSettings.activeCaptureSubMode
+                            ?.let { captureSubModeProviders[it]?.sessionBinding }
+                            as? CameraSessionBinding.SingleCamera
+                        val selector =
+                            activeBinding?.transformCameraSelector(cameraProvider, baseSelector)
+                                ?: baseSelector
                         selector to cameraProvider.getCameraInfo(selector)
                     }
                     val camera2Info = Camera2CameraInfo.from(cameraInfo)
@@ -1386,12 +1384,9 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         }
                     }
                 }
-                val logicalCameraId = try {
-                    session.device.id
-                } catch (_: RuntimeException) {
-                    // CameraDevice.getId() can throw if the device is closing during teardown.
-                    targetCameraLogicalId
-                }
+                // CameraDevice.getId() can throw if the device is closing during teardown.
+                val logicalCameraId =
+                    runCatching { session.device.id }.getOrDefault(targetCameraLogicalId)
 
                 // todo(b/405987189): remove completely after buggy zoomState is fixed
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
