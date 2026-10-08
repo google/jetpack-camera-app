@@ -31,7 +31,6 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.data.camera.CameraLaunchConfigProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.camera.CameraXCameraSystemRepository
-import com.google.jetpackcamera.data.camera.CaptureSubModeModule
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
@@ -108,13 +107,6 @@ internal object CameraModule {
             CaptureMode,
             @JvmSuppressWildcards CaptureSubModeFeatureKey
             >,
-        defaultCaptureSubModeEntries: Set<
-            @JvmSuppressWildcards
-            Map.Entry<
-                CaptureMode,
-                @JvmSuppressWildcards CaptureSubModeFeatureKey
-                >
-            >,
         cameraFeaturePolicy: CameraFeaturePolicy
     ): CameraXCameraSystem {
         return CameraXCameraSystem(
@@ -127,10 +119,7 @@ internal object CameraModule {
             imagePostProcessors,
             cameraEffectProviders,
             captureSubModeProviders,
-            CaptureSubModeModule.resolveDefaultCaptureSubModes(
-                defaultCaptureSubModes,
-                defaultCaptureSubModeEntries
-            ),
+            defaultCaptureSubModes,
             cameraFeaturePolicy
         )
     }

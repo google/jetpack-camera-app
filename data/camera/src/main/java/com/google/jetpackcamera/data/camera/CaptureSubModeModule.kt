@@ -52,26 +52,15 @@ interface CaptureSubModeModule {
 
     /**
      * Map of [CaptureMode] to the [CaptureSubModeFeatureKey] that the app binds as that mode's
-     * default sub-mode, contributed via `@IntoMap`.
+     * default sub-mode, contributed via `@IntoMap` with [DefaultCaptureSubModeFor].
      *
-     * Entries here take precedence over [defaultCaptureSubModeEntries] for the same [CaptureMode].
+     * Each [CaptureMode] can have at most one default; Dagger rejects duplicate keys at compile
+     * time.
      */
     @Multibinds
     fun defaultCaptureSubModes(): Map<
         CaptureMode,
         @JvmSuppressWildcards CaptureSubModeFeatureKey
-        >
-
-    /**
-     * Set-based alternative to [defaultCaptureSubModes] that lets a module contribute a default
-     * via `@IntoSet` without defining a `@MapKey` annotation for [CaptureMode].
-     */
-    @Multibinds
-    fun defaultCaptureSubModeEntries(): Set<
-        Map.Entry<
-            CaptureMode,
-            @JvmSuppressWildcards CaptureSubModeFeatureKey
-            >
         >
 
     companion object {
@@ -91,28 +80,5 @@ interface CaptureSubModeModule {
                 >
         ): Map<CaptureSubModeFeatureKey, Provider<CaptureSubModeProvider>> =
             entries.associate { it.key to it.value }
-
-        /**
-         * Merges the two default sub-mode bindings into a single map. When both bind the same
-         * [CaptureMode], the entry from [multiboundMap] wins.
-         *
-         * @param multiboundMap the contents of [defaultCaptureSubModes].
-         * @param entries the contents of [defaultCaptureSubModeEntries].
-         * @return the default [CaptureSubModeFeatureKey] for each [CaptureMode] that has one.
-         */
-        fun resolveDefaultCaptureSubModes(
-            multiboundMap: Map<
-                CaptureMode,
-                @JvmSuppressWildcards CaptureSubModeFeatureKey
-                > = emptyMap(),
-            entries: Set<
-                @JvmSuppressWildcards
-                Map.Entry<
-                    CaptureMode,
-                    @JvmSuppressWildcards CaptureSubModeFeatureKey
-                    >
-                > = emptySet()
-        ): Map<CaptureMode, CaptureSubModeFeatureKey> =
-            entries.associate { it.key to it.value } + multiboundMap
     }
 }
