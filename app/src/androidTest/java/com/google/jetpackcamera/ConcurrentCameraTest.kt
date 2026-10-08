@@ -135,13 +135,14 @@ class ConcurrentCameraTest {
                     .assertExists()
                     .performClick()
 
-                // Assert the HDR button is disabled (if the row exists)
+                // Assert HDR cannot be enabled (if the row exists). The SDR option always remains
+                // enabled so that SDR can be selected, and it is the selected option here.
                 val hdrExists = onAllNodesWithTag(
                     ROW_QUICK_SETTINGS_HDR
                 ).fetchSemanticsNodes().isNotEmpty()
                 if (hdrExists) {
                     onNodeWithTag(BTN_QUICK_SETTINGS_HDR_OPTION_ON).assert(isNotEnabled())
-                    onNodeWithTag(BTN_QUICK_SETTINGS_HDR_OPTION_OFF).assert(isNotEnabled())
+                    onNodeWithTag(BTN_QUICK_SETTINGS_HDR_OPTION_OFF).assertIsOn()
                 }
 
                 // Assert the capture mode row does not exist (hidden because locked to video-only)
@@ -197,6 +198,11 @@ class ConcurrentCameraTest {
         with(composeTestRule) {
             // Enable concurrent camera in settings
             setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
+
+            // The concurrent camera session starts asynchronously after returning from
+            // settings. The capture button is disabled until it is running, so wait for it
+            // before pressing.
+            waitForCaptureButton()
 
             longClickForVideoRecordingCheckingElapsedTime()
 

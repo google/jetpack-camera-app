@@ -17,8 +17,10 @@ package com.google.jetpackcamera.core.camera
 
 import android.app.Application
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import androidx.camera.camera2.interop.cameraCharacteristics
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
@@ -35,14 +37,20 @@ import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecorded
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.di.PostProcessModule.Companion.provideImagePostProcessorMap
+import com.google.jetpackcamera.core.camera.submode.CameraSessionBinding
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
 import com.google.jetpackcamera.core.camera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
 import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeDescriptor
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -50,7 +58,12 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
+import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.model.OptionVisibility
+import com.google.jetpackcamera.settings.model.SettingConfig
+import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.util.AbstractMap
@@ -354,7 +367,12 @@ class CameraXCameraSystemTest {
 
     private suspend fun createAndInitCameraXCameraSystem(
         appSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS,
-        fakeImagePostProcessor: FakeImagePostProcessor? = null
+        fakeImagePostProcessor: FakeImagePostProcessor? = null,
+        captureSubModeProvider: CaptureSubModeProvider? = null,
+        extraCaptureSubModeProviders:
+        Map<CaptureSubModeFeatureKey, Provider<CaptureSubModeProvider>> = emptyMap(),
+        defaultCaptureSubModes: Map<CaptureMode, CaptureSubModeFeatureKey> = emptyMap(),
+        externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
     ) = CameraXCameraSystem(
         application = application,
         defaultDispatcher = Dispatchers.Default,
@@ -363,9 +381,17 @@ class CameraXCameraSystemTest {
         effectProviders = emptyMap(),
         imagePostProcessors = getFakePostProcessorMap(fakeImagePostProcessor),
         cameraEffectProviders = emptyMap(),
-        filePathGenerator = FakeFilePathGenerator()
+        filePathGenerator = FakeFilePathGenerator(),
+        captureSubModeProviders = (
+            captureSubModeProvider?.let { provider ->
+                mapOf<CaptureSubModeFeatureKey, Provider<CaptureSubModeProvider>>(
+                    FakeCaptureSubModeFeatureKey to Provider { provider }
+                )
+            } ?: emptyMap()
+            ) + extraCaptureSubModeProviders,
+        defaultCaptureSubModes = defaultCaptureSubModes
     ).apply {
-        initialize(appSettings) {}
+        initialize(appSettings.applyExternalCaptureMode(externalCaptureMode)) {}
         providePreviewSurface()
     }
 
@@ -702,6 +728,92 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun leaveCaptureSubMode_restoresSettingsReplacedByItsPolicy(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the aspect ratio to 9:16.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setAspectRatio(AspectRatio.ONE_ONE)
+
+        // Act. Enter the sub-mode.
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Assert. The policy replaces the aspect ratio, and the replaced value is recorded.
+        var settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        assertThat(settings.captureSubModeOverrides).isNotNull()
+
+        // Act. Leave the sub-mode.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The previous aspect ratio is restored, and the record is cleared.
+        settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+        assertThat(settings.captureSubModeOverrides).isNull()
+    }
+
+    @Test
+    fun leaveCaptureSubMode_keepsSettingsChangedWhileActive(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy limits the aspect ratio to 9:16 or 1:1.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(
+                        defaultValue = AspectRatio.NINE_SIXTEEN,
+                        visibility = OptionVisibility.from(
+                            AspectRatio.NINE_SIXTEEN,
+                            AspectRatio.ONE_ONE
+                        )
+                    )
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setAspectRatio(AspectRatio.THREE_FOUR)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(cameraSystem.getCurrentSettings().value!!.aspectRatio)
+            .isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+        // Act. Choose another permitted aspect ratio, then leave the sub-mode.
+        cameraSystem.setAspectRatio(AspectRatio.ONE_ONE)
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The aspect ratio chosen in the sub-mode is kept.
+        assertThat(cameraSystem.getCurrentSettings().value!!.aspectRatio)
+            .isEqualTo(AspectRatio.ONE_ONE)
+    }
+
+    @Test
+    fun switchCaptureMode_fromCaptureSubMode_appliesNewModeDefaults(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the aspect ratio to 9:16.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setAspectRatio(AspectRatio.ONE_ONE)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act. Switching capture mode ends the sub-mode.
+        cameraSystem.setCaptureMode(CaptureMode.VIDEO_ONLY)
+
+        // Assert. The video mode's aspect ratio takes precedence over the restored 1:1.
+        val settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+    }
+
+    @Test
     fun initialize_offersHdrVideoOnlyWithTenBitCapability(): Unit = runBlocking {
         // Arrange.
         val cameraSystem = createAndInitCameraXCameraSystem()
@@ -774,6 +886,229 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun defaultCaptureSubMode_enforcesPolicyOnEnterAndRestoresOnCaptureModeExit(): Unit =
+        runBlocking {
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    CameraFeaturePolicy(
+                        aspectRatio = SettingConfig(
+                            AspectRatio.NINE_SIXTEEN,
+                            OptionVisibility.Hidden
+                        )
+                    )
+                ),
+                defaultCaptureSubModes = mapOf(
+                    CaptureMode.IMAGE_ONLY to FakeCaptureSubModeFeatureKey
+                )
+            )
+            cameraSystem.setCaptureMode(CaptureMode.STANDARD)
+            assertThat(cameraSystem.getCurrentSettings().value!!.activeCaptureSubModeId)
+                .isEqualTo(CaptureSubModeId.DEFAULT)
+
+            // Act. Enter IMAGE_ONLY (whose base default is 3:4), where FakeCaptureSubModeFeatureKey
+            // is the default override and forces 9:16.
+            cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+
+            // Assert. captureSubModeId stays DEFAULT while activeCaptureSubModeId is the override.
+            var settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+            // Act. Leave IMAGE_ONLY back to STANDARD (which preserves aspect ratio unless restored).
+            cameraSystem.setCaptureMode(CaptureMode.STANDARD)
+
+            // Assert. The 3:4 aspect ratio replaced by the default override is restored.
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+        }
+
+    @Test
+    fun defaultCaptureSubMode_switchingBetweenDefaultAndSecondarySubMode_swapsPolicies(): Unit =
+        runBlocking {
+            val secondaryKey = object : CaptureSubModeFeatureKey {
+                override val id = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+            }
+            val defaultProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden)
+                )
+            )
+            val secondaryProvider = FakeCaptureSubModeProvider(
+                featurePolicy = CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(AspectRatio.ONE_ONE, OptionVisibility.Hidden)
+                ),
+                subModeId = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+            )
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    aspectRatio = AspectRatio.THREE_FOUR
+                ),
+                extraCaptureSubModeProviders = mapOf(
+                    FakeCaptureSubModeFeatureKey to Provider { defaultProvider },
+                    secondaryKey to Provider { secondaryProvider }
+                ),
+                defaultCaptureSubModes = mapOf(
+                    CaptureMode.IMAGE_ONLY to FakeCaptureSubModeFeatureKey
+                )
+            )
+
+            // Initially in IMAGE_ONLY with DEFAULT slot -> defaultProvider active (9:16).
+            var settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+            // Act. Select secondary sub-mode -> secondaryProvider active (1:1).
+            cameraSystem.setCaptureSubMode(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+
+            // Act. Return to DEFAULT slot -> defaultProvider active again (9:16).
+            cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        }
+
+    @Test
+    fun defaultCaptureSubMode_supportedOnBackOnly_fallsBackOnFrontAndReappliesOnBack(): Unit =
+        runBlocking {
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    cameraLensFacing = LensFacing.BACK,
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    aspectRatio = AspectRatio.THREE_FOUR
+                ),
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    featurePolicy = CameraFeaturePolicy(
+                        aspectRatio = SettingConfig(
+                            AspectRatio.NINE_SIXTEEN,
+                            OptionVisibility.Hidden
+                        )
+                    ),
+                    supportedLenses = setOf(LensFacing.BACK)
+                ),
+                defaultCaptureSubModes = mapOf(
+                    CaptureMode.IMAGE_ONLY to FakeCaptureSubModeFeatureKey
+                )
+            )
+            val availableLenses = cameraSystem.getSystemConstraints().value!!.availableLenses
+            assume()
+                .withMessage("Both FRONT and BACK lenses required, skip the test.")
+                .that(availableLenses.containsAll(listOf(LensFacing.FRONT, LensFacing.BACK)))
+                .isTrue()
+
+            // On BACK, the default override is active and forces 9:16 (replacing 3:4).
+            var settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+            // Flip to FRONT, where the default override is unsupported -> restores 3:4.
+            cameraSystem.setLensFacing(LensFacing.FRONT)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+
+            // Choose 1:1 on FRONT, then flip back to BACK -> default override forces 9:16 again.
+            cameraSystem.setAspectRatio(AspectRatio.ONE_ONE)
+            cameraSystem.setLensFacing(LensFacing.BACK)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+            // Flip to FRONT again -> restores the 1:1 chosen on FRONT.
+            cameraSystem.setLensFacing(LensFacing.FRONT)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+        }
+
+    @Test
+    fun defaultCaptureSubMode_whenIncompatible_fallsBackAndRecovers(): Unit = runBlocking {
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.IMAGE_ONLY,
+                aspectRatio = AspectRatio.THREE_FOUR
+            ),
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                featurePolicy = CameraFeaturePolicy(
+                    flashMode = SettingConfig(FlashMode.OFF, OptionVisibility.Hidden)
+                ),
+                isCompatiblePredicate = { settings -> settings.aspectRatio != AspectRatio.ONE_ONE }
+            ),
+            defaultCaptureSubModes = mapOf(
+                CaptureMode.IMAGE_ONLY to FakeCaptureSubModeFeatureKey
+            )
+        )
+
+        var settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Setting aspect ratio to 1:1 makes the default override incompatible -> falls back.
+        cameraSystem.setAspectRatio(AspectRatio.ONE_ONE)
+        settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+        assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+
+        // Returning to 4:3 restores compatibility -> default override activates again.
+        cameraSystem.setAspectRatio(AspectRatio.THREE_FOUR)
+        settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+        assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+    }
+
+    @Test
+    fun defaultCaptureSubMode_withExternalImageCaptureIntent_activatesDefaultOverride(): Unit =
+        runBlocking {
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.STANDARD,
+                    aspectRatio = AspectRatio.THREE_FOUR
+                ),
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    featurePolicy = CameraFeaturePolicy(
+                        aspectRatio = SettingConfig(
+                            AspectRatio.NINE_SIXTEEN,
+                            OptionVisibility.Hidden
+                        )
+                    )
+                ),
+                defaultCaptureSubModes = mapOf(
+                    CaptureMode.IMAGE_ONLY to FakeCaptureSubModeFeatureKey
+                ),
+                externalCaptureMode = ExternalCaptureMode.ImageCapture
+            )
+
+            val settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
+            assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun defaultCaptureSubMode_whenParentCaptureModeMismatches_throws(): Unit = runBlocking {
+        // FakeCaptureSubModeProvider has parentCaptureMode = IMAGE_ONLY; binding it as the
+        // default override for VIDEO_ONLY must fail fast during CameraXCameraSystem construction.
+        createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(CameraFeaturePolicy()),
+            defaultCaptureSubModes = mapOf(
+                CaptureMode.VIDEO_ONLY to FakeCaptureSubModeFeatureKey
+            )
+        )
+    }
+
+    @Test
     fun switchConcurrentCameraMode_toDual_updatesAspectRatio(): Unit = runBlocking {
         // Arrange. Start with STANDARD mode and 4:3 aspect ratio
         val cameraSystem =
@@ -815,6 +1150,43 @@ class CameraXCameraSystemTest {
 }
 
 object FakeImagePostProcessorFeatureKey : ImagePostProcessorFeatureKey
+
+private val FAKE_CAPTURE_SUB_MODE_ID = CaptureSubModeId("fake_sub_mode")
+private val SECOND_FAKE_CAPTURE_SUB_MODE_ID = CaptureSubModeId("second_fake_sub_mode")
+
+private object FakeCaptureSubModeFeatureKey : CaptureSubModeFeatureKey {
+    override val id = FAKE_CAPTURE_SUB_MODE_ID
+}
+
+/** An image sub-mode that enforces [featurePolicy]. */
+private class FakeCaptureSubModeProvider(
+    override val featurePolicy: CameraFeaturePolicy,
+    subModeId: CaptureSubModeId = FAKE_CAPTURE_SUB_MODE_ID,
+    private val supportedLenses: Set<LensFacing> = setOf(LensFacing.FRONT, LensFacing.BACK),
+    private val isCompatiblePredicate: (CameraAppSettings) -> Boolean = { true }
+) : CaptureSubModeProvider {
+    override val descriptor = CaptureSubModeDescriptor(
+        id = subModeId,
+        parentCaptureMode = CaptureMode.IMAGE_ONLY,
+        labelResId = 0
+    )
+
+    override suspend fun isSupported(
+        context: Context,
+        cameraProvider: ProcessCameraProvider,
+        cameraInfo: CameraInfo
+    ): Boolean = cameraInfo.appLensFacing in supportedLenses
+
+    override fun isCompatibleWith(
+        settings: CameraAppSettings,
+        systemConstraints: CameraSystemConstraints,
+        externalCaptureMode: ExternalCaptureMode
+    ): Boolean = super.isCompatibleWith(settings, systemConstraints, externalCaptureMode) &&
+        isCompatiblePredicate(settings)
+
+    override val sessionBinding =
+        CameraSessionBinding.SingleCamera { _, baseSelector -> baseSelector }
+}
 
 class FakeImagePostProcessor(val shouldError: Boolean = false) : ImagePostProcessor {
     var postProcessImageCalled = false
