@@ -80,10 +80,10 @@ internal suspend fun runConcurrentCameraSession(
                     var primary: CameraInfo? = null
                     var secondary: CameraInfo? = null
                     for (cameraInfo in group) {
-                        if (cameraInfo.appLensFacing == primaryFacing) {
-                            primary = cameraInfo
-                        } else if (cameraInfo.appLensFacing == secondaryFacing) {
-                            secondary = cameraInfo
+                        when (cameraInfo.appLensFacing) {
+                            primaryFacing -> primary = cameraInfo
+                            secondaryFacing -> secondary = cameraInfo
+                            else -> {}
                         }
                     }
                     primary?.let { nonNullPrimary ->
@@ -234,7 +234,7 @@ internal suspend fun runConcurrentCameraSession(
                             .distinctUntilChanged()
                             .collectLatest { zoomState ->
                                 val settings = transientSettings.value
-                                // TODO(b/405987189): remove checks after buggy zoomState is fixed
+                                // TODO: remove checks after buggy zoomState is fixed on API < 30
                                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                                     if (zoomState.zoomRatio != 1.0f ||
                                         settings == null ||

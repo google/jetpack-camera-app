@@ -39,6 +39,14 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 
+/**
+ * [CaptureSubModeProvider] for the concurrent dual-camera capture sub-mode under
+ * [CaptureMode.VIDEO_ONLY].
+ *
+ * Binds both the primary and opposite-facing cameras simultaneously via a custom concurrent
+ * camera session and restricts dynamic range to SDR and flash to standard modes (excluding
+ * Low Light Boost).
+ */
 class ConcurrentCameraSubModeProvider : CaptureSubModeProvider {
     override val descriptor = CaptureSubModeDescriptor(
         id = CONCURRENT_SUB_MODE_ID,

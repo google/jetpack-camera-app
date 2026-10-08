@@ -18,8 +18,13 @@ package com.google.jetpackcamera.core.camera.concurrent
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
 import com.google.jetpackcamera.model.CaptureSubModeId
 
+/** Identifier for the concurrent dual-camera capture sub-mode. */
 val CONCURRENT_SUB_MODE_ID: CaptureSubModeId = CaptureSubModeId("concurrent_dual")
 
+/**
+ * [CaptureSubModeFeatureKey] identifying the concurrent dual-camera capture sub-mode in Dagger
+ * multibindings.
+ */
 object ConcurrentCameraSubModeKey : CaptureSubModeFeatureKey {
     override val id: CaptureSubModeId = CONCURRENT_SUB_MODE_ID
 }
