@@ -65,4 +65,11 @@ class CaptureSubModeProviderTest {
         assertThat(provider.isCompatibleWith(inParentMode, constraints)).isTrue()
         assertThat(provider.isCompatibleWith(inOtherMode, constraints)).isFalse()
     }
+
+    @Test
+    fun sessionBinding_supportsSingleCameraAndCustomVariants() {
+        val customBinding: CameraSessionBinding = CameraSessionBinding.Custom {}
+        assertThat(provider.sessionBinding).isInstanceOf(CameraSessionBinding.SingleCamera::class.java)
+        assertThat(customBinding).isInstanceOf(CameraSessionBinding.Custom::class.java)
+    }
 }
