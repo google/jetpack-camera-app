@@ -471,15 +471,15 @@ private fun SetVideoBitrateDialog(onSetTargetVideoBitrate: (Int?) -> Unit, onClo
                 ),
                 onClick = {
                     val trimmed = videoBitrateState.text.toString().trim()
-                    if (trimmed.isEmpty()) {
-                        onSetTargetVideoBitrate(null)
-                    } else {
-                        val newBitrate = trimmed.toIntOrNull()
-                        if (newBitrate == null || newBitrate < 0) {
-                            Log.d(TAG, "Video bitrate should be a non-negative integer")
-                        } else if (newBitrate == 0) {
+                    val newBitrate = trimmed.toIntOrNull()
+                    when {
+                        trimmed.isEmpty() || newBitrate == 0 -> {
                             onSetTargetVideoBitrate(null)
-                        } else {
+                        }
+                        newBitrate == null || newBitrate < 0 -> {
+                            Log.d(TAG, "Video bitrate should be a non-negative integer")
+                        }
+                        else -> {
                             onSetTargetVideoBitrate(newBitrate)
                         }
                     }
