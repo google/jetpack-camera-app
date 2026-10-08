@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.model
 
+import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.DebugSettings.Companion.encodeAsString
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -77,22 +78,22 @@ class DebugSettingsTest {
         val parsedZeroBitrate = DebugSettings.parseFromString(
             "debug:true;lens:BACK;pattern:Off;bitrate:0"
         )
-        assertEquals(DebugSettings(true, LensFacing.BACK, TestPattern.Off, null), parsedZeroBitrate)
+        assertThat(parsedZeroBitrate).isEqualTo(
+            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null)
+        )
 
         val parsedNegativeBitrate = DebugSettings.parseFromString(
             "debug:true;lens:BACK;pattern:Off;bitrate:-1000"
         )
-        assertEquals(
-            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null),
-            parsedNegativeBitrate
+        assertThat(parsedNegativeBitrate).isEqualTo(
+            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null)
         )
 
         val parsedMalformedBitrate = DebugSettings.parseFromString(
             "debug:true;lens:BACK;pattern:Off;bitrate:not_a_number"
         )
-        assertEquals(
-            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null),
-            parsedMalformedBitrate
+        assertThat(parsedMalformedBitrate).isEqualTo(
+            DebugSettings(true, LensFacing.BACK, TestPattern.Off, null)
         )
     }
 }

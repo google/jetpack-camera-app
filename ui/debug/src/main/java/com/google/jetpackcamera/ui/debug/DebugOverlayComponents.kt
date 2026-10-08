@@ -458,7 +458,11 @@ private fun SetVideoBitrateDialog(onSetTargetVideoBitrate: (Int?) -> Unit, onClo
             .noIndicationClickable(onClick = onClose),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        val scrollState = rememberScrollState()
+        Column(
+            modifier = Modifier.verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(text = stringResource(R.string.debug_set_video_bitrate_dialog_prompt))
             TextField(
                 modifier = Modifier.testTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD),
