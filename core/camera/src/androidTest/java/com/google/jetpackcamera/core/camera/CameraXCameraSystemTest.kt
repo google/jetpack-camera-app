@@ -1111,56 +1111,56 @@ class CameraXCameraSystemTest {
     @Test
     fun setCaptureSubMode_switchingSubModesWithConflictingOverrides_activatesSecond(): Unit =
         runBlocking {
-        val secondaryKey = object : CaptureSubModeFeatureKey {
-            override val id = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+            val secondaryKey = object : CaptureSubModeFeatureKey {
+                override val id = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+            }
+            // First provider forces aspectRatio = ONE_ONE.
+            val firstProvider = FakeCaptureSubModeProvider(
+                featurePolicy = CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(AspectRatio.ONE_ONE, OptionVisibility.Hidden)
+                )
+            )
+            // Second provider forces aspectRatio = NINE_SIXTEEN and is incompatible with ONE_ONE.
+            val secondProvider = FakeCaptureSubModeProvider(
+                featurePolicy = CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden)
+                ),
+                subModeId = SECOND_FAKE_CAPTURE_SUB_MODE_ID,
+                isCompatiblePredicate = { settings -> settings.aspectRatio != AspectRatio.ONE_ONE }
+            )
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    aspectRatio = AspectRatio.THREE_FOUR
+                ),
+                extraCaptureSubModeProviders = mapOf(
+                    FakeCaptureSubModeFeatureKey to Provider { firstProvider },
+                    secondaryKey to Provider { secondProvider }
+                )
+            )
+
+            // Activate first sub-mode -> forces 1:1.
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+            var settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+
+            // Switch directly to second sub-mode -> first sub-mode's 1:1 override is restored to 3:4
+            // before evaluating secondProvider, so secondProvider is accepted and enforces 9:16.
+            cameraSystem.setCaptureSubMode(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+            // Return to DEFAULT -> original 3:4 is restored.
+            cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
         }
-        // First provider forces aspectRatio = ONE_ONE.
-        val firstProvider = FakeCaptureSubModeProvider(
-            featurePolicy = CameraFeaturePolicy(
-                aspectRatio = SettingConfig(AspectRatio.ONE_ONE, OptionVisibility.Hidden)
-            )
-        )
-        // Second provider forces aspectRatio = NINE_SIXTEEN and is incompatible with ONE_ONE.
-        val secondProvider = FakeCaptureSubModeProvider(
-            featurePolicy = CameraFeaturePolicy(
-                aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden)
-            ),
-            subModeId = SECOND_FAKE_CAPTURE_SUB_MODE_ID,
-            isCompatiblePredicate = { settings -> settings.aspectRatio != AspectRatio.ONE_ONE }
-        )
-        val cameraSystem = createAndInitCameraXCameraSystem(
-            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
-                captureMode = CaptureMode.IMAGE_ONLY,
-                aspectRatio = AspectRatio.THREE_FOUR
-            ),
-            extraCaptureSubModeProviders = mapOf(
-                FakeCaptureSubModeFeatureKey to Provider { firstProvider },
-                secondaryKey to Provider { secondProvider }
-            )
-        )
-
-        // Activate first sub-mode -> forces 1:1.
-        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
-        var settings = cameraSystem.getCurrentSettings().value!!
-        assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
-        assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
-        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
-
-        // Switch directly to second sub-mode -> first sub-mode's 1:1 override is restored to 3:4
-        // before evaluating secondProvider, so secondProvider is accepted and enforces 9:16.
-        cameraSystem.setCaptureSubMode(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
-        settings = cameraSystem.getCurrentSettings().value!!
-        assertThat(settings.captureSubModeId).isEqualTo(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
-        assertThat(settings.activeCaptureSubModeId).isEqualTo(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
-        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
-
-        // Return to DEFAULT -> original 3:4 is restored.
-        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
-        settings = cameraSystem.getCurrentSettings().value!!
-        assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
-        assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
-        assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
-    }
 
     @Test
     fun startCamera_withSingleCameraSubMode_transformsCameraSelector(): Unit = runBlocking {
