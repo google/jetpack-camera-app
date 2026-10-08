@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera.night
 
 import android.content.Context
+import android.os.Build
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -34,8 +35,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Build.VERSION_CODES.S_V2])
 class NightCaptureSubModeProviderTest {
 
     private val context: Context = RuntimeEnvironment.getApplication()
