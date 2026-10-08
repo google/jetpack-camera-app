@@ -15,7 +15,10 @@
  */
 package com.google.jetpackcamera.core.camera.night
 
-import android.content.ContextWrapper
+import android.content.Context
+import androidx.camera.core.CameraInfo
+import androidx.camera.core.CameraSelector
+import androidx.camera.lifecycle.ProcessCameraProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
@@ -25,17 +28,22 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import java.lang.reflect.Proxy
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class NightCaptureSubModeProviderTest {
 
-    private val provider = NightCaptureSubModeProvider(ContextWrapper(null))
+    private val context: Context = RuntimeEnvironment.getApplication()
+    private val provider = NightCaptureSubModeProvider(context)
 
     @Test
     fun descriptor_hasImageOnlyParentAndNightId() {
+        assertThat(NightCaptureSubModeKey.id).isEqualTo(NIGHT_SUB_MODE_ID)
         assertThat(provider.descriptor.id).isEqualTo(NIGHT_SUB_MODE_ID)
         assertThat(provider.descriptor.parentCaptureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
         assertThat(provider.descriptor.quickSettingsTitleResId)
@@ -123,4 +131,68 @@ class NightCaptureSubModeProviderTest {
         )
         assertThat(restrictedWithFlashAuto.flashMode).isEqualTo(FlashMode.AUTO)
     }
+
+    @Test
+    fun isSupportedAndSessionBinding_whenExtensionUnavailable_returnsFalseAndBaseSelector() =
+        runTest {
+            val cameraProvider = obtainProcessCameraProvider()
+            val cameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
+
+            assertThat(provider.isSupported(context, cameraProvider, cameraInfo)).isFalse()
+            assertThat(
+                provider.sessionBinding.transformCameraSelector(
+                    cameraProvider,
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                )
+            ).isSameInstanceAs(CameraSelector.DEFAULT_BACK_CAMERA)
+        }
+
+    @Test
+    fun isSupportedAndSessionBinding_whenExtensionAvailable_returnsNightEnabledSelector() =
+        runTest {
+            val nightSelector = CameraSelector.Builder().build()
+            val supportedProvider = NightCaptureSubModeProvider(
+                applicationContext = context,
+                isNightAvailable = { _, selector ->
+                    selector === CameraSelector.DEFAULT_BACK_CAMERA
+                },
+                enableNightSelector = { _, _ -> nightSelector }
+            )
+            val cameraProvider = obtainProcessCameraProvider()
+            val backCameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
+
+            assertThat(supportedProvider.isSupported(context, cameraProvider, backCameraInfo))
+                .isTrue()
+            assertThat(
+                supportedProvider.sessionBinding.transformCameraSelector(
+                    cameraProvider,
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                )
+            ).isSameInstanceAs(nightSelector)
+            assertThat(
+                supportedProvider.sessionBinding.transformCameraSelector(
+                    cameraProvider,
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+                )
+            ).isSameInstanceAs(CameraSelector.DEFAULT_FRONT_CAMERA)
+        }
+
+    private fun obtainProcessCameraProvider(): ProcessCameraProvider {
+        val field = ProcessCameraProvider::class.java.getDeclaredField("sAppInstance")
+        field.isAccessible = true
+        return field.get(null) as ProcessCameraProvider
+    }
+
+    private fun fakeCameraInfo(selector: CameraSelector): CameraInfo = Proxy.newProxyInstance(
+        CameraInfo::class.java.classLoader,
+        arrayOf(CameraInfo::class.java)
+    ) { _, method, _ ->
+        when (method.name) {
+            "getCameraSelector" -> selector
+            "hashCode" -> 0
+            "equals" -> false
+            "toString" -> "FakeCameraInfo"
+            else -> null
+        }
+    } as CameraInfo
 }
