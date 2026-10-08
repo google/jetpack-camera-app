@@ -189,13 +189,5 @@ class NightCaptureSubModeProviderTest {
     private fun fakeCameraInfo(selector: CameraSelector): CameraInfo = Proxy.newProxyInstance(
         CameraInfo::class.java.classLoader,
         arrayOf(CameraInfo::class.java)
-    ) { _, method, _ ->
-        when (method.name) {
-            "getCameraSelector" -> selector
-            "hashCode" -> 0
-            "equals" -> false
-            "toString" -> "FakeCameraInfo"
-            else -> null
-        }
-    } as CameraInfo
+    ) { _, _, _ -> selector } as CameraInfo
 }
