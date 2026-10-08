@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
@@ -138,7 +139,7 @@ class NightCaptureSubModeProviderTest {
     @Test
     fun isSupportedAndSessionBinding_whenExtensionUnavailable_returnsFalseAndBaseSelector() =
         runTest {
-            val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+            val cameraProvider = ProcessCameraProvider.awaitInstance(context)
             val cameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
 
             assertThat(provider.isSupported(context, cameraProvider, cameraInfo)).isFalse()
@@ -161,7 +162,7 @@ class NightCaptureSubModeProviderTest {
                 },
                 enableNightSelector = { _, _ -> nightSelector }
             )
-            val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+            val cameraProvider = ProcessCameraProvider.awaitInstance(context)
             val backCameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
 
             assertThat(supportedProvider.isSupported(context, cameraProvider, backCameraInfo))
@@ -187,7 +188,7 @@ class NightCaptureSubModeProviderTest {
             isNightAvailable = { _, _ -> throw IllegalStateException("Extension failure") },
             enableNightSelector = { _, selector -> selector }
         )
-        val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+        val cameraProvider = ProcessCameraProvider.awaitInstance(context)
         val backCameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
 
         assertThat(throwingProvider.isSupported(context, cameraProvider, backCameraInfo)).isFalse()
