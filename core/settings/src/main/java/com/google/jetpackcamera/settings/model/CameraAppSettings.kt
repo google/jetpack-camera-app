@@ -37,17 +37,21 @@ import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 
 /**
- * Data layer representation for settings.
+ * Data layer representation for camera session settings.
+ *
+ * Seeded once from persisted user preferences at camera system initialization and subsequently
+ * updated in-memory via `copy(...)` by the camera system for the duration of the session, so
+ * session-scoped fields ([captureSubModeId], [activeCaptureSubModeId], and
+ * [captureSubModeOverrides]) are preserved across setting changes without being overwritten by
+ * DataStore emissions.
  */
 data class CameraAppSettings(
     val captureMode: CaptureMode = CaptureMode.STANDARD,
     val captureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
     val activeCaptureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
-    // TODO: Move runtime state such as this out of CameraAppSettings, which also holds persisted
-    //  user preferences.
     /**
      * The values replaced by the policy of [activeCaptureSubModeId], restored when that sub-mode
-     * ends. Set by the camera system while a sub-mode is active; not a user preference.
+     * ends. Managed in-memory by the camera system while a sub-mode is active.
      */
     val captureSubModeOverrides: PolicyOverrides? = null,
     val cameraLensFacing: LensFacing = LensFacing.BACK,

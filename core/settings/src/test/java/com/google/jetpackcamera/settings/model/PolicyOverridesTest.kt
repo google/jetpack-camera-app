@@ -24,6 +24,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -101,17 +102,20 @@ class PolicyOverridesTest {
     }
 
     @Test
-    fun restore_doesNotRestoreCaptureMode() {
+    fun constructor_whenCaptureModeChanged_throwsException() {
         val policy = restrictivePolicy.copy(
             captureMode = SettingConfig(CaptureMode.VIDEO_ONLY, OptionVisibility.Hidden)
         )
-        val (enforced, overrides) = enforce(policy, userSettings)
-        assertThat(enforced.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        val enforced = policy.enforceRestrictions(userSettings)
 
-        val restored = overrides.restore(enforced)
-
-        assertThat(restored.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
-        assertThat(restored.dynamicRange).isEqualTo(DynamicRange.HLG10)
+        assertThrows(IllegalArgumentException::class.java) {
+            PolicyOverrides(userSettings, enforced)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            CameraSystemConstraints(
+                captureSubModePolicies = mapOf(CaptureSubModeId("video") to policy)
+            )
+        }
     }
 
     @Test
