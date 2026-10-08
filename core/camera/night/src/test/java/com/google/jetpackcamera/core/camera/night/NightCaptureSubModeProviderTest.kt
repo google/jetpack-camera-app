@@ -138,7 +138,7 @@ class NightCaptureSubModeProviderTest {
     @Test
     fun isSupportedAndSessionBinding_whenExtensionUnavailable_returnsFalseAndBaseSelector() =
         runTest {
-            val cameraProvider = obtainProcessCameraProvider()
+            val cameraProvider = ProcessCameraProvider.getInstance(context).get()
             val cameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
 
             assertThat(provider.isSupported(context, cameraProvider, cameraInfo)).isFalse()
@@ -161,7 +161,7 @@ class NightCaptureSubModeProviderTest {
                 },
                 enableNightSelector = { _, _ -> nightSelector }
             )
-            val cameraProvider = obtainProcessCameraProvider()
+            val cameraProvider = ProcessCameraProvider.getInstance(context).get()
             val backCameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
 
             assertThat(supportedProvider.isSupported(context, cameraProvider, backCameraInfo))
@@ -180,10 +180,47 @@ class NightCaptureSubModeProviderTest {
             ).isSameInstanceAs(CameraSelector.DEFAULT_FRONT_CAMERA)
         }
 
-    private fun obtainProcessCameraProvider(): ProcessCameraProvider {
-        val field = ProcessCameraProvider::class.java.getDeclaredField("sAppInstance")
-        field.isAccessible = true
-        return field.get(null) as ProcessCameraProvider
+    @Test
+    fun isSupportedAndSessionBinding_whenQueryThrowsException_fallsBackGracefully() = runTest {
+        val throwingProvider = NightCaptureSubModeProvider(
+            applicationContext = context,
+            isNightAvailable = { _, _ -> throw IllegalStateException("Extension failure") },
+            enableNightSelector = { _, selector -> selector }
+        )
+        val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+        val backCameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
+
+        assertThat(throwingProvider.isSupported(context, cameraProvider, backCameraInfo)).isFalse()
+        assertThat(
+            throwingProvider.sessionBinding.transformCameraSelector(
+                cameraProvider,
+                CameraSelector.DEFAULT_BACK_CAMERA
+            )
+        ).isSameInstanceAs(CameraSelector.DEFAULT_BACK_CAMERA)
+
+        val cancellingProvider = NightCaptureSubModeProvider(
+            applicationContext = context,
+            isNightAvailable = { _, _ ->
+                throw kotlinx.coroutines.CancellationException("Cancelled")
+            },
+            enableNightSelector = { _, selector -> selector }
+        )
+        val isSupportedCancelled = try {
+            !cancellingProvider.isSupported(context, cameraProvider, backCameraInfo)
+        } catch (_: kotlinx.coroutines.CancellationException) {
+            true
+        }
+        assertThat(isSupportedCancelled).isTrue()
+
+        val sessionBindingCancelled = try {
+            cancellingProvider.sessionBinding.transformCameraSelector(
+                cameraProvider,
+                CameraSelector.DEFAULT_BACK_CAMERA
+            ) === CameraSelector.DEFAULT_BACK_CAMERA
+        } catch (_: kotlinx.coroutines.CancellationException) {
+            true
+        }
+        assertThat(sessionBindingCancelled).isTrue()
     }
 
     private fun fakeCameraInfo(selector: CameraSelector): CameraInfo = Proxy.newProxyInstance(
