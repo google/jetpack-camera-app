@@ -185,7 +185,10 @@
     <!-- Option label and subtitle indicating there is no time limit for video recordings. [CHAR LIMIT=NONE] -->
     <string name="duration_description_none">Unlimited duration</string>
     <!-- Option label and subtitle showing the maximum video duration in seconds (e.g. 10 seconds). [CHAR LIMIT=NONE] -->
-    <string name="duration_description_seconds" tools:ignore="PluralsCandidate"><xliff:g id="seconds" example="10">%1$d</xliff:g> seconds</string>
+    <plurals name="duration_description_seconds">
+        <item quantity="one"><xliff:g id="seconds" example="1">%1$d</xliff:g> second</item>
+        <item quantity="other"><xliff:g id="seconds" example="10">%1$d</xliff:g> seconds</item>
+    </plurals>
 
     <!-- Title of the setting dialog and row for selecting the video recording resolution/quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="video_quality_title">Set Video Quality</string>

@@ -20,10 +20,20 @@
     <string name="elapsed_time_format" translatable="false">%1$d:%2$02d</string>
     <!-- Timer text on the capture screen while a video recording is paused, replacing the normal "m:ss" timer. "PAUSED" describes the recording and is shown in all capital letters for emphasis (use the target language's equivalent emphasis if all caps is not appropriate). %1$d is the elapsed minutes (e.g. 1) and %2$02d is the elapsed seconds zero-padded to two digits (e.g. 05), so the text reads e.g. "PAUSED 1:05". Keep the colon between minutes and seconds. [CHAR LIMIT=NONE] -->
     <string name="elapsed_time_format_paused">PAUSED <xliff:g id="minutes" example="1">%1$d</xliff:g>:<xliff:g id="seconds" example="05">%2$02d</xliff:g></string>
-    <!-- Accessibility announcement (read aloud by screen readers, not shown visually) for the elapsed-time timer on the capture screen while a video is recording. %1$d is the elapsed minutes (e.g. 1) and %2$d is the remaining elapsed seconds (e.g. 30), so the text reads e.g. "Recording time: 1 minutes and 30 seconds". [CHAR LIMIT=NONE] -->
-    <string name="elapsed_time_accessibility_recording" tools:ignore="PluralsCandidate">Recording time: <xliff:g id="minutes" example="1">%1$d</xliff:g> minutes and <xliff:g id="seconds" example="30">%2$d</xliff:g> seconds</string>
-    <!-- Accessibility announcement (read aloud by screen readers, not shown visually) for the elapsed-time timer on the capture screen while the video recording is paused. %1$d is the elapsed minutes (e.g. 1) and %2$d is the remaining elapsed seconds (e.g. 30), so the text reads e.g. "Recording paused: 1 minutes and 30 seconds". [CHAR LIMIT=NONE] -->
-    <string name="elapsed_time_accessibility_paused" tools:ignore="PluralsCandidate">Recording paused: <xliff:g id="minutes" example="1">%1$d</xliff:g> minutes and <xliff:g id="seconds" example="30">%2$d</xliff:g> seconds</string>
+    <!-- Plural phrase for the minutes portion of the elapsed-time accessibility announcement on the capture screen during video recording (e.g. "1 minute" or "2 minutes"), substituted into elapsed_time_accessibility_recording and elapsed_time_accessibility_paused. [CHAR LIMIT=NONE] -->
+    <plurals name="elapsed_time_accessibility_minutes">
+        <item quantity="one"><xliff:g id="minutes" example="1">%1$d</xliff:g> minute</item>
+        <item quantity="other"><xliff:g id="minutes" example="2">%1$d</xliff:g> minutes</item>
+    </plurals>
+    <!-- Plural phrase for the seconds portion of the elapsed-time accessibility announcement on the capture screen during video recording (e.g. "1 second" or "30 seconds"), substituted into elapsed_time_accessibility_recording and elapsed_time_accessibility_paused. [CHAR LIMIT=NONE] -->
+    <plurals name="elapsed_time_accessibility_seconds">
+        <item quantity="one"><xliff:g id="seconds" example="1">%1$d</xliff:g> second</item>
+        <item quantity="other"><xliff:g id="seconds" example="30">%1$d</xliff:g> seconds</item>
+    </plurals>
+    <!-- Accessibility announcement (read aloud by screen readers, not shown visually) for the elapsed-time timer on the capture screen while a video is recording. %1$s is the formatted elapsed minutes phrase from elapsed_time_accessibility_minutes (e.g. "1 minute") and %2$s is the formatted remaining elapsed seconds phrase from elapsed_time_accessibility_seconds (e.g. "30 seconds"), so the text reads e.g. "Recording time: 1 minute and 30 seconds". [CHAR LIMIT=NONE] -->
+    <string name="elapsed_time_accessibility_recording">Recording time: <xliff:g id="minutes" example="1 minute">%1$s</xliff:g> and <xliff:g id="seconds" example="30 seconds">%2$s</xliff:g></string>
+    <!-- Accessibility announcement (read aloud by screen readers, not shown visually) for the elapsed-time timer on the capture screen while the video recording is paused. %1$s is the formatted elapsed minutes phrase from elapsed_time_accessibility_minutes (e.g. "1 minute") and %2$s is the formatted remaining elapsed seconds phrase from elapsed_time_accessibility_seconds (e.g. "30 seconds"), so the text reads e.g. "Recording paused: 1 minute and 30 seconds". [CHAR LIMIT=NONE] -->
+    <string name="elapsed_time_accessibility_paused">Recording paused: <xliff:g id="minutes" example="1 minute">%1$s</xliff:g> and <xliff:g id="seconds" example="30 seconds">%2$s</xliff:g></string>
 
     <!-- Accessibility label for the toggle option to switch to photo capture mode. [CHAR LIMIT=NONE] -->
     <string name="capture_mode_image_capture_content_description">Image capture mode</string>
