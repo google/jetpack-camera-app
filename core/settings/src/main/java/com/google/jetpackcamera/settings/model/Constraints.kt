@@ -58,11 +58,20 @@ data class CameraSystemConstraints(
     val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap(),
     val captureSubModeDescriptors: Map<CaptureSubModeId, CaptureSubModeDescriptor> = emptyMap(),
     val captureSubModePolicies: Map<CaptureSubModeId, CameraFeaturePolicy> = emptyMap()
-)
+) {
+    init {
+        for ((id, policy) in captureSubModePolicies) {
+            require(policy.captureMode == null) {
+                "Sub-mode policy for $id must not specify captureMode; the active capture mode " +
+                    "is governed by CaptureSubModeDescriptor.parentCaptureMode."
+            }
+        }
+    }
+}
 
 inline fun <reified T> CameraSystemConstraints.forDevice(
     crossinline constraintSelector: (CameraConstraints) -> Iterable<T>
-) = perLensConstraints.values.asSequence().flatMap { constraintSelector(it) }.toSet()
+): Set<T> = perLensConstraints.values.asSequence().flatMap { constraintSelector(it) }.toSet()
 
 /**
  * Analyzes the camera system constraints to determine supported MIME types for each lens.
@@ -132,7 +141,7 @@ data class CameraConstraints(
     val supportedCaptureSubModes: Set<CaptureSubModeId> = emptySet(),
     val defaultCaptureSubModes: Map<CaptureMode, CaptureSubModeId> = emptyMap()
 ) {
-    val StabilizationMode.unsupportedFpsSet
+    val StabilizationMode.unsupportedFpsSet: Set<Int>
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
 }
 

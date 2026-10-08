@@ -487,7 +487,7 @@ class CameraFeaturePolicyTest {
         assertThat(hostHiddenPermitted.aspectRatio)
             .isEqualTo(SettingConfig(AspectRatio.ONE_ONE, OptionVisibility.Hidden))
         assertThat(hostHiddenNotPermitted.aspectRatio)
-            .isEqualTo(SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden))
+            .isEqualTo(SettingConfig(AspectRatio.THREE_FOUR, OptionVisibility.Hidden))
         assertThat(hostVisible.aspectRatio).isEqualTo(subModeAspectRatio)
     }
 
