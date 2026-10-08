@@ -183,7 +183,8 @@ class MainActivity : ComponentActivity() {
                                         firstFrameComplete?.complete(Unit)
                                     },
                                     onCaptureEvent = captureEventCallback,
-                                    isDarkTheme = isDarkTheme
+                                    isDarkTheme = isDarkTheme,
+                                    onCloseCamera = ::finish
                                 )
                             }
                         }

@@ -306,4 +306,8 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
             old.copy(captureMode = captureMode)
         }
     }
+
+    override fun clearCameraError() {
+        _currentCameraState.update { it.copy(cameraError = null) }
+    }
 }

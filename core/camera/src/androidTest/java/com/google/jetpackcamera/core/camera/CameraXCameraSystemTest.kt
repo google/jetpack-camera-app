@@ -18,6 +18,11 @@ package com.google.jetpackcamera.core.camera
 import android.app.Application
 import android.content.ContentResolver
 import android.net.Uri
+import androidx.camera.camera2.interop.cameraCharacteristics
+import androidx.camera.core.DynamicRange as CXDynamicRange
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
+import androidx.camera.video.Recorder
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -694,6 +699,38 @@ class CameraXCameraSystemTest {
 
         // Clean-up.
         settingsCheck.cancel()
+    }
+
+    @Test
+    fun initialize_offersHdrVideoOnlyWithTenBitCapability(): Unit = runBlocking {
+        // Arrange.
+        val cameraSystem = createAndInitCameraXCameraSystem()
+        val perLensConstraints = cameraSystem.getSystemConstraints().value?.perLensConstraints
+        assertThat(perLensConstraints).isNotNull()
+        val cameraInfos = ProcessCameraProvider.awaitInstance(application).availableCameraInfos
+
+        // Assert. HLG10 may only be offered on lenses whose camera advertises the
+        // DYNAMIC_RANGE_TEN_BIT capability. CameraX will not bind 10-bit streams without it,
+        // even if the camera lists 10-bit dynamic range profiles.
+        for ((lensFacing, constraints) in perLensConstraints!!) {
+            val cameraInfo = lensFacing.toCameraSelector().filter(cameraInfos).first()
+            if (!cameraInfo.cameraCharacteristics.isTenBitDynamicRangeSupported) {
+                assertWithMessage(
+                    "$lensFacing offers HDR video without the DYNAMIC_RANGE_TEN_BIT capability."
+                ).that(constraints.supportedDynamicRanges).containsExactly(DynamicRange.SDR)
+            } else {
+                val reportedRanges =
+                    Recorder.getVideoCapabilities(cameraInfo)
+                        .supportedDynamicRanges
+                        .mapNotNull(CXDynamicRange::toSupportedAppDynamicRange)
+                        .toSet()
+                assertWithMessage(
+                    "$lensFacing should match reported dynamic ranges when 10-bit capability " +
+                        "is supported."
+                ).that(constraints.supportedDynamicRanges)
+                    .containsExactlyElementsIn(reportedRanges)
+            }
+        }
     }
 
     @Test

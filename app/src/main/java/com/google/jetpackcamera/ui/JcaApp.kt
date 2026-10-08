@@ -66,7 +66,8 @@ fun JcaApp(
     onStoragePermissionGranted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
     isDarkTheme: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCloseCamera: () -> Unit = {}
 ) {
     JetpackCameraNavHost(
         modifier = modifier,
@@ -79,7 +80,8 @@ fun JcaApp(
         onRequestWindowColorMode = onRequestWindowColorMode,
         onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
         onCaptureEvent = onCaptureEvent,
-        isDarkTheme = isDarkTheme
+        isDarkTheme = isDarkTheme,
+        onCloseCamera = onCloseCamera
     )
 }
 
@@ -97,6 +99,7 @@ private fun JetpackCameraNavHost(
     onFirstFrameCaptureCompleted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
     isDarkTheme: Boolean = true,
+    onCloseCamera: () -> Unit = {},
     navController: NavHostController = rememberNavController()
 ) {
     // A single owner for system bar visibility, driven by the destination that is currently on top
@@ -147,7 +150,8 @@ private fun JetpackCameraNavHost(
             onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
             onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
             onNavigateToPostCapture = { navController.navigate(POST_CAPTURE_ROUTE) },
-            onCaptureEvent = onCaptureEvent
+            onCaptureEvent = onCaptureEvent,
+            onCloseCamera = onCloseCamera
         )
 
         composable(
