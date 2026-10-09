@@ -85,7 +85,7 @@ internal suspend fun runConcurrentCameraSession(
             imageFormat = ImageOutputFormat.JPEG,
             captureMode = sessionSettings.captureMode,
             videoCaptureUseCase = videoCapture
-        )
+        ).apply { attachPreviewSurfaceProvider(surfaceRequests) }
 
         val cameraConfigs = listOf(
             Pair(
