@@ -30,7 +30,6 @@ import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
-import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
@@ -47,8 +46,8 @@ private const val TAG = "NightSubModeProvider"
  * [CaptureSubModeProvider] for the Night Mode CameraX extension under [CaptureMode.IMAGE_ONLY].
  *
  * Queries [ExtensionsManager] for [ExtensionMode.NIGHT] support per camera lens, transforms the
- * [CameraSelector] when Night Mode is active, and restricts dynamic range to SDR, image output
- * format to JPEG, and flash to standard modes (excluding Low Light Boost).
+ * [CameraSelector] when Night Mode is active, and restricts dynamic range to SDR and flash to
+ * standard modes (excluding Low Light Boost).
  */
 class NightCaptureSubModeProvider internal constructor(
     private val applicationContext: Context,
@@ -81,10 +80,6 @@ class NightCaptureSubModeProvider internal constructor(
     override val featurePolicy = CameraFeaturePolicy(
         dynamicRange = SettingConfig(
             defaultValue = DynamicRange.SDR,
-            visibility = OptionVisibility.Hidden
-        ),
-        imageFormat = SettingConfig(
-            defaultValue = ImageOutputFormat.JPEG,
             visibility = OptionVisibility.Hidden
         ),
         flashMode = SettingConfig(
