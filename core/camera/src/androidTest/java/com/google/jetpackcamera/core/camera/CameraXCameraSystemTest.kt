@@ -1361,7 +1361,7 @@ class CameraXCameraSystemTest {
                             object : CameraFilter {
                                 override fun filter(
                                     cameraInfos: MutableList<CameraInfo>
-                                ): MutableList<CameraInfo> = cameraInfos
+                                ): MutableList<CameraInfo> = ArrayList(cameraInfos)
 
                                 override fun getIdentifier(): Identifier = jpegOnlyFilterId
                             }
