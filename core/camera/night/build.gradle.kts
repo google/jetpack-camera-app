@@ -30,6 +30,12 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -49,6 +55,7 @@ dependencies {
     implementation(libs.futures.ktx)
     implementation(libs.kotlinx.coroutines.core)
 
+    testImplementation(libs.camera.camera2)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)

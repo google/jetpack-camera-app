@@ -29,7 +29,9 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.SettingConfig
 import java.lang.reflect.Proxy
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -103,8 +105,9 @@ class NightCaptureSubModeProviderTest {
     }
 
     @Test
-    fun featurePolicy_enforcesSdrJpegAndExcludesLowLightBoost() {
+    fun featurePolicy_enforcesSdrPreservesImageFormatAndExcludesLowLightBoost() {
         assertThat(provider.featurePolicy.captureMode).isNull()
+        assertThat(provider.featurePolicy.imageFormat).isNull()
 
         val restrictedFromLlb = provider.featurePolicy.enforceRestrictions(
             CameraAppSettings(
@@ -116,8 +119,14 @@ class NightCaptureSubModeProviderTest {
         )
         assertThat(restrictedFromLlb.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
         assertThat(restrictedFromLlb.dynamicRange).isEqualTo(DynamicRange.SDR)
-        assertThat(restrictedFromLlb.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        assertThat(restrictedFromLlb.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
         assertThat(restrictedFromLlb.flashMode).isEqualTo(FlashMode.OFF)
+
+        assertThat(
+            CameraFeaturePolicy(
+                imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR)
+            ).isCompatibleWith(provider.featurePolicy)
+        ).isTrue()
 
         val restrictedWithFlashOn = provider.featurePolicy.enforceRestrictions(
             CameraAppSettings(
