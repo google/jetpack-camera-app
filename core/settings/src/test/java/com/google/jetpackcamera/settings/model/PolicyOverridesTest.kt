@@ -180,14 +180,20 @@ class PolicyOverridesTest {
             supportedFixedFrameRates = emptySet(),
             supportedDynamicRanges = setOf(DynamicRange.SDR),
             supportedVideoQualitiesMap = emptyMap(),
-            supportedImageFormatsMap = emptyMap(),
+            supportedImageFormatsMap = mapOf(
+                true to setOf(ImageOutputFormat.JPEG),
+                false to setOf(ImageOutputFormat.JPEG, ImageOutputFormat.JPEG_ULTRA_HDR)
+            ),
             supportedIlluminants = emptySet(),
             supportedFlashModes = setOf(FlashMode.OFF),
             supportedZoomRange = null,
             unsupportedStabilizationFpsMap = emptyMap(),
             supportedTestPatterns = emptySet(),
             supportedCaptureSubModes = setOf(subModeId),
-            defaultCaptureSubModes = mapOf(CaptureMode.IMAGE_ONLY to subModeId)
+            defaultCaptureSubModes = mapOf(CaptureMode.IMAGE_ONLY to subModeId),
+            supportedImageFormatsBySubMode = mapOf(
+                subModeId to setOf(ImageOutputFormat.JPEG)
+            )
         )
         val systemConstraints = CameraSystemConstraints(
             availableLenses = listOf(LensFacing.BACK),
@@ -201,5 +207,15 @@ class PolicyOverridesTest {
         assertThat(backConstraints.supportedCaptureSubModes).containsExactly(subModeId)
         assertThat(backConstraints.defaultCaptureSubModes)
             .containsEntry(CaptureMode.IMAGE_ONLY, subModeId)
+        assertThat(backConstraints.supportedImageFormatsFor(subModeId, affectsImageCapture = false))
+            .containsExactly(ImageOutputFormat.JPEG)
+        assertThat(
+            backConstraints.supportedImageFormatsFor(
+                CaptureSubModeId.DEFAULT,
+                affectsImageCapture = false
+            )
+        ).containsExactly(ImageOutputFormat.JPEG, ImageOutputFormat.JPEG_ULTRA_HDR)
+        assertThat(backConstraints.supportedImageFormatsFor(subModeId, affectsImageCapture = true))
+            .containsExactly(ImageOutputFormat.JPEG)
     }
 }
