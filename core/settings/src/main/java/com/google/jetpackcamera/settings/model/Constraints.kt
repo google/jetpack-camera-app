@@ -157,6 +157,16 @@ data class CameraConstraints(
     val StabilizationMode.unsupportedFpsSet: Set<Int>
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
 
+    /**
+     * Returns the [ImageOutputFormat]s supported on this lens for the given [subModeId] and
+     * camera effect state.
+     *
+     * When [affectsImageCapture] is `true` (an active effect targets image capture), returns
+     * `supportedImageFormatsMap[true]`. Otherwise, returns the sub-mode-specific formats from
+     * [supportedImageFormatsBySubMode] for [subModeId], falling back to the base lens's
+     * `supportedImageFormatsMap[false]` when [subModeId] is [CaptureSubModeId.DEFAULT] or has no
+     * dedicated entry.
+     */
     fun supportedImageFormatsFor(
         subModeId: CaptureSubModeId,
         affectsImageCapture: Boolean
