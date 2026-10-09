@@ -144,6 +144,16 @@ data class CameraConstraints(
     val defaultCaptureSubModes: Map<CaptureMode, CaptureSubModeId> = emptyMap(),
     val supportedImageFormatsBySubMode: Map<CaptureSubModeId, Set<ImageOutputFormat>> = emptyMap()
 ) {
+    init {
+        for ((mode, subModeId) in defaultCaptureSubModes) {
+            require(
+                subModeId == CaptureSubModeId.DEFAULT || subModeId in supportedCaptureSubModes
+            ) {
+                "Default sub-mode $subModeId for $mode must be supported by this lens."
+            }
+        }
+    }
+
     val StabilizationMode.unsupportedFpsSet: Set<Int>
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
 
