@@ -192,7 +192,12 @@ private fun <T : Any> intersectSetting(
             visibility = OptionVisibility.Hidden
         )
         is OptionVisibility.Visible -> when (base.visibility) {
-            is OptionVisibility.Hidden, is OptionVisibility.Only -> base
+            is OptionVisibility.Hidden -> base
+            is OptionVisibility.Only -> if (base.permits(overlay.defaultValue)) {
+                base.copy(defaultValue = overlay.defaultValue)
+            } else {
+                base
+            }
             is OptionVisibility.Visible -> SettingConfig(
                 defaultValue = overlay.defaultValue,
                 visibility = OptionVisibility.Visible
