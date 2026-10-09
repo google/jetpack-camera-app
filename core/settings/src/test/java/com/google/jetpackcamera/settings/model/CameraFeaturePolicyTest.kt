@@ -453,6 +453,10 @@ class CameraFeaturePolicyTest {
             defaultValue = AspectRatio.THREE_FOUR,
             visibility = OptionVisibility.Only(AspectRatio.THREE_FOUR, AspectRatio.NINE_SIXTEEN)
         )
+        val hostOnlyPermittingSubModeDefault = SettingConfig(
+            defaultValue = AspectRatio.THREE_FOUR,
+            visibility = OptionVisibility.Only(AspectRatio.THREE_FOUR, AspectRatio.ONE_ONE)
+        )
         val hostVisible = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Visible)
 
         assertThat(
@@ -461,6 +465,10 @@ class CameraFeaturePolicyTest {
         assertThat(
             CameraFeaturePolicy(aspectRatio = hostOnly).intersect(subModePolicy).aspectRatio
         ).isEqualTo(hostOnly)
+        assertThat(
+            CameraFeaturePolicy(aspectRatio = hostOnlyPermittingSubModeDefault)
+                .intersect(subModePolicy).aspectRatio
+        ).isEqualTo(hostOnlyPermittingSubModeDefault.copy(defaultValue = AspectRatio.ONE_ONE))
         assertThat(
             CameraFeaturePolicy(aspectRatio = hostVisible).intersect(subModePolicy).aspectRatio
         ).isEqualTo(SettingConfig(AspectRatio.ONE_ONE, OptionVisibility.Visible))
