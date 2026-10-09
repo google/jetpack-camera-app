@@ -389,6 +389,20 @@ class CameraXCameraSystem(
                             }
                             .toMap()
 
+                        val supportedImageFormatsBySubMode = buildMap {
+                            for (subModeId in supportedCaptureSubModes) {
+                                val binding =
+                                    registeredSubModes[subModeId]?.provider?.sessionBinding
+                                if (binding is CameraSessionBinding.SingleCamera) {
+                                    val subModeSelector =
+                                        binding.transformCameraSelector(cameraProvider, selector)
+                                    val subModeCameraInfo =
+                                        cameraProvider.getCameraInfo(subModeSelector)
+                                    put(subModeId, subModeCameraInfo.supportedImageFormats)
+                                }
+                            }
+                        }
+
                         put(
                             lensFacing,
                             CameraConstraints(
@@ -413,7 +427,8 @@ class CameraXCameraSystem(
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap,
                                 supportedTestPatterns = supportedTestPatterns,
                                 supportedCaptureSubModes = supportedCaptureSubModes,
-                                defaultCaptureSubModes = lensDefaultCaptureSubModes
+                                defaultCaptureSubModes = lensDefaultCaptureSubModes,
+                                supportedImageFormatsBySubMode = supportedImageFormatsBySubMode
                             )
                         )
                     }
@@ -888,7 +903,10 @@ class CameraXCameraSystem(
         // or fallback to SDR mid-recording if supported by CameraX).
         currentSettings.update { old ->
             if (systemConstraints.availableLenses.contains(lensFacing)) {
-                old?.copy(cameraLensFacing = lensFacing)
+                old?.copy(
+                    cameraLensFacing = lensFacing,
+                    activeCaptureSubModeId = CaptureSubModeId.DEFAULT
+                )
                     ?.tryApplyDynamicRangeConstraints()
                     ?.tryApplyImageFormatConstraints()
                     ?.tryApplyFlashModeConstraints()
@@ -1017,7 +1035,12 @@ class CameraXCameraSystem(
 
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            with(constraints.supportedImageFormatsMap[affectsImageCapture()]) {
+            with(
+                constraints.supportedImageFormatsFor(
+                    activeCaptureSubModeId,
+                    affectsImageCapture()
+                )
+            ) {
                 // Prioritize Low Light Boost over Ultra HDR to maintain consistency with
                 // Video HDR / Low Light Boost conflict resolution.
                 val newImageFormat = if (this != null && contains(imageFormat) &&
@@ -1210,17 +1233,17 @@ class CameraXCameraSystem(
             return settings.copy(
                 captureSubModeId = CaptureSubModeId.DEFAULT,
                 activeCaptureSubModeId = CaptureSubModeId.DEFAULT
-            )
+            ).tryApplyImageFormatConstraints()
         }
 
         val enforced = resolvedProvider.featurePolicy.enforceRestrictions(settings)
+            .copy(activeCaptureSubModeId = resolvedSubModeId)
             .tryApplyDynamicRangeConstraints()
             .tryApplyImageFormatConstraints()
             .tryApplyFlashModeConstraints()
             .tryApplyVideoQualityConstraints()
 
         return enforced.copy(
-            activeCaptureSubModeId = resolvedSubModeId,
             // Keep the record from when a continuing sub-mode became active.
             captureSubModeOverrides = settings.captureSubModeOverrides
                 ?: PolicyOverrides(beforeEnforcement = settings, afterEnforcement = enforced)
@@ -1233,7 +1256,12 @@ class CameraXCameraSystem(
      */
     private fun CameraAppSettings.restoreCaptureSubModeOverrides(): CameraAppSettings {
         val overrides = captureSubModeOverrides ?: return this
-        return overrides.restore(copy(captureSubModeOverrides = null))
+        return overrides.restore(
+            copy(
+                activeCaptureSubModeId = CaptureSubModeId.DEFAULT,
+                captureSubModeOverrides = null
+            )
+        )
             .tryApplyDynamicRangeConstraints()
             .tryApplyImageFormatConstraints()
             .tryApplyFlashModeConstraints()
