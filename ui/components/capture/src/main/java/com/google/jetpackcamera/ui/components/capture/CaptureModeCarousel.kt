@@ -202,7 +202,9 @@ fun CaptureModeCarousel(
     // Each item is anchored at the offset that centers it. Disabled items are laid out but are not
     // anchors, so the row never comes to rest on them. The selected item is always an anchor so
     // that the row can rest on it.
-    val anchoredIndices = items.indices.filter { isEnabled(it) || it == selectedIndex }
+    val anchoredIndices = remember(items, selectedIndex) {
+        items.indices.filter { isEnabled(it) || it == selectedIndex }
+    }
     val anchors = remember(geometry, anchoredIndices) {
         DraggableAnchors {
             for (index in anchoredIndices) {
@@ -230,6 +232,7 @@ fun CaptureModeCarousel(
     val isDragged by interactionSource.collectIsDraggedAsState()
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
+    val pillPath = remember { Path() }
 
     val currentSelectedId by rememberUpdatedState(selectedId)
     val currentOnSelectSubMode by rememberUpdatedState(onSelectSubMode)
@@ -343,9 +346,8 @@ fun CaptureModeCarousel(
                         ),
                         size = Size(pillWidth, pillHeight)
                     )
-                    val pillPath = Path().apply {
-                        addRoundRect(RoundRect(pillRect, CornerRadius(pillHeight / 2f)))
-                    }
+                    pillPath.reset()
+                    pillPath.addRoundRect(RoundRect(pillRect, CornerRadius(pillHeight / 2f)))
                     clipPath(pillPath) {
                         drawRect(selectedContainerColor)
                         this@drawWithContent.drawContent()

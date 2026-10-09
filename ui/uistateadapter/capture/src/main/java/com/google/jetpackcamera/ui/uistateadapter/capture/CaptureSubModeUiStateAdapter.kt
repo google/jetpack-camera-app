@@ -46,7 +46,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
  *    by `(sortOrder, id.value)` so providers can place items either to the left (`sortOrder < 0`)
  *    or right (`sortOrder > 0`) of the default option, and returns [CaptureSubModeUiState.Available].
  */
-fun CaptureSubModeUiState.Companion.from(
+internal fun CaptureSubModeUiState.Companion.from(
     systemConstraints: CameraSystemConstraints,
     cameraAppSettings: CameraAppSettings,
     videoRecordingState: VideoRecordingState,

@@ -217,5 +217,13 @@ class PolicyOverridesTest {
         ).containsExactly(ImageOutputFormat.JPEG, ImageOutputFormat.JPEG_ULTRA_HDR)
         assertThat(backConstraints.supportedImageFormatsFor(subModeId, affectsImageCapture = true))
             .containsExactly(ImageOutputFormat.JPEG)
+
+        assertThrows(IllegalArgumentException::class.java) {
+            backConstraints.copy(
+                defaultCaptureSubModes = mapOf(
+                    CaptureMode.IMAGE_ONLY to CaptureSubModeId("unsupported")
+                )
+            )
+        }
     }
 }
