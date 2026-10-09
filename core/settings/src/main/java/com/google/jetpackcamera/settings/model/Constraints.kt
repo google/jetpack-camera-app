@@ -124,6 +124,8 @@ fun CameraSystemConstraints.getSupportedMimeTypes(): Map<LensFacing, Set<String>
  * @property unsupportedStabilizationFpsMap Map of [StabilizationMode] to a set of frame rates (FPS) that are unsupported with that mode.
  * @property supportedTestPatterns Set of [TestPattern] values supported by this lens, used for debugging.
  * @property supportedCaptureSubModes Set of [CaptureSubModeId] values supported on this lens.
+ * @property defaultCaptureSubModes Map of [CaptureMode] to default [CaptureSubModeId] on this lens.
+ * @property supportedImageFormatsBySubMode Map of [CaptureSubModeId] to supported [ImageOutputFormat]s when that sub-mode is active.
  */
 data class CameraConstraints(
     val supportedStabilizationModes: Set<StabilizationMode>,
@@ -139,10 +141,20 @@ data class CameraConstraints(
     val unsupportedStabilizationFpsMap: Map<StabilizationMode, Set<Int>>,
     val supportedTestPatterns: Set<TestPattern>,
     val supportedCaptureSubModes: Set<CaptureSubModeId> = emptySet(),
-    val defaultCaptureSubModes: Map<CaptureMode, CaptureSubModeId> = emptyMap()
+    val defaultCaptureSubModes: Map<CaptureMode, CaptureSubModeId> = emptyMap(),
+    val supportedImageFormatsBySubMode: Map<CaptureSubModeId, Set<ImageOutputFormat>> = emptyMap()
 ) {
     val StabilizationMode.unsupportedFpsSet: Set<Int>
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
+
+    fun supportedImageFormatsFor(
+        subModeId: CaptureSubModeId,
+        affectsImageCapture: Boolean
+    ): Set<ImageOutputFormat>? = if (affectsImageCapture) {
+        supportedImageFormatsMap[true]
+    } else {
+        supportedImageFormatsBySubMode[subModeId] ?: supportedImageFormatsMap[false]
+    }
 }
 
 /**
