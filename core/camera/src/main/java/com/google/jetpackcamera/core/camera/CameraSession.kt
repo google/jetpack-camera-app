@@ -667,9 +667,17 @@ internal fun createUseCaseGroup(
             TAG,
             "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
         )
+        val isSensorRotationLandscape =
+            (cameraInfo.getSensorRotationDegrees(previewUseCase.targetRotation) % 180 == 0) ==
+                (cameraInfo.sensorRect.width() >= cameraInfo.sensorRect.height())
+        val viewPortAspectRatio = if (isSensorRotationLandscape) {
+            Rational(aspectRatio.denominator, aspectRatio.numerator)
+        } else {
+            Rational(aspectRatio.numerator, aspectRatio.denominator)
+        }
         setViewPort(
             ViewPort.Builder(
-                Rational(aspectRatio.numerator, aspectRatio.denominator),
+                viewPortAspectRatio,
                 // Initialize rotation to Preview's rotation, which comes from Display rotation
                 previewUseCase.targetRotation
             ).build()
