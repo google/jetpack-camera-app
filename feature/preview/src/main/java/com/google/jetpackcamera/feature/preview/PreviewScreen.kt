@@ -78,6 +78,7 @@ import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CameraErrorDialog
 import com.google.jetpackcamera.ui.components.capture.CaptureButton
+import com.google.jetpackcamera.ui.components.capture.CaptureModeCarousel
 import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CutoutAwareRow
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
@@ -609,6 +610,24 @@ private fun ContentScreen(
         }
     }
 
+    val captureSubModeState = remember {
+        derivedStateOf { currentCaptureUiStateProvider().captureSubModeUiState }
+    }
+    val captureModeCarouselLambda = remember(
+        captureSubModeState,
+        quickSettingsController
+    ) {
+        @Composable { modifier: Modifier ->
+            CaptureModeCarousel(
+                uiState = captureSubModeState.value,
+                onSelectSubMode = { subModeId ->
+                    quickSettingsController?.setCaptureSubMode(subModeId)
+                },
+                modifier = modifier
+            )
+        }
+    }
+
     // TODO: When QuickSettingsUiState is Unavailable, coordinate with optional onNavigateToSettings
     //       if a direct navigation path to settings from the toggle button is desired.
     val quickSettingsButtonLambda = remember(
@@ -816,6 +835,7 @@ private fun ContentScreen(
         quickSettingsButton = quickSettingsButtonLambda,
         audioToggleButton = audioToggleButtonLambda,
         captureModeToggle = captureModeToggleLambda,
+        captureModeCarousel = captureModeCarouselLambda,
         quickSettingsOverlay = quickSettingsOverlayLambda,
         debugOverlay = debugOverlayLambda,
         debugVisibilityWrapper = debugVisibilityWrapperLambda,
@@ -911,6 +931,7 @@ private fun LayoutWrapper(
     pauseToggleButton: @Composable (modifier: Modifier) -> Unit,
     audioToggleButton: @Composable (modifier: Modifier) -> Unit,
     captureModeToggle: @Composable (modifier: Modifier) -> Unit,
+    captureModeCarousel: @Composable (modifier: Modifier) -> Unit,
     imageWell: @Composable (modifier: Modifier) -> Unit,
     quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
     debugOverlay: @Composable (
@@ -934,6 +955,7 @@ private fun LayoutWrapper(
         elapsedTimeDisplay = elapsedTimeDisplay,
         quickSettingsButton = quickSettingsButton,
         captureModeToggle = captureModeToggle,
+        captureModeCarousel = captureModeCarousel,
         quickSettingsOverlay = quickSettingsOverlay,
         indicatorRow = { modifier ->
             if (!isErrorDialogShowing) {

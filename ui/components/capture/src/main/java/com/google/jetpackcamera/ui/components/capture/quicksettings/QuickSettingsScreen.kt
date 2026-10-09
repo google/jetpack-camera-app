@@ -32,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -109,7 +110,7 @@ internal fun QuickSettingsContent(
     val captureMode = (quickSettingsUiState.captureModeUiState as? CaptureModeUiState.Available)
         ?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
 
-    val titleRes = when (captureMode) {
+    val titleRes = quickSettingsUiState.titleResId ?: when (captureMode) {
         CaptureMode.VIDEO_ONLY -> R.string.quick_settings_title_video_settings
         CaptureMode.IMAGE_ONLY -> R.string.quick_settings_title_photo_settings
         CaptureMode.STANDARD -> R.string.quick_settings_title_photo_and_video_settings
@@ -191,6 +192,8 @@ internal class NoOpQuickSettingsController : QuickSettingsController {
     override fun setImageFormat(imageOutputFormat: ImageOutputFormat) {}
 
     override fun setCaptureMode(captureMode: CaptureMode) {}
+
+    override fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {}
 }
 
 @Preview

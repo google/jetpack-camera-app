@@ -19,6 +19,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -100,6 +101,16 @@ internal class QuickSettingsControllerImplTest {
         assertThat(
             cameraSystem.getCurrentSettings().value?.captureMode
         ).isEqualTo(CaptureMode.VIDEO_ONLY)
+    }
+
+    @Test
+    fun setCaptureSubMode_mutatesCameraSystem() = testScope.runTest {
+        val subModeId = CaptureSubModeId("night")
+        controller.setCaptureSubMode(subModeId)
+        advanceUntilIdle()
+        assertThat(
+            cameraSystem.getCurrentSettings().value?.captureSubModeId
+        ).isEqualTo(subModeId)
     }
 
     @Test

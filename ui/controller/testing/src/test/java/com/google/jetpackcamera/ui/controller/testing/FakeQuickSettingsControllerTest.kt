@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.controller.testing
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -74,5 +75,15 @@ class FakeQuickSettingsControllerTest {
         val controller = FakeQuickSettingsController(setCaptureModeAction = { calledValue = it })
         controller.setCaptureMode(CaptureMode.STANDARD)
         assertThat(calledValue).isEqualTo(CaptureMode.STANDARD)
+    }
+
+    @Test
+    fun setCaptureSubMode_invokesAction() {
+        var calledValue: CaptureSubModeId? = null
+        val controller =
+            FakeQuickSettingsController(setCaptureSubModeAction = { calledValue = it })
+        val subModeId = CaptureSubModeId("night")
+        controller.setCaptureSubMode(subModeId)
+        assertThat(calledValue).isEqualTo(subModeId)
     }
 }

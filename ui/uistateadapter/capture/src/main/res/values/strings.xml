@@ -34,4 +34,7 @@
     <string name="toast_hdr_video_unsupported_on_lens">HDR video not supported by current lens</string>
     <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be bound simultaneously</string>
     <string name="toast_llb_disabled_by_hdr">Low Light Boost is disabled when HDR is active</string>
+    <string name="capture_mode_standard_default" description="Label for the default standard (combined photo and video) capture option in the camera mode carousel at the bottom of the preview screen. Noun, not a verb. [CHAR LIMIT=30]">Standard</string>
+    <string name="capture_mode_photo_default" description="Label for the default photo capture option in the camera mode carousel at the bottom of the preview screen. Noun, not a verb. [CHAR LIMIT=30]">Photo</string>
+    <string name="capture_mode_video_default" description="Label for the default video recording option in the camera mode carousel at the bottom of the preview screen. Noun, not a verb. [CHAR LIMIT=30]">Video</string>
 </resources>
