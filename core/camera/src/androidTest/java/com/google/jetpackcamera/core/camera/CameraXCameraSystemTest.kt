@@ -18,10 +18,22 @@ package com.google.jetpackcamera.core.camera
 import android.app.Application
 import android.content.ContentResolver
 import android.content.Context
+import android.graphics.ImageFormat
 import android.net.Uri
+import android.util.Size
 import androidx.camera.camera2.interop.cameraCharacteristics
+import androidx.camera.core.CameraFilter
 import androidx.camera.core.CameraInfo
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.impl.CameraConfig
+import androidx.camera.core.impl.Config
+import androidx.camera.core.impl.ExtendedCameraConfigProviderStore
+import androidx.camera.core.impl.Identifier
+import androidx.camera.core.impl.MutableOptionsBundle
+import androidx.camera.core.impl.SessionProcessor
+import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
@@ -66,6 +78,7 @@ import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.model.applyExternalCaptureMode
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
+import java.lang.reflect.Proxy
 import java.util.AbstractMap
 import javax.inject.Provider
 import kotlin.time.DurationUnit
@@ -1291,6 +1304,117 @@ class CameraXCameraSystemTest {
         assertThat(settings.captureMode)
             .isEqualTo(if (dualAccepted) CaptureMode.VIDEO_ONLY else CaptureMode.STANDARD)
     }
+
+    @Test
+    @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
+    @Suppress("RestrictedApiAndroidX")
+    fun captureSubMode_withJpegOnlyExtensionCameraInfo_coercesUltraHdrAndRestoresOnExit(): Unit =
+        runBlocking {
+            val secondaryKey = object : CaptureSubModeFeatureKey {
+                override val id = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+            }
+            val jpegOnlyFilterId = Identifier.create("jpeg_only_submode_test_filter")
+            val dummySessionProcessor = Proxy.newProxyInstance(
+                SessionProcessor::class.java.classLoader,
+                arrayOf(SessionProcessor::class.java)
+            ) { _, _, _ -> emptySet<Int>() } as SessionProcessor
+            ExtendedCameraConfigProviderStore.addConfig(jpegOnlyFilterId) { _, _ ->
+                object : CameraConfig {
+                    override fun getConfig(): Config = MutableOptionsBundle.create()
+                    override fun getCompatibilityId(): Identifier = Identifier.create(0)
+                    override fun getSessionProcessor(
+                        valueIfMissing: SessionProcessor?
+                    ): SessionProcessor = dummySessionProcessor
+
+                    override fun getSessionProcessor(): SessionProcessor = dummySessionProcessor
+                    override fun getUseCaseConfigFactory(): UseCaseConfigFactory =
+                        UseCaseConfigFactory { captureType, _ ->
+                            if (captureType == UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE) {
+                                ImageCapture.Builder()
+                                    .setSupportedResolutions(
+                                        listOf(
+                                            android.util.Pair(
+                                                ImageFormat.JPEG,
+                                                arrayOf(Size(640, 480))
+                                            )
+                                        )
+                                    )
+                                    .useCaseConfig
+                            } else {
+                                null
+                            }
+                        }
+                }
+            }
+            // First sub-mode keeps the base selector (supports whatever the base lens supports).
+            val passthroughProvider = FakeCaptureSubModeProvider(
+                featurePolicy = CameraFeaturePolicy()
+            )
+            // Second sub-mode transforms the selector to an extension CameraInfo that only
+            // advertises JPEG, even when the underlying lens supports Ultra HDR.
+            val jpegOnlyProvider = FakeCaptureSubModeProvider(
+                featurePolicy = CameraFeaturePolicy(),
+                subModeId = SECOND_FAKE_CAPTURE_SUB_MODE_ID,
+                sessionBinding = CameraSessionBinding.SingleCamera { _, baseSelector ->
+                    CameraSelector.Builder.fromSelector(baseSelector)
+                        .addCameraFilter(
+                            object : CameraFilter {
+                                override fun filter(
+                                    cameraInfos: MutableList<CameraInfo>
+                                ): MutableList<CameraInfo> = cameraInfos
+
+                                override fun getIdentifier(): Identifier = jpegOnlyFilterId
+                            }
+                        )
+                        .build()
+                }
+            )
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY
+                ),
+                extraCaptureSubModeProviders = mapOf(
+                    FakeCaptureSubModeFeatureKey to Provider { passthroughProvider },
+                    secondaryKey to Provider { jpegOnlyProvider }
+                )
+            )
+            val lensFacing = cameraSystem.getCurrentSettings().value!!.cameraLensFacing
+            val lensConstraints =
+                cameraSystem.getSystemConstraints().value!!.perLensConstraints[lensFacing]!!
+
+            assertThat(lensConstraints.supportedImageFormatsBySubMode[FAKE_CAPTURE_SUB_MODE_ID])
+                .isEqualTo(lensConstraints.supportedImageFormatsMap[false])
+            assertThat(
+                lensConstraints.supportedImageFormatsBySubMode[SECOND_FAKE_CAPTURE_SUB_MODE_ID]
+            ).containsExactly(ImageOutputFormat.JPEG)
+
+            assume()
+                .withMessage("Ultra HDR not supported on $lensFacing, skip coercion check.")
+                .that(
+                    lensConstraints.supportedImageFormatsMap[false]
+                        ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+                )
+                .isTrue()
+
+            cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+            assertThat(cameraSystem.getCurrentSettings().value!!.imageFormat)
+                .isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+            // Entering a sub-mode whose CameraInfo supports Ultra HDR preserves JPEG_ULTRA_HDR.
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(cameraSystem.getCurrentSettings().value!!.imageFormat)
+                .isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+            // Switching to a sub-mode whose CameraInfo only supports JPEG coerces to JPEG.
+            cameraSystem.setCaptureSubMode(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(cameraSystem.getCurrentSettings().value!!.imageFormat)
+                .isEqualTo(ImageOutputFormat.JPEG)
+
+            // Exiting back to DEFAULT restores JPEG_ULTRA_HDR.
+            cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+            assertThat(cameraSystem.getCurrentSettings().value!!.imageFormat)
+                .isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+        }
 }
 
 object FakeImagePostProcessorFeatureKey : ImagePostProcessorFeatureKey

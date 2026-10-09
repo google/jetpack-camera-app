@@ -734,7 +734,9 @@ private fun createImageUseCase(
     builder.setResolutionSelector(
         getResolutionSelector(cameraInfo.sensorLandscapeRatio, aspectRatio)
     )
-    if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR) {
+    if (imageFormat == ImageOutputFormat.JPEG_ULTRA_HDR &&
+        ImageOutputFormat.JPEG_ULTRA_HDR in cameraInfo.supportedImageFormats
+    ) {
         builder.setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
     }
     return builder.build()
