@@ -37,6 +37,13 @@ When reviewing a pull request, focus on the following key areas:
         2.  **Shield static sub-components:** Use `derivedStateOf` to extract and debounce low-frequency static state, then wrap the component in a remembered lambda (e.g., `val myLambda = remember(debouncedState) { @Composable { Component(debouncedState.value) } }`).
         3.  **Defer high-frequency reads:** Pass the lambda provider directly into the high-frequency component so the `.value` read is deferred into the deepest possible node.
         4.  **Isolate conditional logic:** For conditional visibility or logic involving high-frequency state, extract the condition into a `derivedStateOf` boolean to keep the lambda body perfectly stable.
+    * **Shared Mutable State in Coroutines:** Give shared state a single owner and access it through coroutine primitives. In order of preference:
+        1.  **Confinement:** Mutate state from one coroutine or a single-threaded context (`Dispatchers.Main`, `limitedParallelism(1)`). `Dispatchers.Default` and `Dispatchers.IO` are multi-threaded and do not provide confinement.
+        2.  **Observable state:** Hold shared state in `StateFlow`/`MutableStateFlow`. Use `update { }` for updates derived from the current value; do not write `state.value = state.value.copy(...)`.
+        3.  **Callback APIs:** Bridge listener-based APIs with `callbackFlow` or `suspendCancellableCoroutine`, scoping the listener to the collecting coroutine, rather than storing callback state in class fields.
+        4.  **Suspending critical sections:** Use `Mutex.withLock`, or `MutatorMutex` for UI-driven mutations.
+        5.  **Atomics:** Use `kotlinx.atomicfu` atomics only for non-suspending compare-and-set logic that the options above do not cover.
+    * **Avoid `@Volatile` Fields and Thread-Blocking Primitives:** Do not use `@Volatile` fields, `synchronized`, `@Synchronized`, `ReentrantLock`, `runBlocking`, `Thread.sleep`, or `CountDownLatch` in production code. `@Volatile` provides visibility but not atomicity and usually indicates state without a clear owner. If one is unavoidable, document which threads read and write it.
 
 4.  **Jetpack Compose & CameraX Usage**
     * Verify that Compose and CameraX APIs are used correctly and effectively.
