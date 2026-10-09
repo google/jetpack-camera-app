@@ -47,7 +47,19 @@ import com.google.jetpackcamera.model.VideoQuality
  */
 data class CameraAppSettings(
     val captureMode: CaptureMode = CaptureMode.STANDARD,
+    /**
+     * The requested capture sub-mode ([CaptureSubModeId.DEFAULT] for the parent [captureMode]'s
+     * default behavior, or an explicit sub-mode ID when a specific sub-mode is requested).
+     */
     val captureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
+    /**
+     * The effective sub-mode currently active in the camera session after resolving any per-lens
+     * default override ([CameraConstraints.defaultCaptureSubModes]) and verifying lens support
+     * and policy compatibility. When a default override is configured for [captureMode],
+     * [captureSubModeId] remains [CaptureSubModeId.DEFAULT] while [activeCaptureSubModeId] holds
+     * the resolved override's ID (or falls back to [CaptureSubModeId.DEFAULT] if unsupported or
+     * incompatible).
+     */
     val activeCaptureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
     /**
      * The values replaced by the policy of [activeCaptureSubModeId], restored when that sub-mode
