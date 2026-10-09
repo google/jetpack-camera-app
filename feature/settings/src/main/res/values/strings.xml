@@ -64,6 +64,15 @@
     <string name="audio_description_on">Recordings will start with audio enabled</string>
     <string name="audio_description_off">Recordings will start muted</string>
 
+    <!-- Location setting strings -->
+    <string name="location_setting_title" description="Title for setting to save location in captured media. [CHAR LIMIT=30]">Save Location</string>
+    <string name="location_setting_description_on" description="Description when location is enabled. Photos is a generic term referring to media captured by the app. [CHAR LIMIT=100]">Photos and videos will be saved with location coordinates</string>
+    <string name="location_setting_description_off" description="Description when location is disabled. Photos is a generic term referring to media captured by the app. [CHAR LIMIT=100]">Photos and videos will be saved without location</string>
+    <string name="location_permission_dialog_title" description="Title for dialog requesting location permission. [CHAR LIMIT=40]">Location permission required</string>
+    <string name="location_permission_dialog_message" description="Message explaining to grant location permission in system settings. Jetpack Camera is a product name. [CHAR LIMIT=NONE]">To save location with your photos and videos, grant location permissions for Jetpack Camera in system settings.</string>
+    <string name="location_permission_dialog_open_settings" description="Button label to open app system settings. [CHAR LIMIT=25]">Open Settings</string>
+    <string name="location_permission_dialog_cancel" description="Button label to dismiss dialog. [CHAR LIMIT=20]">Cancel</string>
+
     <!-- Concurrent Camera setting strings -->
     <string name="concurrent_camera_title">Enable Concurrent Camera</string>
     <string name="concurrent_camera_description_on">Record from multiple cameras concurrently</string>
@@ -163,6 +172,7 @@
     <string name="front_lens_unsupported">%1$s is unsupported by the front lens</string>
     <string name="video_quality_unsupported">%1$s is unsupported by the current video quality</string>
     <string name="permission_record_audio_unsupported">%1$s requires permission to record audio</string>
+    <string name="permission_location_unsupported" description="Rationale explaining that a feature requires location permission. %1$s is the feature name. [CHAR LIMIT=60]">%1$s requires location permission</string>
 
     <string name="concurrent_camera_enabled">%1$s is unsupported when Concurrent Camera is active</string>
     <string name="ultra_hdr_enabled">%1$s is unsupported when Ultra HDR is enabled</string>
@@ -186,6 +196,7 @@
     <string name="no_fixed_fps_rationale_prefix">Fixed frame rate</string>
 
     <string name="mute_audio_rationale_prefix">Mute</string>
+    <string name="save_location_rationale_prefix" description="Prefix title for save location rationale. [CHAR LIMIT=30]">Save Location</string>
     <string name="concurrent_camera_rationale_prefix">Concurrent camera</string>
 
     <!-- Rationale texts -->

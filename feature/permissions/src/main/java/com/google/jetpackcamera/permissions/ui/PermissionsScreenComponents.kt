@@ -35,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,8 +47,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.permissions.PermissionEnum
 import com.google.jetpackcamera.permissions.R
@@ -55,7 +57,12 @@ import com.google.jetpackcamera.permissions.R
 /**
  * Template for a single page for the permissions Screen
  *
+ * When the request for an optional permission ends without a grant, [onDismissPermission] is
+ * called so the optional permission is only requested once.
+ *
  * @param permissionEnum a [PermissionEnum] representing the target permission
+ * @param onDismissPermission Called when the screen should advance past this permission.
+ * @param onOpenAppSettings Called to open the system app settings for a declined permission.
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -65,13 +72,59 @@ fun PermissionTemplate(
     onDismissPermission: () -> Unit,
     onOpenAppSettings: () -> Unit
 ) {
-    val permissionState = rememberPermissionState(permissionEnum.getPermission())
+    key(permissionEnum) {
+        val permissionStates =
+            rememberMultiplePermissionsState(permissionEnum.getPermissions()) { results ->
+                // An optional permission is requested once. If the request ends without a grant,
+                // whether denied, dismissed, or denied by the system without a prompt, advance.
+                // The user can enable it later from settings.
+                if (permissionEnum.isOptional() && results.values.none { it }) {
+                    onDismissPermission()
+                }
+            }
+        PermissionTemplate(
+            modifier = modifier,
+            permissionEnum = permissionEnum,
+            permissionStates = permissionStates,
+            onDismissPermission = onDismissPermission,
+            onOpenAppSettings = onOpenAppSettings
+        )
+    }
+}
 
-    // LaunchedEffect will skip permission enum if already granted.
-    LaunchedEffect(permissionState.status) {
-        if (permissionState.status.isGranted ||
-            (permissionState.status.shouldShowRationale && permissionEnum.isOptional())
-        ) {
+/**
+ * Displays the request screen for a single [PermissionEnum] and routes the request button based
+ * on the permission's current state.
+ *
+ * The screen is skipped automatically via [onDismissPermission] once any component permission is
+ * granted, or when an optional permission has already been declined. For mandatory permissions
+ * the user previously declined, the button opens the system app settings and the rationale text
+ * is shown. Optional permissions are requested once; the caller advances when that request ends
+ * without a grant.
+ *
+ * @param permissionEnum The permission being requested.
+ * @param permissionStates The state of the system permissions that make up [permissionEnum].
+ * @param onDismissPermission Called when the screen should advance past this permission.
+ * @param onOpenAppSettings Called to open the system app settings for a declined permission.
+ * @param modifier The [Modifier] to be applied to the layout.
+ */
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+internal fun PermissionTemplate(
+    permissionEnum: PermissionEnum,
+    permissionStates: MultiplePermissionsState,
+    onDismissPermission: () -> Unit,
+    onOpenAppSettings: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isAnyGranted = permissionStates.permissions.any { it.status.isGranted }
+    val canShowRationale =
+        permissionStates.shouldShowRationale ||
+            permissionStates.permissions.any { it.status.shouldShowRationale }
+
+    // LaunchedEffect will skip permission enum if already granted or declined.
+    LaunchedEffect(isAnyGranted, canShowRationale) {
+        if (isAnyGranted || (canShowRationale && permissionEnum.isOptional())) {
             onDismissPermission()
         }
     }
@@ -80,10 +133,10 @@ fun PermissionTemplate(
         modifier = modifier,
         testTag = permissionEnum.getTestTag(),
         onRequestPermission = {
-            if (permissionState.status.shouldShowRationale) {
+            if (!permissionEnum.isOptional() && permissionStates.shouldShowRationale) {
                 onOpenAppSettings()
             } else {
-                permissionState.launchPermissionRequest()
+                permissionStates.launchMultiplePermissionRequest()
             }
         },
         painter = permissionEnum.getPainter(),
@@ -92,13 +145,13 @@ fun PermissionTemplate(
 
         // if declined by user, must navigate to system app settings to enable permission
         bodyText =
-        if (!permissionState.status.shouldShowRationale || permissionEnum.isOptional()) {
+        if (!permissionStates.shouldShowRationale || permissionEnum.isOptional()) {
             stringResource(id = permissionEnum.getPermissionBodyTextResId())
         } else {
             stringResource(id = checkNotNull(permissionEnum.getRationaleBodyTextResId()))
         },
         requestButtonText =
-        if (!permissionState.status.shouldShowRationale || permissionEnum.isOptional()) {
+        if (!permissionStates.shouldShowRationale || permissionEnum.isOptional()) {
             stringResource(id = R.string.request_permission)
         } else {
             stringResource(id = R.string.navigate_to_settings)

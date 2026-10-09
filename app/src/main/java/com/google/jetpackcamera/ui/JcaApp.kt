@@ -175,6 +175,7 @@ private fun JetpackCameraNavHost(
                     buildType = BuildConfig.BUILD_TYPE
                 ),
                 onNavigateBack = { navController.popBackStack() },
+                onOpenAppSettings = onOpenAppSettings,
                 cameraSettingsSlot = {
                     DefaultCameraSettings(
                         customEffectSlot = {
