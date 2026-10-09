@@ -706,9 +706,14 @@ class CameraXCameraSystem(
                                 )
 
                                 is PerpetualSessionSettings.CustomSession -> {
-                                    val runner = captureSubModeProviders[sessionSettings.subModeKey]
-                                        ?.sessionBinding as? CameraSessionBinding.Custom
-                                    runner?.runSession(this)
+                                    val runner = requireNotNull(
+                                        captureSubModeProviders[sessionSettings.subModeKey]
+                                            ?.sessionBinding as? CameraSessionBinding.Custom
+                                    ) {
+                                        "Custom session runner missing for sub-mode: " +
+                                            "${sessionSettings.subModeKey}"
+                                    }
+                                    runner.runSession(this)
                                 }
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
