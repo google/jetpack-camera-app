@@ -18,6 +18,9 @@ package com.google.jetpackcamera.settings.model
 import android.util.Range
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraEffectTarget
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeDescriptor
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
@@ -44,16 +47,31 @@ import com.google.jetpackcamera.model.VideoQuality
  * @property perLensConstraints A map where each key is a [com.google.jetpackcamera.model.LensFacing] value and the
  *                              corresponding value is a [CameraConstraints] object
  *                              detailing the specific capabilities and limitations of that lens.
+ * @property captureSubModeDescriptors A map of [CaptureSubModeId] to [CaptureSubModeDescriptor]
+ *                                     for all registered capture sub-modes.
+ * @property captureSubModePolicies A map of [CaptureSubModeId] to the [CameraFeaturePolicy]
+ *                                  enforced when that sub-mode is active.
  */
 data class CameraSystemConstraints(
     val availableLenses: List<LensFacing> = emptyList(),
     val concurrentCamerasSupported: Boolean = false,
-    val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap()
-)
+    val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap(),
+    val captureSubModeDescriptors: Map<CaptureSubModeId, CaptureSubModeDescriptor> = emptyMap(),
+    val captureSubModePolicies: Map<CaptureSubModeId, CameraFeaturePolicy> = emptyMap()
+) {
+    init {
+        for ((id, policy) in captureSubModePolicies) {
+            require(policy.captureMode == null) {
+                "Sub-mode policy for $id must not specify captureMode; the active capture mode " +
+                    "is governed by CaptureSubModeDescriptor.parentCaptureMode."
+            }
+        }
+    }
+}
 
 inline fun <reified T> CameraSystemConstraints.forDevice(
     crossinline constraintSelector: (CameraConstraints) -> Iterable<T>
-) = perLensConstraints.values.asSequence().flatMap { constraintSelector(it) }.toSet()
+): Set<T> = perLensConstraints.values.asSequence().flatMap { constraintSelector(it) }.toSet()
 
 /**
  * Analyzes the camera system constraints to determine supported MIME types for each lens.
@@ -105,6 +123,9 @@ fun CameraSystemConstraints.getSupportedMimeTypes(): Map<LensFacing, Set<String>
  * @property supportedZoomRange Optional [Range] of floats for zoom ratios. Null if zoom is not supported.
  * @property unsupportedStabilizationFpsMap Map of [StabilizationMode] to a set of frame rates (FPS) that are unsupported with that mode.
  * @property supportedTestPatterns Set of [TestPattern] values supported by this lens, used for debugging.
+ * @property supportedCaptureSubModes Set of [CaptureSubModeId] values supported on this lens.
+ * @property defaultCaptureSubModes Map of [CaptureMode] to default [CaptureSubModeId] on this lens.
+ * @property supportedImageFormatsBySubMode Map of [CaptureSubModeId] to supported [ImageOutputFormat]s when that sub-mode is active.
  */
 data class CameraConstraints(
     val supportedStabilizationModes: Set<StabilizationMode>,
@@ -118,10 +139,42 @@ data class CameraConstraints(
     val supportedFlashModes: Set<FlashMode>,
     val supportedZoomRange: Range<Float>?,
     val unsupportedStabilizationFpsMap: Map<StabilizationMode, Set<Int>>,
-    val supportedTestPatterns: Set<TestPattern>
+    val supportedTestPatterns: Set<TestPattern>,
+    val supportedCaptureSubModes: Set<CaptureSubModeId> = emptySet(),
+    val defaultCaptureSubModes: Map<CaptureMode, CaptureSubModeId> = emptyMap(),
+    val supportedImageFormatsBySubMode: Map<CaptureSubModeId, Set<ImageOutputFormat>> = emptyMap()
 ) {
-    val StabilizationMode.unsupportedFpsSet
+    init {
+        for ((mode, subModeId) in defaultCaptureSubModes) {
+            require(
+                subModeId == CaptureSubModeId.DEFAULT || subModeId in supportedCaptureSubModes
+            ) {
+                "Default sub-mode $subModeId for $mode must be supported by this lens."
+            }
+        }
+    }
+
+    val StabilizationMode.unsupportedFpsSet: Set<Int>
         get() = unsupportedStabilizationFpsMap[this] ?: emptySet()
+
+    /**
+     * Returns the [ImageOutputFormat]s supported on this lens for the given [subModeId] and
+     * camera effect state.
+     *
+     * When [affectsImageCapture] is `true` (an active effect targets image capture), returns
+     * `supportedImageFormatsMap[true]`. Otherwise, returns the sub-mode-specific formats from
+     * [supportedImageFormatsBySubMode] for [subModeId], falling back to the base lens's
+     * `supportedImageFormatsMap[false]` when [subModeId] is [CaptureSubModeId.DEFAULT] or has no
+     * dedicated entry.
+     */
+    fun supportedImageFormatsFor(
+        subModeId: CaptureSubModeId,
+        affectsImageCapture: Boolean
+    ): Set<ImageOutputFormat>? = if (affectsImageCapture) {
+        supportedImageFormatsMap[true]
+    } else {
+        supportedImageFormatsBySubMode[subModeId] ?: supportedImageFormatsMap[false]
+    }
 }
 
 /**

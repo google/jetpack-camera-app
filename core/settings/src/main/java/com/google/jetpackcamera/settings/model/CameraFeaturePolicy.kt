@@ -107,6 +107,119 @@ data class CameraFeaturePolicy(
             dynamicRange = this.dynamicRange?.defaultValue ?: defaultSettings.dynamicRange
         )
     }
+
+    /**
+     * Clamps [settings] to satisfy all [SettingConfig] restrictions in this policy.
+     */
+    fun enforceRestrictions(settings: CameraAppSettings): CameraAppSettings = settings.copy(
+        aspectRatio = enforceSetting(settings.aspectRatio, aspectRatio),
+        flashMode = enforceSetting(settings.flashMode, flashMode),
+        imageFormat = enforceSetting(settings.imageFormat, imageFormat),
+        dynamicRange = enforceSetting(settings.dynamicRange, dynamicRange),
+        captureMode = enforceSetting(settings.captureMode, captureMode)
+    )
+
+    /**
+     * Returns true if every setting restriction in [other] has at least one mutually permitted
+     * value with this policy. Used to hide sub-modes whose required [CameraFeaturePolicy]
+     * conflicts with a host application's locked [CameraFeaturePolicy].
+     */
+    fun isCompatibleWith(other: CameraFeaturePolicy): Boolean =
+        isSettingCompatible(captureMode, other.captureMode) &&
+            isSettingCompatible(aspectRatio, other.aspectRatio) &&
+            isSettingCompatible(flashMode, other.flashMode) &&
+            isSettingCompatible(imageFormat, other.imageFormat) &&
+            isSettingCompatible(dynamicRange, other.dynamicRange)
+
+    /**
+     * Returns the intersection of this policy (typically the host application's policy) and
+     * [other] (typically the active sub-mode's policy), narrowing visibility and selecting a
+     * mutually permitted default value for each setting.
+     */
+    fun intersect(other: CameraFeaturePolicy): CameraFeaturePolicy = CameraFeaturePolicy(
+        captureMode = intersectSetting(captureMode, other.captureMode),
+        aspectRatio = intersectSetting(aspectRatio, other.aspectRatio),
+        flashMode = intersectSetting(flashMode, other.flashMode),
+        imageFormat = intersectSetting(imageFormat, other.imageFormat),
+        dynamicRange = intersectSetting(dynamicRange, other.dynamicRange)
+    )
+}
+
+private fun <T : Any> enforceSetting(currentValue: T, config: SettingConfig<T>?): T =
+    when (val visibility = config?.visibility) {
+        null, is OptionVisibility.Visible -> currentValue
+        is OptionVisibility.Hidden -> config.defaultValue
+        is OptionVisibility.Only ->
+            if (currentValue in visibility.enabledOptions) currentValue else config.defaultValue
+    }
+
+/**
+ * Returns `true` if [value] is permitted by this [SettingConfig]'s [visibility] restriction.
+ */
+fun <T : Any> SettingConfig<T>.permits(value: T): Boolean = when (visibility) {
+    is OptionVisibility.Visible -> true
+    is OptionVisibility.Hidden -> value == defaultValue
+    is OptionVisibility.Only -> value in visibility.enabledOptions
+}
+
+private fun <T : Any> isSettingCompatible(
+    base: SettingConfig<T>?,
+    overlay: SettingConfig<T>?
+): Boolean {
+    if (base == null || overlay == null) return true
+    return when (val baseVis = base.visibility) {
+        is OptionVisibility.Visible -> true
+        is OptionVisibility.Hidden -> overlay.permits(base.defaultValue)
+        is OptionVisibility.Only -> when (val overlayVis = overlay.visibility) {
+            is OptionVisibility.Visible -> true
+            is OptionVisibility.Hidden -> overlay.defaultValue in baseVis.enabledOptions
+            is OptionVisibility.Only ->
+                (baseVis.enabledOptions intersect overlayVis.enabledOptions).isNotEmpty()
+        }
+    }
+}
+
+private fun <T : Any> intersectSetting(
+    base: SettingConfig<T>?,
+    overlay: SettingConfig<T>?
+): SettingConfig<T>? {
+    if (base == null) return overlay
+    if (overlay == null) return base
+    if (!isSettingCompatible(base, overlay)) return base
+    return when (val overlayVis = overlay.visibility) {
+        is OptionVisibility.Hidden -> SettingConfig(
+            defaultValue = overlay.defaultValue,
+            visibility = OptionVisibility.Hidden
+        )
+        is OptionVisibility.Visible -> when (base.visibility) {
+            is OptionVisibility.Hidden -> base
+            is OptionVisibility.Only -> if (base.permits(overlay.defaultValue)) {
+                base.copy(defaultValue = overlay.defaultValue)
+            } else {
+                base
+            }
+            is OptionVisibility.Visible -> SettingConfig(
+                defaultValue = overlay.defaultValue,
+                visibility = OptionVisibility.Visible
+            )
+        }
+        is OptionVisibility.Only -> when (val baseVis = base.visibility) {
+            is OptionVisibility.Hidden -> base
+            is OptionVisibility.Visible -> overlay
+            is OptionVisibility.Only -> {
+                val common = baseVis.enabledOptions intersect overlayVis.enabledOptions
+                val resolvedDefault = when {
+                    overlay.defaultValue in common -> overlay.defaultValue
+                    base.defaultValue in common -> base.defaultValue
+                    else -> common.first()
+                }
+                SettingConfig(
+                    defaultValue = resolvedDefault,
+                    visibility = OptionVisibility.from(common)
+                )
+            }
+        }
+    }
 }
 
 /**
