@@ -117,8 +117,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val firstFrameComplete = MutableStateFlow(false)
-        if (Trace.isEnabled()) {
+        val firstFrameComplete = if (Trace.isEnabled()) MutableStateFlow(false) else null
+        if (firstFrameComplete != null) {
             // start trace between app starting and the earliest possible completed capture
             lifecycleScope.launch {
                 traceFirstFrameMainActivity(cookie = 0) {
@@ -180,7 +180,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     },
                                     onFirstFrameCaptureCompleted = {
-                                        firstFrameComplete.value = true
+                                        firstFrameComplete?.value = true
                                     },
                                     onCaptureEvent = captureEventCallback,
                                     isDarkTheme = isDarkTheme,
