@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.update
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @HiltViewModel()
-class PermissionsViewModel @Inject constructor(
+class PermissionsViewModel @Inject internal constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 

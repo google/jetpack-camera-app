@@ -30,7 +30,7 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class CameraEffectModule {
+internal abstract class CameraEffectModule private constructor() {
     @Multibinds
     abstract fun cameraEffectProviderEntries(): Set<
         Map.Entry<

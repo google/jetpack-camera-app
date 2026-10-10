@@ -86,7 +86,7 @@ private const val TAG = "PreviewViewModel"
  * [ViewModel] for [PreviewScreen].
  */
 @HiltViewModel
-class PreviewViewModel @Inject constructor(
+class PreviewViewModel @Inject internal constructor(
     private val cameraSystemRepository: CameraSystemRepository,
     private val savedStateHandle: SavedStateHandle,
     private val defaultSaveMode: SaveMode,

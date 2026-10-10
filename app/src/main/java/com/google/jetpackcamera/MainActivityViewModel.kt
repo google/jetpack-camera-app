@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 @HiltViewModel
-class MainActivityViewModel @Inject constructor(
+class MainActivityViewModel @Inject internal constructor(
     settingsRepository: SettingsRepository,
     private val mediaRepository: MediaRepository
 ) : ViewModel() {

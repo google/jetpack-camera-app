@@ -42,6 +42,6 @@ internal object CommonModule {
     @Singleton
     @DefaultCoroutineScope
     @Provides
-    fun providesCoroutineScope(@DefaultDispatcher dispatcher: CoroutineDispatcher) =
+    fun providesCoroutineScope(@DefaultDispatcher dispatcher: CoroutineDispatcher): CoroutineScope =
         CoroutineScope(SupervisorJob() + dispatcher)
 }

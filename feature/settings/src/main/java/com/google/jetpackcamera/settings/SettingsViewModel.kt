@@ -68,7 +68,7 @@ private val fpsOptions = setOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60)
  * [ViewModel] for [SettingsScreen].
  */
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+class SettingsViewModel @Inject internal constructor(
     private val settingsRepository: SettingsRepository,
     constraintsRepository: ConstraintsRepository
 ) : ViewModel() {

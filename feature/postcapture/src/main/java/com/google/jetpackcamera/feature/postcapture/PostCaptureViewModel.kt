@@ -61,7 +61,7 @@ import kotlinx.coroutines.launch
 private const val TAG = "PostCaptureViewModel"
 
 @HiltViewModel
-class PostCaptureViewModel @Inject constructor(
+class PostCaptureViewModel @Inject internal constructor(
     private val mediaRepository: MediaRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
