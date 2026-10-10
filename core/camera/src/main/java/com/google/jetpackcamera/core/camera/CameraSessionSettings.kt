@@ -60,7 +60,9 @@ internal sealed interface PerpetualSessionSettings {
     data class ConcurrentCamera(
         val primaryCameraInfo: CameraInfo,
         val secondaryCameraInfo: CameraInfo,
-        override val aspectRatio: AspectRatio
+        override val aspectRatio: AspectRatio,
+        val targetVideoBitrate: Int? = null,
+        val targetAudioBitrate: Int? = null
     ) : PerpetualSessionSettings {
         override val captureMode: CaptureMode = CaptureMode.VIDEO_ONLY
     }

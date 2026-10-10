@@ -99,6 +99,14 @@ import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraXCameraSystem"
 
+/** The debug target video bitrate in bps, or null when debug mode is disabled. */
+private val CameraAppSettings.debugTargetVideoBitrate: Int?
+    get() = debugSettings.targetVideoBitrate.takeIf { debugSettings.isDebugModeEnabled }
+
+/** The debug target audio bitrate in bps, or null when debug mode is disabled. */
+private val CameraAppSettings.debugTargetAudioBitrate: Int?
+    get() = debugSettings.targetAudioBitrate.takeIf { debugSettings.isDebugModeEnabled }
+
 /**
  * CameraX based implementation for [CameraSystem]
  */
@@ -531,20 +539,8 @@ class CameraXCameraSystem(
                             videoQuality = currentCameraSettings.videoQuality,
                             imageFormat = currentCameraSettings.imageFormat,
                             lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority,
-                            targetVideoBitrate = if (
-                                currentCameraSettings.debugSettings.isDebugModeEnabled
-                            ) {
-                                currentCameraSettings.debugSettings.targetVideoBitrate
-                            } else {
-                                null
-                            },
-                            targetAudioBitrate = if (
-                                currentCameraSettings.debugSettings.isDebugModeEnabled
-                            ) {
-                                currentCameraSettings.debugSettings.targetAudioBitrate
-                            } else {
-                                null
-                            }
+                            targetVideoBitrate = currentCameraSettings.debugTargetVideoBitrate,
+                            targetAudioBitrate = currentCameraSettings.debugTargetAudioBitrate
                         )
                     }
 
@@ -567,7 +563,11 @@ class CameraXCameraSystem(
                                     PerpetualSessionSettings.ConcurrentCamera(
                                         primaryCameraInfo = nonNullPrimary,
                                         secondaryCameraInfo = nonNullSecondary,
-                                        aspectRatio = currentCameraSettings.aspectRatio
+                                        aspectRatio = currentCameraSettings.aspectRatio,
+                                        targetVideoBitrate =
+                                        currentCameraSettings.debugTargetVideoBitrate,
+                                        targetAudioBitrate =
+                                        currentCameraSettings.debugTargetAudioBitrate
                                     )
                                 }
                             }
