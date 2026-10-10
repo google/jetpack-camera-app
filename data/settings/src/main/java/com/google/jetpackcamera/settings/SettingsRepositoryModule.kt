@@ -15,17 +15,19 @@
  */
 package com.google.jetpackcamera.settings
 
-import dagger.Binds
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class SettingsRepositoryModule {
+internal object SettingsRepositoryModule {
 
-    @Binds
-    abstract fun bindSettingsRepository(
-        localSettingsRepository: LocalSettingsRepository
-    ): SettingsRepository
+    @Provides
+    fun provideSettingsRepository(
+        settingsDataSource: SettingsDataSource,
+        cameraFeaturePolicy: CameraFeaturePolicy
+    ): SettingsRepository = LocalSettingsRepository(settingsDataSource, cameraFeaturePolicy)
 }

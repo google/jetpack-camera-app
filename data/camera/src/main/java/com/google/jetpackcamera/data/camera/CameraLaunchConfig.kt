@@ -78,7 +78,7 @@ internal fun Intent.toDebugSettings(): DebugSettings = DebugSettings(
  * Activity-retained provider that manages [CameraLaunchConfig] reactively.
  */
 @ActivityRetainedScoped
-class CameraLaunchConfigProvider @Inject constructor() {
+class CameraLaunchConfigProvider @Inject internal constructor() {
     private val _config = MutableStateFlow(CameraLaunchConfig())
 
     /**

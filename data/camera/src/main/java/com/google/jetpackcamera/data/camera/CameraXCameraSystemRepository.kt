@@ -53,18 +53,6 @@ class CameraXCameraSystemRepository(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) : CameraSystemRepository, ConstraintsRepository {
 
-    constructor(
-        cameraXCameraSystemProvider: Provider<out CameraSystem>,
-        settingsRepository: SettingsRepository,
-        launchConfig: CameraLaunchConfig = CameraLaunchConfig(),
-        scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    ) : this(
-        cameraXCameraSystemProvider = cameraXCameraSystemProvider,
-        settingsRepository = settingsRepository,
-        launchConfigProvider = CameraLaunchConfigProvider().apply { setConfig(launchConfig) },
-        scope = scope
-    )
-
     private val cameraSystem: CameraSystem by lazy {
         cameraXCameraSystemProvider.get()
     }
