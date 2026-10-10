@@ -40,7 +40,6 @@ import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
-import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
 import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
@@ -355,13 +354,14 @@ class CameraXCameraSystem(
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
                     getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
-                val fileDir = File(application.getExternalFilesDir(null), "Debug")
+                // App-private internal storage: always available and not readable by other apps.
+                val fileDir = File(application.filesDir, "Debug")
                 fileDir.mkdirs()
                 val file = File(
                     fileDir,
                     "JCACameraProperties.json"
                 )
-                writeFileExternalStorage(file, cameraPropertiesJSON)
+                file.writeText(cameraPropertiesJSON)
                 cameraPropertiesJSONCallback.invoke(cameraPropertiesJSON)
                 Log.d(
                     TAG,
@@ -699,8 +699,9 @@ class CameraXCameraSystem(
             }
 
             is SaveLocation.Cache -> {
-                // 1. Get the app's cache directory
-                val cacheDir = saveLocation.cacheDir?.toFile() ?: application.cacheDir
+                // 1. Get the cache directory for captures
+                val cacheDir = saveLocation.cacheDir?.toFile()
+                    ?: application.defaultCaptureCacheDir()
 
                 // 2. Create a unique temporary file
                 val tempFile = File.createTempFile(

@@ -17,14 +17,11 @@ package com.google.jetpackcamera.core.camera
 
 import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
-import android.os.Environment
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraInfo
-import java.io.File
-import java.io.FileOutputStream
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -87,19 +84,5 @@ object CameraCoreUtil {
         }
 
         return jsonObject
-    }
-
-    fun writeFileExternalStorage(file: File, textToWrite: String) {
-        // Checking the availability state of the External Storage.
-        val state = Environment.getExternalStorageState()
-        if (Environment.MEDIA_MOUNTED != state) {
-            // If it isn't mounted - we can't write into it.
-            return
-        }
-
-        file.createNewFile()
-        FileOutputStream(file).use { outputStream ->
-            outputStream.write(textToWrite.toByteArray())
-        }
     }
 }
