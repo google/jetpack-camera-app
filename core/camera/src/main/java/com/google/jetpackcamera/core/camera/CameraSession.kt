@@ -726,13 +726,16 @@ internal fun createVideoUseCase(
     recorderExecutor: Executor?
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
-    val recorder = Recorder.Builder()
+    var recorderBuilder = Recorder.Builder()
         .setAspectRatio(
             getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
         )
+    // Without an explicit executor, CameraX runs the recorder on its own executor.
+    if (recorderExecutor != null) {
+        recorderBuilder = recorderBuilder.setExecutor(recorderExecutor)
+    }
+    val recorder = recorderBuilder
         .apply {
-            // Without an explicit executor, CameraX runs the recorder on its own executor.
-            recorderExecutor?.let { setExecutor(it) }
             videoQuality.toQuality()?.let { quality ->
                 // No fallback strategy is used. The app will crash if the quality is unsupported
                 setQualitySelector(
