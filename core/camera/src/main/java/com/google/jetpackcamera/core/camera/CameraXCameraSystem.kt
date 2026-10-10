@@ -80,6 +80,7 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.IOException
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -361,13 +362,18 @@ class CameraXCameraSystem(
                     fileDir,
                     "JCACameraProperties.json"
                 )
-                file.writeText(cameraPropertiesJSON)
+                try {
+                    file.writeText(cameraPropertiesJSON)
+                    Log.d(
+                        TAG,
+                        "JCACameraProperties written to ${file.path}. \n" +
+                            cameraPropertiesJSON
+                    )
+                } catch (e: IOException) {
+                    // Debugging aid only; a write failure must not fail initialization.
+                    Log.e(TAG, "Failed to write JCACameraProperties to ${file.path}", e)
+                }
                 cameraPropertiesJSONCallback.invoke(cameraPropertiesJSON)
-                Log.d(
-                    TAG,
-                    "JCACameraProperties written to ${file.path}. \n" +
-                        cameraPropertiesJSON
-                )
             }
         }
     }
