@@ -1043,7 +1043,7 @@ private fun getPendingRecording(
 
 context(CameraSessionContext)
 @OptIn(ExperimentalPersistentRecording::class)
-private fun startVideoRecordingInternal(
+private suspend fun startVideoRecordingInternal(
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
