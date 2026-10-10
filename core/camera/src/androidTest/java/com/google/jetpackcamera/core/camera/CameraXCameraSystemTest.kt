@@ -357,7 +357,6 @@ class CameraXCameraSystemTest {
         fakeImagePostProcessor: FakeImagePostProcessor? = null
     ) = CameraXCameraSystem(
         application = application,
-        defaultDispatcher = Dispatchers.Default,
         iODispatcher = Dispatchers.IO,
         availabilityCheckers = emptyMap(),
         effectProviders = emptyMap(),

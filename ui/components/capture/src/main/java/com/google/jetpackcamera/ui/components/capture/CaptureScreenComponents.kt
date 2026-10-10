@@ -818,8 +818,8 @@ fun PreviewDisplay(
                 label = ""
             )
 
-            LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
-                if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
+            LaunchedEffect(previewDisplayUiState.captureBlinkCount) {
+                if (previewDisplayUiState.captureBlinkCount != 0) {
                     imageVisible = false
                     delay(BLINK_TIME)
                     imageVisible = true

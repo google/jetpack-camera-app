@@ -93,16 +93,12 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.util.concurrent.Executor
 import javax.inject.Provider
-import kotlin.coroutines.ContinuationInterceptor
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -147,7 +143,7 @@ internal suspend fun runSingleCameraSession(
                     sessionSettings.stabilizationMode,
                     sessionSettings.dynamicRange,
                     sessionSettings.videoQuality,
-                    backgroundDispatcher
+                    recorderExecutor
                 )
 
             else -> {
@@ -727,15 +723,16 @@ internal fun createVideoUseCase(
     stabilizationMode: StabilizationMode,
     dynamicRange: DynamicRange,
     videoQuality: VideoQuality,
-    backgroundDispatcher: CoroutineDispatcher
+    recorderExecutor: Executor?
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
     val recorder = Recorder.Builder()
         .setAspectRatio(
             getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
         )
-        .setExecutor(backgroundDispatcher.asExecutor())
         .apply {
+            // Without an explicit executor, CameraX runs the recorder on its own executor.
+            recorderExecutor?.let { setExecutor(it) }
             videoQuality.toQuality()?.let { quality ->
                 // No fallback strategy is used. The app will crash if the quality is unsupported
                 setQualitySelector(
@@ -1046,7 +1043,7 @@ private fun getPendingRecording(
 
 context(CameraSessionContext)
 @OptIn(ExperimentalPersistentRecording::class)
-private suspend fun startVideoRecordingInternal(
+private fun startVideoRecordingInternal(
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
@@ -1075,12 +1072,9 @@ private suspend fun startVideoRecordingInternal(
     }
         .asPersistentRecording()
 
-    val callbackExecutor: Executor =
-        (
-            currentCoroutineContext()[ContinuationInterceptor] as?
-                CoroutineDispatcher
-            )?.asExecutor() ?: ContextCompat.getMainExecutor(context)
-    return pendingRecord.start(callbackExecutor) { onVideoRecordEvent ->
+    // CameraX posts each recording event to this executor separately. The main executor runs
+    // them one at a time, so state updates are applied in the order the events were sent.
+    return pendingRecord.start(ContextCompat.getMainExecutor(context)) { onVideoRecordEvent ->
         Log.d(TAG, onVideoRecordEvent.toString())
         when (onVideoRecordEvent) {
             is VideoRecordEvent.Start -> {

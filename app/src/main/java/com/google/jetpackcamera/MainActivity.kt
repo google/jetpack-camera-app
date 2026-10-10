@@ -75,8 +75,9 @@ import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlin.collections.emptyList
-import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
@@ -116,13 +117,12 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        var firstFrameComplete: CompletableDeferred<Unit>? = null
+        val firstFrameComplete = MutableStateFlow(false)
         if (Trace.isEnabled()) {
-            firstFrameComplete = CompletableDeferred()
             // start trace between app starting and the earliest possible completed capture
             lifecycleScope.launch {
                 traceFirstFrameMainActivity(cookie = 0) {
-                    firstFrameComplete.await()
+                    firstFrameComplete.first { it }
                 }
             }
         }
@@ -180,7 +180,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     },
                                     onFirstFrameCaptureCompleted = {
-                                        firstFrameComplete?.complete(Unit)
+                                        firstFrameComplete.value = true
                                     },
                                     onCaptureEvent = captureEventCallback,
                                     isDarkTheme = isDarkTheme,

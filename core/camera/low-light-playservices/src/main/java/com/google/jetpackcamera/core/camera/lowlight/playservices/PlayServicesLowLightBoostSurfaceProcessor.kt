@@ -32,7 +32,6 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Status
 import kotlin.coroutines.resume
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.BufferOverflow
@@ -40,9 +39,11 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
@@ -86,16 +87,16 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
 
     private suspend fun runLowLightBoostSession() {
         for (outputSurface in outputSurfaces) {
-            val outputSurfaceCompleter = CompletableDeferred<Unit>()
+            val outputSurfaceCloseRequested = MutableStateFlow(false)
             val surface = outputSurface.getSurface(Runnable::run) {
-                outputSurfaceCompleter.complete(Unit)
+                outputSurfaceCloseRequested.value = true
             }
             coroutineScope {
                 try {
                     runLowLightBoostSessionWithOutput(surface)
                 } finally {
                     withContext(NonCancellable) {
-                        outputSurfaceCompleter.await()
+                        outputSurfaceCloseRequested.first { it }
                         outputSurface.close()
                     }
                 }
@@ -137,8 +138,8 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
         Log.d(TAG, "Creating new LowLightBoostSession for $surfaceRequest")
         try {
             val llbOptions = createLlbOptions(surfaceRequest, outputSurfaceForLlb)
-            val llbSessionComplete = CompletableDeferred<Unit>()
-            val callback = createLlbCallback(llbSessionComplete)
+            val llbSessionEnded = MutableStateFlow(false)
+            val callback = createLlbCallback(llbSessionEnded)
 
             // Must wrap the await() call in a NonCancellable context so we always
             // release the session, even if the coroutine is cancelled.
@@ -147,7 +148,7 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
             }
 
             lowLightBoostSession?.let { session ->
-                useLowLightBoostSession(session, surfaceRequest, llbSessionComplete)
+                useLowLightBoostSession(session, surfaceRequest, llbSessionEnded)
             }
         } catch (_: CancellationException) {
             // Don't call error callback on cancellation, but ensure cancellation is propagated
@@ -162,7 +163,7 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
     private suspend fun useLowLightBoostSession(
         lowLightBoostSession: LowLightBoostSession,
         surfaceRequest: SurfaceRequest,
-        llbSessionComplete: CompletableDeferred<Unit>
+        llbSessionEnded: StateFlow<Boolean>
     ) = coroutineScope {
         Log.d(
             TAG,
@@ -195,7 +196,7 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
             // Must wait for session to be destroyed before continuing so more sessions aren't
             // created while this one is still active.
             withContext(NonCancellable) {
-                llbSessionComplete.await()
+                llbSessionEnded.first { it }
             }
             Log.d(
                 TAG,
@@ -216,17 +217,17 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
     )
 
     private fun createLlbCallback(
-        llbSessionComplete: CompletableDeferred<Unit>
+        llbSessionEnded: MutableStateFlow<Boolean>
     ): LowLightBoostCallback = object : LowLightBoostCallback {
         override fun onSessionDestroyed() {
             Log.d(TAG, "LLB session destroyed")
-            llbSessionComplete.complete(Unit)
+            llbSessionEnded.value = true
         }
 
         override fun onSessionDisconnected(status: Status) {
             Log.d(TAG, "LLB session disconnected: $status")
             onLowLightBoostErrorCallback(RuntimeException(status.statusMessage))
-            llbSessionComplete.complete(Unit)
+            llbSessionEnded.value = true
         }
     }
 

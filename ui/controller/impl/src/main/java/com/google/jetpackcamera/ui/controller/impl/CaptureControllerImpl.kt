@@ -94,7 +94,7 @@ class CaptureControllerImpl(
                 doTakePicture = {
                     cameraSystemProvider().takePicture(contentResolver, saveLocation) {
                         trackedCaptureUiState.update { old ->
-                            old.copy(lastBlinkTimeStamp = System.currentTimeMillis())
+                            old.copy(captureBlinkCount = old.captureBlinkCount + 1)
                         }
                     }.savedUri
                 },

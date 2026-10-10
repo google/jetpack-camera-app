@@ -81,6 +81,7 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.io.FileNotFoundException
+import java.util.concurrent.Executor
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -100,10 +101,12 @@ private const val TAG = "CameraXCameraSystem"
 
 /**
  * CameraX based implementation for [CameraSystem]
+ *
+ * @param recorderExecutor executor for the video [Recorder]'s background tasks, including audio
+ * and video encoding. If `null`, CameraX runs these tasks on its own internal executor.
  */
 class CameraXCameraSystem(
     private val application: Application,
-    private val defaultDispatcher: CoroutineDispatcher,
     private val iODispatcher: CoroutineDispatcher,
     private val filePathGenerator: FilePathGenerator,
     availabilityCheckers:
@@ -113,7 +116,8 @@ class CameraXCameraSystem(
     val imagePostProcessors:
     Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>>,
     private val cameraEffectProviders:
-    Map<CameraEffectFeatureKey, @JvmSuppressWildcards Provider<CameraEffectProvider>>
+    Map<CameraEffectFeatureKey, @JvmSuppressWildcards Provider<CameraEffectProvider>>,
+    private val recorderExecutor: Executor? = null
 ) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -567,7 +571,7 @@ class CameraXCameraSystem(
                         CameraSessionContext(
                             context = application,
                             cameraProvider = cameraProvider,
-                            backgroundDispatcher = defaultDispatcher,
+                            recorderExecutor = recorderExecutor,
                             screenFlashEvents = screenFlashEvents,
                             filePathGenerator = filePathGenerator,
                             focusMeteringEvents = focusMeteringEvents,
