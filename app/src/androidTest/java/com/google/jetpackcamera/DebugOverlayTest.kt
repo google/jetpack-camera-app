@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera
 
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -29,10 +30,16 @@ import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ZOOM_BUTTON_ROW_TAG
 import com.google.jetpackcamera.ui.debug.BTN_DEBUG_HIDE_COMPONENTS_TAG
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_AUDIO_BITRATE_TAG
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_BUTTON
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_AUDIO_BITRATE_TEXT_FIELD
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_BITRATE_BUTTON
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_BITRATE_CONFIRM_BUTTON
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_SET_BUTTON
 import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_SET_ZOOM_RATIO_TEXT_FIELD
+import com.google.jetpackcamera.ui.debug.DEBUG_OVERLAY_VIDEO_BITRATE_TAG
 import com.google.jetpackcamera.ui.debug.LOGICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.debug.PHYSICAL_CAMERA_ID_TAG
 import com.google.jetpackcamera.ui.debug.ZOOM_RATIO_TAG
@@ -124,6 +131,57 @@ class DebugOverlayTest {
 
             // Verify zoom ratio text exists
             composeTestRule.onNodeWithTag(ZOOM_RATIO_TAG).assertExists()
+        }
+    }
+
+    @Test
+    fun setBitrate_viaDebugOverlay() {
+        runMainActivityScenarioTest(debugExtra) {
+            composeTestRule.waitForCaptureButton()
+
+            // Open debug menu
+            composeTestRule.onNodeWithTag(DEBUG_OVERLAY_BUTTON).performClick()
+
+            // Wait for debug menu and verify initial default video and audio bitrate text
+            composeTestRule.waitForNodeWithTag(DEBUG_OVERLAY_SET_BITRATE_BUTTON)
+            composeTestRule.onNodeWithTag(
+                DEBUG_OVERLAY_VIDEO_BITRATE_TAG,
+                useUnmergedTree = true
+            ).assertTextEquals("Default")
+            composeTestRule.onNodeWithTag(
+                DEBUG_OVERLAY_AUDIO_BITRATE_TAG,
+                useUnmergedTree = true
+            ).assertTextEquals("Default")
+
+            // Click "Set Bitrate" button
+            composeTestRule.onNodeWithTag(DEBUG_OVERLAY_SET_BITRATE_BUTTON).performClick()
+
+            // Enter video and audio bitrates in bps
+            composeTestRule.waitForNodeWithTag(DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD)
+            composeTestRule.onNodeWithTag(
+                DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD
+            ).performTextInput("10000000")
+            composeTestRule.onNodeWithTag(
+                DEBUG_OVERLAY_SET_AUDIO_BITRATE_TEXT_FIELD
+            ).performTextInput("128000")
+
+            // Click "Confirm"
+            composeTestRule.onNodeWithTag(DEBUG_OVERLAY_SET_BITRATE_CONFIRM_BUTTON)
+                .performClick()
+
+            // Verify dialog closed and both bitrate texts updated
+            composeTestRule.waitForNodeWithTag(DEBUG_OVERLAY_SET_BITRATE_BUTTON)
+            composeTestRule.onNodeWithTag(
+                DEBUG_OVERLAY_SET_VIDEO_BITRATE_TEXT_FIELD
+            ).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(
+                DEBUG_OVERLAY_VIDEO_BITRATE_TAG,
+                useUnmergedTree = true
+            ).assertTextEquals("10000000 bps")
+            composeTestRule.onNodeWithTag(
+                DEBUG_OVERLAY_AUDIO_BITRATE_TAG,
+                useUnmergedTree = true
+            ).assertTextEquals("128000 bps")
         }
     }
 }

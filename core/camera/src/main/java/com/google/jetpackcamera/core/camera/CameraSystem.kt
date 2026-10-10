@@ -124,6 +124,22 @@ interface CameraSystem {
     fun setTestPattern(newTestPattern: TestPattern)
 
     /**
+     * Sets the target video encoding bitrate for the camera.
+     *
+     * @param bitrate The target video bitrate in bits per second (bps), or `null` to use the
+     *   default bitrate.
+     */
+    fun setTargetVideoBitrate(bitrate: Int?)
+
+    /**
+     * Sets the target audio encoding bitrate for the camera.
+     *
+     * @param bitrate The target audio bitrate in bits per second (bps), or `null` to use the
+     *   default bitrate.
+     */
+    fun setTargetAudioBitrate(bitrate: Int?)
+
+    /**
      * Returns a [StateFlow] of the current [CameraState].
      */
     fun getCurrentCameraState(): StateFlow<CameraState>

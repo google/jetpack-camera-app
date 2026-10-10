@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.debug
 
 import android.util.Size
 import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.settings.model.BitrateConstraints
 
 /**
  * Defines the UI state for the debug information overlay.
@@ -69,6 +70,14 @@ sealed interface DebugUiState {
          *   preview.
          * @property availableTestPatterns The set of test patterns supported by the current camera
          *   device.
+         * @property targetVideoBitrate The custom target video encoding bitrate in bits per second
+         *   (bps), or `null` if using the default bitrate.
+         * @property targetAudioBitrate The custom target audio encoding bitrate in bits per second
+         *   (bps), or `null` if using the default bitrate.
+         * @property videoBitrateConstraints The default bitrate and supported encoder range for the
+         *   current video configuration, if available.
+         * @property audioBitrateConstraints The default bitrate and supported encoder range for
+         *   audio encoding, if available.
          */
         data class Open(
             override val currentPhysicalCameraId: String? = null,
@@ -78,7 +87,11 @@ sealed interface DebugUiState {
             val cameraPropertiesJSON: String = "",
             val videoResolution: Size? = null,
             val selectedTestPattern: TestPattern = TestPattern.Off,
-            val availableTestPatterns: Set<TestPattern> = setOf(TestPattern.Off)
+            val availableTestPatterns: Set<TestPattern> = setOf(TestPattern.Off),
+            val targetVideoBitrate: Int? = null,
+            val targetAudioBitrate: Int? = null,
+            val videoBitrateConstraints: BitrateConstraints? = null,
+            val audioBitrateConstraints: BitrateConstraints? = null
         ) : Enabled
     }
 

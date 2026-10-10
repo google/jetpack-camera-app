@@ -48,7 +48,9 @@ internal sealed interface PerpetualSessionSettings {
         val dynamicRange: DynamicRange,
         val videoQuality: VideoQuality,
         val imageFormat: ImageOutputFormat,
-        val lowLightBoostPriority: LowLightBoostPriority
+        val lowLightBoostPriority: LowLightBoostPriority,
+        val targetVideoBitrate: Int? = null,
+        val targetAudioBitrate: Int? = null
     ) : PerpetualSessionSettings
 
     /**
@@ -58,7 +60,9 @@ internal sealed interface PerpetualSessionSettings {
     data class ConcurrentCamera(
         val primaryCameraInfo: CameraInfo,
         val secondaryCameraInfo: CameraInfo,
-        override val aspectRatio: AspectRatio
+        override val aspectRatio: AspectRatio,
+        val targetVideoBitrate: Int? = null,
+        val targetAudioBitrate: Int? = null
     ) : PerpetualSessionSettings {
         override val captureMode: CaptureMode = CaptureMode.VIDEO_ONLY
     }

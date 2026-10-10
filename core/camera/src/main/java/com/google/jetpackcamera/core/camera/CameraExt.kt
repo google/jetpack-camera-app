@@ -19,8 +19,14 @@ import android.content.Context
 import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
+import android.media.CamcorderProfile
+import android.media.EncoderProfiles
+import android.media.MediaCodecList
+import android.media.MediaFormat
+import android.media.MediaRecorder
 import android.os.Build
 import android.util.Log
+import android.util.Range
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -46,6 +52,7 @@ import com.google.jetpackcamera.model.VideoQuality.HD
 import com.google.jetpackcamera.model.VideoQuality.SD
 import com.google.jetpackcamera.model.VideoQuality.UHD
 import com.google.jetpackcamera.model.VideoQuality.UNSPECIFIED
+import com.google.jetpackcamera.settings.model.BitrateConstraints
 
 private const val TAG = "CameraExt"
 
@@ -259,6 +266,155 @@ val CameraInfo.supportedImageFormats: Set<ImageOutputFormat>
     get() = ImageCapture.getImageCaptureCapabilities(this).supportedOutputFormats
         .mapNotNull(Int::toAppImageFormat)
         .toSet()
+
+@OptIn(ExperimentalCamera2Interop::class)
+internal fun CameraInfo.getBitrateConstraints(
+    supportedVideoQualitiesMap: Map<DynamicRange, List<VideoQuality>>
+): Pair<Map<DynamicRange, Map<VideoQuality, BitrateConstraints>>, BitrateConstraints?> {
+    val cameraId = runCatching { Camera2CameraInfo.from(this).cameraId }.getOrNull()
+        ?: return emptyMap<DynamicRange, Map<VideoQuality, BitrateConstraints>>() to null
+    val cameraIdInt = cameraId.toIntOrNull()
+    val encoderInfos = runCatching {
+        MediaCodecList(MediaCodecList.ALL_CODECS).codecInfos.filter { it.isEncoder }
+    }.getOrDefault(emptyList())
+    val videoRangeCache = mutableMapOf<String, Range<Int>?>()
+    val audioRangeCache = mutableMapOf<String, Range<Int>?>()
+
+    fun videoRangeForMime(mime: String): Range<Int>? = videoRangeCache.getOrPut(mime) {
+        runCatching {
+            encoderInfos.firstOrNull { info ->
+                info.supportedTypes.any { it.equals(mime, ignoreCase = true) }
+            }?.getCapabilitiesForType(mime)?.videoCapabilities?.bitrateRange
+        }.getOrNull()
+    }
+
+    fun audioRangeForMime(mime: String): Range<Int>? = audioRangeCache.getOrPut(mime) {
+        runCatching {
+            encoderInfos.firstOrNull { info ->
+                info.supportedTypes.any { it.equals(mime, ignoreCase = true) }
+            }?.getCapabilitiesForType(mime)?.audioCapabilities?.bitrateRange
+        }.getOrNull()
+    }
+
+    var audioBitrateConstraints: BitrateConstraints? = null
+    val videoBitrateConstraintsMap =
+        buildMap<DynamicRange, Map<VideoQuality, BitrateConstraints>> {
+            for ((dynamicRange, qualities) in supportedVideoQualitiesMap) {
+                val qualityMap = buildMap<VideoQuality, BitrateConstraints> {
+                    for (quality in qualities) {
+                        val camcorderQuality = quality.toCamcorderQuality() ?: continue
+                        if (cameraIdInt != null &&
+                            !runCatching {
+                                CamcorderProfile.hasProfile(cameraIdInt, camcorderQuality)
+                            }.getOrDefault(false)
+                        ) {
+                            continue
+                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            val profiles = runCatching {
+                                CamcorderProfile.getAll(cameraId, camcorderQuality)
+                            }.getOrNull()
+                            val videoProfile = profiles?.videoProfiles?.firstOrNull { profile ->
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    when (dynamicRange) {
+                                        DynamicRange.SDR ->
+                                            profile.hdrFormat ==
+                                                EncoderProfiles.VideoProfile.HDR_NONE &&
+                                                profile.bitDepth == 8
+                                        DynamicRange.HLG10 ->
+                                            profile.hdrFormat ==
+                                                EncoderProfiles.VideoProfile.HDR_HLG &&
+                                                profile.bitDepth == 10
+                                    }
+                                } else {
+                                    dynamicRange == DynamicRange.SDR
+                                }
+                            } ?: profiles?.videoProfiles?.firstOrNull()
+                            if (videoProfile != null) {
+                                put(
+                                    quality,
+                                    BitrateConstraints(
+                                        defaultBitrate = videoProfile.bitrate.takeIf { it > 0 },
+                                        supportedRange = videoRangeForMime(videoProfile.mediaType)
+                                    )
+                                )
+                            }
+                            if (audioBitrateConstraints == null) {
+                                profiles?.audioProfiles?.firstOrNull()?.let { audioProfile ->
+                                    audioBitrateConstraints = BitrateConstraints(
+                                        defaultBitrate = audioProfile.bitrate.takeIf { it > 0 },
+                                        supportedRange = audioRangeForMime(audioProfile.mediaType)
+                                    )
+                                }
+                            }
+                        } else if (cameraIdInt != null && dynamicRange == DynamicRange.SDR) {
+                            @Suppress("DEPRECATION")
+                            val profile = runCatching {
+                                CamcorderProfile.get(cameraIdInt, camcorderQuality)
+                            }.getOrNull()
+                            if (profile != null) {
+                                val videoMime = profile.videoCodec.toVideoMimeType()
+                                put(
+                                    quality,
+                                    BitrateConstraints(
+                                        defaultBitrate = profile.videoBitRate.takeIf { it > 0 },
+                                        supportedRange = videoMime?.let(::videoRangeForMime)
+                                    )
+                                )
+                                if (audioBitrateConstraints == null) {
+                                    val audioMime = profile.audioCodec.toAudioMimeType()
+                                    audioBitrateConstraints = BitrateConstraints(
+                                        defaultBitrate = profile.audioBitRate.takeIf { it > 0 },
+                                        supportedRange = audioMime?.let(::audioRangeForMime)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                if (qualityMap.isNotEmpty()) {
+                    put(dynamicRange, qualityMap)
+                }
+            }
+        }
+    if (audioBitrateConstraints == null) {
+        audioRangeForMime(MediaFormat.MIMETYPE_AUDIO_AAC)?.let { range ->
+            audioBitrateConstraints = BitrateConstraints(
+                defaultBitrate = null,
+                supportedRange = range
+            )
+        }
+    }
+    return videoBitrateConstraintsMap to audioBitrateConstraints
+}
+
+private fun VideoQuality.toCamcorderQuality(): Int? = when (this) {
+    SD -> CamcorderProfile.QUALITY_480P
+    HD -> CamcorderProfile.QUALITY_720P
+    FHD -> CamcorderProfile.QUALITY_1080P
+    UHD -> CamcorderProfile.QUALITY_2160P
+    UNSPECIFIED -> null
+}
+
+private fun Int.toVideoMimeType(): String? = when (this) {
+    MediaRecorder.VideoEncoder.H263 -> MediaFormat.MIMETYPE_VIDEO_H263
+    MediaRecorder.VideoEncoder.H264 -> MediaFormat.MIMETYPE_VIDEO_AVC
+    MediaRecorder.VideoEncoder.MPEG_4_SP -> MediaFormat.MIMETYPE_VIDEO_MPEG4
+    MediaRecorder.VideoEncoder.VP8 -> MediaFormat.MIMETYPE_VIDEO_VP8
+    MediaRecorder.VideoEncoder.HEVC -> MediaFormat.MIMETYPE_VIDEO_HEVC
+    else -> null
+}
+
+private fun Int.toAudioMimeType(): String? = when (this) {
+    MediaRecorder.AudioEncoder.AMR_NB -> MediaFormat.MIMETYPE_AUDIO_AMR_NB
+    MediaRecorder.AudioEncoder.AMR_WB -> MediaFormat.MIMETYPE_AUDIO_AMR_WB
+    MediaRecorder.AudioEncoder.AAC,
+    MediaRecorder.AudioEncoder.HE_AAC,
+    MediaRecorder.AudioEncoder.AAC_ELD -> MediaFormat.MIMETYPE_AUDIO_AAC
+    MediaRecorder.AudioEncoder.VORBIS -> MediaFormat.MIMETYPE_AUDIO_VORBIS
+    MediaRecorder.AudioEncoder.OPUS -> MediaFormat.MIMETYPE_AUDIO_OPUS
+    else -> null
+}
 
 fun UseCaseGroup.getVideoCapture() = getUseCaseOrNull<VideoCapture<Recorder>>()
 fun UseCaseGroup.getImageCapture() = getUseCaseOrNull<ImageCapture>()

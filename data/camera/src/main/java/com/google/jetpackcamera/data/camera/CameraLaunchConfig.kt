@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.asStateFlow
 private const val TAG = "CameraLaunchConfig"
 internal const val KEY_DEBUG_MODE = "KEY_DEBUG_MODE"
 internal const val KEY_DEBUG_SINGLE_LENS_MODE = "KEY_DEBUG_SINGLE_LENS_MODE"
+internal const val KEY_DEBUG_VIDEO_BITRATE = "KEY_DEBUG_VIDEO_BITRATE"
+internal const val KEY_DEBUG_AUDIO_BITRATE = "KEY_DEBUG_AUDIO_BITRATE"
 
 /**
  * Retained configuration options supplied at launch (such as from intent extras).
@@ -57,9 +59,9 @@ internal fun Intent.toExternalCaptureMode(): ExternalCaptureMode = when (action)
 /**
  * Parses [DebugSettings] from an [Intent].
  */
-internal fun Intent.toDebugSettings(): DebugSettings = DebugSettings(
-    isDebugModeEnabled = getBooleanExtra(KEY_DEBUG_MODE, false),
-    singleLensMode = getStringExtra(KEY_DEBUG_SINGLE_LENS_MODE)?.let {
+internal fun Intent.toDebugSettings(): DebugSettings {
+    val isDebugModeEnabled = getBooleanExtra(KEY_DEBUG_MODE, false)
+    val singleLensMode = getStringExtra(KEY_DEBUG_SINGLE_LENS_MODE)?.let {
         when (it.lowercase()) {
             "back" -> LensFacing.BACK
             "front" -> LensFacing.FRONT
@@ -72,7 +74,44 @@ internal fun Intent.toDebugSettings(): DebugSettings = DebugSettings(
             }
         }
     }
-)
+    val targetVideoBitrate = if (isDebugModeEnabled) {
+        parseDebugBitrateExtra(KEY_DEBUG_VIDEO_BITRATE, "video")
+    } else {
+        null
+    }
+    val targetAudioBitrate = if (isDebugModeEnabled) {
+        parseDebugBitrateExtra(KEY_DEBUG_AUDIO_BITRATE, "audio")
+    } else {
+        null
+    }
+    return DebugSettings(
+        isDebugModeEnabled = isDebugModeEnabled,
+        singleLensMode = singleLensMode,
+        targetVideoBitrate = targetVideoBitrate,
+        targetAudioBitrate = targetAudioBitrate
+    )
+}
+
+private fun Intent.parseDebugBitrateExtra(key: String, label: String): Int? {
+    if (!hasExtra(key)) return null
+    val intExtra = getIntExtra(key, 0)
+    val longExtra = getLongExtra(key, 0L)
+    val parsedBitrate = when {
+        intExtra != 0 -> intExtra
+        longExtra in 1L..Int.MAX_VALUE.toLong() -> longExtra.toInt()
+        longExtra != 0L -> 0
+        else -> getStringExtra(key)?.toIntOrNull() ?: 0
+    }
+    return if (parsedBitrate > 0) {
+        parsedBitrate
+    } else {
+        Log.e(
+            TAG,
+            "Invalid debug $label bitrate argument. Value must be a positive integer."
+        )
+        null
+    }
+}
 
 /**
  * Activity-retained provider that manages [CameraLaunchConfig] reactively.

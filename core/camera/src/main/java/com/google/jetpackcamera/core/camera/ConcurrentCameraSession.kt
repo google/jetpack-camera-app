@@ -71,7 +71,9 @@ internal suspend fun runConcurrentCameraSession(
                 StabilizationMode.OFF,
                 DynamicRange.SDR,
                 VideoQuality.UNSPECIFIED,
-                backgroundDispatcher
+                backgroundDispatcher,
+                sessionSettings.targetVideoBitrate,
+                sessionSettings.targetAudioBitrate
             )
         } else {
             null

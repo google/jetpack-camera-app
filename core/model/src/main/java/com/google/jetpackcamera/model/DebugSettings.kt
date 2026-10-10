@@ -24,11 +24,18 @@ package com.google.jetpackcamera.model
  *                       making it appear as if no other lenses are present.
  *                       The provided [LensFacing] determines which lens will be used.
  *                       If `null`, single lens mode is disabled.
+ * @param testPattern Configures the sensor test pattern mode for the camera preview.
+ * @param targetVideoBitrate Configures a custom target video encoding bitrate in bits per
+ *                           second (bps). If `null`, the default bitrate is used.
+ * @param targetAudioBitrate Configures a custom target audio encoding bitrate in bits per
+ *                           second (bps). If `null`, the default bitrate is used.
  */
 data class DebugSettings(
     val isDebugModeEnabled: Boolean = false,
     val singleLensMode: LensFacing? = null,
-    val testPattern: TestPattern = TestPattern.Off
+    val testPattern: TestPattern = TestPattern.Off,
+    val targetVideoBitrate: Int? = null,
+    val targetAudioBitrate: Int? = null
 ) {
     companion object {
         /**
@@ -39,6 +46,8 @@ data class DebugSettings(
             var isDebugModeEnabled = false
             var singleLensMode: LensFacing? = null
             var testPattern: TestPattern = TestPattern.Off
+            var targetVideoBitrate: Int? = null
+            var targetAudioBitrate: Int? = null
 
             for (part in parts) {
                 val kv = part.split(":")
@@ -47,6 +56,9 @@ data class DebugSettings(
                         "debug" -> isDebugModeEnabled = kv[1].toBoolean()
                         "lens" -> singleLensMode = enumValues<LensFacing>()
                             .firstOrNull { it.name == kv[1] }
+                        "bitrate" -> targetVideoBitrate = kv[1].toIntOrNull()?.takeIf { it > 0 }
+                        "audioBitrate" ->
+                            targetAudioBitrate = kv[1].toIntOrNull()?.takeIf { it > 0 }
                         "pattern" -> {
                             testPattern = when (kv[1]) {
                                 "Off" -> TestPattern.Off
@@ -93,7 +105,13 @@ data class DebugSettings(
                     }
                 }
             }
-            return DebugSettings(isDebugModeEnabled, singleLensMode, testPattern)
+            return DebugSettings(
+                isDebugModeEnabled = isDebugModeEnabled,
+                singleLensMode = singleLensMode,
+                testPattern = testPattern,
+                targetVideoBitrate = targetVideoBitrate,
+                targetAudioBitrate = targetAudioBitrate
+            )
         }
 
         /**
@@ -106,7 +124,10 @@ data class DebugSettings(
                     "SolidColor(${pattern.red},${pattern.greenEven},${pattern.greenOdd},${pattern.blue})"
                 else -> pattern.toString()
             }
-            return "debug:$isDebugModeEnabled;lens:$lensStr;pattern:$patternStr"
+            val bitrateStr = targetVideoBitrate?.takeIf { it > 0 }?.toString() ?: ""
+            val audioBitrateStr = targetAudioBitrate?.takeIf { it > 0 }?.toString() ?: ""
+            return "debug:$isDebugModeEnabled;lens:$lensStr;pattern:$patternStr;" +
+                "bitrate:$bitrateStr;audioBitrate:$audioBitrateStr"
         }
     }
 }

@@ -37,4 +37,20 @@ interface DebugController {
      * @param testPattern The test pattern to set.
      */
     fun setTestPattern(testPattern: TestPattern)
+
+    /**
+     * Sets the target video encoding bitrate for the camera.
+     *
+     * @param bitrate The target video bitrate in bits per second (bps), or `null` to reset to the
+     *   default bitrate.
+     */
+    fun setTargetVideoBitrate(bitrate: Int?)
+
+    /**
+     * Sets the target audio encoding bitrate for the camera.
+     *
+     * @param bitrate The target audio bitrate in bits per second (bps), or `null` to reset to the
+     *   default bitrate.
+     */
+    fun setTargetAudioBitrate(bitrate: Int?)
 }

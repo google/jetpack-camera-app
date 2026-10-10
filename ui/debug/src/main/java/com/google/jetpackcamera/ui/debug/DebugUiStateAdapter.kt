@@ -20,6 +20,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.TestPattern
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
@@ -124,8 +125,9 @@ private fun getEnabledDebugUiState(
     debugHidingComponents: Boolean,
     cameraPropertiesJSON: String
 ): DebugUiState.Enabled {
+    val lensConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
     val availableTestPatterns = buildSet {
-        systemConstraints.forCurrentLens(cameraAppSettings)?.supportedTestPatterns
+        lensConstraints?.supportedTestPatterns
             ?.forEach {
                 if (it is TestPattern.SolidColor) {
                     addAll(TestPattern.SolidColor.PREDEFINED_COLORS)
@@ -133,6 +135,18 @@ private fun getEnabledDebugUiState(
                     add(it)
                 }
             }
+    }
+    val qualityMap = lensConstraints?.videoBitrateConstraintsMap?.get(
+        cameraAppSettings.dynamicRange
+    )
+    val activeVideoQuality = cameraState.videoQualityInfo.quality
+        .takeIf { it != VideoQuality.UNSPECIFIED }
+        ?: cameraAppSettings.videoQuality.takeIf { it != VideoQuality.UNSPECIFIED }
+    val videoBitrateConstraints = if (activeVideoQuality != null) {
+        qualityMap?.get(activeVideoQuality)
+    } else {
+        sequenceOf(VideoQuality.FHD, VideoQuality.HD, VideoQuality.SD, VideoQuality.UHD)
+            .firstNotNullOfOrNull { qualityMap?.get(it) }
     }
 
     return DebugUiState.Enabled.Open(
@@ -145,6 +159,10 @@ private fun getEnabledDebugUiState(
         currentLogicalCameraId = cameraState.debugInfo.logicalCameraId,
         selectedTestPattern = cameraAppSettings.debugSettings.testPattern,
         availableTestPatterns = availableTestPatterns,
+        targetVideoBitrate = cameraAppSettings.debugSettings.targetVideoBitrate,
+        targetAudioBitrate = cameraAppSettings.debugSettings.targetAudioBitrate,
+        videoBitrateConstraints = videoBitrateConstraints,
+        audioBitrateConstraints = lensConstraints?.audioBitrateConstraints,
         currentPrimaryZoomRatio = cameraState.zoomRatios[cameraAppSettings.cameraLensFacing],
         debugHidingComponents = debugHidingComponents
     )

@@ -147,7 +147,9 @@ internal suspend fun runSingleCameraSession(
                     sessionSettings.stabilizationMode,
                     sessionSettings.dynamicRange,
                     sessionSettings.videoQuality,
-                    backgroundDispatcher
+                    backgroundDispatcher,
+                    sessionSettings.targetVideoBitrate,
+                    sessionSettings.targetAudioBitrate
                 )
 
             else -> {
@@ -727,7 +729,9 @@ internal fun createVideoUseCase(
     stabilizationMode: StabilizationMode,
     dynamicRange: DynamicRange,
     videoQuality: VideoQuality,
-    backgroundDispatcher: CoroutineDispatcher
+    backgroundDispatcher: CoroutineDispatcher,
+    targetVideoBitrate: Int? = null,
+    targetAudioBitrate: Int? = null
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
     val recorder = Recorder.Builder()
@@ -745,7 +749,18 @@ internal fun createVideoUseCase(
                     )
                 )
             }
-        }.build()
+            if (targetVideoBitrate != null && targetVideoBitrate > 0) {
+                setTargetVideoEncodingBitRate(targetVideoBitrate)
+            }
+        }
+        .let { builder ->
+            if (targetAudioBitrate != null && targetAudioBitrate > 0) {
+                builder.setTargetAudioEncodingBitRate(targetAudioBitrate)
+            } else {
+                builder
+            }
+        }
+        .build()
 
     return VideoCapture.Builder(recorder).apply {
         // set video stabilization

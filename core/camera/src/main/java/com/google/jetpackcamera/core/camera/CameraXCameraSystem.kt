@@ -75,6 +75,7 @@ import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.ZoomStrategy
+import com.google.jetpackcamera.settings.model.BitrateConstraints
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -97,6 +98,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraXCameraSystem"
+
+/** The debug target video bitrate in bps, or null when debug mode is disabled. */
+private val CameraAppSettings.debugTargetVideoBitrate: Int?
+    get() = debugSettings.targetVideoBitrate.takeIf { debugSettings.isDebugModeEnabled }
+
+/** The debug target audio bitrate in bps, or null when debug mode is disabled. */
+private val CameraAppSettings.debugTargetAudioBitrate: Int?
+    get() = debugSettings.targetAudioBitrate.takeIf { debugSettings.isDebugModeEnabled }
 
 /**
  * CameraX based implementation for [CameraSystem]
@@ -306,6 +315,13 @@ class CameraXCameraSystem(
                         } else {
                             setOf(TestPattern.Off)
                         }
+                        val (videoBitrateConstraintsMap, audioBitrateConstraints) =
+                            if (debugSettings.isDebugModeEnabled) {
+                                camInfo.getBitrateConstraints(supportedVideoQualitiesMap)
+                            } else {
+                                emptyMap<DynamicRange, Map<VideoQuality, BitrateConstraints>>() to
+                                    null
+                            }
 
                         put(
                             lensFacing,
@@ -329,7 +345,9 @@ class CameraXCameraSystem(
                                 supportedFlashModes = supportedFlashModes,
                                 supportedZoomRange = supportedZoomRange,
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap,
-                                supportedTestPatterns = supportedTestPatterns
+                                supportedTestPatterns = supportedTestPatterns,
+                                videoBitrateConstraintsMap = videoBitrateConstraintsMap,
+                                audioBitrateConstraints = audioBitrateConstraints
                             )
                         )
                     }
@@ -520,7 +538,9 @@ class CameraXCameraSystem(
                             dynamicRange = currentCameraSettings.dynamicRange,
                             videoQuality = currentCameraSettings.videoQuality,
                             imageFormat = currentCameraSettings.imageFormat,
-                            lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority
+                            lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority,
+                            targetVideoBitrate = currentCameraSettings.debugTargetVideoBitrate,
+                            targetAudioBitrate = currentCameraSettings.debugTargetAudioBitrate
                         )
                     }
 
@@ -543,7 +563,11 @@ class CameraXCameraSystem(
                                     PerpetualSessionSettings.ConcurrentCamera(
                                         primaryCameraInfo = nonNullPrimary,
                                         secondaryCameraInfo = nonNullSecondary,
-                                        aspectRatio = currentCameraSettings.aspectRatio
+                                        aspectRatio = currentCameraSettings.aspectRatio,
+                                        targetVideoBitrate =
+                                        currentCameraSettings.debugTargetVideoBitrate,
+                                        targetAudioBitrate =
+                                        currentCameraSettings.debugTargetAudioBitrate
                                     )
                                 }
                             }
@@ -771,6 +795,26 @@ class CameraXCameraSystem(
     override fun setTestPattern(newTestPattern: TestPattern) {
         currentSettings.update { old ->
             old?.copy(debugSettings = old.debugSettings.copy(testPattern = newTestPattern)) ?: old
+        }
+    }
+
+    override fun setTargetVideoBitrate(bitrate: Int?) {
+        currentSettings.update { old ->
+            old?.copy(
+                debugSettings = old.debugSettings.copy(
+                    targetVideoBitrate = bitrate?.takeIf { it > 0 }
+                )
+            ) ?: old
+        }
+    }
+
+    override fun setTargetAudioBitrate(bitrate: Int?) {
+        currentSettings.update { old ->
+            old?.copy(
+                debugSettings = old.debugSettings.copy(
+                    targetAudioBitrate = bitrate?.takeIf { it > 0 }
+                )
+            ) ?: old
         }
     }
 

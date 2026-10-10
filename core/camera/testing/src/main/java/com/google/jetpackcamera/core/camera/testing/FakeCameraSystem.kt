@@ -175,6 +175,26 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         }
     }
 
+    override fun setTargetVideoBitrate(bitrate: Int?) {
+        currentSettings.update { old ->
+            old.copy(
+                debugSettings = old.debugSettings.copy(
+                    targetVideoBitrate = bitrate?.takeIf { it > 0 }
+                )
+            )
+        }
+    }
+
+    override fun setTargetAudioBitrate(bitrate: Int?) {
+        currentSettings.update { old ->
+            old.copy(
+                debugSettings = old.debugSettings.copy(
+                    targetAudioBitrate = bitrate?.takeIf { it > 0 }
+                )
+            )
+        }
+    }
+
     override fun getCurrentCameraState(): StateFlow<CameraState> = _currentCameraState.asStateFlow()
 
     private val _systemConstraints = MutableStateFlow<CameraSystemConstraints?>(null)

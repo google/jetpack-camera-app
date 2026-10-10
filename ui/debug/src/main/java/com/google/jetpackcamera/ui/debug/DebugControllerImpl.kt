@@ -61,4 +61,20 @@ class DebugControllerImpl(
             )
         }
     }
+
+    override fun setTargetVideoBitrate(bitrate: Int?) {
+        scope.launch {
+            cameraSystemProvider().setTargetVideoBitrate(
+                bitrate = bitrate
+            )
+        }
+    }
+
+    override fun setTargetAudioBitrate(bitrate: Int?) {
+        scope.launch {
+            cameraSystemProvider().setTargetAudioBitrate(
+                bitrate = bitrate
+            )
+        }
+    }
 }

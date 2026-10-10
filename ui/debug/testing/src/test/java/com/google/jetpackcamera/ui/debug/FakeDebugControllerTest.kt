@@ -46,4 +46,20 @@ class FakeDebugControllerTest {
         controller.setTestPattern(TestPattern.ColorBars)
         assertThat(calledPattern).isEqualTo(TestPattern.ColorBars)
     }
+
+    @Test
+    fun setTargetVideoBitrate_invokesAction() {
+        var calledBitrate: Int? = null
+        val controller = FakeDebugController(setTargetVideoBitrateAction = { calledBitrate = it })
+        controller.setTargetVideoBitrate(10_000_000)
+        assertThat(calledBitrate).isEqualTo(10_000_000)
+    }
+
+    @Test
+    fun setTargetAudioBitrate_invokesAction() {
+        var calledBitrate: Int? = null
+        val controller = FakeDebugController(setTargetAudioBitrateAction = { calledBitrate = it })
+        controller.setTargetAudioBitrate(128_000)
+        assertThat(calledBitrate).isEqualTo(128_000)
+    }
 }

@@ -28,4 +28,6 @@ message DebugSettings {
   bool is_debug_mode_enabled = 1;
   optional com.google.jetpackcamera.model.proto.LensFacing single_lens_mode = 2;
   com.google.jetpackcamera.model.proto.TestPattern test_pattern = 3;
+  optional int32 target_video_bitrate = 4;
+  optional int32 target_audio_bitrate = 5;
 }
