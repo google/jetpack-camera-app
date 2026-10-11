@@ -534,7 +534,7 @@ class CameraXCameraSystem(
                         cameraProvider.availableConcurrentCameraInfos.firstNotNullOfOrNull {
                             var primaryCameraInfo: CameraInfo? = null
                             var secondaryCameraInfo: CameraInfo? = null
-                            it.forEach { cameraInfo ->
+                            for (cameraInfo in it) {
                                 if (cameraInfo.appLensFacing == primaryFacing) {
                                     primaryCameraInfo = cameraInfo
                                 } else if (cameraInfo.appLensFacing == secondaryFacing) {
@@ -816,7 +816,7 @@ class CameraXCameraSystem(
         defaultCaptureMode: CaptureMode? = null
     ): CameraAppSettings {
         Log.d(TAG, "applying capture mode constraints")
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { _ ->
             val newCaptureMode =
                 // concurrent currently only supports VIDEO_ONLY
                 if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {

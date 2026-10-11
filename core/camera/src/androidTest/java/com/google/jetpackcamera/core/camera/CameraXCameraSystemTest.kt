@@ -177,7 +177,6 @@ class CameraXCameraSystemTest {
         val cameraSystem =
             createAndInitCameraXCameraSystem(fakeImagePostProcessor = imagePostProcessor)
         cameraSystem.startCameraAndWaitUntilRunning()
-        val uri = Uri.parse(FakeFilePathGenerator().generateImageFilename())
 
         // Act.
         try {

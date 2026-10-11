@@ -602,8 +602,8 @@ private suspend fun updateCamera2RequestOptions(
 
 internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
     val targetRotation = deviceRotation.toUiSurfaceRotation()
-    useCaseGroup.useCases.forEach {
-        when (it) {
+    for (useCase in useCaseGroup.useCases) {
+        when (useCase) {
             is Preview -> {
                 // Preview's target rotation should not be updated with device rotation.
                 // Instead, preview rotation should match the display rotation.
@@ -613,11 +613,11 @@ internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: U
             }
 
             is ImageCapture -> {
-                it.targetRotation = targetRotation
+                useCase.targetRotation = targetRotation
             }
 
             is VideoCapture<*> -> {
-                it.targetRotation = targetRotation
+                useCase.targetRotation = targetRotation
             }
         }
     }
@@ -812,7 +812,7 @@ private fun createPreviewUseCase(
     )
 }.build()
     .apply {
-        setSurfaceProvider { surfaceRequest ->
+        surfaceProvider = Preview.SurfaceProvider { surfaceRequest ->
             surfaceRequests.update { surfaceRequest }
         }
     }

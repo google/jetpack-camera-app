@@ -228,7 +228,7 @@ class MainActivity : ComponentActivity() {
             ExternalCaptureMode.Standard -> emptyList()
         }
 
-    val pictureTakenUriList by lazy { arrayListOf<String>() }
+    private val pictureTakenUriList by lazy { arrayListOf<String>() }
     private val captureEventCallback: (CaptureEvent) -> Unit
         get() {
             return when (externalCaptureMode) {
