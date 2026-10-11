@@ -179,7 +179,6 @@ class PostCaptureViewModel @Inject internal constructor(
                 }
             }
         }
-        super.onCleared()
     }
 
     private fun updatePlayerState(commands: Player.Commands?) {

@@ -19,7 +19,6 @@ import android.util.Log
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
-import com.google.jetpackcamera.core.camera.CameraXCameraSystem
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -44,7 +43,8 @@ private const val TAG = "CameraXCameraSystemRepo"
 
 /**
  * Implementation of [CameraSystemRepository] and [ConstraintsRepository] that manages
- * [CameraXCameraSystem] initialization and exposes camera streams.
+ * [CameraXCameraSystem][com.google.jetpackcamera.core.camera.CameraXCameraSystem]
+ * initialization and exposes camera streams.
  */
 class CameraXCameraSystemRepository(
     private val cameraXCameraSystemProvider: Provider<out CameraSystem>,
