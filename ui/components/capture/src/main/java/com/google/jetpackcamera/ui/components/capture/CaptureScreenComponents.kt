@@ -604,15 +604,10 @@ fun CaptureModeToggleButton(
                 CaptureMode.IMAGE_ONLY
             ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
-    val backgroundStyle = LocalCameraControlBackgroundStyle.current
-
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
-        trackColor = if (enabled) {
-            backgroundStyle.containerColor
-        } else {
-            backgroundStyle.disabledContainerColor
-        },
+        // The track keeps its color when disabled; ToggleSwitch dims the thumb and icons instead.
+        trackColor = LocalCameraControlBackgroundStyle.current.containerColor,
         checked = toggleState,
         onCheckedChange = { isChecked ->
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY

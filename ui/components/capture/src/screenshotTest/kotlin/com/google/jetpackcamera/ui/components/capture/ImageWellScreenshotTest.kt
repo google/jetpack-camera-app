@@ -37,21 +37,3 @@ fun ImageWellBlack60ScreenshotPreview() {
         ImageWellPreview()
     }
 }
-
-@PreviewTest
-@Preview
-@Composable
-fun DisabledImageWellScreenshotPreview() {
-    ImageWellDisabledPreview()
-}
-
-@PreviewTest
-@Preview
-@Composable
-fun DisabledImageWellBlack60ScreenshotPreview() {
-    CompositionLocalProvider(
-        LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
-    ) {
-        ImageWellDisabledPreview()
-    }
-}

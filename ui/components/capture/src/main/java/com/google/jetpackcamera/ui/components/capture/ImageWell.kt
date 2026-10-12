@@ -93,12 +93,9 @@ fun ImageWell(
         val animationSpec: FiniteAnimationSpec<IntOffset> =
             if (disableAnimations) snap() else tween(300)
 
-        val backgroundStyle = LocalCameraControlBackgroundStyle.current
-        val containerColor = if (enabled) {
-            backgroundStyle.containerColor
-        } else {
-            backgroundStyle.disabledContainerColor
-        }
+        // The container keeps its color when disabled so the control does not fade out over the
+        // viewfinder.
+        val containerColor = LocalCameraControlBackgroundStyle.current.containerColor
 
         Box(
             modifier = modifier
@@ -148,7 +145,7 @@ fun ImageWell(
 }
 
 @Composable
-internal fun PreviewImageWell(enabled: Boolean = true) {
+internal fun PreviewImageWell() {
     val previewBitmap = createBitmap(1000, 1000).apply {
         eraseColor(android.graphics.Color.BLUE)
     }
@@ -167,8 +164,7 @@ internal fun PreviewImageWell(enabled: Boolean = true) {
         ) {
             ImageWell(
                 imageWellUiState = imageWellUiState,
-                onClick = {},
-                enabled = enabled
+                onClick = {}
             )
         }
     }
@@ -178,10 +174,4 @@ internal fun PreviewImageWell(enabled: Boolean = true) {
 @Composable
 internal fun ImageWellPreview() {
     PreviewImageWell()
-}
-
-@Preview
-@Composable
-internal fun ImageWellDisabledPreview() {
-    PreviewImageWell(enabled = false)
 }
