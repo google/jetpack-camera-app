@@ -19,6 +19,7 @@ import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
@@ -30,6 +31,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOutExpo
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -49,11 +51,17 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -65,13 +73,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarVisuals
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -87,21 +102,32 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.controller.SnackBarController
-import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
+import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
@@ -117,21 +143,247 @@ import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 
-private const val TAG = "PreviewScreen"
-private const val BLINK_TIME = 100L
-private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
-private const val FOCUS_INDICATOR_RESULT_DELAY = 100L
+private const val TAG = "CaptureScreenComponents"
+
+private val SnackbarMinHeight = 48.dp
+private val SnackbarHorizontalMargin = 16.dp
+private val SnackbarVerticalMargin = 8.dp
+private val SnackbarStartPadding = 12.dp
+private val SnackbarEndPaddingTextOnly = 16.dp
+private val SnackbarEndPaddingAction = 8.dp
+private val SnackbarVerticalPadding = 12.dp
+private val SnackbarIconSize = 24.dp
+private val SnackbarIconToTextSpacing = 10.dp
+private val SnackbarTextToActionSpacing = 8.dp
+private val SnackbarElevation = 6.dp
 
 /**
- * A composable that displays the elapsed time of a video recording in a "MM:SS" format.
+ * A custom [SnackbarHost] that displays snackbars with a pill shape and a leading status icon.
+ *
+ * @param snackbarHostState the [SnackbarHostState] for the host.
+ * @param modifier the modifier for this component.
+ */
+@Composable
+fun PillSnackbarHost(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifier) {
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = modifier.testTag(SNACKBAR_NODE_TAG)
+    ) { data ->
+        PillSnackbar(
+            visuals = data.visuals,
+            onAction = data::performAction,
+            onDismiss = data::dismiss,
+            modifier = Modifier.padding(
+                horizontal = SnackbarHorizontalMargin,
+                vertical = SnackbarVerticalMargin
+            )
+        )
+    }
+}
+
+@Composable
+internal fun PillSnackbar(
+    visuals: SnackbarVisuals,
+    onAction: () -> Unit = {},
+    onDismiss: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val isError = (visuals as? CustomSnackbarVisuals)?.isError ?: false
+    val containerColor = if (isError) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.inverseSurface
+    }
+    val contentColor = if (isError) {
+        MaterialTheme.colorScheme.onError
+    } else {
+        MaterialTheme.colorScheme.inverseOnSurface
+    }
+    val endPadding = when {
+        visuals.withDismissAction -> 0.dp
+        visuals.actionLabel != null -> SnackbarEndPaddingAction
+        else -> SnackbarEndPaddingTextOnly
+    }
+
+    Surface(
+        modifier = modifier.heightIn(min = SnackbarMinHeight),
+        shape = CircleShape,
+        color = containerColor,
+        contentColor = contentColor,
+        shadowElevation = SnackbarElevation
+    ) {
+        Row(
+            modifier = Modifier.padding(start = SnackbarStartPadding, end = endPadding),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .padding(
+                        top = SnackbarVerticalPadding,
+                        bottom = SnackbarVerticalPadding,
+                        end = if (visuals.actionLabel != null) SnackbarTextToActionSpacing else 0.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(SnackbarIconToTextSpacing)
+            ) {
+                Icon(
+                    painter = painterResource(
+                        if (isError) R.drawable.ic_error_filled else R.drawable.ic_info_filled
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier.size(SnackbarIconSize)
+                )
+                Text(
+                    text = visuals.message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            visuals.actionLabel?.let { label ->
+                TextButton(
+                    onClick = onAction,
+                    colors = ButtonDefaults.textButtonColors(contentColor = contentColor)
+                ) {
+                    Text(text = label)
+                }
+            }
+            if (visuals.withDismissAction) {
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_close),
+                        contentDescription = stringResource(
+                            R.string.snackbar_dismiss_content_description
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreviewPillSnackbar(
+    message: String,
+    isError: Boolean = true,
+    withDismissAction: Boolean = false,
+    actionLabel: String? = null,
+    modifier: Modifier = Modifier
+) {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        PillSnackbar(
+            visuals = CustomSnackbarVisuals(
+                message = message,
+                actionLabel = actionLabel,
+                withDismissAction = withDismissAction,
+                duration = SnackbarDuration.Short,
+                isError = isError
+            ),
+            modifier = modifier.padding(
+                horizontal = SnackbarHorizontalMargin,
+                vertical = SnackbarVerticalMargin
+            )
+        )
+    }
+}
+
+@Preview
+@Composable
+internal fun PillSnackbarErrorMessageOnlyPreview() {
+    PreviewPillSnackbar(
+        message = "Image capture failed",
+        isError = true,
+        withDismissAction = false
+    )
+}
+
+@Preview
+@Composable
+internal fun PillSnackbarErrorWithDismissPreview() {
+    PreviewPillSnackbar(
+        message = "Image capture failed",
+        isError = true,
+        withDismissAction = true
+    )
+}
+
+@Preview
+@Composable
+internal fun PillSnackbarErrorWithActionPreview() {
+    PreviewPillSnackbar(
+        message = "Image capture failed",
+        isError = true,
+        withDismissAction = false,
+        actionLabel = "Retry"
+    )
+}
+
+@Preview
+@Composable
+internal fun PillSnackbarInfoWithDismissPreview() {
+    PreviewPillSnackbar(
+        message = "Image saved",
+        isError = false,
+        withDismissAction = true
+    )
+}
+
+@Preview(widthDp = 412)
+@Composable
+internal fun PillSnackbarLongMessagePreview() {
+    PreviewPillSnackbar(
+        message = "An error occurred when running low light boost and the message is very long " +
+            "so it wraps across two lines before truncating with an ellipsis.",
+        isError = true,
+        withDismissAction = true
+    )
+}
+
+@Preview(locale = "ar")
+@Composable
+internal fun PillSnackbarRtlPreview() {
+    PreviewPillSnackbar(
+        message = "Image capture failed",
+        isError = true,
+        withDismissAction = true
+    )
+}
+
+@Preview(fontScale = 2f, widthDp = 412)
+@Composable
+internal fun PillSnackbarLargeFontPreview() {
+    PreviewPillSnackbar(
+        message = "Image capture failed",
+        isError = true,
+        withDismissAction = true
+    )
+}
+private const val BLINK_TIME = 100L
+private val TAP_TO_FOCUS_INDICATOR_SIZE = 56.dp
+private const val FOCUS_INDICATOR_FAILURE_DELAY = 500L
+private val FOCUS_INDICATOR_BORDER_WIDTH = 2.dp
+
+private const val FOCUS_PULSE_DURATION_MILLIS = 400
+private const val FOCUS_ANIMATION_DURATION_MILLIS = 300
+private const val FOCUS_PULSE_MIN_ALPHA = 0.75f
+private const val FOCUS_LOCKED_ALPHA = 0.5f
+private const val FOCUS_FAILURE_ALPHA = 1.0f
+private const val FOCUS_LOCKED_SCALE = 0.8f
+private const val FOCUS_BURST_SCALE = 1.5f
+
+/**
+ * A composable that displays the elapsed time of a video recording formatted as minutes and seconds.
  * This text is only visible during an active recording.
  *
+ * @param modifier the modifier for this component.
  * @param elapsedTimeUiStateProvider the provider for [ElapsedTimeUiState] for this component.
  */
 @Composable
@@ -141,15 +393,46 @@ fun ElapsedTimeText(
 ) {
     val state = elapsedTimeUiStateProvider()
     if (state is ElapsedTimeUiState.Enabled) {
-        Text(
-            modifier = modifier,
-            text = state.elapsedTimeNanos.nanoseconds
-                .toComponents { minutes, seconds, _ -> "%02d:%02d".format(minutes, seconds) },
-            textAlign = TextAlign.Center,
-            style = LocalTextStyle.current.copy(
-                fontFeatureSettings = "tnum"
+        val elapsedSeconds = state.elapsedTimeNanos.nanoseconds.inWholeSeconds
+        val minutes = elapsedSeconds / 60
+        val seconds = elapsedSeconds % 60
+        val formatRes = if (state.isPaused) {
+            R.string.elapsed_time_format_paused
+        } else {
+            R.string.elapsed_time_format
+        }
+        val format = stringResource(formatRes)
+        val formattedTime = remember(elapsedSeconds, format) {
+            format.format(minutes, seconds)
+        }
+        val accessibilityRes = if (state.isPaused) {
+            R.string.elapsed_time_accessibility_paused
+        } else {
+            R.string.elapsed_time_accessibility_recording
+        }
+        val accessibilityText = stringResource(accessibilityRes, minutes, seconds)
+        Box(
+            modifier = modifier
+                .testTag(ELAPSED_TIME_TAG)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = accessibilityText
+                }
+                .defaultMinSize(minWidth = 72.dp, minHeight = 32.dp)
+                .background(color = CaptureTokens.RecordingRed, shape = CircleShape)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = formattedTime,
+                textAlign = TextAlign.Center,
+                color = Color.White,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFeatureSettings = "tnum",
+                    letterSpacing = 0.sp
+                )
             )
-        )
+        }
     }
 }
 
@@ -220,6 +503,8 @@ fun AmplitudeToggleButton(
     onToggleAudio: () -> Unit
 ) {
     val currentUiState = rememberUpdatedState(audioUiState)
+    val microphoneMutedDescription = stringResource(R.string.microphone_muted)
+    val microphoneOnDescription = stringResource(R.string.microphone_on)
 
     // Tweak the multiplier to amplitude to adjust the visualizer sensitivity
     val disableAnimations = LocalDisableAnimations.current
@@ -236,11 +521,23 @@ fun AmplitudeToggleButton(
         FilledIconToggleButton(
             modifier = modifier
                 .size(buttonSize)
-                .apply {
-                    if (audioUiState is AudioUiState.Enabled.On) {
-                        testTag(AMPLITUDE_HOT_TAG)
+                .testTag(AUDIO_INPUT_TOGGLE)
+                .semantics {
+                    stateDescription = if (audioUiState is AudioUiState.Enabled.On) {
+                        microphoneOnDescription
                     } else {
-                        testTag(AMPLITUDE_NONE_TAG)
+                        microphoneMutedDescription
+                    }
+                    audioState = when (audioUiState) {
+                        is AudioUiState.Disabled,
+                        AudioUiState.Enabled.Mute -> AudioInputState.OFF
+                        is AudioUiState.Enabled.On -> {
+                            if (audioUiState.isAudioStreamActive || audioUiState.amplitude > 0.0) {
+                                AudioInputState.INCOMING
+                            } else {
+                                AudioInputState.READY
+                            }
+                        }
                     }
                 }
                 .drawBehind {
@@ -284,8 +581,8 @@ fun AmplitudeToggleButton(
 @Composable
 fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
-    quickSettingsController: QuickSettingsController?,
-    snackBarController: SnackBarController?,
+    onChangeCaptureMode: (CaptureMode) -> Unit,
+    onToggleWhenDisabled: (DisableRationale) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Captures image (left), else captures video (right).
@@ -307,7 +604,7 @@ fun CaptureModeToggleButton(
         checked = toggleState,
         onCheckedChange = { isChecked ->
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
-            quickSettingsController?.setCaptureMode(newCaptureMode)
+            onChangeCaptureMode(newCaptureMode)
         },
         onToggleWhenDisabled = {
             val disabledReason: DisableRationale? =
@@ -320,7 +617,7 @@ fun CaptureModeToggleButton(
                             as? SingleSelectableUiState.Disabled<CaptureMode>
                         )
                         ?.disabledReason
-            disabledReason?.let { snackBarController?.enqueueDisabledHdrToggleSnackBar(it) }
+            disabledReason?.let(onToggleWhenDisabled)
         },
         enabled = enabled,
         leftIcon = if (uiState.selectedCaptureMode ==
@@ -357,7 +654,7 @@ fun CaptureModeToggleButton(
  * @param modifier the modifier for this component.
  * @param snackbarToShow the [SnackbarData] to show.
  * @param snackbarHostState the [SnackbarHostState] for this component.
- * @param onSnackbarResult the callback for the snackbar result.
+ * @param snackBarController the [SnackBarController] for this component.
  */
 @Composable
 fun TestableSnackbar(
@@ -371,22 +668,22 @@ fun TestableSnackbar(
         modifier = modifier
             .size(20.dp)
     ) {
-        val context = LocalContext.current
+        val message = stringResource(id = snackbarToShow.stringResource)
+        val actionLabel = snackbarToShow.actionLabelRes?.let { stringResource(id = it) }
         LaunchedEffect(snackbarToShow) {
-            val message = context.getString(snackbarToShow.stringResource)
             Log.d(TAG, "Snackbar Displayed with message: $message")
             try {
-                val result =
-                    snackbarHostState.showSnackbar(
-                        message = message,
-                        duration = snackbarToShow.duration,
-                        withDismissAction = snackbarToShow.withDismissAction,
-                        actionLabel = if (snackbarToShow.actionLabelRes == null) {
-                            null
-                        } else {
-                            context.getString(snackbarToShow.actionLabelRes!!)
-                        }
-                    )
+                // Convert SnackbarData into SnackbarVisuals so SnackbarHost can receive it
+                val visuals = CustomSnackbarVisuals(
+                    message = message,
+                    actionLabel = actionLabel,
+                    withDismissAction = snackbarToShow.withDismissAction,
+                    duration = snackbarToShow.duration,
+                    isError = snackbarToShow.isError
+                )
+
+                val result = snackbarHostState.showSnackbar(visuals)
+
                 when (result) {
                     SnackbarResult.ActionPerformed,
                     SnackbarResult.Dismissed -> snackBarController.onSnackBarResult(
@@ -493,7 +790,6 @@ fun PreviewDisplay(
     surfaceRequest?.let {
         BoxWithConstraints(
             modifier
-                .testTag(PREVIEW_DISPLAY)
                 .fillMaxSize()
                 .background(Color.Black),
             contentAlignment = Alignment.TopCenter
@@ -506,6 +802,7 @@ fun PreviewDisplay(
             val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
             val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
             var imageVisible by remember { mutableStateOf(true) }
+            val targetBoundsState = LocalOverlapTargetBounds.current
 
             val disableAnimations = LocalDisableAnimations.current
             val imageAlpha: Float by animateFloatAsState(
@@ -531,6 +828,13 @@ fun PreviewDisplay(
 
             Box(
                 modifier = Modifier
+                    .testTag(PREVIEW_DISPLAY)
+                    .onGloballyPositioned { coordinates ->
+                        val bounds = coordinates.boundsInWindow()
+                        if (targetBoundsState.value != bounds) {
+                            targetBoundsState.value = bounds
+                        }
+                    }
                     .width(width)
                     .height(height)
                     .transformable(state = transformableState)
@@ -549,9 +853,12 @@ fun PreviewDisplay(
                 )
 
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
+                val viewfinderDescription =
+                    stringResource(R.string.camera_viewfinder_content_description)
                 CameraXViewfinder(
                     modifier = Modifier
                         .fillMaxSize()
+                        .semantics { contentDescription = viewfinderDescription }
                         .pointerInput(onFlipCamera) {
                             detectTapGestures(
                                 onDoubleTap = { offset ->
@@ -598,8 +905,6 @@ fun PreviewDisplay(
  *
  * @param modifier the modifier for this component.
  * @param captureButtonUiState the [CaptureButtonUiState] that dictates the button's behavior.
- * @param isQuickSettingsOpen true if the quick settings panel is open.
- * @param onToggleQuickSettings callback to open or close the quick settings.
  * @param onIncrementZoom callback to adjust the camera's zoom level.
  * @param onCaptureImage callback to trigger image capture.
  * @param onStartVideoRecording callback to start video recording.
@@ -610,13 +915,11 @@ fun PreviewDisplay(
 fun CaptureButton(
     modifier: Modifier = Modifier,
     captureButtonUiState: CaptureButtonUiState,
-    isQuickSettingsOpen: Boolean,
     onIncrementZoom: (Float) -> Unit = {},
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onLockVideoRecording: (Boolean) -> Unit = {},
-    quickSettingsController: QuickSettingsController? = null
+    onLockVideoRecording: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -628,9 +931,6 @@ fun CaptureButton(
                 captureButtonUiState.isEnabled
             ) {
                 onCaptureImage(context.contentResolver)
-            }
-            if (isQuickSettingsOpen) {
-                quickSettingsController?.toggleQuickSettings()
             }
         },
         onStartRecording = {
@@ -839,9 +1139,17 @@ fun FlipCameraButton(
             onClick = onClick,
             enabled = enabledCondition
         ) {
+            val contentDescription = when (flipLensUiState.selectedLensFacing) {
+                com.google.jetpackcamera.model.LensFacing.FRONT -> stringResource(
+                    R.string.quick_settings_front_camera_description
+                )
+                com.google.jetpackcamera.model.LensFacing.BACK -> stringResource(
+                    R.string.quick_settings_back_camera_description
+                )
+            }
             Icon(
                 painter = painterResource(R.drawable.ic_flip_camera_android),
-                contentDescription = stringResource(id = R.string.flip_camera_icon_description),
+                contentDescription = contentDescription,
                 modifier = Modifier
                     .size(IconButtonDefaults.extraLargeIconSize)
                     .rotate(animatedRotation.value)
@@ -857,95 +1165,237 @@ fun FlipCameraButton(
  * @param coordinateTransformer The coordinate transformer to use to map the surface coordinates
  * to screen coordinates. This should come from [CameraXViewfinder].
  */
+@VisibleForTesting
 @Composable
-private fun FocusMeteringIndicator(
+internal fun FocusMeteringIndicator(
     focusMeteringUiState: FocusMeteringUiState,
     coordinateTransformer: CoordinateTransformer
 ) {
-    if (focusMeteringUiState is FocusMeteringUiState.Specified) {
-        val disableAnimations = LocalDisableAnimations.current
-        val alpha = if (disableAnimations) {
-            1f
+    val lastSpecifiedState = remember { arrayOfNulls<FocusMeteringUiState.Specified>(1) }
+    SideEffect {
+        if (focusMeteringUiState is FocusMeteringUiState.Specified) {
+            lastSpecifiedState[0] = focusMeteringUiState
+        }
+    }
+
+    val activeState =
+        (focusMeteringUiState as? FocusMeteringUiState.Specified)
+            ?: lastSpecifiedState[0]
+            ?: return
+
+    val disableAnimations = LocalDisableAnimations.current
+    val pulseAlphaProvider: () -> Float = if (disableAnimations) {
+        { 1f }
+    } else {
+        val transition = rememberInfiniteTransition(label = "FocusPulse")
+        val alphaState = transition.animateFloat(
+            initialValue = 1f,
+            targetValue = FOCUS_PULSE_MIN_ALPHA,
+            animationSpec = infiniteRepeatable(
+                animation = tween(FOCUS_PULSE_DURATION_MILLIS),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "FocusPulseAlpha"
+        )
+        val provider: () -> Float = { alphaState.value }
+        provider
+    }
+
+    val currentStatus = (focusMeteringUiState as? FocusMeteringUiState.Specified)?.status
+    var showFailureIndicator by remember { mutableStateOf(false) }
+    LaunchedEffect(currentStatus) {
+        if (currentStatus == FocusMeteringUiState.Status.FAILURE) {
+            showFailureIndicator = true
+            delay(FOCUS_INDICATOR_FAILURE_DELAY)
+            showFailureIndicator = false
         } else {
-            val transition = rememberInfiniteTransition(label = "FocusPulse")
-            val a by transition.animateFloat(
-                initialValue = 1f,
-                targetValue = 0.5f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(500),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "FocusPulseAlpha"
-            )
-            a
+            showFailureIndicator = false
+        }
+    }
+
+    // Accessibility: resolve focus status strings for semantics and TalkBack
+    val focusScanningDescription = stringResource(R.string.focus_scanning)
+    val focusLockedDescription = stringResource(R.string.focus_locked)
+    val focusFailedDescription = stringResource(R.string.focus_failed)
+    val focusReleasedDescription = stringResource(R.string.focus_released)
+
+    val focusStatusDescription = when (currentStatus) {
+        FocusMeteringUiState.Status.RUNNING -> focusScanningDescription
+        FocusMeteringUiState.Status.SUCCESS -> focusLockedDescription
+        FocusMeteringUiState.Status.FAILURE -> focusFailedDescription
+        FocusMeteringUiState.Status.CANCELLED -> focusReleasedDescription
+        null -> ""
+    }
+
+    // Accessibility: announce focus state transitions to TalkBack
+    val view = LocalView.current
+    LaunchedEffect(currentStatus) {
+        when (currentStatus) {
+            FocusMeteringUiState.Status.RUNNING ->
+                view.announceForAccessibility(focusScanningDescription)
+            FocusMeteringUiState.Status.SUCCESS ->
+                view.announceForAccessibility(focusLockedDescription)
+            FocusMeteringUiState.Status.FAILURE ->
+                view.announceForAccessibility(focusFailedDescription)
+            FocusMeteringUiState.Status.CANCELLED ->
+                view.announceForAccessibility(focusReleasedDescription)
+            null -> {}
+        }
+    }
+
+    val isVisible = currentStatus == FocusMeteringUiState.Status.RUNNING ||
+        currentStatus == FocusMeteringUiState.Status.SUCCESS ||
+        showFailureIndicator
+
+    val animatedScale by animateFloatAsState(
+        targetValue = if (currentStatus == FocusMeteringUiState.Status.SUCCESS) {
+            FOCUS_LOCKED_SCALE
+        } else {
+            1.0f
+        },
+        animationSpec =
+        if (disableAnimations) {
+            snap()
+        } else {
+            tween(FOCUS_ANIMATION_DURATION_MILLIS, easing = FastOutSlowInEasing)
+        },
+        label = "FocusIndicatorScale"
+    )
+
+    val reticleAlphaProvider = {
+        when (currentStatus) {
+            FocusMeteringUiState.Status.RUNNING -> pulseAlphaProvider()
+            FocusMeteringUiState.Status.SUCCESS -> FOCUS_LOCKED_ALPHA
+            FocusMeteringUiState.Status.FAILURE -> FOCUS_FAILURE_ALPHA
+            FocusMeteringUiState.Status.CANCELLED, null -> {
+                when (lastSpecifiedState[0]?.status) {
+                    FocusMeteringUiState.Status.SUCCESS -> FOCUS_LOCKED_ALPHA
+                    FocusMeteringUiState.Status.FAILURE -> FOCUS_FAILURE_ALPHA
+                    FocusMeteringUiState.Status.RUNNING -> pulseAlphaProvider()
+                    else -> FOCUS_LOCKED_ALPHA
+                }
+            }
+        }
+    }
+
+    // Map coordinates from surface coordinates back to screen coordinates
+    val tapCoords =
+        remember(
+            coordinateTransformer.transformMatrix,
+            activeState.surfaceCoordinates
+        ) {
+            Matrix().run {
+                setFrom(coordinateTransformer.transformMatrix)
+                invert()
+                map(activeState.surfaceCoordinates)
+            }
         }
 
-        // The indicator for SUCCESS/FAILURE is shown for a short duration
-        var showResultIndicator by remember { mutableStateOf(false) }
-        val status = focusMeteringUiState.status
-        LaunchedEffect(status) {
-            if (status == FocusMeteringUiState.Status.SUCCESS ||
-                status == FocusMeteringUiState.Status.FAILURE
-            ) {
-                showResultIndicator = true
-                delay(FOCUS_INDICATOR_RESULT_DELAY)
-                showResultIndicator = false
-            } else {
-                showResultIndicator = false
-            }
-        }
-        // Map coordinates from surface coordinates back to screen coordinates
-        val tapCoords =
-            remember(
-                coordinateTransformer.transformMatrix,
-                focusMeteringUiState.surfaceCoordinates
-            ) {
-                Matrix().run {
-                    setFrom(coordinateTransformer.transformMatrix)
-                    invert()
-                    map(focusMeteringUiState.surfaceCoordinates)
-                }
-            }
-        val showFocusMeteringIndicator = status == FocusMeteringUiState.Status.RUNNING
-        val isVisible = showFocusMeteringIndicator || showResultIndicator
-        AnimatedVisibility(
-            visible = isVisible,
-            enter = if (disableAnimations) {
-                EnterTransition.None
-            } else {
-                fadeIn() + scaleIn(
-                    initialScale = 1.5f
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = if (disableAnimations) {
+            EnterTransition.None
+        } else {
+            fadeIn() + scaleIn(
+                initialScale = FOCUS_BURST_SCALE
+            )
+        },
+        exit = if (disableAnimations) {
+            ExitTransition.None
+        } else {
+            fadeOut(tween(FOCUS_ANIMATION_DURATION_MILLIS, easing = FastOutSlowInEasing)) +
+                scaleOut(
+                    targetScale = FOCUS_BURST_SCALE,
+                    animationSpec = tween(
+                        FOCUS_ANIMATION_DURATION_MILLIS,
+                        easing = FastOutSlowInEasing
+                    )
                 )
-            },
-            exit = if (disableAnimations) {
-                ExitTransition.None
-            } else {
-                fadeOut() + when (focusMeteringUiState.status) {
-                    FocusMeteringUiState.Status.SUCCESS -> scaleOut(targetScale = 0.5f)
-                    FocusMeteringUiState.Status.FAILURE -> scaleOut(targetScale = 1.5f)
-                    else -> fadeOut()
-                }
-            },
-            modifier = Modifier
-                .offset { tapCoords.round() }
-                .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
+        },
+        modifier = Modifier
+            .offset { tapCoords.round() }
+            .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
+    ) {
+        Box(
+            modifier = Modifier.size(TAP_TO_FOCUS_INDICATOR_SIZE),
+            contentAlignment = Alignment.Center
         ) {
             Box(
                 Modifier
                     .testTag(FOCUS_METERING_INDICATOR_TAG)
-                    .alpha(
-                        if (focusMeteringUiState.status == FocusMeteringUiState.Status.SUCCESS) {
-                            1f
-                        } else {
-                            alpha
+                    .semantics {
+                        if (focusStatusDescription.isNotEmpty()) {
+                            contentDescription = focusStatusDescription
                         }
-                    )
+                    }
+                    .graphicsLayer {
+                        alpha = reticleAlphaProvider()
+                    }
                     .border(
-                        1.dp,
+                        FOCUS_INDICATOR_BORDER_WIDTH,
                         Color.White,
                         CircleShape
                     )
-                    .size(TAP_TO_FOCUS_INDICATOR_SIZE)
+                    .size(TAP_TO_FOCUS_INDICATOR_SIZE * animatedScale)
+            )
+        }
+    }
+}
+
+@Preview(name = "Elapsed Time", showBackground = true, backgroundColor = 0xFF000000)
+@Composable
+private fun ElapsedTimeTextPreview() {
+    // Assuming you have a JcaTheme in the google/jetpack-camera-app repository,
+    // you would typically wrap this in your custom theme.
+    MaterialTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Scenario 1: Initial recording state (0:00)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(0L)
+                }
+            )
+
+            // Scenario 2: Standard recording state
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(30.seconds.inWholeNanoseconds)
+                }
+            )
+
+            // Scenario 3: Over a minute (1:05)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(65.seconds.inWholeNanoseconds)
+                }
+            )
+
+            // Scenario 4: Over 10 minutes (10:05)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(605.seconds.inWholeNanoseconds)
+                }
+            )
+
+            // Scenario 5: Paused recording state
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(
+                        elapsedTimeNanos = 30.seconds.inWholeNanoseconds,
+                        isPaused = true
+                    )
+                }
+            )
+
+            // Scenario 6: Unavailable state (renders nothing, verifying the if-condition)
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Unavailable
+                }
             )
         }
     }

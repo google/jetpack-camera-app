@@ -18,7 +18,6 @@ package com.google.jetpackcamera.ui.controller.impl
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.ui.controller.ImageWellController
-import com.google.jetpackcamera.ui.controller.impl.Utils.postCurrentMediaToMediaRepository
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -30,26 +29,18 @@ import kotlinx.coroutines.launch
  * Implementation of [ImageWellController] that handles image well actions.
  *
  * @param mediaRepository The [MediaRepository] for accessing media.
- * @param updateLastCapturedMediaCallback Callback to update the last captured media.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class ImageWellControllerImpl(
     private val mediaRepository: MediaRepository,
-    private val updateLastCapturedMediaCallback: () -> Unit,
     coroutineContext: CoroutineContext
 ) : ImageWellController {
     private val job = Job(parent = coroutineContext[Job.Key])
     private val scope = CoroutineScope(coroutineContext + job)
     override fun imageWellToRepository(mediaDescriptor: MediaDescriptor) {
         scope.launch {
-            postCurrentMediaToMediaRepository(
-                mediaRepository,
-                mediaDescriptor
-            )
+            mediaRepository.setCurrentMedia(mediaDescriptor)
         }
-    }
-    override fun updateLastCapturedMedia() {
-        updateLastCapturedMediaCallback()
     }
 
     /**

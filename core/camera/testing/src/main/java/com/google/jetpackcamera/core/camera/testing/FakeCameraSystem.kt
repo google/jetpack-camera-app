@@ -71,6 +71,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         cameraAppSettings: CameraAppSettings,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
+        currentSettings.value = cameraAppSettings
         initialized = true
     }
 
@@ -129,6 +130,8 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         screenFlashEvents.trySend(event)
     }
 
+    var numVideoRecordingStarts = 0
+
     override suspend fun startVideoRecording(
         saveLocation: SaveLocation,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
@@ -136,6 +139,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
+        numVideoRecordingStarts++
         recordingInProgress = true
     }
 
@@ -288,5 +292,9 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         currentSettings.update { old ->
             old.copy(captureMode = captureMode)
         }
+    }
+
+    override fun clearCameraError() {
+        _currentCameraState.update { it.copy(cameraError = null) }
     }
 }

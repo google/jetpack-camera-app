@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.net.Uri
+import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.StabilizationMode
@@ -37,6 +38,7 @@ import com.google.jetpackcamera.model.VideoQuality
  * @param debugInfo Information for debugging purposes.
  * @param videoQualityInfo Information about the current video quality.
  * @param focusState The current focus state of the camera.
+ * @param cameraError The current camera error, if any.
  */
 data class CameraState(
     val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
@@ -49,7 +51,8 @@ data class CameraState(
     val lowLightBoostState: LowLightBoostState = LowLightBoostState.Inactive,
     val debugInfo: DebugInfo = DebugInfo(null, null),
     val videoQualityInfo: VideoQualityInfo = VideoQualityInfo(VideoQuality.UNSPECIFIED, 0, 0),
-    val focusState: FocusState = FocusState.Unspecified
+    val focusState: FocusState = FocusState.Unspecified,
+    val cameraError: CameraError? = null
 )
 
 /**
@@ -120,6 +123,31 @@ sealed interface FocusState {
 data class VideoQualityInfo(val quality: VideoQuality, val width: Int, val height: Int)
 
 /**
+ * Represents the state of the audio stream during video recording.
+ */
+sealed interface AudioStreamState {
+    /**
+     * The audio stream is actively recording and providing amplitude data.
+     */
+    data class Active(val amplitude: Double) : AudioStreamState
+
+    /** The audio stream was not enabled or is disabled. */
+    data object Disabled : AudioStreamState
+
+    /** The audio stream was silenced by the system (e.g. privacy toggle). */
+    data object Silenced : AudioStreamState
+
+    /** The audio stream is muted (e.g. by the app/user). */
+    data object Muted : AudioStreamState
+
+    /** An error occurred in the audio stream. */
+    data object Error : AudioStreamState
+
+    /** The audio stream state is unknown. */
+    data object Unknown : AudioStreamState
+}
+
+/**
  * Represents the state of video recording.
  */
 sealed interface VideoRecordingState {
@@ -151,9 +179,9 @@ sealed interface VideoRecordingState {
         val maxDurationMillis: Long
 
         /**
-         * The current amplitude of the audio being recorded.
+         * The state of the audio stream being recorded.
          */
-        val audioAmplitude: Double
+        val audioStreamState: AudioStreamState
 
         /**
          * The elapsed time of the recording in nanoseconds.
@@ -165,7 +193,7 @@ sealed interface VideoRecordingState {
          */
         data class Recording(
             override val maxDurationMillis: Long,
-            override val audioAmplitude: Double,
+            override val audioStreamState: AudioStreamState,
             override val elapsedTimeNanos: Long
         ) : Active
 
@@ -174,7 +202,7 @@ sealed interface VideoRecordingState {
          */
         data class Paused(
             override val maxDurationMillis: Long,
-            override val audioAmplitude: Double,
+            override val audioStreamState: AudioStreamState,
             override val elapsedTimeNanos: Long
         ) : Active
     }

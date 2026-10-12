@@ -16,36 +16,62 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.BottomSheetScaffoldState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.takeOrElse
 
 /**
  * The base layout for the camera capture screen.
  *
  * @param modifier the modifier for this component
+ * @param scaffoldState the bottom sheet scaffold state
+ * @param onDismissQuickSettings callback to dismiss quick settings when clicking the drag handle
  * @param viewfinder the viewfinder composable
  * @param captureButton the capture button composable
  * @param imageWell the image well composable
@@ -60,10 +86,21 @@ import androidx.compose.ui.unit.dp
  * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug settings
  * @param screenFlashOverlay the screen flash overlay composable
  * @param snackBar the snack bar composable for showing messages
+ * @param topStartContent optional composable content aligned to the top-start of the viewfinder
+ * @param errorDialog the camera error alert dialog composable
  */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Suppress("DEPRECATION")
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
+    scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            skipHiddenState = false
+        )
+    ),
+    onDismissQuickSettings: () -> Unit = {},
     viewfinder: @Composable (Modifier) -> Unit,
     captureButton: @Composable (Modifier) -> Unit,
     imageWell: @Composable (Modifier) -> Unit,
@@ -77,48 +114,117 @@ fun PreviewLayout(
     debugOverlay: @Composable (Modifier) -> Unit,
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (Modifier) -> Unit,
-    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit
+    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    topStartContent: @Composable (Modifier) -> Unit = {},
+    errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.testTag(SNACKBAR_NODE_TAG)
-            )
-        }
-    ) { paddingValues ->
-        Box(modifier = modifier.background(Color.Black)) {
-            Column {
-                indicatorRow(Modifier.statusBarsPadding())
-                viewfinder(Modifier)
-            }
+    val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .safeDrawingPadding()
+    CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
+        BottomSheetScaffold(
+            modifier = modifier.fillMaxSize(),
+            scaffoldState = scaffoldState,
+            sheetPeekHeight = 0.dp,
+            sheetDragHandle = {
+                BottomSheetDefaults.DragHandle(
+                    modifier = Modifier
+                        .testTag(QUICK_SETTINGS_DRAG_HANDLE)
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = stringResource(
+                                R.string.quick_settings_btn_close_expanded_settings_description
+                            ),
+                            onClick = onDismissQuickSettings
+                        )
+                )
+            },
+            sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            sheetContent = {
+                quickSettingsOverlay(Modifier)
+            },
+            snackbarHost = {}
+        ) {
+            Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                Column {
+                    // The indicator row occupies the top bar real estate in the hidden status bar
+                    // region. We size the top bar to accommodate any top display cutout or the
+                    // minimum interactive touch target (defaulting to 48dp), while CutoutAwareRow
+                    // shifts individual indicator icons around any intersecting cutout bounds.
+                    val cutoutTopInset =
+                        WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+                    val minTouchTarget =
+                        LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
+                    val topBarHeight = max(cutoutTopInset, minTouchTarget)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(topBarHeight)
+                            .windowInsetsPadding(
+                                WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
+                            )
+                            .padding(horizontal = 16.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        indicatorRow(Modifier)
+                    }
+                    Box {
+                        viewfinder(Modifier)
+                        topStartContent(Modifier.align(Alignment.TopStart))
+                    }
+                }
 
-            ) {
-                debugVisibilityWrapper {
-                    VerticalMaterialControls(
-                        captureButton = captureButton,
-                        imageWell = imageWell,
-                        flipCameraButton = flipCameraButton,
-                        quickSettingsToggleButton = quickSettingsButton,
-                        captureModeToggleSwitch = captureModeToggle,
-                        bottomSheetQuickSettings = quickSettingsOverlay,
-                        zoomControls = zoomLevelDisplay,
-                        elapsedTimeDisplay = elapsedTimeDisplay
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .windowInsetsPadding(
+                            WindowInsets.systemBarsIgnoringVisibility
+                                .union(WindowInsets.displayCutout)
+                        )
+
+                ) {
+                    debugVisibilityWrapper {
+                        VerticalMaterialControls(
+                            captureButton = captureButton,
+                            imageWell = imageWell,
+                            flipCameraButton = flipCameraButton,
+                            quickSettingsToggleButton = quickSettingsButton,
+                            captureModeToggleSwitch = captureModeToggle,
+                            zoomControls = zoomLevelDisplay,
+                            elapsedTimeDisplay = elapsedTimeDisplay,
+                            snackbarHost = { modifier ->
+                                PillSnackbarHost(
+                                    snackbarHostState = scaffoldState.snackbarHostState,
+                                    modifier = modifier
+                                )
+                            }
+                        )
+                    }
+                    // controls overlay
+                    snackBar(Modifier, scaffoldState.snackbarHostState)
+                    screenFlashOverlay(Modifier)
+                }
+                debugOverlay(Modifier)
+
+                val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
+                    scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+                if (isSheetVisible) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .testTag(QUICK_SETTINGS_SCRIM)
+                            .clickable(
+                                onClickLabel = stringResource(
+                                    R.string.quick_settings_btn_close_expanded_settings_description
+                                ),
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onDismissQuickSettings
+                            )
                     )
                 }
-                // controls overlay
-                snackBar(Modifier, snackbarHostState)
-                screenFlashOverlay(Modifier)
+                errorDialog(Modifier)
             }
-            debugOverlay(Modifier)
         }
     }
 }
@@ -131,13 +237,15 @@ private fun VerticalMaterialControls(
     imageWell: @Composable (Modifier) -> Unit,
     flipCameraButton: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
-    bottomSheetQuickSettings: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable (Modifier) -> Unit
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+                snackbarHost(Modifier)
+
                 elapsedTimeDisplay(Modifier)
 
                 // zoom controls row
@@ -162,7 +270,12 @@ private fun VerticalMaterialControls(
                                 imageWell(Modifier)
                             }
                         }
-                        captureButton(Modifier)
+
+                        OverlapAwareStyleProvider(
+                            overlapThreshold = 0.5f
+                        ) {
+                            captureButton(Modifier)
+                        }
 
                         // right capturebutton item
                         Box(
@@ -217,10 +330,10 @@ private fun VerticalMaterialControls(
                 }
             }
         }
-        bottomSheetQuickSettings(Modifier)
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun CaptureLayoutPreview() {

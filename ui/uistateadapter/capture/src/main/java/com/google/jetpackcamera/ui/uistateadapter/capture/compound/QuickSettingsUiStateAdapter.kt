@@ -20,7 +20,6 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
-import com.google.jetpackcamera.ui.uistate.capture.compound.FocusedQuickSetting
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
 /**
@@ -32,31 +31,29 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
  * @param captureModeUiState The UI state for the capture mode (e.g., photo, video).
  * @param flashModeUiState The UI state for the flash mode.
  * @param flipLensUiState The UI state for the flip lens button.
- * @param cameraAppSettings The current application settings for the camera.
- * @param systemConstraints The constraints of the camera system.
  * @param aspectRatioUiState The UI state for the aspect ratio setting.
  * @param hdrUiState The UI state for the HDR setting.
- * @param quickSettingsIsOpen Indicates whether the quick settings panel is open.
- * @param focusedQuickSetting The currently focused quick setting, if any.
- * @param externalCaptureMode The external capture mode, if any.
  * @return A [QuickSettingsUiState.Available] instance containing the consolidated states.
  */
+// TODO: Consider returning QuickSettingsUiState.Unavailable if all option rows (aspectRatio,
+//       captureMode, flashMode, hdr) are Unavailable due to policy restrictions or device constraints.
+//       In a follow-up, coordinate with PreviewScreen to support optional onNavigateToSettings:
+//       1. Has quick settings + onNavigateToSettings: open Quick Settings with "More settings".
+//       2. Has quick settings + no onNavigateToSettings: open Quick Settings without "More settings".
+//       3. No quick settings + onNavigateToSettings: skip bottom sheet and call onNavigateToSettings().
+//       4. No quick settings + no onNavigateToSettings: hide the button altogether.
 fun QuickSettingsUiState.Companion.from(
     captureModeUiState: CaptureModeUiState,
     flashModeUiState: FlashModeUiState,
     flipLensUiState: FlipLensUiState,
     aspectRatioUiState: AspectRatioUiState,
-    hdrUiState: HdrUiState,
-    quickSettingsIsOpen: Boolean,
-    focusedQuickSetting: FocusedQuickSetting
+    hdrUiState: HdrUiState
 ): QuickSettingsUiState {
     return QuickSettingsUiState.Available(
         aspectRatioUiState = aspectRatioUiState,
         captureModeUiState = captureModeUiState,
         flashModeUiState = flashModeUiState,
         flipLensUiState = flipLensUiState,
-        hdrUiState = hdrUiState,
-        quickSettingsIsOpen = quickSettingsIsOpen,
-        focusedQuickSetting = focusedQuickSetting
+        hdrUiState = hdrUiState
     )
 }

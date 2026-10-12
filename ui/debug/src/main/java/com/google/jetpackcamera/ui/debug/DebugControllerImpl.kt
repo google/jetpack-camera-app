@@ -18,20 +18,30 @@ package com.google.jetpackcamera.ui.debug
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * Implementation of [DebugController] that interacts with [CameraSystem] and updates
  * [trackedCaptureUiState].
  *
- * @param cameraSystem The camera system to control.
+ * @param cameraSystemProvider Provider for the initialized [CameraSystem].
  * @param trackedCaptureUiState The state flow to update with debug information.
+ * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class DebugControllerImpl(
-    private val cameraSystem: CameraSystem,
-    private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>
+    private val cameraSystemProvider: suspend () -> CameraSystem,
+    private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
+    coroutineContext: CoroutineContext = Dispatchers.Main.immediate
 ) : DebugController {
+    private val job = Job(parent = coroutineContext[Job])
+    private val scope = CoroutineScope(coroutineContext + job)
+
     override fun toggleDebugHidingComponents() {
         trackedCaptureUiState.update { old ->
             old.copy(debugHidingComponents = !old.debugHidingComponents)
@@ -45,8 +55,10 @@ class DebugControllerImpl(
     }
 
     override fun setTestPattern(testPattern: TestPattern) {
-        cameraSystem.setTestPattern(
-            newTestPattern = testPattern
-        )
+        scope.launch {
+            cameraSystemProvider().setTestPattern(
+                newTestPattern = testPattern
+            )
+        }
     }
 }

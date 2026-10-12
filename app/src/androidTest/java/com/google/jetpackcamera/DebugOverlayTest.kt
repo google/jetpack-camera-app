@@ -24,8 +24,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_HOT_TAG
-import com.google.jetpackcamera.ui.components.capture.AMPLITUDE_NONE_TAG
+import com.google.jetpackcamera.ui.components.capture.AUDIO_INPUT_TOGGLE
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ZOOM_BUTTON_ROW_TAG
@@ -80,8 +79,7 @@ class DebugOverlayTest {
             composeTestRule.waitForNodeWithTagToDisappear(CAPTURE_BUTTON)
             composeTestRule.onNodeWithTag(ZOOM_BUTTON_ROW_TAG).assertDoesNotExist()
             composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
-            composeTestRule.onNodeWithTag(AMPLITUDE_NONE_TAG).assertDoesNotExist()
-            composeTestRule.onNodeWithTag(AMPLITUDE_HOT_TAG).assertDoesNotExist()
+            composeTestRule.onNodeWithTag(AUDIO_INPUT_TOGGLE).assertDoesNotExist()
             composeTestRule.onNodeWithTag(DEBUG_OVERLAY_BUTTON).assertDoesNotExist()
             composeTestRule.onNodeWithTag(LOGICAL_CAMERA_ID_TAG).assertDoesNotExist()
             composeTestRule.onNodeWithTag(PHYSICAL_CAMERA_ID_TAG).assertDoesNotExist()

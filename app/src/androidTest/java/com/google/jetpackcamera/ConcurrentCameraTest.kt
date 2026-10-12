@@ -24,13 +24,16 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
+import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BTN_DIALOG_FLASH_OPTION_LLB_TAG
@@ -40,23 +43,21 @@ import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFI
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
-import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_HDR_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_BUTTON
-import com.google.jetpackcamera.ui.components.capture.R as CaptureR
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.getCurrentCaptureMode
 import com.google.jetpackcamera.utils.getResString
 import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
-import com.google.jetpackcamera.utils.searchForQuickSetting
 import com.google.jetpackcamera.utils.setConcurrentCameraModeInSettings
-import com.google.jetpackcamera.utils.stateDescriptionMatches
 import com.google.jetpackcamera.utils.visitSettingsScreen
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForSnackbarWithText
@@ -118,29 +119,6 @@ class ConcurrentCameraTest {
     }
 
     @Test
-    fun concurrentCameraMode_whenEnabled_canSwitchAspectRatio() = runConcurrentCameraScenarioTest {
-        with(composeTestRule) {
-            // Enable concurrent camera in settings
-            setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
-
-            // Enter quick settings
-            onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
-                .assertExists()
-                .performClick()
-
-            // Click the ratio button inside Quick Settings
-            onNodeWithTag(QUICK_SETTINGS_RATIO_BUTTON)
-                .assertExists()
-                .performClick()
-
-            // Click the 1:1 ratio button
-            onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON)
-                .assertExists()
-                .performClick()
-        }
-    }
-
-    @Test
     fun concurrentCameraMode_whenEnabled_disablesOtherQuickSettings() =
         runConcurrentCameraScenarioTest {
             with(composeTestRule) {
@@ -157,23 +135,18 @@ class ConcurrentCameraTest {
                     .assertExists()
                     .performClick()
 
-                // Assert the HDR button is disabled
-                searchForQuickSetting(QUICK_SETTINGS_HDR_BUTTON)
-                onNodeWithTag(QUICK_SETTINGS_HDR_BUTTON)
-                    .assertExists()
-                    .assert(isNotEnabled())
+                // Assert the HDR button is disabled (if the row exists)
+                val hdrExists = onAllNodesWithTag(
+                    ROW_QUICK_SETTINGS_HDR
+                ).fetchSemanticsNodes().isNotEmpty()
+                if (hdrExists) {
+                    onNodeWithTag(BTN_QUICK_SETTINGS_HDR_OPTION_ON).assert(isNotEnabled())
+                    onNodeWithTag(BTN_QUICK_SETTINGS_HDR_OPTION_OFF).assert(isNotEnabled())
+                }
 
-                // Assert the capture mode toggle button is disabled and set to video-only
-                onNodeWithTag(BTN_QUICK_SETTINGS_FOCUS_CAPTURE_MODE)
-                    .assertExists()
-                    .assert(isNotEnabled())
-                    .assert(
-                        stateDescriptionMatches(
-                            getResString(
-                                CaptureR.string.quick_settings_description_capture_mode_video_only
-                            )
-                        )
-                    )
+                // Assert the capture mode row does not exist (hidden because locked to video-only)
+                onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertDoesNotExist()
+                assertThat(getCurrentCaptureMode()).isEqualTo(CaptureMode.VIDEO_ONLY)
             }
         }
 

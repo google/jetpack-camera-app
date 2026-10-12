@@ -15,11 +15,13 @@
  */
 package com.google.jetpackcamera
 
+import androidx.annotation.VisibleForTesting
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.di.DefaultCaptureModeOverride
 import com.google.jetpackcamera.di.DefaultFilePathGenerator
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.SaveMode
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -28,6 +30,18 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Volatile
+    @VisibleForTesting
+    var testCameraFeaturePolicy: CameraFeaturePolicy? = null
+
+    /**
+     * Provides the [CameraFeaturePolicy] configuration.
+     */
+    @Provides
+    fun providesCameraFeaturePolicy(): CameraFeaturePolicy =
+        testCameraFeaturePolicy ?: CameraFeaturePolicy()
+
     /**
      * provides the default [CaptureMode] to override by the app
      */

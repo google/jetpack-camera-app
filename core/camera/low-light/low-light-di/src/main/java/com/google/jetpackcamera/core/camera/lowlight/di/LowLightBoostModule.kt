@@ -28,10 +28,10 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-internal abstract class LowLightBoostModule {
+internal interface LowLightBoostModule {
 
     @Multibinds
-    abstract fun availabilityCheckerEntries(): Set<
+    fun availabilityCheckerEntries(): Set<
         Map.Entry<
             LowLightBoostFeatureKey,
             @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>
@@ -39,7 +39,7 @@ internal abstract class LowLightBoostModule {
         >
 
     @Multibinds
-    abstract fun effectProviderEntries(): Set<
+    fun effectProviderEntries(): Set<
         Map.Entry<
             LowLightBoostFeatureKey,
             @JvmSuppressWildcards Provider<LowLightBoostEffectProvider>

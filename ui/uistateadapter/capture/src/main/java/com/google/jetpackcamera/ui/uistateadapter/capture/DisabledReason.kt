@@ -24,6 +24,16 @@ import com.google.jetpackcamera.ui.uistate.DisableRationale
 enum class DisabledReason(
     override val reasonTextResId: Int
 ) : DisableRationale {
+    UNKNOWN(R.string.toast_unknown_disabled_rationale),
+    IMAGE_CAPTURE_RESTRICTED(
+        R.string.toast_image_capture_restricted
+    ),
+    VIDEO_CAPTURE_RESTRICTED(
+        R.string.toast_video_capture_restricted
+    ),
+    HYBRID_CAPTURE_RESTRICTED(
+        R.string.toast_hybrid_capture_restricted
+    ),
     VIDEO_CAPTURE_EXTERNAL_UNSUPPORTED(
         R.string.toast_video_capture_external_unsupported
     ),
@@ -53,5 +63,8 @@ enum class DisabledReason(
     ),
     HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED(
         R.string.toast_hdr_simultaneous_image_video_unsupported
+    ),
+    LLB_DISABLED_BY_HDR(
+        R.string.toast_llb_disabled_by_hdr
     )
 }

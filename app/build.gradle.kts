@@ -16,14 +16,17 @@
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.android.legacy.kapt)
     alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.compose.compiler)
 }
 
 android {
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     namespace = "com.google.jetpackcamera"
 
@@ -131,6 +134,8 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.truth)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.rules)
@@ -147,6 +152,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Hilt
+    implementation(libs.hilt.navigation.compose)
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 
@@ -158,10 +164,10 @@ dependencies {
 
     // Access settings & model data
     implementation(project(":data:settings"))
-    implementation(project(":core:settings:datastore-prefs"))
+    implementation(project(":core:settings:datastore-proto"))
     implementation(project(":core:settings"))
+
     implementation(project(":core:model"))
-    implementation(libs.androidx.datastore.preferences)
 
     // Camera Preview
     implementation(project(":feature:preview"))
@@ -182,13 +188,14 @@ dependencies {
     implementation(project(":ui:components:capture"))
     implementation(project(":ui:debug"))
 
+    implementation(project(":core:camera"))
+
     // Low Light implementations
     implementation(project(":core:camera:low-light:low-light-di"))
     implementation(project(":core:camera:low-light-playservices-di"))
 
     // Postprocess implementations
     implementation(project(":core:camera:postprocess:postprocess-di"))
-
     implementation(project(":core:camera:low-light-playservices"))
     implementation(project(":core:camera:effects:single-stream"))
 }

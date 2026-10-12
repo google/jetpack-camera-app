@@ -19,24 +19,35 @@ import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.ui.controller.ZoomController
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * Implementation of [ZoomController] that updates the camera's zoom and tracked UI state.
  *
- * @param cameraSystem The camera system to update zoom on.
+ * @param cameraSystemProvider Provider for the initialized [CameraSystem].
  * @param trackedCaptureUiState State for tracking zoom changes.
+ * @param coroutineContext The [CoroutineContext] for launching coroutines.
  */
 class ZoomControllerImpl(
-    private val cameraSystem: CameraSystem,
-    private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>
+    private val cameraSystemProvider: suspend () -> CameraSystem,
+    private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState>,
+    coroutineContext: CoroutineContext = Dispatchers.Main.immediate
 ) : ZoomController {
+    private val job = Job(parent = coroutineContext[Job])
+    private val scope = CoroutineScope(coroutineContext + job)
 
     override fun setZoomRatio(zoomRatio: CameraZoomRatio) {
-        cameraSystem.changeZoomRatio(
-            newZoomState = zoomRatio
-        )
+        scope.launch {
+            cameraSystemProvider().changeZoomRatio(
+                newZoomState = zoomRatio
+            )
+        }
     }
 
     override fun setZoomAnimationState(targetValue: Float?) {
