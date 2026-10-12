@@ -20,6 +20,8 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.time.measureTime
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 /**
  * Exhaustive and invariant tests for [CameraLayoutSolver].
@@ -32,6 +34,7 @@ import org.junit.Test
  * not enumerable, so a layout validated only against known phones is validated against the wrong
  * thing. The grid below is the closest we can get to checking the promise itself.
  */
+@RunWith(JUnit4::class)
 class CameraLayoutSolverPropertyTest {
 
     /**

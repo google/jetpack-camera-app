@@ -526,7 +526,8 @@ object CameraLayoutSolver {
             val obstacles = ArrayList<Obstacle>(spec.rows.size)
 
             var cursor = navTop - bottomPadding
-            spec.rows.forEachIndexed { index, row ->
+            for (index in spec.rows.indices) {
+                val row = spec.rows[index]
                 // The bottom-most row is the one compaction applies to.
                 val height = if (index == 0) toolbarHeight else row.height.value
                 val bottom = cursor
@@ -539,7 +540,7 @@ object CameraLayoutSolver {
                 cursor = top - gaps[index]
             }
 
-            val stackTop = obstacles.minOfOrNull { it.top } ?: cursor
+            val stackTop = obstacles.lastOrNull()?.top ?: cursor
             if (stackTop < topInset) return null
 
             val frames = LinkedHashMap<String, Pair<Float, Float>>(spec.viewfinders.size)
@@ -548,22 +549,24 @@ object CameraLayoutSolver {
             var minClearance = Float.POSITIVE_INFINITY
             val mayEnclose = bottomPadding <= enclosureMaxPadding
 
-            for (slot in spec.viewfinders) {
+            for (i in spec.viewfinders.indices) {
+                val slot = spec.viewfinders[i]
                 val rawHeight = windowWidth / slot.aspectRatio
                 val keepOut = TopStartKeepOut(
-                    bottom = effectiveTopStartBottom(slot, rawHeight, bands, frames),
+                    bottom = fixedTopStartBottom,
                     behindLimit = behindLimitFor(slot, rawHeight)
                 )
                 val placed = place(slot, rawHeight, obstacles, frames, keepOut, mayEnclose)
                 frames[slot.id] = placed
-                collisions += intrusions(
+                addIntrusions(
                     slot.id,
                     placed,
                     obstacles,
                     clearance - COLLISION_TEST_SLACK,
-                    keepOut
+                    keepOut,
+                    collisions
                 )
-                hardCollisions += intrusions(slot.id, placed, obstacles, 0f, keepOut)
+                addIntrusions(slot.id, placed, obstacles, 0f, keepOut, hardCollisions)
                 minClearance = min(minClearance, edgeClearance(placed, obstacles, keepOut))
             }
 
@@ -577,30 +580,6 @@ object CameraLayoutSolver {
                 hardCollisions = hardCollisions,
                 minClearance = minClearance
             )
-        }
-
-        private fun effectiveTopStartBottom(
-            slot: ViewfinderSlot,
-            rawHeight: Float,
-            bands: Map<String, DpRange>,
-            placed: Map<String, Pair<Float, Float>>
-        ): Float {
-            if (!enforceFixedTopStart || slot.policy != PlacementPolicy.CENTERED_IN_REFERENCE) {
-                return fixedTopStartBottom
-            }
-            val reference = placed[slot.referenceId] ?: return fixedTopStartBottom
-            val captureBand = bands[CameraRowIds.CAPTURE_ROW] ?: return fixedTopStartBottom
-            val maxTopAboveShutter =
-                floor((captureBand.top.value - clearance) - rawHeight - clearance)
-            return if (
-                reference.second > captureBand.bottom.value &&
-                maxTopAboveShutter >= topInset + 28f &&
-                maxTopAboveShutter < fixedTopStartBottom
-            ) {
-                maxTopAboveShutter
-            } else {
-                fixedTopStartBottom
-            }
         }
 
         /**
@@ -619,13 +598,23 @@ object CameraLayoutSolver {
         ): Pair<Float, Float> = when (slot.policy) {
             PlacementPolicy.TOP_ALIGNED_PREFER_OBSTACLE_EDGE -> {
                 val rawBottom = topInset + rawHeight
-                val alreadyClear = obstacles.all {
-                    rawBottom <= it.top - clearance || rawBottom >= it.bottom + clearance
+                var alreadyClear = true
+                for (i in obstacles.indices) {
+                    val obstacle = obstacles[i]
+                    if (
+                        !(
+                            rawBottom <= obstacle.top - clearance ||
+                                rawBottom >= obstacle.bottom + clearance
+                            )
+                    ) {
+                        alreadyClear = false
+                        break
+                    }
                 }
                 // When the frame does collide, prefer resting on the lower edge of the topmost
                 // control rather than drifting to some arbitrary clean position. Visually this
                 // groups the frame border with the control it is dodging.
-                val topmost = obstacles.minByOrNull { it.top }
+                val topmost = obstacles.lastOrNull()
                 val preferred =
                     if (!alreadyClear && topmost != null && rawBottom < topmost.bottom) {
                         topmost.bottom
@@ -685,13 +674,12 @@ object CameraLayoutSolver {
                     }
                     if (
                         enclosing != null &&
-                        intrusions(
-                            slot.id,
+                        !hasIntrusions(
                             enclosing,
                             obstacles,
                             clearance - COLLISION_TEST_SLACK,
                             keepOut
-                        ).isEmpty()
+                        )
                     ) {
                         enclosing
                     } else {
@@ -774,20 +762,20 @@ object CameraLayoutSolver {
                 }
             }
 
-            val sorted = obstacles.sortedBy { it.top }
-            sorted.forEachIndexed { index, obstacle ->
+            for (i in obstacles.indices.reversed()) {
+                val obstacle = obstacles[i]
                 // Bottom edge resting just outside the keep-out band, then top edge doing the same
                 // (in which case the bottom edge is rawHeight lower).
-                listOf(
-                    obstacle.top - clearance,
-                    obstacle.bottom + clearance,
-                    obstacle.top - clearance + rawHeight,
-                    obstacle.bottom + clearance + rawHeight
-                ).forEach { c ->
-                    if (c >= lowerBound && c <= upperBound) candidates += quantize(c)
-                }
-                if (index + 1 < sorted.size) {
-                    val midpoint = quantize((obstacle.bottom + sorted[index + 1].top) / 2f)
+                val c1 = obstacle.top - clearance
+                if (c1 >= lowerBound && c1 <= upperBound) candidates += quantize(c1)
+                val c2 = obstacle.bottom + clearance
+                if (c2 >= lowerBound && c2 <= upperBound) candidates += quantize(c2)
+                val c3 = obstacle.top - clearance + rawHeight
+                if (c3 >= lowerBound && c3 <= upperBound) candidates += quantize(c3)
+                val c4 = obstacle.bottom + clearance + rawHeight
+                if (c4 >= lowerBound && c4 <= upperBound) candidates += quantize(c4)
+                if (i > 0) {
+                    val midpoint = quantize((obstacle.bottom + obstacles[i - 1].top) / 2f)
                     if (midpoint >= lowerBound && midpoint <= upperBound) candidates += midpoint
                 }
             }
@@ -814,7 +802,8 @@ object CameraLayoutSolver {
         ): Float {
             val top = bottom - rawHeight
             var total = 0f
-            for (obstacle in obstacles) {
+            for (i in obstacles.indices) {
+                val obstacle = obstacles[i]
                 val keepOutTop = obstacle.top - clearance
                 val keepOutBottom = obstacle.bottom + clearance
                 if (keepOutBottom <= keepOutTop) continue
@@ -838,26 +827,54 @@ object CameraLayoutSolver {
             return total + PREFERENCE_WEIGHT * distance * distance
         }
 
-        private fun intrusions(
-            viewfinderId: String,
+        private fun hasIntrusions(
             frame: Pair<Float, Float>,
             obstacles: List<Obstacle>,
             margin: Float,
             keepOut: TopStartKeepOut
-        ): List<Collision> {
-            val result = obstacles.filter { obstacle ->
+        ): Boolean {
+            for (i in obstacles.indices) {
+                val obstacle = obstacles[i]
                 val lo = obstacle.top - margin
                 val hi = obstacle.bottom + margin
-                (frame.second > lo && frame.second < hi) || (frame.first > lo && frame.first < hi)
-            }.mapTo(ArrayList()) { Collision(viewfinderId, it.id) }
+                if (
+                    (frame.second > lo && frame.second < hi) ||
+                    (frame.first > lo && frame.first < hi)
+                ) {
+                    return true
+                }
+            }
+            return enforceFixedTopStart &&
+                frame.first > keepOut.behindLimit + 0.05f &&
+                frame.first < keepOut.bottom + margin
+        }
+
+        private fun addIntrusions(
+            viewfinderId: String,
+            frame: Pair<Float, Float>,
+            obstacles: List<Obstacle>,
+            margin: Float,
+            keepOut: TopStartKeepOut,
+            destination: MutableList<Collision>
+        ) {
+            for (i in obstacles.indices) {
+                val obstacle = obstacles[i]
+                val lo = obstacle.top - margin
+                val hi = obstacle.bottom + margin
+                if (
+                    (frame.second > lo && frame.second < hi) ||
+                    (frame.first > lo && frame.first < hi)
+                ) {
+                    destination += Collision(viewfinderId, obstacle.id)
+                }
+            }
             if (
                 enforceFixedTopStart &&
                 frame.first > keepOut.behindLimit + 0.05f &&
                 frame.first < keepOut.bottom + margin
             ) {
-                result += Collision(viewfinderId, "topStartContent")
+                destination += Collision(viewfinderId, "topStartContent")
             }
-            return result
         }
 
         private fun edgeClearance(
@@ -866,12 +883,20 @@ object CameraLayoutSolver {
             keepOut: TopStartKeepOut
         ): Float {
             var smallest = Float.POSITIVE_INFINITY
-            for (obstacle in obstacles) {
-                for (edge in listOf(frame.first, frame.second)) {
-                    if (edge < 0f) continue
-                    if (edge >= obstacle.top && edge <= obstacle.bottom) return 0f
+            for (i in obstacles.indices) {
+                val obstacle = obstacles[i]
+                val edge1 = frame.first
+                if (edge1 >= 0f) {
+                    if (edge1 >= obstacle.top && edge1 <= obstacle.bottom) return 0f
                     val distance =
-                        if (edge < obstacle.top) obstacle.top - edge else edge - obstacle.bottom
+                        if (edge1 < obstacle.top) obstacle.top - edge1 else edge1 - obstacle.bottom
+                    if (distance < smallest) smallest = distance
+                }
+                val edge2 = frame.second
+                if (edge2 >= 0f) {
+                    if (edge2 >= obstacle.top && edge2 <= obstacle.bottom) return 0f
+                    val distance =
+                        if (edge2 < obstacle.top) obstacle.top - edge2 else edge2 - obstacle.bottom
                     if (distance < smallest) smallest = distance
                 }
             }
@@ -908,10 +933,10 @@ object CameraLayoutSolver {
     ) {
         var best: Candidate? = null
             private set
-        private var bestScore: List<Float>? = null
+        private var bestScore: CandidateScore? = null
 
         /** The top-ranked acceptable candidate at each padding, under the ranking [best] uses. */
-        private val bestByPadding = HashMap<Int, Pair<Candidate, List<Float>>>()
+        private val bestByPadding = HashMap<Int, Pair<Candidate, CandidateScore>>()
 
         /** The lowest padding at which any acceptable candidate was found, or null if none was. */
         val lowestAcceptablePadding: Int?
@@ -925,11 +950,11 @@ object CameraLayoutSolver {
         fun bestAtOrBelow(maxPadding: Int): Candidate? {
             val overall = best ?: return null
             if (overall.bottomPadding <= maxPadding) return overall
-            var pick: Pair<Candidate, List<Float>>? = null
+            var pick: Pair<Candidate, CandidateScore>? = null
             for (padding in bestByPadding.keys.sorted()) {
                 if (padding > maxPadding) break
                 val entry = bestByPadding.getValue(padding)
-                if (pick == null || isBetter(entry.second, pick.second)) pick = entry
+                if (pick == null || entry.second < pick.second) pick = entry
             }
             return pick?.first
         }
@@ -1096,17 +1121,10 @@ object CameraLayoutSolver {
             val h1 = rows[1].height.value
             val h2 = rows[2].height.value
             val h3 = rows[3].height.value
-            val minStackBelowZoom =
-                h0 + h1 + h2 + 16f + context.minBottomPadding + context.clearance
-            val shutterInside34 = (context.navTop - raw34Bottom) < minStackBelowZoom
 
             val g0 = gapGrid(0, preferredGaps[0])
             val g1 = gapGrid(1, preferredGaps[1])
-            val g2 = gapGrid(
-                2,
-                preferredGaps[2],
-                if (shutterInside34) preferredGaps[2] else max(preferredGaps[2], 38)
-            )
+            val g2 = gapGrid(2, preferredGaps[2], max(preferredGaps[2], 38))
             val working = IntArray(preferredGaps.size)
             working[3] = preferredGaps[3]
 
@@ -1185,7 +1203,7 @@ object CameraLayoutSolver {
                 val working = IntArray(preferredGaps.size)
                 for (padding in from..to) {
                     placedAny = false
-                    permute(grids, working, 0) { consider(padding, working, allowTightDaylight) }
+                    permute(grids, working, 0, padding, allowTightDaylight)
                     if (!placedAny || evaluations >= EVALUATION_BUDGET) break
                 }
                 return
@@ -1298,15 +1316,17 @@ object CameraLayoutSolver {
             grids: List<List<Int>>,
             working: IntArray,
             index: Int,
-            emit: () -> Unit
+            padding: Int,
+            allowTightDaylight: Boolean
         ) {
             if (index == grids.size) {
-                emit()
+                consider(padding, working, allowTightDaylight)
                 return
             }
-            for (value in grids[index]) {
-                working[index] = value
-                permute(grids, working, index + 1, emit)
+            val grid = grids[index]
+            for (i in grid.indices) {
+                working[index] = grid[i]
+                permute(grids, working, index + 1, padding, allowTightDaylight)
             }
         }
 
@@ -1349,38 +1369,43 @@ object CameraLayoutSolver {
             if (!allowTightDaylight && candidate.collisions.isNotEmpty()) return
             if (allowTightDaylight && candidate.hardCollisions.isNotEmpty()) return
 
-            val score = score(candidate, padding, gaps)
-            val ranked = if (allowTightDaylight) {
-                listOf(-(candidate.minClearance * 10f).roundToJsFloat()) + score
-            } else {
-                score
-            }
-
+            val score = score(candidate, padding, gaps, allowTightDaylight)
             val current = bestScore
-            if (current == null || isBetter(ranked, current)) {
-                bestScore = ranked
+            if (current == null || score < current) {
+                bestScore = score
                 best = candidate
             }
             val atPadding = bestByPadding[padding]
-            if (atPadding == null || isBetter(ranked, atPadding.second)) {
-                bestByPadding[padding] = candidate to ranked
+            if (atPadding == null || score < atPadding.second) {
+                bestByPadding[padding] = candidate to score
             }
         }
 
         /**
          * Ranks a candidate. Earlier terms dominate absolutely.
          *
-         * 1. How far the primary frame dropped from the top bar.
-         * 2. How far the remaining frames dropped.
-         * 3. How far the stack moved from its designed bottom padding.
-         * 4. How far the gaps deviated from their targets.
+         * 1. Tight daylight survival (when [allowTightDaylight] is true).
+         * 2. How far the primary frame dropped from the top bar.
+         * 3. How far the remaining frames dropped.
+         * 4. How far the stack moved from its designed bottom padding.
+         * 5. How far the gaps deviated from their targets.
          */
-        private fun score(candidate: Candidate, padding: Int, gaps: IntArray): List<Float> {
+        private fun score(
+            candidate: Candidate,
+            padding: Int,
+            gaps: IntArray,
+            allowTightDaylight: Boolean
+        ): CandidateScore {
             val topInset = context.topInset
-            val frames = context.spec.viewfinders.map { candidate.frames.getValue(it.id) }
-            val primaryDrop = max(0f, frames.first().first - topInset)
-            val secondaryDrop = frames.drop(1)
-                .fold(0f) { acc, f -> acc + max(0f, f.first - topInset) }
+            val viewfinders = context.spec.viewfinders
+            val primaryFrame = candidate.frames.getValue(viewfinders[0].id)
+            val primaryDrop = max(0f, primaryFrame.first - topInset)
+
+            var secondaryDrop = 0f
+            for (i in 1 until viewfinders.size) {
+                val frame = candidate.frames.getValue(viewfinders[i].id)
+                secondaryDrop += max(0f, frame.first - topInset)
+            }
 
             var gapDeviation = 0f
             for (i in gaps.indices) {
@@ -1391,11 +1416,18 @@ object CameraLayoutSolver {
                 gapDeviation += weight * abs(target - gaps[i]).toFloat()
             }
 
-            return listOf(
-                primaryDrop,
-                secondaryDrop,
-                abs(padding - preferredPadding).toFloat(),
-                gapDeviation
+            val tightDaylight = if (allowTightDaylight) {
+                -(candidate.minClearance * 10f).roundToJsFloat()
+            } else {
+                0f
+            }
+
+            return CandidateScore(
+                tightDaylight = tightDaylight,
+                primaryDrop = primaryDrop,
+                secondaryDrop = secondaryDrop,
+                paddingDiff = abs(padding - preferredPadding).toFloat(),
+                gapDeviation = gapDeviation
             )
         }
 
@@ -1410,13 +1442,19 @@ object CameraLayoutSolver {
             val band = candidate.bands[rows[index].id] ?: return preferredGaps[index]
             val above = candidate.bands[rows.getOrNull(index + 1)?.id]
                 ?: return preferredGaps[index]
-            val frames = context.spec.viewfinders.map { candidate.frames.getValue(it.id) }
+            val viewfinders = context.spec.viewfinders
+            val primaryFrame = candidate.frames.getValue(viewfinders[0].id)
 
             // Is this row inside the primary frame rather than below it?
-            val rowInsidePrimaryFrame = frames.first().second > band.bottom.value
+            val rowInsidePrimaryFrame = primaryFrame.second > band.bottom.value
             // Does any other frame's lower edge run through the gap above this row?
-            val borderSplitsTheGap = frames.drop(1).any { frame ->
-                frame.second > above.bottom.value && frame.second < band.top.value
+            var borderSplitsTheGap = false
+            for (i in 1 until viewfinders.size) {
+                val frame = candidate.frames.getValue(viewfinders[i].id)
+                if (frame.second > above.bottom.value && frame.second < band.top.value) {
+                    borderSplitsTheGap = true
+                    break
+                }
             }
 
             return if (rowInsidePrimaryFrame && !borderSplitsTheGap) {
@@ -1424,14 +1462,6 @@ object CameraLayoutSolver {
             } else {
                 preferredGaps[index]
             }
-        }
-
-        private fun isBetter(a: List<Float>, b: List<Float>): Boolean {
-            for (i in a.indices) {
-                if (i >= b.size) return false
-                if (a[i] != b[i]) return a[i] < b[i]
-            }
-            return false
         }
     }
 
@@ -1452,4 +1482,24 @@ object CameraLayoutSolver {
     private fun Float.roundToJsFloat(): Float = floor(this + 0.5f)
 
     private fun Float.roundToJs(): Int = roundToJsFloat().toInt()
+
+    private class CandidateScore(
+        val tightDaylight: Float,
+        val primaryDrop: Float,
+        val secondaryDrop: Float,
+        val paddingDiff: Float,
+        val gapDeviation: Float
+    ) : Comparable<CandidateScore> {
+        override fun compareTo(other: CandidateScore): Int {
+            var cmp = tightDaylight.compareTo(other.tightDaylight)
+            if (cmp != 0) return cmp
+            cmp = primaryDrop.compareTo(other.primaryDrop)
+            if (cmp != 0) return cmp
+            cmp = secondaryDrop.compareTo(other.secondaryDrop)
+            if (cmp != 0) return cmp
+            cmp = paddingDiff.compareTo(other.paddingDiff)
+            if (cmp != 0) return cmp
+            return gapDeviation.compareTo(other.gapDeviation)
+        }
+    }
 }

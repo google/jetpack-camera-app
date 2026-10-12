@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 /**
  * Pins [CameraLayoutSolver] to the layouts the design was reviewed against.
@@ -41,6 +43,7 @@ import org.junit.Test
  * These are plain JVM tests. The solver has no Compose or Android dependency, so the whole
  * evaluation set runs in milliseconds and belongs in ordinary presubmit.
  */
+@RunWith(JUnit4::class)
 class CameraLayoutSolverGoldenTest {
 
     private val cases = GoldenFixture.load()
