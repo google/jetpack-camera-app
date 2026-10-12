@@ -26,7 +26,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,8 +55,8 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
 /**
- * The inset between the edge of the image well container and the thumbnail. The thumbnail is also
- * framed by a border of this width drawn in the container color.
+ * The inset between the edge of the image well container and the thumbnail, which leaves a frame
+ * of the container color around the thumbnail.
  */
 private val ThumbnailInset = 2.dp
 
@@ -105,8 +104,6 @@ fun ImageWell(
                 .background(containerColor)
                 .clickable(onClick = onClick, enabled = enabled)
                 .padding(ThumbnailInset)
-                // The border is drawn after its content, so it frames the edge of the thumbnail.
-                .border(ThumbnailInset, containerColor, ThumbnailShape)
                 .clip(ThumbnailShape)
         ) {
             AnimatedContent(
