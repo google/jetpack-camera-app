@@ -226,4 +226,35 @@ class PolicyOverridesTest {
             )
         }
     }
+
+    @Test
+    fun supportedImageFormatsFor_withImageCaptureEffect_narrowsToSubModeFormats() {
+        val subModeId = CaptureSubModeId("night")
+        val constraints = CameraConstraints(
+            supportedStabilizationModes = emptySet(),
+            supportedFixedFrameRates = emptySet(),
+            supportedDynamicRanges = setOf(DynamicRange.SDR),
+            supportedVideoQualitiesMap = emptyMap(),
+            supportedImageFormatsMap = mapOf(
+                true to setOf(ImageOutputFormat.JPEG, ImageOutputFormat.JPEG_ULTRA_HDR),
+                false to setOf(ImageOutputFormat.JPEG, ImageOutputFormat.JPEG_ULTRA_HDR)
+            ),
+            supportedIlluminants = emptySet(),
+            supportedFlashModes = setOf(FlashMode.OFF),
+            supportedZoomRange = null,
+            unsupportedStabilizationFpsMap = emptyMap(),
+            supportedTestPatterns = emptySet(),
+            supportedCaptureSubModes = setOf(subModeId),
+            supportedImageFormatsBySubMode = mapOf(subModeId to setOf(ImageOutputFormat.JPEG))
+        )
+
+        assertThat(constraints.supportedImageFormatsFor(subModeId, affectsImageCapture = true))
+            .containsExactly(ImageOutputFormat.JPEG)
+        assertThat(
+            constraints.supportedImageFormatsFor(
+                CaptureSubModeId.DEFAULT,
+                affectsImageCapture = true
+            )
+        ).containsExactly(ImageOutputFormat.JPEG, ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
 }
