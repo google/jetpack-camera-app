@@ -137,8 +137,14 @@ private val MIN_CONTROLS_BOTTOM_PADDING = 12.dp
 /** Available height below which the control stack compresses its gaps in landscape. */
 private val SHORT_SCREEN_THRESHOLD = 600.dp
 
-/** Horizontal inset of the lower controls row. */
+/** Horizontal inset of the lower controls row and top indicator bar. */
 private val LOWER_SECTION_HORIZONTAL_PADDING = 16.dp
+
+/** Minimum height/width aspect ratio treated as a portrait handheld window (16:9 with float slack). */
+private const val PORTRAIT_ASPECT_RATIO_THRESHOLD = 16f / 9f - 0.01f
+
+/** Minimum bottom gesture inset floor used when solving the portrait control stack. */
+private val MIN_GESTURE_INSET = 32.dp
 
 /**
  * The base layout for the camera capture screen.
@@ -233,7 +239,8 @@ fun PreviewLayout(
                 // a full-width 9:16 frame fits inside the window). Squarer windows (landscape,
                 // foldable inner displays, or short split-screen panes like 360x500) fall back to
                 // VerticalMaterialControls, which compresses below SHORT_SCREEN_THRESHOLD.
-                val isHandheldPortrait = (maxHeight / maxWidth) >= (16f / 9f - 0.01f)
+                val isHandheldPortrait =
+                    (maxHeight.value / maxWidth.value) >= PORTRAIT_ASPECT_RATIO_THRESHOLD
                 if (isHandheldPortrait) {
                     AdaptivePortraitCaptureLayout(
                         windowWidth = maxWidth,
@@ -283,7 +290,7 @@ fun PreviewLayout(
                                 .windowInsetsPadding(
                                     WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
                                 )
-                                .padding(horizontal = 16.dp),
+                                .padding(horizontal = LOWER_SECTION_HORIZONTAL_PADDING),
                             contentAlignment = Alignment.CenterStart
                         ) {
                             indicatorRow(Modifier)
@@ -387,7 +394,7 @@ private fun AdaptivePortraitCaptureLayout(
     val rawGestureInset = WindowInsets.systemGestures
         .asPaddingValues()
         .calculateBottomPadding()
-    val effectiveGestureInset = max(32.dp, rawGestureInset)
+    val effectiveGestureInset = max(MIN_GESTURE_INSET, rawGestureInset)
     val minTouchTarget = LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
     val topBarHeight = max(cutoutTopInset, minTouchTarget)
 
@@ -442,7 +449,7 @@ private fun AdaptivePortraitCaptureLayout(
                         .windowInsetsPadding(
                             WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
                         )
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = LOWER_SECTION_HORIZONTAL_PADDING),
                     contentAlignment = Alignment.CenterStart
                 ) {
                     indicatorRow(Modifier)
@@ -592,15 +599,12 @@ private fun AdaptivePortraitCaptureLayout(
                 }
 
                 topStartPlaceable?.let { topStart ->
-                    val topStartX = viewfinderPlaceable?.let { vf ->
-                        (constraints.maxWidth - vf.width) / 2
-                    } ?: 0
                     val topStartY = when (topStartPlacement) {
                         TopStartPlacement.FIXED_BELOW_TOP_BAR -> topBarHeight.roundToPx()
                         TopStartPlacement.VIEWFINDER_TOP_START ->
                             max(topBarHeight, activeVfTopDp ?: topBarHeight).roundToPx()
                     }
-                    topStart.placeRelative(topStartX, topStartY)
+                    topStart.placeRelative(0, topStartY)
                 }
 
                 topBarPlaceable?.placeRelative(0, 0)
@@ -642,7 +646,7 @@ private fun VerticalMaterialControls(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomCenter
     ) {
-        val isPortrait = (maxHeight / maxWidth) >= (16f / 9f - 0.01f)
+        val isPortrait = (maxHeight.value / maxWidth.value) >= PORTRAIT_ASPECT_RATIO_THRESHOLD
         val navBarBottom = WindowInsets.navigationBarsIgnoringVisibility
             .asPaddingValues()
             .calculateBottomPadding()
