@@ -161,19 +161,25 @@ data class CameraConstraints(
      * Returns the [ImageOutputFormat]s supported on this lens for the given [subModeId] and
      * camera effect state.
      *
-     * When [affectsImageCapture] is `true` (an active effect targets image capture), returns
-     * `supportedImageFormatsMap[true]`. Otherwise, returns the sub-mode-specific formats from
-     * [supportedImageFormatsBySubMode] for [subModeId], falling back to the base lens's
-     * `supportedImageFormatsMap[false]` when [subModeId] is [CaptureSubModeId.DEFAULT] or has no
-     * dedicated entry.
+     * The base set is `supportedImageFormatsMap[affectsImageCapture]`, where
+     * [affectsImageCapture] is `true` when an active effect targets image capture. When
+     * [supportedImageFormatsBySubMode] has a dedicated entry for [subModeId], the result is
+     * narrowed to the formats supported by both: the sub-mode's formats alone when no effect
+     * targets image capture, or their intersection with the effect formats otherwise. When
+     * [subModeId] is [CaptureSubModeId.DEFAULT] or has no dedicated entry, the base set is
+     * returned.
      */
     fun supportedImageFormatsFor(
         subModeId: CaptureSubModeId,
         affectsImageCapture: Boolean
-    ): Set<ImageOutputFormat>? = if (affectsImageCapture) {
-        supportedImageFormatsMap[true]
-    } else {
-        supportedImageFormatsBySubMode[subModeId] ?: supportedImageFormatsMap[false]
+    ): Set<ImageOutputFormat>? {
+        val subModeFormats = supportedImageFormatsBySubMode[subModeId]
+        return if (affectsImageCapture) {
+            val effectFormats = supportedImageFormatsMap[true]
+            if (subModeFormats == null) effectFormats else effectFormats?.intersect(subModeFormats)
+        } else {
+            subModeFormats ?: supportedImageFormatsMap[false]
+        }
     }
 }
 
