@@ -29,7 +29,9 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import androidx.core.net.toFile
+import com.google.jetpackcamera.core.common.ContentResolverUriStreams
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.UriStreams
 import com.google.jetpackcamera.core.common.ignoreResult
 import java.io.File
 import java.io.IOException
@@ -59,10 +61,20 @@ private const val TAG = "LocalMediaRepository"
 private const val IMAGE_MIME_TYPE = "image/jpeg"
 private const val VIDEO_MIME_TYPE = "video/mp4"
 
-class LocalMediaRepository(
+/**
+ * [MediaRepository] backed by the MediaStore and this app's cache directory.
+ *
+ * @param context the context used to access the MediaStore.
+ * @param iODispatcher the dispatcher for blocking I/O.
+ * @param filePathGenerator generates file names and MediaStore paths for saved media.
+ * @param uriStreams opens URIs that belong to other apps, such as MediaStore entries and
+ * caller-supplied destinations. Defaults to [ContentResolverUriStreams].
+ */
+class LocalMediaRepository @JvmOverloads constructor(
     private val context: Context,
     private val iODispatcher: CoroutineDispatcher,
-    private val filePathGenerator: FilePathGenerator
+    private val filePathGenerator: FilePathGenerator,
+    private val uriStreams: UriStreams = ContentResolverUriStreams(context)
 ) : MediaRepository {
     private val repositoryScope = CoroutineScope(iODispatcher + SupervisorJob())
     private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
@@ -357,24 +369,28 @@ class LocalMediaRepository(
      */
     @Throws(IOException::class)
     override suspend fun copyToUri(mediaDescriptor: MediaDescriptor.Content, destinationUri: Uri) =
-        copyUriToUri(context.contentResolver, sourceUri = mediaDescriptor.uri, destinationUri)
+        copyUriToUri(sourceUri = mediaDescriptor.uri, destinationUri)
 
     /**
      * Copies the content from a source URI to a destination URI.
      *
+     * A `file://` source is a capture in this app's cache and is read directly as a [File]. Any
+     * other source, and the destination, are opened through [uriStreams].
+     *
      * @throws IOException if an I/O error occurs during the copy operation.
      */
     @Throws(IOException::class)
-    private fun copyUriToUri(
-        contentResolver: ContentResolver,
-        sourceUri: Uri,
-        destinationUri: Uri
-    ) {
-        contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-            contentResolver.openOutputStream(destinationUri)?.use { outputStream ->
+    private fun copyUriToUri(sourceUri: Uri, destinationUri: Uri) {
+        val inputStream = if (sourceUri.scheme == ContentResolver.SCHEME_FILE) {
+            sourceUri.toFile().inputStream()
+        } else {
+            uriStreams.openInputStream(sourceUri)
+        } ?: throw IOException("Could not open input stream for $sourceUri")
+        inputStream.use {
+            uriStreams.openOutputStream(destinationUri)?.use { outputStream ->
                 inputStream.copyTo(outputStream)
             } ?: throw IOException("Could not open output stream for $destinationUri")
-        } ?: throw IOException("Could not open input stream for $sourceUri")
+        }
     }
 
     /**
@@ -480,7 +496,7 @@ class LocalMediaRepository(
             }
 
             // Copy the data from source to destination
-            copyUriToUri(contentResolver, sourceUri, destinationUri)
+            copyUriToUri(sourceUri, destinationUri)
 
             // (API 29+) Publish the file by marking it as "not pending"
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -511,7 +527,7 @@ class LocalMediaRepository(
                 ImageDecoder.decodeBitmap(source)
             } else {
                 // Android 9 (API 28) and below: Use BitmapFactory
-                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                uriStreams.openInputStream(uri)?.use { inputStream ->
                     BitmapFactory.decodeStream(inputStream)
                 }
             }

@@ -17,6 +17,7 @@ package com.google.jetpackcamera.di
 
 import android.content.Context
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.UriStreams
 import com.google.jetpackcamera.data.media.LocalMediaRepository
 import com.google.jetpackcamera.data.media.MediaRepository
 import dagger.Module
@@ -39,8 +40,9 @@ internal object MediaModule {
     fun provideMediaRepository(
         @ApplicationContext context: Context,
         @IODispatcher ioDispatcher: CoroutineDispatcher,
-        @DefaultFilePathGenerator filePathGenerator: FilePathGenerator
+        @DefaultFilePathGenerator filePathGenerator: FilePathGenerator,
+        uriStreams: UriStreams
     ): MediaRepository {
-        return LocalMediaRepository(context, ioDispatcher, filePathGenerator)
+        return LocalMediaRepository(context, ioDispatcher, filePathGenerator, uriStreams)
     }
 }

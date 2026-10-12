@@ -69,6 +69,7 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.net.toFile
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.UriStreams
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
@@ -908,6 +909,7 @@ private fun setFlashModeInternal(
 
 private fun getPendingRecording(
     context: Context,
+    uriStreams: UriStreams,
     videoCaptureUseCase: VideoCapture<Recorder>,
     maxDurationMillis: Long,
     filePathGenerator: FilePathGenerator,
@@ -920,7 +922,7 @@ private fun getPendingRecording(
         is SaveLocation.Explicit ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 try {
-                    context.applicationContext.contentResolver.openFileDescriptor(
+                    uriStreams.openFileDescriptor(
                         saveLocation.locationUri,
                         "rw"
                     )?.let { pfd ->
@@ -1228,6 +1230,7 @@ private suspend fun runVideoRecording(
 
     getPendingRecording(
         context,
+        uriStreams,
         videoCapture,
         maxDurationMillis,
         filePathGenerator,
