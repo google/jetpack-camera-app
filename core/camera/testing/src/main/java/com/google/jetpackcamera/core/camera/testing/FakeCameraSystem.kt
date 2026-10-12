@@ -217,7 +217,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     override fun isScreenFlashEnabled() = isScreenFlash
 
-    fun isPreviewStarted() = previewStarted
+    fun isPreviewStarted(): Boolean = previewStarted
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
