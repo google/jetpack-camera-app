@@ -764,6 +764,7 @@ class LocationManagerLocationProviderTest {
         assertThat(shadowLocationManager.locationUpdateListeners).isEmpty()
     }
 
+    @Suppress("KotlinArray")
     private fun setDeclaredPermissions(vararg permissions: String) {
         shadowOf(context.packageManager)
             .getInternalMutablePackageInfo(context.packageName)

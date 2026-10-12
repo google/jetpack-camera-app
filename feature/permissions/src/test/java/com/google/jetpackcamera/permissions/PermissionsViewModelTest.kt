@@ -280,6 +280,8 @@ class PermissionsViewModelTest {
 
     @Test
     fun locationPermissionEnum_hasNoMandatoryRationaleBody() {
+        assertThat(PermissionEnum.LOCATION.getPermission())
+            .isEqualTo(android.Manifest.permission.ACCESS_FINE_LOCATION)
         assertThat(PermissionEnum.LOCATION.getRationaleBodyTextResId()).isNull()
     }
 }
