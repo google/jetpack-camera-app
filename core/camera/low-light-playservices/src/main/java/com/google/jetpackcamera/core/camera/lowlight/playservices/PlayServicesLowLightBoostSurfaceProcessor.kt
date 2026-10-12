@@ -89,7 +89,7 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
         for (outputSurface in outputSurfaces) {
             val outputSurfaceEvents = Channel<SurfaceOutput.Event>(Channel.UNLIMITED)
             val surface = outputSurface.getSurface(Runnable::run) { event ->
-                outputSurfaceEvents.trySend(event)
+                outputSurfaceEvents.trySendOrLog(event)
             }
             coroutineScope {
                 try {
@@ -225,7 +225,7 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
     private fun createLlbCallback(sessionEvents: SendChannel<SessionEvent>): LowLightBoostCallback =
         object : LowLightBoostCallback {
             override fun onSessionDestroyed() {
-                sessionEvents.trySend(SessionEvent.Destroyed)
+                sessionEvents.trySendOrLog(SessionEvent.Destroyed)
                 sessionEvents.close()
             }
 
@@ -234,7 +234,7 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
                 // Report immediately: the session can disconnect while the camera is still using
                 // its input surface, long before the session's events are drained during cleanup.
                 onLowLightBoostErrorCallback(RuntimeException(status.statusMessage))
-                sessionEvents.trySend(SessionEvent.Disconnected(status))
+                sessionEvents.trySendOrLog(SessionEvent.Disconnected(status))
                 sessionEvents.close()
             }
         }
@@ -266,6 +266,13 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
                 )
         }
         onLowLightBoostErrorCallback(e)
+    }
+}
+
+/** Sends [event] without suspending, logging it if the channel is already closed. */
+private fun <E> SendChannel<E>.trySendOrLog(event: E) {
+    if (trySend(event).isFailure) {
+        Log.w(TAG, "Dropped $event: channel is closed")
     }
 }
 
