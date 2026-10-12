@@ -101,6 +101,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.graphicsLayer
@@ -573,7 +574,9 @@ fun AmplitudeToggleButton(
  * A toggle switch that allows the user to switch between image and video capture modes.
  *
  * This component visually represents the selected mode with distinct icons for photo and video.
- * It is only enabled when both capture modes are available to the camera.
+ * It is only enabled when both capture modes are available to the camera. The track color is
+ * determined by [LocalCameraControlBackgroundStyle], so that the toggle remains legible when drawn
+ * over the viewfinder.
  *
  * @param uiState the [CaptureModeToggleUiState.Available] for this component.
  * @param onChangeCaptureMode the callback for changing the capture mode.
@@ -601,8 +604,15 @@ fun CaptureModeToggleButton(
                 CaptureMode.IMAGE_ONLY
             ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
+    val backgroundStyle = LocalCameraControlBackgroundStyle.current
+
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
+        trackColor = if (enabled) {
+            backgroundStyle.containerColor
+        } else {
+            backgroundStyle.disabledContainerColor
+        },
         checked = toggleState,
         onCheckedChange = { isChecked ->
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
@@ -1534,4 +1544,55 @@ private fun FlipCameraButtonPreview() {
             }
         }
     }
+}
+
+@Composable
+internal fun PreviewCaptureModeToggleButton(
+    selectedCaptureMode: CaptureMode,
+    enabled: Boolean = true
+) {
+    val disabledRationale = object : DisableRationale {
+        override val reasonTextResId: Int =
+            R.string.capture_mode_video_recording_content_description_disabled
+    }
+    val uiState = CaptureModeToggleUiState.Available(
+        selectedCaptureMode = selectedCaptureMode,
+        imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+        videoOnlyUiState = if (enabled) {
+            SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+        } else {
+            SingleSelectableUiState.Disabled(CaptureMode.VIDEO_ONLY, disabledRationale)
+        }
+    )
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(
+            modifier = Modifier
+                .background(Brush.verticalGradient(colors = listOf(Color.Gray, Color.DarkGray)))
+                .padding(8.dp)
+        ) {
+            CaptureModeToggleButton(
+                uiState = uiState,
+                onChangeCaptureMode = {},
+                onToggleWhenDisabled = {}
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+internal fun CaptureModeToggleImageSelectedPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY)
+}
+
+@Preview
+@Composable
+internal fun CaptureModeToggleVideoSelectedPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.VIDEO_ONLY)
+}
+
+@Preview
+@Composable
+internal fun CaptureModeToggleDisabledPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY, enabled = false)
 }
