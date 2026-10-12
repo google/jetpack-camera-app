@@ -135,6 +135,10 @@ data class CameraFeaturePolicy(
      * Returns the intersection of this policy (typically the host application's policy) and
      * [other] (typically the active sub-mode's policy), narrowing visibility and selecting a
      * mutually permitted default value for each setting.
+     *
+     * Callers should check [isCompatibleWith] first. For any setting where the two policies have
+     * no mutually permitted value, this policy's [SettingConfig] is returned unchanged and the
+     * restriction from [other] is dropped.
      */
     fun intersect(other: CameraFeaturePolicy): CameraFeaturePolicy = CameraFeaturePolicy(
         captureMode = intersectSetting(captureMode, other.captureMode),
