@@ -1541,6 +1541,14 @@ private fun FlipCameraButtonPreview() {
     }
 }
 
+/**
+ * Shows a [CaptureModeToggleButton] over a gray gradient, using the
+ * [LocalCameraControlBackgroundStyle] provided by the caller.
+ *
+ * @param selectedCaptureMode the selected mode; must be [CaptureMode.IMAGE_ONLY] or
+ * [CaptureMode.VIDEO_ONLY].
+ * @param enabled whether video capture is selectable. When `false`, the toggle is shown disabled.
+ */
 @Composable
 internal fun PreviewCaptureModeToggleButton(
     selectedCaptureMode: CaptureMode,
@@ -1574,18 +1582,28 @@ internal fun PreviewCaptureModeToggleButton(
     }
 }
 
+/**
+ * Preview of the [CaptureModeToggleButton] with image capture selected.
+ */
 @Preview
 @Composable
 internal fun CaptureModeToggleImageSelectedPreview() {
     PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY)
 }
 
+/**
+ * Preview of the [CaptureModeToggleButton] with video capture selected.
+ */
 @Preview
 @Composable
 internal fun CaptureModeToggleVideoSelectedPreview() {
     PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.VIDEO_ONLY)
 }
 
+/**
+ * Preview of the [CaptureModeToggleButton] when video capture is unavailable. The track keeps its
+ * container color while the thumb and icons are dimmed.
+ */
 @Preview
 @Composable
 internal fun CaptureModeToggleDisabledPreview() {

@@ -55,15 +55,21 @@ import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
 /**
- * The inset between the edge of the image well container and the thumbnail, which leaves a frame
- * of the container color around the thumbnail.
+ * Dimensions and shapes for [ImageWell].
  */
-private val ThumbnailInset = 2.dp
+private object ImageWellTokens {
+    /** The default shape of the image well container. */
+    val ContainerShape = RoundedCornerShape(12.dp)
 
-/**
- * The shape of the thumbnail, concentric with the default image well container shape.
- */
-private val ThumbnailShape = RoundedCornerShape(10.dp)
+    /**
+     * The inset between the edge of the container and the thumbnail, which leaves a frame of the
+     * container color around the thumbnail.
+     */
+    val ThumbnailInset = 2.dp
+
+    /** The shape of the thumbnail, concentric with [ContainerShape]. */
+    val ThumbnailShape = RoundedCornerShape(10.dp)
+}
 
 /**
  * A composable that displays thumbnail image that can be clicked to open the full media in
@@ -84,7 +90,7 @@ fun ImageWell(
     imageWellUiState: ImageWellUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(12.dp),
+    shape: Shape = ImageWellTokens.ContainerShape,
     enabled: Boolean = true
 ) {
     if (imageWellUiState is ImageWellUiState.Content) {
@@ -103,8 +109,8 @@ fun ImageWell(
                 .clip(shape)
                 .background(containerColor)
                 .clickable(onClick = onClick, enabled = enabled)
-                .padding(ThumbnailInset)
-                .clip(ThumbnailShape)
+                .padding(ImageWellTokens.ThumbnailInset)
+                .clip(ImageWellTokens.ThumbnailShape)
         ) {
             AnimatedContent(
                 targetState = imageWellUiState.mediaDescriptor,
@@ -141,6 +147,10 @@ fun ImageWell(
     }
 }
 
+/**
+ * Shows an [ImageWell] with a solid blue thumbnail over a gray gradient, using the
+ * [LocalCameraControlBackgroundStyle] provided by the caller.
+ */
 @Composable
 internal fun PreviewImageWell() {
     val previewBitmap = createBitmap(1000, 1000).apply {
@@ -167,6 +177,9 @@ internal fun PreviewImageWell() {
     }
 }
 
+/**
+ * Preview of the [ImageWell] with the default background style.
+ */
 @Preview
 @Composable
 internal fun ImageWellPreview() {
