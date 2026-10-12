@@ -313,6 +313,7 @@ class PermissionsScreenTest {
         assertThat(openAppSettingsCalled).isTrue()
     }
 
+    @Suppress("KotlinArray")
     @Test
     fun permissionsScreen_whenPermissionGranted_updatesViewModelAndInvokesAllPermissionsGranted() {
         var allGrantedCalled = false
@@ -324,12 +325,12 @@ class PermissionsScreenTest {
             permissions = listOf(cameraState)
         )
         val viewModel = PermissionsViewModel(
-            savedStateHandle = SavedStateHandle(
-                mapOf(
-                    PermissionsRoute.ARG_REQUESTABLE_PERMISSIONS to
-                        arrayOf(Manifest.permission.CAMERA)
+            savedStateHandle = SavedStateHandle().apply {
+                set(
+                    PermissionsRoute.ARG_REQUESTABLE_PERMISSIONS,
+                    arrayOf(Manifest.permission.CAMERA)
                 )
-            ),
+            },
             settingsRepository = FakeSettingsRepository(),
             permissionsRepository = FakePermissionsRepository()
         )

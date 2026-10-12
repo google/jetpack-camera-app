@@ -65,8 +65,8 @@ fun JcaApp(
     openAppSettings: () -> Unit,
     onStoragePermissionGranted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
-    isDarkTheme: Boolean = true,
     modifier: Modifier = Modifier,
+    isDarkTheme: Boolean = true,
     onCloseCamera: () -> Unit = {}
 ) {
     JetpackCameraNavHost(
