@@ -91,6 +91,8 @@
     <string name="quick_settings_flash_llb_description">Low Light Boost on</string>
 
     <string name="low_light_boost_error_toast_message">An error occurred when running low light boost.</string>
+    <!-- Snackbar message shown when a capture sub-mode fails to activate and the camera falls back to the default mode. [CHAR_LIMIT=80] -->
+    <string name="capture_sub_mode_error_toast_message">An error occurred when activating the capture mode.</string>
     <!-- Capture Mode Text -->
     <string name="quick_settings_text_capture_mode_standard">Hybrid Capture</string>
     <string name="quick_settings_text_capture_mode_video_only">Video Only</string>

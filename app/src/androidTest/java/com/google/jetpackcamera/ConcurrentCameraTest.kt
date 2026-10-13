@@ -28,6 +28,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
+import com.google.jetpackcamera.core.camera.concurrent.CONCURRENT_SUB_MODE_ID
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
@@ -40,6 +41,7 @@ import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.VIDEO_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.getCurrentCaptureMode
+import com.google.jetpackcamera.utils.getCurrentLensFacing
 import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedTime
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
@@ -51,8 +53,6 @@ import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-
-private val CONCURRENT_SUB_MODE_ID = CaptureSubModeId("concurrent_dual")
 
 @RunWith(AndroidJUnit4::class)
 class ConcurrentCameraTest {
@@ -92,11 +92,15 @@ class ConcurrentCameraTest {
     fun concurrentCameraMode_whenEnabled_canFlipCamera() = runConcurrentCameraScenarioTest {
         with(composeTestRule) {
             selectConcurrentCameraSubMode(enabled = true)
+            val initialLensFacing = getCurrentLensFacing()
 
             // Flip camera from preview screen directly (it should be available)
             onNodeWithTag(FLIP_CAMERA_BUTTON)
                 .assertExists()
                 .performClick()
+
+            waitForCaptureButton()
+            assertThat(getCurrentLensFacing()).isEqualTo(initialLensFacing.flip())
         }
     }
 

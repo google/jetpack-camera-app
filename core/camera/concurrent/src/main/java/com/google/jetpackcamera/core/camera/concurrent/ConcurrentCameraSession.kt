@@ -42,7 +42,6 @@ import com.google.jetpackcamera.core.camera.processTransientSettingEvents
 import com.google.jetpackcamera.core.camera.processVideoControlEvents
 import com.google.jetpackcamera.core.camera.runWithConcurrent
 import com.google.jetpackcamera.core.camera.toCameraError
-import com.google.jetpackcamera.core.camera.toCameraSelector
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -50,7 +49,6 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.VideoQuality
-import com.google.jetpackcamera.settings.model.CameraConstraints
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
@@ -67,7 +65,6 @@ private const val TAG = "ConcurrentCameraSession"
 @SuppressLint("RestrictedApi")
 internal suspend fun CameraSessionContext.runConcurrentCameraSession(
     sessionSettings: PerpetualSessionSettings.CustomSession,
-    cameraConstraints: CameraConstraints?,
     availableConcurrentCameraInfos: List<List<CameraInfo>> =
         cameraProvider.availableConcurrentCameraInfos,
     bindConcurrentCameras: suspend (
@@ -131,9 +128,7 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                 val useCaseGroup = withContext(backgroundDispatcher) {
                     val videoCapture = if (sessionSettings.captureMode != CaptureMode.IMAGE_ONLY) {
                         createVideoUseCase(
-                            cameraProvider.getCameraInfo(
-                                initialTransientSettings.primaryLensFacing.toCameraSelector()
-                            ),
+                            primaryCameraInfo,
                             sessionSettings.aspectRatio,
                             TARGET_FPS_AUTO,
                             StabilizationMode.OFF,
@@ -280,7 +275,7 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                     applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
                     processTransientSettingEvents(
                         primaryCamera,
-                        cameraConstraints,
+                        perLensConstraints[primaryLensFacing],
                         useCaseGroup,
                         initialTransientSettings,
                         transientSettings,

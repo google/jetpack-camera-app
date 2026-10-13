@@ -26,13 +26,15 @@ import com.google.jetpackcamera.core.camera.PerpetualSessionSettings
 import com.google.jetpackcamera.core.camera.appLensFacing
 import com.google.jetpackcamera.core.camera.submode.CameraSessionBinding
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
-import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -44,8 +46,9 @@ import com.google.jetpackcamera.settings.model.SettingConfig
  * [CaptureMode.VIDEO_ONLY].
  *
  * Binds both the primary and opposite-facing cameras simultaneously via a custom concurrent
- * camera session and restricts dynamic range to SDR and flash to standard modes (excluding
- * Low Light Boost).
+ * camera session, recording at [com.google.jetpackcamera.model.VideoQuality.UNSPECIFIED], and
+ * restricts dynamic range to SDR, flash to standard modes (excluding Low Light Boost),
+ * stabilization to [StabilizationMode.OFF], and target frame rate to [TARGET_FPS_AUTO].
  */
 class ConcurrentCameraSubModeProvider internal constructor(
     private val availableConcurrentCameraInfos: (ProcessCameraProvider) -> List<List<CameraInfo>>
@@ -75,6 +78,14 @@ class ConcurrentCameraSubModeProvider internal constructor(
                 FlashMode.ON,
                 FlashMode.AUTO
             )
+        ),
+        stabilizationMode = SettingConfig(
+            defaultValue = StabilizationMode.OFF,
+            visibility = OptionVisibility.Hidden
+        ),
+        targetFrameRate = SettingConfig(
+            defaultValue = TARGET_FPS_AUTO,
+            visibility = OptionVisibility.Hidden
         )
     )
 
@@ -90,21 +101,22 @@ class ConcurrentCameraSubModeProvider internal constructor(
         settings: CameraAppSettings,
         systemConstraints: CameraSystemConstraints,
         externalCaptureMode: ExternalCaptureMode
-    ): Boolean = settings.captureMode == CaptureMode.VIDEO_ONLY &&
+    ): Boolean = super.isCompatibleWith(settings, systemConstraints, externalCaptureMode) &&
+        settings.selectedCameraEffect == NONE_EFFECT_ID &&
         externalCaptureMode == ExternalCaptureMode.Standard
 
     override val sessionBinding = CameraSessionBinding.Custom { sessionScope ->
-        val context = sessionScope as CameraSessionContext
-        val customSettings = context.sessionSettings as? PerpetualSessionSettings.CustomSession
-            ?: PerpetualSessionSettings.CustomSession(
-                subModeKey = ConcurrentCameraSubModeKey,
-                aspectRatio = AspectRatio.NINE_SIXTEEN,
-                captureMode = CaptureMode.VIDEO_ONLY
-            )
+        val context = requireNotNull(sessionScope as? CameraSessionContext) {
+            "Expected CameraSessionContext as CameraSessionScope, got ${sessionScope::class.java}"
+        }
+        val customSettings =
+            requireNotNull(context.sessionSettings as? PerpetualSessionSettings.CustomSession) {
+                "Expected PerpetualSessionSettings.CustomSession, got ${context.sessionSettings}"
+            }
         with(context) {
             runConcurrentCameraSession(
                 sessionSettings = customSettings,
-                cameraConstraints = context.cameraConstraints
+                availableConcurrentCameraInfos = availableConcurrentCameraInfos(cameraProvider)
             )
         }
     }

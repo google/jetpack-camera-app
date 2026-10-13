@@ -24,6 +24,7 @@ import com.google.jetpackcamera.core.camera.submode.CameraSessionScope
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
@@ -56,5 +57,5 @@ data class CameraSessionContext(
     val captureSubModeProviders: Map<CaptureSubModeFeatureKey, CaptureSubModeProvider> =
         emptyMap(),
     val sessionSettings: PerpetualSessionSettings? = null,
-    val cameraConstraints: CameraConstraints? = null
+    val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap()
 ) : CameraSessionScope

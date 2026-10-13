@@ -146,6 +146,7 @@ dependencies {
     androidTestImplementation(project(":ui:uistate"))
     androidTestImplementation(project(":ui:components:capture"))
     androidTestImplementation(project(":ui:debug"))
+    androidTestImplementation(project(":core:camera:concurrent"))
     androidTestUtil(libs.androidx.orchestrator)
 
     implementation(libs.androidx.core.ktx)
