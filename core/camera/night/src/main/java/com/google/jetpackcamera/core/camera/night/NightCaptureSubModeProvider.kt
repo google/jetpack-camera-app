@@ -31,6 +31,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
+import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -46,13 +47,21 @@ private const val TAG = "NightSubModeProvider"
  * [CaptureSubModeProvider] for the Night Mode CameraX extension under [CaptureMode.IMAGE_ONLY].
  *
  * Queries [ExtensionsManager] for [ExtensionMode.NIGHT] support per camera lens, transforms the
- * [CameraSelector] when Night Mode is active, and restricts dynamic range to SDR and flash to
- * standard modes (excluding Low Light Boost).
+ * [CameraSelector] when Night Mode is active, and restricts dynamic range to SDR, stabilization
+ * to off, flash to standard modes (excluding Low Light Boost), and the camera effect to none.
+ *
+ * Night Mode can't start while a camera effect is selected ([isCompatibleWith]), so the camera
+ * effect restriction does not change the settings; it disables the stream configuration setting
+ * while Night Mode is active.
  */
 class NightCaptureSubModeProvider internal constructor(
     private val applicationContext: Context,
     private val isNightAvailable: (ExtensionsManager, CameraSelector) -> Boolean,
-    private val enableNightSelector: (ExtensionsManager, CameraSelector) -> CameraSelector
+    private val enableNightSelector: (ExtensionsManager, CameraSelector) -> CameraSelector,
+    private val extensionsManagerFactory: suspend (ProcessCameraProvider) -> ExtensionsManager =
+        { cameraProvider ->
+            ExtensionsManager.getInstanceAsync(applicationContext, cameraProvider).await()
+        }
 ) : CaptureSubModeProvider {
 
     constructor(applicationContext: Context) : this(
@@ -82,6 +91,10 @@ class NightCaptureSubModeProvider internal constructor(
             defaultValue = DynamicRange.SDR,
             visibility = OptionVisibility.Hidden
         ),
+        stabilizationMode = SettingConfig(
+            defaultValue = StabilizationMode.OFF,
+            visibility = OptionVisibility.Hidden
+        ),
         flashMode = SettingConfig(
             defaultValue = FlashMode.OFF,
             visibility = OptionVisibility.from(
@@ -89,16 +102,19 @@ class NightCaptureSubModeProvider internal constructor(
                 FlashMode.ON,
                 FlashMode.AUTO
             )
+        ),
+        cameraEffect = SettingConfig(
+            defaultValue = NONE_EFFECT_ID,
+            visibility = OptionVisibility.Hidden
         )
     )
 
     private suspend fun getExtensionsManager(
         cameraProvider: ProcessCameraProvider
     ): ExtensionsManager = mutex.withLock {
-        cachedExtensionsManager ?: ExtensionsManager.getInstanceAsync(
-            applicationContext,
-            cameraProvider
-        ).await().also { cachedExtensionsManager = it }
+        cachedExtensionsManager ?: extensionsManagerFactory(cameraProvider).also {
+            cachedExtensionsManager = it
+        }
     }
 
     override suspend fun isSupported(
@@ -119,25 +135,17 @@ class NightCaptureSubModeProvider internal constructor(
         settings: CameraAppSettings,
         systemConstraints: CameraSystemConstraints,
         externalCaptureMode: ExternalCaptureMode
-    ): Boolean = settings.captureMode == CaptureMode.IMAGE_ONLY &&
+    ): Boolean = super.isCompatibleWith(settings, systemConstraints, externalCaptureMode) &&
         settings.selectedCameraEffect == NONE_EFFECT_ID &&
         externalCaptureMode != ExternalCaptureMode.VideoCapture
 
     @Suppress("DEPRECATION")
     override val sessionBinding =
         CameraSessionBinding.SingleCamera { cameraProvider, baseSelector ->
-            try {
-                val extensionsManager = getExtensionsManager(cameraProvider)
-                if (isNightAvailable(extensionsManager, baseSelector)) {
-                    enableNightSelector(extensionsManager, baseSelector)
-                } else {
-                    baseSelector
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to resolve Night extension CameraSelector", e)
-                baseSelector
+            val extensionsManager = getExtensionsManager(cameraProvider)
+            check(isNightAvailable(extensionsManager, baseSelector)) {
+                "Night extension is not available for selector $baseSelector"
             }
+            enableNightSelector(extensionsManager, baseSelector)
         }
 }
