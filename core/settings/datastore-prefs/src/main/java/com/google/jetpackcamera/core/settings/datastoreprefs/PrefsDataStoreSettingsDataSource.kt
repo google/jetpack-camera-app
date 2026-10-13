@@ -27,7 +27,6 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
-import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
@@ -61,9 +60,10 @@ class PrefsDataStoreSettingsDataSource(
                 .toEnumOrDefault(baselineDefaults.stabilizationMode),
             targetFrameRate = prefs[PreferenceKeys.KEY_TARGET_FRAME_RATE]
                 ?: baselineDefaults.targetFrameRate,
-            selectedCameraEffect = prefs[PreferenceKeys.KEY_SELECTED_CAMERA_EFFECT]?.let {
-                if (it.isEmpty()) NONE_EFFECT_ID else CameraEffectId(it)
-            } ?: NONE_EFFECT_ID,
+            selectedCameraEffect = prefs[PreferenceKeys.KEY_SELECTED_CAMERA_EFFECT]
+                ?.takeIf { it.isNotEmpty() }
+                ?.let(::CameraEffectId)
+                ?: baselineDefaults.selectedCameraEffect,
             lowLightBoostPriority = prefs[PreferenceKeys.KEY_LOW_LIGHT_BOOST_PRIORITY]
                 .toEnumOrDefault(LowLightBoostPriority.PRIORITIZE_AE_MODE),
             dynamicRange = prefs[PreferenceKeys.KEY_DYNAMIC_RANGE]

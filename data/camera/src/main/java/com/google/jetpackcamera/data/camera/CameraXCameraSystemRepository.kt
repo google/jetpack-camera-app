@@ -20,6 +20,7 @@ import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.CameraXCameraSystem
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -35,10 +36,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 private const val TAG = "CameraXCameraSystemRepo"
 
@@ -106,6 +110,12 @@ class CameraXCameraSystemRepository(
 
     override val currentSettings: StateFlow<CameraAppSettings?> by lazy {
         cameraSystem.getCurrentSettings()
+    }
+
+    override val activeCaptureSubModeId: StateFlow<CaptureSubModeId> by lazy {
+        currentSettings
+            .map { it?.activeCaptureSubModeId ?: CaptureSubModeId.DEFAULT }
+            .stateIn(scope, SharingStarted.WhileSubscribed(), CaptureSubModeId.DEFAULT)
     }
 
     override val currentCameraState: StateFlow<CameraState> by lazy {

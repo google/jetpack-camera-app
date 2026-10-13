@@ -48,7 +48,12 @@ import com.google.jetpackcamera.settings.model.SettingConfig
  * Binds both the primary and opposite-facing cameras simultaneously via a custom concurrent
  * camera session, recording at [com.google.jetpackcamera.model.VideoQuality.UNSPECIFIED], and
  * restricts dynamic range to SDR, flash to standard modes (excluding Low Light Boost),
- * stabilization to [StabilizationMode.OFF], and target frame rate to [TARGET_FPS_AUTO].
+ * stabilization to [StabilizationMode.OFF], target frame rate to [TARGET_FPS_AUTO], and the camera
+ * effect to none.
+ *
+ * Dual camera can't start while a camera effect is selected ([isCompatibleWith]), so the camera
+ * effect restriction does not change the settings; it disables the stream configuration setting
+ * while dual camera is active.
  */
 class ConcurrentCameraSubModeProvider internal constructor(
     private val availableConcurrentCameraInfos: (ProcessCameraProvider) -> List<List<CameraInfo>>
@@ -85,6 +90,10 @@ class ConcurrentCameraSubModeProvider internal constructor(
         ),
         targetFrameRate = SettingConfig(
             defaultValue = TARGET_FPS_AUTO,
+            visibility = OptionVisibility.Hidden
+        ),
+        cameraEffect = SettingConfig(
+            defaultValue = NONE_EFFECT_ID,
             visibility = OptionVisibility.Hidden
         )
     )

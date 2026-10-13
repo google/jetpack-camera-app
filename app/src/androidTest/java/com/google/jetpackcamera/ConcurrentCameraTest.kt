@@ -17,8 +17,11 @@ package com.google.jetpackcamera
 
 import android.net.Uri
 import android.provider.MediaStore
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.isEnabled
+import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -31,6 +34,12 @@ import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.core.camera.concurrent.CONCURRENT_SUB_MODE_ID
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
+import com.google.jetpackcamera.settings.ui.BTN_DIALOG_FLASH_OPTION_LLB_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FPS_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG
+import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
@@ -47,6 +56,7 @@ import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenari
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.selectConcurrentCameraSubMode
 import com.google.jetpackcamera.utils.setCaptureMode
+import com.google.jetpackcamera.utils.visitSettingsScreen
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForNodeWithTag
 import com.google.jetpackcamera.utils.waitForSnackbarWithText
@@ -121,6 +131,45 @@ class ConcurrentCameraTest {
                 // Assert the capture mode row does not exist (hidden because locked to video-only)
                 onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertDoesNotExist()
                 assertThat(getCurrentCaptureMode()).isEqualTo(CaptureMode.VIDEO_ONLY)
+            }
+        }
+
+    @Test
+    fun concurrentCameraMode_whenEnabled_disablesOtherSettingsInSettingsScreen() =
+        runConcurrentCameraScenarioTest {
+            with(composeTestRule) {
+                // Select the dual sub-mode, then assert other settings are disabled in settings
+                selectConcurrentCameraSubMode(enabled = true)
+                visitSettingsScreen {
+                    // 1. Assert Stream Config is disabled
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+
+                    // 2. Assert Video Stabilization is disabled
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_VIDEO_STABILIZATION_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+
+                    // 3. Assert Flash Low Light Boost option is disabled in dialog
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_FLASH_TAG)
+                        .assertExists()
+                        .assert(isEnabled())
+                        .performClick()
+
+                    onNodeWithTag(BTN_DIALOG_FLASH_OPTION_LLB_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+
+                    onNodeWithTag(CLOSE_BUTTON)
+                        .assertExists()
+                        .performClick()
+
+                    // 4. Assert FPS setting is disabled
+                    onNodeWithTag(BTN_OPEN_DIALOG_SETTING_FPS_TAG)
+                        .assertExists()
+                        .assert(isNotEnabled())
+                }
             }
         }
 

@@ -17,14 +17,17 @@ package com.google.jetpackcamera.settings.model
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_60
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -556,5 +559,100 @@ class CameraFeaturePolicyTest {
             .isEqualTo(SettingConfig(AspectRatio.THREE_FOUR, OptionVisibility.Hidden))
         assertThat(neitherDefaultCommon.aspectRatio)
             .isEqualTo(SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden))
+    }
+
+    @Test
+    fun toCameraAppSettings_appliesCameraEffectDefault() {
+        val effect = CameraEffectId("single_stream")
+        val policy = CameraFeaturePolicy(cameraEffect = SettingConfig(defaultValue = effect))
+
+        assertThat(policy.toCameraAppSettings().selectedCameraEffect).isEqualTo(effect)
+        assertThat(CameraFeaturePolicy().toCameraAppSettings().selectedCameraEffect)
+            .isEqualTo(NONE_EFFECT_ID)
+    }
+
+    @Test
+    fun enforceRestrictions_whenCameraEffectHidden_clampsToDefaultValue() {
+        val policy = CameraFeaturePolicy(
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+        )
+        val settings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+            selectedCameraEffect = CameraEffectId("single_stream")
+        )
+
+        assertThat(policy.enforceRestrictions(settings).selectedCameraEffect)
+            .isEqualTo(NONE_EFFECT_ID)
+    }
+
+    @Test
+    fun isCompatibleWith_comparesStabilizationFrameRateAndCameraEffect() {
+        val subModePolicy = CameraFeaturePolicy(
+            stabilizationMode = SettingConfig(StabilizationMode.OFF, OptionVisibility.Hidden),
+            targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden),
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+        )
+        val hostPermittingSubMode = CameraFeaturePolicy(
+            stabilizationMode = SettingConfig(
+                defaultValue = StabilizationMode.AUTO,
+                visibility = OptionVisibility.Only(StabilizationMode.AUTO, StabilizationMode.OFF)
+            ),
+            targetFrameRate = SettingConfig(
+                defaultValue = TARGET_FPS_30,
+                visibility = OptionVisibility.Only(TARGET_FPS_AUTO, TARGET_FPS_30)
+            ),
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Visible)
+        )
+
+        assertThat(hostPermittingSubMode.isCompatibleWith(subModePolicy)).isTrue()
+        assertThat(
+            CameraFeaturePolicy(
+                stabilizationMode = SettingConfig(StabilizationMode.ON, OptionVisibility.Hidden)
+            ).isCompatibleWith(subModePolicy)
+        ).isFalse()
+        assertThat(
+            CameraFeaturePolicy(
+                targetFrameRate = SettingConfig(TARGET_FPS_60, OptionVisibility.Hidden)
+            ).isCompatibleWith(subModePolicy)
+        ).isFalse()
+        assertThat(
+            CameraFeaturePolicy(
+                cameraEffect = SettingConfig(
+                    CameraEffectId("single_stream"),
+                    OptionVisibility.Hidden
+                )
+            ).isCompatibleWith(subModePolicy)
+        ).isFalse()
+    }
+
+    @Test
+    fun intersect_narrowsStabilizationFrameRateAndCameraEffect() {
+        val hostPolicy = CameraFeaturePolicy(
+            stabilizationMode = SettingConfig(StabilizationMode.AUTO, OptionVisibility.Visible),
+            targetFrameRate = SettingConfig(
+                defaultValue = TARGET_FPS_30,
+                visibility = OptionVisibility.Only(TARGET_FPS_AUTO, TARGET_FPS_15, TARGET_FPS_30)
+            )
+        )
+        val subModePolicy = CameraFeaturePolicy(
+            stabilizationMode = SettingConfig(StabilizationMode.OFF, OptionVisibility.Hidden),
+            targetFrameRate = SettingConfig(
+                defaultValue = TARGET_FPS_AUTO,
+                visibility = OptionVisibility.Only(TARGET_FPS_AUTO, TARGET_FPS_30, TARGET_FPS_60)
+            ),
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+        )
+
+        val intersected = hostPolicy.intersect(subModePolicy)
+
+        assertThat(intersected.stabilizationMode)
+            .isEqualTo(SettingConfig(StabilizationMode.OFF, OptionVisibility.Hidden))
+        assertThat(intersected.targetFrameRate).isEqualTo(
+            SettingConfig(
+                defaultValue = TARGET_FPS_AUTO,
+                visibility = OptionVisibility.Only(TARGET_FPS_AUTO, TARGET_FPS_30)
+            )
+        )
+        assertThat(intersected.cameraEffect)
+            .isEqualTo(SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden))
     }
 }

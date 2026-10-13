@@ -27,6 +27,7 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.ui.CAPTURE_SUB_MODE_ACTIVE_TAG
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
@@ -108,6 +109,19 @@ sealed interface DisabledRationale {
     ) : DisabledRationale {
         override val reasonTextResId = R.string.video_quality_unsupported
         override val testTag = VIDEO_QUALITY_UNSUPPORTED_TAG
+    }
+
+    /**
+     * Text will be [affectedSettingNameResId] is unsupported in [captureSubModeLabelResId] mode.
+     *
+     * Used when the active capture sub-mode's policy hides the setting or excludes the option.
+     */
+    data class CaptureSubModeActiveRationale(
+        override val affectedSettingNameResId: Int,
+        val captureSubModeLabelResId: Int
+    ) : DisabledRationale {
+        override val reasonTextResId: Int = R.string.capture_sub_mode_active
+        override val testTag = CAPTURE_SUB_MODE_ACTIVE_TAG
     }
 
     data class UltraHdrUnsupportedRationale(override val affectedSettingNameResId: Int) :

@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings.model
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -59,6 +60,7 @@ import com.google.jetpackcamera.model.StabilizationMode
  * @param dynamicRange Configuration for captured video dynamic range (e.g. SDR, HLG10).
  * @param stabilizationMode Configuration for preview and video stabilization mode.
  * @param targetFrameRate Configuration for target video frame rate (FPS).
+ * @param cameraEffect Configuration for the selected camera effect (e.g. single-stream).
  *
  * TODO (kc): Defer audioEnabled configuration to a follow-up PR, pending design for visual UX.
  */
@@ -69,7 +71,8 @@ data class CameraFeaturePolicy(
     val imageFormat: SettingConfig<ImageOutputFormat>? = null,
     val dynamicRange: SettingConfig<DynamicRange>? = null,
     val stabilizationMode: SettingConfig<StabilizationMode>? = null,
-    val targetFrameRate: SettingConfig<Int>? = null
+    val targetFrameRate: SettingConfig<Int>? = null,
+    val cameraEffect: SettingConfig<CameraEffectId>? = null
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
@@ -113,7 +116,9 @@ data class CameraFeaturePolicy(
             stabilizationMode = this.stabilizationMode?.defaultValue
                 ?: defaultSettings.stabilizationMode,
             targetFrameRate = this.targetFrameRate?.defaultValue
-                ?: defaultSettings.targetFrameRate
+                ?: defaultSettings.targetFrameRate,
+            selectedCameraEffect = this.cameraEffect?.defaultValue
+                ?: defaultSettings.selectedCameraEffect
         )
     }
 
@@ -127,7 +132,8 @@ data class CameraFeaturePolicy(
         dynamicRange = enforceSetting(settings.dynamicRange, dynamicRange),
         captureMode = enforceSetting(settings.captureMode, captureMode),
         stabilizationMode = enforceSetting(settings.stabilizationMode, stabilizationMode),
-        targetFrameRate = enforceSetting(settings.targetFrameRate, targetFrameRate)
+        targetFrameRate = enforceSetting(settings.targetFrameRate, targetFrameRate),
+        selectedCameraEffect = enforceSetting(settings.selectedCameraEffect, cameraEffect)
     )
 
     /**
@@ -142,7 +148,8 @@ data class CameraFeaturePolicy(
             isSettingCompatible(imageFormat, other.imageFormat) &&
             isSettingCompatible(dynamicRange, other.dynamicRange) &&
             isSettingCompatible(stabilizationMode, other.stabilizationMode) &&
-            isSettingCompatible(targetFrameRate, other.targetFrameRate)
+            isSettingCompatible(targetFrameRate, other.targetFrameRate) &&
+            isSettingCompatible(cameraEffect, other.cameraEffect)
 
     /**
      * Returns the intersection of this policy (typically the host application's policy) and
@@ -160,7 +167,8 @@ data class CameraFeaturePolicy(
         imageFormat = intersectSetting(imageFormat, other.imageFormat),
         dynamicRange = intersectSetting(dynamicRange, other.dynamicRange),
         stabilizationMode = intersectSetting(stabilizationMode, other.stabilizationMode),
-        targetFrameRate = intersectSetting(targetFrameRate, other.targetFrameRate)
+        targetFrameRate = intersectSetting(targetFrameRate, other.targetFrameRate),
+        cameraEffect = intersectSetting(cameraEffect, other.cameraEffect)
     )
 }
 

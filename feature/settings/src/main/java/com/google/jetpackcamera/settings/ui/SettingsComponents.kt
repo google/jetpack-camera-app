@@ -1049,6 +1049,12 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )
+
+        is DisabledRationale.CaptureSubModeActiveRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId),
+            stringResource(disabledRationale.captureSubModeLabelResId)
+        )
     }
 
 @Preview(name = "Light Mode")

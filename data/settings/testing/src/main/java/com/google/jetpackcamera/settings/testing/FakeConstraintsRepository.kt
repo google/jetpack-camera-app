@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.settings.testing
 
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,12 +23,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * A fake implementation of [ConstraintsRepository] whose constraints can be set during a test.
+ * A fake implementation of [ConstraintsRepository] whose constraints and active capture sub-mode
+ * can be set during a test.
  *
  * @param initialConstraints The constraints [systemConstraints] starts with.
+ * @param initialActiveCaptureSubModeId The sub-mode [activeCaptureSubModeId] starts with.
  */
 class FakeConstraintsRepository(
-    initialConstraints: CameraSystemConstraints? = null
+    initialConstraints: CameraSystemConstraints? = null,
+    initialActiveCaptureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT
 ) : ConstraintsRepository {
     private val _systemConstraints = MutableStateFlow(initialConstraints)
     override val systemConstraints: StateFlow<CameraSystemConstraints?> =
@@ -38,5 +42,16 @@ class FakeConstraintsRepository(
      */
     fun setSystemConstraints(systemConstraints: CameraSystemConstraints?) {
         _systemConstraints.value = systemConstraints
+    }
+
+    private val _activeCaptureSubModeId = MutableStateFlow(initialActiveCaptureSubModeId)
+    override val activeCaptureSubModeId: StateFlow<CaptureSubModeId> =
+        _activeCaptureSubModeId.asStateFlow()
+
+    /**
+     * Sets the [CaptureSubModeId] emitted by [activeCaptureSubModeId].
+     */
+    fun setActiveCaptureSubModeId(activeCaptureSubModeId: CaptureSubModeId) {
+        _activeCaptureSubModeId.value = activeCaptureSubModeId
     }
 }
