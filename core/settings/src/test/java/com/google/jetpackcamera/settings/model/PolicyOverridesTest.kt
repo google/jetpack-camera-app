@@ -24,6 +24,10 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_60
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,14 +41,18 @@ class PolicyOverridesTest {
         aspectRatio = AspectRatio.ONE_ONE,
         flashMode = FlashMode.ON,
         imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
-        dynamicRange = DynamicRange.HLG10
+        dynamicRange = DynamicRange.HLG10,
+        stabilizationMode = StabilizationMode.ON,
+        targetFrameRate = TARGET_FPS_60
     )
 
     private val restrictivePolicy = CameraFeaturePolicy(
         aspectRatio = SettingConfig(AspectRatio.THREE_FOUR, OptionVisibility.Hidden),
         flashMode = SettingConfig(FlashMode.OFF, OptionVisibility.Hidden),
         imageFormat = SettingConfig(ImageOutputFormat.JPEG, OptionVisibility.Hidden),
-        dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden)
+        dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden),
+        stabilizationMode = SettingConfig(StabilizationMode.OFF, OptionVisibility.Hidden),
+        targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden)
     )
 
     private fun enforce(
@@ -62,6 +70,8 @@ class PolicyOverridesTest {
         assertThat(enforced.flashMode).isEqualTo(FlashMode.OFF)
         assertThat(enforced.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(enforced.dynamicRange).isEqualTo(DynamicRange.SDR)
+        assertThat(enforced.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(enforced.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
 
         val restored = overrides.restore(enforced)
 
@@ -75,15 +85,33 @@ class PolicyOverridesTest {
                 defaultValue = FlashMode.OFF,
                 visibility = OptionVisibility.from(FlashMode.OFF, FlashMode.AUTO)
             ),
-            dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden)
+            dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden),
+            stabilizationMode = SettingConfig(
+                defaultValue = StabilizationMode.OFF,
+                visibility = OptionVisibility.from(StabilizationMode.OFF, StabilizationMode.AUTO)
+            ),
+            targetFrameRate = SettingConfig(
+                defaultValue = TARGET_FPS_AUTO,
+                visibility = OptionVisibility.from(TARGET_FPS_AUTO, TARGET_FPS_30)
+            )
         )
         val (enforced, overrides) = enforce(policy, userSettings)
         assertThat(enforced.flashMode).isEqualTo(FlashMode.OFF)
+        assertThat(enforced.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(enforced.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
 
         // The user picks another permitted value while the policy applies.
-        val restored = overrides.restore(enforced.copy(flashMode = FlashMode.AUTO))
+        val restored = overrides.restore(
+            enforced.copy(
+                flashMode = FlashMode.AUTO,
+                stabilizationMode = StabilizationMode.AUTO,
+                targetFrameRate = TARGET_FPS_30
+            )
+        )
 
         assertThat(restored.flashMode).isEqualTo(FlashMode.AUTO)
+        assertThat(restored.stabilizationMode).isEqualTo(StabilizationMode.AUTO)
+        assertThat(restored.targetFrameRate).isEqualTo(TARGET_FPS_30)
         assertThat(restored.dynamicRange).isEqualTo(DynamicRange.HLG10)
     }
 

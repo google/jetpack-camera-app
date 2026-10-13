@@ -19,6 +19,7 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.StabilizationMode
 
 /**
  * Records the [CameraAppSettings] values that [CameraFeaturePolicy.enforceRestrictions] replaced,
@@ -26,7 +27,8 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  * leaves a capture sub-mode).
  *
  * The restored values are [CameraAppSettings.aspectRatio], [CameraAppSettings.flashMode],
- * [CameraAppSettings.imageFormat], and [CameraAppSettings.dynamicRange].
+ * [CameraAppSettings.imageFormat], [CameraAppSettings.dynamicRange],
+ * [CameraAppSettings.stabilizationMode], and [CameraAppSettings.targetFrameRate].
  * [CameraAppSettings.captureMode] is not restored. A capture mode change ends a sub-mode rather
  * than being a value that the sub-mode overrides.
  *
@@ -37,7 +39,9 @@ data class PolicyOverrides private constructor(
     private val aspectRatio: OverriddenValue<AspectRatio>,
     private val flashMode: OverriddenValue<FlashMode>,
     private val imageFormat: OverriddenValue<ImageOutputFormat>,
-    private val dynamicRange: OverriddenValue<DynamicRange>
+    private val dynamicRange: OverriddenValue<DynamicRange>,
+    private val stabilizationMode: OverriddenValue<StabilizationMode>,
+    private val targetFrameRate: OverriddenValue<Int>
 ) {
     /**
      * @param beforeEnforcement The settings before the policy was enforced.
@@ -50,6 +54,14 @@ data class PolicyOverrides private constructor(
         dynamicRange = OverriddenValue(
             beforeEnforcement.dynamicRange,
             afterEnforcement.dynamicRange
+        ),
+        stabilizationMode = OverriddenValue(
+            beforeEnforcement.stabilizationMode,
+            afterEnforcement.stabilizationMode
+        ),
+        targetFrameRate = OverriddenValue(
+            beforeEnforcement.targetFrameRate,
+            afterEnforcement.targetFrameRate
         )
     ) {
         require(beforeEnforcement.captureMode == afterEnforcement.captureMode) {
@@ -68,7 +80,9 @@ data class PolicyOverrides private constructor(
         aspectRatio = aspectRatio.restore(settings.aspectRatio),
         flashMode = flashMode.restore(settings.flashMode),
         imageFormat = imageFormat.restore(settings.imageFormat),
-        dynamicRange = dynamicRange.restore(settings.dynamicRange)
+        dynamicRange = dynamicRange.restore(settings.dynamicRange),
+        stabilizationMode = stabilizationMode.restore(settings.stabilizationMode),
+        targetFrameRate = targetFrameRate.restore(settings.targetFrameRate)
     )
 
     /** A setting's value before enforcement, and the value that the policy set. */

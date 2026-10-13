@@ -1269,6 +1269,8 @@ class CameraXCameraSystem(
             .tryApplyImageFormatConstraints()
             .tryApplyFlashModeConstraints()
             .tryApplyVideoQualityConstraints()
+            .tryApplyFrameRateConstraints()
+            .tryApplyStabilizationConstraints()
 
         return enforced.copy(
             // Keep the record from when a continuing sub-mode became active.
@@ -1293,6 +1295,8 @@ class CameraXCameraSystem(
             .tryApplyImageFormatConstraints()
             .tryApplyFlashModeConstraints()
             .tryApplyVideoQualityConstraints()
+            .tryApplyFrameRateConstraints()
+            .tryApplyStabilizationConstraints()
     }
 
     private fun CameraAppSettings.defaultCaptureSubModeIdForLens(): CaptureSubModeId =
@@ -1420,6 +1424,7 @@ class CameraXCameraSystem(
     override suspend fun setStabilizationMode(stabilizationMode: StabilizationMode) {
         currentSettings.update { old ->
             old?.copy(stabilizationMode = stabilizationMode)
+                ?.tryApplyCaptureSubModeConstraints()
         }
     }
 
@@ -1427,6 +1432,7 @@ class CameraXCameraSystem(
         currentSettings.update { old ->
             old?.copy(targetFrameRate = targetFrameRate)?.tryApplyFrameRateConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
+                ?.tryApplyCaptureSubModeConstraints()
         }
     }
 

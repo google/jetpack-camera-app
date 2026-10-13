@@ -69,6 +69,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -831,27 +832,53 @@ class CameraXCameraSystemTest {
 
     @Test
     fun setImageFormatAndDynamicRange_inCaptureSubMode_keepsPolicyValues(): Unit = runBlocking {
-        // Arrange. The sub-mode's policy locks the image format and dynamic range.
+        // Arrange. The sub-mode's policy locks the image format, dynamic range, stabilization mode,
+        // and target frame rate.
         val cameraSystem = createAndInitCameraXCameraSystem(
             captureSubModeProvider = FakeCaptureSubModeProvider(
                 CameraFeaturePolicy(
                     imageFormat = SettingConfig(ImageOutputFormat.JPEG, OptionVisibility.Hidden),
-                    dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden)
+                    dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden),
+                    stabilizationMode = SettingConfig(
+                        StabilizationMode.OFF,
+                        OptionVisibility.Hidden
+                    ),
+                    targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden)
                 )
             )
         )
         cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setStabilizationMode(StabilizationMode.ON)
         cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
 
         // Act.
         cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
         cameraSystem.setDynamicRange(DynamicRange.HLG10)
+        cameraSystem.setStabilizationMode(StabilizationMode.ON)
+        cameraSystem.setTargetFrameRate(60)
 
         // Assert. The sub-mode stays active and its policy values are kept.
-        val settings = cameraSystem.getCurrentSettings().value!!
+        var settings = cameraSystem.getCurrentSettings().value!!
         assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
         assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(settings.dynamicRange).isEqualTo(DynamicRange.SDR)
+        assertThat(settings.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
+
+        // Act. Leave the sub-mode -> stabilizationMode is restored to ON (if supported on lens).
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+        settings = cameraSystem.getCurrentSettings().value!!
+        val lensConstraints =
+            cameraSystem.getSystemConstraints().value!!.perLensConstraints[
+                settings.cameraLensFacing
+            ]!!
+        val expectedRestoredStabilization =
+            if (StabilizationMode.ON in lensConstraints.supportedStabilizationModes) {
+                StabilizationMode.ON
+            } else {
+                StabilizationMode.AUTO
+            }
+        assertThat(settings.stabilizationMode).isEqualTo(expectedRestoredStabilization)
     }
 
     @Test
