@@ -20,6 +20,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.StabilizationMode
 
 /**
  * Configuration for the Jetpack Camera App that allows developers and host applications
@@ -56,6 +57,8 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  *   if [OptionVisibility.Hidden].
  * @param imageFormat Configuration for captured photo format (e.g. JPEG, Ultra HDR).
  * @param dynamicRange Configuration for captured video dynamic range (e.g. SDR, HLG10).
+ * @param stabilizationMode Configuration for preview and video stabilization mode.
+ * @param targetFrameRate Configuration for target video frame rate (FPS).
  *
  * TODO (kc): Defer audioEnabled configuration to a follow-up PR, pending design for visual UX.
  */
@@ -64,7 +67,9 @@ data class CameraFeaturePolicy(
     val aspectRatio: SettingConfig<AspectRatio>? = null,
     val flashMode: SettingConfig<FlashMode>? = null,
     val imageFormat: SettingConfig<ImageOutputFormat>? = null,
-    val dynamicRange: SettingConfig<DynamicRange>? = null
+    val dynamicRange: SettingConfig<DynamicRange>? = null,
+    val stabilizationMode: SettingConfig<StabilizationMode>? = null,
+    val targetFrameRate: SettingConfig<Int>? = null
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
@@ -104,7 +109,11 @@ data class CameraFeaturePolicy(
             flashMode = this.flashMode?.defaultValue ?: defaultSettings.flashMode,
             captureMode = this.captureMode?.defaultValue ?: defaultSettings.captureMode,
             imageFormat = this.imageFormat?.defaultValue ?: defaultSettings.imageFormat,
-            dynamicRange = this.dynamicRange?.defaultValue ?: defaultSettings.dynamicRange
+            dynamicRange = this.dynamicRange?.defaultValue ?: defaultSettings.dynamicRange,
+            stabilizationMode = this.stabilizationMode?.defaultValue
+                ?: defaultSettings.stabilizationMode,
+            targetFrameRate = this.targetFrameRate?.defaultValue
+                ?: defaultSettings.targetFrameRate
         )
     }
 
@@ -116,7 +125,9 @@ data class CameraFeaturePolicy(
         flashMode = enforceSetting(settings.flashMode, flashMode),
         imageFormat = enforceSetting(settings.imageFormat, imageFormat),
         dynamicRange = enforceSetting(settings.dynamicRange, dynamicRange),
-        captureMode = enforceSetting(settings.captureMode, captureMode)
+        captureMode = enforceSetting(settings.captureMode, captureMode),
+        stabilizationMode = enforceSetting(settings.stabilizationMode, stabilizationMode),
+        targetFrameRate = enforceSetting(settings.targetFrameRate, targetFrameRate)
     )
 
     /**
@@ -129,7 +140,9 @@ data class CameraFeaturePolicy(
             isSettingCompatible(aspectRatio, other.aspectRatio) &&
             isSettingCompatible(flashMode, other.flashMode) &&
             isSettingCompatible(imageFormat, other.imageFormat) &&
-            isSettingCompatible(dynamicRange, other.dynamicRange)
+            isSettingCompatible(dynamicRange, other.dynamicRange) &&
+            isSettingCompatible(stabilizationMode, other.stabilizationMode) &&
+            isSettingCompatible(targetFrameRate, other.targetFrameRate)
 
     /**
      * Returns the intersection of this policy (typically the host application's policy) and
@@ -145,7 +158,9 @@ data class CameraFeaturePolicy(
         aspectRatio = intersectSetting(aspectRatio, other.aspectRatio),
         flashMode = intersectSetting(flashMode, other.flashMode),
         imageFormat = intersectSetting(imageFormat, other.imageFormat),
-        dynamicRange = intersectSetting(dynamicRange, other.dynamicRange)
+        dynamicRange = intersectSetting(dynamicRange, other.dynamicRange),
+        stabilizationMode = intersectSetting(stabilizationMode, other.stabilizationMode),
+        targetFrameRate = intersectSetting(targetFrameRate, other.targetFrameRate)
     )
 }
 

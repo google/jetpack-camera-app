@@ -153,7 +153,7 @@ internal class CaptureModeSettingsTest {
     }
 
     @Test
-    fun concurrent_only_supports_video_capture_mode() {
+    fun concurrent_switchingToImageOnly_exitsDualMode() {
         runMainActivityScenarioTest {
             composeTestRule.waitForCaptureButton()
 

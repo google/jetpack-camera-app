@@ -21,6 +21,10 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_15
+import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_60
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -91,6 +95,8 @@ class CameraFeaturePolicyTest {
         assertThat(config.captureMode).isNull()
         assertThat(config.imageFormat).isNull()
         assertThat(config.dynamicRange).isNull()
+        assertThat(config.stabilizationMode).isNull()
+        assertThat(config.targetFrameRate).isNull()
     }
 
     @Test
@@ -197,7 +203,9 @@ class CameraFeaturePolicyTest {
             flashMode = SettingConfig(FlashMode.ON),
             captureMode = SettingConfig(CaptureMode.VIDEO_ONLY),
             imageFormat = SettingConfig(ImageOutputFormat.JPEG_ULTRA_HDR),
-            dynamicRange = SettingConfig(DynamicRange.HLG10)
+            dynamicRange = SettingConfig(DynamicRange.HLG10),
+            stabilizationMode = SettingConfig(StabilizationMode.OFF),
+            targetFrameRate = SettingConfig(TARGET_FPS_30)
         )
 
         val appSettings = developerConfig.toCameraAppSettings()
@@ -207,6 +215,8 @@ class CameraFeaturePolicyTest {
         assertThat(appSettings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
         assertThat(appSettings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
         assertThat(appSettings.dynamicRange).isEqualTo(DynamicRange.HLG10)
+        assertThat(appSettings.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(appSettings.targetFrameRate).isEqualTo(TARGET_FPS_30)
     }
 
     @Test
@@ -262,11 +272,21 @@ class CameraFeaturePolicyTest {
             imageFormat = SettingConfig(
                 defaultValue = ImageOutputFormat.JPEG,
                 visibility = OptionVisibility.Hidden
+            ),
+            stabilizationMode = SettingConfig(
+                defaultValue = StabilizationMode.OFF,
+                visibility = OptionVisibility.Hidden
+            ),
+            targetFrameRate = SettingConfig(
+                defaultValue = TARGET_FPS_15,
+                visibility = OptionVisibility.Hidden
             )
         )
         val settings = DEFAULT_CAMERA_APP_SETTINGS.copy(
             dynamicRange = DynamicRange.HLG10,
             imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
+            stabilizationMode = StabilizationMode.ON,
+            targetFrameRate = TARGET_FPS_60,
             aspectRatio = AspectRatio.ONE_ONE
         )
 
@@ -274,6 +294,8 @@ class CameraFeaturePolicyTest {
 
         assertThat(enforced.dynamicRange).isEqualTo(DynamicRange.SDR)
         assertThat(enforced.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        assertThat(enforced.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(enforced.targetFrameRate).isEqualTo(TARGET_FPS_15)
         assertThat(enforced.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
     }
 

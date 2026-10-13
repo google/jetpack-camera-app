@@ -47,6 +47,7 @@ import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.errorprone.annotations.CanIgnoreReturnValue
+import com.google.jetpackcamera.core.camera.concurrent.CONCURRENT_SUB_MODE_ID
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.FlashMode
@@ -723,8 +724,6 @@ fun ComposeTestRule.searchForQuickSetting(settingTestTag: String) {
     // No scroll container in the new flat layout, just assert existence
     this.onNodeWithTag(settingTestTag).assertExists()
 }
-
-private val CONCURRENT_SUB_MODE_ID = CaptureSubModeId("concurrent_dual")
 
 /**
  * Switches to [CaptureMode.VIDEO_ONLY] (if needed) and selects the concurrent camera sub-mode

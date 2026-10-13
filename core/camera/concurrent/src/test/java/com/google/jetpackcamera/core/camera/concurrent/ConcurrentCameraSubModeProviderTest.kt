@@ -16,10 +16,13 @@
 package com.google.jetpackcamera.core.camera.concurrent
 
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.OptionVisibility
@@ -91,6 +94,23 @@ class ConcurrentCameraSubModeProviderTest {
     }
 
     @Test
+    fun isCompatibleWith_activeCameraEffect_returnsFalse() {
+        val settings = CameraAppSettings(
+            captureMode = CaptureMode.VIDEO_ONLY,
+            selectedCameraEffect = CameraEffectId("custom_effect")
+        )
+        val constraints = CameraSystemConstraints()
+
+        assertThat(
+            provider.isCompatibleWith(
+                settings = settings,
+                systemConstraints = constraints,
+                externalCaptureMode = ExternalCaptureMode.Standard
+            )
+        ).isFalse()
+    }
+
+    @Test
     fun featurePolicy_enforcesExpectedConstraints() {
         val policy = provider.featurePolicy
 
@@ -107,5 +127,11 @@ class ConcurrentCameraSubModeProviderTest {
                 FlashMode.AUTO
             )
         )
+
+        assertThat(policy.stabilizationMode?.defaultValue).isEqualTo(StabilizationMode.OFF)
+        assertThat(policy.stabilizationMode?.visibility).isEqualTo(OptionVisibility.Hidden)
+
+        assertThat(policy.targetFrameRate?.defaultValue).isEqualTo(TARGET_FPS_AUTO)
+        assertThat(policy.targetFrameRate?.visibility).isEqualTo(OptionVisibility.Hidden)
     }
 }

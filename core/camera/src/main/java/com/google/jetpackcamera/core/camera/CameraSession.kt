@@ -102,6 +102,7 @@ import kotlin.coroutines.ContinuationInterceptor
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asExecutor
@@ -134,7 +135,6 @@ context(CameraSessionContext)
 @ExperimentalCamera2Interop
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
-    cameraConstraints: CameraConstraints?,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture) -> Unit = {}
 ) = coroutineScope {
@@ -209,16 +209,52 @@ internal suspend fun runSingleCameraSession(
                     // CameraInfo can issue blocking camera metadata queries, so this is kept off
                     // the calling (typically main) thread.
                     val (currentCameraSelector, cameraInfo) = withContext(backgroundDispatcher) {
-                        val activeBinding = sessionSettings.activeCaptureSubMode
+                        val activeSubModeKey = sessionSettings.activeCaptureSubMode
+                        val activeBinding = activeSubModeKey
                             ?.let { captureSubModeProviders[it]?.sessionBinding }
                             as? CameraSessionBinding.SingleCamera
-                        val selector =
-                            activeBinding?.transformCameraSelector(cameraProvider, baseSelector)
-                                ?: baseSelector
-                        selector to cameraProvider.getCameraInfo(selector)
+                        if (activeBinding != null) {
+                            try {
+                                val selector = activeBinding.transformCameraSelector(
+                                    cameraProvider,
+                                    baseSelector
+                                )
+                                val resolvedInfo = cameraProvider.getCameraInfo(selector)
+                                currentCameraState.update { old ->
+                                    if (old.captureSubModeState != CaptureSubModeState.Idle) {
+                                        old.copy(captureSubModeState = CaptureSubModeState.Idle)
+                                    } else {
+                                        old
+                                    }
+                                }
+                                selector to resolvedInfo
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                Log.w(
+                                    TAG,
+                                    "Failed to resolve camera selector for sub-mode " +
+                                        "${activeSubModeKey.id}; falling back to base camera",
+                                    e
+                                )
+                                currentCameraState.update { old ->
+                                    old.copy(
+                                        captureSubModeState = CaptureSubModeState.Error(
+                                            subModeId = activeSubModeKey.id,
+                                            error = e
+                                        )
+                                    )
+                                }
+                                baseSelector to cameraProvider.getCameraInfo(baseSelector)
+                            }
+                        } else {
+                            baseSelector to cameraProvider.getCameraInfo(baseSelector)
+                        }
                     }
                     val camera2Info = Camera2CameraInfo.from(cameraInfo)
                     val cameraId = camera2Info.cameraId
+                    val cameraConstraints =
+                        perLensConstraints[currentTransientSettings.primaryLensFacing]
 
                     var cameraEffect: CameraEffect? = null
                     val captureResults = MutableStateFlow<TotalCaptureResult?>(null)
@@ -627,12 +663,8 @@ private suspend fun updateCamera2RequestOptions(
     }
 }
 
-context(CameraSessionContext)
 @InternalCameraApi
-fun CameraSessionContext.applyDeviceRotation(
-    deviceRotation: DeviceRotation,
-    useCaseGroup: UseCaseGroup
-) {
+fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
     val targetRotation = deviceRotation.toUiSurfaceRotation()
     useCaseGroup.useCases.forEach {
         when (it) {
@@ -751,9 +783,8 @@ private fun createImageUseCase(
     return builder.build()
 }
 
-context(CameraSessionContext)
 @InternalCameraApi
-fun CameraSessionContext.createVideoUseCase(
+fun createVideoUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
@@ -824,7 +855,22 @@ private fun createPreviewUseCase(
     )
 
     // set preview stabilization
-    when (stabilizationMode) {
+    val effectiveStabilizationMode = when (stabilizationMode) {
+        StabilizationMode.ON ->
+            if (cameraInfo.isPreviewStabilizationSupported) {
+                StabilizationMode.ON
+            } else {
+                StabilizationMode.OFF
+            }
+        StabilizationMode.OPTICAL ->
+            if (cameraInfo.isOpticalStabilizationSupported) {
+                StabilizationMode.OPTICAL
+            } else {
+                StabilizationMode.OFF
+            }
+        else -> stabilizationMode
+    }
+    when (effectiveStabilizationMode) {
         StabilizationMode.ON -> setPreviewStabilizationEnabled(true)
         StabilizationMode.OPTICAL -> setOpticalStabilizationModeEnabled(true)
         StabilizationMode.OFF -> {

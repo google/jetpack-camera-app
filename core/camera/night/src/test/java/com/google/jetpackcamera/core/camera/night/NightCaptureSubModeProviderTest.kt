@@ -19,8 +19,10 @@ import android.content.Context
 import android.os.Build
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
+import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
+import androidx.concurrent.futures.await
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
@@ -28,12 +30,18 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import java.lang.reflect.Proxy
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -105,21 +113,29 @@ class NightCaptureSubModeProviderTest {
     }
 
     @Test
-    fun featurePolicy_enforcesSdrPreservesImageFormatAndExcludesLowLightBoost() {
+    fun featurePolicy_enforcesSdrStabilizationOffPreservesImageFormatAndExcludesLowLightBoost() {
         assertThat(provider.featurePolicy.captureMode).isNull()
         assertThat(provider.featurePolicy.imageFormat).isNull()
+        assertThat(provider.featurePolicy.stabilizationMode).isEqualTo(
+            SettingConfig(
+                defaultValue = StabilizationMode.OFF,
+                visibility = OptionVisibility.Hidden
+            )
+        )
 
         val restrictedFromLlb = provider.featurePolicy.enforceRestrictions(
             CameraAppSettings(
                 captureMode = CaptureMode.IMAGE_ONLY,
                 dynamicRange = DynamicRange.HLG10,
                 imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
+                stabilizationMode = StabilizationMode.ON,
                 flashMode = FlashMode.LOW_LIGHT_BOOST
             )
         )
         assertThat(restrictedFromLlb.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
         assertThat(restrictedFromLlb.dynamicRange).isEqualTo(DynamicRange.SDR)
         assertThat(restrictedFromLlb.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+        assertThat(restrictedFromLlb.stabilizationMode).isEqualTo(StabilizationMode.OFF)
         assertThat(restrictedFromLlb.flashMode).isEqualTo(FlashMode.OFF)
 
         assertThat(
@@ -146,19 +162,20 @@ class NightCaptureSubModeProviderTest {
     }
 
     @Test
-    fun isSupportedAndSessionBinding_whenExtensionUnavailable_returnsFalseAndBaseSelector() =
-        runTest {
-            val cameraProvider = ProcessCameraProvider.awaitInstance(context)
-            val cameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
+    fun isSupportedAndSessionBinding_whenExtensionUnavailable_returnsFalseAndThrows() = runTest {
+        val cameraProvider = ProcessCameraProvider.awaitInstance(context)
+        val cameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
 
-            assertThat(provider.isSupported(context, cameraProvider, cameraInfo)).isFalse()
-            assertThat(
+        assertThat(provider.isSupported(context, cameraProvider, cameraInfo)).isFalse()
+        assertThrows(IllegalStateException::class.java) {
+            kotlinx.coroutines.runBlocking {
                 provider.sessionBinding.transformCameraSelector(
                     cameraProvider,
                     CameraSelector.DEFAULT_BACK_CAMERA
                 )
-            ).isSameInstanceAs(CameraSelector.DEFAULT_BACK_CAMERA)
+            }
         }
+    }
 
     @Test
     fun isSupportedAndSessionBinding_whenExtensionAvailable_returnsNightEnabledSelector() =
@@ -182,59 +199,105 @@ class NightCaptureSubModeProviderTest {
                     CameraSelector.DEFAULT_BACK_CAMERA
                 )
             ).isSameInstanceAs(nightSelector)
-            assertThat(
-                supportedProvider.sessionBinding.transformCameraSelector(
-                    cameraProvider,
-                    CameraSelector.DEFAULT_FRONT_CAMERA
-                )
-            ).isSameInstanceAs(CameraSelector.DEFAULT_FRONT_CAMERA)
+            assertThrows(IllegalStateException::class.java) {
+                kotlinx.coroutines.runBlocking {
+                    supportedProvider.sessionBinding.transformCameraSelector(
+                        cameraProvider,
+                        CameraSelector.DEFAULT_FRONT_CAMERA
+                    )
+                }
+            }
         }
 
     @Test
-    fun isSupportedAndSessionBinding_whenQueryThrowsException_fallsBackGracefully() = runTest {
-        val throwingProvider = NightCaptureSubModeProvider(
+    fun isSupportedAndSessionBinding_whenQueryThrows_isSupportedFalseAndBindingPropagates() =
+        runTest {
+            val throwingProvider = NightCaptureSubModeProvider(
+                applicationContext = context,
+                isNightAvailable = { _, _ -> throw IllegalStateException("Extension failure") },
+                enableNightSelector = { _, selector -> selector }
+            )
+            val cameraProvider = ProcessCameraProvider.awaitInstance(context)
+            val backCameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
+
+            assertThat(
+                throwingProvider.isSupported(context, cameraProvider, backCameraInfo)
+            ).isFalse()
+            assertThrows(IllegalStateException::class.java) {
+                kotlinx.coroutines.runBlocking {
+                    throwingProvider.sessionBinding.transformCameraSelector(
+                        cameraProvider,
+                        CameraSelector.DEFAULT_BACK_CAMERA
+                    )
+                }
+            }
+
+            val cancellingProvider = NightCaptureSubModeProvider(
+                applicationContext = context,
+                isNightAvailable = { _, _ ->
+                    throw kotlinx.coroutines.CancellationException("Cancelled")
+                },
+                enableNightSelector = { _, selector -> selector }
+            )
+            val isSupportedCancelled = try {
+                cancellingProvider.isSupported(context, cameraProvider, backCameraInfo)
+            } catch (_: kotlinx.coroutines.CancellationException) {
+                true
+            }
+            assertThat(isSupportedCancelled).isTrue()
+
+            val sessionBindingCancelled = try {
+                cancellingProvider.sessionBinding.transformCameraSelector(
+                    cameraProvider,
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                ) !== CameraSelector.DEFAULT_BACK_CAMERA
+            } catch (_: kotlinx.coroutines.CancellationException) {
+                true
+            }
+            assertThat(sessionBindingCancelled).isTrue()
+        }
+
+    @Test
+    fun getExtensionsManager_concurrentCalls_initializesManagerOnlyOnce() = runTest {
+        val factoryInvocations = AtomicInteger(0)
+        val nightSelector = CameraSelector.Builder().build()
+        val cachingProvider = NightCaptureSubModeProvider(
             applicationContext = context,
-            isNightAvailable = { _, _ -> throw IllegalStateException("Extension failure") },
-            enableNightSelector = { _, selector -> selector }
+            isNightAvailable = { _, _ -> true },
+            enableNightSelector = { _, _ -> nightSelector },
+            extensionsManagerFactory = { cameraProvider ->
+                factoryInvocations.incrementAndGet()
+                ExtensionsManager.getInstanceAsync(context, cameraProvider).await()
+            }
         )
         val cameraProvider = ProcessCameraProvider.awaitInstance(context)
         val backCameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)
 
-        assertThat(throwingProvider.isSupported(context, cameraProvider, backCameraInfo)).isFalse()
-        assertThat(
-            throwingProvider.sessionBinding.transformCameraSelector(
-                cameraProvider,
-                CameraSelector.DEFAULT_BACK_CAMERA
-            )
-        ).isSameInstanceAs(CameraSelector.DEFAULT_BACK_CAMERA)
-
-        val cancellingProvider = NightCaptureSubModeProvider(
-            applicationContext = context,
-            isNightAvailable = { _, _ ->
-                throw kotlinx.coroutines.CancellationException("Cancelled")
-            },
-            enableNightSelector = { _, selector -> selector }
+        val jobs = listOf(
+            async { cachingProvider.isSupported(context, cameraProvider, backCameraInfo) },
+            async { cachingProvider.isSupported(context, cameraProvider, backCameraInfo) },
+            async {
+                cachingProvider.sessionBinding.transformCameraSelector(
+                    cameraProvider,
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                )
+            }
         )
-        val isSupportedCancelled = try {
-            cancellingProvider.isSupported(context, cameraProvider, backCameraInfo)
-        } catch (_: kotlinx.coroutines.CancellationException) {
-            true
-        }
-        assertThat(isSupportedCancelled).isTrue()
+        jobs.awaitAll()
 
-        val sessionBindingCancelled = try {
-            cancellingProvider.sessionBinding.transformCameraSelector(
-                cameraProvider,
-                CameraSelector.DEFAULT_BACK_CAMERA
-            ) !== CameraSelector.DEFAULT_BACK_CAMERA
-        } catch (_: kotlinx.coroutines.CancellationException) {
-            true
-        }
-        assertThat(sessionBindingCancelled).isTrue()
+        assertThat(factoryInvocations.get()).isEqualTo(1)
     }
 
     private fun fakeCameraInfo(selector: CameraSelector): CameraInfo = Proxy.newProxyInstance(
         CameraInfo::class.java.classLoader,
         arrayOf(CameraInfo::class.java)
-    ) { _, _, _ -> selector } as CameraInfo
+    ) { proxy, method, args ->
+        when (method.name) {
+            "getCameraSelector" -> selector
+            "equals" -> proxy === args?.firstOrNull()
+            "hashCode" -> System.identityHashCode(proxy)
+            "toString" -> "FakeCameraInfo($selector)"
+            else -> throw UnsupportedOperationException("Unexpected call: ${method.name}")
+        }
+    } as CameraInfo
 }

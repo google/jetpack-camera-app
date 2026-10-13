@@ -50,20 +50,26 @@ class CameraXCameraSystemRepositoryTest {
         private val delegate: FakeCameraSystem = FakeCameraSystem()
     ) : CameraSystem by delegate {
         var initializedSettings: CameraAppSettings? = null
+        var initializedExternalCaptureMode: ExternalCaptureMode? = null
         var mockPropertiesJSON: String? = null
 
         override suspend fun initialize(
             cameraAppSettings: CameraAppSettings,
+            externalCaptureMode: ExternalCaptureMode,
             cameraPropertiesJSONCallback: (result: String) -> Unit
         ) {
-            delegate.initialize(cameraAppSettings, cameraPropertiesJSONCallback)
+            delegate.initialize(
+                cameraAppSettings,
+                externalCaptureMode,
+                cameraPropertiesJSONCallback
+            )
             delegate.setSystemConstraints(
                 CameraSystemConstraints(
-                    availableLenses = listOf(),
-                    concurrentCamerasSupported = false
+                    availableLenses = listOf()
                 )
             )
             initializedSettings = cameraAppSettings
+            initializedExternalCaptureMode = externalCaptureMode
             mockPropertiesJSON?.let(cameraPropertiesJSONCallback)
         }
     }
@@ -96,6 +102,8 @@ class CameraXCameraSystemRepositoryTest {
         assertThat(cameraSystem).isEqualTo(testCamera)
         assertThat(testCamera.initializedSettings).isNotNull()
         assertThat(testCamera.initializedSettings?.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
+        assertThat(testCamera.initializedExternalCaptureMode)
+            .isEqualTo(ExternalCaptureMode.ImageCapture)
         assertThat(testCamera.initializedSettings?.debugSettings?.isDebugModeEnabled).isTrue()
         assertThat(repository.cameraPropertiesJSON.value).isEqualTo("{\"test\": true}")
     }

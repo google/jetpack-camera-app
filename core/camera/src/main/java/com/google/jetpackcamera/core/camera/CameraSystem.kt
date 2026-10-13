@@ -25,6 +25,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
@@ -49,6 +50,7 @@ interface CameraSystem {
      */
     suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
+        externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     )
 

@@ -47,11 +47,13 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.TestPattern
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.junit.Rule
 import org.junit.Test
@@ -121,13 +123,10 @@ class ConcurrentCameraSessionTest {
     fun sessionBinding_whenNoConcurrentCamerasAvailable_reportsStreamConfigError(): Unit =
         runBlocking {
             val cameraProvider = ProcessCameraProvider.awaitInstance(context)
-            assume()
-                .withMessage("Device supports concurrent cameras, skip empty-pair error test.")
-                .that(cameraProvider.availableConcurrentCameraInfos)
-                .isEmpty()
-
             val sessionContext = createTestSessionContext(cameraProvider)
-            val provider = ConcurrentCameraSubModeProvider()
+            val provider = ConcurrentCameraSubModeProvider(
+                availableConcurrentCameraInfos = { emptyList() }
+            )
             val sessionJob = launch(Dispatchers.Main) {
                 provider.sessionBinding.runSession(sessionContext)
             }
@@ -140,25 +139,28 @@ class ConcurrentCameraSessionTest {
                 }
                 assertThat(errorState.isCameraRunning).isFalse()
             } finally {
-                sessionJob.cancel()
+                sessionJob.cancelAndJoin()
+                withContext(Dispatchers.Main) {
+                    cameraProvider.unbindAll()
+                }
             }
         }
 
     @Test
-    fun runConcurrentCameraSession_withCandidatePair_bindsOrReportsStreamConfigError(): Unit =
+    fun runConcurrentCameraSession_withDeviceConcurrentPair_bindsAndRequestsSurface(): Unit =
         runBlocking {
             val cameraProvider = ProcessCameraProvider.awaitInstance(context)
-            val firstCameraInfo = cameraProvider.availableCameraInfos.firstOrNull()
+            val hasConcurrentFrontAndBack =
+                cameraProvider.availableConcurrentCameraInfos.any { group ->
+                    group.map { it.appLensFacing }.toSet() ==
+                        setOf(LensFacing.FRONT, LensFacing.BACK)
+                }
             assume()
-                .withMessage("No cameras available on device, skip the test.")
-                .that(firstCameraInfo != null)
+                .withMessage("Device does not support concurrent front+back cameras, skip test.")
+                .that(hasConcurrentFrontAndBack)
                 .isTrue()
 
-            val oppositeCameraInfo = fakeOppositeLensCameraInfo(firstCameraInfo!!)
-            val sessionContext = createTestSessionContext(
-                cameraProvider,
-                primaryLensFacing = firstCameraInfo.appLensFacing
-            )
+            val sessionContext = createTestSessionContext(cameraProvider)
             val sessionJob = launch(Dispatchers.Main) {
                 with(sessionContext) {
                     runConcurrentCameraSession(
@@ -166,96 +168,146 @@ class ConcurrentCameraSessionTest {
                             subModeKey = ConcurrentCameraSubModeKey,
                             aspectRatio = AspectRatio.NINE_SIXTEEN,
                             captureMode = CaptureMode.VIDEO_ONLY
-                        ),
-                        cameraConstraints = null,
-                        availableConcurrentCameraInfos = listOf(
-                            listOf(firstCameraInfo, oppositeCameraInfo)
                         )
                     )
                 }
             }
 
             try {
-                if (cameraProvider.availableConcurrentCameraInfos.isEmpty()) {
-                    val errorState = withTimeout(5_000) {
-                        sessionContext.currentCameraState.first {
-                            it.cameraError == CameraError.StreamConfigError
-                        }
-                    }
-                    assertThat(errorState.isCameraRunning).isFalse()
-                } else {
-                    withTimeout(5_000) {
-                        sessionContext.surfaceRequests.first { it != null }
-                    }
+                withTimeout(5_000) {
+                    sessionContext.surfaceRequests.first { it != null }
                 }
             } finally {
-                sessionJob.cancel()
+                sessionJob.cancelAndJoin()
+                withContext(Dispatchers.Main) {
+                    cameraProvider.unbindAll()
+                }
             }
         }
 
     @SuppressLint("Recycle")
     @Test
-    fun runConcurrentCameraSession_whenBound_updatesCameraStateAndSurfaceRequest(): Unit =
-        runBlocking {
-            val cameraProvider = ProcessCameraProvider.awaitInstance(context)
-            val firstCameraInfo = cameraProvider.availableCameraInfos.firstOrNull()
-            assume()
-                .withMessage("No cameras available on device, skip the test.")
-                .that(firstCameraInfo != null)
-                .isTrue()
+    fun runConcurrentCameraSession_whenLensFlipped_updatesStateAndSurface(): Unit = runBlocking {
+        val cameraProvider = ProcessCameraProvider.awaitInstance(context)
+        val backCameraInfo = cameraProvider.availableCameraInfos.firstOrNull {
+            it.appLensFacing == LensFacing.BACK
+        }
+        val frontCameraInfo = cameraProvider.availableCameraInfos.firstOrNull {
+            it.appLensFacing == LensFacing.FRONT
+        }
+        assume()
+            .withMessage("Both FRONT and BACK cameras required on device, skip the test.")
+            .that(backCameraInfo != null && frontCameraInfo != null)
+            .isTrue()
 
-            val oppositeCameraInfo = fakeOppositeLensCameraInfo(firstCameraInfo!!)
-            val sessionContext = createTestSessionContext(
-                cameraProvider,
-                primaryLensFacing = firstCameraInfo.appLensFacing
+        val boundPrimaryLensFacings = mutableListOf<LensFacing>()
+        val transientSettingsFlow = MutableStateFlow<TransientSessionSettings?>(
+            TransientSessionSettings(
+                isAudioEnabled = true,
+                deviceRotation = DeviceRotation.Natural,
+                flashMode = FlashMode.OFF,
+                primaryLensFacing = LensFacing.BACK,
+                zoomRatios = emptyMap(),
+                testPattern = TestPattern.Off
             )
-            val sessionJob = launch(Dispatchers.Main) {
-                with(sessionContext) {
-                    runConcurrentCameraSession(
-                        sessionSettings = PerpetualSessionSettings.CustomSession(
-                            subModeKey = ConcurrentCameraSubModeKey,
-                            aspectRatio = AspectRatio.NINE_SIXTEEN,
-                            captureMode = CaptureMode.VIDEO_ONLY
-                        ),
-                        cameraConstraints = null,
-                        availableConcurrentCameraInfos = listOf(
-                            listOf(firstCameraInfo, oppositeCameraInfo)
-                        ),
-                        bindConcurrentCameras = { _, useCaseGroup, block ->
-                            cameraProvider.runWith(
-                                firstCameraInfo.cameraSelector,
-                                useCaseGroup
-                            ) { camera ->
-                                block(listOf(camera))
-                            }
+        )
+        val sessionContext = createTestSessionContext(
+            cameraProvider,
+            transientSettings = transientSettingsFlow
+        )
+        val sessionJob = launch(Dispatchers.Main) {
+            with(sessionContext) {
+                runConcurrentCameraSession(
+                    sessionSettings = PerpetualSessionSettings.CustomSession(
+                        subModeKey = ConcurrentCameraSubModeKey,
+                        aspectRatio = AspectRatio.NINE_SIXTEEN,
+                        captureMode = CaptureMode.VIDEO_ONLY
+                    ),
+                    availableConcurrentCameraInfos = listOf(
+                        listOf(backCameraInfo!!, frontCameraInfo!!)
+                    ),
+                    bindConcurrentCameras = { cameraConfigs, useCaseGroup, block ->
+                        val primarySelector = cameraConfigs[0].first
+                        val secondarySelector = cameraConfigs[1].first
+                        val secondaryInfo = secondarySelector
+                            .filter(listOf(backCameraInfo, frontCameraInfo))
+                            .first()
+                        cameraProvider.runWith(
+                            primarySelector,
+                            useCaseGroup
+                        ) { primaryCamera ->
+                            boundPrimaryLensFacings += primaryCamera.cameraInfo.appLensFacing
+                            block(
+                                listOf(
+                                    primaryCamera,
+                                    fakeOppositeLensCamera(primaryCamera, secondaryInfo)
+                                )
+                            )
                         }
-                    )
-                }
-            }
-
-            try {
-                val surfaceRequest = withTimeout(5_000) {
-                    sessionContext.surfaceRequests.first { it != null }!!
-                }
-                val surfaceTexture = SurfaceTexture(0).apply {
-                    setDefaultBufferSize(
-                        surfaceRequest.resolution.width,
-                        surfaceRequest.resolution.height
-                    )
-                }
-                val surface = Surface(surfaceTexture)
-                surfaceRequest.provideSurface(surface, Runnable::run) {
-                    surface.release()
-                    surfaceTexture.release()
-                }
-                val runningState = withTimeout(10_000) {
-                    sessionContext.currentCameraState.first { it.isCameraRunning }
-                }
-                assertThat(runningState.cameraError).isNull()
-            } finally {
-                sessionJob.cancel()
+                    }
+                )
             }
         }
+
+        try {
+            val initialSurfaceRequest = withTimeout(5_000) {
+                sessionContext.surfaceRequests.first { it != null }!!
+            }
+            provideSurfaceForTest(initialSurfaceRequest)
+            val runningState = withTimeout(10_000) {
+                sessionContext.currentCameraState.first { it.isCameraRunning }
+            }
+            assertThat(runningState.cameraError).isNull()
+            assertThat(boundPrimaryLensFacings).containsExactly(LensFacing.BACK)
+
+            // Flip primaryLensFacing mid-session and verify a new SurfaceRequest is emitted.
+            sessionContext.surfaceRequests.value = null
+            transientSettingsFlow.value = transientSettingsFlow.value?.copy(
+                primaryLensFacing = LensFacing.FRONT
+            )
+            val flippedSurfaceRequest = withTimeout(5_000) {
+                sessionContext.surfaceRequests.first {
+                    it != null && it !== initialSurfaceRequest
+                }!!
+            }
+            provideSurfaceForTest(flippedSurfaceRequest)
+            val flippedRunningState = withTimeout(10_000) {
+                sessionContext.currentCameraState.first { it.isCameraRunning }
+            }
+            assertThat(flippedRunningState.cameraError).isNull()
+            assertThat(boundPrimaryLensFacings)
+                .containsExactly(LensFacing.BACK, LensFacing.FRONT)
+                .inOrder()
+        } finally {
+            sessionJob.cancelAndJoin()
+            withContext(Dispatchers.Main) {
+                cameraProvider.unbindAll()
+            }
+        }
+    }
+
+    @SuppressLint("Recycle")
+    private fun provideSurfaceForTest(surfaceRequest: androidx.camera.core.SurfaceRequest) {
+        val surfaceTexture = SurfaceTexture(0).apply {
+            setDefaultBufferSize(
+                surfaceRequest.resolution.width,
+                surfaceRequest.resolution.height
+            )
+            detachFromGLContext()
+        }
+        val surface = Surface(surfaceTexture)
+        surfaceRequest.provideSurface(surface, Runnable::run) {
+            surface.release()
+            surfaceTexture.release()
+        }
+    }
+
+    private fun fakeOppositeLensCamera(
+        delegate: androidx.camera.core.Camera,
+        oppositeInfo: CameraInfo
+    ): androidx.camera.core.Camera = object : androidx.camera.core.Camera by delegate {
+        override fun getCameraInfo(): CameraInfo = oppositeInfo
+    }
 
     private fun fakeOppositeLensCameraInfo(delegate: CameraInfo): CameraInfo =
         object : CameraInfo by delegate {
@@ -269,7 +321,17 @@ class ConcurrentCameraSessionTest {
 
     private fun createTestSessionContext(
         cameraProvider: ProcessCameraProvider,
-        primaryLensFacing: LensFacing = LensFacing.BACK
+        primaryLensFacing: LensFacing = LensFacing.BACK,
+        transientSettings: MutableStateFlow<TransientSessionSettings?> = MutableStateFlow(
+            TransientSessionSettings(
+                isAudioEnabled = true,
+                deviceRotation = DeviceRotation.Natural,
+                flashMode = FlashMode.OFF,
+                primaryLensFacing = primaryLensFacing,
+                zoomRatios = emptyMap(),
+                testPattern = TestPattern.Off
+            )
+        )
     ): CameraSessionContext = CameraSessionContext(
         context = context,
         cameraProvider = cameraProvider,
@@ -280,15 +342,11 @@ class ConcurrentCameraSessionTest {
         videoCaptureControlEvents = Channel(Channel.UNLIMITED),
         currentCameraState = MutableStateFlow(CameraState()),
         surfaceRequests = MutableStateFlow(null),
-        transientSettings = MutableStateFlow(
-            TransientSessionSettings(
-                isAudioEnabled = true,
-                deviceRotation = DeviceRotation.Natural,
-                flashMode = FlashMode.OFF,
-                primaryLensFacing = primaryLensFacing,
-                zoomRatios = emptyMap(),
-                testPattern = TestPattern.Off
-            )
+        transientSettings = transientSettings,
+        sessionSettings = PerpetualSessionSettings.CustomSession(
+            subModeKey = ConcurrentCameraSubModeKey,
+            aspectRatio = AspectRatio.NINE_SIXTEEN,
+            captureMode = CaptureMode.VIDEO_ONLY
         )
     )
 }
