@@ -404,7 +404,10 @@ class CameraXCameraSystemTest {
             ) + extraCaptureSubModeProviders,
         defaultCaptureSubModes = defaultCaptureSubModes
     ).apply {
-        initialize(appSettings.applyExternalCaptureMode(externalCaptureMode)) {}
+        initialize(
+            appSettings.applyExternalCaptureMode(externalCaptureMode),
+            externalCaptureMode
+        ) {}
         providePreviewSurface()
     }
 
@@ -1415,6 +1418,87 @@ class CameraXCameraSystemTest {
             assertThat(cameraSystem.getCurrentSettings().value!!.imageFormat)
                 .isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
         }
+
+    @Test
+    fun setCaptureSubMode_whenIncompatibleWithExternalCaptureMode_remainsDefault(): Unit =
+        runBlocking {
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY
+                ),
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    featurePolicy = CameraFeaturePolicy(),
+                    isExternalCaptureModeCompatible = { it == ExternalCaptureMode.Standard }
+                ),
+                externalCaptureMode = ExternalCaptureMode.ImageCapture
+            )
+
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+            val settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+        }
+
+    @Test
+    fun runCamera_whenSingleCameraSubModeSelectorThrows_fallsBackAndRevertsSubMode(): Unit =
+        runBlocking {
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    aspectRatio = AspectRatio.THREE_FOUR
+                ),
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    featurePolicy = CameraFeaturePolicy(
+                        aspectRatio = SettingConfig(
+                            AspectRatio.NINE_SIXTEEN,
+                            OptionVisibility.Hidden
+                        )
+                    ),
+                    sessionBinding = CameraSessionBinding.SingleCamera { _, _ ->
+                        throw IllegalArgumentException("Extension unavailable on this device")
+                    }
+                )
+            )
+            cameraSystem.startCameraAndWaitUntilRunning()
+
+            val subModeStateChannel = cameraSystem.getCurrentCameraState()
+                .map { it.captureSubModeState }
+                .produceIn(this)
+
+            // Act: activate the failing sub-mode.
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+            // Assert: CaptureSubModeState.Error is emitted for FAKE_CAPTURE_SUB_MODE_ID.
+            val errorState = withTimeoutOrNull(GENERAL_TIMEOUT_MS) {
+                var found: CaptureSubModeState.Error? = null
+                for (state in subModeStateChannel) {
+                    if (state is CaptureSubModeState.Error) {
+                        found = state
+                        break
+                    }
+                }
+                found
+            }
+            assertThat(errorState).isNotNull()
+            assertThat(errorState?.subModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+
+            // Assert: CameraXCameraSystem reverts captureSubModeId to DEFAULT and restores 3:4.
+            val revertedSettings = withTimeoutOrNull(GENERAL_TIMEOUT_MS) {
+                cameraSystem.getCurrentSettings().filterNotNull().first {
+                    it.captureSubModeId == CaptureSubModeId.DEFAULT
+                }
+            }
+            assertThat(revertedSettings).isNotNull()
+            assertThat(revertedSettings?.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+            assertThat(revertedSettings?.captureSubModeOverrides).isNull()
+            val cameraRunningAfterRevert = withTimeoutOrNull(CAMERA_START_TIMEOUT_MS) {
+                cameraSystem.getCurrentCameraState().first { it.isCameraRunning }
+            }
+            assertThat(cameraRunningAfterRevert).isNotNull()
+
+            subModeStateChannel.cancel()
+        }
 }
 
 object FakeImagePostProcessorFeatureKey : ImagePostProcessorFeatureKey
@@ -1432,6 +1516,7 @@ private class FakeCaptureSubModeProvider(
     subModeId: CaptureSubModeId = FAKE_CAPTURE_SUB_MODE_ID,
     private val supportedLenses: Set<LensFacing> = setOf(LensFacing.FRONT, LensFacing.BACK),
     private val isCompatiblePredicate: (CameraAppSettings) -> Boolean = { true },
+    private val isExternalCaptureModeCompatible: (ExternalCaptureMode) -> Boolean = { true },
     override val sessionBinding: CameraSessionBinding =
         CameraSessionBinding.SingleCamera { _, baseSelector -> baseSelector }
 ) : CaptureSubModeProvider {
@@ -1452,7 +1537,8 @@ private class FakeCaptureSubModeProvider(
         systemConstraints: CameraSystemConstraints,
         externalCaptureMode: ExternalCaptureMode
     ): Boolean = super.isCompatibleWith(settings, systemConstraints, externalCaptureMode) &&
-        isCompatiblePredicate(settings)
+        isCompatiblePredicate(settings) &&
+        isExternalCaptureModeCompatible(externalCaptureMode)
 }
 
 class FakeImagePostProcessor(val shouldError: Boolean = false) : ImagePostProcessor {
