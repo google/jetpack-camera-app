@@ -24,6 +24,7 @@ import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.isGranted
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -42,9 +43,13 @@ import com.google.jetpackcamera.settings.DisabledRationale.FpsUnsupportedRationa
 import com.google.jetpackcamera.settings.DisabledRationale.StabilizationUnsupportedRationale
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.OptionVisibility
+import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.settings.model.forDevice
+import com.google.jetpackcamera.settings.model.permits
 import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_STREAM_CONFIG_TAG
 import com.google.jetpackcamera.settings.ui.FIXED_FPS_ACTIVE_TAG
 import com.google.jetpackcamera.settings.ui.FLASH_LLB_ACTIVE_TAG
@@ -78,24 +83,30 @@ class SettingsViewModel @Inject constructor(
         combine(
             settingsRepository.defaultCameraAppSettings,
             constraintsRepository.systemConstraints.filterNotNull(),
-            grantedPermissions
-        ) { updatedSettings, constraints, grantedPerms ->
+            grantedPermissions,
+            constraintsRepository.activeCaptureSubModeId
+        ) { updatedSettings, constraints, grantedPerms, activeCaptureSubModeId ->
             updatedSettings.videoQuality
+            val activeSubMode = constraints.activeCaptureSubMode(activeCaptureSubModeId)
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
-                cameraEffectUiState = getCameraEffectUiState(updatedSettings, constraints),
+                cameraEffectUiState = getCameraEffectUiState(updatedSettings, constraints)
+                    .restrictedBy(activeSubMode),
                 maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
                     updatedSettings.maxVideoDurationMillis
                 ),
-                flashUiState = getFlashUiState(updatedSettings, constraints),
+                flashUiState = getFlashUiState(updatedSettings, constraints)
+                    .restrictedBy(activeSubMode),
                 darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 audioUiState = getAudioUiState(
                     updatedSettings.audioEnabled,
                     grantedPerms.contains(Manifest.permission.RECORD_AUDIO)
                 ),
-                fpsUiState = getFpsUiState(constraints, updatedSettings),
+                fpsUiState = getFpsUiState(constraints, updatedSettings)
+                    .restrictedBy(activeSubMode),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
+                    .restrictedBy(activeSubMode),
                 videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings),
                 lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
                     updatedSettings.lowLightBoostPriority
@@ -242,6 +253,137 @@ class SettingsViewModel @Inject constructor(
             currentCameraEffect = cameraAppSettings.selectedCameraEffect,
             supportedEffects = supportedEffects
         )
+    }
+
+// ////////////////////////////////////////////////////////////
+//
+// Restrictions from the active capture sub-mode
+//
+// ////////////////////////////////////////////////////////////
+
+    /**
+     * The policy of the capture sub-mode that the camera is running, and the sub-mode's label for
+     * the disabled rationale text.
+     */
+    private data class ActiveCaptureSubMode(
+        val policy: CameraFeaturePolicy,
+        val labelResId: Int
+    ) {
+        fun rationale(affectedSettingNameResId: Int): DisabledRationale =
+            DisabledRationale.CaptureSubModeActiveRationale(
+                affectedSettingNameResId = affectedSettingNameResId,
+                captureSubModeLabelResId = labelResId
+            )
+    }
+
+    private fun CameraSystemConstraints.activeCaptureSubMode(
+        activeCaptureSubModeId: CaptureSubModeId
+    ): ActiveCaptureSubMode? {
+        if (activeCaptureSubModeId == CaptureSubModeId.DEFAULT) return null
+        val policy = captureSubModePolicies[activeCaptureSubModeId] ?: return null
+        val labelResId = captureSubModeDescriptors[activeCaptureSubModeId]?.labelResId
+            ?: return null
+        return ActiveCaptureSubMode(policy, labelResId)
+    }
+
+    /**
+     * Disables this option if it is selectable but [config] does not permit [option]. Options that
+     * are already disabled keep their existing rationale (e.g. unsupported by the device).
+     */
+    private fun <T : Any> SingleSelectableState.restrictedBy(
+        config: SettingConfig<T>,
+        option: T,
+        rationale: () -> DisabledRationale
+    ): SingleSelectableState =
+        if (this is SingleSelectableState.Selectable && !config.permits(option)) {
+            SingleSelectableState.Disabled(rationale())
+        } else {
+            this
+        }
+
+    private fun FpsUiState.restrictedBy(activeSubMode: ActiveCaptureSubMode?): FpsUiState {
+        val config = activeSubMode?.policy?.targetFrameRate ?: return this
+        val rationale = { activeSubMode.rationale(R.string.fps_rationale_prefix) }
+        if (config.visibility is OptionVisibility.Hidden) {
+            return FpsUiState.Disabled(rationale())
+        }
+        return when (this) {
+            is FpsUiState.Disabled -> this
+            is FpsUiState.Enabled -> copy(
+                fpsAutoState = fpsAutoState.restrictedBy(config, TARGET_FPS_AUTO, rationale),
+                fpsFifteenState = fpsFifteenState.restrictedBy(config, TARGET_FPS_15, rationale),
+                fpsThirtyState = fpsThirtyState.restrictedBy(config, TARGET_FPS_30, rationale),
+                fpsSixtyState = fpsSixtyState.restrictedBy(config, TARGET_FPS_60, rationale)
+            )
+        }
+    }
+
+    private fun StabilizationUiState.restrictedBy(
+        activeSubMode: ActiveCaptureSubMode?
+    ): StabilizationUiState {
+        val config = activeSubMode?.policy?.stabilizationMode ?: return this
+        val rationale = { activeSubMode.rationale(R.string.stabilization_rationale_prefix) }
+        if (config.visibility is OptionVisibility.Hidden) {
+            return StabilizationUiState.Disabled(rationale())
+        }
+        return when (this) {
+            is StabilizationUiState.Disabled -> this
+            is StabilizationUiState.Enabled -> copy(
+                stabilizationAutoState = stabilizationAutoState
+                    .restrictedBy(config, StabilizationMode.AUTO, rationale),
+                stabilizationOnState = stabilizationOnState
+                    .restrictedBy(config, StabilizationMode.ON, rationale),
+                stabilizationHighQualityState = stabilizationHighQualityState
+                    .restrictedBy(config, StabilizationMode.HIGH_QUALITY, rationale),
+                stabilizationOpticalState = stabilizationOpticalState
+                    .restrictedBy(config, StabilizationMode.OPTICAL, rationale)
+            )
+        }
+    }
+
+    private fun FlashUiState.restrictedBy(activeSubMode: ActiveCaptureSubMode?): FlashUiState {
+        val config = activeSubMode?.policy?.flashMode ?: return this
+        if (config.visibility is OptionVisibility.Hidden) {
+            return FlashUiState.Disabled(activeSubMode.rationale(R.string.flash_rationale_prefix))
+        }
+        return when (this) {
+            is FlashUiState.Disabled -> this
+            is FlashUiState.Enabled -> copy(
+                onSelectableState = onSelectableState.restrictedBy(config, FlashMode.ON) {
+                    activeSubMode.rationale(R.string.flash_on_rationale_prefix)
+                },
+                autoSelectableState = autoSelectableState.restrictedBy(config, FlashMode.AUTO) {
+                    activeSubMode.rationale(R.string.flash_auto_rationale_prefix)
+                },
+                lowLightSelectableState = lowLightSelectableState
+                    .restrictedBy(config, FlashMode.LOW_LIGHT_BOOST) {
+                        activeSubMode.rationale(R.string.flash_llb_rationale_prefix)
+                    }
+            )
+        }
+    }
+
+    private fun CameraEffectUiState.restrictedBy(
+        activeSubMode: ActiveCaptureSubMode?
+    ): CameraEffectUiState {
+        val config = activeSubMode?.policy?.cameraEffect ?: return this
+        val rationale = activeSubMode.rationale(R.string.stream_config_rationale_prefix)
+        if (config.visibility is OptionVisibility.Hidden) {
+            return CameraEffectUiState.Disabled(rationale)
+        }
+        return when (this) {
+            is CameraEffectUiState.Disabled -> this
+            is CameraEffectUiState.Enabled -> {
+                val permittedEffects = supportedEffects.filterTo(mutableSetOf()) {
+                    config.permits(it)
+                }
+                if (permittedEffects.isEmpty()) {
+                    CameraEffectUiState.Disabled(rationale)
+                } else {
+                    copy(supportedEffects = permittedEffects)
+                }
+            }
+        }
     }
 
     private fun getAudioUiState(isAudioEnabled: Boolean, permissionGranted: Boolean): AudioUiState =

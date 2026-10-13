@@ -17,7 +17,6 @@ package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
@@ -33,9 +32,9 @@ import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSet
  *
  * Fields that can be configured through
  * [com.google.jetpackcamera.settings.model.CameraFeaturePolicy] (flash mode, aspect ratio, dynamic
- * range, image format, stabilization mode, and target frame rate) are resolved from
- * [baselineSettings] when the stored value is unspecified, so that stored user preferences take
- * precedence over baseline defaults.
+ * range, image format, stabilization mode, target frame rate, and camera effect) are resolved
+ * from [baselineSettings] when the stored value is unspecified, so that stored user preferences
+ * take precedence over baseline defaults.
  *
  * @param defaultCaptureModeOverride The [CaptureMode] reported by the returned settings.
  * @param baselineSettings The settings used for policy-configurable fields that have no stored
@@ -48,7 +47,7 @@ fun CameraAppSettingsProto.toModel(
     return CameraAppSettings(
         captureMode = defaultCaptureModeOverride,
         selectedCameraEffect = if (this.selectedCameraEffect.isEmpty()) {
-            NONE_EFFECT_ID
+            baselineSettings.selectedCameraEffect
         } else {
             CameraEffectId(this.selectedCameraEffect)
         },

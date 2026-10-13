@@ -17,6 +17,7 @@ package com.google.jetpackcamera.settings.model
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.CaptureSubModeId
@@ -24,6 +25,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_60
@@ -127,6 +129,19 @@ class PolicyOverridesTest {
         assertThat(restored.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
         assertThat(restored.flashMode).isEqualTo(FlashMode.ON)
         assertThat(restored.dynamicRange).isEqualTo(DynamicRange.HLG10)
+    }
+
+    @Test
+    fun restore_returnsCameraEffectToItsPreviousValue() {
+        val effect = CameraEffectId("single_stream")
+        val policy = CameraFeaturePolicy(
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+        )
+        val settings = userSettings.copy(selectedCameraEffect = effect)
+        val (enforced, overrides) = enforce(policy, settings)
+        assertThat(enforced.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+
+        assertThat(overrides.restore(enforced).selectedCameraEffect).isEqualTo(effect)
     }
 
     @Test

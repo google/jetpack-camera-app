@@ -390,6 +390,27 @@ class ProtoDataStoreSettingsDataSourceTest {
     }
 
     @Test
+    fun cameraFeaturePolicyCameraEffectDefault_appliesUntilUserSelectsEffect() = runTest {
+        val policyEffect = CameraEffectId("policy_effect")
+        val policy = CameraFeaturePolicy(cameraEffect = SettingConfig(defaultValue = policyEffect))
+        val policyRepository = ProtoDataStoreSettingsDataSource(
+            jcaSettings = testDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD,
+            cameraFeaturePolicy = policy
+        )
+
+        assertThat(policyRepository.getCurrentDefaultCameraAppSettings().selectedCameraEffect)
+            .isEqualTo(policyEffect)
+
+        // An explicit selection, including no effect, takes precedence over the policy default.
+        repository.updateSelectedCameraEffect(NONE_EFFECT_ID)
+        advanceUntilIdle()
+
+        assertThat(policyRepository.getCurrentDefaultCameraAppSettings().selectedCameraEffect)
+            .isEqualTo(NONE_EFFECT_ID)
+    }
+
+    @Test
     fun corrupted_proto_file_falls_back_to_default_settings() = runTest {
         testFile.writeBytes(byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()))
 

@@ -20,6 +20,7 @@ import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
@@ -32,6 +33,7 @@ import javax.inject.Provider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -125,6 +127,28 @@ class CameraXCameraSystemRepositoryTest {
         val constraints = repository.systemConstraints.filterNotNull().first()
         assertThat(testCamera.initializedSettings).isNotNull()
         assertThat(constraints).isEqualTo(testCamera.getSystemConstraints().value)
+    }
+
+    @Test
+    fun activeCaptureSubModeId_mirrorsCameraSystemSettings() = testScope.runTest {
+        val testCamera = TestCameraSystem()
+        // The shared state flow runs until its scope is cancelled, so use the background scope.
+        val repository = CameraXCameraSystemRepository(
+            cameraXCameraSystemProvider = Provider { testCamera },
+            settingsRepository = FakeSettingsRepository(),
+            launchConfig = CameraLaunchConfig(),
+            scope = backgroundScope
+        )
+        backgroundScope.launch { repository.activeCaptureSubModeId.collect {} }
+        val subModeId = CaptureSubModeId("test_sub_mode")
+
+        assertThat(repository.activeCaptureSubModeId.value).isEqualTo(CaptureSubModeId.DEFAULT)
+
+        repository.getCameraSystem().setCaptureSubMode(subModeId)
+        assertThat(repository.activeCaptureSubModeId.value).isEqualTo(subModeId)
+
+        repository.getCameraSystem().setCaptureSubMode(CaptureSubModeId.DEFAULT)
+        assertThat(repository.activeCaptureSubModeId.value).isEqualTo(CaptureSubModeId.DEFAULT)
     }
 
     @Test

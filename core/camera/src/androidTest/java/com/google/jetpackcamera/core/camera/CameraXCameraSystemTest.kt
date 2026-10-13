@@ -57,6 +57,7 @@ import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
 import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.CaptureSubModeId
@@ -67,6 +68,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
@@ -879,6 +881,48 @@ class CameraXCameraSystemTest {
                 StabilizationMode.AUTO
             }
         assertThat(settings.stabilizationMode).isEqualTo(expectedRestoredStabilization)
+    }
+
+    @Test
+    fun setCaptureSubMode_toDefault_restoresTargetFrameRateAndCameraEffect(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the target frame rate and camera effect.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden),
+                    cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        val lensFacing = cameraSystem.getCurrentSettings().value!!.cameraLensFacing
+        val fixedFrameRate = cameraSystem.getSystemConstraints().value!!
+            .perLensConstraints[lensFacing]!!
+            .supportedFixedFrameRates
+            .firstOrNull()
+        assume().withMessage("No fixed frame rate supported on $lensFacing, skip the test.")
+            .that(fixedFrameRate)
+            .isNotNull()
+        val cameraEffect = CameraEffectId("test_effect")
+        cameraSystem.setTargetFrameRate(fixedFrameRate!!)
+        cameraSystem.setCameraEffect(cameraEffect)
+
+        // Act. Enter the sub-mode -> its policy values are applied.
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Assert.
+        var settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
+        assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+
+        // Act. Leave the sub-mode -> the values from before it are restored.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert.
+        settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.targetFrameRate).isEqualTo(fixedFrameRate)
+        assertThat(settings.selectedCameraEffect).isEqualTo(cameraEffect)
     }
 
     @Test

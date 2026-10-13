@@ -28,14 +28,23 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
 import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeDescriptor
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.OptionVisibility
+import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
@@ -92,6 +101,54 @@ private val LLB_SUPPORTED_CONSTRAINTS = TYPICAL_SYSTEM_CONSTRAINTS.copy(
         }
     }
 )
+
+private val TEST_SUB_MODE_ID = CaptureSubModeId("test_sub_mode")
+private const val TEST_SUB_MODE_LABEL_RES_ID = 42
+private val TEST_EFFECT_ID = CameraEffectId("test_effect")
+
+/**
+ * Constraints that support Low Light Boost, stabilization, and [TEST_EFFECT_ID], with a registered
+ * capture sub-mode whose policy is [policy].
+ */
+private fun constraintsWithSubModePolicy(policy: CameraFeaturePolicy): CameraSystemConstraints =
+    TYPICAL_SYSTEM_CONSTRAINTS.copy(
+        perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.mapValues {
+            it.value.copy(
+                supportedFlashModes = setOf(
+                    FlashMode.OFF,
+                    FlashMode.ON,
+                    FlashMode.AUTO,
+                    FlashMode.LOW_LIGHT_BOOST
+                ),
+                supportedStabilizationModes = setOf(StabilizationMode.OFF, StabilizationMode.ON),
+                supportedEffects = setOf(TEST_EFFECT_ID)
+            )
+        },
+        captureSubModeDescriptors = mapOf(
+            TEST_SUB_MODE_ID to CaptureSubModeDescriptor(
+                id = TEST_SUB_MODE_ID,
+                parentCaptureMode = CaptureMode.VIDEO_ONLY,
+                labelResId = TEST_SUB_MODE_LABEL_RES_ID
+            )
+        ),
+        captureSubModePolicies = mapOf(TEST_SUB_MODE_ID to policy)
+    )
+
+private val HIDING_SUB_MODE_POLICY = CameraFeaturePolicy(
+    flashMode = SettingConfig(
+        defaultValue = FlashMode.OFF,
+        visibility = OptionVisibility.from(FlashMode.OFF, FlashMode.ON, FlashMode.AUTO)
+    ),
+    stabilizationMode = SettingConfig(StabilizationMode.OFF, OptionVisibility.Hidden),
+    targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden),
+    cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+)
+
+private fun subModeRationale(affectedSettingNameResId: Int) =
+    DisabledRationale.CaptureSubModeActiveRationale(
+        affectedSettingNameResId = affectedSettingNameResId,
+        captureSubModeLabelResId = TEST_SUB_MODE_LABEL_RES_ID
+    )
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -269,7 +326,9 @@ internal class CameraAppSettingsViewModelTest {
 
     private fun createViewModelWithConstraints(
         systemConstraints: CameraSystemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-        defaultCaptureMode: CaptureMode = CaptureMode.VIDEO_ONLY
+        defaultCaptureMode: CaptureMode = CaptureMode.VIDEO_ONLY,
+        constraintsRepository: FakeConstraintsRepository =
+            FakeConstraintsRepository(systemConstraints)
     ): SettingsViewModel {
         val settingsDataSource = PrefsDataStoreSettingsDataSource(
             dataStore = testDataStore,
@@ -278,7 +337,6 @@ internal class CameraAppSettingsViewModelTest {
         val settingsRepository = LocalSettingsRepository(
             settingsDataSource = settingsDataSource
         )
-        val constraintsRepository = FakeConstraintsRepository(systemConstraints)
         return SettingsViewModel(settingsRepository, constraintsRepository).apply {
             setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
         }
@@ -559,6 +617,121 @@ internal class CameraAppSettingsViewModelTest {
         assertThat(disabledState.disabledRationale)
             .isInstanceOf(DisabledRationale.ConcurrentCameraActiveRationale::class.java)
     }
+
+    /**
+     * Verifies that while a capture sub-mode is active, settings that its policy hides are
+     * disabled, and options that its policy excludes are disabled, with a rationale naming the
+     * sub-mode.
+     */
+    @Test
+    fun settings_whenCaptureSubModeActive_disableSettingsRestrictedByItsPolicy() =
+        runTest(StandardTestDispatcher()) {
+            val customViewModel = createViewModelWithConstraints(
+                constraintsRepository = FakeConstraintsRepository(
+                    initialConstraints = constraintsWithSubModePolicy(HIDING_SUB_MODE_POLICY),
+                    initialActiveCaptureSubModeId = TEST_SUB_MODE_ID
+                )
+            )
+            advanceUntilIdle()
+
+            val enabledState = assertIsEnabled(
+                customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            )
+
+            assertThat(enabledState.fpsUiState)
+                .isEqualTo(FpsUiState.Disabled(subModeRationale(R.string.fps_rationale_prefix)))
+            assertThat(enabledState.stabilizationUiState).isEqualTo(
+                StabilizationUiState.Disabled(
+                    subModeRationale(R.string.stabilization_rationale_prefix)
+                )
+            )
+            assertThat(enabledState.cameraEffectUiState).isEqualTo(
+                CameraEffectUiState.Disabled(
+                    subModeRationale(R.string.stream_config_rationale_prefix)
+                )
+            )
+            val flashState = enabledState.flashUiState as FlashUiState.Enabled
+            assertThat(flashState.onSelectableState).isEqualTo(SingleSelectableState.Selectable)
+            assertThat(flashState.autoSelectableState).isEqualTo(SingleSelectableState.Selectable)
+            assertThat(flashState.lowLightSelectableState).isEqualTo(
+                SingleSelectableState.Disabled(
+                    subModeRationale(R.string.flash_llb_rationale_prefix)
+                )
+            )
+        }
+
+    /**
+     * Verifies that an [OptionVisibility.Only] restriction disables only the excluded options,
+     * and that options already disabled for another reason keep that reason.
+     */
+    @Test
+    fun fps_whenCaptureSubModeAllowsOnlySomeOptions_disablesExcludedOptions() =
+        runTest(StandardTestDispatcher()) {
+            val policy = CameraFeaturePolicy(
+                targetFrameRate = SettingConfig(
+                    defaultValue = TARGET_FPS_AUTO,
+                    visibility = OptionVisibility.Only(TARGET_FPS_AUTO, TARGET_FPS_30)
+                )
+            )
+            val customViewModel = createViewModelWithConstraints(
+                constraintsRepository = FakeConstraintsRepository(
+                    initialConstraints = constraintsWithSubModePolicy(policy),
+                    initialActiveCaptureSubModeId = TEST_SUB_MODE_ID
+                )
+            )
+            advanceUntilIdle()
+
+            val fpsState = assertIsEnabled(
+                customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            ).fpsUiState as FpsUiState.Enabled
+
+            assertThat(fpsState.fpsAutoState).isEqualTo(SingleSelectableState.Selectable)
+            assertThat(fpsState.fpsThirtyState).isEqualTo(SingleSelectableState.Selectable)
+            assertThat(fpsState.fpsFifteenState).isEqualTo(
+                SingleSelectableState.Disabled(subModeRationale(R.string.fps_rationale_prefix))
+            )
+            // 60 fps is unsupported by the typical constraints, which stays the reason.
+            val sixtyState = fpsState.fpsSixtyState as SingleSelectableState.Disabled
+            assertThat(sixtyState.disabledRationale)
+                .isNotInstanceOf(DisabledRationale.CaptureSubModeActiveRationale::class.java)
+        }
+
+    /**
+     * Verifies that a registered sub-mode's policy only applies while that sub-mode is active.
+     */
+    @Test
+    fun settings_whenActiveCaptureSubModeEnds_restrictionsAreRemoved() =
+        runTest(StandardTestDispatcher()) {
+            val constraintsRepository = FakeConstraintsRepository(
+                initialConstraints = constraintsWithSubModePolicy(HIDING_SUB_MODE_POLICY),
+                initialActiveCaptureSubModeId = TEST_SUB_MODE_ID
+            )
+            val customViewModel = createViewModelWithConstraints(
+                constraintsRepository = constraintsRepository
+            )
+            advanceUntilIdle()
+            assertThat(
+                assertIsEnabled(
+                    customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+                ).fpsUiState
+            ).isInstanceOf(FpsUiState.Disabled::class.java)
+
+            constraintsRepository.setActiveCaptureSubModeId(CaptureSubModeId.DEFAULT)
+            advanceUntilIdle()
+
+            val enabledState = assertIsEnabled(
+                customViewModel.settingsUiState.first {
+                    it is SettingsUiState.Enabled && it.fpsUiState is FpsUiState.Enabled
+                }
+            )
+            assertThat(enabledState.stabilizationUiState)
+                .isInstanceOf(StabilizationUiState.Enabled::class.java)
+            assertThat(enabledState.cameraEffectUiState)
+                .isInstanceOf(CameraEffectUiState.Enabled::class.java)
+            assertThat(
+                (enabledState.flashUiState as FlashUiState.Enabled).lowLightSelectableState
+            ).isEqualTo(SingleSelectableState.Selectable)
+        }
 
     @Test
     fun cameraEffectDisabled_whenUltraHdrEnabled() = runTest(StandardTestDispatcher()) {
