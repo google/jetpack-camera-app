@@ -152,6 +152,26 @@ class CameraXCameraSystemRepositoryTest {
     }
 
     @Test
+    fun activeCaptureSubModeId_isCurrentWithoutCollector() = testScope.runTest {
+        val testCamera = TestCameraSystem()
+        val subModeId = CaptureSubModeId("test_sub_mode")
+        testCamera.setCaptureSubMode(subModeId)
+        // The shared state flow runs until its scope is cancelled, so use the background scope.
+        val repository = CameraXCameraSystemRepository(
+            cameraXCameraSystemProvider = Provider { testCamera },
+            settingsRepository = FakeSettingsRepository(),
+            launchConfig = CameraLaunchConfig(),
+            scope = backgroundScope
+        )
+
+        // A late reader sees the active sub-mode, not a default.
+        assertThat(repository.activeCaptureSubModeId.value).isEqualTo(subModeId)
+
+        testCamera.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+        assertThat(repository.activeCaptureSubModeId.value).isEqualTo(CaptureSubModeId.DEFAULT)
+    }
+
+    @Test
     fun getInitialDefaultCameraAppSettings_returnsDefaultSettings() = testScope.runTest {
         val testCamera = TestCameraSystem()
         val settingsRepository = FakeSettingsRepository()

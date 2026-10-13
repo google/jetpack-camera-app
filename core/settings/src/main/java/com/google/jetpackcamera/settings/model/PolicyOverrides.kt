@@ -93,6 +93,42 @@ data class PolicyOverrides private constructor(
         selectedCameraEffect = selectedCameraEffect.restore(settings.selectedCameraEffect)
     )
 
+    /**
+     * Returns a copy in which [change] is applied to the values to restore.
+     *
+     * Call this when the user changes a setting while the policy applies, so that the user's
+     * choice, rather than the value from before the policy was enforced, is what returns when the
+     * policy no longer applies. This holds whether or not the policy permits the choice.
+     *
+     * @param change Applies the user's change to settings that hold the values to restore, for
+     *   example `{ it.copy(flashMode = FlashMode.OFF) }`. Changes to settings that are not
+     *   restored are ignored.
+     */
+    fun withRequestedChange(change: (CameraAppSettings) -> CameraAppSettings): PolicyOverrides {
+        val requested = change(
+            DEFAULT_CAMERA_APP_SETTINGS.copy(
+                aspectRatio = aspectRatio.before,
+                flashMode = flashMode.before,
+                imageFormat = imageFormat.before,
+                dynamicRange = dynamicRange.before,
+                stabilizationMode = stabilizationMode.before,
+                targetFrameRate = targetFrameRate.before,
+                selectedCameraEffect = selectedCameraEffect.before
+            )
+        )
+        return copy(
+            aspectRatio = aspectRatio.copy(before = requested.aspectRatio),
+            flashMode = flashMode.copy(before = requested.flashMode),
+            imageFormat = imageFormat.copy(before = requested.imageFormat),
+            dynamicRange = dynamicRange.copy(before = requested.dynamicRange),
+            stabilizationMode = stabilizationMode.copy(before = requested.stabilizationMode),
+            targetFrameRate = targetFrameRate.copy(before = requested.targetFrameRate),
+            selectedCameraEffect = selectedCameraEffect.copy(
+                before = requested.selectedCameraEffect
+            )
+        )
+    }
+
     /** A setting's value before enforcement, and the value that the policy set. */
     private data class OverriddenValue<T>(val before: T, val enforced: T) {
         fun restore(current: T): T = if (current == enforced) before else current

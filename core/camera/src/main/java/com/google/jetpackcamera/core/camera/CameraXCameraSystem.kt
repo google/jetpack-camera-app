@@ -1263,14 +1263,23 @@ class CameraXCameraSystem(
             ).tryApplyImageFormatConstraints()
         }
 
-        val enforced = resolvedProvider.featurePolicy.enforceRestrictions(settings)
+        val policy = resolvedProvider.featurePolicy
+        val enforced = policy.enforceRestrictions(settings)
             .copy(activeCaptureSubModeId = resolvedSubModeId)
             .tryApplyDynamicRangeConstraints()
             .tryApplyImageFormatConstraints()
             .tryApplyFlashModeConstraints()
             .tryApplyVideoQualityConstraints()
-            .tryApplyFrameRateConstraints()
-            .tryApplyStabilizationConstraints()
+            // Frame rate and stabilization are only checked when the policy sets them, so that
+            // a sub-mode that doesn't restrict them leaves them as they are outside a sub-mode.
+            .let { if (policy.targetFrameRate != null) it.tryApplyFrameRateConstraints() else it }
+            .let {
+                if (policy.targetFrameRate != null || policy.stabilizationMode != null) {
+                    it.tryApplyStabilizationConstraints()
+                } else {
+                    it
+                }
+            }
 
         return enforced.copy(
             // Keep the record from when a continuing sub-mode became active.
@@ -1285,7 +1294,7 @@ class CameraXCameraSystem(
      */
     private fun CameraAppSettings.restoreCaptureSubModeOverrides(): CameraAppSettings {
         val overrides = captureSubModeOverrides ?: return this
-        return overrides.restore(
+        val restored = overrides.restore(
             copy(
                 activeCaptureSubModeId = CaptureSubModeId.DEFAULT,
                 captureSubModeOverrides = null
@@ -1295,9 +1304,29 @@ class CameraXCameraSystem(
             .tryApplyImageFormatConstraints()
             .tryApplyFlashModeConstraints()
             .tryApplyVideoQualityConstraints()
-            .tryApplyFrameRateConstraints()
-            .tryApplyStabilizationConstraints()
+        // Frame rate and stabilization are only checked when they were restored, matching how
+        // they are handled outside a sub-mode.
+        val frameRateRestored = restored.targetFrameRate != targetFrameRate
+        return restored
+            .let { if (frameRateRestored) it.tryApplyFrameRateConstraints() else it }
+            .let {
+                if (frameRateRestored || it.stabilizationMode != stabilizationMode) {
+                    it.tryApplyStabilizationConstraints()
+                } else {
+                    it
+                }
+            }
     }
+
+    /**
+     * Applies [change] to these settings and, if a capture sub-mode is active, to the values that
+     * are restored when it ends, so that the user's latest choice is kept when the sub-mode ends.
+     */
+    private fun CameraAppSettings.withUserChange(
+        change: CameraAppSettings.() -> CameraAppSettings
+    ): CameraAppSettings = change().copy(
+        captureSubModeOverrides = captureSubModeOverrides?.withRequestedChange { it.change() }
+    )
 
     private fun CameraAppSettings.defaultCaptureSubModeIdForLens(): CaptureSubModeId =
         systemConstraints.forCurrentLens(this)
@@ -1336,7 +1365,7 @@ class CameraXCameraSystem(
 
     override fun setFlashMode(flashMode: FlashMode) {
         currentSettings.update { old ->
-            old?.copy(flashMode = flashMode)
+            old?.withUserChange { copy(flashMode = flashMode) }
                 ?.tryApplyDynamicRangeConstraints()
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
@@ -1350,7 +1379,7 @@ class CameraXCameraSystem(
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
-            old?.copy(aspectRatio = aspectRatio)
+            old?.withUserChange { copy(aspectRatio = aspectRatio) }
                 ?.tryApplyCaptureSubModeConstraints()
         }
     }
@@ -1370,7 +1399,7 @@ class CameraXCameraSystem(
 
     override suspend fun setCameraEffect(cameraEffect: CameraEffectId) {
         currentSettings.update { old ->
-            old?.copy(selectedCameraEffect = cameraEffect)
+            old?.withUserChange { copy(selectedCameraEffect = cameraEffect) }
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
                 ?.tryApplyCaptureModeConstraints()
@@ -1381,7 +1410,7 @@ class CameraXCameraSystem(
 
     override suspend fun setDynamicRange(dynamicRange: DynamicRange) {
         currentSettings.update { old ->
-            old?.copy(dynamicRange = dynamicRange)
+            old?.withUserChange { copy(dynamicRange = dynamicRange) }
                 ?.tryApplyDynamicRangeConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
                 ?.tryApplyCaptureModeConstraints()
@@ -1406,7 +1435,7 @@ class CameraXCameraSystem(
 
     override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {
         currentSettings.update { old ->
-            old?.copy(imageFormat = imageFormat)
+            old?.withUserChange { copy(imageFormat = imageFormat) }
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyCaptureModeConstraints()
                 ?.tryApplyCaptureSubModeConstraints()
@@ -1423,14 +1452,15 @@ class CameraXCameraSystem(
 
     override suspend fun setStabilizationMode(stabilizationMode: StabilizationMode) {
         currentSettings.update { old ->
-            old?.copy(stabilizationMode = stabilizationMode)
+            old?.withUserChange { copy(stabilizationMode = stabilizationMode) }
                 ?.tryApplyCaptureSubModeConstraints()
         }
     }
 
     override suspend fun setTargetFrameRate(targetFrameRate: Int) {
         currentSettings.update { old ->
-            old?.copy(targetFrameRate = targetFrameRate)?.tryApplyFrameRateConstraints()
+            old?.withUserChange { copy(targetFrameRate = targetFrameRate) }
+                ?.tryApplyFrameRateConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
                 ?.tryApplyCaptureSubModeConstraints()
         }

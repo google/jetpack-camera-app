@@ -21,6 +21,7 @@ import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.CaptureSubModeId
+import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -142,6 +143,39 @@ class PolicyOverridesTest {
         assertThat(enforced.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
 
         assertThat(overrides.restore(enforced).selectedCameraEffect).isEqualTo(effect)
+    }
+
+    @Test
+    fun withRequestedChange_whenUserPicksTheEnforcedValue_restoresTheUserChoice() {
+        val (enforced, overrides) = enforce(restrictivePolicy, userSettings)
+        assertThat(enforced.flashMode).isEqualTo(FlashMode.OFF)
+
+        // The user picks the value the policy already set, so the setting doesn't change.
+        val updated = overrides.withRequestedChange { it.copy(flashMode = FlashMode.OFF) }
+
+        assertThat(updated.restore(enforced).flashMode).isEqualTo(FlashMode.OFF)
+        assertThat(overrides.restore(enforced).flashMode).isEqualTo(FlashMode.ON)
+    }
+
+    @Test
+    fun withRequestedChange_whenPolicyBlocksTheChoice_restoresTheUserChoice() {
+        val (enforced, overrides) = enforce(restrictivePolicy, userSettings)
+
+        // The policy keeps the frame rate at auto, but the user's choice returns afterwards.
+        val updated = overrides.withRequestedChange { it.copy(targetFrameRate = TARGET_FPS_30) }
+
+        val restored = updated.restore(enforced)
+        assertThat(restored.targetFrameRate).isEqualTo(TARGET_FPS_30)
+        assertThat(restored.aspectRatio).isEqualTo(userSettings.aspectRatio)
+        assertThat(restored.selectedCameraEffect).isEqualTo(userSettings.selectedCameraEffect)
+    }
+
+    @Test
+    fun withRequestedChange_whenOnlyUnrestoredSettingsChange_returnsAnEqualRecord() {
+        val (_, overrides) = enforce(restrictivePolicy, userSettings)
+
+        assertThat(overrides.withRequestedChange { it.copy(darkMode = DarkMode.LIGHT) })
+            .isEqualTo(overrides)
     }
 
     @Test
