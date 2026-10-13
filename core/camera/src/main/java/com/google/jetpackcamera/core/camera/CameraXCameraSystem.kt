@@ -61,6 +61,7 @@ import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -89,6 +90,7 @@ import com.google.jetpackcamera.settings.model.permits
 import java.io.File
 import java.io.FileNotFoundException
 import javax.inject.Provider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -142,6 +144,7 @@ class CameraXCameraSystem(
     private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
+    private var externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
 
     private val registeredSubModes: Map<CaptureSubModeId, RegisteredSubMode> by lazy {
         buildMap {
@@ -219,8 +222,10 @@ class CameraXCameraSystem(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
+        externalCaptureMode: ExternalCaptureMode,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
+        this.externalCaptureMode = externalCaptureMode
         val debugSettings = cameraAppSettings.debugSettings
         cameraProvider = try {
             configureAndGetCameraProvider(
@@ -394,11 +399,25 @@ class CameraXCameraSystem(
                                 val binding =
                                     registeredSubModes[subModeId]?.provider?.sessionBinding
                                 if (binding is CameraSessionBinding.SingleCamera) {
-                                    val subModeSelector =
-                                        binding.transformCameraSelector(cameraProvider, selector)
-                                    val subModeCameraInfo =
-                                        cameraProvider.getCameraInfo(subModeSelector)
-                                    put(subModeId, subModeCameraInfo.supportedImageFormats)
+                                    try {
+                                        val subModeSelector =
+                                            binding.transformCameraSelector(
+                                                cameraProvider,
+                                                selector
+                                            )
+                                        val subModeCameraInfo =
+                                            cameraProvider.getCameraInfo(subModeSelector)
+                                        put(subModeId, subModeCameraInfo.supportedImageFormats)
+                                    } catch (e: CancellationException) {
+                                        throw e
+                                    } catch (e: Exception) {
+                                        Log.w(
+                                            TAG,
+                                            "Failed to query image formats for sub-mode " +
+                                                "$subModeId on $lensFacing",
+                                            e
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -543,6 +562,9 @@ class CameraXCameraSystem(
 
         launch {
             handleLowLightBoostErrors()
+        }
+        launch {
+            handleCaptureSubModeErrors()
         }
 
         if (!this@CameraXCameraSystem::cameraProvider.isInitialized) {
@@ -1297,7 +1319,7 @@ class CameraXCameraSystem(
         return provider.takeIf {
             isSupportedOnLens &&
                 it.descriptor.parentCaptureMode == captureMode &&
-                it.isCompatibleWith(this, systemConstraints)
+                it.isCompatibleWith(this, systemConstraints, externalCaptureMode)
         }
     }
 
@@ -1447,6 +1469,16 @@ class CameraXCameraSystem(
             if (state is LowLightBoostState.Error) {
                 if (currentSettings.value?.flashMode == FlashMode.LOW_LIGHT_BOOST) {
                     setFlashMode(FlashMode.OFF)
+                }
+            }
+        }
+    }
+
+    private suspend fun handleCaptureSubModeErrors() {
+        currentCameraState.map { it.captureSubModeState }.distinctUntilChanged().collect { state ->
+            if (state is CaptureSubModeState.Error) {
+                if (currentSettings.value?.activeCaptureSubModeId == state.subModeId) {
+                    setCaptureSubMode(CaptureSubModeId.DEFAULT)
                 }
             }
         }
