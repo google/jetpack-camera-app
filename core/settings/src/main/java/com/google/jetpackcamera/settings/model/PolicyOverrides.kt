@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings.model
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -28,7 +29,8 @@ import com.google.jetpackcamera.model.StabilizationMode
  *
  * The restored values are [CameraAppSettings.aspectRatio], [CameraAppSettings.flashMode],
  * [CameraAppSettings.imageFormat], [CameraAppSettings.dynamicRange],
- * [CameraAppSettings.stabilizationMode], and [CameraAppSettings.targetFrameRate].
+ * [CameraAppSettings.stabilizationMode], [CameraAppSettings.targetFrameRate], and
+ * [CameraAppSettings.selectedCameraEffect].
  * [CameraAppSettings.captureMode] is not restored. A capture mode change ends a sub-mode rather
  * than being a value that the sub-mode overrides.
  *
@@ -41,7 +43,8 @@ data class PolicyOverrides private constructor(
     private val imageFormat: OverriddenValue<ImageOutputFormat>,
     private val dynamicRange: OverriddenValue<DynamicRange>,
     private val stabilizationMode: OverriddenValue<StabilizationMode>,
-    private val targetFrameRate: OverriddenValue<Int>
+    private val targetFrameRate: OverriddenValue<Int>,
+    private val selectedCameraEffect: OverriddenValue<CameraEffectId>
 ) {
     /**
      * @param beforeEnforcement The settings before the policy was enforced.
@@ -62,6 +65,10 @@ data class PolicyOverrides private constructor(
         targetFrameRate = OverriddenValue(
             beforeEnforcement.targetFrameRate,
             afterEnforcement.targetFrameRate
+        ),
+        selectedCameraEffect = OverriddenValue(
+            beforeEnforcement.selectedCameraEffect,
+            afterEnforcement.selectedCameraEffect
         )
     ) {
         require(beforeEnforcement.captureMode == afterEnforcement.captureMode) {
@@ -82,7 +89,8 @@ data class PolicyOverrides private constructor(
         imageFormat = imageFormat.restore(settings.imageFormat),
         dynamicRange = dynamicRange.restore(settings.dynamicRange),
         stabilizationMode = stabilizationMode.restore(settings.stabilizationMode),
-        targetFrameRate = targetFrameRate.restore(settings.targetFrameRate)
+        targetFrameRate = targetFrameRate.restore(settings.targetFrameRate),
+        selectedCameraEffect = selectedCameraEffect.restore(settings.selectedCameraEffect)
     )
 
     /** A setting's value before enforcement, and the value that the policy set. */
