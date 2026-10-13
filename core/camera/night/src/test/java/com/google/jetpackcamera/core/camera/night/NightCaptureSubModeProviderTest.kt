@@ -30,6 +30,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
@@ -159,6 +160,14 @@ class NightCaptureSubModeProviderTest {
             )
         )
         assertThat(restrictedWithFlashAuto.flashMode).isEqualTo(FlashMode.AUTO)
+    }
+
+    @Test
+    fun featurePolicy_locksCameraEffectToNone() {
+        val cameraEffect = provider.featurePolicy.cameraEffect
+
+        assertThat(cameraEffect?.defaultValue).isEqualTo(NONE_EFFECT_ID)
+        assertThat(cameraEffect?.visibility).isEqualTo(OptionVisibility.Hidden)
     }
 
     @Test

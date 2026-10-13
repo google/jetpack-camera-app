@@ -48,7 +48,11 @@ private const val TAG = "NightSubModeProvider"
  *
  * Queries [ExtensionsManager] for [ExtensionMode.NIGHT] support per camera lens, transforms the
  * [CameraSelector] when Night Mode is active, and restricts dynamic range to SDR, stabilization
- * to off, and flash to standard modes (excluding Low Light Boost).
+ * to off, flash to standard modes (excluding Low Light Boost), and the camera effect to none.
+ *
+ * Night Mode can't start while a camera effect is selected ([isCompatibleWith]), so the camera
+ * effect restriction does not change the settings; it disables the stream configuration setting
+ * while Night Mode is active.
  */
 class NightCaptureSubModeProvider internal constructor(
     private val applicationContext: Context,
@@ -98,6 +102,10 @@ class NightCaptureSubModeProvider internal constructor(
                 FlashMode.ON,
                 FlashMode.AUTO
             )
+        ),
+        cameraEffect = SettingConfig(
+            defaultValue = NONE_EFFECT_ID,
+            visibility = OptionVisibility.Hidden
         )
     )
 
