@@ -1,0 +1,35 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.google.jetpackcamera.settings
+
+import com.google.jetpackcamera.model.CaptureSubModeId
+import kotlinx.coroutines.flow.StateFlow
+
+/**
+ * Data layer for the capture sub-mode that the camera is running.
+ *
+ * Settings screens use it to disable settings that the active sub-mode's policy restricts. The
+ * policy itself is looked up in
+ * [com.google.jetpackcamera.settings.model.CameraSystemConstraints.captureSubModePolicies].
+ */
+interface ActiveCaptureSubModeRepository {
+
+    /**
+     * A [StateFlow] emitting the [CaptureSubModeId] of the capture sub-mode that the camera is
+     * running, or [CaptureSubModeId.DEFAULT] if none is active.
+     */
+    val activeCaptureSubModeId: StateFlow<CaptureSubModeId>
+}

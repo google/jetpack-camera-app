@@ -264,12 +264,10 @@ interface CameraSystem {
     /**
      * Sets the active capture sub-mode for the camera.
      *
-     * A sub-mode is only active while the capture mode matches its parent [CaptureMode]. If the
-     * current capture mode is [CaptureMode.STANDARD] and the sub-mode has a different parent, the
-     * capture mode is switched to that parent, applying the same defaults as [setCaptureMode].
-     * An explicitly selected [CaptureMode.IMAGE_ONLY] or [CaptureMode.VIDEO_ONLY] capture mode is
-     * never changed. If the sub-mode is unsupported or incompatible with the resulting settings,
-     * the default sub-mode remains active.
+     * A sub-mode is only active while the capture mode matches its parent [CaptureMode]; the
+     * capture mode is never changed by this call. Set the capture mode with [setCaptureMode]
+     * first. If the capture mode doesn't match, or the sub-mode is unsupported or incompatible
+     * with the current settings, the default sub-mode remains active.
      *
      * @param captureSubModeId The [CaptureSubModeId] to set.
      */

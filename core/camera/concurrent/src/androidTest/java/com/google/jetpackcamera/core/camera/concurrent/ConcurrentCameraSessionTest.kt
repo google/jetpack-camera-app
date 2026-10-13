@@ -286,6 +286,54 @@ class ConcurrentCameraSessionTest {
         }
     }
 
+    @Test
+    fun runConcurrentCameraSession_whenBindingFails_reportsStreamConfigError(): Unit = runBlocking {
+        val cameraProvider = ProcessCameraProvider.awaitInstance(context)
+        val backCameraInfo = cameraProvider.availableCameraInfos.firstOrNull {
+            it.appLensFacing == LensFacing.BACK
+        }
+        val frontCameraInfo = cameraProvider.availableCameraInfos.firstOrNull {
+            it.appLensFacing == LensFacing.FRONT
+        }
+        assume()
+            .withMessage("Both FRONT and BACK cameras required on device, skip the test.")
+            .that(backCameraInfo != null && frontCameraInfo != null)
+            .isTrue()
+
+        val sessionContext = createTestSessionContext(cameraProvider)
+        val sessionJob = launch(Dispatchers.Main) {
+            with(sessionContext) {
+                runConcurrentCameraSession(
+                    sessionSettings = PerpetualSessionSettings.CustomSession(
+                        subModeKey = ConcurrentCameraSubModeKey,
+                        aspectRatio = AspectRatio.NINE_SIXTEEN,
+                        captureMode = CaptureMode.VIDEO_ONLY
+                    ),
+                    availableConcurrentCameraInfos = listOf(
+                        listOf(backCameraInfo!!, frontCameraInfo!!)
+                    ),
+                    bindConcurrentCameras = { _, _, _ ->
+                        throw IllegalArgumentException("Unsupported stream combination")
+                    }
+                )
+            }
+        }
+
+        try {
+            val errorState = withTimeout(5_000) {
+                sessionContext.currentCameraState.first {
+                    it.cameraError == CameraError.StreamConfigError
+                }
+            }
+            assertThat(errorState.isCameraRunning).isFalse()
+        } finally {
+            sessionJob.cancelAndJoin()
+            withContext(Dispatchers.Main) {
+                cameraProvider.unbindAll()
+            }
+        }
+    }
+
     @SuppressLint("Recycle")
     private fun provideSurfaceForTest(surfaceRequest: androidx.camera.core.SurfaceRequest) {
         val surfaceTexture = SurfaceTexture(0).apply {

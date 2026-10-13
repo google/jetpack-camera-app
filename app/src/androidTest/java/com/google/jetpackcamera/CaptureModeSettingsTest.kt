@@ -18,6 +18,7 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.provider.MediaStore
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -31,6 +32,7 @@ import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.OptionVisibility
@@ -38,6 +40,7 @@ import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
+import com.google.jetpackcamera.ui.components.capture.carouselOptionTag
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
 import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
@@ -178,6 +181,10 @@ internal class CaptureModeSettingsTest {
             composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
             composeTestRule.waitForCaptureModeToggleState(CaptureMode.VIDEO_ONLY)
             composeTestRule.checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
+
+            // Dual camera ended when the capture mode changed, so the default option is selected
+            composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+                .assertIsSelected()
         }
     }
 
