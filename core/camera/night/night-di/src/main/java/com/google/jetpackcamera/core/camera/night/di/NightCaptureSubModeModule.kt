@@ -20,12 +20,14 @@ import com.google.jetpackcamera.core.camera.night.NightCaptureSubModeKey
 import com.google.jetpackcamera.core.camera.night.NightCaptureSubModeProvider
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
+import com.google.jetpackcamera.model.CameraEffectId
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoSet
+import dagger.multibindings.Multibinds
 import java.util.AbstractMap
 import javax.inject.Provider
 
@@ -35,13 +37,24 @@ internal object NightCaptureSubModeModule {
     @Provides
     @IntoSet
     fun provideNightCaptureSubModeEntry(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        @NightModeCompatibleCameraEffects
+        compatibleCameraEffects: Set<@JvmSuppressWildcards CameraEffectId>
     ): Map.Entry<
         CaptureSubModeFeatureKey,
         @JvmSuppressWildcards Provider<CaptureSubModeProvider>
         > =
         AbstractMap.SimpleImmutableEntry(
             NightCaptureSubModeKey,
-            Provider { NightCaptureSubModeProvider(context) }
+            Provider { NightCaptureSubModeProvider(context, compatibleCameraEffects) }
         )
+}
+
+/** Declares the [NightModeCompatibleCameraEffects] set so that it is empty unless an app adds to it. */
+@Module
+@InstallIn(SingletonComponent::class)
+internal interface NightModeCompatibleCameraEffectsModule {
+    @Multibinds
+    @NightModeCompatibleCameraEffects
+    fun nightModeCompatibleCameraEffects(): Set<CameraEffectId>
 }
