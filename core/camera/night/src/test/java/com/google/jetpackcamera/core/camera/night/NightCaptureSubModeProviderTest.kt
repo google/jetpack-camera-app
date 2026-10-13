@@ -171,6 +171,40 @@ class NightCaptureSubModeProviderTest {
     }
 
     @Test
+    fun compatibleCameraEffects_areAllowedByPolicyAndCompatibility() {
+        val compatibleEffect = CameraEffectId("compatible_effect")
+        val providerWithEffect = NightCaptureSubModeProvider(context, setOf(compatibleEffect))
+        val constraints = CameraSystemConstraints()
+
+        assertThat(providerWithEffect.featurePolicy.cameraEffect).isEqualTo(
+            SettingConfig(
+                defaultValue = NONE_EFFECT_ID,
+                visibility = OptionVisibility.Only(NONE_EFFECT_ID, compatibleEffect)
+            )
+        )
+        assertThat(
+            providerWithEffect.isCompatibleWith(
+                settings = CameraAppSettings(
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    selectedCameraEffect = compatibleEffect
+                ),
+                systemConstraints = constraints,
+                externalCaptureMode = ExternalCaptureMode.Standard
+            )
+        ).isTrue()
+        assertThat(
+            providerWithEffect.isCompatibleWith(
+                settings = CameraAppSettings(
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    selectedCameraEffect = CameraEffectId("other_effect")
+                ),
+                systemConstraints = constraints,
+                externalCaptureMode = ExternalCaptureMode.Standard
+            )
+        ).isFalse()
+    }
+
+    @Test
     fun isSupportedAndSessionBinding_whenExtensionUnavailable_returnsFalseAndThrows() = runTest {
         val cameraProvider = ProcessCameraProvider.awaitInstance(context)
         val cameraInfo = fakeCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)

@@ -25,6 +25,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.concurrent.futures.await
 import com.google.jetpackcamera.core.camera.submode.CameraSessionBinding
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.DynamicRange
@@ -48,11 +49,16 @@ private const val TAG = "NightSubModeProvider"
  *
  * Queries [ExtensionsManager] for [ExtensionMode.NIGHT] support per camera lens, transforms the
  * [CameraSelector] when Night Mode is active, and restricts dynamic range to SDR, stabilization
- * to off, flash to standard modes (excluding Low Light Boost), and the camera effect to none.
+ * to off, flash to standard modes (excluding Low Light Boost), and the camera effect to none or
+ * one of [compatibleCameraEffects].
  *
- * Night Mode can't start while a camera effect is selected ([isCompatibleWith]), so the camera
- * effect restriction does not change the settings; it disables the stream configuration setting
- * while Night Mode is active.
+ * Night Mode can't start while any other camera effect is selected ([isCompatibleWith]), so the
+ * camera effect restriction does not change the settings; it limits the stream configuration
+ * setting while Night Mode is active.
+ *
+ * @param compatibleCameraEffects Camera effects that the app has verified work with Night Mode.
+ *   This module does not depend on any effect, so the app, which knows which effects it includes,
+ *   provides them. Defaults to none.
  */
 class NightCaptureSubModeProvider internal constructor(
     private val applicationContext: Context,
@@ -61,11 +67,16 @@ class NightCaptureSubModeProvider internal constructor(
     private val extensionsManagerFactory: suspend (ProcessCameraProvider) -> ExtensionsManager =
         { cameraProvider ->
             ExtensionsManager.getInstanceAsync(applicationContext, cameraProvider).await()
-        }
+        },
+    private val compatibleCameraEffects: Set<CameraEffectId> = emptySet()
 ) : CaptureSubModeProvider {
 
-    constructor(applicationContext: Context) : this(
+    constructor(
+        applicationContext: Context,
+        compatibleCameraEffects: Set<CameraEffectId> = emptySet()
+    ) : this(
         applicationContext = applicationContext,
+        compatibleCameraEffects = compatibleCameraEffects,
         isNightAvailable = { manager, selector ->
             manager.isExtensionAvailable(selector, ExtensionMode.NIGHT)
         },
@@ -105,7 +116,7 @@ class NightCaptureSubModeProvider internal constructor(
         ),
         cameraEffect = SettingConfig(
             defaultValue = NONE_EFFECT_ID,
-            visibility = OptionVisibility.Hidden
+            visibility = OptionVisibility.from(compatibleCameraEffects + NONE_EFFECT_ID)
         )
     )
 
@@ -136,7 +147,10 @@ class NightCaptureSubModeProvider internal constructor(
         systemConstraints: CameraSystemConstraints,
         externalCaptureMode: ExternalCaptureMode
     ): Boolean = super.isCompatibleWith(settings, systemConstraints, externalCaptureMode) &&
-        settings.selectedCameraEffect == NONE_EFFECT_ID &&
+        (
+            settings.selectedCameraEffect == NONE_EFFECT_ID ||
+                settings.selectedCameraEffect in compatibleCameraEffects
+            ) &&
         externalCaptureMode != ExternalCaptureMode.VideoCapture
 
     @Suppress("DEPRECATION")

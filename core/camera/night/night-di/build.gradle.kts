@@ -44,6 +44,7 @@ android {
 dependencies {
     implementation(project(":core:camera"))
     implementation(project(":core:camera:night"))
+    implementation(project(":core:model"))
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
 }
