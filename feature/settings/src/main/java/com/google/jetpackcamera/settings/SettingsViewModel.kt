@@ -69,7 +69,8 @@ private val fpsOptions = setOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60)
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    constraintsRepository: ConstraintsRepository
+    constraintsRepository: ConstraintsRepository,
+    activeCaptureSubModeRepository: ActiveCaptureSubModeRepository
 ) : ViewModel() {
     private var grantedPermissions = MutableStateFlow<Set<String>>(emptySet())
 
@@ -78,7 +79,7 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.defaultCameraAppSettings,
             constraintsRepository.systemConstraints.filterNotNull(),
             grantedPermissions,
-            constraintsRepository.activeCaptureSubModeId
+            activeCaptureSubModeRepository.activeCaptureSubModeId
         ) { updatedSettings, constraints, grantedPerms, activeCaptureSubModeId ->
             updatedSettings.videoQuality
             val activeSubMode = constraints.activeCaptureSubMode(activeCaptureSubModeId)
@@ -342,6 +343,11 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Restricts the camera effect setting. Selecting no effect is always offered by the settings
+     * screen, so the setting is only disabled if the policy hides it or removes every supported
+     * effect.
+     */
     private fun CameraEffectUiState.restrictedBy(
         activeSubMode: ActiveCaptureSubMode?
     ): CameraEffectUiState {
@@ -356,7 +362,7 @@ class SettingsViewModel @Inject constructor(
                 val permittedEffects = supportedEffects.filterTo(mutableSetOf()) {
                     config.permits(it)
                 }
-                if (permittedEffects.isEmpty()) {
+                if (permittedEffects.isEmpty() && supportedEffects.isNotEmpty()) {
                     CameraEffectUiState.Disabled(rationale)
                 } else {
                     copy(supportedEffects = permittedEffects)

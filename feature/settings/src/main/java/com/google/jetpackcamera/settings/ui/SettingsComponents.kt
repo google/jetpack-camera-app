@@ -241,10 +241,7 @@ fun FlashModeSetting(
                 )
             }
 
-            is FlashUiState.Disabled -> stringResource(
-                flashUiState.disabledRationale.reasonTextResId,
-                stringResource(flashUiState.disabledRationale.affectedSettingNameResId)
-            )
+            is FlashUiState.Disabled -> disabledRationaleString(flashUiState.disabledRationale)
         },
         popupContents = {
             if (flashUiState is FlashUiState.Enabled) {

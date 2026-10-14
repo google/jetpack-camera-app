@@ -32,6 +32,7 @@ import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -293,6 +294,42 @@ class PrefsDataStoreSettingsDataSourceInstrumentedTest {
         assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
         // Baseline default for unconfigured key is used
         assertThat(settings.flashMode).isEqualTo(FlashMode.ON)
+    }
+
+    @Test
+    fun unconfiguredEffectKey_fallsBackToCameraFeaturePolicyDefault() = runTest {
+        val policyEffect = CameraEffectId("policy_effect")
+        val customSource = PrefsDataStoreSettingsDataSource(
+            dataStore = testDataStore,
+            cameraFeaturePolicy = CameraFeaturePolicy(
+                cameraEffect = SettingConfig(defaultValue = policyEffect)
+            )
+        )
+
+        assertThat(customSource.getCurrentDefaultCameraAppSettings().selectedCameraEffect)
+            .isEqualTo(policyEffect)
+    }
+
+    @Test
+    fun configuredVideoAndEffectKeys_preserveStoredUserPreferences() = runTest {
+        dataSource.updateStabilizationMode(StabilizationMode.ON)
+        dataSource.updateTargetFrameRate(TARGET_FPS_AUTO)
+        dataSource.updateSelectedCameraEffect(NONE_EFFECT_ID)
+        advanceUntilIdle()
+
+        val customSource = PrefsDataStoreSettingsDataSource(
+            dataStore = testDataStore,
+            cameraFeaturePolicy = CameraFeaturePolicy(
+                stabilizationMode = SettingConfig(defaultValue = StabilizationMode.OFF),
+                targetFrameRate = SettingConfig(defaultValue = TARGET_FPS_30),
+                cameraEffect = SettingConfig(defaultValue = CameraEffectId("policy_effect"))
+            )
+        )
+
+        val settings = customSource.getCurrentDefaultCameraAppSettings()
+        assertThat(settings.stabilizationMode).isEqualTo(StabilizationMode.ON)
+        assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
+        assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
     }
 
     @Test

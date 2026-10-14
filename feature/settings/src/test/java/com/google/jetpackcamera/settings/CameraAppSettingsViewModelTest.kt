@@ -19,6 +19,7 @@ import android.Manifest
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -44,9 +45,11 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.testing.FakeActiveCaptureSubModeRepository
 import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
+import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -150,7 +153,8 @@ internal class CameraAppSettingsViewModelTest {
         val constraintsRepository = FakeConstraintsRepository(TYPICAL_SYSTEM_CONSTRAINTS)
         settingsViewModel = SettingsViewModel(
             settingsRepository,
-            constraintsRepository
+            constraintsRepository,
+            FakeActiveCaptureSubModeRepository()
         )
         advanceUntilIdle()
     }
@@ -181,7 +185,11 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun settingsUiState_whenConstraintsUnavailable_isLoading() = runTest(StandardTestDispatcher()) {
         val constraintsRepository = FakeConstraintsRepository()
-        val customViewModel = SettingsViewModel(FakeSettingsRepository(), constraintsRepository)
+        val customViewModel = SettingsViewModel(
+            FakeSettingsRepository(),
+            constraintsRepository,
+            FakeActiveCaptureSubModeRepository()
+        )
         backgroundScope.launch { customViewModel.settingsUiState.collect {} }
         advanceUntilIdle()
 
@@ -292,8 +300,8 @@ internal class CameraAppSettingsViewModelTest {
     private fun createViewModelWithConstraints(
         systemConstraints: CameraSystemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
         defaultCaptureMode: CaptureMode = CaptureMode.VIDEO_ONLY,
-        constraintsRepository: FakeConstraintsRepository =
-            FakeConstraintsRepository(systemConstraints)
+        activeCaptureSubModeRepository: FakeActiveCaptureSubModeRepository =
+            FakeActiveCaptureSubModeRepository()
     ): SettingsViewModel {
         val settingsDataSource = PrefsDataStoreSettingsDataSource(
             dataStore = testDataStore,
@@ -302,7 +310,11 @@ internal class CameraAppSettingsViewModelTest {
         val settingsRepository = LocalSettingsRepository(
             settingsDataSource = settingsDataSource
         )
-        return SettingsViewModel(settingsRepository, constraintsRepository).apply {
+        return SettingsViewModel(
+            settingsRepository,
+            FakeConstraintsRepository(systemConstraints),
+            activeCaptureSubModeRepository
+        ).apply {
             setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
         }
     }
@@ -316,9 +328,9 @@ internal class CameraAppSettingsViewModelTest {
     fun settings_whenCaptureSubModeActive_disableSettingsRestrictedByItsPolicy() =
         runTest(StandardTestDispatcher()) {
             val customViewModel = createViewModelWithConstraints(
-                constraintsRepository = FakeConstraintsRepository(
-                    initialConstraints = constraintsWithSubModePolicy(HIDING_SUB_MODE_POLICY),
-                    initialActiveCaptureSubModeId = TEST_SUB_MODE_ID
+                systemConstraints = constraintsWithSubModePolicy(HIDING_SUB_MODE_POLICY),
+                activeCaptureSubModeRepository = FakeActiveCaptureSubModeRepository(
+                    TEST_SUB_MODE_ID
                 )
             )
             advanceUntilIdle()
@@ -362,12 +374,7 @@ internal class CameraAppSettingsViewModelTest {
                     visibility = OptionVisibility.Only(TARGET_FPS_AUTO, TARGET_FPS_30)
                 )
             )
-            val customViewModel = createViewModelWithConstraints(
-                constraintsRepository = FakeConstraintsRepository(
-                    initialConstraints = constraintsWithSubModePolicy(policy),
-                    initialActiveCaptureSubModeId = TEST_SUB_MODE_ID
-                )
-            )
+            val customViewModel = createViewModelWithSubModePolicy(policy)
             advanceUntilIdle()
 
             val fpsState = assertIsEnabled(
@@ -391,12 +398,11 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun settings_whenActiveCaptureSubModeEnds_restrictionsAreRemoved() =
         runTest(StandardTestDispatcher()) {
-            val constraintsRepository = FakeConstraintsRepository(
-                initialConstraints = constraintsWithSubModePolicy(HIDING_SUB_MODE_POLICY),
-                initialActiveCaptureSubModeId = TEST_SUB_MODE_ID
-            )
+            val activeCaptureSubModeRepository =
+                FakeActiveCaptureSubModeRepository(TEST_SUB_MODE_ID)
             val customViewModel = createViewModelWithConstraints(
-                constraintsRepository = constraintsRepository
+                systemConstraints = constraintsWithSubModePolicy(HIDING_SUB_MODE_POLICY),
+                activeCaptureSubModeRepository = activeCaptureSubModeRepository
             )
             advanceUntilIdle()
             assertThat(
@@ -405,7 +411,7 @@ internal class CameraAppSettingsViewModelTest {
                 ).fpsUiState
             ).isInstanceOf(FpsUiState.Disabled::class.java)
 
-            constraintsRepository.setActiveCaptureSubModeId(CaptureSubModeId.DEFAULT)
+            activeCaptureSubModeRepository.setActiveCaptureSubModeId(CaptureSubModeId.DEFAULT)
             advanceUntilIdle()
 
             val enabledState = assertIsEnabled(
@@ -421,6 +427,198 @@ internal class CameraAppSettingsViewModelTest {
                 (enabledState.flashUiState as FlashUiState.Enabled).lowLightSelectableState
             ).isEqualTo(SingleSelectableState.Selectable)
         }
+
+    /** Creates a view model whose active capture sub-mode has [policy]. */
+    private fun createViewModelWithSubModePolicy(
+        policy: CameraFeaturePolicy,
+        effects: Set<CameraEffectId> = setOf(TEST_EFFECT_ID)
+    ): SettingsViewModel {
+        val constraints = constraintsWithSubModePolicy(policy)
+        return createViewModelWithConstraints(
+            systemConstraints = constraints.copy(
+                perLensConstraints = constraints.perLensConstraints.mapValues {
+                    it.value.copy(supportedEffects = effects)
+                }
+            ),
+            activeCaptureSubModeRepository = FakeActiveCaptureSubModeRepository(TEST_SUB_MODE_ID)
+        )
+    }
+
+    @Test
+    fun stabilization_whenCaptureSubModeAllowsOnlySomeOptions_disablesExcludedOptions() =
+        runTest(StandardTestDispatcher()) {
+            val customViewModel = createViewModelWithSubModePolicy(
+                CameraFeaturePolicy(
+                    stabilizationMode = SettingConfig(
+                        defaultValue = StabilizationMode.OFF,
+                        visibility = OptionVisibility.Only(
+                            StabilizationMode.OFF,
+                            StabilizationMode.AUTO
+                        )
+                    )
+                )
+            )
+            advanceUntilIdle()
+
+            val stabilizationState = assertIsEnabled(
+                customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            ).stabilizationUiState as StabilizationUiState.Enabled
+
+            assertThat(stabilizationState.stabilizationOnState).isEqualTo(
+                SingleSelectableState.Disabled(
+                    subModeRationale(R.string.stabilization_rationale_prefix)
+                )
+            )
+        }
+
+    @Test
+    fun flash_whenCaptureSubModeExcludesOnAndAuto_disablesThemWithOptionRationales() =
+        runTest(StandardTestDispatcher()) {
+            val customViewModel = createViewModelWithSubModePolicy(
+                CameraFeaturePolicy(
+                    flashMode = SettingConfig(
+                        defaultValue = FlashMode.OFF,
+                        visibility = OptionVisibility.Only(
+                            FlashMode.OFF,
+                            FlashMode.LOW_LIGHT_BOOST
+                        )
+                    )
+                )
+            )
+            advanceUntilIdle()
+
+            val flashState = assertIsEnabled(
+                customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            ).flashUiState as FlashUiState.Enabled
+
+            assertThat(flashState.onSelectableState).isEqualTo(
+                SingleSelectableState.Disabled(subModeRationale(R.string.flash_on_rationale_prefix))
+            )
+            assertThat(flashState.autoSelectableState).isEqualTo(
+                SingleSelectableState.Disabled(
+                    subModeRationale(R.string.flash_auto_rationale_prefix)
+                )
+            )
+            assertThat(flashState.lowLightSelectableState)
+                .isEqualTo(SingleSelectableState.Selectable)
+        }
+
+    @Test
+    fun flash_whenCaptureSubModeHidesFlash_disablesWholeSetting() =
+        runTest(StandardTestDispatcher()) {
+            val customViewModel = createViewModelWithSubModePolicy(
+                CameraFeaturePolicy(
+                    flashMode = SettingConfig(FlashMode.OFF, OptionVisibility.Hidden)
+                )
+            )
+            advanceUntilIdle()
+
+            assertThat(
+                assertIsEnabled(
+                    customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+                ).flashUiState
+            ).isEqualTo(FlashUiState.Disabled(subModeRationale(R.string.flash_rationale_prefix)))
+        }
+
+    @Test
+    fun cameraEffect_whenCaptureSubModeAllowsOnlySomeEffects_offersOnlyThoseEffects() =
+        runTest(StandardTestDispatcher()) {
+            val otherEffect = CameraEffectId("other_effect")
+            val customViewModel = createViewModelWithSubModePolicy(
+                policy = CameraFeaturePolicy(
+                    cameraEffect = SettingConfig(
+                        defaultValue = NONE_EFFECT_ID,
+                        visibility = OptionVisibility.Only(NONE_EFFECT_ID, TEST_EFFECT_ID)
+                    )
+                ),
+                effects = setOf(TEST_EFFECT_ID, otherEffect)
+            )
+            advanceUntilIdle()
+
+            val effectState = assertIsEnabled(
+                customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            ).cameraEffectUiState as CameraEffectUiState.Enabled
+
+            assertThat(effectState.supportedEffects).containsExactly(TEST_EFFECT_ID)
+        }
+
+    /**
+     * Verifies that the sub-mode isn't blamed for an effect setting that has no effects to offer
+     * anyway.
+     */
+    @Test
+    fun cameraEffect_whenNoEffectsSupported_isNotDisabledBySubMode() =
+        runTest(StandardTestDispatcher()) {
+            val customViewModel = createViewModelWithSubModePolicy(
+                policy = CameraFeaturePolicy(
+                    cameraEffect = SettingConfig(
+                        defaultValue = NONE_EFFECT_ID,
+                        visibility = OptionVisibility.Only(NONE_EFFECT_ID, TEST_EFFECT_ID)
+                    )
+                ),
+                effects = emptySet()
+            )
+            advanceUntilIdle()
+
+            assertThat(
+                assertIsEnabled(
+                    customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+                ).cameraEffectUiState
+            ).isInstanceOf(CameraEffectUiState.Enabled::class.java)
+        }
+
+    /**
+     * Verifies that a setting the active sub-mode hides shows the sub-mode as the reason, even if
+     * the setting is also disabled for another reason, since the sub-mode is what the user can
+     * change.
+     */
+    @Test
+    fun stabilization_whenUnsupportedAndHiddenBySubMode_showsSubModeRationale() =
+        runTest(StandardTestDispatcher()) {
+            val policy = CameraFeaturePolicy(
+                stabilizationMode = SettingConfig(StabilizationMode.OFF, OptionVisibility.Hidden)
+            )
+            // The typical constraints support no stabilization, so it is already disabled.
+            val customViewModel = createViewModelWithConstraints(
+                systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                    captureSubModeDescriptors = constraintsWithSubModePolicy(policy)
+                        .captureSubModeDescriptors,
+                    captureSubModePolicies = mapOf(TEST_SUB_MODE_ID to policy)
+                ),
+                activeCaptureSubModeRepository = FakeActiveCaptureSubModeRepository(
+                    TEST_SUB_MODE_ID
+                )
+            )
+            advanceUntilIdle()
+
+            assertThat(
+                assertIsEnabled(
+                    customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+                ).stabilizationUiState
+            ).isEqualTo(
+                StabilizationUiState.Disabled(
+                    subModeRationale(R.string.stabilization_rationale_prefix)
+                )
+            )
+        }
+
+    @Test
+    fun flashSetting_whenDisabledByCaptureSubMode_showsRationale() {
+        Dispatchers.resetMain()
+        composeTestRule.setContent {
+            FlashModeSetting(
+                flashUiState = FlashUiState.Disabled(
+                    DisabledRationale.CaptureSubModeActiveRationale(
+                        affectedSettingNameResId = R.string.flash_rationale_prefix,
+                        captureSubModeLabelResId = R.string.settings_title
+                    )
+                ),
+                setFlashMode = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Flash is unsupported in Settings mode").assertIsDisplayed()
+    }
 
     @Test
     fun cameraEffectDisabled_whenUltraHdrEnabled() = runTest(StandardTestDispatcher()) {

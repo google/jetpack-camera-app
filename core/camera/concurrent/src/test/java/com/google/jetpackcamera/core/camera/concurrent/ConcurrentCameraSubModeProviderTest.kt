@@ -23,6 +23,7 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -94,8 +95,9 @@ class ConcurrentCameraSubModeProviderTest {
         ).isFalse()
     }
 
+    /** A selected effect is turned off by the policy rather than preventing dual camera. */
     @Test
-    fun isCompatibleWith_activeCameraEffect_returnsFalse() {
+    fun isCompatibleWith_activeCameraEffect_returnsTrue() {
         val settings = CameraAppSettings(
             captureMode = CaptureMode.VIDEO_ONLY,
             selectedCameraEffect = CameraEffectId("custom_effect")
@@ -108,7 +110,7 @@ class ConcurrentCameraSubModeProviderTest {
                 systemConstraints = constraints,
                 externalCaptureMode = ExternalCaptureMode.Standard
             )
-        ).isFalse()
+        ).isTrue()
     }
 
     @Test
@@ -142,5 +144,36 @@ class ConcurrentCameraSubModeProviderTest {
 
         assertThat(cameraEffect?.defaultValue).isEqualTo(NONE_EFFECT_ID)
         assertThat(cameraEffect?.visibility).isEqualTo(OptionVisibility.Hidden)
+    }
+
+    /**
+     * Verifies that settings that used to prevent dual camera are accepted and then overridden
+     * by the policy while dual camera is active.
+     */
+    @Test
+    fun featurePolicy_overridesSettingsThatDualCameraDoesNotSupport() {
+        val settings = CameraAppSettings(
+            captureMode = CaptureMode.VIDEO_ONLY,
+            dynamicRange = DynamicRange.HLG10,
+            flashMode = FlashMode.LOW_LIGHT_BOOST,
+            stabilizationMode = StabilizationMode.ON,
+            targetFrameRate = TARGET_FPS_30,
+            selectedCameraEffect = CameraEffectId("custom_effect")
+        )
+
+        assertThat(
+            provider.isCompatibleWith(
+                settings = settings,
+                systemConstraints = CameraSystemConstraints(),
+                externalCaptureMode = ExternalCaptureMode.Standard
+            )
+        ).isTrue()
+
+        val enforced = provider.featurePolicy.enforceRestrictions(settings)
+        assertThat(enforced.dynamicRange).isEqualTo(DynamicRange.SDR)
+        assertThat(enforced.flashMode).isEqualTo(FlashMode.OFF)
+        assertThat(enforced.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(enforced.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
+        assertThat(enforced.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
     }
 }

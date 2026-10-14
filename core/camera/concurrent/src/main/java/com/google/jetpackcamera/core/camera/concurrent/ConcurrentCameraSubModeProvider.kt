@@ -51,9 +51,8 @@ import com.google.jetpackcamera.settings.model.SettingConfig
  * stabilization to [StabilizationMode.OFF], target frame rate to [TARGET_FPS_AUTO], and the camera
  * effect to none.
  *
- * Dual camera can't start while a camera effect is selected ([isCompatibleWith]), so the camera
- * effect restriction does not change the settings; it disables the stream configuration setting
- * while dual camera is active.
+ * The concurrent session doesn't apply camera effects, so a selected effect is turned off while
+ * dual camera is active and turned back on when it ends.
  */
 class ConcurrentCameraSubModeProvider internal constructor(
     private val availableConcurrentCameraInfos: (ProcessCameraProvider) -> List<List<CameraInfo>>
@@ -111,7 +110,6 @@ class ConcurrentCameraSubModeProvider internal constructor(
         systemConstraints: CameraSystemConstraints,
         externalCaptureMode: ExternalCaptureMode
     ): Boolean = super.isCompatibleWith(settings, systemConstraints, externalCaptureMode) &&
-        settings.selectedCameraEffect == NONE_EFFECT_ID &&
         externalCaptureMode == ExternalCaptureMode.Standard
 
     override val sessionBinding = CameraSessionBinding.Custom { sessionScope ->

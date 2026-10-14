@@ -32,6 +32,7 @@ import com.google.jetpackcamera.data.camera.CameraLaunchConfigProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.camera.CameraXCameraSystemRepository
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.settings.ActiveCaptureSubModeRepository
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
@@ -75,6 +76,11 @@ internal object CameraModule {
     fun providesConstraintsRepository(
         repository: CameraXCameraSystemRepository
     ): ConstraintsRepository = repository
+
+    @Provides
+    fun providesActiveCaptureSubModeRepository(
+        repository: CameraXCameraSystemRepository
+    ): ActiveCaptureSubModeRepository = repository
 
     @Provides
     @ActivityRetainedScoped

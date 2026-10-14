@@ -21,6 +21,7 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.CameraXCameraSystem
 import com.google.jetpackcamera.model.CaptureSubModeId
+import com.google.jetpackcamera.settings.ActiveCaptureSubModeRepository
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -47,15 +48,16 @@ import kotlinx.coroutines.flow.stateIn
 private const val TAG = "CameraXCameraSystemRepo"
 
 /**
- * Implementation of [CameraSystemRepository] and [ConstraintsRepository] that manages
- * [CameraXCameraSystem] initialization and exposes camera streams.
+ * Implementation of [CameraSystemRepository], [ConstraintsRepository], and
+ * [ActiveCaptureSubModeRepository] that manages [CameraXCameraSystem] initialization and exposes
+ * camera streams.
  */
 class CameraXCameraSystemRepository(
     private val cameraXCameraSystemProvider: Provider<out CameraSystem>,
     private val settingsRepository: SettingsRepository,
     private val launchConfigProvider: CameraLaunchConfigProvider,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-) : CameraSystemRepository, ConstraintsRepository {
+) : CameraSystemRepository, ConstraintsRepository, ActiveCaptureSubModeRepository {
 
     constructor(
         cameraXCameraSystemProvider: Provider<out CameraSystem>,
@@ -112,10 +114,16 @@ class CameraXCameraSystemRepository(
         cameraSystem.getCurrentSettings()
     }
 
+    // Shared eagerly and seeded from the current settings, so that the value is current even
+    // when nothing is collecting and a new subscriber never sees a stale default first.
     override val activeCaptureSubModeId: StateFlow<CaptureSubModeId> by lazy {
         currentSettings
-            .map { it?.activeCaptureSubModeId ?: CaptureSubModeId.DEFAULT }
-            .stateIn(scope, SharingStarted.WhileSubscribed(), CaptureSubModeId.DEFAULT)
+            .map { it.activeCaptureSubModeIdOrDefault() }
+            .stateIn(
+                scope,
+                SharingStarted.Eagerly,
+                currentSettings.value.activeCaptureSubModeIdOrDefault()
+            )
     }
 
     override val currentCameraState: StateFlow<CameraState> by lazy {
@@ -136,3 +144,6 @@ class CameraXCameraSystemRepository(
         return constraints.getSupportedMimeTypes().values.flatten().distinct()
     }
 }
+
+private fun CameraAppSettings?.activeCaptureSubModeIdOrDefault(): CaptureSubModeId =
+    this?.activeCaptureSubModeId ?: CaptureSubModeId.DEFAULT
