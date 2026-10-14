@@ -65,8 +65,8 @@ fun JcaApp(
     openAppSettings: () -> Unit,
     onStoragePermissionGranted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
-    isDarkTheme: Boolean = true,
     modifier: Modifier = Modifier,
+    isDarkTheme: Boolean = true,
     onCloseCamera: () -> Unit = {}
 ) {
     JetpackCameraNavHost(
@@ -175,6 +175,7 @@ private fun JetpackCameraNavHost(
                     buildType = BuildConfig.BUILD_TYPE
                 ),
                 onNavigateBack = { navController.popBackStack() },
+                onOpenAppSettings = onOpenAppSettings,
                 cameraSettingsSlot = {
                     DefaultCameraSettings(
                         customEffectSlot = {
