@@ -52,9 +52,8 @@ private const val TAG = "NightSubModeProvider"
  * to off, flash to standard modes (excluding Low Light Boost), and the camera effect to none or
  * one of [compatibleCameraEffects].
  *
- * Night Mode can't start while any other camera effect is selected ([isCompatibleWith]), so the
- * camera effect restriction does not change the settings; it limits the stream configuration
- * setting while Night Mode is active.
+ * Any other selected camera effect is turned off while Night Mode is active and turned back on
+ * when it ends.
  *
  * @param compatibleCameraEffects Camera effects that the app has verified work with Night Mode.
  *   This module does not depend on any effect, so the app, which knows which effects it includes,
@@ -147,10 +146,6 @@ class NightCaptureSubModeProvider internal constructor(
         systemConstraints: CameraSystemConstraints,
         externalCaptureMode: ExternalCaptureMode
     ): Boolean = super.isCompatibleWith(settings, systemConstraints, externalCaptureMode) &&
-        (
-            settings.selectedCameraEffect == NONE_EFFECT_ID ||
-                settings.selectedCameraEffect in compatibleCameraEffects
-            ) &&
         externalCaptureMode != ExternalCaptureMode.VideoCapture
 
     @Suppress("DEPRECATION")

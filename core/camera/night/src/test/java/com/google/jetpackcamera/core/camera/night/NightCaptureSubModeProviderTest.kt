@@ -39,8 +39,10 @@ import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import java.lang.reflect.Proxy
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -101,6 +103,7 @@ class NightCaptureSubModeProviderTest {
             )
         ).isFalse()
 
+        // A selected effect is turned off by the policy rather than preventing Night Mode.
         assertThat(
             provider.isCompatibleWith(
                 settings = CameraAppSettings(
@@ -110,7 +113,7 @@ class NightCaptureSubModeProviderTest {
                 systemConstraints = constraints,
                 externalCaptureMode = ExternalCaptureMode.Standard
             )
-        ).isFalse()
+        ).isTrue()
     }
 
     @Test
@@ -201,7 +204,35 @@ class NightCaptureSubModeProviderTest {
                 systemConstraints = constraints,
                 externalCaptureMode = ExternalCaptureMode.Standard
             )
-        ).isFalse()
+        ).isTrue()
+
+        // The compatible effect stays on; any other effect is turned off.
+        val policy = providerWithEffect.featurePolicy
+        assertThat(
+            policy.enforceRestrictions(
+                CameraAppSettings(selectedCameraEffect = compatibleEffect)
+            ).selectedCameraEffect
+        ).isEqualTo(compatibleEffect)
+        assertThat(
+            policy.enforceRestrictions(
+                CameraAppSettings(selectedCameraEffect = CameraEffectId("other_effect"))
+            ).selectedCameraEffect
+        ).isEqualTo(NONE_EFFECT_ID)
+    }
+
+    @Test
+    fun featurePolicy_whenHostLocksAnEffect_isIncompatibleUnlessAllowed() {
+        val effect = CameraEffectId("locked_effect")
+        val hostPolicy = CameraFeaturePolicy(
+            cameraEffect = SettingConfig(effect, OptionVisibility.Hidden)
+        )
+
+        assertThat(hostPolicy.isCompatibleWith(provider.featurePolicy)).isFalse()
+        assertThat(
+            hostPolicy.isCompatibleWith(
+                NightCaptureSubModeProvider(context, setOf(effect)).featurePolicy
+            )
+        ).isTrue()
     }
 
     @Test
@@ -303,6 +334,7 @@ class NightCaptureSubModeProviderTest {
     @Test
     fun getExtensionsManager_concurrentCalls_initializesManagerOnlyOnce() = runTest {
         val factoryInvocations = AtomicInteger(0)
+        val factoryGate = CompletableDeferred<Unit>()
         val nightSelector = CameraSelector.Builder().build()
         val cachingProvider = NightCaptureSubModeProvider(
             applicationContext = context,
@@ -310,6 +342,8 @@ class NightCaptureSubModeProviderTest {
             enableNightSelector = { _, _ -> nightSelector },
             extensionsManagerFactory = { cameraProvider ->
                 factoryInvocations.incrementAndGet()
+                // Hold the first initialization until every caller has started.
+                factoryGate.await()
                 ExtensionsManager.getInstanceAsync(context, cameraProvider).await()
             }
         )
@@ -326,6 +360,11 @@ class NightCaptureSubModeProviderTest {
                 )
             }
         )
+        // All callers are now waiting; only one may be initializing the manager.
+        runCurrent()
+        assertThat(factoryInvocations.get()).isEqualTo(1)
+
+        factoryGate.complete(Unit)
         jobs.awaitAll()
 
         assertThat(factoryInvocations.get()).isEqualTo(1)
