@@ -110,6 +110,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -405,12 +406,24 @@ fun ElapsedTimeText(
         val formattedTime = remember(elapsedSeconds, format) {
             format.format(minutes, seconds)
         }
+        val minutesInt = minutes.toInt()
+        val secondsInt = seconds.toInt()
+        val minutesText = pluralStringResource(
+            R.plurals.elapsed_time_accessibility_minutes,
+            minutesInt,
+            minutesInt
+        )
+        val secondsText = pluralStringResource(
+            R.plurals.elapsed_time_accessibility_seconds,
+            secondsInt,
+            secondsInt
+        )
         val accessibilityRes = if (state.isPaused) {
             R.string.elapsed_time_accessibility_paused
         } else {
             R.string.elapsed_time_accessibility_recording
         }
-        val accessibilityText = stringResource(accessibilityRes, minutes, seconds)
+        val accessibilityText = stringResource(accessibilityRes, minutesText, secondsText)
         Box(
             modifier = modifier
                 .testTag(ELAPSED_TIME_TAG)

@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -428,7 +429,10 @@ fun MaxVideoDurationSetting(
         leadingIcon = null,
         description = when (val maxDuration = maxVideoDurationUiState.currentMaxDurationMillis) {
             UNLIMITED_VIDEO_DURATION -> stringResource(R.string.duration_description_none)
-            else -> stringResource(R.string.duration_description_seconds, (maxDuration / 1000))
+            else -> {
+                val seconds = (maxDuration / 1000).toInt()
+                pluralStringResource(R.plurals.duration_description_seconds, seconds, seconds)
+            }
         },
         popupContents = {
             Column(Modifier.selectableGroup()) {
@@ -450,12 +454,14 @@ fun MaxVideoDurationSetting(
                     THIRTY_SECONDS_DURATION,
                     SIXTY_SECONDS_DURATION
                 ).forEach { maxDuration ->
+                    val seconds = (maxDuration / 1000).toInt()
                     SingleChoiceSelector(
                         modifier = Modifier.testTag(getMaxVideoDurationTestTag(maxDuration)),
                         enabled = true,
-                        text = stringResource(
-                            R.string.duration_description_seconds,
-                            (maxDuration / 1000)
+                        text = pluralStringResource(
+                            R.plurals.duration_description_seconds,
+                            seconds,
+                            seconds
                         ),
                         selected = maxVideoDurationUiState.currentMaxDurationMillis == maxDuration,
                         onClick = { setMaxDuration(maxDuration) }
