@@ -179,6 +179,28 @@ class PolicyOverridesTest {
     }
 
     @Test
+    fun withRequestedChange_whenPolicyReplacesThePermittedEntryValue_restoresTheUserChoice() {
+        // The policy permits the entry value (1:1), so it is kept on entry.
+        val policy = CameraFeaturePolicy(
+            aspectRatio = SettingConfig(
+                defaultValue = AspectRatio.NINE_SIXTEEN,
+                visibility = OptionVisibility.from(AspectRatio.NINE_SIXTEEN, AspectRatio.ONE_ONE)
+            )
+        )
+        val (enforced, overrides) = enforce(policy, userSettings)
+        assertThat(enforced.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+
+        // The user requests a blocked value, so the policy replaces it with its default.
+        val requested = enforced.copy(aspectRatio = AspectRatio.THREE_FOUR)
+        val reEnforced = policy.enforceRestrictions(requested)
+        assertThat(reEnforced.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        val updated =
+            overrides.withRequestedChange { it.copy(aspectRatio = AspectRatio.THREE_FOUR) }
+
+        assertThat(updated.restore(reEnforced).aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+    }
+
+    @Test
     fun constructor_whenCaptureModeChanged_throwsException() {
         val policy = restrictivePolicy.copy(
             captureMode = SettingConfig(CaptureMode.VIDEO_ONLY, OptionVisibility.Hidden)

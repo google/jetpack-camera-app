@@ -267,7 +267,13 @@ interface CameraSystem {
      * A sub-mode is only active while the capture mode matches its parent [CaptureMode]; the
      * capture mode is never changed by this call. Set the capture mode with [setCaptureMode]
      * first. If the capture mode doesn't match, or the sub-mode is unsupported or incompatible
-     * with the current settings, the default sub-mode remains active.
+     * with the current settings, the default sub-mode is used instead, ending any sub-mode that
+     * was active.
+     *
+     * While a sub-mode is active, its feature policy is applied to the settings, and the values
+     * it replaced are restored when the sub-mode ends. If a setting that the policy controls is
+     * set while the sub-mode is active, the policy still applies, and the requested value is the
+     * one restored when the sub-mode ends.
      *
      * @param captureSubModeId The [CaptureSubModeId] to set.
      */

@@ -885,19 +885,26 @@ class CameraXCameraSystemTest {
         assertThat(settings.stabilizationMode).isEqualTo(StabilizationMode.OFF)
         assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
 
-        // Act. Leave the sub-mode -> stabilizationMode is restored to ON (if supported on lens).
+        // Act. Leave the sub-mode -> the latest choices made during the sub-mode are restored:
+        // 60 fps (if supported on lens) and stabilization ON (if supported on lens at that fps).
         cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
         settings = cameraSystem.getCurrentSettings().value!!
         val lensConstraints =
             cameraSystem.getSystemConstraints().value!!.perLensConstraints[
                 settings.cameraLensFacing
             ]!!
-        val expectedRestoredStabilization =
-            if (StabilizationMode.ON in lensConstraints.supportedStabilizationModes) {
+        val expectedRestoredFrameRate =
+            if (60 in lensConstraints.supportedFixedFrameRates) 60 else TARGET_FPS_AUTO
+        val expectedRestoredStabilization = with(lensConstraints) {
+            if (StabilizationMode.ON in supportedStabilizationModes &&
+                expectedRestoredFrameRate !in StabilizationMode.ON.unsupportedFpsSet
+            ) {
                 StabilizationMode.ON
             } else {
                 StabilizationMode.AUTO
             }
+        }
+        assertThat(settings.targetFrameRate).isEqualTo(expectedRestoredFrameRate)
         assertThat(settings.stabilizationMode).isEqualTo(expectedRestoredStabilization)
     }
 
@@ -1029,6 +1036,74 @@ class CameraXCameraSystemTest {
         // Assert. The user's choice is applied.
         assertThat(cameraSystem.getCurrentSettings().value!!.aspectRatio)
             .isEqualTo(AspectRatio.ONE_ONE)
+    }
+
+    @Test
+    fun setAspectRatio_whenPolicyReplacesPermittedEntryValue_restoresUserChoiceOnExit(): Unit =
+        runBlocking {
+            // Arrange. The sub-mode's policy allows 9:16 (default) and 1:1, and the sub-mode is
+            // entered with 1:1, which the policy keeps.
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    CameraFeaturePolicy(
+                        aspectRatio = SettingConfig(
+                            AspectRatio.NINE_SIXTEEN,
+                            OptionVisibility.from(AspectRatio.NINE_SIXTEEN, AspectRatio.ONE_ONE)
+                        )
+                    )
+                )
+            )
+            cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+            cameraSystem.setAspectRatio(AspectRatio.ONE_ONE)
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(cameraSystem.getCurrentSettings().value!!.aspectRatio)
+                .isEqualTo(AspectRatio.ONE_ONE)
+
+            // Act. The user picks a value the policy doesn't allow.
+            cameraSystem.setAspectRatio(AspectRatio.THREE_FOUR)
+
+            // Assert. The policy replaces it with its default while the sub-mode is active.
+            assertThat(cameraSystem.getCurrentSettings().value!!.aspectRatio)
+                .isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+            // Act. Leave the sub-mode.
+            cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+            // Assert. The user's choice is applied, not the policy's default.
+            assertThat(cameraSystem.getCurrentSettings().value!!.aspectRatio)
+                .isEqualTo(AspectRatio.THREE_FOUR)
+        }
+
+    @Test
+    fun setFlashMode_inCaptureSubMode_restoresTheUserChoiceOnExit(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the flash mode to OFF.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    flashMode = SettingConfig(FlashMode.OFF, OptionVisibility.Hidden)
+                )
+            )
+        )
+        val settingsBefore = cameraSystem.getCurrentSettings().value!!
+        val supportedFlashModes = cameraSystem.getSystemConstraints().value!!
+            .perLensConstraints[settingsBefore.cameraLensFacing]!!.supportedFlashModes
+        assume().withMessage("Flash modes ON and AUTO not supported, skip the test.")
+            .that(supportedFlashModes).containsAtLeast(FlashMode.ON, FlashMode.AUTO)
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setFlashMode(FlashMode.ON)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act. The user picks a value the policy doesn't allow.
+        cameraSystem.setFlashMode(FlashMode.AUTO)
+
+        // Assert. The policy value is kept while the sub-mode is active.
+        assertThat(cameraSystem.getCurrentSettings().value!!.flashMode).isEqualTo(FlashMode.OFF)
+
+        // Act. Leave the sub-mode.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The user's choice, not the value from before the sub-mode, is applied.
+        assertThat(cameraSystem.getCurrentSettings().value!!.flashMode).isEqualTo(FlashMode.AUTO)
     }
 
     @Test
