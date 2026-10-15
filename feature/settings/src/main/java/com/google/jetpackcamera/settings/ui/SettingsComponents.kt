@@ -859,6 +859,7 @@ fun LocationSetting(
         enabled = true // always clickable to allow on-demand permission prompts
     )
 }
+
 @Composable
 fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: String = "") {
     SettingUI(
