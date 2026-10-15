@@ -146,7 +146,8 @@ internal suspend fun runSingleCameraSession(
     val videoCaptureUseCase = try {
         when (sessionSettings.captureMode) {
             CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY -> withContext(backgroundDispatcher) {
-                cameraProvider.getCameraInfo(initialCameraSelector).createVideoUseCase(
+                createVideoUseCase(
+                    cameraProvider.getCameraInfo(initialCameraSelector),
                     sessionSettings.aspectRatio,
                     sessionSettings.targetFrameRate,
                     sessionSettings.stabilizationMode,
@@ -438,7 +439,7 @@ internal suspend fun runSingleCameraSession(
                                 }
                         }
 
-                        useCaseGroup.applyDeviceRotation(currentTransientSettings.deviceRotation)
+                        applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
                         processTransientSettingEvents(
                             camera,
                             cameraConstraints,
@@ -541,7 +542,7 @@ suspend fun processTransientSettingEvents(
                     "${prevTransientSettings.deviceRotation} -> " +
                     "${newTransientSettings.deviceRotation}"
             )
-            useCaseGroup.applyDeviceRotation(newTransientSettings.deviceRotation)
+            applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
         }
 
         // setzoomratio when the primary zoom value changes.
@@ -663,9 +664,12 @@ private suspend fun updateCamera2RequestOptions(
 }
 
 @InternalCameraApi
-fun UseCaseGroup.applyDeviceRotation(deviceRotation: DeviceRotation) {
+fun CameraSessionContext.applyDeviceRotation(
+    deviceRotation: DeviceRotation,
+    useCaseGroup: UseCaseGroup
+) {
     val targetRotation = deviceRotation.toUiSurfaceRotation()
-    useCases.forEach {
+    useCaseGroup.useCases.forEach {
         when (it) {
             is Preview -> {
                 // Preview's target rotation should not be updated with device rotation.
@@ -783,7 +787,8 @@ private fun createImageUseCase(
 }
 
 @InternalCameraApi
-fun CameraInfo.createVideoUseCase(
+fun CameraSessionContext.createVideoUseCase(
+    cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
     stabilizationMode: StabilizationMode,
@@ -791,7 +796,7 @@ fun CameraInfo.createVideoUseCase(
     videoQuality: VideoQuality,
     backgroundDispatcher: CoroutineDispatcher
 ): VideoCapture<Recorder> {
-    val sensorLandscapeRatio = this.sensorLandscapeRatio
+    val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
     val recorder = Recorder.Builder()
         .setAspectRatio(
             getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
