@@ -69,49 +69,23 @@ class NightCaptureSubModeProviderTest {
 
     @Test
     fun isCompatibleWith_returnsTrueOnlyForImageOnly() {
-        val constraints = CameraSystemConstraints()
-
+        assertThat(isCompatible(CameraAppSettings(captureMode = CaptureMode.IMAGE_ONLY))).isTrue()
+        assertThat(isCompatible(CameraAppSettings(captureMode = CaptureMode.STANDARD))).isFalse()
+        assertThat(isCompatible(CameraAppSettings(captureMode = CaptureMode.VIDEO_ONLY))).isFalse()
         assertThat(
-            provider.isCompatibleWith(
-                settings = CameraAppSettings(captureMode = CaptureMode.IMAGE_ONLY),
-                systemConstraints = constraints,
-                externalCaptureMode = ExternalCaptureMode.Standard
-            )
-        ).isTrue()
-
-        assertThat(
-            provider.isCompatibleWith(
-                settings = CameraAppSettings(captureMode = CaptureMode.STANDARD),
-                systemConstraints = constraints,
-                externalCaptureMode = ExternalCaptureMode.Standard
-            )
-        ).isFalse()
-
-        assertThat(
-            provider.isCompatibleWith(
-                settings = CameraAppSettings(captureMode = CaptureMode.VIDEO_ONLY),
-                systemConstraints = constraints,
-                externalCaptureMode = ExternalCaptureMode.Standard
-            )
-        ).isFalse()
-
-        assertThat(
-            provider.isCompatibleWith(
-                settings = CameraAppSettings(captureMode = CaptureMode.IMAGE_ONLY),
-                systemConstraints = constraints,
+            isCompatible(
+                CameraAppSettings(captureMode = CaptureMode.IMAGE_ONLY),
                 externalCaptureMode = ExternalCaptureMode.VideoCapture
             )
         ).isFalse()
 
         // A selected effect is turned off by the policy rather than preventing Night Mode.
         assertThat(
-            provider.isCompatibleWith(
-                settings = CameraAppSettings(
+            isCompatible(
+                CameraAppSettings(
                     captureMode = CaptureMode.IMAGE_ONLY,
                     selectedCameraEffect = CameraEffectId("custom_effect")
-                ),
-                systemConstraints = constraints,
-                externalCaptureMode = ExternalCaptureMode.Standard
+                )
             )
         ).isTrue()
     }
@@ -177,7 +151,6 @@ class NightCaptureSubModeProviderTest {
     fun compatibleCameraEffects_areAllowedByPolicyAndCompatibility() {
         val compatibleEffect = CameraEffectId("compatible_effect")
         val providerWithEffect = NightCaptureSubModeProvider(context, setOf(compatibleEffect))
-        val constraints = CameraSystemConstraints()
 
         assertThat(providerWithEffect.featurePolicy.cameraEffect).isEqualTo(
             SettingConfig(
@@ -185,26 +158,13 @@ class NightCaptureSubModeProviderTest {
                 visibility = OptionVisibility.Only(NONE_EFFECT_ID, compatibleEffect)
             )
         )
-        assertThat(
-            providerWithEffect.isCompatibleWith(
-                settings = CameraAppSettings(
-                    captureMode = CaptureMode.IMAGE_ONLY,
-                    selectedCameraEffect = compatibleEffect
-                ),
-                systemConstraints = constraints,
-                externalCaptureMode = ExternalCaptureMode.Standard
+        for (effect in listOf(compatibleEffect, CameraEffectId("other_effect"))) {
+            val settings = CameraAppSettings(
+                captureMode = CaptureMode.IMAGE_ONLY,
+                selectedCameraEffect = effect
             )
-        ).isTrue()
-        assertThat(
-            providerWithEffect.isCompatibleWith(
-                settings = CameraAppSettings(
-                    captureMode = CaptureMode.IMAGE_ONLY,
-                    selectedCameraEffect = CameraEffectId("other_effect")
-                ),
-                systemConstraints = constraints,
-                externalCaptureMode = ExternalCaptureMode.Standard
-            )
-        ).isTrue()
+            assertThat(isCompatible(settings, provider = providerWithEffect)).isTrue()
+        }
 
         // The compatible effect stays on; any other effect is turned off.
         val policy = providerWithEffect.featurePolicy
@@ -369,6 +329,12 @@ class NightCaptureSubModeProviderTest {
 
         assertThat(factoryInvocations.get()).isEqualTo(1)
     }
+
+    private fun isCompatible(
+        settings: CameraAppSettings,
+        externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard,
+        provider: NightCaptureSubModeProvider = this.provider
+    ): Boolean = provider.isCompatibleWith(settings, CameraSystemConstraints(), externalCaptureMode)
 
     private fun fakeCameraInfo(selector: CameraSelector): CameraInfo = Proxy.newProxyInstance(
         CameraInfo::class.java.classLoader,
