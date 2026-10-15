@@ -62,6 +62,11 @@ import kotlinx.coroutines.withContext
 
 private const val TAG = "ConcurrentCameraSession"
 
+// Picture-in-picture placement of the secondary camera, in normalized composition coordinates.
+private const val SECONDARY_CAMERA_SCALE = 1 / 3f
+private const val SECONDARY_CAMERA_OFFSET_X = 2 / 3f - 0.1f
+private const val SECONDARY_CAMERA_OFFSET_Y = -2 / 3f + 0.1f
+
 @SuppressLint("RestrictedApi")
 internal suspend fun CameraSessionContext.runConcurrentCameraSession(
     sessionSettings: PerpetualSessionSettings.CustomSession,
@@ -87,20 +92,9 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
             val secondaryFacing = primaryFacing.flip()
             val cameraPair =
                 availableConcurrentCameraInfos.firstNotNullOfOrNull { group ->
-                    var primary: CameraInfo? = null
-                    var secondary: CameraInfo? = null
-                    for (cameraInfo in group) {
-                        when (cameraInfo.appLensFacing) {
-                            primaryFacing -> primary = cameraInfo
-                            secondaryFacing -> secondary = cameraInfo
-                            else -> {}
-                        }
-                    }
-                    primary?.let { nonNullPrimary ->
-                        secondary?.let { nonNullSecondary ->
-                            nonNullPrimary to nonNullSecondary
-                        }
-                    }
+                    val primary = group.firstOrNull { it.appLensFacing == primaryFacing }
+                    val secondary = group.firstOrNull { it.appLensFacing == secondaryFacing }
+                    if (primary != null && secondary != null) primary to secondary else null
                 }
             if (cameraPair == null) {
                 currentCameraState.update { old ->
@@ -162,8 +156,8 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                         secondaryCameraInfo.cameraSelector,
                         CompositionSettings.Builder()
                             .setAlpha(1.0f)
-                            .setOffset(2 / 3f - 0.1f, -2 / 3f + 0.1f)
-                            .setScale(1 / 3f, 1 / 3f)
+                            .setOffset(SECONDARY_CAMERA_OFFSET_X, SECONDARY_CAMERA_OFFSET_Y)
+                            .setScale(SECONDARY_CAMERA_SCALE, SECONDARY_CAMERA_SCALE)
                             .build()
                     )
                 )
