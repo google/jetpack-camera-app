@@ -48,48 +48,20 @@ class ConcurrentCameraSubModeProviderTest {
 
     @Test
     fun isCompatibleWith_videoOnlyAndStandardExternalMode_returnsTrue() {
-        val settings = CameraAppSettings(captureMode = CaptureMode.VIDEO_ONLY)
-        val constraints = CameraSystemConstraints()
-
-        assertThat(
-            provider.isCompatibleWith(
-                settings = settings,
-                systemConstraints = constraints,
-                externalCaptureMode = ExternalCaptureMode.Standard
-            )
-        ).isTrue()
+        assertThat(isCompatible(CameraAppSettings(captureMode = CaptureMode.VIDEO_ONLY))).isTrue()
     }
 
     @Test
     fun isCompatibleWith_nonVideoOnlyCaptureMode_returnsFalse() {
-        val constraints = CameraSystemConstraints()
-
-        assertThat(
-            provider.isCompatibleWith(
-                settings = CameraAppSettings(captureMode = CaptureMode.STANDARD),
-                systemConstraints = constraints,
-                externalCaptureMode = ExternalCaptureMode.Standard
-            )
-        ).isFalse()
-
-        assertThat(
-            provider.isCompatibleWith(
-                settings = CameraAppSettings(captureMode = CaptureMode.IMAGE_ONLY),
-                systemConstraints = constraints,
-                externalCaptureMode = ExternalCaptureMode.Standard
-            )
-        ).isFalse()
+        assertThat(isCompatible(CameraAppSettings(captureMode = CaptureMode.STANDARD))).isFalse()
+        assertThat(isCompatible(CameraAppSettings(captureMode = CaptureMode.IMAGE_ONLY))).isFalse()
     }
 
     @Test
     fun isCompatibleWith_nonStandardExternalCaptureMode_returnsFalse() {
-        val settings = CameraAppSettings(captureMode = CaptureMode.VIDEO_ONLY)
-        val constraints = CameraSystemConstraints()
-
         assertThat(
-            provider.isCompatibleWith(
-                settings = settings,
-                systemConstraints = constraints,
+            isCompatible(
+                CameraAppSettings(captureMode = CaptureMode.VIDEO_ONLY),
                 externalCaptureMode = ExternalCaptureMode.VideoCapture
             )
         ).isFalse()
@@ -102,15 +74,8 @@ class ConcurrentCameraSubModeProviderTest {
             captureMode = CaptureMode.VIDEO_ONLY,
             selectedCameraEffect = CameraEffectId("custom_effect")
         )
-        val constraints = CameraSystemConstraints()
 
-        assertThat(
-            provider.isCompatibleWith(
-                settings = settings,
-                systemConstraints = constraints,
-                externalCaptureMode = ExternalCaptureMode.Standard
-            )
-        ).isTrue()
+        assertThat(isCompatible(settings)).isTrue()
     }
 
     @Test
@@ -161,13 +126,7 @@ class ConcurrentCameraSubModeProviderTest {
             selectedCameraEffect = CameraEffectId("custom_effect")
         )
 
-        assertThat(
-            provider.isCompatibleWith(
-                settings = settings,
-                systemConstraints = CameraSystemConstraints(),
-                externalCaptureMode = ExternalCaptureMode.Standard
-            )
-        ).isTrue()
+        assertThat(isCompatible(settings)).isTrue()
 
         val enforced = provider.featurePolicy.enforceRestrictions(settings)
         assertThat(enforced.dynamicRange).isEqualTo(DynamicRange.SDR)
@@ -176,4 +135,9 @@ class ConcurrentCameraSubModeProviderTest {
         assertThat(enforced.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
         assertThat(enforced.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
     }
+
+    private fun isCompatible(
+        settings: CameraAppSettings,
+        externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
+    ): Boolean = provider.isCompatibleWith(settings, CameraSystemConstraints(), externalCaptureMode)
 }
