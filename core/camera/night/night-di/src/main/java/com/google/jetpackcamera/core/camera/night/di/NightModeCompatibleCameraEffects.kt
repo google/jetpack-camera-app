@@ -18,32 +18,17 @@ package com.google.jetpackcamera.core.camera.night.di
 import javax.inject.Qualifier
 
 /**
- * Identifies the set of camera effects that Night Mode allows, as a
- * `Set<com.google.jetpackcamera.model.CameraEffectId>` multibinding.
+ * Identifies the `Set<CameraEffectId>` of camera effects that Night Mode allows. The set is empty
+ * by default, so a selected effect is turned off while Night Mode is active. Whether an effect
+ * works with Night Mode depends on the device.
  *
- * The set is empty by default, so a selected camera effect is turned off while Night Mode is
- * active. An app that includes a camera effect and has verified that it works with Night Mode can
- * add it:
- *
- * ```kotlin
- * @Module
- * @InstallIn(SingletonComponent::class)
- * object NightModeEffectsModule {
- *     @Provides
- *     @ElementsIntoSet
- *     @NightModeCompatibleCameraEffects
- *     fun provideNightModeCompatibleCameraEffects(): Set<CameraEffectId> =
- *         setOf(SingleStreamEffectKey.id)
- * }
+ * Example usage in a Hilt module (use `@ElementsIntoSet`, since `CameraEffectId` is a value class):
  * ```
- *
- * Contribute the set with `@ElementsIntoSet` as shown. `CameraEffectId` is a value class, so a
- * `@Provides @IntoSet` function that returns a single `CameraEffectId` gets a JVM name that the
- * dependency injection code generator can't see, and its contribution is silently dropped.
- *
- * Whether an effect works with Night Mode depends on the device's Night Mode extension, so verify
- * it on each class of device the app supports. If binding fails, the camera reports a stream
- * configuration error.
+ * @Provides
+ * @ElementsIntoSet
+ * @NightModeCompatibleCameraEffects
+ * fun provideNightModeEffects(): Set<CameraEffectId> = setOf(SingleStreamEffectKey.id)
+ * ```
  */
 @Qualifier
 @Retention(AnnotationRetention.BINARY)

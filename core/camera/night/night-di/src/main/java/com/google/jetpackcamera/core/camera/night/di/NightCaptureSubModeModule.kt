@@ -50,7 +50,7 @@ internal object NightCaptureSubModeModule {
         )
 }
 
-/** Declares the [NightModeCompatibleCameraEffects] set so that it is empty unless an app adds to it. */
+/** Declares [NightModeCompatibleCameraEffects] so that it is empty by default. */
 @Module
 @InstallIn(SingletonComponent::class)
 internal interface NightModeCompatibleCameraEffectsModule {

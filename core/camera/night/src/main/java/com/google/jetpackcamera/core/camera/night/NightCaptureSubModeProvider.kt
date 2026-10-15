@@ -46,18 +46,10 @@ private const val TAG = "NightSubModeProvider"
 
 /**
  * [CaptureSubModeProvider] for the Night Mode CameraX extension under [CaptureMode.IMAGE_ONLY].
- *
- * Queries [ExtensionsManager] for [ExtensionMode.NIGHT] support per camera lens, transforms the
- * [CameraSelector] when Night Mode is active, and restricts dynamic range to SDR, stabilization
- * to off, flash to standard modes (excluding Low Light Boost), and the camera effect to none or
- * one of [compatibleCameraEffects].
- *
- * Any other selected camera effect is turned off while Night Mode is active and turned back on
- * when it ends.
+ * It checks [ExtensionMode.NIGHT] support per lens and enables it through the [CameraSelector].
  *
  * @param compatibleCameraEffects Camera effects that the app has verified work with Night Mode.
- *   This module does not depend on any effect, so the app, which knows which effects it includes,
- *   provides them. Defaults to none.
+ *   Other effects are turned off while Night Mode is active.
  */
 class NightCaptureSubModeProvider internal constructor(
     private val applicationContext: Context,
