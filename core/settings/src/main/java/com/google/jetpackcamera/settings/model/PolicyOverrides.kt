@@ -25,7 +25,8 @@ import com.google.jetpackcamera.model.StabilizationMode
 /**
  * Records the [CameraAppSettings] values that [CameraFeaturePolicy.enforceRestrictions] replaced,
  * so that they can be restored when the policy no longer applies (for example, when the user
- * leaves a capture sub-mode).
+ * leaves a capture sub-mode). Changes that the user requests while the policy applies replace
+ * the recorded values (see [withRequestedChange]).
  *
  * The restored values are [CameraAppSettings.aspectRatio], [CameraAppSettings.flashMode],
  * [CameraAppSettings.imageFormat], [CameraAppSettings.dynamicRange],
@@ -78,10 +79,12 @@ data class PolicyOverrides private constructor(
     }
 
     /**
-     * Returns [settings] with each overridden value set back to its value before enforcement.
+     * Returns [settings] with each overridden value set back to the value to restore.
      *
-     * A value is only restored if it still equals the value that the policy set. Values that have
-     * changed since enforcement (for example, by the user) are kept.
+     * The value to restore is the value that the user last requested while the policy applied
+     * (see [withRequestedChange]), or otherwise the value from before enforcement. A value from
+     * before enforcement is only restored if the setting still equals the value that the policy
+     * set; values that have changed since enforcement are kept.
      */
     fun restore(settings: CameraAppSettings): CameraAppSettings = settings.copy(
         aspectRatio = aspectRatio.restore(settings.aspectRatio),
@@ -101,8 +104,9 @@ data class PolicyOverrides private constructor(
      * policy no longer applies. This holds whether or not the policy permits the choice.
      *
      * @param change Applies the user's change to settings that hold the values to restore, for
-     *   example `{ it.copy(flashMode = FlashMode.OFF) }`. Changes to settings that are not
-     *   restored are ignored.
+     *   example `{ it.copy(flashMode = FlashMode.OFF) }`. Only the restored settings listed in
+     *   [PolicyOverrides] hold meaningful values; other settings are placeholders, and changes to
+     *   them are ignored.
      */
     fun withRequestedChange(change: (CameraAppSettings) -> CameraAppSettings): PolicyOverrides {
         val requested = change(
@@ -117,20 +121,36 @@ data class PolicyOverrides private constructor(
             )
         )
         return copy(
-            aspectRatio = aspectRatio.copy(before = requested.aspectRatio),
-            flashMode = flashMode.copy(before = requested.flashMode),
-            imageFormat = imageFormat.copy(before = requested.imageFormat),
-            dynamicRange = dynamicRange.copy(before = requested.dynamicRange),
-            stabilizationMode = stabilizationMode.copy(before = requested.stabilizationMode),
-            targetFrameRate = targetFrameRate.copy(before = requested.targetFrameRate),
-            selectedCameraEffect = selectedCameraEffect.copy(
-                before = requested.selectedCameraEffect
+            aspectRatio = aspectRatio.withRequest(requested.aspectRatio),
+            flashMode = flashMode.withRequest(requested.flashMode),
+            imageFormat = imageFormat.withRequest(requested.imageFormat),
+            dynamicRange = dynamicRange.withRequest(requested.dynamicRange),
+            stabilizationMode = stabilizationMode.withRequest(requested.stabilizationMode),
+            targetFrameRate = targetFrameRate.withRequest(requested.targetFrameRate),
+            selectedCameraEffect = selectedCameraEffect.withRequest(
+                requested.selectedCameraEffect
             )
         )
     }
 
-    /** A setting's value before enforcement, and the value that the policy set. */
-    private data class OverriddenValue<T>(val before: T, val enforced: T) {
-        fun restore(current: T): T = if (current == enforced) before else current
+    /**
+     * A setting's value to restore, and the value that the policy set.
+     *
+     * @property before The value from before enforcement, or the value that the user requested
+     *   while the policy applied.
+     * @property enforced The value that the policy set.
+     * @property requested Whether [before] holds a value that the user requested while the policy
+     *   applied. A requested value is always restored, even if the policy has since replaced the
+     *   value that it set on entry.
+     */
+    private data class OverriddenValue<T>(
+        val before: T,
+        val enforced: T,
+        val requested: Boolean = false
+    ) {
+        fun restore(current: T): T = if (requested || current == enforced) before else current
+
+        fun withRequest(value: T): OverriddenValue<T> =
+            if (value == before) this else copy(before = value, requested = true)
     }
 }
