@@ -272,10 +272,8 @@ interface CameraSystem {
     /**
      * Sets the active capture sub-mode for the camera.
      *
-     * While a sub-mode is active, its feature policy is applied to the settings, and the values
-     * it replaced are restored when the sub-mode ends. If a setting that the policy controls is
-     * set while the sub-mode is active, the policy still applies, and the requested value is the
-     * one restored when the sub-mode ends.
+     * While a sub-mode is active, its feature policy applies. When it ends, settings the policy
+     * changed return to their earlier values, or to the values last set during the sub-mode.
      *
      * @param captureSubModeId The [CaptureSubModeId] to set.
      */

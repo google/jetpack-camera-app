@@ -1212,8 +1212,6 @@ class CameraXCameraSystem(
      *
      * The values replaced by the policy are recorded in [CameraAppSettings.captureSubModeOverrides]
      * when a sub-mode becomes active, and are restored when it ends (see [PolicyOverrides]).
-     * Changes requested by the user while the sub-mode is active replace the recorded values (see
-     * [withUserChange]).
      *
      * This has no side effects, so it is safe to call from `MutableStateFlow.update`, which may
      * run its function more than once.
@@ -1272,9 +1270,7 @@ class CameraXCameraSystem(
             .tryApplyImageFormatConstraints()
             .tryApplyFlashModeConstraints()
             .tryApplyVideoQualityConstraints()
-            // Frame rate is only checked when the policy sets it, and stabilization only when the
-            // policy sets it or the frame rate, so that a sub-mode that restricts neither leaves
-            // them as they are outside a sub-mode.
+            // Only re-check frame rate and stabilization if the policy restricts them.
             .let { if (policy.targetFrameRate != null) it.tryApplyFrameRateConstraints() else it }
             .let {
                 if (policy.targetFrameRate != null || policy.stabilizationMode != null) {
@@ -1307,8 +1303,7 @@ class CameraXCameraSystem(
             .tryApplyImageFormatConstraints()
             .tryApplyFlashModeConstraints()
             .tryApplyVideoQualityConstraints()
-        // Frame rate and stabilization are only checked when they were restored, matching how
-        // they are handled outside a sub-mode.
+        // Only re-check frame rate and stabilization if they were restored.
         val frameRateRestored = restored.targetFrameRate != targetFrameRate
         return restored
             .let { if (frameRateRestored) it.tryApplyFrameRateConstraints() else it }
@@ -1322,8 +1317,8 @@ class CameraXCameraSystem(
     }
 
     /**
-     * Applies [change] to these settings and, if a capture sub-mode is active, to the values that
-     * are restored when it ends, so that the user's latest choice is kept when the sub-mode ends.
+     * Applies [change] to these settings and, if a capture sub-mode is active, to the values
+     * restored when it ends.
      */
     private fun CameraAppSettings.withUserChange(
         change: CameraAppSettings.() -> CameraAppSettings

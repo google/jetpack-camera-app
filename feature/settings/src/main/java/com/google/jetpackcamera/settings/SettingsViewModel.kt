@@ -262,10 +262,7 @@ class SettingsViewModel @Inject constructor(
 //
 // ////////////////////////////////////////////////////////////
 
-    /**
-     * The policy of the capture sub-mode that the camera is running, and the sub-mode's label for
-     * the disabled rationale text.
-     */
+    /** The active capture sub-mode's policy and label. */
     private data class ActiveCaptureSubMode(
         val policy: CameraFeaturePolicy,
         val labelResId: Int
@@ -287,10 +284,7 @@ class SettingsViewModel @Inject constructor(
         return ActiveCaptureSubMode(policy, labelResId)
     }
 
-    /**
-     * Disables this option if it is selectable but [config] does not permit [option]. Options that
-     * are already disabled keep their existing rationale (e.g. unsupported by the device).
-     */
+    /** Disables this option if it is selectable and [config] does not permit [option]. */
     private fun <T : Any> SingleSelectableState.restrictedBy(
         config: SettingConfig<T>,
         option: T,
@@ -364,11 +358,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Restricts the camera effect setting. Selecting no effect is always offered by the settings
-     * screen, so the setting is only disabled if the policy hides it or removes every supported
-     * effect.
-     */
+    /** Disables the setting if the policy hides it or permits none of the supported effects. */
     private fun CameraEffectUiState.restrictedBy(
         activeSubMode: ActiveCaptureSubMode?
     ): CameraEffectUiState {
