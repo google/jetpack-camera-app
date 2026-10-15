@@ -46,11 +46,10 @@ fun CameraAppSettingsProto.toModel(
 ): CameraAppSettings {
     return CameraAppSettings(
         captureMode = defaultCaptureModeOverride,
-        selectedCameraEffect = if (this.selectedCameraEffect.isEmpty()) {
-            baselineSettings.selectedCameraEffect
-        } else {
-            CameraEffectId(this.selectedCameraEffect)
-        },
+        selectedCameraEffect = this.selectedCameraEffect
+            .takeIf { it.isNotEmpty() }
+            ?.let(::CameraEffectId)
+            ?: baselineSettings.selectedCameraEffect,
 
         cameraLensFacing = this.defaultLensFacing.toModel(),
         flashMode = when (this.flashMode) {
