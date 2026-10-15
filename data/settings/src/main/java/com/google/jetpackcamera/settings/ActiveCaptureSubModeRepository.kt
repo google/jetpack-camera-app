@@ -20,17 +20,12 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Data layer for the capture sub-mode that the camera is running.
- *
- * Settings screens use it to disable settings that the active sub-mode's policy restricts. The
- * policy itself is looked up in
- * [com.google.jetpackcamera.settings.model.CameraSystemConstraints.captureSubModePolicies].
  */
 interface ActiveCaptureSubModeRepository {
 
     /**
-     * A [Flow] emitting the [CaptureSubModeId] of the capture sub-mode that the camera is
-     * running, or [CaptureSubModeId.DEFAULT] if none is active. Each collector receives the
-     * current value first, followed by changes.
+     * A [Flow] emitting the [CaptureSubModeId] of the active capture sub-mode, or
+     * [CaptureSubModeId.DEFAULT] if none is active, starting with the current value.
      */
     val activeCaptureSubModeId: Flow<CaptureSubModeId>
 }

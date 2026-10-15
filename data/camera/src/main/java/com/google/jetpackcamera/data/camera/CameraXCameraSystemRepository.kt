@@ -114,8 +114,6 @@ class CameraXCameraSystemRepository(
         cameraSystem.getCurrentSettings()
     }
 
-    // Derived from the current settings on each collection, so that a new collector receives
-    // the current value first and no coroutine outlives its collectors.
     override val activeCaptureSubModeId: Flow<CaptureSubModeId> by lazy {
         currentSettings
             .map { it.activeCaptureSubModeIdOrDefault() }

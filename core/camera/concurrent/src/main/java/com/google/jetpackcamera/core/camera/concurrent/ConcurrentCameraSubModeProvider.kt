@@ -43,16 +43,8 @@ import com.google.jetpackcamera.settings.model.SettingConfig
 
 /**
  * [CaptureSubModeProvider] for the concurrent dual-camera capture sub-mode under
- * [CaptureMode.VIDEO_ONLY].
- *
- * Binds both the primary and opposite-facing cameras simultaneously via a custom concurrent
- * camera session, recording at [com.google.jetpackcamera.model.VideoQuality.UNSPECIFIED], and
- * restricts dynamic range to SDR, flash to standard modes (excluding Low Light Boost),
- * stabilization to [StabilizationMode.OFF], target frame rate to [TARGET_FPS_AUTO], and the camera
- * effect to none.
- *
- * The concurrent session doesn't apply camera effects, so a selected effect is turned off while
- * dual camera is active and turned back on when it ends.
+ * [CaptureMode.VIDEO_ONLY]. It binds the front and back cameras in a custom session, and its
+ * [featurePolicy] locks the settings that session doesn't support, including camera effects.
  */
 class ConcurrentCameraSubModeProvider internal constructor(
     private val availableConcurrentCameraInfos: (ProcessCameraProvider) -> List<List<CameraInfo>>
