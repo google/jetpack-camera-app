@@ -79,6 +79,7 @@ import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
 import com.google.jetpackcamera.settings.FlashUiState
 import com.google.jetpackcamera.settings.FlipLensUiState
 import com.google.jetpackcamera.settings.FpsUiState
+import com.google.jetpackcamera.settings.LocationUiState
 import com.google.jetpackcamera.settings.LowLightBoostPriorityUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
 import com.google.jetpackcamera.settings.R
@@ -814,6 +815,50 @@ fun RecordingAudioSetting(
     )
 }
 
+/**
+ * A settings item that renders a toggle switch for enabling or disabling location geotagging.
+ *
+ * @param modifier Modifier to be applied to the setting layout.
+ * @param locationUiState The current [LocationUiState] controlling title, rationale, and state.
+ * @param onLocationToggled Callback invoked when the user toggles the switch.
+ */
+@Composable
+fun LocationSetting(
+    modifier: Modifier = Modifier,
+    locationUiState: LocationUiState,
+    onLocationToggled: (Boolean) -> Unit
+) {
+    if (locationUiState is LocationUiState.Hidden) return
+
+    SwitchSettingUI(
+        modifier = modifier.testTag(BTN_SWITCH_SETTING_LOCATION_TAG),
+        title = stringResource(id = R.string.location_setting_title),
+        description = when (locationUiState) {
+            is LocationUiState.Enabled.On -> {
+                stringResource(R.string.location_setting_description_on)
+            }
+
+            is LocationUiState.Enabled.Off -> {
+                stringResource(R.string.location_setting_description_off)
+            }
+
+            is LocationUiState.Disabled -> {
+                disabledRationaleString(disabledRationale = locationUiState.disabledRationale)
+            }
+
+            LocationUiState.Hidden -> ""
+        },
+        leadingIcon = null,
+        onSwitchChanged = onLocationToggled,
+        settingValue = when (locationUiState) {
+            is LocationUiState.Enabled.On -> true
+            is LocationUiState.Disabled,
+            is LocationUiState.Enabled.Off,
+            LocationUiState.Hidden -> false
+        },
+        enabled = true // always clickable to allow on-demand permission prompts
+    )
+}
 @Composable
 fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: String = "") {
     SettingUI(
@@ -1038,6 +1083,11 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
         )
 
         is DisabledRationale.PermissionRecordAudioNotGrantedRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.PermissionLocationNotGrantedRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
         )

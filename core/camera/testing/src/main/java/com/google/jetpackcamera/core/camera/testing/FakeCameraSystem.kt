@@ -17,6 +17,7 @@ package com.google.jetpackcamera.core.camera.testing
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
+import android.location.Location
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
@@ -62,6 +63,14 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     var isRecordingPaused = false
 
     var isLensFacingFront = false
+
+    /** The most recent [Location] passed to [takePicture], or `null` if none was provided. */
+    var lastPictureTakenLocation: Location? = null
+        private set
+
+    /** The most recent [Location] passed to [startVideoRecording], or `null` if none was provided. */
+    var lastVideoRecordingLocation: Location? = null
+        private set
 
     private var isScreenFlash = true
     private var screenFlashEvents = Channel<CameraSystem.ScreenFlashEvent>(capacity = UNLIMITED)
@@ -125,8 +134,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override suspend fun takePicture(
         contentResolver: ContentResolver,
         saveLocation: SaveLocation,
+        location: Location?,
         onCaptureStarted: () -> Unit
     ): ImageCapture.OutputFileResults {
+        lastPictureTakenLocation = location
         takePicture(onCaptureStarted)
         return ImageCapture.OutputFileResults(null)
     }
@@ -139,11 +150,13 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     override suspend fun startVideoRecording(
         saveLocation: SaveLocation,
+        location: Location?,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
+        lastVideoRecordingLocation = location
         numVideoRecordingStarts++
         recordingInProgress = true
     }
@@ -209,7 +222,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     override fun isScreenFlashEnabled() = isScreenFlash
 
-    fun isPreviewStarted() = previewStarted
+    fun isPreviewStarted(): Boolean = previewStarted
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->

@@ -17,13 +17,18 @@ package com.google.jetpackcamera.feature.preview
 
 import android.content.ContentResolver
 import android.content.Context
+import android.location.Location
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.CaptureSubModeState
+import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
+import com.google.jetpackcamera.core.location.LocationProvider
+import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute
@@ -49,7 +54,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -64,7 +69,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class PreviewViewModelTest {
 
@@ -109,6 +113,7 @@ class PreviewViewModelTest {
             cameraSystemRepository = cameraSystemRepository,
             settingsRepository = FakeSettingsRepository(),
             mediaRepository = FakeMediaRepository(),
+            locationProvider = java.util.Optional.of(FakeLocationProvider()),
             savedStateHandle = SavedStateHandle(),
             defaultSaveMode = SaveMode.Immediate,
             cameraFeaturePolicy = defaultTestPolicy
@@ -232,6 +237,7 @@ class PreviewViewModelTest {
                 cameraSystemRepository = cameraSystemRepository,
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.empty(),
                 savedStateHandle = SavedStateHandle(),
                 defaultSaveMode = SaveMode.Immediate,
                 cameraFeaturePolicy = restrictedPolicy
@@ -257,6 +263,7 @@ class PreviewViewModelTest {
                 cameraSystemRepository = cameraSystemRepository,
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.empty(),
                 savedStateHandle = SavedStateHandle(),
                 defaultSaveMode = SaveMode.Immediate,
                 cameraFeaturePolicy = defaultTestPolicy
@@ -288,6 +295,7 @@ class PreviewViewModelTest {
                 ),
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.empty(),
                 savedStateHandle = SavedStateHandle(
                     mapOf(
                         PreviewRoute.ARG_EXTERNAL_CAPTURE_MODE to ExternalCaptureMode.ImageCapture
@@ -319,6 +327,7 @@ class PreviewViewModelTest {
                 ),
                 settingsRepository = FakeSettingsRepository(),
                 mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.empty(),
                 savedStateHandle = SavedStateHandle(
                     mapOf(
                         PreviewRoute.ARG_EXTERNAL_CAPTURE_MODE to ExternalCaptureMode.VideoCapture
@@ -346,6 +355,7 @@ class PreviewViewModelTest {
                     CameraAppSettings(cameraLensFacing = LensFacing.FRONT)
                 ),
                 mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.empty(),
                 savedStateHandle = SavedStateHandle(),
                 defaultSaveMode = SaveMode.Immediate,
                 cameraFeaturePolicy = defaultTestPolicy
@@ -375,6 +385,352 @@ class PreviewViewModelTest {
         assertThat(snackbarToShow?.cookie).startsWith("CaptureSubMode-")
     }
 
+    @Test
+    fun locationUpdates_withLocationProviderPresent_triggersUpdates() =
+        runTest(StandardTestDispatcher()) {
+            val fakeLocation = FakeLocationProvider()
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(locationEnabled = true)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(fakeLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            assertThat(fakeLocation.isUpdatesRunning).isFalse()
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isTrue()
+            vm.stopLocationUpdates()
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isFalse()
+        }
+
+    @Test
+    fun locationUpdates_withLocationProviderEmpty_doesNotThrow() =
+        runTest(StandardTestDispatcher()) {
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(locationEnabled = true)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.empty(),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            // Verify safe no-op when provider is absent
+            vm.startLocationUpdates()
+            vm.stopLocationUpdates()
+        }
+
+    @Test
+    fun locationUpdates_locationSettingToggled_startsAndStopsUpdates() =
+        runTest(StandardTestDispatcher()) {
+            val fakeLocation = FakeLocationProvider()
+            val settingsRepo = FakeSettingsRepository(CameraAppSettings(locationEnabled = false))
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = settingsRepo,
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(fakeLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            advanceUntilIdle()
+
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isFalse()
+
+            settingsRepo.updateLocationEnabled(true)
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isTrue()
+
+            settingsRepo.updateLocationEnabled(false)
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isFalse()
+        }
+
+    @Test
+    fun captureImage_locationSettingDisabled_doesNotPassLocationToCameraSystem() =
+        runTest(StandardTestDispatcher()) {
+            val contentResolver: ContentResolver =
+                ApplicationProvider.getApplicationContext<Context>().contentResolver
+            val fakeLocation = FakeLocationProvider()
+            fakeLocation.setLocation(latitude = 37.4220, longitude = -122.0841)
+            val settingsRepo = FakeSettingsRepository(CameraAppSettings(locationEnabled = false))
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = settingsRepo,
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(fakeLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            vm.cameraController.startCamera()
+            advanceUntilIdle()
+
+            vm.captureController.captureImage(contentResolver)
+            advanceUntilIdle()
+            assertThat(cameraSystem.lastPictureTakenLocation).isNull()
+
+            settingsRepo.updateLocationEnabled(true)
+            advanceUntilIdle()
+
+            vm.captureController.captureImage(contentResolver)
+            advanceUntilIdle()
+            assertThat(cameraSystem.lastPictureTakenLocation?.latitude).isEqualTo(37.4220)
+        }
+
+    @Test
+    fun locationUpdates_videoRecordingStarts_cancelsLocationUpdates() =
+        runTest(StandardTestDispatcher()) {
+            val fakeLocation = FakeLocationProvider()
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(locationEnabled = true)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(fakeLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            advanceUntilIdle()
+
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isTrue()
+
+            cameraSystem.setCurrentCameraState(
+                CameraState(
+                    videoRecordingState = VideoRecordingState.Active.Recording(
+                        maxDurationMillis = 0,
+                        audioStreamState = AudioStreamState.Disabled,
+                        elapsedTimeNanos = 0
+                    )
+                )
+            )
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isFalse()
+        }
+
+    @Test
+    fun locationUpdates_videoRecordingStarting_cancelsLocationUpdates() =
+        runTest(StandardTestDispatcher()) {
+            val fakeLocation = FakeLocationProvider()
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(locationEnabled = true)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(fakeLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            advanceUntilIdle()
+
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isTrue()
+
+            cameraSystem.setCurrentCameraState(
+                CameraState(videoRecordingState = VideoRecordingState.Starting())
+            )
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isFalse()
+        }
+
+    @Test
+    fun locationUpdates_videoRecordingStops_resumesLocationUpdatesIfPreviewActive() =
+        runTest(StandardTestDispatcher()) {
+            val fakeLocation = FakeLocationProvider()
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(locationEnabled = true)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(fakeLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            advanceUntilIdle()
+
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isTrue()
+
+            cameraSystem.setCurrentCameraState(
+                CameraState(
+                    videoRecordingState = VideoRecordingState.Active.Recording(
+                        maxDurationMillis = 0,
+                        audioStreamState = AudioStreamState.Disabled,
+                        elapsedTimeNanos = 0
+                    )
+                )
+            )
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isFalse()
+
+            cameraSystem.setCurrentCameraState(
+                CameraState(
+                    videoRecordingState = VideoRecordingState.Inactive()
+                )
+            )
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isTrue()
+        }
+
+    @Test
+    fun locationUpdates_providerThrows_doesNotCrashAndRestartsOnNextTrigger() =
+        runTest(StandardTestDispatcher()) {
+            val failingLocation = FailingLocationProvider()
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(locationEnabled = true)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(failingLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            advanceUntilIdle()
+
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(failingLocation.runCount).isEqualTo(1)
+
+            // A recording pauses location updates, and its end restarts them.
+            cameraSystem.setCurrentCameraState(
+                CameraState(videoRecordingState = VideoRecordingState.Starting())
+            )
+            advanceUntilIdle()
+            cameraSystem.setCurrentCameraState(
+                CameraState(videoRecordingState = VideoRecordingState.Inactive())
+            )
+            advanceUntilIdle()
+            assertThat(failingLocation.runCount).isEqualTo(2)
+        }
+
+    @Test
+    fun locationUpdates_videoRecordingStops_doesNotResumeIfPreviewInactive() =
+        runTest(StandardTestDispatcher()) {
+            val fakeLocation = FakeLocationProvider()
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(locationEnabled = true)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(fakeLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            advanceUntilIdle()
+
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isTrue()
+
+            cameraSystem.setCurrentCameraState(
+                CameraState(
+                    videoRecordingState = VideoRecordingState.Active.Recording(
+                        maxDurationMillis = 0,
+                        audioStreamState = AudioStreamState.Disabled,
+                        elapsedTimeNanos = 0
+                    )
+                )
+            )
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isFalse()
+
+            vm.stopLocationUpdates()
+            advanceUntilIdle()
+
+            cameraSystem.setCurrentCameraState(
+                CameraState(
+                    videoRecordingState = VideoRecordingState.Inactive()
+                )
+            )
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isFalse()
+        }
+
+    @Test
+    fun locationUpdates_startWhileVideoRecording_doesNotTriggerUpdates() =
+        runTest(StandardTestDispatcher()) {
+            val fakeLocation = FakeLocationProvider()
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(locationEnabled = true)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(fakeLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            advanceUntilIdle()
+
+            cameraSystem.setCurrentCameraState(
+                CameraState(
+                    videoRecordingState = VideoRecordingState.Active.Recording(
+                        maxDurationMillis = 0,
+                        audioStreamState = AudioStreamState.Disabled,
+                        elapsedTimeNanos = 0
+                    )
+                )
+            )
+            advanceUntilIdle()
+
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isFalse()
+
+            cameraSystem.setCurrentCameraState(
+                CameraState(
+                    videoRecordingState = VideoRecordingState.Inactive()
+                )
+            )
+            advanceUntilIdle()
+            assertThat(fakeLocation.isUpdatesRunning).isTrue()
+        }
+
+    @Test
+    fun locationUpdates_startWhileRunning_doesNotRestartSession() =
+        runTest(StandardTestDispatcher()) {
+            val countingLocation = CountingLocationProvider()
+            val vm = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(locationEnabled = true)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.of(countingLocation),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate
+            )
+            advanceUntilIdle()
+
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(countingLocation.runCount).isEqualTo(1)
+
+            vm.stopLocationUpdates()
+            advanceUntilIdle()
+            vm.startLocationUpdates()
+            advanceUntilIdle()
+            assertThat(countingLocation.runCount).isEqualTo(2)
+        }
+
     private fun TestScope.startCameraUntilRunning(viewModel: PreviewViewModel? = null) {
         (viewModel ?: previewViewModel).cameraController.startCamera()
         advanceUntilIdle()
@@ -388,3 +744,27 @@ private fun assertIsReady(viewFinderUiState: CaptureUiState): CaptureUiState.Rea
             "PreviewUiState expected to be Ready, but was ${viewFinderUiState::class}"
         )
     }
+
+private class FailingLocationProvider : LocationProvider {
+    var runCount = 0
+        private set
+
+    override fun getCurrentLocation(): Location? = null
+
+    override suspend fun runLocationUpdates() {
+        runCount++
+        throw IllegalStateException("Location hardware unavailable")
+    }
+}
+
+private class CountingLocationProvider : LocationProvider {
+    var runCount = 0
+        private set
+
+    override fun getCurrentLocation(): Location? = null
+
+    override suspend fun runLocationUpdates() {
+        runCount++
+        awaitCancellation()
+    }
+}
