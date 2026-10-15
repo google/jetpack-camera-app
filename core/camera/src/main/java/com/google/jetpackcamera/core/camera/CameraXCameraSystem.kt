@@ -21,6 +21,7 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
+import android.location.Location
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
@@ -752,8 +753,12 @@ class CameraXCameraSystem(
     override suspend fun takePicture(
         contentResolver: ContentResolver,
         saveLocation: SaveLocation,
+        location: Location?,
         onCaptureStarted: (() -> Unit)
     ): ImageCapture.OutputFileResults = imageCaptureUseCase?.let { imageCaptureUseCase ->
+        val metadata = ImageCapture.Metadata().apply {
+            this.location = location?.takeIfInBounds()
+        }
         val (outputFileOptions, closeable) = when (saveLocation) {
             is SaveLocation.Default -> {
                 val filename = filePathGenerator.generateImageFilename()
@@ -771,7 +776,9 @@ class CameraXCameraSystem(
                     contentResolver,
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     contentValues
-                ).build()
+                )
+                    .setMetadata(metadata)
+                    .build()
                 options to null
             }
 
@@ -780,7 +787,9 @@ class CameraXCameraSystem(
                     val imageCaptureUri = saveLocation.locationUri
                     val outputStream = contentResolver.openOutputStream(imageCaptureUri)
                         ?: throw RuntimeException("Provider recently crashed.")
-                    val options = OutputFileOptions.Builder(outputStream).build()
+                    val options = OutputFileOptions.Builder(outputStream)
+                        .setMetadata(metadata)
+                        .build()
                     options to outputStream
                 } catch (e: FileNotFoundException) {
                     Log.d(TAG, "takePicture onError: $e")
@@ -801,7 +810,9 @@ class CameraXCameraSystem(
                 Log.d(TAG, "cached image location: ${tempFile.absolutePath}")
 
                 // 3. Build OutputFileOptions directly with the File object
-                val options = OutputFileOptions.Builder(tempFile).build()
+                val options = OutputFileOptions.Builder(tempFile)
+                    .setMetadata(metadata)
+                    .build()
 
                 // 4. Return options. Since CameraX manages the stream, we return null for the 'closeable'.
                 options to null
@@ -828,13 +839,15 @@ class CameraXCameraSystem(
 
     override suspend fun startVideoRecording(
         saveLocation: SaveLocation,
+        location: Location?,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) {
         videoCaptureControlEvents.send(
             VideoCaptureControlEvent.StartRecordingEvent(
-                saveLocation,
-                currentSettings.value?.maxVideoDurationMillis
+                saveLocation = saveLocation,
+                maxVideoDuration = currentSettings.value?.maxVideoDurationMillis
                     ?: UNLIMITED_VIDEO_DURATION,
+                location = location?.takeIfInBounds(),
                 onVideoRecord = onVideoRecord
             )
         )

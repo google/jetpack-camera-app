@@ -202,6 +202,11 @@ dependencies {
 
     // Concurrent camera sub-mode implementation
     implementation(project(":core:camera:concurrent:concurrent-di"))
+
+    // Location implementations
+    implementation(project(":core:location"))
+    implementation(project(":core:location:location-di"))
+    implementation(project(":core:location:location-manager-di"))
 }
 
 // Allow references to generated code
