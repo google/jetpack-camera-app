@@ -1433,6 +1433,82 @@ class CameraXCameraSystemTest {
         }
 
     @Test
+    fun setCaptureSubMode_switchingSubModesWithUserChanges_keepsLatestChoices(): Unit =
+        runBlocking {
+            val secondaryKey = object : CaptureSubModeFeatureKey {
+                override val id = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+            }
+            // The first sub-mode allows 9:16 or 1:1 and turns off the camera effect.
+            val firstProvider = FakeCaptureSubModeProvider(
+                featurePolicy = CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(
+                        defaultValue = AspectRatio.NINE_SIXTEEN,
+                        visibility = OptionVisibility.Only(
+                            AspectRatio.NINE_SIXTEEN,
+                            AspectRatio.ONE_ONE
+                        )
+                    ),
+                    cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+                )
+            )
+            // The second sub-mode locks 9:16 and doesn't restrict the camera effect.
+            val secondProvider = FakeCaptureSubModeProvider(
+                featurePolicy = CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden)
+                ),
+                subModeId = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+            )
+            // No effect provider is registered, so this only exercises the settings.
+            val initialEffect = CameraEffectId("initial_effect")
+            val requestedEffect = CameraEffectId("requested_effect")
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    aspectRatio = AspectRatio.THREE_FOUR,
+                    selectedCameraEffect = initialEffect
+                ),
+                extraCaptureSubModeProviders = mapOf(
+                    FakeCaptureSubModeFeatureKey to Provider { firstProvider },
+                    secondaryKey to Provider { secondProvider }
+                )
+            )
+
+            // Enter the first sub-mode -> its policy applies.
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+            var settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+            assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+
+            // A permitted choice applies now; a blocked choice is remembered.
+            cameraSystem.setAspectRatio(AspectRatio.ONE_ONE)
+            cameraSystem.setCameraEffect(requestedEffect)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+            assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+
+            // Switch directly to the second sub-mode -> the first one is undone with the user's
+            // choices, then the second one's policy applies. The second sub-mode allows the
+            // effect that the first one blocked, so it is now on.
+            cameraSystem.setCaptureSubMode(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+            assertThat(settings.selectedCameraEffect).isEqualTo(requestedEffect)
+
+            // A choice the second sub-mode blocks is remembered.
+            cameraSystem.setAspectRatio(AspectRatio.THREE_FOUR)
+            assertThat(cameraSystem.getCurrentSettings().value!!.aspectRatio)
+                .isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+            // Return to the default sub-mode -> the latest choices from both sub-modes apply.
+            cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+            assertThat(settings.selectedCameraEffect).isEqualTo(requestedEffect)
+        }
+
+    @Test
     fun startCamera_withSingleCameraSubMode_transformsCameraSelector(): Unit = runBlocking {
         var transformInvoked = false
         val provider = FakeCaptureSubModeProvider(
