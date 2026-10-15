@@ -22,6 +22,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
+import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.core.location.LocationProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
@@ -67,13 +69,19 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateAdapterR
 import com.google.jetpackcamera.ui.uistateadapter.capture.compound.captureUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.Optional
 import javax.inject.Inject
+import kotlin.jvm.optionals.getOrNull
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -92,7 +100,8 @@ class PreviewViewModel @Inject constructor(
     private val defaultSaveMode: SaveMode,
     private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy(),
     private val settingsRepository: SettingsRepository,
-    private val mediaRepository: MediaRepository
+    private val mediaRepository: MediaRepository,
+    private val locationProvider: Optional<LocationProvider>
 ) : ViewModel() {
     private val saveMode: SaveMode = savedStateHandle.getRequestedSaveMode() ?: defaultSaveMode
     private val trackedCaptureUiState: MutableStateFlow<TrackedCaptureUiState> =
@@ -193,6 +202,10 @@ class PreviewViewModel @Inject constructor(
         coroutineContext = viewModelScope.coroutineContext
     )
 
+    // Written only by the settings collector in init; read at capture time and by the location
+    // updates collector.
+    private val isLocationEnabled = MutableStateFlow(false)
+
     val captureController: CaptureController = CaptureControllerImpl(
         trackedCaptureUiState = trackedCaptureUiState,
         cameraSystemProvider = cameraSystemRepository::getCameraSystem,
@@ -214,6 +227,16 @@ class PreviewViewModel @Inject constructor(
             }
         },
         captureEvents = incomingCaptureEvents,
+        locationProvider = locationProvider.getOrNull()?.let { provider ->
+            object : LocationProvider {
+                override fun getCurrentLocation() =
+                    if (isLocationEnabled.value) provider.getCurrentLocation() else null
+
+                override suspend fun runLocationUpdates() {
+                    provider.runLocationUpdates()
+                }
+            }
+        },
         onImageCached = { uri ->
             viewModelScope.launch {
                 mediaRepository.setCurrentMedia(
@@ -231,13 +254,64 @@ class PreviewViewModel @Inject constructor(
         coroutineContext = viewModelScope.coroutineContext
     )
 
+    private val isPreviewActive = MutableStateFlow(false)
+
+    /**
+     * Starts location updates so a recent fix is available at capture time.
+     *
+     * Called when the preview screen becomes visible. Safe no-op if no [LocationProvider] is bound,
+     * if location tagging is disabled in settings, or if video recording is active. Calling this
+     * while updates are already running has no effect; the current session continues.
+     */
+    fun startLocationUpdates() {
+        isPreviewActive.value = true
+    }
+
+    /**
+     * Stops active location updates and releases location hardware.
+     *
+     * Called when preview is paused or disposed to conserve battery. Safe no-op if no [LocationProvider] is bound.
+     */
+    fun stopLocationUpdates() {
+        isPreviewActive.value = false
+    }
+
+    /**
+     * Runs [provider] location updates while the preview is active, location tagging is enabled,
+     * and no video recording is active. A change to any of these cancels or restarts the session.
+     */
+    private suspend fun runLocationUpdatesWhileActive(provider: LocationProvider) {
+        val isRecording = cameraSystemRepository.currentCameraState.map {
+            it.videoRecordingState is VideoRecordingState.Active ||
+                it.videoRecordingState is VideoRecordingState.Starting
+        }
+        combine(isPreviewActive, isLocationEnabled, isRecording) { active, enabled, recording ->
+            active && enabled && !recording
+        }
+            .distinctUntilChanged()
+            .collectLatest { shouldRun ->
+                if (!shouldRun) return@collectLatest
+                try {
+                    provider.runLocationUpdates()
+                } catch (e: Exception) {
+                    // Location is optional metadata, so a provider failure is logged and must not
+                    // crash the camera. Rethrows if this session was cancelled. The session
+                    // restarts on the next change that re-enables it.
+                    currentCoroutineContext().ensureActive()
+                    Log.e(TAG, "Location updates failed", e)
+                }
+            }
+    }
+
     init {
         viewModelScope.launch {
             launch {
                 var oldCameraAppSettings: CameraAppSettings =
                     cameraSystemRepository.getInitialDefaultCameraAppSettings()
+                isLocationEnabled.value = oldCameraAppSettings.locationEnabled
                 settingsRepository.defaultCameraAppSettings
                     .collect { new ->
+                        isLocationEnabled.value = new.locationEnabled
                         oldCameraAppSettings.applyDiffs(
                             new,
                             cameraSystemRepository.getCameraSystem()
@@ -280,6 +354,10 @@ class PreviewViewModel @Inject constructor(
                     showSnackbarForCaptureEvent(event)
                     outgoingCaptureEvents.send(event)
                 }
+            }
+
+            locationProvider.getOrNull()?.let { provider ->
+                launch { runLocationUpdatesWhileActive(provider) }
             }
         }
     }

@@ -16,11 +16,13 @@
 package com.google.jetpackcamera.ui.controller.impl
 
 import android.content.ContentResolver
+import android.location.Location
 import android.net.Uri
 import android.util.Log
 import androidx.tracing.traceAsync
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
+import com.google.jetpackcamera.core.location.LocationProvider
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
@@ -47,6 +49,17 @@ private const val TAG = "CaptureButtonControllerImpl"
 private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
 
 /**
+ * Returns the current location, or `null` if the provider throws. Location is optional metadata,
+ * so a provider failure must not fail the capture.
+ */
+private fun LocationProvider.currentLocationOrNull(): Location? = try {
+    getCurrentLocation()
+} catch (e: Exception) {
+    Log.w(TAG, "Failed to get location; capturing without it", e)
+    null
+}
+
+/**
  * Implementation of [CaptureController] that interacts with [CameraSystem].
  *
  * @param trackedCaptureUiState State for tracking UI changes during capture.
@@ -55,6 +68,7 @@ private const val IMAGE_CAPTURE_TRACE = "JCA Image Capture"
  * @param externalCaptureMode Mode for external capture requests.
  * @param externalCapturesCallback Callback for getting external capture information.
  * @property captureEvents Channel for sending capture-related events.
+ * @param locationProvider Provider for geographical location data.
  * @param onImageCached Callback invoked when an image is saved to cache.
  * @param onVideoCached Callback invoked when a video is saved to cache.
  * @param coroutineContext The [CoroutineContext] for launching coroutines.
@@ -66,6 +80,7 @@ class CaptureControllerImpl(
     private val externalCaptureMode: ExternalCaptureMode,
     private val externalCapturesCallback: () -> Pair<SaveLocation, IntProgress?>,
     override val captureEvents: Channel<CaptureEvent>,
+    private val locationProvider: LocationProvider? = null,
     private val onImageCached: ((Uri) -> Unit)? = null,
     private val onVideoCached: ((Uri) -> Unit)? = null,
     coroutineContext: CoroutineContext
@@ -92,7 +107,11 @@ class CaptureControllerImpl(
             captureImageInternal(
                 saveLocation = saveLocation,
                 doTakePicture = {
-                    cameraSystemProvider().takePicture(contentResolver, saveLocation) {
+                    cameraSystemProvider().takePicture(
+                        contentResolver,
+                        saveLocation,
+                        locationProvider?.currentLocationOrNull()
+                    ) {
                         trackedCaptureUiState.update { old ->
                             old.copy(lastBlinkTimeStamp = System.currentTimeMillis())
                         }
@@ -142,7 +161,10 @@ class CaptureControllerImpl(
                 externalCapturesCallback
             )
             try {
-                cameraSystemProvider().startVideoRecording(saveLocation) {
+                cameraSystemProvider().startVideoRecording(
+                    saveLocation,
+                    locationProvider?.currentLocationOrNull()
+                ) {
                     when (it) {
                         is OnVideoRecordEvent.OnVideoRecorded -> {
                             Log.d(TAG, "cameraSystem.startRecording OnVideoRecorded")
