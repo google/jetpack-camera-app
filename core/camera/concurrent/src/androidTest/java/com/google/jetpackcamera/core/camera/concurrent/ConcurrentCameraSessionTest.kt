@@ -47,6 +47,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.TestPattern
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -139,9 +140,11 @@ class ConcurrentCameraSessionTest {
                 }
                 assertThat(errorState.isCameraRunning).isFalse()
             } finally {
-                sessionJob.cancelAndJoin()
-                withContext(Dispatchers.Main) {
-                    cameraProvider.unbindAll()
+                withContext(NonCancellable) {
+                    sessionJob.cancelAndJoin()
+                    withContext(Dispatchers.Main) {
+                        cameraProvider.unbindAll()
+                    }
                 }
             }
         }
@@ -178,9 +181,11 @@ class ConcurrentCameraSessionTest {
                     sessionContext.surfaceRequests.first { it != null }
                 }
             } finally {
-                sessionJob.cancelAndJoin()
-                withContext(Dispatchers.Main) {
-                    cameraProvider.unbindAll()
+                withContext(NonCancellable) {
+                    sessionJob.cancelAndJoin()
+                    withContext(Dispatchers.Main) {
+                        cameraProvider.unbindAll()
+                    }
                 }
             }
         }
@@ -279,9 +284,11 @@ class ConcurrentCameraSessionTest {
                 .containsExactly(LensFacing.BACK, LensFacing.FRONT)
                 .inOrder()
         } finally {
-            sessionJob.cancelAndJoin()
-            withContext(Dispatchers.Main) {
-                cameraProvider.unbindAll()
+            withContext(NonCancellable) {
+                sessionJob.cancelAndJoin()
+                withContext(Dispatchers.Main) {
+                    cameraProvider.unbindAll()
+                }
             }
         }
     }
@@ -327,9 +334,11 @@ class ConcurrentCameraSessionTest {
             }
             assertThat(errorState.isCameraRunning).isFalse()
         } finally {
-            sessionJob.cancelAndJoin()
-            withContext(Dispatchers.Main) {
-                cameraProvider.unbindAll()
+            withContext(NonCancellable) {
+                sessionJob.cancelAndJoin()
+                withContext(Dispatchers.Main) {
+                    cameraProvider.unbindAll()
+                }
             }
         }
     }
