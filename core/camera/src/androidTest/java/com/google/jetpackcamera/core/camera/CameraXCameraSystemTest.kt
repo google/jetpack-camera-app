@@ -867,19 +867,26 @@ class CameraXCameraSystemTest {
         assertThat(settings.stabilizationMode).isEqualTo(StabilizationMode.OFF)
         assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
 
-        // Act. Leave the sub-mode -> stabilizationMode is restored to ON (if supported on lens).
+        // Act. Leave the sub-mode -> the latest choices made during the sub-mode are restored:
+        // 60 fps (if supported on lens) and stabilization ON (if supported on lens at that fps).
         cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
         settings = cameraSystem.getCurrentSettings().value!!
         val lensConstraints =
             cameraSystem.getSystemConstraints().value!!.perLensConstraints[
                 settings.cameraLensFacing
             ]!!
-        val expectedRestoredStabilization =
-            if (StabilizationMode.ON in lensConstraints.supportedStabilizationModes) {
+        val expectedRestoredFrameRate =
+            if (60 in lensConstraints.supportedFixedFrameRates) 60 else TARGET_FPS_AUTO
+        val expectedRestoredStabilization = with(lensConstraints) {
+            if (StabilizationMode.ON in supportedStabilizationModes &&
+                expectedRestoredFrameRate !in StabilizationMode.ON.unsupportedFpsSet
+            ) {
                 StabilizationMode.ON
             } else {
                 StabilizationMode.AUTO
             }
+        }
+        assertThat(settings.targetFrameRate).isEqualTo(expectedRestoredFrameRate)
         assertThat(settings.stabilizationMode).isEqualTo(expectedRestoredStabilization)
     }
 
