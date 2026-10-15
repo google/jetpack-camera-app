@@ -280,11 +280,13 @@ internal suspend fun runSingleCameraSession(
                             val videoQuality = getVideoQualityFromResolution(
                                 videoCaptureUseCase.resolutionInfo?.resolution
                             )
-                            if (videoQuality != sessionSettings.videoQuality) {
+                            if (sessionSettings.videoQuality != VideoQuality.UNSPECIFIED &&
+                                videoQuality != sessionSettings.videoQuality
+                            ) {
                                 Log.e(
                                     TAG,
                                     "Failed to select video quality: " +
-                                        "$sessionSettings.videoQuality. Fallback: $videoQuality"
+                                        "${sessionSettings.videoQuality}. Fallback: $videoQuality"
                                 )
                             }
                             launch {
@@ -685,10 +687,11 @@ internal fun createUseCaseGroup(
     }.build()
 }
 
-private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
+internal fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
     resolution?.let { res ->
+        val shortEdge = minOf(res.width, res.height)
         QUALITY_RANGE_MAP.firstNotNullOfOrNull {
-            if (it.value.contains(res.height)) it.key else null
+            if (it.value.contains(shortEdge)) it.key else null
         }
     } ?: VideoQuality.UNSPECIFIED
 
@@ -738,7 +741,8 @@ internal fun createVideoUseCase(
         .setExecutor(backgroundDispatcher.asExecutor())
         .apply {
             videoQuality.toQuality()?.let { quality ->
-                // No fallback strategy is used. The app will crash if the quality is unsupported
+                // Allow falling back to a lower or higher supported quality rather than crashing
+                // if the requested quality cannot be satisfied by the active stream combination.
                 setQualitySelector(
                     QualitySelector.from(
                         quality,
