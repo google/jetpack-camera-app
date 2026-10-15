@@ -37,11 +37,11 @@ import com.google.jetpackcamera.core.camera.attachPreviewSurfaceProvider
 import com.google.jetpackcamera.core.camera.createUseCaseGroup
 import com.google.jetpackcamera.core.camera.createVideoUseCase
 import com.google.jetpackcamera.core.camera.getVideoCapture
+import com.google.jetpackcamera.core.camera.mapCameraStateError
 import com.google.jetpackcamera.core.camera.processFocusMeteringEvents
 import com.google.jetpackcamera.core.camera.processTransientSettingEvents
 import com.google.jetpackcamera.core.camera.processVideoControlEvents
 import com.google.jetpackcamera.core.camera.runWithConcurrent
-import com.google.jetpackcamera.core.camera.toCameraError
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -147,7 +147,7 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                         captureMode = sessionSettings.captureMode,
                         videoCaptureUseCase = videoCapture
                     )
-                }.apply { attachPreviewSurfaceProvider(surfaceRequests) }
+                }.apply { attachPreviewSurfaceProvider(useCaseGroup = this) }
 
                 val cameraConfigs = listOf(
                     Pair(
@@ -214,10 +214,8 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                                 }
                             }
                             .collectLatest { (primaryState, secondaryState) ->
-                                val mappedError =
-                                    (primaryState.error ?: secondaryState.error)?.toCameraError(
-                                        context
-                                    )
+                                val mappedError = (primaryState.error ?: secondaryState.error)
+                                    ?.let { mapCameraStateError(it) }
                                 val bothOpen = primaryState.type == CXCameraState.Type.OPEN &&
                                     secondaryState.type == CXCameraState.Type.OPEN
                                 currentCameraState.update { old ->
