@@ -62,6 +62,12 @@ class NightCaptureSubModeProvider internal constructor(
     private val compatibleCameraEffects: Set<CameraEffectId> = emptySet()
 ) : CaptureSubModeProvider {
 
+    /**
+     * Creates a [NightCaptureSubModeProvider] that queries CameraX extensions for Night Mode.
+     *
+     * @param applicationContext The application context.
+     * @param compatibleCameraEffects Camera effects verified to work with Night Mode.
+     */
     constructor(
         applicationContext: Context,
         compatibleCameraEffects: Set<CameraEffectId> = emptySet()

@@ -273,22 +273,19 @@ class NightCaptureSubModeProviderTest {
                 },
                 enableNightSelector = { _, selector -> selector }
             )
-            val isSupportedCancelled = try {
-                cancellingProvider.isSupported(context, cameraProvider, backCameraInfo)
-            } catch (_: kotlinx.coroutines.CancellationException) {
-                true
+            assertThrows(kotlinx.coroutines.CancellationException::class.java) {
+                kotlinx.coroutines.runBlocking {
+                    cancellingProvider.isSupported(context, cameraProvider, backCameraInfo)
+                }
             }
-            assertThat(isSupportedCancelled).isTrue()
-
-            val sessionBindingCancelled = try {
-                cancellingProvider.sessionBinding.transformCameraSelector(
-                    cameraProvider,
-                    CameraSelector.DEFAULT_BACK_CAMERA
-                ) !== CameraSelector.DEFAULT_BACK_CAMERA
-            } catch (_: kotlinx.coroutines.CancellationException) {
-                true
+            assertThrows(kotlinx.coroutines.CancellationException::class.java) {
+                kotlinx.coroutines.runBlocking {
+                    cancellingProvider.sessionBinding.transformCameraSelector(
+                        cameraProvider,
+                        CameraSelector.DEFAULT_BACK_CAMERA
+                    )
+                }
             }
-            assertThat(sessionBindingCancelled).isTrue()
         }
 
     @Test
