@@ -105,9 +105,10 @@ class ConcurrentCameraSubModeProvider internal constructor(
         externalCaptureMode == ExternalCaptureMode.Standard
 
     override val sessionBinding = CameraSessionBinding.Custom { sessionScope ->
-        val context = requireNotNull(sessionScope as? CameraSessionContext) {
+        require(sessionScope is CameraSessionContext) {
             "Expected CameraSessionContext as CameraSessionScope, got ${sessionScope::class.java}"
         }
+        val context = sessionScope
         val customSettings =
             requireNotNull(context.sessionSettings as? PerpetualSessionSettings.CustomSession) {
                 "Expected PerpetualSessionSettings.CustomSession, got ${context.sessionSettings}"
