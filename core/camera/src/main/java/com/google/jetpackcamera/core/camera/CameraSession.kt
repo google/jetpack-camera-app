@@ -48,7 +48,6 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraState as CXCameraState
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
-import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
@@ -308,7 +307,7 @@ internal suspend fun runSingleCameraSession(
                             captureResults = captureResults
                         )
                     }.apply {
-                        attachPreviewSurfaceProvider(surfaceRequests)
+                        attachPreviewSurfaceProvider(useCaseGroup = this)
                         getImageCapture()?.let(onImageCaptureCreated)
                     }
 
@@ -895,15 +894,15 @@ private fun createPreviewUseCase(
 }.build()
 
 /**
- * Routes surface requests from this group's [Preview] use case to [surfaceRequests].
+ * Routes surface requests from the [Preview] use case in [useCaseGroup] to [surfaceRequests].
  *
  * Use cases may be constructed off the main thread, but [Preview.setSurfaceProvider] must be
  * called on the main thread, so this is applied separately before the group is bound.
  */
 @InternalCameraApi
 @MainThread
-fun UseCaseGroup.attachPreviewSurfaceProvider(surfaceRequests: MutableStateFlow<SurfaceRequest?>) {
-    useCases.filterIsInstance<Preview>().forEach { preview ->
+fun CameraSessionContext.attachPreviewSurfaceProvider(useCaseGroup: UseCaseGroup) {
+    useCaseGroup.useCases.filterIsInstance<Preview>().forEach { preview ->
         preview.surfaceProvider = Preview.SurfaceProvider { surfaceRequest ->
             surfaceRequests.update { surfaceRequest }
         }
@@ -1555,23 +1554,31 @@ private fun Provider<CameraEffectProvider>.createEffect(scope: CoroutineScope): 
  * @param context The [Context] used to retrieve system services.
  * @return The mapped [CameraError].
  */
-@InternalCameraApi
-fun CXCameraState.StateError.toCameraError(context: Context): CameraError = when (this.code) {
-    CXCameraState.ERROR_CAMERA_IN_USE -> CameraError.CameraInUse
-    CXCameraState.ERROR_MAX_CAMERAS_IN_USE -> CameraError.MaxCamerasInUse
-    CXCameraState.ERROR_OTHER_RECOVERABLE_ERROR -> CameraError.OtherRecoverableError
-    CXCameraState.ERROR_STREAM_CONFIG -> CameraError.StreamConfigError
-    CXCameraState.ERROR_CAMERA_DISABLED -> {
-        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE)
-            as? DevicePolicyManager
-        if (dpm?.getCameraDisabled(null) == true) {
-            CameraError.CameraDisabledByPolicy
-        } else {
-            CameraError.CameraSensorPrivacyDisabled
+internal fun CXCameraState.StateError.toCameraError(context: Context): CameraError =
+    when (this.code) {
+        CXCameraState.ERROR_CAMERA_IN_USE -> CameraError.CameraInUse
+        CXCameraState.ERROR_MAX_CAMERAS_IN_USE -> CameraError.MaxCamerasInUse
+        CXCameraState.ERROR_OTHER_RECOVERABLE_ERROR -> CameraError.OtherRecoverableError
+        CXCameraState.ERROR_STREAM_CONFIG -> CameraError.StreamConfigError
+        CXCameraState.ERROR_CAMERA_DISABLED -> {
+            val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE)
+                as? DevicePolicyManager
+            if (dpm?.getCameraDisabled(null) == true) {
+                CameraError.CameraDisabledByPolicy
+            } else {
+                CameraError.CameraSensorPrivacyDisabled
+            }
         }
+        CXCameraState.ERROR_CAMERA_FATAL_ERROR -> CameraError.FatalCameraError
+        CXCameraState.ERROR_DO_NOT_DISTURB_MODE_ENABLED -> CameraError.DoNotDisturbEnabled
+        CXCameraState.ERROR_CAMERA_REMOVED -> CameraError.CameraRemoved
+        else -> CameraError.FatalCameraError
     }
-    CXCameraState.ERROR_CAMERA_FATAL_ERROR -> CameraError.FatalCameraError
-    CXCameraState.ERROR_DO_NOT_DISTURB_MODE_ENABLED -> CameraError.DoNotDisturbEnabled
-    CXCameraState.ERROR_CAMERA_REMOVED -> CameraError.CameraRemoved
-    else -> CameraError.FatalCameraError
-}
+
+/**
+ * Maps a CameraX [CXCameraState.StateError] to a domain-specific [CameraError] using this
+ * session's [Context].
+ */
+@InternalCameraApi
+fun CameraSessionContext.mapCameraStateError(error: CXCameraState.StateError): CameraError =
+    error.toCameraError(context)

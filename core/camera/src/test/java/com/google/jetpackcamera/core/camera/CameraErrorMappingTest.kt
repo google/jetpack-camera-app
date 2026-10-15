@@ -27,7 +27,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 
-@OptIn(InternalCameraApi::class)
 @RunWith(AndroidJUnit4::class)
 class CameraErrorMappingTest {
 
