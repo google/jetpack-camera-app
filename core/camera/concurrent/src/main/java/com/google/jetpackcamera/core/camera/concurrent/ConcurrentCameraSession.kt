@@ -125,8 +125,7 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                 // Keep blocking camera lookups and use case setup off the calling thread.
                 val useCaseGroup = withContext(backgroundDispatcher) {
                     val videoCapture = if (sessionSettings.captureMode != CaptureMode.IMAGE_ONLY) {
-                        createVideoUseCase(
-                            primaryCameraInfo,
+                        primaryCameraInfo.createVideoUseCase(
                             sessionSettings.aspectRatio,
                             TARGET_FPS_AUTO,
                             StabilizationMode.OFF,
@@ -270,7 +269,7 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                             }
                     }
 
-                    applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
+                    useCaseGroup.applyDeviceRotation(initialTransientSettings.deviceRotation)
                     processTransientSettingEvents(
                         primaryCamera,
                         perLensConstraints[primaryLensFacing],
