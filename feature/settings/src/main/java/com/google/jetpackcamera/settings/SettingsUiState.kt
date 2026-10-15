@@ -113,8 +113,6 @@ sealed interface DisabledRationale {
 
     /**
      * Text will be [affectedSettingNameResId] is unsupported in [captureSubModeLabelResId] mode.
-     *
-     * Used when the active capture sub-mode's policy hides the setting or excludes the option.
      */
     data class CaptureSubModeActiveRationale(
         override val affectedSettingNameResId: Int,
