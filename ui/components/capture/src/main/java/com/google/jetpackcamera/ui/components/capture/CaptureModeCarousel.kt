@@ -173,7 +173,7 @@ fun CaptureModeCarousel(
         val horizontalPaddingPx = with(density) { ItemHorizontalPadding.toPx() }
         val minWidthPx = with(density) { ItemMinWidth.toPx() }
         CarouselGeometry(
-            widths = FloatArray(labels.size) { index ->
+            widths = List(labels.size) { index ->
                 val textWidth = max(
                     textMeasurer.measure(
                         text = labels[index],
@@ -407,11 +407,11 @@ private fun CarouselRow(
  * Slot widths and centers of the carousel items, in pixels along the scroll axis. Adjacent slots
  * are separated by [spacing].
  */
-private class CarouselGeometry(val widths: FloatArray, spacing: Float) {
-    val centers: FloatArray = FloatArray(widths.size).also { centers ->
+private class CarouselGeometry(val widths: List<Float>, spacing: Float) {
+    val centers: List<Float> = buildList {
         var start = 0f
-        widths.forEachIndexed { index, width ->
-            centers[index] = start + width / 2f
+        for (width in widths) {
+            add(start + width / 2f)
             start += width + spacing
         }
     }
