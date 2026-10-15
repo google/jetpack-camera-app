@@ -36,14 +36,14 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 
 private const val TAG = "CameraXCameraSystemRepo"
 
@@ -114,16 +114,12 @@ class CameraXCameraSystemRepository(
         cameraSystem.getCurrentSettings()
     }
 
-    // Shared eagerly and seeded from the current settings, so that the value is current even
-    // when nothing is collecting and a new subscriber never sees a stale default first.
-    override val activeCaptureSubModeId: StateFlow<CaptureSubModeId> by lazy {
+    // Derived from the current settings on each collection, so that a new collector receives
+    // the current value first and no coroutine outlives its collectors.
+    override val activeCaptureSubModeId: Flow<CaptureSubModeId> by lazy {
         currentSettings
             .map { it.activeCaptureSubModeIdOrDefault() }
-            .stateIn(
-                scope,
-                SharingStarted.Eagerly,
-                currentSettings.value.activeCaptureSubModeIdOrDefault()
-            )
+            .distinctUntilChanged()
     }
 
     override val currentCameraState: StateFlow<CameraState> by lazy {

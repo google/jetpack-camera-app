@@ -1212,6 +1212,8 @@ class CameraXCameraSystem(
      *
      * The values replaced by the policy are recorded in [CameraAppSettings.captureSubModeOverrides]
      * when a sub-mode becomes active, and are restored when it ends (see [PolicyOverrides]).
+     * Changes requested by the user while the sub-mode is active replace the recorded values (see
+     * [withUserChange]).
      *
      * This has no side effects, so it is safe to call from `MutableStateFlow.update`, which may
      * run its function more than once.
@@ -1270,8 +1272,9 @@ class CameraXCameraSystem(
             .tryApplyImageFormatConstraints()
             .tryApplyFlashModeConstraints()
             .tryApplyVideoQualityConstraints()
-            // Frame rate and stabilization are only checked when the policy sets them, so that
-            // a sub-mode that doesn't restrict them leaves them as they are outside a sub-mode.
+            // Frame rate is only checked when the policy sets it, and stabilization only when the
+            // policy sets it or the frame rate, so that a sub-mode that restricts neither leaves
+            // them as they are outside a sub-mode.
             .let { if (policy.targetFrameRate != null) it.tryApplyFrameRateConstraints() else it }
             .let {
                 if (policy.targetFrameRate != null || policy.stabilizationMode != null) {

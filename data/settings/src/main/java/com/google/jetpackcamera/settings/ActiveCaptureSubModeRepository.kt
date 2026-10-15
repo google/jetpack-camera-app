@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.CaptureSubModeId
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Data layer for the capture sub-mode that the camera is running.
@@ -28,8 +28,9 @@ import kotlinx.coroutines.flow.StateFlow
 interface ActiveCaptureSubModeRepository {
 
     /**
-     * A [StateFlow] emitting the [CaptureSubModeId] of the capture sub-mode that the camera is
-     * running, or [CaptureSubModeId.DEFAULT] if none is active.
+     * A [Flow] emitting the [CaptureSubModeId] of the capture sub-mode that the camera is
+     * running, or [CaptureSubModeId.DEFAULT] if none is active. Each collector receives the
+     * current value first, followed by changes.
      */
-    val activeCaptureSubModeId: StateFlow<CaptureSubModeId>
+    val activeCaptureSubModeId: Flow<CaptureSubModeId>
 }
