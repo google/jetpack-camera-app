@@ -16,13 +16,8 @@
 package com.google.jetpackcamera.core.camera
 
 /**
- * Marks camera session APIs that are public only so that capture sub-mode modules (for example,
- * a module that runs its own
- * [com.google.jetpackcamera.core.camera.submode.CameraSessionBinding.Custom] session) can build on
- * them.
- *
- * These APIs are not stable and may change without notice. Apps should use [CameraSystem]
- * instead. Using them requires opting in with `@OptIn(InternalCameraApi::class)`.
+ * Marks camera session APIs that are public only for capture sub-mode modules. They may change
+ * without notice; apps should use [CameraSystem] instead.
  */
 @RequiresOptIn(
     level = RequiresOptIn.Level.ERROR,

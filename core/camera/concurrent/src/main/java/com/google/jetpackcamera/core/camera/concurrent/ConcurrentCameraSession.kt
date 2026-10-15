@@ -77,8 +77,7 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
         }
     }
 ) = coroutineScope {
-    // The camera pair is resolved from the primary lens facing, so rebind whenever it changes
-    // (e.g. when the user flips the camera).
+    // Rebind when the primary lens changes, e.g. when the user flips the camera.
     transientSettings
         .filterNotNull()
         .distinctUntilChanged { old, new -> old.primaryLensFacing == new.primaryLensFacing }
@@ -123,8 +122,7 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
             )
 
             try {
-                // Camera info lookup and use case construction can block, so they are kept off the
-                // calling (typically main) thread.
+                // Keep blocking camera lookups and use case setup off the calling thread.
                 val useCaseGroup = withContext(backgroundDispatcher) {
                     val videoCapture = if (sessionSettings.captureMode != CaptureMode.IMAGE_ONLY) {
                         createVideoUseCase(
