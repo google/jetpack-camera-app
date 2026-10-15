@@ -64,7 +64,7 @@ import com.google.jetpackcamera.model.StabilizationMode
  *
  * TODO (kc): Defer audioEnabled configuration to a follow-up PR, pending design for visual UX.
  */
-data class CameraFeaturePolicy(
+data class CameraFeaturePolicy @JvmOverloads constructor(
     val captureMode: SettingConfig<CaptureMode>? = null,
     val aspectRatio: SettingConfig<AspectRatio>? = null,
     val flashMode: SettingConfig<FlashMode>? = null,
