@@ -83,7 +83,7 @@ class CameraXCameraSystemRepositoryTest {
         val repository = CameraXCameraSystemRepository(
             cameraXCameraSystemProvider = Provider { testCamera },
             settingsRepository = settingsRepository,
-            launchConfig = launchConfig,
+            launchConfigProvider = launchConfig.toProvider(),
             scope = testScope
         )
 
@@ -107,7 +107,7 @@ class CameraXCameraSystemRepositoryTest {
         val repository = CameraXCameraSystemRepository(
             cameraXCameraSystemProvider = Provider { testCamera },
             settingsRepository = FakeSettingsRepository(),
-            launchConfig = CameraLaunchConfig(),
+            launchConfigProvider = CameraLaunchConfig().toProvider(),
             scope = testScope
         )
 
@@ -126,9 +126,9 @@ class CameraXCameraSystemRepositoryTest {
         val repository = CameraXCameraSystemRepository(
             cameraXCameraSystemProvider = Provider { testCamera },
             settingsRepository = settingsRepository,
-            launchConfig = CameraLaunchConfig(
+            launchConfigProvider = CameraLaunchConfig(
                 externalCaptureMode = ExternalCaptureMode.ImageCapture
-            ),
+            ).toProvider(),
             scope = testScope
         )
 
@@ -144,7 +144,7 @@ class CameraXCameraSystemRepositoryTest {
         val repository = CameraXCameraSystemRepository(
             cameraXCameraSystemProvider = Provider { testCamera },
             settingsRepository = FakeSettingsRepository(),
-            launchConfig = CameraLaunchConfig(),
+            launchConfigProvider = CameraLaunchConfig().toProvider(),
             scope = testScope
         )
 
@@ -164,7 +164,7 @@ class CameraXCameraSystemRepositoryTest {
         val repository = CameraXCameraSystemRepository(
             cameraXCameraSystemProvider = Provider { testCamera },
             settingsRepository = FakeSettingsRepository(cameraFeaturePolicy = policy),
-            launchConfig = CameraLaunchConfig(),
+            launchConfigProvider = CameraLaunchConfig().toProvider(),
             scope = testScope
         )
 
@@ -184,7 +184,7 @@ class CameraXCameraSystemRepositoryTest {
             val repository = CameraXCameraSystemRepository(
                 cameraXCameraSystemProvider = Provider { testCamera },
                 settingsRepository = FakeSettingsRepository(cameraFeaturePolicy = policy),
-                launchConfig = CameraLaunchConfig(),
+                launchConfigProvider = CameraLaunchConfig().toProvider(),
                 scope = testScope
             )
 
@@ -196,4 +196,7 @@ class CameraXCameraSystemRepositoryTest {
                 testCamera.initializedSettings?.aspectRatio
             ).isEqualTo(AspectRatio.NINE_SIXTEEN)
         }
+
+    private fun CameraLaunchConfig.toProvider(): CameraLaunchConfigProvider =
+        CameraLaunchConfigProvider().apply { setConfig(this@toProvider) }
 }

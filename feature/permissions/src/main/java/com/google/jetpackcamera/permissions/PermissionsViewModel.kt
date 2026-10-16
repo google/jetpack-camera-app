@@ -40,7 +40,7 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @HiltViewModel()
-class PermissionsViewModel @Inject constructor(
+class PermissionsViewModel @Inject internal constructor(
     savedStateHandle: SavedStateHandle,
     private val settingsRepository: SettingsRepository,
     private val permissionsRepository: PermissionsRepository

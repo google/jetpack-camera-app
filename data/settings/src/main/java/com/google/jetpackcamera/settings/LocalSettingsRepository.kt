@@ -28,15 +28,16 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
-import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
  * Implementation of [SettingsRepository] delegating to [SettingsDataSource].
+ *
+ * Instances are provided to the dependency graph by [SettingsRepositoryModule].
  */
-class LocalSettingsRepository @Inject constructor(
+class LocalSettingsRepository(
     private val settingsDataSource: SettingsDataSource,
     private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy()
 ) : SettingsRepository {

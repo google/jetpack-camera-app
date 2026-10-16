@@ -70,7 +70,7 @@ private val fpsOptions = setOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60)
  * [ViewModel] for [SettingsScreen].
  */
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+class SettingsViewModel @Inject internal constructor(
     private val settingsRepository: SettingsRepository,
     constraintsRepository: ConstraintsRepository,
     private val locationProvider: Optional<LocationProvider> = Optional.empty()
@@ -648,7 +648,7 @@ class SettingsViewModel @Inject constructor(
 
         with(currentLensConstraints) {
             // provide selectable states for each of the fps options
-            fpsOptions.forEach { fpsOption ->
+            for (fpsOption in fpsOptions) {
                 val fpsUiState = isFpsOptionEnabled(
                     fpsOption = fpsOption,
                     defaultLensFacing = cameraAppSettings.cameraLensFacing,

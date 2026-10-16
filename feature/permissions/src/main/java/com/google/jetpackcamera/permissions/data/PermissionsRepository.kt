@@ -55,7 +55,7 @@ private val KEY_REQUESTED_PERMISSIONS = stringSetPreferencesKey("requested_permi
 
 /** [PermissionsRepository] backed by a Preferences [DataStore]. */
 @Singleton
-class DataStorePermissionsRepository @Inject constructor(
+class DataStorePermissionsRepository @Inject internal constructor(
     @ApplicationContext context: Context
 ) : PermissionsRepository {
     private val dataStore = context.permissionsDataStore
