@@ -67,11 +67,11 @@ import org.junit.runner.RunWith
 internal class ImageCaptureDeviceTest {
     // TODO(b/319733374): Return bitmap for external mediastore capture without URI
 
-    @get:Rule
+    @get:Rule(order = 0)
     val permissionsRule: GrantPermissionRule =
         GrantPermissionRule.grant(*(TEST_REQUIRED_PERMISSIONS).toTypedArray())
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule = createEmptyComposeRule()
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()

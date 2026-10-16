@@ -15,7 +15,11 @@
   ~ limitations under the License.
   -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      Share only the directory where captures are cached for review, not the whole cache
+      directory. This path must match DEFAULT_CAPTURE_CACHE_SUBDIRECTORY in core:camera.
+    -->
     <cache-path
-        name="my_cache"
-        path="." />
+        name="captures"
+        path="captures/" />
 </paths>

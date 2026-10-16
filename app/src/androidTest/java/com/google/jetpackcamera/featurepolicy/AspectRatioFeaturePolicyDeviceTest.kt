@@ -41,11 +41,11 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 internal class AspectRatioFeaturePolicyDeviceTest {
 
-    @get:Rule
+    @get:Rule(order = 0)
     val permissionsRule: GrantPermissionRule =
         GrantPermissionRule.grant(*(TEST_REQUIRED_PERMISSIONS).toTypedArray())
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule = createEmptyComposeRule()
 
     @After

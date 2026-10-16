@@ -41,7 +41,6 @@ import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
-import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
 import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostAvailabilityChecker
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
@@ -82,6 +81,7 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.IOException
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -356,19 +356,25 @@ class CameraXCameraSystem(
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
                     getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
-                val fileDir = File(application.getExternalFilesDir(null), "Debug")
+                // App-private internal storage: always available and not readable by other apps.
+                val fileDir = File(application.filesDir, "Debug")
                 fileDir.mkdirs()
                 val file = File(
                     fileDir,
                     "JCACameraProperties.json"
                 )
-                writeFileExternalStorage(file, cameraPropertiesJSON)
+                try {
+                    file.writeText(cameraPropertiesJSON)
+                    Log.d(
+                        TAG,
+                        "JCACameraProperties written to ${file.path}. \n" +
+                            cameraPropertiesJSON
+                    )
+                } catch (e: IOException) {
+                    // Debugging aid only; a write failure must not fail initialization.
+                    Log.e(TAG, "Failed to write JCACameraProperties to ${file.path}", e)
+                }
                 cameraPropertiesJSONCallback.invoke(cameraPropertiesJSON)
-                Log.d(
-                    TAG,
-                    "JCACameraProperties written to ${file.path}. \n" +
-                        cameraPropertiesJSON
-                )
             }
         }
     }
@@ -708,8 +714,9 @@ class CameraXCameraSystem(
             }
 
             is SaveLocation.Cache -> {
-                // 1. Get the app's cache directory
-                val cacheDir = saveLocation.cacheDir?.toFile() ?: application.cacheDir
+                // 1. Get the cache directory for captures
+                val cacheDir = saveLocation.cacheDir?.toFile()
+                    ?: application.defaultCaptureCacheDir()
 
                 // 2. Create a unique temporary file
                 val tempFile = File.createTempFile(

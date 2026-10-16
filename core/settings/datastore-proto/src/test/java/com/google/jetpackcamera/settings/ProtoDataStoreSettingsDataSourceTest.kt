@@ -404,7 +404,7 @@ class ProtoDataStoreSettingsDataSourceTest {
         assertThat(cameraAppSettings).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS)
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun non_io_exception_is_rethrown() = runTest {
         val failingDataStore = object : DataStore<CameraAppSettingsProto> {
             override val data: Flow<CameraAppSettingsProto> =
@@ -419,8 +419,8 @@ class ProtoDataStoreSettingsDataSourceTest {
             defaultCaptureModeOverride = CaptureMode.STANDARD
         )
 
-        val unused = failingRepository.getCurrentDefaultCameraAppSettings()
-        assertThat(unused).isNotNull()
+        val result = runCatching { failingRepository.getCurrentDefaultCameraAppSettings() }
+        assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
     }
 
     @Test

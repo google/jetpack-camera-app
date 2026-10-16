@@ -98,10 +98,10 @@ private val LLB_SUPPORTED_CONSTRAINTS = TYPICAL_SYSTEM_CONSTRAINTS.copy(
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 internal class CameraAppSettingsViewModelTest {
-    @get:Rule
+    @get:Rule(order = 0)
     val tempFolder = TemporaryFolder()
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule = createComposeRule()
 
     private lateinit var testFile: File

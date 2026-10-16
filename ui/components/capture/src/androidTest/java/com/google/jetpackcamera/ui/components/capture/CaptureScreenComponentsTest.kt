@@ -25,8 +25,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -259,6 +261,29 @@ class CaptureScreenComponentsTest {
         composeTestRule.onNodeWithTag(FOCUS_METERING_INDICATOR_TAG)
             .assertContentDescriptionEquals("Focused")
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun focusMeteringIndicator_isPoliteLiveRegion() {
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                val coordinateTransformer = remember { MutableCoordinateTransformer() }
+                FocusMeteringIndicator(
+                    focusMeteringUiState = FocusMeteringUiState.Specified(
+                        surfaceCoordinates = TEST_COORDINATES,
+                        status = FocusMeteringUiState.Status.RUNNING
+                    ),
+                    coordinateTransformer = coordinateTransformer
+                )
+            }
+        }
+        composeTestRule.onNodeWithTag(FOCUS_METERING_INDICATOR_TAG)
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.LiveRegion,
+                    LiveRegionMode.Polite
+                )
+            )
     }
 
     @Test

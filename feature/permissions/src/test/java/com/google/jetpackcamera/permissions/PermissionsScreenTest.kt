@@ -16,8 +16,11 @@
 package com.google.jetpackcamera.permissions
 
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -243,8 +246,10 @@ class PermissionsScreenTest {
         assertThat(dismissCalled).isFalse()
     }
 
-    /** Answers the last runtime permission request made by [activity]. */
-    @Suppress("DEPRECATION")
+    /**
+     * Answers the last runtime permission request made by [activity] by dispatching the result to
+     * its [androidx.activity.result.ActivityResultRegistry], as the framework does.
+     */
     private fun deliverPermissionResult(activity: ComponentActivity, granted: Boolean) {
         composeTestRule.waitForIdle()
         val request = checkNotNull(shadowOf(activity).lastRequestedPermission) {
@@ -252,10 +257,19 @@ class PermissionsScreenTest {
         }
         val result =
             if (granted) PackageManager.PERMISSION_GRANTED else PackageManager.PERMISSION_DENIED
-        activity.onRequestPermissionsResult(
+        val resultData = Intent()
+            .putExtra(
+                ActivityResultContracts.RequestMultiplePermissions.EXTRA_PERMISSIONS,
+                request.requestedPermissions
+            )
+            .putExtra(
+                ActivityResultContracts.RequestMultiplePermissions.EXTRA_PERMISSION_GRANT_RESULTS,
+                IntArray(request.requestedPermissions.size) { result }
+            )
+        activity.activityResultRegistry.dispatchResult(
             request.requestCode,
-            request.requestedPermissions,
-            IntArray(request.requestedPermissions.size) { result }
+            Activity.RESULT_OK,
+            resultData
         )
         composeTestRule.waitForIdle()
     }
