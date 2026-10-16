@@ -73,7 +73,10 @@ data class PolicyOverrides private constructor(
             beforeEnforcement.selectedCameraEffect,
             afterEnforcement.selectedCameraEffect
         ),
-        videoQuality = OverriddenValue(beforeEnforcement.videoQuality, afterEnforcement.videoQuality)
+        videoQuality = OverriddenValue(
+            beforeEnforcement.videoQuality,
+            afterEnforcement.videoQuality
+        )
     ) {
         require(beforeEnforcement.captureMode == afterEnforcement.captureMode) {
             "PolicyOverrides does not support overriding captureMode; sub-mode feature policies " +
