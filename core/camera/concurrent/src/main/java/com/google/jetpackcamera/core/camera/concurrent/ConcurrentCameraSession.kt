@@ -212,7 +212,9 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                                 if (mappedError == CameraError.StreamConfigError) {
                                     reportSubModeFailure(
                                         sessionSettings,
-                                        IllegalStateException("Concurrent stream configuration failed")
+                                        IllegalStateException(
+                                            "Concurrent stream configuration failed"
+                                        )
                                     )
                                     return@collectLatest
                                 }
