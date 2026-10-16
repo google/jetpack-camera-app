@@ -77,18 +77,10 @@
     <!-- Accessibility action label (announced as "double-tap to [label]") for tapping the drag handle of the quick settings bottom sheet, or the dimmed area behind it, on the capture screen; the action dismisses the quick settings sheet. "Close" is an imperative verb; "expanded settings" refers to the open quick settings panel. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_btn_close_expanded_settings_description">Close expanded settings</string>
 
-    <!-- Short label in the quick settings panel indicating the front-facing camera lens is active. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_front_camera_text">Front</string>
-    <!-- Short label in the quick settings panel indicating the rear-facing camera lens is active. "Back" refers to the rear-facing camera on the back of the device, not the navigation action to go back. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_back_camera_text">Back</string>
     <!-- Accessibility label for the round flip-camera button on the capture screen while the front-facing (selfie) camera is active; it names the current lens (a state), and tapping the button switches to the rear camera. Translate as a noun phrase ("the front camera"), not as a command to switch. "Camera" is a generic term. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_front_camera_description">Front Camera</string>
     <!-- Accessibility label for the round flip-camera button on the capture screen while the rear-facing camera is active; it names the current lens (a state), and tapping the button switches to the front camera. Translate as a noun phrase ("the back camera"), not as a command to switch. "Back" refers to the rear-facing camera on the back of the device, not the navigation action to go back. "Camera" is a generic term. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_back_camera_description">Back Camera</string>
-
-    <string name="quick_settings_aspect_ratio_3_4" translatable="false">3:4</string>
-    <string name="quick_settings_aspect_ratio_9_16" translatable="false">9:16</string>
-    <string name="quick_settings_aspect_ratio_1_1" translatable="false">1:1</string>
 
     <!-- Accessibility label for the 3:4 aspect ratio option in quick settings. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_aspect_ratio_3_4_description" tools:ignore="HardCodedNumber">3 to 4 aspect ratio</string>
@@ -105,15 +97,6 @@
     <string name="quick_settings_dynamic_range_sdr_description">Standard dynamic range</string>
     <!-- Accessibility label for the High Dynamic Range (HDR) option in quick settings. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_dynamic_range_hdr_description">High dynamic range</string>
-
-    <!-- Short option label in quick settings indicating camera flash is turned off. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_flash_off">Off</string>
-    <!-- Short option label in quick settings indicating camera flash is set to automatic. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_flash_auto">Auto</string>
-    <!-- Short option label in quick settings indicating camera flash is turned on. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_flash_on">On</string>
-    <!-- Short abbreviated option label in quick settings for Low Light Boost mode. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_flash_llb">LLB</string>
 
     <!-- Accessibility label for the flash control when flash is turned off. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_flash_off_description">Flash off</string>
