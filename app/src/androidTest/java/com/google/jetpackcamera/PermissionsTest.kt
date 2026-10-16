@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera
 
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.Manifest.permission.CAMERA
 import android.Manifest.permission.RECORD_AUDIO
 import androidx.compose.ui.test.isDisplayed
@@ -26,17 +28,18 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.google.jetpackcamera.permissions.ui.CAMERA_PERMISSION_BUTTON
+import com.google.jetpackcamera.permissions.ui.LOCATION_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.RECORD_AUDIO_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.REQUEST_PERMISSION_BUTTON
 import com.google.jetpackcamera.permissions.ui.WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.IMAGE_WELL_TAG
 import com.google.jetpackcamera.ui.uistateadapter.capture.R as StateR
-import com.google.jetpackcamera.utils.APP_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IMAGE_CAPTURE_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.IndividualTestGrantPermissionRule
 import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
+import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.askEveryTimeDialog
 import com.google.jetpackcamera.utils.deleteFilesInDirAfterTimestamp
 import com.google.jetpackcamera.utils.denyPermissionDialog
@@ -55,18 +58,18 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PermissionsTest {
-    @get:Rule(order = 3)
+    @get:Rule(order = 4)
     val composeTestRule = createEmptyComposeRule()
 
     @get:Rule(order = 0)
     val allPermissionsRule = IndividualTestGrantPermissionRule(
-        permissions = APP_REQUIRED_PERMISSIONS.toTypedArray(),
+        permissions = TEST_REQUIRED_PERMISSIONS.toTypedArray(),
         targetTestNames = arrayOf("allPermissions_alreadyGranted_screenNotShown")
     )
 
     @get:Rule(order = 1)
-    val cameraAudioPermissionRule = IndividualTestGrantPermissionRule(
-        permissions = arrayOf(CAMERA, RECORD_AUDIO),
+    val storagePermissionsRule = IndividualTestGrantPermissionRule(
+        permissions = arrayOf(CAMERA, RECORD_AUDIO, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION),
         targetTestNames = arrayOf(
             "writeStoragePermission_granted",
             "writeStoragePermission_denied"
@@ -74,6 +77,15 @@ class PermissionsTest {
     )
 
     @get:Rule(order = 2)
+    val cameraAudioPermissionRule = IndividualTestGrantPermissionRule(
+        permissions = arrayOf(CAMERA, RECORD_AUDIO),
+        targetTestNames = arrayOf(
+            "locationPermission_granted_closesPage",
+            "locationPermission_denied_closesPage"
+        )
+    )
+
+    @get:Rule(order = 3)
     val cameraPermissionRule = IndividualTestGrantPermissionRule(
         permissions = arrayOf(CAMERA),
         targetTestNames = arrayOf(
@@ -220,6 +232,58 @@ class PermissionsTest {
             // Assert we're on a different page
             composeTestRule.waitForNodeWithTagToDisappear(
                 RECORD_AUDIO_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
+        }
+    }
+
+    @Test
+    fun locationPermission_granted_closesPage() {
+        // optional permissions should close the screen after declining
+        runMainActivityScenarioTest {
+            composeTestRule.waitForNodeWithTag(
+                LOCATION_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
+
+            // Click button to request permission
+            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
+                .assertExists()
+                .performClick()
+
+            // grant permission
+            uiDevice.grantPermissionDialog()
+            uiDevice.waitForIdle()
+
+            // Assert we're on a different page
+            composeTestRule.waitForNodeWithTagToDisappear(
+                LOCATION_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
+        }
+    }
+
+    @Test
+    fun locationPermission_denied_closesPage() {
+        // optional permissions should close the screen after declining
+        runMainActivityScenarioTest {
+            composeTestRule.waitForNodeWithTag(
+                LOCATION_PERMISSION_BUTTON,
+                timeoutMillis = APP_START_TIMEOUT_MILLIS
+            )
+
+            // Click button to request permission
+            composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
+                .assertExists()
+                .performClick()
+
+            // deny permission
+            uiDevice.denyPermissionDialog()
+            uiDevice.waitForIdle()
+
+            // Assert we're on a different page
+            composeTestRule.waitForNodeWithTagToDisappear(
+                LOCATION_PERMISSION_BUTTON,
                 timeoutMillis = APP_START_TIMEOUT_MILLIS
             )
         }

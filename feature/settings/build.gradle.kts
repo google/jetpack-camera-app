@@ -110,6 +110,7 @@ dependencies {
     testImplementation(project(":core:settings:datastore-prefs:testing"))
     testImplementation(project(":data:settings:testing"))
     testImplementation(libs.androidx.datastore.preferences)
+    testImplementation(project(":core:location:testing"))
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.truth)
@@ -134,6 +135,8 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:camera"))
     implementation(project(":core:camera:effects:single-stream"))
+    implementation(project(":core:location"))
+    implementation(project(":core:location:location-di"))
 }
 
 // Allow references to generated code
