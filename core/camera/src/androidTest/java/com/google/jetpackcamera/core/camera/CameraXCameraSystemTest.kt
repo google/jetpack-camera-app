@@ -1038,7 +1038,9 @@ class CameraXCameraSystemTest {
                 override val id = CameraEffectId("image_capture_effect")
             }
             val cameraSystem = createAndInitCameraXCameraSystem(
-                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(captureMode = CaptureMode.IMAGE_ONLY),
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY
+                ),
                 captureSubModeProvider = FakeCaptureSubModeProvider(
                     CameraFeaturePolicy(
                         cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
