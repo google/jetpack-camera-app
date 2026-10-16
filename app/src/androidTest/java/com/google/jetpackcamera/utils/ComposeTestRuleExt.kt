@@ -37,6 +37,7 @@ import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -54,6 +55,9 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.R as SettingsR
 import com.google.jetpackcamera.settings.ui.BACK_BUTTON
+import com.google.jetpackcamera.settings.ui.BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG
+import com.google.jetpackcamera.settings.ui.BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
@@ -736,21 +740,44 @@ fun ComposeTestRule.searchForQuickSetting(settingTestTag: String) {
  * @param enabled `true` to select the concurrent camera sub-mode, `false` to select the default
  * sub-mode.
  */
-fun ComposeTestRule.selectConcurrentCameraSubMode(enabled: Boolean) {
+fun ComposeTestRule.selectConcurrentCameraSubMode(enabled: Boolean) = selectCaptureSubMode(
+    subModeId = CONCURRENT_SUB_MODE_ID,
+    parentCaptureMode = CaptureMode.VIDEO_ONLY,
+    subModeName = "Concurrent camera",
+    enabled = enabled
+)
+
+/**
+ * Switches to [parentCaptureMode] (if needed) and selects the sub-mode with [subModeId] from the
+ * capture mode carousel.
+ *
+ * Assumes the sub-mode is supported by the device, skipping the test if not. After the selection
+ * is applied, waits for the capture button to be enabled, since the camera session restarts
+ * asynchronously.
+ *
+ * @param subModeName The sub-mode name used in skip messages.
+ * @param enabled `true` to select the sub-mode, `false` to select the default sub-mode.
+ */
+fun ComposeTestRule.selectCaptureSubMode(
+    subModeId: CaptureSubModeId,
+    parentCaptureMode: CaptureMode,
+    subModeName: String,
+    enabled: Boolean
+) {
     closeQuickSettings()
-    if (getCurrentCaptureMode() != CaptureMode.VIDEO_ONLY) {
-        setCaptureMode(CaptureMode.VIDEO_ONLY)
+    if (getCurrentCaptureMode() != parentCaptureMode) {
+        setCaptureMode(parentCaptureMode)
         waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
     }
 
-    val concurrentOptionTag = CONCURRENT_SUB_MODE_ID.carouselOptionTag
+    val subModeOptionTag = subModeId.carouselOptionTag
     val defaultOptionTag = CaptureSubModeId.DEFAULT.carouselOptionTag
-    val isSupported = onAllNodesWithTag(concurrentOptionTag).fetchSemanticsNodes().isNotEmpty()
+    val isSupported = onAllNodesWithTag(subModeOptionTag).fetchSemanticsNodes().isNotEmpty()
 
     if (!isSupported) {
         if (enabled) {
             throw AssumptionViolatedException(
-                "Concurrent camera sub-mode is not supported by the device"
+                "$subModeName sub-mode is not supported by the device"
             )
         } else {
             return
@@ -758,14 +785,14 @@ fun ComposeTestRule.selectConcurrentCameraSubMode(enabled: Boolean) {
     }
 
     val targetTag = if (enabled) {
-        concurrentOptionTag
+        subModeOptionTag
     } else {
         defaultOptionTag
     }
 
     onNodeWithTag(targetTag)
         .assertExists()
-        .assume(isEnabled()) { "Concurrent camera sub-mode option is not enabled" }
+        .assume(isEnabled()) { "$subModeName sub-mode option is not enabled" }
         .performClick()
 
     waitUntil(DEFAULT_TIMEOUT_MILLIS) {
@@ -774,6 +801,39 @@ fun ComposeTestRule.selectConcurrentCameraSubMode(enabled: Boolean) {
         ) == true
     }
     waitForCaptureButton()
+}
+
+/**
+ * Selects the single-stream camera effect in the Settings screen, skipping the test if the
+ * effect is not offered.
+ */
+fun ComposeTestRule.selectSingleStreamEffect() {
+    visitSettingsScreen {
+        visitSettingDialog(
+            settingTestTag = BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG,
+            dialogTestTag = BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG,
+            disabledMessage = "Stream configuration setting is disabled"
+        ) {
+            val singleStreamOptions =
+                onAllNodesWithTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG)
+                    .fetchSemanticsNodes()
+            if (singleStreamOptions.isEmpty()) {
+                throw AssumptionViolatedException("Single-stream effect is not offered")
+            }
+            onNodeWithTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG).performClick()
+        }
+    }
+}
+
+/**
+ * Waits until the Settings screen shows [text], for example as the description of a setting.
+ */
+fun ComposeTestRule.waitForSettingsText(text: String) {
+    visitSettingsScreen {
+        waitUntil(DEFAULT_TIMEOUT_MILLIS) {
+            onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
 }
 
 // ////////////////////////////

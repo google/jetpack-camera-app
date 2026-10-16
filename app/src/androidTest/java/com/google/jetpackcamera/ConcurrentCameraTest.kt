@@ -65,11 +65,13 @@ import com.google.jetpackcamera.utils.longClickForVideoRecordingCheckingElapsedT
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.selectConcurrentCameraSubMode
+import com.google.jetpackcamera.utils.selectSingleStreamEffect
 import com.google.jetpackcamera.utils.setCaptureMode
 import com.google.jetpackcamera.utils.visitSettingsScreen
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import com.google.jetpackcamera.utils.waitForCaptureModeToggleState
 import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForSettingsText
 import com.google.jetpackcamera.utils.waitForSnackbarWithText
 import org.junit.Rule
 import org.junit.Test
@@ -221,6 +223,40 @@ class ConcurrentCameraTest {
                             .isNotEnabledNow()
                     }
                 }
+            }
+        }
+
+    /**
+     * Verifies that a camera effect selected before Dual is turned off while Dual records, and is
+     * selected again after leaving Dual.
+     */
+    @Test
+    fun concurrentCameraMode_turnsSingleStreamEffectOff_andRestoresItAfterLeavingDual() =
+        runConcurrentCameraScenarioTest(
+            mediaUriForSavedFiles = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        ) {
+            with(composeTestRule) {
+                selectSingleStreamEffect()
+
+                selectConcurrentCameraSubMode(enabled = true)
+                waitForSettingsText(
+                    getResString(SettingsR.string.capture_sub_mode_active).format(
+                        getResString(SettingsR.string.stream_config_rationale_prefix),
+                        getResString(ConcurrentR.string.capture_mode_concurrent_dual)
+                    )
+                )
+                // The concurrent session records without the effect.
+                waitForCaptureButton()
+                longClickForVideoRecordingCheckingElapsedTime()
+                waitForSnackbarWithText(
+                    StateR.string.toast_video_capture_success,
+                    VIDEO_CAPTURE_TIMEOUT_MILLIS
+                )
+
+                selectConcurrentCameraSubMode(enabled = false)
+                waitForSettingsText(
+                    getResString(SettingsR.string.stream_config_description_single_stream)
+                )
             }
         }
 

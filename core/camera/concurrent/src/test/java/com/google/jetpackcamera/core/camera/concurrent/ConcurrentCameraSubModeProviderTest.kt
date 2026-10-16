@@ -25,6 +25,7 @@ import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.OptionVisibility
@@ -134,6 +135,18 @@ class ConcurrentCameraSubModeProviderTest {
         assertThat(enforced.stabilizationMode).isEqualTo(StabilizationMode.OFF)
         assertThat(enforced.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
         assertThat(enforced.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+    }
+
+    @Test
+    fun featurePolicy_locksVideoQualityToTheConcurrentSessionQuality() {
+        val settings = CameraAppSettings(
+            captureMode = CaptureMode.VIDEO_ONLY,
+            videoQuality = VideoQuality.UHD
+        )
+
+        assertThat(isCompatible(settings)).isTrue()
+        assertThat(provider.featurePolicy.enforceRestrictions(settings).videoQuality)
+            .isEqualTo(VideoQuality.UNSPECIFIED)
     }
 
     private fun isCompatible(
