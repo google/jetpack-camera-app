@@ -807,32 +807,28 @@ fun ComposeTestRule.selectCaptureSubMode(
  * Selects the single-stream camera effect in the Settings screen, skipping the test if the
  * effect is not offered.
  */
-fun ComposeTestRule.selectSingleStreamEffect() {
-    visitSettingsScreen {
-        visitSettingDialog(
-            settingTestTag = BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG,
-            dialogTestTag = BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG,
-            disabledMessage = "Stream configuration setting is disabled"
-        ) {
-            val singleStreamOptions =
-                onAllNodesWithTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG)
-                    .fetchSemanticsNodes()
-            if (singleStreamOptions.isEmpty()) {
-                throw AssumptionViolatedException("Single-stream effect is not offered")
-            }
-            onNodeWithTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG).performClick()
+fun ComposeTestRule.selectSingleStreamEffect(): Unit = visitSettingsScreen {
+    visitSettingDialog(
+        settingTestTag = BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG,
+        dialogTestTag = BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG,
+        disabledMessage = "Stream configuration setting is disabled"
+    ) {
+        val singleStreamOptions =
+            onAllNodesWithTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG)
+                .fetchSemanticsNodes()
+        if (singleStreamOptions.isEmpty()) {
+            throw AssumptionViolatedException("Single-stream effect is not offered")
         }
+        onNodeWithTag(BTN_DIALOG_STREAM_CONFIG_OPTION_SINGLE_STREAM_TAG).performClick()
     }
 }
 
 /**
  * Waits until the Settings screen shows [text], for example as the description of a setting.
  */
-fun ComposeTestRule.waitForSettingsText(text: String) {
-    visitSettingsScreen {
-        waitUntil(DEFAULT_TIMEOUT_MILLIS) {
-            onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
-        }
+fun ComposeTestRule.waitForSettingsText(text: String): Unit = visitSettingsScreen {
+    waitUntil(DEFAULT_TIMEOUT_MILLIS) {
+        onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
     }
 }
 
