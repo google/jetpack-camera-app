@@ -121,7 +121,7 @@ class ConcurrentCameraSessionTest {
     }
 
     @Test
-    fun sessionBinding_whenNoConcurrentCamerasAvailable_reportsSubModeError(): Unit =
+    fun sessionBinding_whenNoConcurrentCamerasAvailable_reportsCaptureSubModeError(): Unit =
         runBlocking {
             val cameraProvider = ProcessCameraProvider.awaitInstance(context)
             val sessionContext = createTestSessionContext(cameraProvider)
