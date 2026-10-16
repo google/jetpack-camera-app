@@ -32,6 +32,7 @@ import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_ENABLED_TAG
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
+import com.google.jetpackcamera.settings.ui.PERMISSION_LOCATION_NOT_GRANTED_TAG
 import com.google.jetpackcamera.settings.ui.PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.ULTRA_HDR_ENABLED_TAG
@@ -57,6 +58,7 @@ sealed interface SettingsUiState {
         val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
         val videoQualityUiState: VideoQualityUiState,
         val audioUiState: AudioUiState,
+        val locationUiState: LocationUiState,
         val lowLightBoostPriorityUiState: LowLightBoostPriorityUiState,
         val concurrentCameraUiState: ConcurrentCameraUiState
     ) : SettingsUiState
@@ -80,6 +82,17 @@ sealed interface DisabledRationale {
     ) : DisabledRationale {
         override val reasonTextResId: Int = R.string.permission_record_audio_unsupported
         override val testTag = PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
+    }
+
+    /**
+     * Rationale indicating that location geotagging is unavailable because location
+     * permissions have not been granted.
+     */
+    data class PermissionLocationNotGrantedRationale(
+        override val affectedSettingNameResId: Int
+    ) : DisabledRationale {
+        override val reasonTextResId: Int = R.string.permission_location_unsupported
+        override val testTag = PERMISSION_LOCATION_NOT_GRANTED_TAG
     }
 
     /**
@@ -219,6 +232,26 @@ sealed interface AudioUiState {
     data class Disabled(val disabledRationale: DisabledRationale) : AudioUiState
 }
 
+/**
+ * Represents the UI state of the location geotagging setting.
+ */
+sealed interface LocationUiState {
+    /** The location setting is not displayed. */
+    data object Hidden : LocationUiState
+
+    /** The location setting is enabled and interactive. */
+    sealed interface Enabled : LocationUiState {
+        /** Location geotagging is enabled. */
+        data object On : Enabled
+
+        /** Location geotagging is disabled. */
+        data object Off : Enabled
+    }
+
+    /** The location setting is disabled due to missing permissions. */
+    data class Disabled(val disabledRationale: DisabledRationale) : LocationUiState
+}
+
 sealed interface FlashUiState {
     data class Enabled(
         val currentFlashMode: FlashMode,
@@ -332,6 +365,11 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     } else {
         AudioUiState.Enabled.Mute()
     },
+    locationUiState = LocationUiState.Disabled(
+        DisabledRationale.PermissionLocationNotGrantedRationale(
+            R.string.save_location_rationale_prefix
+        )
+    ),
     flashUiState =
     FlashUiState.Enabled(
         currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode,
