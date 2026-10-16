@@ -31,5 +31,8 @@
     <string name="write_storage_permission_required_rationale">Please provide permission to write to external storage. You will be unable to save captured mages or videos if this permission is denied.</string>
     <string name="write_storage_permission_accessibility_text">An icon representing a file folder</string>
 
+    <string name="location_permission_screen_title" description="Title for screen requesting location permission. [CHAR LIMIT=30]">Enable Location</string>
+    <string name="location_permission_required_rationale" description="Explanation for why location permission is needed. Jetpack Camera is a product name. [CHAR LIMIT=NONE]">Please provide permission to access location. This allows Jetpack Camera to tag photos and videos with where they were captured.</string>
+    <string name="location_permission_accessibility_text" description="Accessibility description for location icon. [CHAR LIMIT=50]">An icon representing a location pin</string>
 
 </resources>
