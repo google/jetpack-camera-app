@@ -32,6 +32,12 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -47,6 +53,12 @@ dependencies {
     implementation(project(":core:model"))
     implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
+
+    testImplementation(project(":core:settings"))
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.truth)
+    kaptTest(libs.dagger.hilt.compiler)
 }
 
 kapt {
