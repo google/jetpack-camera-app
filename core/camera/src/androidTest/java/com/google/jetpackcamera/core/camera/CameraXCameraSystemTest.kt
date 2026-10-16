@@ -75,6 +75,7 @@ import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -956,6 +957,52 @@ class CameraXCameraSystemTest {
         // Assert.
         assertThat(cameraSystem.getCurrentSettings().value!!.targetFrameRate)
             .isEqualTo(fixedFrameRate)
+    }
+
+    @Test
+    fun setCaptureSubMode_toDefault_restoresVideoQualityChosenDuringSubMode(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the video quality.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        val settingsBefore = cameraSystem.getCurrentSettings().value!!
+        val supportedQualities = cameraSystem.getSystemConstraints().value!!
+            .perLensConstraints[settingsBefore.cameraLensFacing]
+            ?.supportedVideoQualitiesMap
+            ?.get(settingsBefore.dynamicRange)
+            .orEmpty()
+            .filter { it != VideoQuality.UNSPECIFIED }
+        assume().withMessage("No specific video quality is supported, skip the test.")
+            .that(supportedQualities)
+            .isNotEmpty()
+        cameraSystem.setVideoQuality(supportedQualities.first())
+
+        // Act. Enter the sub-mode -> the video quality is locked.
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Assert.
+        assertThat(cameraSystem.getCurrentSettings().value!!.videoQuality)
+            .isEqualTo(VideoQuality.UNSPECIFIED)
+
+        // Act. Choose another quality while the sub-mode is active -> it stays locked.
+        val chosenDuringSubMode = supportedQualities.last()
+        cameraSystem.setVideoQuality(chosenDuringSubMode)
+
+        // Assert.
+        assertThat(cameraSystem.getCurrentSettings().value!!.videoQuality)
+            .isEqualTo(VideoQuality.UNSPECIFIED)
+
+        // Act. Leave the sub-mode -> the quality chosen during the sub-mode is restored.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert.
+        assertThat(cameraSystem.getCurrentSettings().value!!.videoQuality)
+            .isEqualTo(chosenDuringSubMode)
     }
 
     @Test

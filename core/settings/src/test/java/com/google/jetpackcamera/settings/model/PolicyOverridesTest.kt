@@ -31,6 +31,7 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_60
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
+import com.google.jetpackcamera.model.VideoQuality
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -143,6 +144,32 @@ class PolicyOverridesTest {
         assertThat(enforced.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
 
         assertThat(overrides.restore(enforced).selectedCameraEffect).isEqualTo(effect)
+    }
+
+    @Test
+    fun restore_returnsVideoQualityToItsPreviousValue() {
+        val policy = CameraFeaturePolicy(
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+        )
+        val settings = userSettings.copy(videoQuality = VideoQuality.UHD)
+        val (enforced, overrides) = enforce(policy, settings)
+        assertThat(enforced.videoQuality).isEqualTo(VideoQuality.UNSPECIFIED)
+
+        assertThat(overrides.restore(enforced).videoQuality).isEqualTo(VideoQuality.UHD)
+    }
+
+    @Test
+    fun withRequestedChange_whenPolicyBlocksTheVideoQuality_restoresTheUserChoice() {
+        val policy = CameraFeaturePolicy(
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+        )
+        val settings = userSettings.copy(videoQuality = VideoQuality.UHD)
+        val (enforced, overrides) = enforce(policy, settings)
+
+        // The policy keeps the quality unspecified, but the user's choice returns afterwards.
+        val updated = overrides.withRequestedChange { it.copy(videoQuality = VideoQuality.HD) }
+
+        assertThat(updated.restore(enforced).videoQuality).isEqualTo(VideoQuality.HD)
     }
 
     @Test

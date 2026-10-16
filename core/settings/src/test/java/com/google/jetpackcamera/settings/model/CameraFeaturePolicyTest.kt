@@ -28,6 +28,7 @@ import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_60
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
+import com.google.jetpackcamera.model.VideoQuality
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -654,5 +655,83 @@ class CameraFeaturePolicyTest {
         )
         assertThat(intersected.cameraEffect)
             .isEqualTo(SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden))
+    }
+
+    @Test
+    fun toCameraAppSettings_appliesVideoQualityDefault() {
+        val policy = CameraFeaturePolicy(
+            videoQuality = SettingConfig(defaultValue = VideoQuality.FHD)
+        )
+
+        assertThat(policy.toCameraAppSettings().videoQuality).isEqualTo(VideoQuality.FHD)
+        assertThat(CameraFeaturePolicy().toCameraAppSettings().videoQuality)
+            .isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.videoQuality)
+    }
+
+    @Test
+    fun enforceRestrictions_whenVideoQualityHidden_clampsToDefaultValue() {
+        val policy = CameraFeaturePolicy(
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+        )
+        val settings = DEFAULT_CAMERA_APP_SETTINGS.copy(videoQuality = VideoQuality.UHD)
+
+        assertThat(policy.enforceRestrictions(settings).videoQuality)
+            .isEqualTo(VideoQuality.UNSPECIFIED)
+        assertThat(CameraFeaturePolicy().enforceRestrictions(settings).videoQuality)
+            .isEqualTo(VideoQuality.UHD)
+    }
+
+    @Test
+    fun isCompatibleWith_comparesVideoQuality() {
+        val subModePolicy = CameraFeaturePolicy(
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+        )
+
+        assertThat(
+            CameraFeaturePolicy(
+                videoQuality = SettingConfig(
+                    defaultValue = VideoQuality.FHD,
+                    visibility = OptionVisibility.Only(VideoQuality.UNSPECIFIED, VideoQuality.FHD)
+                )
+            ).isCompatibleWith(subModePolicy)
+        ).isTrue()
+        assertThat(
+            CameraFeaturePolicy(
+                videoQuality = SettingConfig(VideoQuality.UHD, OptionVisibility.Hidden)
+            ).isCompatibleWith(subModePolicy)
+        ).isFalse()
+    }
+
+    @Test
+    fun intersect_narrowsVideoQuality() {
+        val hostPolicy = CameraFeaturePolicy(
+            videoQuality = SettingConfig(
+                defaultValue = VideoQuality.FHD,
+                visibility = OptionVisibility.Only(
+                    VideoQuality.HD,
+                    VideoQuality.FHD,
+                    VideoQuality.UHD
+                )
+            )
+        )
+        val subModePolicy = CameraFeaturePolicy(
+            videoQuality = SettingConfig(
+                defaultValue = VideoQuality.HD,
+                visibility = OptionVisibility.Only(
+                    VideoQuality.SD,
+                    VideoQuality.HD,
+                    VideoQuality.FHD
+                )
+            )
+        )
+
+        assertThat(hostPolicy.intersect(subModePolicy).videoQuality).isEqualTo(
+            SettingConfig(
+                defaultValue = VideoQuality.HD,
+                visibility = OptionVisibility.Only(VideoQuality.HD, VideoQuality.FHD)
+            )
+        )
+        assertThat(CameraFeaturePolicy().intersect(subModePolicy).videoQuality)
+            .isEqualTo(subModePolicy.videoQuality)
     }
 }

@@ -1397,8 +1397,9 @@ class CameraXCameraSystem(
 
     override suspend fun setVideoQuality(videoQuality: VideoQuality) {
         currentSettings.update { old ->
-            old?.copy(videoQuality = videoQuality)
+            old?.withUserChange { copy(videoQuality = videoQuality) }
                 ?.tryApplyVideoQualityConstraints()
+                ?.tryApplyCaptureSubModeConstraints()
         }
     }
 

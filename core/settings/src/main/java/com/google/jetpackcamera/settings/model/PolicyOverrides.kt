@@ -21,6 +21,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.VideoQuality
 
 /**
  * Records the [CameraAppSettings] values that [CameraFeaturePolicy.enforceRestrictions] replaced,
@@ -30,8 +31,8 @@ import com.google.jetpackcamera.model.StabilizationMode
  *
  * The restored values are [CameraAppSettings.aspectRatio], [CameraAppSettings.flashMode],
  * [CameraAppSettings.imageFormat], [CameraAppSettings.dynamicRange],
- * [CameraAppSettings.stabilizationMode], [CameraAppSettings.targetFrameRate], and
- * [CameraAppSettings.selectedCameraEffect].
+ * [CameraAppSettings.stabilizationMode], [CameraAppSettings.targetFrameRate],
+ * [CameraAppSettings.selectedCameraEffect], and [CameraAppSettings.videoQuality].
  * [CameraAppSettings.captureMode] is not restored. A capture mode change ends a sub-mode rather
  * than being a value that the sub-mode overrides.
  *
@@ -45,7 +46,8 @@ data class PolicyOverrides private constructor(
     private val dynamicRange: OverriddenValue<DynamicRange>,
     private val stabilizationMode: OverriddenValue<StabilizationMode>,
     private val targetFrameRate: OverriddenValue<Int>,
-    private val selectedCameraEffect: OverriddenValue<CameraEffectId>
+    private val selectedCameraEffect: OverriddenValue<CameraEffectId>,
+    private val videoQuality: OverriddenValue<VideoQuality>
 ) {
     /**
      * @param beforeEnforcement The settings before the policy was enforced.
@@ -70,7 +72,8 @@ data class PolicyOverrides private constructor(
         selectedCameraEffect = OverriddenValue(
             beforeEnforcement.selectedCameraEffect,
             afterEnforcement.selectedCameraEffect
-        )
+        ),
+        videoQuality = OverriddenValue(beforeEnforcement.videoQuality, afterEnforcement.videoQuality)
     ) {
         require(beforeEnforcement.captureMode == afterEnforcement.captureMode) {
             "PolicyOverrides does not support overriding captureMode; sub-mode feature policies " +
@@ -90,7 +93,8 @@ data class PolicyOverrides private constructor(
         dynamicRange = dynamicRange.restore(settings.dynamicRange),
         stabilizationMode = stabilizationMode.restore(settings.stabilizationMode),
         targetFrameRate = targetFrameRate.restore(settings.targetFrameRate),
-        selectedCameraEffect = selectedCameraEffect.restore(settings.selectedCameraEffect)
+        selectedCameraEffect = selectedCameraEffect.restore(settings.selectedCameraEffect),
+        videoQuality = videoQuality.restore(settings.videoQuality)
     )
 
     /**
@@ -110,7 +114,8 @@ data class PolicyOverrides private constructor(
                 dynamicRange = dynamicRange.before,
                 stabilizationMode = stabilizationMode.before,
                 targetFrameRate = targetFrameRate.before,
-                selectedCameraEffect = selectedCameraEffect.before
+                selectedCameraEffect = selectedCameraEffect.before,
+                videoQuality = videoQuality.before
             )
         )
         return copy(
@@ -122,7 +127,8 @@ data class PolicyOverrides private constructor(
             targetFrameRate = targetFrameRate.withRequest(requested.targetFrameRate),
             selectedCameraEffect = selectedCameraEffect.withRequest(
                 requested.selectedCameraEffect
-            )
+            ),
+            videoQuality = videoQuality.withRequest(requested.videoQuality)
         )
     }
 
