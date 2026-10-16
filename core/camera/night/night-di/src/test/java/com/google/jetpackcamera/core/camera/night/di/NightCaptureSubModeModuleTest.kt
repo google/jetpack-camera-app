@@ -49,7 +49,7 @@ class NightCaptureSubModeModuleTest {
         val component = DaggerNightCaptureSubModeModuleTest_DefaultComponent.factory()
             .create(context)
 
-        val provider = component.captureSubModeEntries().nightProvider()
+        val provider = component.nightProvider()
 
         assertThat(provider.featurePolicy.cameraEffect?.visibility)
             .isEqualTo(OptionVisibility.Hidden)
@@ -60,16 +60,14 @@ class NightCaptureSubModeModuleTest {
         val component = DaggerNightCaptureSubModeModuleTest_ContributedEffectsComponent.factory()
             .create(context)
 
-        val provider = component.captureSubModeEntries().nightProvider()
+        val provider = component.nightProvider()
 
         assertThat(provider.featurePolicy.cameraEffect?.visibility)
             .isEqualTo(OptionVisibility.Only(setOf(NONE_EFFECT_ID, TEST_EFFECT_ID)))
     }
 
-    private fun Set<Map.Entry<CaptureSubModeFeatureKey, Provider<CaptureSubModeProvider>>>
-    .nightProvider(): CaptureSubModeProvider = single { it.key == NightCaptureSubModeKey }
-        .value
-        .get()
+    private fun TestComponent.nightProvider(): CaptureSubModeProvider =
+        captureSubModeEntries().single { it.key == NightCaptureSubModeKey }.value.get()
 
     /** Contributes an effect the way an app would, as documented on the qualifier. */
     @Module
