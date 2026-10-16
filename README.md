@@ -629,6 +629,12 @@ media to be captured
 2. Configure content values and insert the url into the intent at MediaStore.EXTRA_OUTPUT
 3. Launch JCA
 
+#### Constraints / Limitations
+
+* The `EXTRA_OUTPUT` URI must not point at JCA's own storage. `content://` URIs served by JCA's own
+  content providers and `file://` URIs inside JCA's data directory are rejected, and the capture
+  fails with an error.
+
 ---
 
 ### Dark Mode

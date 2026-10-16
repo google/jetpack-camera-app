@@ -48,7 +48,9 @@ import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
+import com.google.jetpackcamera.core.common.ContentResolverUriStreams
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.UriStreams
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraEffectTarget
@@ -101,6 +103,9 @@ private const val TAG = "CameraXCameraSystem"
 
 /**
  * CameraX based implementation for [CameraSystem]
+ *
+ * @param uriStreams opens caller-supplied save locations ([SaveLocation.Explicit]). Defaults to
+ * [ContentResolverUriStreams].
  */
 class CameraXCameraSystem(
     private val application: Application,
@@ -114,7 +119,8 @@ class CameraXCameraSystem(
     val imagePostProcessors:
     Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>>,
     private val cameraEffectProviders:
-    Map<CameraEffectFeatureKey, @JvmSuppressWildcards Provider<CameraEffectProvider>>
+    Map<CameraEffectFeatureKey, @JvmSuppressWildcards Provider<CameraEffectProvider>>,
+    private val uriStreams: UriStreams = ContentResolverUriStreams(application)
 ) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -571,6 +577,7 @@ class CameraXCameraSystem(
                             backgroundDispatcher = defaultDispatcher,
                             screenFlashEvents = screenFlashEvents,
                             filePathGenerator = filePathGenerator,
+                            uriStreams = uriStreams,
                             focusMeteringEvents = focusMeteringEvents,
                             videoCaptureControlEvents = videoCaptureControlEvents,
                             currentCameraState = currentCameraState,
@@ -695,7 +702,7 @@ class CameraXCameraSystem(
             is SaveLocation.Explicit -> {
                 try {
                     val imageCaptureUri = saveLocation.locationUri
-                    val outputStream = contentResolver.openOutputStream(imageCaptureUri)
+                    val outputStream = uriStreams.openOutputStream(imageCaptureUri)
                         ?: throw RuntimeException("Provider recently crashed.")
                     val options = OutputFileOptions.Builder(outputStream)
                         .setMetadata(metadata)
