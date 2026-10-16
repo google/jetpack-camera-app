@@ -16,7 +16,11 @@
 package com.google.jetpackcamera.settings
 
 import android.Manifest
+import androidx.compose.ui.test.assertAll
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.isNotEnabled
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -29,11 +33,13 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
 import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
 import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DarkMode
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
@@ -41,6 +47,7 @@ import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_30
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.OptionVisibility
@@ -49,8 +56,10 @@ import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.testing.FakeActiveCaptureSubModeRepository
 import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
+import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
+import com.google.jetpackcamera.settings.ui.SingleChoiceSelector
 import java.io.File
 import java.util.Optional
 import kotlinx.coroutines.CoroutineScope
@@ -731,6 +740,181 @@ internal class CameraAppSettingsViewModelTest {
         }
 
         composeTestRule.onNodeWithText("Flash is unsupported in Settings mode").assertIsDisplayed()
+    }
+
+    /** Creates a view model that supports all video qualities and whose sub-mode has [policy]. */
+    private fun createViewModelWithVideoQualitiesAndSubModePolicy(
+        policy: CameraFeaturePolicy
+    ): SettingsViewModel {
+        val constraints = constraintsWithSubModePolicy(policy)
+        return createViewModelWithConstraints(
+            systemConstraints = constraints.copy(
+                perLensConstraints = constraints.perLensConstraints.mapValues {
+                    it.value.copy(
+                        supportedVideoQualitiesMap = mapOf(
+                            DynamicRange.SDR to listOf(
+                                VideoQuality.SD,
+                                VideoQuality.HD,
+                                VideoQuality.FHD,
+                                VideoQuality.UHD
+                            )
+                        )
+                    )
+                }
+            ),
+            activeCaptureSubModeRepository = FakeActiveCaptureSubModeRepository(TEST_SUB_MODE_ID)
+        )
+    }
+
+    @Test
+    fun videoQuality_whenCaptureSubModeHidesVideoQuality_disablesWholeSetting() =
+        runTest(StandardTestDispatcher()) {
+            val customViewModel = createViewModelWithVideoQualitiesAndSubModePolicy(
+                CameraFeaturePolicy(
+                    videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+                )
+            )
+            advanceUntilIdle()
+
+            assertThat(
+                assertIsEnabled(
+                    customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+                ).videoQualityUiState
+            ).isEqualTo(
+                VideoQualityUiState.Disabled(
+                    subModeRationale(R.string.video_quality_rationale_prefix)
+                )
+            )
+        }
+
+    @Test
+    fun videoQuality_whenCaptureSubModeAllowsOnlySomeOptions_disablesExcludedOptions() =
+        runTest(StandardTestDispatcher()) {
+            val customViewModel = createViewModelWithVideoQualitiesAndSubModePolicy(
+                CameraFeaturePolicy(
+                    videoQuality = SettingConfig(
+                        defaultValue = VideoQuality.UNSPECIFIED,
+                        visibility = OptionVisibility.Only(
+                            VideoQuality.UNSPECIFIED,
+                            VideoQuality.HD,
+                            VideoQuality.FHD
+                        )
+                    )
+                )
+            )
+            advanceUntilIdle()
+
+            val videoQualityState = assertIsEnabled(
+                customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            ).videoQualityUiState as VideoQualityUiState.Enabled
+            val subModeDisabled = SingleSelectableState.Disabled(
+                subModeRationale(R.string.video_quality_rationale_prefix)
+            )
+
+            assertThat(videoQualityState.videoQualityAutoState)
+                .isEqualTo(SingleSelectableState.Selectable)
+            assertThat(videoQualityState.videoQualityHDState)
+                .isEqualTo(SingleSelectableState.Selectable)
+            assertThat(videoQualityState.videoQualityFHDState)
+                .isEqualTo(SingleSelectableState.Selectable)
+            assertThat(videoQualityState.videoQualitySDState).isEqualTo(subModeDisabled)
+            assertThat(videoQualityState.videoQualityUHDState).isEqualTo(subModeDisabled)
+        }
+
+    @Test
+    fun aspectRatio_whenCaptureSubModeHidesAspectRatio_disablesWholeSetting() =
+        runTest(StandardTestDispatcher()) {
+            val customViewModel = createViewModelWithSubModePolicy(
+                CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden)
+                )
+            )
+            advanceUntilIdle()
+
+            assertThat(
+                assertIsEnabled(
+                    customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+                ).aspectRatioUiState
+            ).isEqualTo(
+                AspectRatioUiState.Disabled(
+                    subModeRationale(R.string.aspect_ratio_rationale_prefix)
+                )
+            )
+        }
+
+    @Test
+    fun aspectRatio_whenCaptureSubModeAllowsOnlySomeOptions_disablesExcludedOptions() =
+        runTest(StandardTestDispatcher()) {
+            val customViewModel = createViewModelWithSubModePolicy(
+                CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(
+                        defaultValue = AspectRatio.NINE_SIXTEEN,
+                        visibility = OptionVisibility.Only(
+                            AspectRatio.NINE_SIXTEEN,
+                            AspectRatio.THREE_FOUR
+                        )
+                    )
+                )
+            )
+            advanceUntilIdle()
+
+            val aspectRatioState = assertIsEnabled(
+                customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            ).aspectRatioUiState as AspectRatioUiState.Enabled
+
+            assertThat(aspectRatioState.nineSixteenState)
+                .isEqualTo(SingleSelectableState.Selectable)
+            assertThat(aspectRatioState.threeFourState)
+                .isEqualTo(SingleSelectableState.Selectable)
+            assertThat(aspectRatioState.oneOneState).isEqualTo(
+                SingleSelectableState.Disabled(
+                    subModeRationale(R.string.aspect_ratio_rationale_prefix)
+                )
+            )
+        }
+
+    @Test
+    fun aspectRatioSetting_whenDisabledByCaptureSubMode_showsRationale() {
+        Dispatchers.resetMain()
+        composeTestRule.setContent {
+            AspectRatioSetting(
+                aspectRatioUiState = AspectRatioUiState.Disabled(
+                    DisabledRationale.CaptureSubModeActiveRationale(
+                        affectedSettingNameResId = R.string.aspect_ratio_rationale_prefix,
+                        captureSubModeLabelResId = R.string.settings_title
+                    )
+                ),
+                setAspectRatio = {}
+            )
+        }
+
+        composeTestRule.onNodeWithText("Aspect ratio is unsupported in Settings mode")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun singleChoiceSelector_whenOptionDisabled_showsRationaleAndIsNotEnabled() {
+        Dispatchers.resetMain()
+        composeTestRule.setContent {
+            SingleChoiceSelector(
+                text = "On",
+                selected = false,
+                onClick = {},
+                selectableState = SingleSelectableState.Disabled(
+                    DisabledRationale.CaptureSubModeActiveRationale(
+                        affectedSettingNameResId = R.string.flash_on_rationale_prefix,
+                        captureSubModeLabelResId = R.string.settings_title
+                    )
+                )
+            )
+        }
+
+        composeTestRule.onNodeWithText("Flash On is unsupported in Settings mode")
+            .assertIsDisplayed()
+        // The row and its radio button are both selectable, and neither accepts input.
+        composeTestRule.onAllNodes(isSelectable())
+            .assertCountEquals(2)
+            .assertAll(isNotEnabled())
     }
 
     @Test

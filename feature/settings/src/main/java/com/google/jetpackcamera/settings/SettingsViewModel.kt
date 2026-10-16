@@ -87,7 +87,8 @@ class SettingsViewModel @Inject constructor(
             updatedSettings.videoQuality
             val activeSubMode = constraints.activeCaptureSubMode(activeCaptureSubModeId)
             SettingsUiState.Enabled(
-                aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
+                aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio)
+                    .restrictedBy(activeSubMode),
                 cameraEffectUiState = getCameraEffectUiState(updatedSettings, constraints)
                     .restrictedBy(activeSubMode),
                 maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
@@ -114,7 +115,8 @@ class SettingsViewModel @Inject constructor(
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
                 stabilizationUiState = getStabilizationUiState(constraints, updatedSettings)
                     .restrictedBy(activeSubMode),
-                videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings),
+                videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings)
+                    .restrictedBy(activeSubMode),
                 lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
                     updatedSettings.lowLightBoostPriority
                 )
@@ -323,6 +325,51 @@ class SettingsViewModel @Inject constructor(
                     .restrictedBy(config, StabilizationMode.HIGH_QUALITY, rationale),
                 stabilizationOpticalState = stabilizationOpticalState
                     .restrictedBy(config, StabilizationMode.OPTICAL, rationale)
+            )
+        }
+    }
+
+    private fun AspectRatioUiState.restrictedBy(
+        activeSubMode: ActiveCaptureSubMode?
+    ): AspectRatioUiState {
+        val config = activeSubMode?.policy?.aspectRatio ?: return this
+        val rationale = { activeSubMode.rationale(R.string.aspect_ratio_rationale_prefix) }
+        if (config.visibility is OptionVisibility.Hidden) {
+            return AspectRatioUiState.Disabled(rationale())
+        }
+        return when (this) {
+            is AspectRatioUiState.Disabled -> this
+            is AspectRatioUiState.Enabled -> copy(
+                nineSixteenState = nineSixteenState
+                    .restrictedBy(config, AspectRatio.NINE_SIXTEEN, rationale),
+                threeFourState = threeFourState
+                    .restrictedBy(config, AspectRatio.THREE_FOUR, rationale),
+                oneOneState = oneOneState.restrictedBy(config, AspectRatio.ONE_ONE, rationale)
+            )
+        }
+    }
+
+    private fun VideoQualityUiState.restrictedBy(
+        activeSubMode: ActiveCaptureSubMode?
+    ): VideoQualityUiState {
+        val config = activeSubMode?.policy?.videoQuality ?: return this
+        val rationale = { activeSubMode.rationale(R.string.video_quality_rationale_prefix) }
+        if (config.visibility is OptionVisibility.Hidden) {
+            return VideoQualityUiState.Disabled(rationale())
+        }
+        return when (this) {
+            is VideoQualityUiState.Disabled -> this
+            is VideoQualityUiState.Enabled -> copy(
+                videoQualityAutoState = videoQualityAutoState
+                    .restrictedBy(config, VideoQuality.UNSPECIFIED, rationale),
+                videoQualitySDState = videoQualitySDState
+                    .restrictedBy(config, VideoQuality.SD, rationale),
+                videoQualityHDState = videoQualityHDState
+                    .restrictedBy(config, VideoQuality.HD, rationale),
+                videoQualityFHDState = videoQualityFHDState
+                    .restrictedBy(config, VideoQuality.FHD, rationale),
+                videoQualityUHDState = videoQualityUHDState
+                    .restrictedBy(config, VideoQuality.UHD, rationale)
             )
         }
     }

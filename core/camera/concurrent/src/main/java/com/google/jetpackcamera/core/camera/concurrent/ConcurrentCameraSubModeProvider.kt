@@ -35,6 +35,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -85,6 +86,11 @@ class ConcurrentCameraSubModeProvider internal constructor(
         ),
         cameraEffect = SettingConfig(
             defaultValue = NONE_EFFECT_ID,
+            visibility = OptionVisibility.Hidden
+        ),
+        // The concurrent session records with an unspecified video quality.
+        videoQuality = SettingConfig(
+            defaultValue = VideoQuality.UNSPECIFIED,
             visibility = OptionVisibility.Hidden
         )
     )
