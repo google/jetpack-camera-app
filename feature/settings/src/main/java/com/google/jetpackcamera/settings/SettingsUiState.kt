@@ -276,8 +276,15 @@ sealed interface LowLightBoostPriorityUiState {
 // ////////////////////////////////////////////////////////////
 
 sealed interface AspectRatioUiState {
-    data class Enabled(val currentAspectRatio: AspectRatio, val additionalContext: String = "") :
-        AspectRatioUiState
+    data class Enabled(
+        val currentAspectRatio: AspectRatio,
+        val additionalContext: String = "",
+        val nineSixteenState: SingleSelectableState = SingleSelectableState.Selectable,
+        val threeFourState: SingleSelectableState = SingleSelectableState.Selectable,
+        val oneOneState: SingleSelectableState = SingleSelectableState.Selectable
+    ) : AspectRatioUiState
+
+    data class Disabled(val disabledRationale: DisabledRationale) : AspectRatioUiState
 }
 
 sealed interface CameraEffectUiState {

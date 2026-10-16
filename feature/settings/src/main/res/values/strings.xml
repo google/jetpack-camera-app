@@ -183,6 +183,7 @@
     <string name="flash_llb_rationale_prefix">Low Light Boost</string>
 
     <string name="video_quality_rationale_prefix">Video quality</string>
+    <string name="aspect_ratio_rationale_prefix" description="Setting name used in the explanation of why the aspect ratio setting or option is disabled. [CHAR LIMIT=NONE]">Aspect ratio</string>
     <string name="video_quality_rationale_suffix_default">the current dynamic range</string>
     <string name="video_quality_rationale_suffix_sdr">SDR</string>
 
