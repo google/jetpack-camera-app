@@ -466,7 +466,9 @@ internal suspend fun runSingleCameraSession(
                     }
                 } catch (e: IllegalArgumentException) {
                     val failedSubModeId = boundSubModeId
-                    if (failedSubModeId != null && cameraProvider.availableCameraInfos.isNotEmpty()) {
+                    if (failedSubModeId != null &&
+                        cameraProvider.availableCameraInfos.isNotEmpty()
+                    ) {
                         Log.w(TAG, "Failed to bind sub-mode $failedSubModeId; falling back", e)
                         reportCaptureSubModeBindFailure(failedSubModeId, e)
                         kotlinx.coroutines.awaitCancellation()
