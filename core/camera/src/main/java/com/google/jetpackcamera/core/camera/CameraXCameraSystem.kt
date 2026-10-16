@@ -1221,7 +1221,8 @@ class CameraXCameraSystem(
     /**
      * Keeps [CameraAppSettings.captureSubModeId] only if that sub-mode is supported and compatible
      * with these settings, resolves the effective provider (including any per-lens default override
-     * for [CameraAppSettings.captureMode]), and enforces its [CaptureSubModeProvider.featurePolicy].
+     * for [CameraAppSettings.captureMode]), and enforces its [CaptureSubModeProvider.featurePolicy]
+     * intersected with the host application's [CameraFeaturePolicy].
      *
      * The values replaced by the policy are recorded in [CameraAppSettings.captureSubModeOverrides]
      * when a sub-mode becomes active, and are restored when it ends (see [PolicyOverrides]).
@@ -1276,7 +1277,8 @@ class CameraXCameraSystem(
             ).tryApplyImageFormatConstraints()
         }
 
-        val policy = resolvedProvider.featurePolicy
+        // Enforce the sub-mode's policy within the host application's policy.
+        val policy = cameraFeaturePolicy.intersect(resolvedProvider.featurePolicy)
         val enforced = policy.enforceRestrictions(settings)
             .copy(activeCaptureSubModeId = resolvedSubModeId)
             .tryApplyDynamicRangeConstraints()
