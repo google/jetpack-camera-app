@@ -80,6 +80,8 @@ import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.lang.reflect.Proxy
 import java.util.AbstractMap
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Provider
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -1496,6 +1498,82 @@ class CameraXCameraSystemTest {
                 cameraSystem.getCurrentCameraState().first { it.isCameraRunning }
             }
             assertThat(cameraRunningAfterRevert).isNotNull()
+
+            subModeStateChannel.cancel()
+        }
+
+    @Test
+    fun runCamera_whenSingleCameraSubModeBindFails_fallsBackAndRevertsSubMode(): Unit =
+        runBlocking {
+            val filterCalls = AtomicInteger(0)
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    aspectRatio = AspectRatio.THREE_FOUR
+                ),
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    featurePolicy = CameraFeaturePolicy(
+                        aspectRatio = SettingConfig(
+                            AspectRatio.NINE_SIXTEEN,
+                            OptionVisibility.Hidden
+                        )
+                    ),
+                    // The selector matches the base camera only the first time it is resolved,
+                    // when the session looks up its CameraInfo, so binding it then fails.
+                    sessionBinding = CameraSessionBinding.SingleCamera { _, baseSelector ->
+                        val resolved = AtomicBoolean(false)
+                        CameraSelector.Builder()
+                            .addCameraFilter { cameraInfos ->
+                                filterCalls.incrementAndGet()
+                                if (resolved.getAndSet(true)) {
+                                    emptyList()
+                                } else {
+                                    baseSelector.filter(cameraInfos)
+                                }
+                            }
+                            .build()
+                    }
+                )
+            )
+            cameraSystem.startCameraAndWaitUntilRunning()
+
+            val subModeStateChannel = cameraSystem.getCurrentCameraState()
+                .map { it.captureSubModeState }
+                .produceIn(this)
+            filterCalls.set(0)
+
+            // Act: activate the sub-mode whose camera cannot be bound.
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+            // Assert: CaptureSubModeState.Error is emitted after the bind was attempted.
+            val errorState = withTimeoutOrNull(GENERAL_TIMEOUT_MS) {
+                var found: CaptureSubModeState.Error? = null
+                for (state in subModeStateChannel) {
+                    if (state is CaptureSubModeState.Error) {
+                        found = state
+                        break
+                    }
+                }
+                found
+            }
+            assertThat(errorState).isNotNull()
+            assertThat(errorState?.subModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(filterCalls.get()).isAtLeast(2)
+
+            // Assert: the sub-mode is reverted, its policy is undone, and the camera runs again
+            // without a camera error.
+            val revertedSettings = withTimeoutOrNull(GENERAL_TIMEOUT_MS) {
+                cameraSystem.getCurrentSettings().filterNotNull().first {
+                    it.captureSubModeId == CaptureSubModeId.DEFAULT
+                }
+            }
+            assertThat(revertedSettings).isNotNull()
+            assertThat(revertedSettings?.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+            val runningState = withTimeoutOrNull(CAMERA_START_TIMEOUT_MS) {
+                cameraSystem.getCurrentCameraState().first { it.isCameraRunning }
+            }
+            assertThat(runningState).isNotNull()
+            assertThat(runningState?.cameraError).isNull()
 
             subModeStateChannel.cancel()
         }
