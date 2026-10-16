@@ -1996,10 +1996,11 @@ class CameraXCameraSystemTest {
                         CameraSelector.Builder()
                             .addCameraFilter { cameraInfos ->
                                 filterCalls.incrementAndGet()
+                                // CameraX modifies the returned list, so it must be mutable.
                                 if (resolved.getAndSet(true)) {
-                                    emptyList()
+                                    ArrayList()
                                 } else {
-                                    baseSelector.filter(cameraInfos)
+                                    ArrayList(baseSelector.filter(cameraInfos))
                                 }
                             }
                             .build()
