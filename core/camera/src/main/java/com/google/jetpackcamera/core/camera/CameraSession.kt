@@ -77,6 +77,7 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -203,6 +204,9 @@ internal suspend fun runSingleCameraSession(
                 cameraProvider.unbindAll()
                 val baseSelector = currentTransientSettings.primaryLensFacing
                     .toCameraSelector()
+                // Set when the camera is bound through a sub-mode's transformed selector, so that a
+                // failure to bind it can fall back to the default sub-mode.
+                var boundSubModeId: CaptureSubModeId? = null
 
                 try {
                     // Resolving the selector (e.g. querying extension availability) and its
@@ -227,6 +231,7 @@ internal suspend fun runSingleCameraSession(
                                         old
                                     }
                                 }
+                                boundSubModeId = activeSubModeKey.id
                                 selector to resolvedInfo
                             } catch (e: CancellationException) {
                                 throw e
@@ -376,6 +381,18 @@ internal suspend fun runSingleCameraSession(
                                 }
                                 .collectLatest { cameraState ->
                                     val mappedError = cameraState.error?.toCameraError(context)
+                                    val failedSubModeId = boundSubModeId
+                                    if (failedSubModeId != null &&
+                                        mappedError == CameraError.StreamConfigError
+                                    ) {
+                                        reportCaptureSubModeBindFailure(
+                                            failedSubModeId,
+                                            IllegalStateException(
+                                                "Stream configuration failed for $failedSubModeId"
+                                            )
+                                        )
+                                        return@collectLatest
+                                    }
                                     currentCameraState.update { old ->
                                         old.copy(
                                             isCameraRunning =
@@ -450,6 +467,12 @@ internal suspend fun runSingleCameraSession(
                         )
                     }
                 } catch (e: IllegalArgumentException) {
+                    val failedSubModeId = boundSubModeId
+                    if (failedSubModeId != null && cameraProvider.availableCameraInfos.isNotEmpty()) {
+                        Log.w(TAG, "Failed to bind sub-mode $failedSubModeId; falling back", e)
+                        reportCaptureSubModeBindFailure(failedSubModeId, e)
+                        kotlinx.coroutines.awaitCancellation()
+                    }
                     Log.e(TAG, "Failed to bind use cases to lifecycle (stream config error)", e)
                     currentCameraState.update { old ->
                         old.copy(
@@ -465,6 +488,22 @@ internal suspend fun runSingleCameraSession(
                 }
             }
         }
+}
+
+/**
+ * Reports that the camera could not be bound for [subModeId]. [CameraXCameraSystem] then switches
+ * back to the default sub-mode, which rebinds the base camera.
+ */
+private fun CameraSessionContext.reportCaptureSubModeBindFailure(
+    subModeId: CaptureSubModeId,
+    error: Throwable
+) {
+    currentCameraState.update { old ->
+        old.copy(
+            isCameraRunning = false,
+            captureSubModeState = CaptureSubModeState.Error(subModeId = subModeId, error = error)
+        )
+    }
 }
 
 context(CameraSessionContext)
