@@ -387,7 +387,8 @@ class CameraXCameraSystemTest {
         extraCaptureSubModeProviders:
         Map<CaptureSubModeFeatureKey, Provider<CaptureSubModeProvider>> = emptyMap(),
         defaultCaptureSubModes: Map<CaptureMode, CaptureSubModeFeatureKey> = emptyMap(),
-        externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
+        externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard,
+        cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy()
     ) = CameraXCameraSystem(
         application = application,
         defaultDispatcher = Dispatchers.Default,
@@ -404,7 +405,8 @@ class CameraXCameraSystemTest {
                 )
             } ?: emptyMap()
             ) + extraCaptureSubModeProviders,
-        defaultCaptureSubModes = defaultCaptureSubModes
+        defaultCaptureSubModes = defaultCaptureSubModes,
+        cameraFeaturePolicy = cameraFeaturePolicy
     ).apply {
         initialize(
             appSettings.applyExternalCaptureMode(externalCaptureMode),
@@ -1440,6 +1442,50 @@ class CameraXCameraSystemTest {
             val settings = cameraSystem.getCurrentSettings().value!!
             assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
             assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+        }
+
+    @Test
+    fun setCaptureSubMode_withHostPolicy_enforcesIntersectionAndRestoresOnExit(): Unit =
+        runBlocking {
+            // Arrange. The host allows 3:4 and 1:1, and the sub-mode allows 9:16 and 1:1, so only
+            // 1:1 is allowed by both.
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    aspectRatio = AspectRatio.THREE_FOUR
+                ),
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    CameraFeaturePolicy(
+                        aspectRatio = SettingConfig(
+                            AspectRatio.NINE_SIXTEEN,
+                            OptionVisibility.Only(
+                                setOf(AspectRatio.NINE_SIXTEEN, AspectRatio.ONE_ONE)
+                            )
+                        )
+                    )
+                ),
+                cameraFeaturePolicy = CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(
+                        AspectRatio.THREE_FOUR,
+                        OptionVisibility.Only(setOf(AspectRatio.THREE_FOUR, AspectRatio.ONE_ONE))
+                    )
+                )
+            )
+
+            // Act. Enter the sub-mode.
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+            // Assert. The aspect ratio is one both policies allow, not the sub-mode's default.
+            var settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+
+            // Act. Leave the sub-mode.
+            cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+            // Assert.
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
         }
 
     @Test
