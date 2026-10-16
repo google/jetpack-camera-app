@@ -33,6 +33,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.core.camera.CameraSessionContext
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.core.camera.CaptureSubModeState
 import com.google.jetpackcamera.core.camera.InternalCameraApi
 import com.google.jetpackcamera.core.camera.PerpetualSessionSettings
 import com.google.jetpackcamera.core.camera.TransientSessionSettings
@@ -40,7 +41,6 @@ import com.google.jetpackcamera.core.camera.appLensFacing
 import com.google.jetpackcamera.core.camera.runWith
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
-import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.FlashMode
@@ -121,7 +121,7 @@ class ConcurrentCameraSessionTest {
     }
 
     @Test
-    fun sessionBinding_whenNoConcurrentCamerasAvailable_reportsStreamConfigError(): Unit =
+    fun sessionBinding_whenNoConcurrentCamerasAvailable_reportsSubModeError(): Unit =
         runBlocking {
             val cameraProvider = ProcessCameraProvider.awaitInstance(context)
             val sessionContext = createTestSessionContext(cameraProvider)
@@ -135,10 +135,13 @@ class ConcurrentCameraSessionTest {
             try {
                 val errorState = withTimeout(5_000) {
                     sessionContext.currentCameraState.first {
-                        it.cameraError == CameraError.StreamConfigError
+                        it.captureSubModeState is CaptureSubModeState.Error
                     }
                 }
                 assertThat(errorState.isCameraRunning).isFalse()
+                assertThat(errorState.cameraError).isNull()
+                assertThat((errorState.captureSubModeState as CaptureSubModeState.Error).subModeId)
+                    .isEqualTo(CONCURRENT_SUB_MODE_ID)
             } finally {
                 withContext(NonCancellable) {
                     sessionJob.cancelAndJoin()
@@ -294,7 +297,7 @@ class ConcurrentCameraSessionTest {
     }
 
     @Test
-    fun runConcurrentCameraSession_whenBindingFails_reportsStreamConfigError(): Unit = runBlocking {
+    fun runConcurrentCameraSession_whenBindingFails_reportsSubModeError(): Unit = runBlocking {
         val cameraProvider = ProcessCameraProvider.awaitInstance(context)
         val backCameraInfo = cameraProvider.availableCameraInfos.firstOrNull {
             it.appLensFacing == LensFacing.BACK
@@ -329,10 +332,13 @@ class ConcurrentCameraSessionTest {
         try {
             val errorState = withTimeout(5_000) {
                 sessionContext.currentCameraState.first {
-                    it.cameraError == CameraError.StreamConfigError
+                    it.captureSubModeState is CaptureSubModeState.Error
                 }
             }
             assertThat(errorState.isCameraRunning).isFalse()
+            assertThat(errorState.cameraError).isNull()
+            assertThat((errorState.captureSubModeState as CaptureSubModeState.Error).subModeId)
+                .isEqualTo(CONCURRENT_SUB_MODE_ID)
         } finally {
             withContext(NonCancellable) {
                 sessionJob.cancelAndJoin()

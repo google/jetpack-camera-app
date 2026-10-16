@@ -29,6 +29,7 @@ import androidx.camera.core.TorchState
 import androidx.camera.core.UseCaseGroup
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.CameraSessionContext
+import com.google.jetpackcamera.core.camera.CaptureSubModeState
 import com.google.jetpackcamera.core.camera.InternalCameraApi
 import com.google.jetpackcamera.core.camera.PerpetualSessionSettings
 import com.google.jetpackcamera.core.camera.appLensFacing
@@ -97,12 +98,10 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                     if (primary != null && secondary != null) primary to secondary else null
                 }
             if (cameraPair == null) {
-                currentCameraState.update { old ->
-                    old.copy(
-                        isCameraRunning = false,
-                        cameraError = CameraError.StreamConfigError
-                    )
-                }
+                reportSubModeFailure(
+                    sessionSettings,
+                    IllegalStateException("No concurrent camera pair for $primaryFacing")
+                )
                 return@collectLatest
             }
             val (primaryCameraInfo, secondaryCameraInfo) = cameraPair
@@ -210,6 +209,13 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                             .collectLatest { (primaryState, secondaryState) ->
                                 val mappedError = (primaryState.error ?: secondaryState.error)
                                     ?.let { mapCameraStateError(it) }
+                                if (mappedError == CameraError.StreamConfigError) {
+                                    reportSubModeFailure(
+                                        sessionSettings,
+                                        IllegalStateException("Concurrent stream configuration failed")
+                                    )
+                                    return@collectLatest
+                                }
                                 val bothOpen = primaryState.type == CXCameraState.Type.OPEN &&
                                     secondaryState.type == CXCameraState.Type.OPEN
                                 currentCameraState.update { old ->
@@ -273,22 +279,34 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                     )
                 }
             } catch (e: IllegalArgumentException) {
-                Log.e(
-                    TAG,
-                    "Failed to bind concurrent use cases to lifecycle (stream config error)",
-                    e
-                )
-                currentCameraState.update { old ->
-                    old.copy(
-                        isCameraRunning = false,
-                        cameraError = if (cameraProvider.availableCameraInfos.isEmpty()) {
-                            CameraError.CameraRemoved
-                        } else {
-                            CameraError.StreamConfigError
-                        }
-                    )
+                Log.e(TAG, "Failed to bind concurrent use cases to lifecycle", e)
+                if (cameraProvider.availableCameraInfos.isEmpty()) {
+                    currentCameraState.update { old ->
+                        old.copy(isCameraRunning = false, cameraError = CameraError.CameraRemoved)
+                    }
+                } else {
+                    reportSubModeFailure(sessionSettings, e)
                 }
                 kotlinx.coroutines.awaitCancellation()
             }
         }
+}
+
+/**
+ * Reports that the concurrent session failed, so the camera system switches back to the default
+ * sub-mode and rebinds a single camera.
+ */
+private fun CameraSessionContext.reportSubModeFailure(
+    sessionSettings: PerpetualSessionSettings.CustomSession,
+    error: Throwable
+) {
+    currentCameraState.update { old ->
+        old.copy(
+            isCameraRunning = false,
+            captureSubModeState = CaptureSubModeState.Error(
+                subModeId = sessionSettings.subModeKey.id,
+                error = error
+            )
+        )
+    }
 }
