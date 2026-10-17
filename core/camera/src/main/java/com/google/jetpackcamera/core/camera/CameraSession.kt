@@ -224,13 +224,6 @@ internal suspend fun runSingleCameraSession(
                                     baseSelector
                                 )
                                 val resolvedInfo = cameraProvider.getCameraInfo(selector)
-                                currentCameraState.update { old ->
-                                    if (old.captureSubModeState != CaptureSubModeState.Idle) {
-                                        old.copy(captureSubModeState = CaptureSubModeState.Idle)
-                                    } else {
-                                        old
-                                    }
-                                }
                                 boundSubModeId = activeSubModeKey.id
                                 selector to resolvedInfo
                             } catch (e: CancellationException) {
@@ -242,15 +235,8 @@ internal suspend fun runSingleCameraSession(
                                         "${activeSubModeKey.id}; falling back to base camera",
                                     e
                                 )
-                                currentCameraState.update { old ->
-                                    old.copy(
-                                        captureSubModeState = CaptureSubModeState.Error(
-                                            subModeId = activeSubModeKey.id,
-                                            error = e
-                                        )
-                                    )
-                                }
-                                baseSelector to cameraProvider.getCameraInfo(baseSelector)
+                                reportCaptureSubModeBindFailure(activeSubModeKey.id, e)
+                                kotlinx.coroutines.awaitCancellation()
                             }
                         } else {
                             baseSelector to cameraProvider.getCameraInfo(baseSelector)
@@ -401,6 +387,13 @@ internal suspend fun runSingleCameraSession(
                                                 mappedError != null -> mappedError
                                                 cameraState.type == CXCameraState.Type.OPEN -> null
                                                 else -> old.cameraError
+                                            },
+                                            captureSubModeState = if (
+                                                cameraState.type == CXCameraState.Type.OPEN
+                                            ) {
+                                                CaptureSubModeState.Idle
+                                            } else {
+                                                old.captureSubModeState
                                             }
                                         )
                                     }

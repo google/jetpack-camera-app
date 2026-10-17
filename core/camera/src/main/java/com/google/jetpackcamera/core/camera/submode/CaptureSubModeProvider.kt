@@ -26,6 +26,11 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 
 /**
  * SPI implemented by optional capture sub-mode modules (such as Night Mode or Concurrent Camera).
+ *
+ * Implementations are instantiated during camera system initialization to read [descriptor] and
+ * [featurePolicy]. Constructors must stay lightweight and avoid blocking or heavy initialization;
+ * defer expensive work (such as querying CameraX `ExtensionsManager`) to [isSupported] and
+ * [sessionBinding].
  */
 interface CaptureSubModeProvider {
     /**
