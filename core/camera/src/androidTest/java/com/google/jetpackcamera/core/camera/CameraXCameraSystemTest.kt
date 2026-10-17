@@ -2023,8 +2023,60 @@ class CameraXCameraSystemTest {
                 cameraSystem.getCurrentCameraState().first { it.isCameraRunning }
             }
             assertThat(cameraRunningAfterRevert).isNotNull()
+            assertThat(cameraRunningAfterRevert?.captureSubModeState)
+                .isEqualTo(CaptureSubModeState.Idle)
 
             subModeStateChannel.cancel()
+        }
+
+    @Test
+    fun runCamera_whenDefaultCaptureSubModeSelectorThrows_fallsBackToBaseCamera(): Unit =
+        runBlocking {
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    aspectRatio = AspectRatio.THREE_FOUR
+                ),
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    featurePolicy = CameraFeaturePolicy(
+                        aspectRatio = SettingConfig(
+                            AspectRatio.NINE_SIXTEEN,
+                            OptionVisibility.Hidden
+                        )
+                    ),
+                    sessionBinding = CameraSessionBinding.SingleCamera { _, _ ->
+                        throw IllegalArgumentException("Default sub-mode unavailable")
+                    }
+                ),
+                defaultCaptureSubModes = mapOf(
+                    CaptureMode.IMAGE_ONLY to FakeCaptureSubModeFeatureKey
+                )
+            )
+            // Initially resolved to the default override sub-mode and its 9:16 policy.
+            val initialSettings = cameraSystem.getCurrentSettings().value!!
+            assertThat(initialSettings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(initialSettings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(initialSettings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+            // Act: start the camera. The default sub-mode selector throws, so it must fall back
+            // to the base camera without hanging in awaitCancellation().
+            cameraJob = cameraSystemScope.launch { cameraSystem.runCamera() }
+
+            val revertedSettings = withTimeoutOrNull(GENERAL_TIMEOUT_MS) {
+                cameraSystem.getCurrentSettings().filterNotNull().first {
+                    it.activeCaptureSubModeId == CaptureSubModeId.DEFAULT
+                }
+            }
+            assertThat(revertedSettings).isNotNull()
+            assertThat(revertedSettings?.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+            assertThat(revertedSettings?.captureSubModeOverrides).isNull()
+
+            val runningState = withTimeoutOrNull(CAMERA_START_TIMEOUT_MS) {
+                cameraSystem.getCurrentCameraState().first { it.isCameraRunning }
+            }
+            assertThat(runningState).isNotNull()
+            assertThat(runningState?.cameraError).isNull()
+            assertThat(runningState?.captureSubModeState).isEqualTo(CaptureSubModeState.Idle)
         }
 
     @Test
@@ -2100,6 +2152,7 @@ class CameraXCameraSystemTest {
             }
             assertThat(runningState).isNotNull()
             assertThat(runningState?.cameraError).isNull()
+            assertThat(runningState?.captureSubModeState).isEqualTo(CaptureSubModeState.Idle)
 
             subModeStateChannel.cancel()
         }
