@@ -22,6 +22,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
+import com.google.jetpackcamera.core.camera.CaptureSubModeState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.location.LocationProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
@@ -341,6 +342,26 @@ class PreviewViewModel @Inject constructor(
                                 SnackbarData(
                                     cookie = "LowLightBoost-$cookieInt",
                                     stringResource = R.string.low_light_boost_error_toast_message,
+                                    withDismissAction = true,
+                                    isError = true
+                                )
+                            )
+                        }
+                    }
+            }
+
+            launch {
+                cameraSystemRepository.currentCameraState
+                    .map { it.captureSubModeState }
+                    .distinctUntilChanged()
+                    .collect { state ->
+                        if (state is CaptureSubModeState.Error) {
+                            val cookieInt = snackBarController.incrementAndGetSnackBarCount()
+                            Log.d(TAG, "CaptureSubModeState changed to Error #$cookieInt")
+                            snackBarController.addSnackBarData(
+                                SnackbarData(
+                                    cookie = "CaptureSubMode-$cookieInt",
+                                    stringResource = R.string.capture_sub_mode_error_toast_message,
                                     withDismissAction = true,
                                     isError = true
                                 )

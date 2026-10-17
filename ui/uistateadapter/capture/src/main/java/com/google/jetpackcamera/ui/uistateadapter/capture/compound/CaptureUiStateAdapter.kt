@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
@@ -28,6 +29,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -92,11 +94,30 @@ fun captureUiState(
             roundVideoRecordingState(videoRecordingState, timePrecision)
         val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
 
+        val activeSubModeId = cameraAppSettings.activeCaptureSubModeId
+            .takeIf { it != CaptureSubModeId.DEFAULT }
+        val subModePolicy = activeSubModeId?.let { systemConstraints.captureSubModePolicies[it] }
+        // The Quick Settings title intentionally follows the user's explicit selection, not the
+        // active sub-mode. When a default sub-mode override is active, the user still selected the
+        // parent capture mode, so the parent title is kept. The feature policy above still uses
+        // the active sub-mode so that the controls match what the camera is running.
+        val explicitSubModeId = cameraAppSettings.captureSubModeId
+            .takeIf { it != CaptureSubModeId.DEFAULT }
+        val subModeQuickSettingsTitleResId = explicitSubModeId?.let {
+            systemConstraints.captureSubModeDescriptors[it]?.quickSettingsTitleResId
+        }
+        val effectiveFeaturePolicy = when {
+            cameraFeaturePolicy != null && subModePolicy != null ->
+                cameraFeaturePolicy.intersect(subModePolicy)
+            subModePolicy != null -> subModePolicy
+            else -> cameraFeaturePolicy
+        }
+
         val captureModeUiState = CaptureModeUiState.from(
             systemConstraints = systemConstraints,
             cameraAppSettings = cameraAppSettings,
             externalCaptureMode = externalCaptureMode,
-            optionVisibility = cameraFeaturePolicy?.captureMode?.visibility
+            optionVisibility = effectiveFeaturePolicy?.captureMode?.visibility
         )
         val flipLensUiState = FlipLensUiState.from(
             cameraAppSettings,
@@ -104,7 +125,7 @@ fun captureUiState(
         )
         val aspectRatioUiState = AspectRatioUiState.from(
             cameraAppSettings = cameraAppSettings,
-            optionVisibility = cameraFeaturePolicy?.aspectRatio?.visibility
+            optionVisibility = effectiveFeaturePolicy?.aspectRatio?.visibility
         )
         val previewAspectRatioUiState = when (aspectRatioUiState) {
             is AspectRatioUiState.Available -> aspectRatioUiState
@@ -118,19 +139,19 @@ fun captureUiState(
         val hdrUiState = HdrUiState.from(
             cameraAppSettings = cameraAppSettings,
             systemConstraints = systemConstraints,
-            imageFormatOptionVisibility = cameraFeaturePolicy?.imageFormat?.visibility,
-            dynamicRangeOptionVisibility = cameraFeaturePolicy?.dynamicRange?.visibility
+            imageFormatOptionVisibility = effectiveFeaturePolicy?.imageFormat?.visibility,
+            dynamicRangeOptionVisibility = effectiveFeaturePolicy?.dynamicRange?.visibility
         )
 
         flashModeUiState = flashModeUiState?.updateFrom(
             cameraAppSettings = cameraAppSettings,
             systemConstraints = systemConstraints,
             cameraState = roundedCameraState,
-            optionVisibility = cameraFeaturePolicy?.flashMode?.visibility
+            optionVisibility = effectiveFeaturePolicy?.flashMode?.visibility
         ) ?: FlashModeUiState.from(
             cameraAppSettings = cameraAppSettings,
             systemConstraints = systemConstraints,
-            optionVisibility = cameraFeaturePolicy?.flashMode?.visibility
+            optionVisibility = effectiveFeaturePolicy?.flashMode?.visibility
         )
         focusMeteringUiState = focusMeteringUiState?.updateFrom(
             cameraState = roundedCameraState
@@ -147,11 +168,12 @@ fun captureUiState(
             // TODO: add updateFrom() for all ui states to prevent re-updating if
             // values are the same
             quickSettingsUiState = QuickSettingsUiState.from(
-                captureModeUiState,
-                flashModeUiState,
-                flipLensUiState,
-                aspectRatioUiState,
-                hdrUiState
+                captureModeUiState = captureModeUiState,
+                flashModeUiState = flashModeUiState,
+                flipLensUiState = flipLensUiState,
+                aspectRatioUiState = aspectRatioUiState,
+                hdrUiState = hdrUiState,
+                titleResId = subModeQuickSettingsTitleResId
             ),
             sessionFirstFrameTimestamp = roundedCameraState.sessionFirstFrameTimestamp,
             stabilizationUiState = StabilizationUiState.from(
@@ -186,7 +208,14 @@ fun captureUiState(
                 cameraAppSettings = cameraAppSettings,
                 cameraState = roundedCameraState,
                 externalCaptureMode = externalCaptureMode,
-                optionVisibility = cameraFeaturePolicy?.captureMode?.visibility
+                optionVisibility = effectiveFeaturePolicy?.captureMode?.visibility
+            ),
+            captureSubModeUiState = CaptureSubModeUiState.from(
+                systemConstraints = systemConstraints,
+                cameraAppSettings = cameraAppSettings,
+                videoRecordingState = roundedVideoRecordingState,
+                externalCaptureMode = externalCaptureMode,
+                cameraFeaturePolicy = cameraFeaturePolicy
             ),
             hdrUiState = hdrUiState,
             focusMeteringUiState = focusMeteringUiState,
