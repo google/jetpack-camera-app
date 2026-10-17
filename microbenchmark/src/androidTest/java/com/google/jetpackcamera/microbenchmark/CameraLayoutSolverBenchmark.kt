@@ -37,7 +37,7 @@ import org.junit.runner.RunWith
  *
  * A microbenchmark reports warm, steady-state cost: the harness warms up and then takes the median
  * of many iterations. That is the right way to compare one window against another, and it is what
- * makes the three cases below meaningful next to each other.
+ * makes the cases below meaningful next to each other.
  *
  * It is *not* the cost the user pays. The solve runs once, during the first composition of the
  * camera UI, when the code is cold and on the startup critical path. On a desktop JVM the first
@@ -45,26 +45,25 @@ import org.junit.runner.RunWith
  * the startup cost is a different and larger number, and measuring it needs a trace section and the
  * macrobenchmark module rather than this.
  *
- * ## Why these three windows
+ * ## Why these windows
  *
  * The solve tries the designed layout first and only searches if that collides. How much searching
  * follows depends entirely on the window, so a single geometry would measure one arbitrary point on
- * a very wide range. These three bracket it, and the evaluation counts are exact, not estimated:
+ * a very wide range. These cases bracket it, and the evaluation counts are exact, not estimated:
  *
- * | window                  | candidate layouts evaluated |
- * |-------------------------|-----------------------------|
- * | Pixel 9, gesture nav    | 1                           |
- * | Pixel 9, three-button   | 96                          |
- * | 460x920 at 2.00 aspect  | 1,055                       |
+ * | case                       | window                            | candidate layouts evaluated |
+ * |----------------------------|-----------------------------------|-----------------------------|
+ * | [solveTypicalPhone]        | Pixel 9, gesture navigation       | 24                          |
+ * | [solveWorstRealDevice]     | Pixel 9 XL, gesture navigation    | 89                          |
+ * | [solveTallWindowZeroDrop]  | 443.1 x 986.3                     | 32                          |
+ * | [solveWorstInScopeWindow]  | 340 x 720, 3-button navigation    | 587                         |
+ * | [solveWorstRoutedWindow]   | 332 x 616, immersive              | 2,850                       |
  *
- * The first is the common case: 10 of the 22 device configurations in the golden fixture solve on
- * the first attempt. The second is the worst any real device in that fixture costs, and it is not
- * exotic, 9 of the 22 land there. The third is the worst supported window anywhere in the property
- * sweep; it is wider than any shipping phone and is included as a ceiling, not as a case to
- * optimise for.
- *
- * Comparing the first two isolates the cost of the search from the fixed cost of a solve, which is
- * the number that matters when deciding whether the search is worth optimising at all.
+ * The first two are real devices from the golden fixture: the common case, and the most expensive
+ * device in it. The third is a tall window where the primary frame stays flush only by tightening
+ * gaps. The last two are ceilings rather than cases to optimise for: the most expensive window in
+ * the property-test grid, and the most expensive one found by sweeping every window shape the
+ * capture layout sends to the solver in 4 dp width and 8 dp height steps.
  */
 @RunWith(AndroidJUnit4::class)
 class CameraLayoutSolverBenchmark {
@@ -74,46 +73,51 @@ class CameraLayoutSolverBenchmark {
 
     private val spec = CameraLayoutDefaults.spec()
 
-    private fun window(w: Float, h: Float, top: Float, nav: Float, gesture: Float = 24f) =
+    private fun window(w: Float, h: Float, top: Float, nav: Float, gesture: Float) =
         CameraWindow(w.dp, h.dp, top.dp, nav.dp, gesture.dp)
 
-    /** Designed layout fits as-is. No search. */
+    /** Pixel 9 with gesture navigation, the common case. */
     @Test
     fun solveTypicalPhone() {
-        val window = window(412f, 925f, 60f, 24f)
+        val window = window(412f, 925f, 60f, 24f, 32f)
         benchmarkRule.measureRepeated {
             CameraLayoutSolver.solve(spec, window)
         }
     }
 
-    /** Worst real device geometry in the golden fixture: a full padding sweep. */
+    /** Pixel 9 XL with gesture navigation, the most expensive device in the golden fixture. */
     @Test
     fun solveWorstRealDevice() {
-        val window = window(412f, 925f, 60f, 48f)
-        benchmarkRule.measureRepeated {
-            CameraLayoutSolver.solve(spec, window)
-        }
-    }
-
-    /** Worst supported window anywhere in the sweep: a full gap sweep. Wider than any phone. */
-    @Test
-    fun solveWorstSupportedWindow() {
-        val window = window(460f, 920f, 42f, 48f)
+        val window = window(448f, 997f, 54f, 24f, 32f)
         benchmarkRule.measureRepeated {
             CameraLayoutSolver.solve(spec, window)
         }
     }
 
     /**
-     * Unsupported geometry, which exhausts the evaluation budget by design.
-     *
-     * A split-screen pane can be any shape, so this is reachable in production even though it is
-     * not a shape the layout targets. What it must not be is unbounded, and this is where that
-     * guarantee costs the most.
+     * Tall window where 9:16 fits below the top bar and 3:4 requires gap tightening to stay flush.
      */
     @Test
-    fun solveUnsupportedGeometry() {
-        val window = window(340f, 600f, 60f, 0f)
+    fun solveTallWindowZeroDrop() {
+        val window = window(443.1f, 986.3f, 66f, 24f, 32f)
+        benchmarkRule.measureRepeated {
+            CameraLayoutSolver.solve(spec, window)
+        }
+    }
+
+    /** Most expensive window in the property-test grid. */
+    @Test
+    fun solveWorstInScopeWindow() {
+        val window = window(340f, 720f, 48f, 48f, 48f)
+        benchmarkRule.measureRepeated {
+            CameraLayoutSolver.solve(spec, window)
+        }
+    }
+
+    /** Most expensive window found in a fine sweep of the shapes the capture layout solves. */
+    @Test
+    fun solveWorstRoutedWindow() {
+        val window = window(332f, 616f, 30f, 48f, 24f)
         benchmarkRule.measureRepeated {
             CameraLayoutSolver.solve(spec, window)
         }
