@@ -68,6 +68,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -124,6 +125,7 @@ import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.controller.SnackBarController
@@ -1093,7 +1095,7 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
  *
  * This button is only visible and enabled if the device has more than one camera lens available.
  *
- * @param enabledCondition the enabled condition for this component.
+ * @param enabled the enabled condition for this component.
  * @param flipLensUiState the [FlipLensUiState] for this component.
  * @param onClick the callback for when the button is clicked.
  * @param modifier the modifier for this component.
@@ -1101,10 +1103,10 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FlipCameraButton(
-    enabledCondition: Boolean,
     flipLensUiState: FlipLensUiState,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     if (flipLensUiState is FlipLensUiState.Available) {
         var rotation by remember { mutableFloatStateOf(0f) }
@@ -1134,16 +1136,24 @@ fun FlipCameraButton(
                 initialLaunch = true
             }
         }
-        IconButton(
-            modifier = modifier,
+        val backgroundStyle = LocalCameraControlBackgroundStyle.current
+        FilledIconButton(
+            modifier = modifier.size(56.dp),
             onClick = onClick,
-            enabled = enabledCondition
+            enabled = enabled,
+            shape = RoundedCornerShape(12.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = backgroundStyle.containerColor,
+                contentColor = Color.White,
+                disabledContainerColor = backgroundStyle.disabledContainerColor,
+                disabledContentColor = Color.White.copy(alpha = 0.38f)
+            )
         ) {
             val contentDescription = when (flipLensUiState.selectedLensFacing) {
-                com.google.jetpackcamera.model.LensFacing.FRONT -> stringResource(
+                LensFacing.FRONT -> stringResource(
                     R.string.quick_settings_front_camera_description
                 )
-                com.google.jetpackcamera.model.LensFacing.BACK -> stringResource(
+                LensFacing.BACK -> stringResource(
                     R.string.quick_settings_back_camera_description
                 )
             }
@@ -1151,7 +1161,7 @@ fun FlipCameraButton(
                 painter = painterResource(R.drawable.ic_flip_camera_android),
                 contentDescription = contentDescription,
                 modifier = Modifier
-                    .size(IconButtonDefaults.extraLargeIconSize)
+                    .size(IconButtonDefaults.mediumIconSize)
                     .rotate(animatedRotation.value)
             )
         }
@@ -1397,6 +1407,131 @@ private fun ElapsedTimeTextPreview() {
                     ElapsedTimeUiState.Unavailable
                 }
             )
+        }
+    }
+}
+
+@Preview(name = "Flip Camera Button Previews")
+@Composable
+private fun FlipCameraButtonPreview() {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Black Background (WHITE_20)
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            FlipCameraButton(
+                enabled = true,
+                flipLensUiState = FlipLensUiState.Available(
+                    selectedLensFacing = LensFacing.BACK,
+                    availableLensFacings = listOf(
+                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                    )
+                ),
+                onClick = {}
+            )
+        }
+
+        // Dark Gray Background (BLACK_60)
+        Box(
+            modifier = Modifier
+                .background(Color.DarkGray)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CompositionLocalProvider(
+                LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
+            ) {
+                FlipCameraButton(
+                    enabled = true,
+                    flipLensUiState = FlipLensUiState.Available(
+                        selectedLensFacing = LensFacing.BACK,
+                        availableLensFacings = listOf(
+                            SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                            SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                        )
+                    ),
+                    onClick = {}
+                )
+            }
+        }
+
+        // Light Gray Background (BLACK_60)
+        Box(
+            modifier = Modifier
+                .background(Color.LightGray)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CompositionLocalProvider(
+                LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
+            ) {
+                FlipCameraButton(
+                    enabled = true,
+                    flipLensUiState = FlipLensUiState.Available(
+                        selectedLensFacing = LensFacing.BACK,
+                        availableLensFacings = listOf(
+                            SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                            SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                        )
+                    ),
+                    onClick = {}
+                )
+            }
+        }
+
+        // Disabled - Dark Background (WHITE_20)
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CompositionLocalProvider(
+                LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.WHITE_20
+            ) {
+                FlipCameraButton(
+                    enabled = false,
+                    flipLensUiState = FlipLensUiState.Available(
+                        selectedLensFacing = LensFacing.BACK,
+                        availableLensFacings = listOf(
+                            SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                            SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                        )
+                    ),
+                    onClick = {}
+                )
+            }
+        }
+
+        // Disabled - Light Background (BLACK_60)
+        Box(
+            modifier = Modifier
+                .background(Color.LightGray)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CompositionLocalProvider(
+                LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
+            ) {
+                FlipCameraButton(
+                    enabled = false,
+                    flipLensUiState = FlipLensUiState.Available(
+                        selectedLensFacing = LensFacing.BACK,
+                        availableLensFacings = listOf(
+                            SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                            SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                        )
+                    ),
+                    onClick = {}
+                )
+            }
         }
     }
 }
