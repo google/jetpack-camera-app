@@ -223,6 +223,39 @@ class CameraLayoutSolverGoldenTest {
     }
 
     /**
+     * On a tall 443.1 x 986.3 window with a 66 dp top inset, the 9:16 frame is already clear at
+     * preferred padding while the 3:4 frame collides with the zoom bar. The zero-drop repair sweep
+     * must still run so that both 3:4 and 9:16 remain flush with the top bar across every reported
+     * bottom inset.
+     */
+    @Test
+    fun window443x986KeepsPrimaryAndTallFramesFlushWithTopBar() {
+        val spec = CameraLayoutDefaults.spec()
+        val topInset = 66f
+        reportedBottomInsets.forEach { (navInset, gestureInset) ->
+            val window = CameraWindow(
+                width = 443.1.dp,
+                height = 986.3.dp,
+                topInset = topInset.dp,
+                navInset = navInset.dp,
+                gestureInset = gestureInset.dp
+            )
+            val solution = CameraLayoutSolver.solve(spec, window)
+            val label = "nav $navInset gesture $gestureInset"
+
+            assertWithMessage("%s collisions", label).that(solution.collisions).isEmpty()
+            val primary = solution.viewfinders.getValue(CameraViewfinderIds.RATIO_3_4)
+            val tall = solution.viewfinders.getValue(CameraViewfinderIds.RATIO_9_16)
+            assertWithMessage("%s 3:4 top", label)
+                .that(primary.top.value.toDouble())
+                .isWithin(tolerance).of(topInset.toDouble())
+            assertWithMessage("%s 9:16 top", label)
+                .that(tall.top.value.toDouble())
+                .isWithin(tolerance).of(topInset.toDouble())
+        }
+    }
+
+    /**
      * The bottom inset of a single device changes with the navigation mode and the platform
      * release, so the layout must not move with it.
      *
