@@ -31,6 +31,7 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
+        testOptions.targetSdk = libs.versions.targetSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -48,6 +49,12 @@ android {
         buildConfig = true
         compose = true
     }
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -62,6 +69,7 @@ dependencies {
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.compose.test.manifest)
 
     // Compose - Integration with ViewModels with Navigation and Hilt
     implementation(libs.androidx.navigation.compose)
@@ -69,6 +77,7 @@ dependencies {
 
 
     // Compose - Testing
+    testImplementation(libs.compose.junit)
     androidTestImplementation(libs.compose.junit)
 
     // Accompanist - Permissions
@@ -81,7 +90,14 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(project(":data:settings"))
+    testImplementation(project(":core:settings"))
+    testImplementation(project(":data:settings:testing"))
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.truth)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
