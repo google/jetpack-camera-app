@@ -31,6 +31,8 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -256,7 +258,9 @@ class PrefsDataStoreSettingsDataSourceInstrumentedTest {
             aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE),
             flashMode = SettingConfig(defaultValue = FlashMode.ON),
             dynamicRange = SettingConfig(defaultValue = DynamicRange.HLG10),
-            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR)
+            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR),
+            stabilizationMode = SettingConfig(defaultValue = StabilizationMode.OFF),
+            targetFrameRate = SettingConfig(defaultValue = TARGET_FPS_30)
         )
         val customSource = PrefsDataStoreSettingsDataSource(
             dataStore = testDataStore,
@@ -267,6 +271,8 @@ class PrefsDataStoreSettingsDataSourceInstrumentedTest {
         assertThat(settings.flashMode).isEqualTo(FlashMode.ON)
         assertThat(settings.dynamicRange).isEqualTo(DynamicRange.HLG10)
         assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+        assertThat(settings.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_30)
     }
 
     @Test
@@ -288,6 +294,42 @@ class PrefsDataStoreSettingsDataSourceInstrumentedTest {
         assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
         // Baseline default for unconfigured key is used
         assertThat(settings.flashMode).isEqualTo(FlashMode.ON)
+    }
+
+    @Test
+    fun unconfiguredEffectKey_fallsBackToCameraFeaturePolicyDefault() = runTest {
+        val policyEffect = CameraEffectId("policy_effect")
+        val customSource = PrefsDataStoreSettingsDataSource(
+            dataStore = testDataStore,
+            cameraFeaturePolicy = CameraFeaturePolicy(
+                cameraEffect = SettingConfig(defaultValue = policyEffect)
+            )
+        )
+
+        assertThat(customSource.getCurrentDefaultCameraAppSettings().selectedCameraEffect)
+            .isEqualTo(policyEffect)
+    }
+
+    @Test
+    fun configuredVideoAndEffectKeys_preserveStoredUserPreferences() = runTest {
+        dataSource.updateStabilizationMode(StabilizationMode.ON)
+        dataSource.updateTargetFrameRate(TARGET_FPS_AUTO)
+        dataSource.updateSelectedCameraEffect(NONE_EFFECT_ID)
+        advanceUntilIdle()
+
+        val customSource = PrefsDataStoreSettingsDataSource(
+            dataStore = testDataStore,
+            cameraFeaturePolicy = CameraFeaturePolicy(
+                stabilizationMode = SettingConfig(defaultValue = StabilizationMode.OFF),
+                targetFrameRate = SettingConfig(defaultValue = TARGET_FPS_30),
+                cameraEffect = SettingConfig(defaultValue = CameraEffectId("policy_effect"))
+            )
+        )
+
+        val settings = customSource.getCurrentDefaultCameraAppSettings()
+        assertThat(settings.stabilizationMode).isEqualTo(StabilizationMode.ON)
+        assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
+        assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
     }
 
     @Test

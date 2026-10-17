@@ -176,6 +176,7 @@
 
     <string name="concurrent_camera_enabled">%1$s is unsupported when Concurrent Camera is active</string>
     <string name="ultra_hdr_enabled">%1$s is unsupported when Ultra HDR is enabled</string>
+    <string name="capture_sub_mode_active" description="Explains why a setting is disabled while a capture mode such as Dual or Night is active. %1$s is the setting name, %2$s is the capture mode name. [CHAR LIMIT=NONE]">%1$s is unsupported in %2$s mode</string>
 
 
     <!-- Rationale prefixes -->
@@ -188,6 +189,7 @@
     <string name="flash_llb_rationale_prefix">Low Light Boost</string>
 
     <string name="video_quality_rationale_prefix">Video quality</string>
+    <string name="aspect_ratio_rationale_prefix" description="Setting name used in the explanation of why the aspect ratio setting or option is disabled. [CHAR LIMIT=NONE]">Aspect ratio</string>
     <string name="video_quality_rationale_suffix_default">the current dynamic range</string>
     <string name="video_quality_rationale_suffix_sdr">SDR</string>
 

@@ -32,6 +32,8 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
@@ -309,7 +311,9 @@ class ProtoDataStoreSettingsDataSourceTest {
             aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE),
             flashMode = SettingConfig(defaultValue = FlashMode.ON),
             dynamicRange = SettingConfig(defaultValue = DynamicRange.HLG10),
-            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR)
+            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR),
+            stabilizationMode = SettingConfig(defaultValue = StabilizationMode.OFF),
+            targetFrameRate = SettingConfig(defaultValue = TARGET_FPS_30)
         )
         val policyRepository = ProtoDataStoreSettingsDataSource(
             jcaSettings = testDataStore,
@@ -324,6 +328,8 @@ class ProtoDataStoreSettingsDataSourceTest {
         assertThat(settings.flashMode).isEqualTo(FlashMode.ON)
         assertThat(settings.dynamicRange).isEqualTo(DynamicRange.HLG10)
         assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+        assertThat(settings.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_30)
     }
 
     @Test
@@ -334,7 +340,9 @@ class ProtoDataStoreSettingsDataSourceTest {
         advanceUntilIdle()
 
         val policy = CameraFeaturePolicy(
-            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR)
+            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR),
+            stabilizationMode = SettingConfig(defaultValue = StabilizationMode.OFF),
+            targetFrameRate = SettingConfig(defaultValue = TARGET_FPS_30)
         )
         val policyRepository = ProtoDataStoreSettingsDataSource(
             jcaSettings = testDataStore,
@@ -345,19 +353,25 @@ class ProtoDataStoreSettingsDataSourceTest {
         val settings = policyRepository.getCurrentDefaultCameraAppSettings()
         assertThat(settings.darkMode).isEqualTo(DarkMode.LIGHT)
         assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+        assertThat(settings.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_30)
     }
 
     @Test
     fun storedUserPreferences_takePrecedenceOverCameraFeaturePolicyDefaults() = runTest {
-        // User selects 3:4 and standard JPEG
+        // User selects 3:4, standard JPEG, ON stabilization, and explicit TARGET_FPS_AUTO (0)
         repository.updateAspectRatio(AspectRatio.THREE_FOUR)
         repository.updateImageFormat(ImageOutputFormat.JPEG)
+        repository.updateStabilizationMode(StabilizationMode.ON)
+        repository.updateTargetFrameRate(TARGET_FPS_AUTO)
         advanceUntilIdle()
 
         val policy = CameraFeaturePolicy(
             aspectRatio = SettingConfig(defaultValue = AspectRatio.ONE_ONE),
             flashMode = SettingConfig(defaultValue = FlashMode.ON),
-            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR)
+            imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR),
+            stabilizationMode = SettingConfig(defaultValue = StabilizationMode.OFF),
+            targetFrameRate = SettingConfig(defaultValue = TARGET_FPS_30)
         )
         val policyRepository = ProtoDataStoreSettingsDataSource(
             jcaSettings = testDataStore,
@@ -369,8 +383,31 @@ class ProtoDataStoreSettingsDataSourceTest {
         // Stored user preferences are preserved
         assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
         assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        assertThat(settings.stabilizationMode).isEqualTo(StabilizationMode.ON)
+        assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
         // Policy default is used for the setting the user has not configured
         assertThat(settings.flashMode).isEqualTo(FlashMode.ON)
+    }
+
+    @Test
+    fun cameraFeaturePolicyCameraEffectDefault_appliesUntilUserSelectsEffect() = runTest {
+        val policyEffect = CameraEffectId("policy_effect")
+        val policy = CameraFeaturePolicy(cameraEffect = SettingConfig(defaultValue = policyEffect))
+        val policyRepository = ProtoDataStoreSettingsDataSource(
+            jcaSettings = testDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD,
+            cameraFeaturePolicy = policy
+        )
+
+        assertThat(policyRepository.getCurrentDefaultCameraAppSettings().selectedCameraEffect)
+            .isEqualTo(policyEffect)
+
+        // An explicit selection, including no effect, takes precedence over the policy default.
+        repository.updateSelectedCameraEffect(NONE_EFFECT_ID)
+        advanceUntilIdle()
+
+        assertThat(policyRepository.getCurrentDefaultCameraAppSettings().selectedCameraEffect)
+            .isEqualTo(NONE_EFFECT_ID)
     }
 
     @Test

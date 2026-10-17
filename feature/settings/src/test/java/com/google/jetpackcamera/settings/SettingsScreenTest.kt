@@ -34,6 +34,7 @@ import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSetti
 import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import com.google.jetpackcamera.settings.testing.FakeActiveCaptureSubModeRepository
 import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
 import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CANCEL_TAG
 import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG
@@ -75,6 +76,7 @@ class SettingsScreenTest {
         return SettingsViewModel(
             settingsRepository,
             constraintsRepository,
+            FakeActiveCaptureSubModeRepository(),
             Optional.of(FakeLocationProvider())
         )
     }

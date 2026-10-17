@@ -17,11 +17,11 @@ package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
+import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 import com.google.jetpackcamera.model.proto.toModel
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -32,8 +32,9 @@ import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSet
  *
  * Fields that can be configured through
  * [com.google.jetpackcamera.settings.model.CameraFeaturePolicy] (flash mode, aspect ratio, dynamic
- * range, and image format) are resolved from [baselineSettings] when the stored value is
- * unspecified, so that stored user preferences take precedence over baseline defaults.
+ * range, image format, stabilization mode, target frame rate, and camera effect) are resolved
+ * from [baselineSettings] when the stored value is unspecified, so that stored user preferences
+ * take precedence over baseline defaults.
  *
  * @param defaultCaptureModeOverride The [CaptureMode] reported by the returned settings.
  * @param baselineSettings The settings used for policy-configurable fields that have no stored
@@ -45,11 +46,10 @@ fun CameraAppSettingsProto.toModel(
 ): CameraAppSettings {
     return CameraAppSettings(
         captureMode = defaultCaptureModeOverride,
-        selectedCameraEffect = if (this.selectedCameraEffect.isEmpty()) {
-            NONE_EFFECT_ID
-        } else {
-            CameraEffectId(this.selectedCameraEffect)
-        },
+        selectedCameraEffect = this.selectedCameraEffect
+            .takeIf { it.isNotEmpty() }
+            ?.let(::CameraEffectId)
+            ?: baselineSettings.selectedCameraEffect,
 
         cameraLensFacing = this.defaultLensFacing.toModel(),
         flashMode = when (this.flashMode) {
@@ -57,13 +57,21 @@ fun CameraAppSettingsProto.toModel(
             FlashModeProto.UNRECOGNIZED -> baselineSettings.flashMode
             else -> this.flashMode.toModel()
         },
-        targetFrameRate = this.targetFrameRate,
+        targetFrameRate = if (this.hasTargetFrameRate()) {
+            this.targetFrameRate
+        } else {
+            baselineSettings.targetFrameRate
+        },
         aspectRatio = when (this.aspectRatio) {
             AspectRatioProto.ASPECT_RATIO_UNSPECIFIED,
             AspectRatioProto.UNRECOGNIZED -> baselineSettings.aspectRatio
             else -> this.aspectRatio.toModel()
         },
-        stabilizationMode = this.stabilizationMode.toModel(),
+        stabilizationMode = when (this.stabilizationMode) {
+            StabilizationModeProto.STABILIZATION_MODE_UNSPECIFIED,
+            StabilizationModeProto.UNRECOGNIZED -> baselineSettings.stabilizationMode
+            else -> this.stabilizationMode.toModel()
+        },
         dynamicRange = when (this.dynamicRange) {
             DynamicRangeProto.DYNAMIC_RANGE_UNSPECIFIED,
             DynamicRangeProto.UNRECOGNIZED -> baselineSettings.dynamicRange
