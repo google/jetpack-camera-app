@@ -156,7 +156,9 @@ fun PreviewScreen(
 
     LifecycleStartEffect(Unit) {
         viewModel.cameraController.startCamera()
+        viewModel.startLocationUpdates()
         onStopOrDispose {
+            viewModel.stopLocationUpdates()
             viewModel.cameraController.stopCamera()
         }
     }
