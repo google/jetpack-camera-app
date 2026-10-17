@@ -90,6 +90,7 @@ import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.settings.model.permits
 import java.io.File
 import java.io.FileNotFoundException
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Provider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -146,6 +147,12 @@ class CameraXCameraSystem(
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
     private var externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
+
+    // Per-lens default sub-modes that failed to bind during the current initialization cycle.
+    // Excluded by defaultCaptureSubModeIdForLens() so that reverting to CaptureSubModeId.DEFAULT
+    // falls back to the base camera instead of re-resolving to the same failing override.
+    private val failedDefaultSubModes: MutableSet<Pair<LensFacing, CaptureSubModeId>> =
+        ConcurrentHashMap.newKeySet()
 
     private val registeredSubModes: Map<CaptureSubModeId, RegisteredSubMode> by lazy {
         buildMap {
@@ -226,6 +233,7 @@ class CameraXCameraSystem(
         externalCaptureMode: ExternalCaptureMode,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
+        failedDefaultSubModes.clear()
         this.externalCaptureMode = externalCaptureMode
         val debugSettings = cameraAppSettings.debugSettings
         cameraProvider = try {
@@ -1345,6 +1353,7 @@ class CameraXCameraSystem(
         systemConstraints.forCurrentLens(this)
             ?.defaultCaptureSubModes
             ?.get(captureMode)
+            ?.takeIf { (cameraLensFacing to it) !in failedDefaultSubModes }
             ?: CaptureSubModeId.DEFAULT
 
     /**
@@ -1527,7 +1536,11 @@ class CameraXCameraSystem(
     private suspend fun handleCaptureSubModeErrors() {
         currentCameraState.map { it.captureSubModeState }.distinctUntilChanged().collect { state ->
             if (state is CaptureSubModeState.Error) {
-                if (currentSettings.value?.activeCaptureSubModeId == state.subModeId) {
+                val settings = currentSettings.value
+                if (settings?.activeCaptureSubModeId == state.subModeId) {
+                    if (settings.captureSubModeId == CaptureSubModeId.DEFAULT) {
+                        failedDefaultSubModes.add(settings.cameraLensFacing to state.subModeId)
+                    }
                     setCaptureSubMode(CaptureSubModeId.DEFAULT)
                 }
             }
