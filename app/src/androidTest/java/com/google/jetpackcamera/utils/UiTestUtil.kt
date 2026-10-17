@@ -450,42 +450,38 @@ fun UiDevice.askEveryTimeDialog() {
  *  Clicks ALLOW option on an open permission dialog
  */
 fun UiDevice.grantPermissionDialog() {
-    if (Build.VERSION.SDK_INT >= 23) {
-        Log.d(TAG, "Searching for Allow Button...")
+    Log.d(TAG, "Searching for Allow Button...")
 
-        val allowPermission = this.findObjectById(
-            resId = when {
-                Build.VERSION.SDK_INT <= 29 ->
-                    "com.android.packageinstaller:id/permission_allow_button"
+    val allowPermission = this.findObjectById(
+        resId = when {
+            Build.VERSION.SDK_INT <= 29 ->
+                "com.android.packageinstaller:id/permission_allow_button"
 
-                else ->
-                    "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
-            }
-        )
-        Log.d(TAG, "Clicking Allow Button")
+            else ->
+                "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
+        }
+    )
+    Log.d(TAG, "Clicking Allow Button")
 
-        allowPermission?.click()
-    }
+    allowPermission?.click()
 }
 
 /**
  * Clicks the DENY option on an open permission dialog
  */
 fun UiDevice.denyPermissionDialog() {
-    if (Build.VERSION.SDK_INT >= 23) {
-        Log.d(TAG, "Searching for Deny Button...")
-        val denyPermission = this.findObjectById(
-            resId = when {
-                Build.VERSION.SDK_INT <= 29 ->
-                    "com.android.packageinstaller:id/permission_deny_button"
+    Log.d(TAG, "Searching for Deny Button...")
+    val denyPermission = this.findObjectById(
+        resId = when {
+            Build.VERSION.SDK_INT <= 29 ->
+                "com.android.packageinstaller:id/permission_deny_button"
 
-                else -> "com.android.permissioncontroller:id/permission_deny_button"
-            }
-        )
-        Log.d(TAG, "Clicking Deny Button")
+            else -> "com.android.permissioncontroller:id/permission_deny_button"
+        }
+    )
+    Log.d(TAG, "Clicking Deny Button")
 
-        denyPermission?.click()
-    }
+    denyPermission?.click()
 }
 
 /**

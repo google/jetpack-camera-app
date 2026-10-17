@@ -39,8 +39,8 @@ interface CaptureSubModeModule {
      * Set of [CaptureSubModeProvider]s keyed by [CaptureSubModeFeatureKey], contributed by optional
      * sub-mode modules via `@IntoSet`.
      *
-     * Each provider is wrapped in a [Provider] so that it is only instantiated when the camera
-     * system first needs it.
+     * Each provider is wrapped in a [Provider] so that instantiation is deferred until
+     * `CameraXCameraSystem.initialize()` inspects the registered sub-modes.
      */
     @Multibinds
     fun captureSubModeProviderEntries(): Set<
