@@ -76,6 +76,7 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:common"))
     implementation(project(":core:camera"))
+    implementation(project(":core:location"))
 
     // Testing
     testImplementation(libs.junit)
@@ -85,6 +86,7 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(project(":core:common"))
     testImplementation(project(":core:camera:testing"))
+    testImplementation(project(":core:location:testing"))
     testImplementation(project(":data:settings"))
     testImplementation(project(":core:settings"))
 }
