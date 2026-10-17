@@ -55,7 +55,7 @@ class CameraLayoutSolverPropertyTest {
     private object Grid {
         val widths = (320..480 step 20).map { it.toFloat() }
         val heights = (600..1160 step 40).map { it.toFloat() }
-        val topInsets = listOf(24f, 30f, 36f, 42f, 48f, 54f, 60f)
+        val topInsets = listOf(24f, 30f, 36f, 42f, 48f, 54f, 60f, 66f)
 
         /**
          * Navigation bar heights, each paired with the bottom gesture zone reported alongside it.
@@ -155,9 +155,9 @@ class CameraLayoutSolverPropertyTest {
     @Test
     fun gridIsTheExpectedSize() {
         // Pinned so that accidentally narrowing a sweep axis is visible rather than silent.
-        assertThat(Grid.size).isEqualTo(3780)
-        assertThat(Grid.inScope().count()).isEqualTo(1568)
-        assertThat(Grid.outOfScope().count()).isEqualTo(2212)
+        assertThat(Grid.size).isEqualTo(4320)
+        assertThat(Grid.inScope().count()).isEqualTo(1792)
+        assertThat(Grid.outOfScope().count()).isEqualTo(2528)
     }
 
     @Test
@@ -331,6 +331,109 @@ class CameraLayoutSolverPropertyTest {
     }
 
     @Test
+    fun tallWindowsWhere9x16FitsBelowTopBarKeepPrimaryFrameFlush() {
+        // When a window is tall enough that the 9:16 frame fits between the top bar and the bottom
+        // toolbar at minimum bottom padding, the 3:4 primary frame must also sit flush below the
+        // top bar rather than dropping below the top-start control.
+        Grid.inScope().forEach { window ->
+            val solution = solutionFor(window)
+            val navTop = window.height.value - window.navInset.value
+            val maxBottom = if (solution.requiresImmersive) window.height.value else navTop
+            val exposedGesture = kotlin.math.max(
+                0f,
+                window.gestureInset.value - window.navInset.value
+            )
+            val minBottomPadding = kotlin.math.max(
+                spec.bottomPadding.min.value,
+                exposedGesture + spec.minControlClearance.value
+            )
+            val tallHeight = window.width.value / (9f / 16f)
+            val tallFitsBelowTopBar = (window.topInset.value + tallHeight) <=
+                (
+                    maxBottom - minBottomPadding - solution.toolbarHeight.value -
+                        spec.minControlClearance.value + 0.05f
+                    )
+            if (tallFitsBelowTopBar) {
+                val frame3x4 = solution.viewfinders.getValue(CameraViewfinderIds.RATIO_3_4)
+                assertWithMessage("3:4 dropped at %s", window.describe())
+                    .that(frame3x4.top.value)
+                    .isWithin(0.05f)
+                    .of(window.topInset.value)
+            }
+        }
+    }
+
+    @Test
+    fun shiftedFramesClearFixedTopStartControl() {
+        // Under FIXED_BELOW_TOP_BAR, any frame whose top edge shifts past the behind-control limit
+        // must clear the full top-start keep-out band rather than bisecting the top-start control.
+        Grid.inScope().forEach { window ->
+            val solution = solutionFor(window)
+            val topInset = window.topInset.value
+            val behindTopStartLimit = topInset + kotlin.math.max(
+                0f,
+                spec.topStartVisibleInset.value - spec.topStartMinEdgeGap.value
+            )
+            val minShiftedTop =
+                topInset + spec.topStartHeight.value + spec.minControlClearance.value - 0.05f
+            solution.viewfinders.forEach { (id, band) ->
+                val maxUnshiftedTop = if (id == CameraViewfinderIds.RATIO_9_16) {
+                    behindTopStartLimit
+                } else {
+                    topInset
+                }
+                if (band.top.value > maxUnshiftedTop + 0.05f) {
+                    assertWithMessage("%s overlaps topStartContent at %s", id, window.describe())
+                        .that(band.top.value)
+                        .isAtLeast(minShiftedTop)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun smallWindowHeightIncreaseDoesNotDropFlushPrimaryFrame() {
+        // Increasing window height by 1 or 2 dp on a tall window where 3:4 is already flush must
+        // never cause 3:4 to drop below the top-start control.
+        Grid.inScope().forEach { window ->
+            val solution = solutionFor(window)
+            val navTop = window.height.value - window.navInset.value
+            val maxBottom = if (solution.requiresImmersive) window.height.value else navTop
+            val exposedGesture = kotlin.math.max(
+                0f,
+                window.gestureInset.value - window.navInset.value
+            )
+            val minBottomPadding = kotlin.math.max(
+                spec.bottomPadding.min.value,
+                exposedGesture + spec.minControlClearance.value
+            )
+            val tallHeight = window.width.value / (9f / 16f)
+            val tallFitsBelowTopBar = (window.topInset.value + tallHeight) <=
+                (
+                    maxBottom - minBottomPadding - solution.toolbarHeight.value -
+                        spec.minControlClearance.value + 0.05f
+                    )
+            val frame3x4 = solution.viewfinders.getValue(CameraViewfinderIds.RATIO_3_4)
+            if (tallFitsBelowTopBar && frame3x4.top.value <= window.topInset.value + 0.05f) {
+                for (deltaDp in listOf(1f, 2f)) {
+                    val tallerWindow = window.copy(height = (window.height.value + deltaDp).dp)
+                    val tallerSolution = CameraLayoutSolver.solve(spec, tallerWindow)
+                    val taller3x4 =
+                        tallerSolution.viewfinders.getValue(CameraViewfinderIds.RATIO_3_4)
+                    assertWithMessage(
+                        "3:4 dropped when height increased by +%sdp from %s",
+                        deltaDp,
+                        window.describe()
+                    )
+                        .that(taller3x4.top.value)
+                        .isWithin(0.05f)
+                        .of(window.topInset.value)
+                }
+            }
+        }
+    }
+
+    @Test
     fun viewfinderTopStartPlacementIsAlsoCollisionFreeAcrossInScopeGrid() {
         val vfSpec = CameraLayoutDefaults.spec(
             topStartPlacement = TopStartPlacement.VIEWFINDER_TOP_START
@@ -357,16 +460,16 @@ class CameraLayoutSolverPropertyTest {
      *
      * | evaluations | windows |
      * |-------------|---------|
-     * | 1           | 363     |
-     * | 2 to 10     | 248     |
-     * | 11 to 100   | 947     |
-     * | 101 to 1000 | 10      |
+     * | 1           | 391     |
+     * | 2 to 10     | 286     |
+     * | 11 to 100   | 1,071   |
+     * | 101 to 1000 | 44      |
      * | over 1000   | 0       |
      *
-     * So 1,558 of 1,568 supported windows cost at most 100 evaluations, and none costs more than
-     * 1,000. That is worth stating explicitly, because the shape of this distribution is the
-     * reason the search is not worth optimising further: the expensive path is rare and already
-     * bounded.
+     * So 1,748 of 1,792 supported windows cost at most 100 evaluations, and none costs more than
+     * 1,000. This grid steps 20 dp in width and 40 dp in height, so it bounds the common case rather
+     * than the worst one: sweeping every shape the capture layout sends to the solver in 4 dp and
+     * 8 dp steps finds windows up to 2,850 evaluations, still well inside the budget.
      */
     @Test
     fun supportedGeometryIsSolvedWithinAKnownEvaluationBound() {
@@ -396,6 +499,29 @@ class CameraLayoutSolverPropertyTest {
         assertThat(worst).isLessThan(5_000 / 4)
 
         assertWithMessage("in-scope sweep cost %s evaluations", total).that(total).isAtMost(60_000)
+    }
+
+    @Test
+    fun windowsTallerThanAHandheldStayFarFromTheEvaluationBudget() {
+        // Out of scope by aspect ratio, but CaptureLayout still routes every window at least 16:9
+        // tall to this solver, so these are solved on device. Their layouts are easy, and the
+        // search must find that out quickly rather than sweeping every padding and gap looking for
+        // a 9:16 position that does not exist. The worst measured window, 320x960, costs 119
+        // evaluations; the bound adds headroom to that.
+        var worst = 0
+        var worstWindow: CameraWindow? = null
+        Grid.outOfScope()
+            .filter { it.height.value / it.width.value > 2.4f }
+            .forEach { window ->
+                val n = solutionFor(window).evaluationCount
+                if (n > worst) {
+                    worst = n
+                    worstWindow = window
+                }
+            }
+        assertWithMessage("worst window %s cost %s evaluations", worstWindow?.describe(), worst)
+            .that(worst)
+            .isAtMost(150)
     }
 
     @Test
