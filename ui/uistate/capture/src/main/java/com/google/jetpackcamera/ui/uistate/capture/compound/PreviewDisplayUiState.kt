@@ -20,10 +20,11 @@ import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 /**
  * The UI state for the preview display.
  *
- * @param lastBlinkTimeStamp The timestamp of the most recent capture blink animation.
+ * @param captureBlinkCount The number of capture blink animations requested so far. The preview
+ * plays the blink animation each time this value changes.
  * @param aspectRatioUiState The UI state for the aspect ratio of the preview.
  */
 data class PreviewDisplayUiState(
-    val lastBlinkTimeStamp: Long = 0,
+    val captureBlinkCount: Int = 0,
     val aspectRatioUiState: AspectRatioUiState
 )

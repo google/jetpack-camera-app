@@ -61,7 +61,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.tracing.Trace
 import com.google.jetpackcamera.MainActivityUiState.Loading
 import com.google.jetpackcamera.MainActivityUiState.Success
-import com.google.jetpackcamera.core.common.traceFirstFrameMainActivity
+import com.google.jetpackcamera.core.common.FIRST_FRAME_TRACE_MAIN_ACTIVITY
 import com.google.jetpackcamera.data.camera.CameraLaunchConfigProvider
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.DarkMode
@@ -75,12 +75,12 @@ import com.google.jetpackcamera.ui.theme.JetpackCameraTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlin.collections.emptyList
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 private const val TAG = "MainActivity"
+private const val FIRST_FRAME_TRACE_COOKIE = 0
 
 /**
  * Activity for the JetpackCameraApp.
@@ -116,15 +116,10 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        var firstFrameComplete: CompletableDeferred<Unit>? = null
         if (Trace.isEnabled()) {
-            firstFrameComplete = CompletableDeferred()
-            // start trace between app starting and the earliest possible completed capture
-            lifecycleScope.launch {
-                traceFirstFrameMainActivity(cookie = 0) {
-                    firstFrameComplete.await()
-                }
-            }
+            // Trace from app start until the first frame is captured.
+            Trace.beginAsyncSection(FIRST_FRAME_TRACE_MAIN_ACTIVITY, FIRST_FRAME_TRACE_COOKIE)
+            isFirstFrameTraceOpen = true
         }
 
         val disableAnimations = intent?.getBooleanExtra(KEY_DISABLE_ANIMATIONS, false) ?: false
@@ -179,9 +174,7 @@ class MainActivity : ComponentActivity() {
                                             window?.colorMode = colorMode
                                         }
                                     },
-                                    onFirstFrameCaptureCompleted = {
-                                        firstFrameComplete?.complete(Unit)
-                                    },
+                                    onFirstFrameCaptureCompleted = ::endFirstFrameTrace,
                                     onCaptureEvent = captureEventCallback,
                                     isDarkTheme = isDarkTheme,
                                     onCloseCamera = ::finish
@@ -228,7 +221,30 @@ class MainActivity : ComponentActivity() {
             ExternalCaptureMode.Standard -> emptyList()
         }
 
-    val pictureTakenUriList by lazy { arrayListOf<String>() }
+    private val pictureTakenUriList by lazy { arrayListOf<String>() }
+
+    // Only accessed on the main thread.
+    private var isFirstFrameTraceOpen = false
+
+    override fun onDestroy() {
+        // Close the section if the activity goes away before the first frame, so a recreated
+        // activity can start a new one with the same cookie.
+        endFirstFrameTrace()
+        super.onDestroy()
+    }
+
+    /**
+     * Ends the first-frame trace section started in [onCreate]. The preview screen can report its
+     * first frame more than once (for example, after navigating back to it), so only the first call
+     * ends the section.
+     */
+    private fun endFirstFrameTrace() {
+        if (isFirstFrameTraceOpen) {
+            isFirstFrameTraceOpen = false
+            Trace.endAsyncSection(FIRST_FRAME_TRACE_MAIN_ACTIVITY, FIRST_FRAME_TRACE_COOKIE)
+        }
+    }
+
     private val captureEventCallback: (CaptureEvent) -> Unit
         get() {
             return when (externalCaptureMode) {

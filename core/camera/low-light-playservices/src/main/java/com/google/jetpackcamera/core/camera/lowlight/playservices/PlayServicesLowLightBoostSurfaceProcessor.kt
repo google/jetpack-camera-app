@@ -32,11 +32,12 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Status
 import kotlin.coroutines.resume
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -86,16 +87,19 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
 
     private suspend fun runLowLightBoostSession() {
         for (outputSurface in outputSurfaces) {
-            val outputSurfaceCompleter = CompletableDeferred<Unit>()
-            val surface = outputSurface.getSurface(Runnable::run) {
-                outputSurfaceCompleter.complete(Unit)
+            val outputSurfaceEvents = Channel<SurfaceOutput.Event>(Channel.UNLIMITED)
+            val surface = outputSurface.getSurface(Runnable::run) { event ->
+                outputSurfaceEvents.trySendOrLog(event)
             }
             coroutineScope {
                 try {
                     runLowLightBoostSessionWithOutput(surface)
                 } finally {
                     withContext(NonCancellable) {
-                        outputSurfaceCompleter.await()
+                        // The camera owns the output surface until it requests a close.
+                        for (event in outputSurfaceEvents) {
+                            if (event.eventCode == SurfaceOutput.Event.EVENT_REQUEST_CLOSE) break
+                        }
                         outputSurface.close()
                     }
                 }
@@ -137,8 +141,8 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
         Log.d(TAG, "Creating new LowLightBoostSession for $surfaceRequest")
         try {
             val llbOptions = createLlbOptions(surfaceRequest, outputSurfaceForLlb)
-            val llbSessionComplete = CompletableDeferred<Unit>()
-            val callback = createLlbCallback(llbSessionComplete)
+            val sessionEvents = Channel<SessionEvent>(Channel.UNLIMITED)
+            val callback = createLlbCallback(sessionEvents)
 
             // Must wrap the await() call in a NonCancellable context so we always
             // release the session, even if the coroutine is cancelled.
@@ -147,7 +151,7 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
             }
 
             lowLightBoostSession?.let { session ->
-                useLowLightBoostSession(session, surfaceRequest, llbSessionComplete)
+                useLowLightBoostSession(session, surfaceRequest, sessionEvents)
             }
         } catch (_: CancellationException) {
             // Don't call error callback on cancellation, but ensure cancellation is propagated
@@ -162,7 +166,7 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
     private suspend fun useLowLightBoostSession(
         lowLightBoostSession: LowLightBoostSession,
         surfaceRequest: SurfaceRequest,
-        llbSessionComplete: CompletableDeferred<Unit>
+        sessionEvents: ReceiveChannel<SessionEvent>
     ) = coroutineScope {
         Log.d(
             TAG,
@@ -195,7 +199,10 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
             // Must wait for session to be destroyed before continuing so more sessions aren't
             // created while this one is still active.
             withContext(NonCancellable) {
-                llbSessionComplete.await()
+                // The callback closes the channel after the session's final event.
+                for (event in sessionEvents) {
+                    Log.d(TAG, "LLB session event: $event")
+                }
             }
             Log.d(
                 TAG,
@@ -215,19 +222,30 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
         true
     )
 
-    private fun createLlbCallback(
-        llbSessionComplete: CompletableDeferred<Unit>
-    ): LowLightBoostCallback = object : LowLightBoostCallback {
-        override fun onSessionDestroyed() {
-            Log.d(TAG, "LLB session destroyed")
-            llbSessionComplete.complete(Unit)
+    private fun createLlbCallback(sessionEvents: SendChannel<SessionEvent>): LowLightBoostCallback =
+        object : LowLightBoostCallback {
+            override fun onSessionDestroyed() {
+                sessionEvents.trySendOrLog(SessionEvent.Destroyed)
+                sessionEvents.close()
+            }
+
+            override fun onSessionDisconnected(status: Status) {
+                Log.d(TAG, "LLB session disconnected: $status")
+                // Report immediately: the session can disconnect while the camera is still using
+                // its input surface, long before the session's events are drained during cleanup.
+                onLowLightBoostErrorCallback(RuntimeException(status.statusMessage))
+                sessionEvents.trySendOrLog(SessionEvent.Disconnected(status))
+                sessionEvents.close()
+            }
         }
 
-        override fun onSessionDisconnected(status: Status) {
-            Log.d(TAG, "LLB session disconnected: $status")
-            onLowLightBoostErrorCallback(RuntimeException(status.statusMessage))
-            llbSessionComplete.complete(Unit)
-        }
+    /** Events reported by a [LowLightBoostSession] through its [LowLightBoostCallback]. */
+    private sealed interface SessionEvent {
+        /** The session was destroyed after [LowLightBoostSession.release]. Terminal. */
+        data object Destroyed : SessionEvent
+
+        /** The session lost its connection to the service. Terminal. */
+        data class Disconnected(val status: Status) : SessionEvent
     }
 
     private fun handleLowLightBoostError(e: Exception) {
@@ -248,6 +266,13 @@ internal class PlayServicesLowLightBoostSurfaceProcessor(
                 )
         }
         onLowLightBoostErrorCallback(e)
+    }
+}
+
+/** Sends [event] without suspending, logging it if the channel is already closed. */
+private fun <E> SendChannel<E>.trySendOrLog(event: E) {
+    if (trySend(event).isFailure) {
+        Log.w(TAG, "Dropped $event: channel is closed")
     }
 }
 

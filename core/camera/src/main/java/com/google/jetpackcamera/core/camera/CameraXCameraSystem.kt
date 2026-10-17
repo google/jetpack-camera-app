@@ -82,6 +82,7 @@ import com.google.jetpackcamera.settings.model.CameraSystemConstraints
 import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.io.FileNotFoundException
+import java.util.concurrent.Executor
 import javax.inject.Provider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -101,10 +102,12 @@ private const val TAG = "CameraXCameraSystem"
 
 /**
  * CameraX based implementation for [CameraSystem]
+ *
+ * @param recorderExecutor executor for the video [Recorder]'s background tasks, including audio
+ * and video encoding. If `null`, CameraX runs these tasks on its own internal executor.
  */
 class CameraXCameraSystem(
     private val application: Application,
-    private val defaultDispatcher: CoroutineDispatcher,
     private val iODispatcher: CoroutineDispatcher,
     private val filePathGenerator: FilePathGenerator,
     availabilityCheckers:
@@ -114,7 +117,8 @@ class CameraXCameraSystem(
     val imagePostProcessors:
     Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>>,
     private val cameraEffectProviders:
-    Map<CameraEffectFeatureKey, @JvmSuppressWildcards Provider<CameraEffectProvider>>
+    Map<CameraEffectFeatureKey, @JvmSuppressWildcards Provider<CameraEffectProvider>>,
+    private val recorderExecutor: Executor? = null
 ) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -531,7 +535,7 @@ class CameraXCameraSystem(
                         cameraProvider.availableConcurrentCameraInfos.firstNotNullOfOrNull {
                             var primaryCameraInfo: CameraInfo? = null
                             var secondaryCameraInfo: CameraInfo? = null
-                            it.forEach { cameraInfo ->
+                            for (cameraInfo in it) {
                                 if (cameraInfo.appLensFacing == primaryFacing) {
                                     primaryCameraInfo = cameraInfo
                                 } else if (cameraInfo.appLensFacing == secondaryFacing) {
@@ -568,7 +572,7 @@ class CameraXCameraSystem(
                         CameraSessionContext(
                             context = application,
                             cameraProvider = cameraProvider,
-                            backgroundDispatcher = defaultDispatcher,
+                            recorderExecutor = recorderExecutor,
                             screenFlashEvents = screenFlashEvents,
                             filePathGenerator = filePathGenerator,
                             focusMeteringEvents = focusMeteringEvents,
@@ -825,7 +829,7 @@ class CameraXCameraSystem(
         defaultCaptureMode: CaptureMode? = null
     ): CameraAppSettings {
         Log.d(TAG, "applying capture mode constraints")
-        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
+        return systemConstraints.perLensConstraints[cameraLensFacing]?.let { _ ->
             val newCaptureMode =
                 // concurrent currently only supports VIDEO_ONLY
                 if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {

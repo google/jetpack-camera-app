@@ -21,8 +21,8 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import java.util.concurrent.Executor
 import javax.inject.Provider
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,11 +33,14 @@ import kotlinx.coroutines.flow.StateFlow
  *
  * Can be used to confer context (such as reactive state or session-wide parameters)
  * on context receivers using [with] in a camera session.
+ *
+ * @property recorderExecutor executor for the video recorder's background tasks, or `null` to let
+ * CameraX use its own executor.
  */
 internal data class CameraSessionContext(
     val context: Context,
     val cameraProvider: ProcessCameraProvider,
-    val backgroundDispatcher: CoroutineDispatcher,
+    val recorderExecutor: Executor?,
     val screenFlashEvents: SendChannel<CameraSystem.ScreenFlashEvent>,
     val filePathGenerator: FilePathGenerator,
     val focusMeteringEvents: Channel<CameraEvent.FocusMeteringEvent>,

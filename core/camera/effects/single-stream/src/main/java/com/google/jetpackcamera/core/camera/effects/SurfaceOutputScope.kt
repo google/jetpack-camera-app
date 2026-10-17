@@ -19,36 +19,36 @@ import android.util.Size
 import android.view.Surface
 import androidx.camera.core.SurfaceOutput
 import com.google.jetpackcamera.core.common.RefCounted
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.launch
 
 class SurfaceOutputScope(val surfaceOutput: SurfaceOutput) {
     private val surfaceLifecycleJob = SupervisorJob()
     private val refCountedSurface = RefCounted<Surface>(onRelease = {
         surfaceOutput.close()
     }).apply {
-        // Ensure we don't release until after `initialize` has completed by deferring
-        // the release.
-        val deferredRelease = CompletableDeferred<Unit>()
+        // The close request can arrive before `initialize` has returned, so release only after
+        // both have happened, whichever comes last.
+        val pendingReleaseConditions = AtomicInteger(2)
+        val releaseWhenReady = {
+            if (pendingReleaseConditions.decrementAndGet() == 0) {
+                surfaceLifecycleJob.cancel("SurfaceOutput close requested.")
+                this@apply.release()
+            }
+        }
         initialize(
             surfaceOutput.getSurface(Runnable::run) {
-                deferredRelease.complete(Unit)
+                releaseWhenReady()
             }
         )
-        CoroutineScope(Dispatchers.Unconfined).launch {
-            deferredRelease.await()
-            surfaceLifecycleJob.cancel("SurfaceOutput close requested.")
-            this@apply.release()
-        }
+        releaseWhenReady()
     }
 
     suspend fun <R> withSurfaceOutput(
