@@ -126,6 +126,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.DisableRationale
@@ -798,9 +799,21 @@ fun PreviewDisplay(
                 aspectRatioUiState.selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.toFloat()
+            val layoutSolution = LocalCameraLayoutSolution.current
+            val solvedBand = if (maxHeight > maxWidth) {
+                layoutSolution?.viewfinderBandFor(aspectRatioFloat)
+            } else {
+                null
+            }
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+            val width = if (solvedBand != null || shouldUseMaxWidth) {
+                maxWidth
+            } else {
+                maxHeight * aspectRatioFloat
+            }
+            val height = solvedBand?.height
+                ?: if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+            val topOffset = solvedBand?.top ?: 0.dp
             var imageVisible by remember { mutableStateOf(true) }
             val targetBoundsState = LocalOverlapTargetBounds.current
 
@@ -828,6 +841,7 @@ fun PreviewDisplay(
 
             Box(
                 modifier = Modifier
+                    .padding(top = topOffset)
                     .testTag(PREVIEW_DISPLAY)
                     .onGloballyPositioned { coordinates ->
                         val bounds = coordinates.boundsInWindow()

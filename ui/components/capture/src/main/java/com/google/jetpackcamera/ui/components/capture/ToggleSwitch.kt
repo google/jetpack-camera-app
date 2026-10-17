@@ -53,6 +53,8 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 
 private const val DISABLED_ICON_ALPHA = 0.38f
 private const val TRACK_COLOR_ALPHA = .16f
@@ -94,12 +96,17 @@ fun ToggleSwitch(
     iconSize: Dp = 24.dp
 ) {
     // --- 1. Dimensions ---
-    // Encapsulate all Dp and Px calculations
+    // Encapsulate all Dp and Px calculations, scaling uniformly when the adaptive layout solver
+    // compacts the bottom toolbar row so the rounded track edge stays aligned with the thumb.
+    val layoutSolution = LocalCameraLayoutSolution.current
+    val toolbarScale = layoutSolution?.toolbarHeight?.let { toolbarHeight ->
+        (toolbarHeight / CameraLayoutDefaults.BottomToolbarHeight).coerceIn(0f, 1f)
+    } ?: 1f
     val dims = rememberSwitchDimensions(
-        switchWidth = switchWidth,
-        switchHeight = switchHeight,
-        thumbDiameter = thumbDiameter,
-        iconSize = iconSize
+        switchWidth = switchWidth * toolbarScale,
+        switchHeight = switchHeight * toolbarScale,
+        thumbDiameter = thumbDiameter * toolbarScale,
+        iconSize = iconSize * toolbarScale
     )
     val thumbY = dims.switchHeightPx / 2
     val trackCornerRadius = CornerRadius(dims.switchHeightPx / 2, dims.switchHeightPx / 2)
