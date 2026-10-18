@@ -26,6 +26,7 @@ import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.UriStreams
 import com.google.jetpackcamera.data.camera.CameraLaunchConfigProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.camera.CameraXCameraSystemRepository
@@ -94,7 +95,8 @@ internal object CameraModule {
         cameraEffectProviders: Map<
             CameraEffectFeatureKey,
             @JvmSuppressWildcards Provider<CameraEffectProvider>
-            >
+            >,
+        uriStreams: UriStreams
     ): CameraXCameraSystem {
         return CameraXCameraSystem(
             context as Application,
@@ -104,7 +106,8 @@ internal object CameraModule {
             availabilityCheckers,
             effectProviders,
             imagePostProcessors,
-            cameraEffectProviders
+            cameraEffectProviders,
+            uriStreams
         )
     }
 }

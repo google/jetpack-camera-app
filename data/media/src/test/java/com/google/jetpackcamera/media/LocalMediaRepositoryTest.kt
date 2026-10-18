@@ -19,20 +19,27 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.ProviderInfo
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
+import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.UriStreams
 import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.data.media.LocalMediaRepository
 import com.google.jetpackcamera.data.media.Media
 import com.google.jetpackcamera.data.media.MediaDescriptor
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -42,6 +49,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.shadows.ShadowContentResolver
@@ -810,6 +818,52 @@ class LocalMediaRepositoryTest {
     }
 
     @Test
+    fun copyToUri_writesDestinationThroughProvidedUriStreams() = runTest {
+        // Given a cached capture and a repository with a custom UriStreams
+        val sourceFile = File(context.cacheDir, "temp.jpg").apply { writeText("fake image data") }
+        val destinationUri = Uri.parse("content://com.example.other.provider/output.jpg")
+        val uriStreams = RecordingUriStreams()
+        val customRepo =
+            LocalMediaRepository(context, testDispatcher, filePathGenerator, uriStreams)
+
+        // When
+        customRepo.copyToUri(
+            MediaDescriptor.Content.Image(Uri.fromFile(sourceFile), thumbnail = null),
+            destinationUri
+        )
+
+        // Then the cached file is read directly and only the destination uses UriStreams
+        assertThat(uriStreams.openedUris).containsExactly(destinationUri)
+        assertThat(uriStreams.written.toString(Charsets.UTF_8.name()))
+            .isEqualTo("fake image data")
+    }
+
+    @Test
+    fun copyToUri_destinationServedByThisApp_isRejected() = runTest {
+        // Given a destination URI served by one of this app's own content providers
+        val ownAuthority = "${context.packageName}.test.provider"
+        shadowOf(context.packageManager).addOrUpdateProvider(
+            ProviderInfo().apply {
+                authority = ownAuthority
+                packageName = context.packageName
+                name = "TestProvider"
+            }
+        )
+        val sourceFile = File(context.cacheDir, "temp.jpg").apply { writeText("fake image data") }
+
+        // When
+        val result = runCatching {
+            repository.copyToUri(
+                MediaDescriptor.Content.Image(Uri.fromFile(sourceFile), thumbnail = null),
+                Uri.parse("content://$ownAuthority/files/secret.jpg")
+            )
+        }
+
+        // Then
+        assertThat(result.exceptionOrNull()).isInstanceOf(FileNotFoundException::class.java)
+    }
+
+    @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun defaultThumbnailLoader_api29Plus_usesContentResolverLoadThumbnail() = runTest {
         val legacyStubBitmap = Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
@@ -894,5 +948,26 @@ class LocalMediaRepositoryTest {
         assertThat(legacyRepo.lastCapturedMedia.value).isEqualTo(videoDescriptor)
         contentResolver.notifyChange(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null)
         assertThat(legacyRepo.lastCapturedMedia.value).isEqualTo(videoDescriptor)
+    }
+
+    /** A [UriStreams] that records the URIs it opens and captures written bytes. */
+    private class RecordingUriStreams : UriStreams {
+        val openedUris = mutableListOf<Uri>()
+        val written = ByteArrayOutputStream()
+
+        override fun openInputStream(uri: Uri): InputStream? {
+            openedUris += uri
+            return null
+        }
+
+        override fun openOutputStream(uri: Uri): OutputStream {
+            openedUris += uri
+            return written
+        }
+
+        override fun openFileDescriptor(uri: Uri, mode: String): ParcelFileDescriptor? {
+            openedUris += uri
+            return null
+        }
     }
 }
