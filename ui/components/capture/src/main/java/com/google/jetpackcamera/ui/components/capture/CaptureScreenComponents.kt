@@ -123,7 +123,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
-import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
@@ -443,40 +442,45 @@ fun ElapsedTimeText(
  *
  * The button's icon changes to reflect the current recording state: a pause icon is shown when
  * recording is active, and a play icon is shown when the recording is paused. This component is only
- * visible when a video recording is in progress.
+ * visible when [isActive] is true.
  *
- * @param modifier the modifier for this component.
+ * @param isActive whether a video recording is currently active.
+ * @param isPaused whether the active video recording is currently paused.
  * @param onSetPause the callback invoked when the button is tapped.
+ * @param modifier the modifier for this component.
  * @param size the size of the button.
- * @param currentRecordingStateProvider the provider for the current recording state.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PauseResumeToggleButton(
-    modifier: Modifier = Modifier,
+    isActive: Boolean,
+    isPaused: Boolean,
     onSetPause: (Boolean) -> Unit,
-    size: Dp = ButtonDefaults.MediumContainerHeight,
-    currentRecordingStateProvider: () -> VideoRecordingState
+    modifier: Modifier = Modifier,
+    size: Dp = 56.dp
 ) {
-    val currentRecordingState = currentRecordingStateProvider()
-    if (currentRecordingState is VideoRecordingState.Active) {
+    if (isActive) {
+        val backgroundStyle = LocalCameraControlBackgroundStyle.current
         FilledIconToggleButton(
-            checked = currentRecordingState is VideoRecordingState.Active.Recording,
-            onCheckedChange = {
-                onSetPause(
-                    currentRecordingState !is VideoRecordingState.Active.Paused
-                )
+            checked = !isPaused,
+            onCheckedChange = { isChecked ->
+                onSetPause(!isChecked)
             },
+            shape = CircleShape,
+            colors = IconButtonDefaults.filledIconToggleButtonColors(
+                containerColor = backgroundStyle.containerColor,
+                contentColor = Color.White,
+                checkedContainerColor = backgroundStyle.containerColor,
+                checkedContentColor = Color.White
+            ),
             modifier = modifier.size(size)
         ) {
             Icon(
-                modifier = Modifier
-                    .size(ButtonDefaults.MediumIconSize),
-                painter = when (currentRecordingState) {
-                    is VideoRecordingState.Active.Recording -> painterResource(R.drawable.ic_pause)
-                    is VideoRecordingState.Active.Paused -> painterResource(
-                        R.drawable.ic_play_arrow
-                    )
+                modifier = Modifier.size(ButtonDefaults.MediumIconSize),
+                painter = if (isPaused) {
+                    painterResource(R.drawable.ic_play_arrow)
+                } else {
+                    painterResource(R.drawable.ic_pause)
                 },
                 contentDescription = stringResource(id = R.string.pause_resume_button_description)
             )
