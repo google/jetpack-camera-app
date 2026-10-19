@@ -155,6 +155,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "CaptureScreenComponents"
+private val LOADING_SPINNER_SIZE = 40.dp
 
 private val SnackbarMinHeight = 48.dp
 private val SnackbarHorizontalMargin = 16.dp
@@ -892,7 +893,7 @@ fun PreviewDisplay(
                 )
             } else {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(LOADING_SPINNER_SIZE),
                     color = Color.White
                 )
             }

@@ -107,8 +107,9 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  * Button to toggle open quick settings.
  *
  * @param isOpen Whether the quick settings panel is currently open.
- * @param modifier The modifier for this component.
  * @param onClick The behavior for when this button is clicked.
+ * @param modifier The modifier for this component.
+ * @param enabled Whether this button is enabled.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
