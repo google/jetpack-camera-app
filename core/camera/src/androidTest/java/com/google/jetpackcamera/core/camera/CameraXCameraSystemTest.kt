@@ -1175,6 +1175,126 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun setStabilizationMode_inCaptureSubMode_restoresTheUserChoiceOnExit(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks stabilization to OFF.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    stabilizationMode = SettingConfig(
+                        StabilizationMode.OFF,
+                        OptionVisibility.Hidden
+                    )
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        val settingsBefore = cameraSystem.getCurrentSettings().value!!
+        // A supported mode other than the value from before the sub-mode (AUTO) and the policy
+        // value (OFF), so that only the user's choice can restore it.
+        val lensConstraints = cameraSystem.getSystemConstraints().value!!
+            .perLensConstraints[settingsBefore.cameraLensFacing]!!
+        val chosenMode = with(lensConstraints) {
+            supportedStabilizationModes.firstOrNull {
+                it != StabilizationMode.AUTO &&
+                    it != StabilizationMode.OFF &&
+                    settingsBefore.targetFrameRate !in it.unsupportedFpsSet
+            }
+        }
+        assume().withMessage("No stabilization mode to choose, skip the test.")
+            .that(chosenMode)
+            .isNotNull()
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act. The user picks a mode the policy doesn't allow.
+        cameraSystem.setStabilizationMode(chosenMode!!)
+
+        // Assert. The policy keeps the user's choice from applying while the sub-mode is active.
+        assertThat(cameraSystem.getCurrentSettings().value!!.stabilizationMode)
+            .isNotEqualTo(chosenMode)
+
+        // Act. Leave the sub-mode.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The user's choice is applied.
+        assertThat(cameraSystem.getCurrentSettings().value!!.stabilizationMode)
+            .isEqualTo(chosenMode)
+    }
+
+    @Test
+    fun setImageFormat_inCaptureSubMode_restoresTheUserChoiceOnExit(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the image format to JPEG.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(captureMode = CaptureMode.IMAGE_ONLY),
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    imageFormat = SettingConfig(ImageOutputFormat.JPEG, OptionVisibility.Hidden)
+                )
+            )
+        )
+        val lensFacing = cameraSystem.getCurrentSettings().value!!.cameraLensFacing
+        val lensConstraints =
+            cameraSystem.getSystemConstraints().value!!.perLensConstraints[lensFacing]!!
+        assume()
+            .withMessage("Ultra HDR not supported on $lensFacing, skip the test.")
+            .that(
+                lensConstraints.supportedImageFormatsMap[false]
+                    ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+            )
+            .isTrue()
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act. The user picks Ultra HDR, which the policy doesn't allow.
+        cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+        // Assert. The policy value is kept while the sub-mode is active.
+        assertThat(cameraSystem.getCurrentSettings().value!!.imageFormat)
+            .isEqualTo(ImageOutputFormat.JPEG)
+
+        // Act. Leave the sub-mode.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The user's choice is applied.
+        assertThat(cameraSystem.getCurrentSettings().value!!.imageFormat)
+            .isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
+
+    @Test
+    fun setDynamicRange_inCaptureSubMode_restoresTheUserChoiceOnExit(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the dynamic range to SDR.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(captureMode = CaptureMode.IMAGE_ONLY),
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden)
+                )
+            )
+        )
+        val lensFacing = cameraSystem.getCurrentSettings().value!!.cameraLensFacing
+        assume()
+            .withMessage("HLG10 not supported on $lensFacing, skip the test.")
+            .that(
+                cameraSystem.getSystemConstraints().value!!.perLensConstraints[lensFacing]!!
+                    .supportedDynamicRanges
+            )
+            .contains(DynamicRange.HLG10)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act. The user picks HLG10, which the policy doesn't allow.
+        cameraSystem.setDynamicRange(DynamicRange.HLG10)
+
+        // Assert. The policy value is kept while the sub-mode is active.
+        assertThat(cameraSystem.getCurrentSettings().value!!.dynamicRange)
+            .isEqualTo(DynamicRange.SDR)
+
+        // Act. Leave the sub-mode.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The user's choice is applied.
+        assertThat(cameraSystem.getCurrentSettings().value!!.dynamicRange)
+            .isEqualTo(DynamicRange.HLG10)
+    }
+
+    @Test
     fun setStabilizationMode_inSubModeWithoutStabilizationPolicy_isNotChanged(): Unit =
         runBlocking {
             // Arrange. The sub-mode's policy doesn't restrict stabilization.

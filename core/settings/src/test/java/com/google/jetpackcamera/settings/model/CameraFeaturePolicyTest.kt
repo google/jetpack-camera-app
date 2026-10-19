@@ -101,6 +101,8 @@ class CameraFeaturePolicyTest {
         assertThat(config.dynamicRange).isNull()
         assertThat(config.stabilizationMode).isNull()
         assertThat(config.targetFrameRate).isNull()
+        assertThat(config.cameraEffect).isNull()
+        assertThat(config.videoQuality).isNull()
     }
 
     @Test
