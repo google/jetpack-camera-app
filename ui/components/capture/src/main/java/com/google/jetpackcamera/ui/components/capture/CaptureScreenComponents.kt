@@ -1051,41 +1051,52 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
 fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         if (videoQuality != VideoQuality.UNSPECIFIED) {
-            Icon(
-                modifier = modifier.size(IconButtonDefaults.smallIconSize),
+            Box(
+                modifier = modifier
+                    .defaultMinSize(minWidth = 28.dp, minHeight = 32.dp)
+                    .background(
+                        color = CameraControlBackgroundStyle.BLACK_60.containerColor,
+                        shape = CircleShape
+                    )
+                    .padding(horizontal = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    modifier = Modifier.size(IconButtonDefaults.smallIconSize),
 
-                painter = when (videoQuality) {
-                    VideoQuality.SD ->
-                        painterResource(R.drawable.video_resolution_sd_icon)
+                    painter = when (videoQuality) {
+                        VideoQuality.SD ->
+                            painterResource(R.drawable.video_resolution_sd_icon)
 
-                    VideoQuality.HD ->
-                        painterResource(R.drawable.video_resolution_hd_icon)
+                        VideoQuality.HD ->
+                            painterResource(R.drawable.video_resolution_hd_icon)
 
-                    VideoQuality.FHD ->
-                        painterResource(R.drawable.video_resolution_fhd_icon)
+                        VideoQuality.FHD ->
+                            painterResource(R.drawable.video_resolution_fhd_icon)
 
-                    VideoQuality.UHD ->
-                        painterResource(R.drawable.video_resolution_uhd_icon)
+                        VideoQuality.UHD ->
+                            painterResource(R.drawable.video_resolution_uhd_icon)
 
-                    VideoQuality.UNSPECIFIED ->
-                        throw IllegalStateException("Illegal video quality state")
-                },
-                contentDescription = when (videoQuality) {
-                    VideoQuality.SD ->
-                        stringResource(R.string.video_quality_description_sd)
+                        VideoQuality.UNSPECIFIED ->
+                            throw IllegalStateException("Illegal video quality state")
+                    },
+                    contentDescription = when (videoQuality) {
+                        VideoQuality.SD ->
+                            stringResource(R.string.video_quality_description_sd)
 
-                    VideoQuality.HD ->
-                        stringResource(R.string.video_quality_description_hd)
+                        VideoQuality.HD ->
+                            stringResource(R.string.video_quality_description_hd)
 
-                    VideoQuality.FHD ->
-                        stringResource(R.string.video_quality_description_fhd)
+                        VideoQuality.FHD ->
+                            stringResource(R.string.video_quality_description_fhd)
 
-                    VideoQuality.UHD ->
-                        stringResource(R.string.video_quality_description_uhd)
+                        VideoQuality.UHD ->
+                            stringResource(R.string.video_quality_description_uhd)
 
-                    VideoQuality.UNSPECIFIED -> null
-                }
-            )
+                        VideoQuality.UNSPECIFIED -> null
+                    }
+                )
+            }
         }
     }
 }
