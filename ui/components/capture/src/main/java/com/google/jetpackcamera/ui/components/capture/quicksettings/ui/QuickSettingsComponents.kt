@@ -112,7 +112,12 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ToggleQuickSettingsButton(isOpen: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ToggleQuickSettingsButton(
+    isOpen: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
     val buttonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
     )
@@ -131,11 +136,14 @@ fun ToggleQuickSettingsButton(isOpen: Boolean, onClick: () -> Unit, modifier: Mo
                 }
             },
         onClick = onClick,
+        enabled = enabled,
         colors = IconButtonDefaults.iconButtonColors(
             // Set the background color of the button
             containerColor = Color.White.copy(alpha = 0.08f),
             // Set the color of the icon inside the button
-            contentColor = Color.White
+            contentColor = Color.White,
+            disabledContainerColor = Color.White.copy(alpha = 0.08f),
+            disabledContentColor = Color.White.copy(alpha = 0.38f)
         )
     ) {
         Icon(
