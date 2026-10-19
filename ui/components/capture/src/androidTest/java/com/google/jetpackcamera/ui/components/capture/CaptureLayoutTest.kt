@@ -20,6 +20,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SheetValue
@@ -27,6 +28,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -39,6 +41,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -217,6 +220,26 @@ class CaptureLayoutTest {
 
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
             .assertDoesNotExist()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun previewLayout_landscapeConstraints_displaysHorizontalControls() {
+        composeTestRule.setContent {
+            TestPreviewLayout(
+                modifier = Modifier.size(width = 800.dp, height = 400.dp),
+                captureButton = { modifier ->
+                    Box(
+                        modifier = modifier
+                            .size(80.dp)
+                            .testTag(CAPTURE_BUTTON)
+                    )
+                }
+            )
+        }
+
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 }

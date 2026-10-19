@@ -133,7 +133,11 @@ fun PreviewLayout(
                 modifier = Modifier.fillMaxSize(),
                 scaffoldState = scaffoldState,
                 sheetPeekHeight = 0.dp,
-                sheetMaxWidth = if (isLandscape) 360.dp else BottomSheetDefaults.SheetMaxWidth,
+                sheetMaxWidth = if (isLandscape) {
+                    Tokens.QuickSettingsSheetMaxWidthLandscape
+                } else {
+                    BottomSheetDefaults.SheetMaxWidth
+                },
                 sheetDragHandle = {
                     BottomSheetDefaults.DragHandle(
                         modifier = Modifier
@@ -253,6 +257,12 @@ fun PreviewLayout(
     }
 }
 
+private object Tokens {
+    val QuickSettingsSheetMaxWidthLandscape = 360.dp
+    val ShutterStackWidth = 120.dp
+    val ControlPadding = 16.dp
+}
+
 @Composable
 private fun HorizontalMaterialControls(
     modifier: Modifier = Modifier,
@@ -274,7 +284,7 @@ private fun HorizontalMaterialControls(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .padding(bottom = 16.dp),
+                .padding(bottom = Tokens.ControlPadding),
             contentAlignment = Alignment.BottomCenter
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -286,7 +296,7 @@ private fun HorizontalMaterialControls(
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .padding(vertical = 16.dp),
+                .padding(vertical = Tokens.ControlPadding),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -296,7 +306,7 @@ private fun HorizontalMaterialControls(
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .width(120.dp),
+                .width(Tokens.ShutterStackWidth),
             verticalArrangement = Arrangement.SpaceEvenly,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -326,7 +336,11 @@ private fun HorizontalMaterialControls(
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .padding(end = 16.dp, top = 16.dp, bottom = 16.dp),
+                .padding(
+                    end = Tokens.ControlPadding,
+                    top = Tokens.ControlPadding,
+                    bottom = Tokens.ControlPadding
+                ),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
