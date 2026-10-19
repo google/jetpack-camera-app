@@ -25,15 +25,19 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_AUDIO_OPTION_OFF
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_AUDIO_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_AUDIO
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -174,5 +178,52 @@ class QuickSettingsScreenTest {
         }
 
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON).assertDoesNotExist()
+    }
+
+    @Test
+    fun quickSettingsScaffoldContent_audioEnabledOn_rendersAudioRowAndCallsController() {
+        var setAudioEnabledCalledWith: Boolean? = null
+        fakeQuickSettingsController.setAudioEnabledAction = { setAudioEnabledCalledWith = it }
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsScaffoldContent(
+                    quickSettingsUiState = sampleAvailableUiState.copy(
+                        audioUiState = AudioUiState.Enabled.On(
+                            amplitude = 0.0,
+                            isAudioStreamActive = false
+                        )
+                    ),
+                    onNavigateToSettings = {},
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_AUDIO).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(BTN_QUICK_SETTINGS_AUDIO_OPTION_OFF).performClick()
+        assertThat(setAudioEnabledCalledWith).isEqualTo(false)
+    }
+
+    @Test
+    fun quickSettingsScaffoldContent_audioEnabledMute_rendersAudioRowAndCallsController() {
+        var setAudioEnabledCalledWith: Boolean? = null
+        fakeQuickSettingsController.setAudioEnabledAction = { setAudioEnabledCalledWith = it }
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsScaffoldContent(
+                    quickSettingsUiState = sampleAvailableUiState.copy(
+                        audioUiState = AudioUiState.Enabled.Mute
+                    ),
+                    onNavigateToSettings = {},
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_AUDIO).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(BTN_QUICK_SETTINGS_AUDIO_OPTION_ON).performClick()
+        assertThat(setAudioEnabledCalledWith).isEqualTo(true)
     }
 }

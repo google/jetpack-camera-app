@@ -103,6 +103,15 @@ internal class QuickSettingsControllerImplTest {
     }
 
     @Test
+    fun setAudioEnabled_mutatesCameraSystem() = testScope.runTest {
+        controller.setAudioEnabled(false)
+        advanceUntilIdle()
+        assertThat(
+            cameraSystem.getCurrentSettings().value?.audioEnabled
+        ).isEqualTo(false)
+    }
+
+    @Test
     fun cancelScope_cancelsCoroutineScope() = testScope.runTest {
         val job = controller.cancelScope()
         job.join()

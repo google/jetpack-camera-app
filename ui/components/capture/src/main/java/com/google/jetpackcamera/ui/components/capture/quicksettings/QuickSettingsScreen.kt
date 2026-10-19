@@ -150,11 +150,12 @@ internal fun QuickSettingsContent(
         }
 
         // Video Audio settings (Standard and Video only)
+        val audioUiState = quickSettingsUiState.audioUiState
         if ((captureMode == CaptureMode.VIDEO_ONLY || captureMode == CaptureMode.STANDARD) &&
-            quickSettingsUiState.audioUiState is AudioUiState.Enabled
+            audioUiState is AudioUiState.Enabled
         ) {
             AudioRow(
-                audioUiState = quickSettingsUiState.audioUiState,
+                audioUiState = audioUiState,
                 onSetAudioEnabled = quickSettingsController::setAudioEnabled
             )
         }

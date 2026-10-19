@@ -365,9 +365,8 @@ internal fun FlashRow(
 internal fun AudioRow(
     modifier: Modifier = Modifier,
     onSetAudioEnabled: (Boolean) -> Unit,
-    audioUiState: AudioUiState
+    audioUiState: AudioUiState.Enabled
 ) {
-    val isSupported = audioUiState is AudioUiState.Enabled
     val isAudioOn = audioUiState is AudioUiState.Enabled.On
     QuickSettingsListRow(
         modifier = modifier.testTag(ROW_QUICK_SETTINGS_AUDIO),
@@ -389,7 +388,7 @@ internal fun AudioRow(
         enumMapper = { enabled ->
             if (enabled) CameraAudioMode.ENABLED else CameraAudioMode.MUTED
         },
-        isItemEnabled = { isSupported }
+        isItemEnabled = { true }
     )
 }
 

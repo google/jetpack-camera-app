@@ -150,7 +150,10 @@ enum class CameraCaptureMode : QuickSettingsEnum {
     }
 }
 
-enum class CameraAudioMode : QuickSettingsEnum {
+/**
+ * Enumerates the audio recording modes for video capture.
+ */
+internal enum class CameraAudioMode : QuickSettingsEnum {
     ENABLED {
         override fun getDrawableResId() = R.drawable.ic_mic
         override fun getTextResId() = R.string.quick_settings_audio_enabled
