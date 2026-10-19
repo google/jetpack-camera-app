@@ -861,7 +861,10 @@ internal class CameraAppSettingsViewModelTest {
             ).isEqualTo(SingleSelectableState.Selectable)
         }
 
-    /** Creates a view model whose active capture sub-mode has [policy]. */
+    /**
+     * Creates a view model that supports [effects] and all video qualities, and whose active
+     * capture sub-mode has [policy].
+     */
     private fun createViewModelWithSubModePolicy(
         policy: CameraFeaturePolicy,
         effects: Set<CameraEffectId> = setOf(TEST_EFFECT_ID)
@@ -870,7 +873,17 @@ internal class CameraAppSettingsViewModelTest {
         return createViewModelWithConstraints(
             systemConstraints = constraints.copy(
                 perLensConstraints = constraints.perLensConstraints.mapValues {
-                    it.value.copy(supportedEffects = effects)
+                    it.value.copy(
+                        supportedEffects = effects,
+                        supportedVideoQualitiesMap = mapOf(
+                            DynamicRange.SDR to listOf(
+                                VideoQuality.SD,
+                                VideoQuality.HD,
+                                VideoQuality.FHD,
+                                VideoQuality.UHD
+                            )
+                        )
+                    )
                 }
             ),
             activeCaptureSubModeRepository = FakeActiveCaptureSubModeRepository(TEST_SUB_MODE_ID)
@@ -1053,34 +1066,10 @@ internal class CameraAppSettingsViewModelTest {
         composeTestRule.onNodeWithText("Flash is unsupported in Settings mode").assertIsDisplayed()
     }
 
-    /** Creates a view model that supports all video qualities and whose sub-mode has [policy]. */
-    private fun createViewModelWithVideoQualitiesAndSubModePolicy(
-        policy: CameraFeaturePolicy
-    ): SettingsViewModel {
-        val constraints = constraintsWithSubModePolicy(policy)
-        return createViewModelWithConstraints(
-            systemConstraints = constraints.copy(
-                perLensConstraints = constraints.perLensConstraints.mapValues {
-                    it.value.copy(
-                        supportedVideoQualitiesMap = mapOf(
-                            DynamicRange.SDR to listOf(
-                                VideoQuality.SD,
-                                VideoQuality.HD,
-                                VideoQuality.FHD,
-                                VideoQuality.UHD
-                            )
-                        )
-                    )
-                }
-            ),
-            activeCaptureSubModeRepository = FakeActiveCaptureSubModeRepository(TEST_SUB_MODE_ID)
-        )
-    }
-
     @Test
     fun videoQuality_whenCaptureSubModeHidesVideoQuality_disablesWholeSetting() =
         runTest(StandardTestDispatcher()) {
-            val customViewModel = createViewModelWithVideoQualitiesAndSubModePolicy(
+            val customViewModel = createViewModelWithSubModePolicy(
                 CameraFeaturePolicy(
                     videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
                 )
@@ -1101,7 +1090,7 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun videoQuality_whenCaptureSubModeAllowsOnlySomeOptions_disablesExcludedOptions() =
         runTest(StandardTestDispatcher()) {
-            val customViewModel = createViewModelWithVideoQualitiesAndSubModePolicy(
+            val customViewModel = createViewModelWithSubModePolicy(
                 CameraFeaturePolicy(
                     videoQuality = SettingConfig(
                         defaultValue = VideoQuality.UNSPECIFIED,

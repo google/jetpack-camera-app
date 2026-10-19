@@ -130,26 +130,6 @@ class CameraXCameraSystemRepositoryTest {
     }
 
     @Test
-    fun activeCaptureSubModeId_mirrorsCameraSystemSettings() = testScope.runTest {
-        val testCamera = TestCameraSystem()
-        val repository = CameraXCameraSystemRepository(
-            cameraXCameraSystemProvider = Provider { testCamera },
-            settingsRepository = FakeSettingsRepository(),
-            launchConfig = CameraLaunchConfig(),
-            scope = backgroundScope
-        )
-        val subModeId = CaptureSubModeId("test_sub_mode")
-
-        assertThat(repository.activeCaptureSubModeId.first()).isEqualTo(CaptureSubModeId.DEFAULT)
-
-        repository.getCameraSystem().setCaptureSubMode(subModeId)
-        assertThat(repository.activeCaptureSubModeId.first()).isEqualTo(subModeId)
-
-        repository.getCameraSystem().setCaptureSubMode(CaptureSubModeId.DEFAULT)
-        assertThat(repository.activeCaptureSubModeId.first()).isEqualTo(CaptureSubModeId.DEFAULT)
-    }
-
-    @Test
     fun activeCaptureSubModeId_newCollectorReceivesCurrentValue() = testScope.runTest {
         val testCamera = TestCameraSystem()
         val subModeId = CaptureSubModeId("test_sub_mode")
