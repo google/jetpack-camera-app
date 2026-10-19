@@ -39,6 +39,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AudioRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureModeRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrRow
@@ -46,6 +47,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavS
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -139,13 +141,21 @@ internal fun QuickSettingsContent(
             )
         }
 
-        // Aspect Ratio settings (Standard and Image only)
-        if ((captureMode == CaptureMode.STANDARD || captureMode == CaptureMode.IMAGE_ONLY) &&
-            quickSettingsUiState.aspectRatioUiState is AspectRatioUiState.Available
-        ) {
+        // Aspect Ratio settings
+        if (quickSettingsUiState.aspectRatioUiState is AspectRatioUiState.Available) {
             AspectRatioRow(
                 aspectRatioUiState = quickSettingsUiState.aspectRatioUiState,
                 onSetAspectRatio = quickSettingsController::setAspectRatio
+            )
+        }
+
+        // Video Audio settings (Standard and Video only)
+        if ((captureMode == CaptureMode.VIDEO_ONLY || captureMode == CaptureMode.STANDARD) &&
+            quickSettingsUiState.audioUiState is AudioUiState.Enabled
+        ) {
+            AudioRow(
+                audioUiState = quickSettingsUiState.audioUiState,
+                onSetAudioEnabled = quickSettingsController::setAudioEnabled
             )
         }
 

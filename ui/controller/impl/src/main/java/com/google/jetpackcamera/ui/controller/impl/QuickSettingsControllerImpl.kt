@@ -81,6 +81,12 @@ class QuickSettingsControllerImpl(
         }
     }
 
+    override fun setAudioEnabled(isAudioEnabled: Boolean) {
+        scope.launch {
+            cameraSystemProvider().setAudioEnabled(isAudioEnabled)
+        }
+    }
+
     /**
      * Initiates the cancellation of this controller's scope and returns its Job.
      * To wait for cancellation to complete, call .join() on the returned Job.

@@ -68,6 +68,8 @@ import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_AUDIO_OPTION_OFF
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_AUDIO_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
@@ -83,17 +85,20 @@ import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_B
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_9_16_BUTTON
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_AUDIO
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraAspectRatio
+import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraAudioMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEnum
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
@@ -347,6 +352,45 @@ internal fun FlashRow(
             }
         )
     }
+}
+
+/**
+ * A row component in the quick settings menu that allows the user to toggle video audio recording.
+ *
+ * @param modifier The [Modifier] to be applied to this row.
+ * @param onSetAudioEnabled Callback invoked when video audio is enabled or muted.
+ * @param audioUiState The current [AudioUiState] representing audio availability and selection.
+ */
+@Composable
+internal fun AudioRow(
+    modifier: Modifier = Modifier,
+    onSetAudioEnabled: (Boolean) -> Unit,
+    audioUiState: AudioUiState
+) {
+    val isSupported = audioUiState is AudioUiState.Enabled
+    val isAudioOn = audioUiState is AudioUiState.Enabled.On
+    QuickSettingsListRow(
+        modifier = modifier.testTag(ROW_QUICK_SETTINGS_AUDIO),
+        title = stringResource(id = R.string.quick_settings_title_audio),
+        stateSubtitle = if (isAudioOn) {
+            stringResource(R.string.quick_settings_audio_enabled)
+        } else {
+            stringResource(R.string.quick_settings_audio_muted)
+        },
+        items = listOf(
+            SingleSelectableUiState.SelectableUi(true),
+            SingleSelectableUiState.SelectableUi(false)
+        ),
+        selectedItem = isAudioOn,
+        onItemClick = onSetAudioEnabled,
+        testTagMapper = { enabled ->
+            if (enabled) BTN_QUICK_SETTINGS_AUDIO_OPTION_ON else BTN_QUICK_SETTINGS_AUDIO_OPTION_OFF
+        },
+        enumMapper = { enabled ->
+            if (enabled) CameraAudioMode.ENABLED else CameraAudioMode.MUTED
+        },
+        isItemEnabled = { isSupported }
+    )
 }
 
 // ////////////////////////////////////////////////////

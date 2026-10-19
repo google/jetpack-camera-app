@@ -39,7 +39,8 @@ class FakeQuickSettingsController(
     var setAspectRatioAction: (AspectRatio) -> Unit = {},
     var setDynamicRangeAction: (DynamicRange) -> Unit = {},
     var setImageFormatAction: (ImageOutputFormat) -> Unit = {},
-    var setCaptureModeAction: (CaptureMode) -> Unit = {}
+    var setCaptureModeAction: (CaptureMode) -> Unit = {},
+    var setAudioEnabledAction: (Boolean) -> Unit = {}
 ) : QuickSettingsController {
 
     override fun setLensFacing(lensFace: LensFacing) {
@@ -64,5 +65,9 @@ class FakeQuickSettingsController(
 
     override fun setCaptureMode(captureMode: CaptureMode) {
         setCaptureModeAction(captureMode)
+    }
+
+    override fun setAudioEnabled(isAudioEnabled: Boolean) {
+        setAudioEnabledAction(isAudioEnabled)
     }
 }

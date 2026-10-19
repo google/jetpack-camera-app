@@ -67,4 +67,11 @@ interface QuickSettingsController {
      * @param captureMode The capture mode to set.
      */
     fun setCaptureMode(captureMode: CaptureMode)
+
+    /**
+     * Sets whether audio recording is enabled for video capture.
+     *
+     * @param isAudioEnabled True to enable audio recording, false to mute.
+     */
+    fun setAudioEnabled(isAudioEnabled: Boolean) {}
 }

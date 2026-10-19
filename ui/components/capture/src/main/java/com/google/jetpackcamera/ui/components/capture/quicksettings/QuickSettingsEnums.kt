@@ -149,3 +149,16 @@ enum class CameraCaptureMode : QuickSettingsEnum {
             R.string.quick_settings_description_capture_mode_image_only
     }
 }
+
+enum class CameraAudioMode : QuickSettingsEnum {
+    ENABLED {
+        override fun getDrawableResId() = R.drawable.ic_mic
+        override fun getTextResId() = R.string.quick_settings_audio_enabled
+        override fun getDescriptionResId() = R.string.microphone_on
+    },
+    MUTED {
+        override fun getDrawableResId() = R.drawable.ic_mic_off
+        override fun getTextResId() = R.string.quick_settings_audio_muted
+        override fun getDescriptionResId() = R.string.microphone_muted
+    }
+}

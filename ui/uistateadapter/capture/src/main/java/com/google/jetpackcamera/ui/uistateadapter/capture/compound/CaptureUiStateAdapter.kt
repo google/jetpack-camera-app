@@ -135,6 +135,10 @@ fun captureUiState(
         focusMeteringUiState = focusMeteringUiState?.updateFrom(
             cameraState = roundedCameraState
         ) ?: FocusMeteringUiState.from(roundedCameraState)
+        val audioUiState = AudioUiState.from(
+            cameraAppSettings,
+            roundedCameraState
+        )
         CaptureUiState.Ready(
             externalCaptureMode = externalCaptureMode,
             videoRecordingState = roundedVideoRecordingState,
@@ -151,7 +155,8 @@ fun captureUiState(
                 flashModeUiState,
                 flipLensUiState,
                 aspectRatioUiState,
-                hdrUiState
+                hdrUiState,
+                audioUiState
             ),
             sessionFirstFrameTimestamp = roundedCameraState.sessionFirstFrameTimestamp,
             stabilizationUiState = StabilizationUiState.from(
@@ -160,10 +165,7 @@ fun captureUiState(
             ),
             flashModeUiState = flashModeUiState,
             videoQuality = roundedCameraState.videoQualityInfo.quality,
-            audioUiState = AudioUiState.from(
-                cameraAppSettings,
-                roundedCameraState
-            ),
+            audioUiState = audioUiState,
             elapsedTimeUiState = ElapsedTimeUiState.from(roundedCameraState),
             captureButtonUiState = CaptureButtonUiState.from(
                 cameraAppSettings,

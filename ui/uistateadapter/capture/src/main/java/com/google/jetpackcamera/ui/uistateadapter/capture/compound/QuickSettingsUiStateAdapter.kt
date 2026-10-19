@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -47,13 +48,15 @@ fun QuickSettingsUiState.Companion.from(
     flashModeUiState: FlashModeUiState,
     flipLensUiState: FlipLensUiState,
     aspectRatioUiState: AspectRatioUiState,
-    hdrUiState: HdrUiState
+    hdrUiState: HdrUiState,
+    audioUiState: AudioUiState = AudioUiState.Disabled
 ): QuickSettingsUiState {
     return QuickSettingsUiState.Available(
         aspectRatioUiState = aspectRatioUiState,
         captureModeUiState = captureModeUiState,
         flashModeUiState = flashModeUiState,
         flipLensUiState = flipLensUiState,
-        hdrUiState = hdrUiState
+        hdrUiState = hdrUiState,
+        audioUiState = audioUiState
     )
 }
