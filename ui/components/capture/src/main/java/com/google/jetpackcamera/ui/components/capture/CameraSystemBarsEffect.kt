@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.os.Build
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.Window
@@ -66,13 +67,21 @@ fun CameraSystemBarsEffect(
 ) {
     val activity = LocalActivity.current as? ComponentActivity
     val view = LocalView.current
-    val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+    val dialogWindow = generateSequence(view.parent) { it.parent }
+        .filterIsInstance<DialogWindowProvider>()
+        .firstOrNull()?.window
     if ((activity == null && dialogWindow == null) || view.isInEditMode) return
 
     // Hiding bars in multi-window would affect the whole screen, not just this app's partition,
     // so never hide anything while sharing the screen.
     var isInMultiWindowMode by remember(activity) {
-        mutableStateOf(activity?.isInMultiWindowMode ?: false)
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                activity?.isInMultiWindowMode ?: false
+            } else {
+                false
+            }
+        )
     }
     DisposableEffect(activity) {
         val listener = Consumer<MultiWindowModeChangedInfo> {
@@ -92,7 +101,7 @@ fun CameraSystemBarsEffect(
                     window = win,
                     view = view,
                     hideStatusBar = hideStatus,
-                    keepNavigationBar = !shouldHideNavigationBar && keepNav,
+                    keepNavigationBar = keepNav,
                     isDarkTheme = darkTheme
                 )
             }
@@ -101,7 +110,7 @@ fun CameraSystemBarsEffect(
                     window = win,
                     view = win.decorView,
                     hideStatusBar = hideStatus,
-                    keepNavigationBar = !shouldHideNavigationBar && keepNav,
+                    keepNavigationBar = keepNav,
                     isDarkTheme = darkTheme
                 )
             }
