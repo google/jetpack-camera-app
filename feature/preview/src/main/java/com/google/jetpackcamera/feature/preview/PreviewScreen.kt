@@ -271,6 +271,11 @@ private fun ContentScreen(
             currentCaptureUiStateProvider().videoRecordingState is VideoRecordingState.Active
         }
     }
+    val isVideoRecordingPaused = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().videoRecordingState is VideoRecordingState.Active.Paused
+        }
+    }
 
     val scope = rememberCoroutineScope()
     val zoomStateManager = remember(zoomController) {
@@ -751,12 +756,17 @@ private fun ContentScreen(
         }
     }
 
-    val pauseToggleButtonLambda = remember(videoRecordingState, captureController) {
+    val pauseToggleButtonLambda = remember(
+        isVideoRecordingActive,
+        isVideoRecordingPaused,
+        captureController
+    ) {
         @Composable { modifier: Modifier ->
             PauseResumeToggleButton(
                 modifier = modifier,
                 onSetPause = captureController?.let { it::setPaused } ?: { _ -> },
-                currentRecordingStateProvider = { videoRecordingState.value }
+                isActive = isVideoRecordingActive.value,
+                isPaused = isVideoRecordingPaused.value
             )
         }
     }

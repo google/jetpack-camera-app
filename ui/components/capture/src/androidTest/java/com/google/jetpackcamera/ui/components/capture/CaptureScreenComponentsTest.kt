@@ -30,6 +30,8 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -340,5 +342,67 @@ class CaptureScreenComponentsTest {
             SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
             useUnmergedTree = true
         ).assertCountEquals(0)
+    }
+
+    @Test
+    fun pauseResumeToggleButton_whenRecording_rendersPauseIcon() {
+        val description =
+            ApplicationProvider.getApplicationContext<Context>().getString(
+                R.string.pause_resume_button_description
+            )
+
+        composeTestRule.setContent {
+            PauseResumeToggleButton(
+                isActive = true,
+                isPaused = false,
+                onSetPause = {}
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription(description)
+            .assertIsDisplayed()
+            .assertIsOn()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun pauseResumeToggleButton_whenPaused_rendersPlayIcon() {
+        val description =
+            ApplicationProvider.getApplicationContext<Context>().getString(
+                R.string.pause_resume_button_description
+            )
+
+        composeTestRule.setContent {
+            PauseResumeToggleButton(
+                isActive = true,
+                isPaused = true,
+                onSetPause = {}
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription(description)
+            .assertIsDisplayed()
+            .assertIsOff()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun pauseResumeToggleButton_click_triggersOnSetPause() {
+        var pausedArg: Boolean? = null
+        val description =
+            ApplicationProvider.getApplicationContext<Context>().getString(
+                R.string.pause_resume_button_description
+            )
+
+        composeTestRule.setContent {
+            PauseResumeToggleButton(
+                isActive = true,
+                isPaused = false,
+                onSetPause = { pausedArg = it }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription(description).performClick()
+        assertThat(pausedArg).isTrue()
     }
 }
