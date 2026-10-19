@@ -315,7 +315,7 @@ private fun VerticalMaterialControls(
                         modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.CenterStart
                     ) {
-                        OverlapAwareStyleProvider(overlapThreshold = 0.5f) {
+                        OverlapAwareStyleProvider {
                             quickSettingsToggleButton(Modifier)
                         }
                     }
