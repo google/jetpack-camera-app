@@ -1051,16 +1051,7 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
 fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         if (videoQuality != VideoQuality.UNSPECIFIED) {
-            Box(
-                modifier = modifier
-                    .defaultMinSize(minWidth = 28.dp, minHeight = 32.dp)
-                    .background(
-                        color = CameraControlBackgroundStyle.BLACK_60.containerColor,
-                        shape = CircleShape
-                    )
-                    .padding(horizontal = 6.dp),
-                contentAlignment = Alignment.Center
-            ) {
+            IndicatorPill(modifier = modifier) {
                 Icon(
                     modifier = Modifier.size(IconButtonDefaults.smallIconSize),
 
@@ -1098,6 +1089,34 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                 )
             }
         }
+    }
+}
+
+private object IndicatorPillTokens {
+    val MinWidth = 28.dp
+    val MinHeight = 32.dp
+    val HorizontalPadding = 6.dp
+}
+
+/**
+ * A pill-shaped container used for top bar status indicators.
+ */
+@Composable
+fun IndicatorPill(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Box(
+        modifier = modifier
+            .defaultMinSize(
+                minWidth = IndicatorPillTokens.MinWidth,
+                minHeight = IndicatorPillTokens.MinHeight
+            )
+            .background(
+                color = CameraControlBackgroundStyle.BLACK_60.containerColor,
+                shape = CircleShape
+            )
+            .padding(horizontal = IndicatorPillTokens.HorizontalPadding),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
     }
 }
 

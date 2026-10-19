@@ -25,13 +25,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroupDefaults
@@ -79,7 +77,7 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
-import com.google.jetpackcamera.ui.components.capture.CameraControlBackgroundStyle
+import com.google.jetpackcamera.ui.components.capture.IndicatorPill
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
@@ -528,16 +526,7 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
                     hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
                 )
     if (isHdrActive) {
-        Box(
-            modifier = modifier
-                .defaultMinSize(minWidth = 28.dp, minHeight = 32.dp)
-                .background(
-                    color = CameraControlBackgroundStyle.BLACK_60.containerColor,
-                    shape = CircleShape
-                )
-                .padding(horizontal = 6.dp),
-            contentAlignment = Alignment.Center
-        ) {
+        IndicatorPill(modifier = modifier) {
             Icon(
                 modifier = Modifier.size(IconButtonDefaults.smallIconSize),
                 painter = CameraDynamicRange.HDR.getPainter(),
@@ -589,21 +578,13 @@ private fun TopBarQuickSettingIcon(
         if (!enabled) it.copy(alpha = 0.38f) else it
     }
     CompositionLocalProvider(LocalContentColor provides contentColor) {
-        Box(
-            modifier = modifier
-                .defaultMinSize(minWidth = 28.dp, minHeight = 32.dp)
-                .background(
-                    color = CameraControlBackgroundStyle.BLACK_60.containerColor,
-                    shape = CircleShape
-                )
-                .padding(horizontal = 6.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onClick,
-                    enabled = enabled
-                ),
-            contentAlignment = Alignment.Center
+        IndicatorPill(
+            modifier = modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+                enabled = enabled
+            )
         ) {
             Icon(
                 painter = enum.getPainter(),
