@@ -455,11 +455,12 @@ fun ElapsedTimeText(
 fun PauseResumeToggleButton(
     modifier: Modifier = Modifier,
     onSetPause: (Boolean) -> Unit,
-    size: Dp = ButtonDefaults.MediumContainerHeight,
+    size: Dp = 56.dp,
     currentRecordingStateProvider: () -> VideoRecordingState
 ) {
     val currentRecordingState = currentRecordingStateProvider()
     if (currentRecordingState is VideoRecordingState.Active) {
+        val backgroundStyle = LocalCameraControlBackgroundStyle.current
         FilledIconToggleButton(
             checked = currentRecordingState is VideoRecordingState.Active.Recording,
             onCheckedChange = {
@@ -467,6 +468,13 @@ fun PauseResumeToggleButton(
                     currentRecordingState !is VideoRecordingState.Active.Paused
                 )
             },
+            shape = CircleShape,
+            colors = IconButtonDefaults.filledIconToggleButtonColors(
+                containerColor = backgroundStyle.containerColor,
+                contentColor = Color.White,
+                checkedContainerColor = backgroundStyle.containerColor,
+                checkedContentColor = Color.White
+            ),
             modifier = modifier.size(size)
         ) {
             Icon(

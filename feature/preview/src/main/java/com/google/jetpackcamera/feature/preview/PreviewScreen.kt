@@ -587,22 +587,36 @@ private fun ContentScreen(
     }
     val captureModeToggleLambda = remember(
         captureModeToggleState,
+        isVideoRecordingActive,
         quickSettingsController,
         snackBarController
     ) {
         @Composable { modifier: Modifier ->
             val captureModeToggleUiState = captureModeToggleState.value
-            if (captureModeToggleUiState is CaptureModeToggleUiState.Available) {
-                CaptureModeToggleButton(
-                    uiState = captureModeToggleUiState,
-                    onChangeCaptureMode = { newCaptureMode ->
-                        quickSettingsController?.setCaptureMode(newCaptureMode)
-                    },
-                    onToggleWhenDisabled = { disableRationale ->
-                        snackBarController?.enqueueDisabledHdrToggleSnackBar(disableRationale)
-                    },
-                    modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
-                )
+            val isVisible = !isVideoRecordingActive.value &&
+                captureModeToggleUiState is CaptureModeToggleUiState.Available
+            val disableAnimations = LocalDisableAnimations.current
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = if (disableAnimations) EnterTransition.None else fadeIn(),
+                exit = if (disableAnimations) {
+                    ExitTransition.None
+                } else {
+                    fadeOut(animationSpec = tween(delayMillis = 1_500))
+                }
+            ) {
+                if (captureModeToggleUiState is CaptureModeToggleUiState.Available) {
+                    CaptureModeToggleButton(
+                        uiState = captureModeToggleUiState,
+                        onChangeCaptureMode = { newCaptureMode ->
+                            quickSettingsController?.setCaptureMode(newCaptureMode)
+                        },
+                        onToggleWhenDisabled = { disableRationale ->
+                            snackBarController?.enqueueDisabledHdrToggleSnackBar(disableRationale)
+                        },
+                        modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                    )
+                }
             }
         }
     }
@@ -756,12 +770,15 @@ private fun ContentScreen(
         remember { derivedStateOf { currentCaptureUiStateProvider().imageWellUiState } }
     val imageWellLambda = remember(
         externalCaptureModeState,
+        isVideoRecordingActive,
         imageWellState,
         imageWellController,
         onNavigatePostCapture
     ) {
         @Composable { modifier: Modifier ->
-            if (externalCaptureModeState.value == ExternalCaptureMode.Standard) {
+            if (!isVideoRecordingActive.value &&
+                externalCaptureModeState.value == ExternalCaptureMode.Standard
+            ) {
                 (imageWellState.value as? ImageWellUiState.Content)?.let { contentState ->
                     ImageWell(
                         modifier = modifier,
@@ -960,6 +977,7 @@ private fun LayoutWrapper(
         debugVisibilityWrapper = debugVisibilityWrapper,
         screenFlashOverlay = screenFlashOverlay,
         snackBar = snackBar,
+        pauseToggleButton = pauseToggleButton,
         errorDialog = errorDialog
     )
 }
