@@ -157,4 +157,5 @@
 
     <!-- Snackbar -->
     <string name="snackbar_dismiss_content_description">Dismiss</string>
+    <string name="close_camera_content_description">Close camera</string>
 </resources>

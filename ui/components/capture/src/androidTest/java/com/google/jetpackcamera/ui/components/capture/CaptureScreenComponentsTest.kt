@@ -30,6 +30,8 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -340,5 +342,47 @@ class CaptureScreenComponentsTest {
             SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
             useUnmergedTree = true
         ).assertCountEquals(0)
+    }
+
+    @Test
+    fun closeCameraButton_isDisplayed_withContentDescription() {
+        val closeDescription =
+            ApplicationProvider.getApplicationContext<Context>().getString(
+                R.string.close_camera_content_description
+            )
+
+        composeTestRule.setContent {
+            CloseCameraButton(onClick = {})
+        }
+
+        composeTestRule.onNodeWithTag(CLOSE_CAMERA_BUTTON)
+            .assertIsDisplayed()
+            .assertIsEnabled()
+            .assertContentDescriptionEquals(closeDescription)
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun closeCameraButton_click_triggersOnClick() {
+        var clicked = false
+
+        composeTestRule.setContent {
+            CloseCameraButton(onClick = { clicked = true })
+        }
+
+        composeTestRule.onNodeWithTag(CLOSE_CAMERA_BUTTON).performClick()
+        assertThat(clicked).isTrue()
+    }
+
+    @Test
+    fun closeCameraButton_whenDisabled_isNotEnabled() {
+        composeTestRule.setContent {
+            CloseCameraButton(onClick = {}, enabled = false)
+        }
+
+        composeTestRule.onNodeWithTag(CLOSE_CAMERA_BUTTON)
+            .assertIsDisplayed()
+            .assertIsNotEnabled()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 }

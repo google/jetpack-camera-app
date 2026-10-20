@@ -21,6 +21,7 @@ const val CAPTURE_BUTTON = "CaptureButton"
 internal const val CAPTURE_BUTTON_RING_BORDER = "CaptureButtonRingBorder"
 const val CAPTURE_MODE_TOGGLE_BUTTON = "CaptureModeToggleButton"
 const val FLIP_CAMERA_BUTTON = "FlipCameraButton"
+const val CLOSE_CAMERA_BUTTON = "btn_close_camera"
 const val SNACKBAR_NODE_TAG = "SnackbarNodeTag"
 
 const val IMAGE_WELL_TAG = "ImageWellTag"

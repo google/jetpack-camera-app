@@ -153,6 +153,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "CaptureScreenComponents"
+private val CLOSE_BUTTON_SIZE = 40.dp
 
 private val SnackbarMinHeight = 48.dp
 private val SnackbarHorizontalMargin = 16.dp
@@ -1087,6 +1088,40 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                 }
             )
         }
+    }
+}
+
+/**
+ * A circular close button (`X`) intended for the `topStartContent` slot of [PreviewLayout]
+ * when the camera capture screen is hosted in an embedded or modal flow.
+ *
+ * @param onClick callback invoked when the close button is clicked.
+ * @param modifier the modifier for this component.
+ * @param enabled whether the button is enabled.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun CloseCameraButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    val backgroundStyle = CameraControlBackgroundStyle.BLACK_60
+    FilledIconButton(
+        modifier = modifier
+            .size(CLOSE_BUTTON_SIZE)
+            .testTag(CLOSE_CAMERA_BUTTON),
+        onClick = onClick,
+        enabled = enabled,
+        shape = CircleShape,
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = backgroundStyle.containerColor,
+            contentColor = Color.White,
+            disabledContainerColor = backgroundStyle.disabledContainerColor,
+            disabledContentColor = Color.White.copy(alpha = 0.38f)
+        )
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_close),
+            contentDescription = stringResource(R.string.close_camera_content_description),
+            modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+        )
     }
 }
 
