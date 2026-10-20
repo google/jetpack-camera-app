@@ -120,7 +120,7 @@ import kotlinx.coroutines.launch
 private const val TAG = "CameraSession"
 private val QUALITY_RANGE_MAP = mapOf(
     UHD to Range.create(2160, 4319),
-    FHD to Range.create(1080, 1439),
+    FHD to Range.create(1080, 2159),
     HD to Range.create(720, 1079),
     SD to Range.create(241, 719)
 )
@@ -285,8 +285,7 @@ internal suspend fun runSingleCameraSession(
                             ) {
                                 Log.e(
                                     TAG,
-                                    "Failed to select video quality: " +
-                                        "${sessionSettings.videoQuality}. Fallback: $videoQuality"
+                                    "Failed to select video quality: ${sessionSettings.videoQuality}. Fallback: $videoQuality"
                                 )
                             }
                             launch {

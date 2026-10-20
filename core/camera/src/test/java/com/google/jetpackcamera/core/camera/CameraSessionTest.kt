@@ -30,6 +30,7 @@ class CameraSessionTest {
         assertThat(getVideoQualityFromResolution(Size(640, 480))).isEqualTo(VideoQuality.SD)
         assertThat(getVideoQualityFromResolution(Size(1280, 720))).isEqualTo(VideoQuality.HD)
         assertThat(getVideoQualityFromResolution(Size(1920, 1080))).isEqualTo(VideoQuality.FHD)
+        assertThat(getVideoQualityFromResolution(Size(1920, 1440))).isEqualTo(VideoQuality.FHD)
         assertThat(getVideoQualityFromResolution(Size(3840, 2160))).isEqualTo(VideoQuality.UHD)
     }
 
@@ -38,6 +39,7 @@ class CameraSessionTest {
         assertThat(getVideoQualityFromResolution(Size(480, 640))).isEqualTo(VideoQuality.SD)
         assertThat(getVideoQualityFromResolution(Size(720, 1280))).isEqualTo(VideoQuality.HD)
         assertThat(getVideoQualityFromResolution(Size(1080, 1920))).isEqualTo(VideoQuality.FHD)
+        assertThat(getVideoQualityFromResolution(Size(1440, 1920))).isEqualTo(VideoQuality.FHD)
         assertThat(getVideoQualityFromResolution(Size(2160, 3840))).isEqualTo(VideoQuality.UHD)
     }
 
