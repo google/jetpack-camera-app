@@ -23,13 +23,18 @@ import com.google.jetpackcamera.ui.components.capture.CameraSystemBarsEffect
 /**
  * Describes how the system bars should be configured for a given destination.
  *
- * Note that the navigation bar is always kept visible: JCA is portrait-locked and has no
- * large-screen layout, so there is no destination that benefits from hiding it, and keeping it
- * visible avoids the gesture/3-button inconsistencies that come with hiding it.
+ * The navigation bar is kept visible except on the preview screen when the capture layout reports
+ * that the window is too short for the tallest viewfinder to clear a persistent navigation bar.
  */
 internal enum class SystemBarsPolicy {
     /** Hide the status bar, keep the navigation bar. Used by the capture surfaces. */
     HideStatusBar,
+
+    /**
+     * Hide the status bar and the navigation bar. Used by the preview screen while its layout
+     * requires immersive mode.
+     */
+    HideStatusAndNavigationBars,
 
     /** Show every system bar. Used by everything else, and by multi-window. */
     ShowAll
@@ -43,12 +48,22 @@ internal enum class SystemBarsPolicy {
  * `"preview?externalCaptureMode={externalCaptureMode}&..."`). Only the part before the first `?`
  * identifies the destination, so the route is normalized before matching. An unknown or `null`
  * route falls back to [SystemBarsPolicy.ShowAll].
+ *
+ * @param previewRequiresImmersive the latest value reported by the preview screen's layout. It only
+ *   applies to the preview route, so a stale value never affects another destination.
  */
-internal fun systemBarsPolicyFor(route: String?): SystemBarsPolicy =
-    when (route?.substringBefore('?')) {
-        PreviewRoute.toString(), POST_CAPTURE_ROUTE -> SystemBarsPolicy.HideStatusBar
-        else -> SystemBarsPolicy.ShowAll
+internal fun systemBarsPolicyFor(
+    route: String?,
+    previewRequiresImmersive: Boolean = false
+): SystemBarsPolicy = when (route?.substringBefore('?')) {
+    PreviewRoute.toString() -> if (previewRequiresImmersive) {
+        SystemBarsPolicy.HideStatusAndNavigationBars
+    } else {
+        SystemBarsPolicy.HideStatusBar
     }
+    POST_CAPTURE_ROUTE -> SystemBarsPolicy.HideStatusBar
+    else -> SystemBarsPolicy.ShowAll
+}
 
 /**
  * Connects the app navigation route policy to [CameraSystemBarsEffect].
@@ -56,7 +71,8 @@ internal fun systemBarsPolicyFor(route: String?): SystemBarsPolicy =
 @Composable
 internal fun SystemBarsPolicyEffect(policy: SystemBarsPolicy, isDarkTheme: Boolean = true) {
     CameraSystemBarsEffect(
-        enabled = policy == SystemBarsPolicy.HideStatusBar,
-        isDarkTheme = isDarkTheme
+        enabled = policy != SystemBarsPolicy.ShowAll,
+        isDarkTheme = isDarkTheme,
+        keepNavigationBar = policy != SystemBarsPolicy.HideStatusAndNavigationBars
     )
 }

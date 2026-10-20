@@ -15,19 +15,25 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.content.res.Configuration
+import android.os.Looper
 import android.view.View
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
- * Tests for [applySystemBars], [CameraSystemBarsEffect], and [ImmersiveNavigationBarEffect].
+ * Tests for [applySystemBars] and [CameraSystemBarsEffect].
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29])
@@ -77,7 +83,6 @@ class CameraSystemBarsEffectTest {
         val view = window.decorView
         val controller = WindowCompat.getInsetsController(window, view)
 
-        // First set dark icons so we also exercise the true -> false transition.
         applySystemBars(window = window, view = view, hideStatusBar = false, isDarkTheme = false)
         applySystemBars(window = window, view = view, hideStatusBar = false, isDarkTheme = true)
 
@@ -88,29 +93,82 @@ class CameraSystemBarsEffectTest {
     }
 
     @Test
-    fun immersiveNavigationBarEffect_hidesNavigationBar_andRestoresOnDispose() {
+    fun cameraSystemBarsEffect_appliesPolicy_clampsInMultiWindow_andRestoresOnDispose() {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         val view = activity.window.decorView
-        val requiresImmersive = androidx.compose.runtime.mutableStateOf(true)
+        val composed = mutableStateOf(true)
 
         activity.setContentView(
-            androidx.compose.ui.platform.ComposeView(activity).apply {
+            ComposeView(activity).apply {
                 setContent {
-                    ImmersiveNavigationBarEffect(requiresImmersive = requiresImmersive.value)
+                    if (composed.value) {
+                        CameraSystemBarsEffect(
+                            enabled = true,
+                            isDarkTheme = false
+                        )
+                    }
                 }
             }
         )
-        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
+
+        // Entering multi-window mode clamps policy to ShowAll.
+        activity.onMultiWindowModeChanged(true, Configuration())
+        shadowOf(Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(0)
+
+        // Exiting multi-window mode re-hides the status bar.
+        activity.onMultiWindowModeChanged(false, Configuration())
+        shadowOf(Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
+
+        // Disposing the effect when not finishing/changing configurations restores the status bar.
+        composed.value = false
+        shadowOf(Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(0)
+    }
+
+    @Test
+    fun cameraSystemBarsEffect_hiddenNavigationBar_isReassertedWhenWindowFocusReturns() {
+        val controller = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+        val activity = controller.get()
+        val view = activity.window.decorView
+        activity.setContentView(
+            ComposeView(activity).apply {
+                setContent { CameraSystemBarsEffect(enabled = true, keepNavigationBar = false) }
+            }
+        )
+        controller.windowFocusChanged(true)
+        shadowOf(Looper.getMainLooper()).idle()
 
         @Suppress("DEPRECATION")
         assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
             .isEqualTo(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
 
-        requiresImmersive.value = false
-        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+        // The system reveals the navigation bar while another window, such as the notification
+        // shade, takes focus.
+        WindowCompat.getInsetsController(activity.window, view)
+            .show(WindowInsetsCompat.Type.navigationBars())
+        controller.windowFocusChanged(false)
+        shadowOf(Looper.getMainLooper()).idle()
+        controller.windowFocusChanged(true)
+        shadowOf(Looper.getMainLooper()).idle()
 
         @Suppress("DEPRECATION")
         assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
-            .isEqualTo(0)
+            .isEqualTo(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
     }
 }

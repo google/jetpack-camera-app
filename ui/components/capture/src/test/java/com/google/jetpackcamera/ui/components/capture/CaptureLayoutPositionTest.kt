@@ -39,7 +39,6 @@ import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefault
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
 import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
-import com.google.jetpackcamera.ui.components.capture.layout.TopStartPlacement
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
 import org.junit.Rule
 import org.junit.Test
@@ -237,17 +236,14 @@ class CaptureLayoutPositionTest {
     }
 
     /**
-     * Verifies that [PreviewLayout] supports both [TopStartPlacement.FIXED_BELOW_TOP_BAR] (default,
-     * where `topStartContent` stays anchored directly below the top bar across aspect ratios) and
-     * [TopStartPlacement.VIEWFINDER_TOP_START] (where `topStartContent` tracks the active
-     * viewfinder's top edge).
+     * `topStartContent` stays anchored directly below the top bar across aspect ratios, even when
+     * the viewfinder shifts down below it.
      */
     @OptIn(ExperimentalMaterial3Api::class)
     @Config(qualifiers = "w412dp-h915dp")
     @Test
-    fun topStartContent_supportsFixedBelowTopBarAndViewfinderTopStart() {
+    fun topStartContent_staysFixedBelowTopBar_acrossAspectRatios() {
         var aspectRatio by mutableStateOf(3f / 4f)
-        var placement by mutableStateOf(TopStartPlacement.FIXED_BELOW_TOP_BAR)
 
         composeTestRule.setContent {
             PreviewLayout(
@@ -266,7 +262,6 @@ class CaptureLayoutPositionTest {
                             .size(48.dp)
                     )
                 },
-                topStartPlacement = placement,
                 captureButton = {
                     Box(
                         Modifier
@@ -290,27 +285,133 @@ class CaptureLayoutPositionTest {
         }
         composeTestRule.waitForIdle()
 
-        val topStartFixed34 = topOf(TOP_START_TAG)
-        val vfTop34 = topOf(VIEWFINDER_TAG)
-        assertThat(topStartFixed34).isWithin(TOLERANCE).of(48f)
-        assertThat(vfTop34).isWithin(TOLERANCE).of(48f)
+        val topStart34 = topOf(TOP_START_TAG)
+        assertThat(topStart34).isWithin(TOLERANCE).of(48f)
+        assertThat(topOf(VIEWFINDER_TAG)).isWithin(TOLERANCE).of(48f)
 
-        // Switching to 1:1 under FIXED_BELOW_TOP_BAR moves the viewfinder down, but keeps
-        // topStartContent stationary at 48dp below the top bar.
+        // Switching to 1:1 moves the viewfinder down, but keeps topStartContent stationary.
         aspectRatio = 1f
         composeTestRule.waitForIdle()
-        val topStartFixed11 = topOf(TOP_START_TAG)
-        val vfTop11 = topOf(VIEWFINDER_TAG)
-        assertThat(topStartFixed11).isEqualTo(topStartFixed34)
-        assertThat(vfTop11).isGreaterThan(topStartFixed11 + 48f)
+        val topStart11 = topOf(TOP_START_TAG)
+        assertThat(topStart11).isEqualTo(topStart34)
+        assertThat(topOf(VIEWFINDER_TAG)).isGreaterThan(topStart11 + 48f)
+    }
 
-        // Switching to VIEWFINDER_TOP_START aligns topStartContent with the 1:1 viewfinder top.
-        placement = TopStartPlacement.VIEWFINDER_TOP_START
+    /**
+     * Content taller than the mode switcher band, such as a carousel with a larger touch target,
+     * is centered on the band without moving any row, and is limited to the band plus the smaller
+     * adjacent gap on each side so it never overlaps the neighboring rows.
+     *
+     * On 360x800dp the solver places the capture row at 532..618dp, the mode switcher band at
+     * 642..674dp (center 658dp) and the bottom toolbar at 698..762dp, leaving 24dp gaps.
+     */
+    @Config(qualifiers = "w360dp-h800dp")
+    @Test
+    fun modeSwitcherContent_tallerThanBand_isCenteredAndBoundedByAdjacentGaps() {
+        var carouselHeight by mutableStateOf(0.dp)
+
+        composeTestRule.setContent {
+            TestCaptureLayout(
+                captureModeCarousel = { carouselModifier ->
+                    if (carouselHeight > 0.dp) {
+                        Box(
+                            carouselModifier
+                                .testTag(CAROUSEL_TAG)
+                                .fillMaxWidth()
+                                .height(carouselHeight)
+                        )
+                    }
+                }
+            )
+        }
         composeTestRule.waitForIdle()
-        val topStartVf11 = topOf(TOP_START_TAG)
-        val vfTop11ViewfinderMode = topOf(VIEWFINDER_TAG)
-        assertThat(topStartVf11).isWithin(TOLERANCE).of(vfTop11ViewfinderMode)
-        assertThat(topStartVf11).isGreaterThan(topStartFixed11)
+        val emptySlotButtonTop = topOf(CAPTURE_BUTTON_TAG)
+
+        carouselHeight = TALL_CAROUSEL_HEIGHT
+        composeTestRule.waitForIdle()
+        val carousel = composeTestRule.onNodeWithTag(CAROUSEL_TAG).getUnclippedBoundsInRoot()
+        assertThat(carousel.height.value).isWithin(TOLERANCE).of(TALL_CAROUSEL_HEIGHT.value)
+        assertThat((carousel.top.value + carousel.bottom.value) / 2f)
+            .isWithin(TOLERANCE).of(MODE_SWITCHER_BAND_CENTER)
+        assertThat(topOf(CAPTURE_BUTTON_TAG)).isEqualTo(emptySlotButtonTop)
+
+        // Oversized content is clamped to 32dp + 2 * 24dp and still stays clear of both rows.
+        carouselHeight = 120.dp
+        composeTestRule.waitForIdle()
+        val clamped = composeTestRule.onNodeWithTag(CAROUSEL_TAG).getUnclippedBoundsInRoot()
+        assertThat(clamped.height.value).isWithin(TOLERANCE).of(80f)
+        assertThat(clamped.top.value).isAtLeast(CAPTURE_ROW_BOTTOM - TOLERANCE)
+        assertThat(clamped.bottom.value).isAtMost(BOTTOM_TOOLBAR_TOP + TOLERANCE)
+        assertThat(topOf(CAPTURE_BUTTON_TAG)).isEqualTo(emptySlotButtonTop)
+    }
+
+    /**
+     * In the compressed fallback layout, a carousel taller than the reserved middle slot keeps its
+     * full height and does not move the capture button, because the slot shares the adjacent
+     * gaps.
+     */
+    @Config(qualifiers = "w360dp-h500dp")
+    @Test
+    fun middleSlotContent_tallerThanSlot_keepsHeightInCompressedFallbackLayout() {
+        composeTestRule.setContent {
+            TestCaptureLayout(
+                captureModeCarousel = { carouselModifier ->
+                    Box(
+                        carouselModifier
+                            .testTag(CAROUSEL_TAG)
+                            .fillMaxWidth()
+                            .height(TALL_CAROUSEL_HEIGHT)
+                    )
+                }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(topOf(CAPTURE_BUTTON_TAG)).isWithin(TOLERANCE).of(EXPECTED_SHORT_BUTTON_TOP)
+        val carousel = composeTestRule.onNodeWithTag(CAROUSEL_TAG).getUnclippedBoundsInRoot()
+        assertThat(carousel.height.value).isWithin(TOLERANCE).of(TALL_CAROUSEL_HEIGHT.value)
+    }
+
+    /**
+     * The adaptive layout reports whether immersive mode is required and withdraws the request
+     * when it leaves the composition, so a stale request can never outlive the layout.
+     */
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Config(qualifiers = "w360dp-h800dp")
+    @Test
+    fun onRequiresImmersiveChange_reportsSolverValue_andFalseOnDispose() {
+        val reported = mutableListOf<Boolean>()
+        var showLayout by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            if (showLayout) {
+                PreviewLayout(
+                    viewfinder = {},
+                    captureButton = {},
+                    imageWell = {},
+                    flipCameraButton = {},
+                    zoomLevelDisplay = {},
+                    elapsedTimeDisplay = {},
+                    quickSettingsButton = {},
+                    indicatorRow = {},
+                    captureModeToggle = {},
+                    quickSettingsOverlay = {},
+                    debugOverlay = {},
+                    debugVisibilityWrapper = { it() },
+                    screenFlashOverlay = {},
+                    snackBar = { _, _ -> },
+                    onRequiresImmersiveChange = { reported += it }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+        // A 360x800dp window with no navigation bar never requires immersive mode.
+        assertThat(reported).containsExactly(false)
+
+        reported.clear()
+        showLayout = false
+        composeTestRule.waitForIdle()
+        assertThat(reported).containsExactly(false)
     }
 
     /**
@@ -366,7 +467,7 @@ class CaptureLayoutPositionTest {
      * On a short 16:9 portrait handheld (360x640dp), the adaptive solver places the control stack
      * at captureRow = 366..452dp (centered 80dp button at 369dp) while keeping the zoom bar on
      * screen, and keeps `topStartContent` below the top bar even when a full-bleed 9:16 viewfinder
-     * starts at y = 0 in [TopStartPlacement.VIEWFINDER_TOP_START] mode.
+     * starts at y = 0.
      */
     @OptIn(ExperimentalMaterial3Api::class)
     @Config(qualifiers = "w360dp-h640dp")
@@ -389,7 +490,6 @@ class CaptureLayoutPositionTest {
                             .size(48.dp)
                     )
                 },
-                topStartPlacement = TopStartPlacement.VIEWFINDER_TOP_START,
                 captureButton = {
                     Box(
                         Modifier
@@ -433,9 +533,13 @@ class CaptureLayoutPositionTest {
         const val VIEWFINDER_TAG = "test_viewfinder"
         const val TOP_START_TAG = "test_top_start"
         const val TOGGLE_SWITCH_TAG = "test_toggle_switch"
+        const val CAROUSEL_TAG = "test_carousel"
         val CAPTURE_BUTTON_SIZE = 80.dp
         val ZOOM_BAR_HEIGHT = 48.dp
         val CAROUSEL_HEIGHT = 32.dp
+
+        /** A carousel whose touch target is taller than the 32dp mode switcher band. */
+        val TALL_CAROUSEL_HEIGHT = 50.dp
         val TALL_SCREEN_HEIGHT = 800.dp
         val SHORT_SCREEN_HEIGHT = 500.dp
 
@@ -446,6 +550,15 @@ class CaptureLayoutPositionTest {
          * button at 535dp.
          */
         const val EXPECTED_TALL_BUTTON_TOP = 535f
+
+        /** Bottom of the 86dp shutter row on 360x800dp (532 + 86). */
+        const val CAPTURE_ROW_BOTTOM = 618f
+
+        /** Center of the 32dp mode switcher band at 642..674dp on 360x800dp. */
+        const val MODE_SWITCHER_BAND_CENTER = 658f
+
+        /** Top of the 64dp bottom toolbar at 698..762dp on 360x800dp. */
+        const val BOTTOM_TOOLBAR_TOP = 698f
 
         /**
          * Solver placement on 360x640dp (with zero navigation bar inset in Robolectric):

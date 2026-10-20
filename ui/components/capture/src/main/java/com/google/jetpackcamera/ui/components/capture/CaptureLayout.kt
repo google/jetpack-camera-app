@@ -55,8 +55,11 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -70,7 +73,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.takeOrElse
@@ -79,7 +81,6 @@ import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
 import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
 import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
-import com.google.jetpackcamera.ui.components.capture.layout.TopStartPlacement
 
 /**
  * Height of the shutter row (capture button, image well and flip camera button) as specified by
@@ -109,12 +110,6 @@ private val ZOOM_TO_SHUTTER_GAP = 32.dp
 /** Minimum safety gap between the zoom bar and the shutter row. */
 private val MIN_ZOOM_TO_SHUTTER_GAP = 16.dp
 
-/**
- * Vertical clearance between the zoom bar and the bottom edge of the 3:4 viewfinder,
- * providing comfortable breathing room inside the preview.
- */
-private val ZOOM_VIEWFINDER_BOTTOM_PADDING = 20.dp
-
 /** Maximum target vertical gap above and below the reserved middle slot. */
 private val CONTROL_STACK_MAX_GAP = 24.dp
 
@@ -134,7 +129,7 @@ private val MIN_NAV_MARGIN = 8.dp
 /** Minimum compressed bottom padding used on short screens. */
 private val MIN_CONTROLS_BOTTOM_PADDING = 12.dp
 
-/** Available height below which the control stack compresses its gaps in landscape. */
+/** Available height below which the control stack compresses its gaps. */
 private val SHORT_SCREEN_THRESHOLD = 600.dp
 
 /** Horizontal inset of the lower controls row and top indicator bar. */
@@ -163,17 +158,23 @@ private val MIN_GESTURE_INSET = 32.dp
  * @param captureModeToggle the capture mode toggle composable
  * @param captureModeCarousel content for the fixed-height slot reserved between the shutter row
  * and the lower controls row. The slot is always reserved, so supplying or omitting content here
- * never moves the surrounding controls.
+ * never moves the surrounding controls. The content is centered on the slot and may be taller than
+ * it, for example to provide a larger touch target, extending equally into the gaps above and
+ * below the slot without overlapping the neighboring rows.
  * @param quickSettingsOverlay the quick settings overlay composable
  * @param debugOverlay the debug overlay composable
  * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug
  * settings
  * @param screenFlashOverlay the screen flash overlay composable
  * @param snackBar the snack bar composable for showing messages
- * @param topStartContent optional composable content placed at the top-start of the capture screen
- * @param topStartPlacement controls whether [topStartContent] stays fixed directly below the top
- * status/indicator bar ([TopStartPlacement.FIXED_BELOW_TOP_BAR], default) or tracks the top-start
- * corner of the active viewfinder ([TopStartPlacement.VIEWFINDER_TOP_START])
+ * @param topStartContent optional composable content placed at the top-start of the capture
+ * screen, at a fixed position directly below the top status/indicator bar
+ * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
+ * tallest viewfinder to clear a persistent navigation bar, and with `false` when it no longer is
+ * or when the adaptive portrait layout leaves the composition. The owner of the system bars should
+ * hide the navigation bar while this is `true`, for example by passing
+ * `keepNavigationBar = false` to [CameraSystemBarsEffect]. This layout does not change the system
+ * bars itself.
  * @param errorDialog the camera error alert dialog composable
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -204,7 +205,7 @@ fun PreviewLayout(
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
-    topStartPlacement: TopStartPlacement = TopStartPlacement.FIXED_BELOW_TOP_BAR,
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
@@ -247,7 +248,7 @@ fun PreviewLayout(
                         windowHeight = maxHeight,
                         viewfinder = viewfinder,
                         topStartContent = topStartContent,
-                        topStartPlacement = topStartPlacement,
+                        onRequiresImmersiveChange = onRequiresImmersiveChange,
                         indicatorRow = indicatorRow,
                         elapsedTimeDisplay = elapsedTimeDisplay,
                         zoomControls = zoomLevelDisplay,
@@ -374,7 +375,7 @@ private fun AdaptivePortraitCaptureLayout(
     windowHeight: Dp,
     viewfinder: @Composable (Modifier) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit,
-    topStartPlacement: TopStartPlacement,
+    onRequiresImmersiveChange: (Boolean) -> Unit,
     indicatorRow: @Composable (Modifier) -> Unit,
     elapsedTimeDisplay: @Composable (Modifier) -> Unit,
     zoomControls: @Composable (Modifier) -> Unit,
@@ -419,15 +420,19 @@ private fun AdaptivePortraitCaptureLayout(
     // contractually the row's *reserved* height, so that showing or hiding a row's content never
     // moves the rows around it. Measuring the children and re-solving would both break that
     // guarantee and turn the solve into a per-measure-pass cost.
-    val spec = remember(minTouchTarget, topStartPlacement) {
-        CameraLayoutDefaults.spec(
-            minInteractiveTouchTarget = minTouchTarget,
-            topStartPlacement = topStartPlacement
-        )
+    val spec = remember(minTouchTarget) {
+        CameraLayoutDefaults.spec(minInteractiveTouchTarget = minTouchTarget)
     }
     val solution = remember(spec, window) { CameraLayoutSolver.solve(spec, window) }
 
-    ImmersiveNavigationBarEffect(requiresImmersive = solution.requiresImmersive)
+    // Report whether the navigation bar has to be hidden rather than hiding it here, so that a
+    // single owner controls system bar visibility. Leaving the composition reports `false`, so the
+    // request never outlives this layout.
+    val currentOnRequiresImmersiveChange by rememberUpdatedState(onRequiresImmersiveChange)
+    DisposableEffect(solution.requiresImmersive) {
+        currentOnRequiresImmersiveChange(solution.requiresImmersive)
+        onDispose { currentOnRequiresImmersiveChange(false) }
+    }
 
     CompositionLocalProvider(LocalCameraLayoutSolution provides solution) {
         Layout(
@@ -574,7 +579,30 @@ private fun AdaptivePortraitCaptureLayout(
 
             val zoomBar = measureInBand(CaptureSlotId.ZoomBar, CameraRowIds.ZOOM_BAR)
             val captureRow = measureInBand(CaptureSlotId.CaptureRow, CameraRowIds.CAPTURE_ROW)
-            val modeSwitcher = measureInBand(CaptureSlotId.ModeSwitcher, CameraRowIds.MODE_SWITCHER)
+            // The mode switcher's band is the switcher's reserved visual height. Its content may
+            // be taller, for example a carousel with a larger touch target, so it is measured up to
+            // the band plus the smaller of the two gaps around it, once on each side, and centered
+            // on the band. The content then never overlaps the neighboring rows and never moves
+            // them.
+            val modeSwitcher = measurables
+                .firstOrNull { it.layoutId == CaptureSlotId.ModeSwitcher }
+                ?.let { measurable ->
+                    val band = bandOf(CameraRowIds.MODE_SWITCHER)
+                    val clearance = min(
+                        band.top - bandOf(CameraRowIds.CAPTURE_ROW).bottom,
+                        bandOf(CameraRowIds.BOTTOM_TOOLBAR).top - band.bottom
+                    ).coerceAtLeast(0.dp)
+                    val bandHeightPx = band.height.roundToPx()
+                    val placeable = measurable.measure(
+                        Constraints(
+                            minWidth = constraints.maxWidth,
+                            maxWidth = constraints.maxWidth,
+                            minHeight = bandHeightPx,
+                            maxHeight = (band.height + clearance * 2).roundToPx()
+                        )
+                    )
+                    placeable to band.top.roundToPx() - (placeable.height - bandHeightPx) / 2
+                }
             val bottomToolbar =
                 measureInBand(CaptureSlotId.BottomToolbar, CameraRowIds.BOTTOM_TOOLBAR)
 
@@ -598,14 +626,7 @@ private fun AdaptivePortraitCaptureLayout(
                     vf.placeRelative(vfX, vfY)
                 }
 
-                topStartPlaceable?.let { topStart ->
-                    val topStartY = when (topStartPlacement) {
-                        TopStartPlacement.FIXED_BELOW_TOP_BAR -> topBarHeight.roundToPx()
-                        TopStartPlacement.VIEWFINDER_TOP_START ->
-                            max(topBarHeight, activeVfTopDp ?: topBarHeight).roundToPx()
-                    }
-                    topStart.placeRelative(0, topStartY)
-                }
+                topStartPlaceable?.placeRelative(0, topBarHeight.roundToPx())
 
                 topBarPlaceable?.placeRelative(0, 0)
 
@@ -646,73 +667,21 @@ private fun VerticalMaterialControls(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomCenter
     ) {
-        val isPortrait = (maxHeight.value / maxWidth.value) >= PORTRAIT_ASPECT_RATIO_THRESHOLD
+        // This layout is only used for windows that are not portrait handhelds (see
+        // PreviewLayout), so it does not track the viewfinder. Short windows, such as landscape
+        // phones, compress the stack to its minimum spacing.
         val navBarBottom = WindowInsets.navigationBarsIgnoringVisibility
             .asPaddingValues()
             .calculateBottomPadding()
-
-        val topInset = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
-        val minTouchTarget = LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
-        val topBarHeight = max(topInset, minTouchTarget)
-        val viewfinder34Height = maxWidth * 4f / 3f
-        val viewfinder34BottomFromTop = topBarHeight + viewfinder34Height
-        // Available space below the 3:4 viewfinder baseline
-        val spaceBelowViewfinder34 = maxHeight - (viewfinder34BottomFromTop - topInset)
-
-        // Dynamic bounds computed on the fly from constituent element constraints
+        val isShortScreen = maxHeight < SHORT_SCREEN_THRESHOLD
         val maxBottomPad = max(TARGET_BOTTOM_CLEARANCE - navBarBottom, MIN_NAV_MARGIN)
-        val minBottomPad = min(MIN_CONTROLS_BOTTOM_PADDING, maxBottomPad)
-
-        val minStackHeight = SHUTTER_STACK_HEIGHT +
-            MIDDLE_SLOT_HEIGHT +
-            LOWER_SECTION_HEIGHT +
-            (CONTROL_STACK_MIN_GAP * 2) +
-            minBottomPad
-
-        val maxStackHeight = SHUTTER_STACK_HEIGHT +
-            MIDDLE_SLOT_HEIGHT +
-            LOWER_SECTION_HEIGHT +
-            (CONTROL_STACK_MAX_GAP * 2) +
+        val bottomPad = if (isShortScreen) {
+            min(MIN_CONTROLS_BOTTOM_PADDING, maxBottomPad)
+        } else {
             maxBottomPad
-
-        // In portrait, distribute the padding space linearly with the available space below the
-        // 3:4 viewfinder so the shutter button never overlaps the live preview while smoothly
-        // expanding to the target design spec spacing on taller screens.
-        val fraction = if (isPortrait) {
-            if (maxStackHeight > minStackHeight) {
-                ((spaceBelowViewfinder34 - minStackHeight) / (maxStackHeight - minStackHeight))
-                    .coerceIn(0f, 1f)
-            } else {
-                1f
-            }
-        } else {
-            if (maxHeight < SHORT_SCREEN_THRESHOLD) 0f else 1f
         }
-
-        val stackGap = lerp(CONTROL_STACK_MIN_GAP, CONTROL_STACK_MAX_GAP, fraction)
-        val bottomPad = lerp(minBottomPad, maxBottomPad, fraction)
-
-        // Shutter top measured up from the bottom of this controls Box
-        val shutterTopFromBottom = bottomPad + LOWER_SECTION_HEIGHT + stackGap +
-            MIDDLE_SLOT_HEIGHT + stackGap + SHUTTER_STACK_HEIGHT
-
-        val zoomGap = if (isPortrait) {
-            // In standard portrait orientation, anchor the zoom bar to the 3:4 viewfinder
-            // bottom baseline (matching reference camera app behavior).
-            // This places the zoom bar cleanly inside the 3:4 preview, keeps it locked at the
-            // same physical coordinate when switching between 3:4 and 9:16 aspect ratios,
-            // and adapts across device screen heights while respecting a minimum safety gap
-            // above the shutter button.
-            val targetGap = (spaceBelowViewfinder34 + ZOOM_VIEWFINDER_BOTTOM_PADDING) -
-                shutterTopFromBottom
-            max(targetGap, MIN_ZOOM_TO_SHUTTER_GAP)
-        } else {
-            if (maxHeight < SHORT_SCREEN_THRESHOLD) {
-                MIN_ZOOM_TO_SHUTTER_GAP
-            } else {
-                ZOOM_TO_SHUTTER_GAP
-            }
-        }
+        val stackGap = if (isShortScreen) CONTROL_STACK_MIN_GAP else CONTROL_STACK_MAX_GAP
+        val zoomGap = if (isShortScreen) MIN_ZOOM_TO_SHUTTER_GAP else ZOOM_TO_SHUTTER_GAP
 
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -764,21 +733,19 @@ private fun VerticalMaterialControls(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(stackGap))
-
                 // Slot reserved by the design spec between the shutter row and the lower controls
-                // row. Its height is fixed whether or not it has content, so the shutter row never
-                // moves when content appears here.
+                // row, together with the gaps above and below it. Its height is fixed whether or
+                // not it has content, so the shutter row never moves when content appears here.
+                // Content is centered, so content taller than MIDDLE_SLOT_HEIGHT, such as a carousel
+                // with a larger touch target, extends equally into both gaps.
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(MIDDLE_SLOT_HEIGHT),
+                        .height(MIDDLE_SLOT_HEIGHT + stackGap * 2),
                     contentAlignment = Alignment.Center
                 ) {
                     captureModeCarousel(Modifier)
                 }
-
-                Spacer(modifier = Modifier.height(stackGap))
 
                 // bottom controls row
                 Row(

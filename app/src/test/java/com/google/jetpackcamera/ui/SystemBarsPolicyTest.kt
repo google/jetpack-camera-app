@@ -71,6 +71,24 @@ class SystemBarsPolicyTest {
     }
 
     @Test
+    fun systemBarsPolicyFor_previewRequiresImmersive_onlyAffectsThePreviewRoute() {
+        val cases = listOf(
+            previewRouteWithArgs to SystemBarsPolicy.HideStatusAndNavigationBars,
+            "$PreviewRoute" to SystemBarsPolicy.HideStatusAndNavigationBars,
+            Routes.POST_CAPTURE_ROUTE to SystemBarsPolicy.HideStatusBar,
+            Routes.SETTINGS_ROUTE to SystemBarsPolicy.ShowAll,
+            "$PermissionsRoute" to SystemBarsPolicy.ShowAll,
+            null to SystemBarsPolicy.ShowAll
+        )
+
+        for ((route, expected) in cases) {
+            assertWithMessage("Unexpected immersive policy for route: %s", route)
+                .that(systemBarsPolicyFor(route, previewRequiresImmersive = true))
+                .isEqualTo(expected)
+        }
+    }
+
+    @Test
     fun systemBarsPolicyFor_doesNotMatchRoutesThatMerelyStartWithACaptureRoute() {
         assertThat(systemBarsPolicyFor("${PreviewRoute}Something"))
             .isEqualTo(SystemBarsPolicy.ShowAll)
@@ -122,6 +140,33 @@ class SystemBarsPolicyTest {
 
         @Suppress("DEPRECATION")
         assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(0)
+    }
+
+    @Test
+    fun systemBarsPolicyEffect_hideStatusAndNavigationBars_hidesNavigationBar() {
+        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+        val view = activity.window.decorView
+        val policy = androidx.compose.runtime.mutableStateOf(
+            SystemBarsPolicy.HideStatusAndNavigationBars
+        )
+
+        activity.setContentView(
+            androidx.compose.ui.platform.ComposeView(activity).apply {
+                setContent { SystemBarsPolicyEffect(policy = policy.value) }
+            }
+        )
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+            .isEqualTo(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+
+        policy.value = SystemBarsPolicy.HideStatusBar
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
             .isEqualTo(0)
     }
 }
