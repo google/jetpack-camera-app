@@ -28,48 +28,110 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TooltipState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlin.time.Duration
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+const val TOOLTIP_ANCHOR_BUTTON_TAG = "tooltip_anchor_button"
+const val TOOLTIP_CONTENT_TAG = "tooltip_content"
+
 /**
- * An icon button that shows a styled RichTooltip when clicked.
- * The tooltip is persistent and stays visible until the user taps outside.
+ * Events used to trigger programmatic display or dismissal of tooltips.
+ */
+sealed interface TooltipTriggerEvent {
+    data object Show : TooltipTriggerEvent
+    data object Dismiss : TooltipTriggerEvent
+}
+
+/**
+ * A generic container that wraps content with a styled [RichTooltip].
  *
- * @param icon The icon to display inside the button.
- * @param tooltipTitle The optional title to display inside the tooltip.
  * @param tooltipText The text to display inside the tooltip.
- * @param modifier Modifier for the button container.
- * @param isOutlined Whether the icon button should be outlined.
- * @param onClick Optional callback when the button is clicked.
+ * @param modifier Modifier for the container.
+ * @param tooltipTitle Optional title displayed above the tooltip text.
+ * @param state State controlling tooltip visibility.
+ * @param positioning Anchor position for the tooltip (e.g. Above, Below).
+ * @param autoDismissDuration Optional duration after which the tooltip automatically dismisses.
+ * @param triggerFlow Optional flow of [TooltipTriggerEvent] to trigger showing or dismissing.
+ * @param enableUserInput Whether long-press and hover gestures on the anchor trigger the tooltip.
+ * @param onDismissRequest Optional callback invoked when the tooltip is dismissed.
+ * @param content The anchor composable wrapped by the tooltip.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TooltipIconButton(
-    icon: @Composable () -> Unit,
+fun JcaTooltipBox(
+    tooltipText: String,
     modifier: Modifier = Modifier,
     tooltipTitle: String? = null,
-    tooltipText: String,
-    isOutlined: Boolean = false,
-    onClick: () -> Unit = {}
+    state: TooltipState = rememberTooltipState(isPersistent = true),
+    positioning: TooltipAnchorPosition = TooltipAnchorPosition.Above,
+    autoDismissDuration: Duration? = null,
+    triggerFlow: Flow<TooltipTriggerEvent>? = null,
+    enableUserInput: Boolean = true,
+    onDismissRequest: (() -> Unit)? = null,
+    content: @Composable () -> Unit
 ) {
-    val tooltipState = rememberTooltipState(isPersistent = true)
-    val scope = rememberCoroutineScope()
+    var triggerRevision by remember { mutableIntStateOf(0) }
+
+    // External flow triggers using collectLatest to prevent deadlock from show() suspension
+    if (triggerFlow != null) {
+        LaunchedEffect(triggerFlow, state) {
+            triggerFlow.collectLatest { event ->
+                when (event) {
+                    TooltipTriggerEvent.Show -> {
+                        triggerRevision++
+                        state.show()
+                    }
+                    TooltipTriggerEvent.Dismiss -> state.dismiss()
+                }
+            }
+        }
+    }
+
+    // Auto-dismiss timer keyed on targetState and triggerRevision
+    if (autoDismissDuration != null) {
+        LaunchedEffect(state.transition.targetState, triggerRevision, autoDismissDuration) {
+            if (state.transition.targetState) {
+                delay(autoDismissDuration)
+                state.dismiss()
+                onDismissRequest?.invoke()
+            }
+        }
+    }
 
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-            positioning = TooltipAnchorPosition.Above
+            positioning = positioning
         ),
         tooltip = {
             RichTooltip(
                 modifier = Modifier
-                    .widthIn(min = 140.dp, max = 296.dp),
+                    .widthIn(min = 140.dp, max = 296.dp)
+                    .testTag(TOOLTIP_CONTENT_TAG)
+                    .semantics {
+                        liveRegion = LiveRegionMode.Assertive
+                        paneTitle = tooltipTitle ?: tooltipText
+                    },
                 title = tooltipTitle?.let {
                     {
                         Text(
@@ -103,27 +165,87 @@ fun TooltipIconButton(
                 caretShape = TooltipDefaults.caretShape()
             )
         },
-        state = tooltipState,
-        modifier = modifier
+        state = state,
+        modifier = modifier,
+        enableUserInput = enableUserInput,
+        onDismissRequest = onDismissRequest
     ) {
-        val showTooltipAction = remember(tooltipState, scope, onClick) {
-            {
-                scope.launch {
-                    tooltipState.show()
+        content()
+    }
+}
+
+/**
+ * An icon button that shows a styled [RichTooltip] when clicked.
+ *
+ * @param icon The icon to display inside the button.
+ * @param tooltipText The text to display inside the tooltip.
+ * @param modifier Modifier for the button container.
+ * @param tooltipTitle The optional title to display inside the tooltip.
+ * @param state State controlling tooltip visibility.
+ * @param positioning Anchor position for the tooltip (e.g. Above, Below).
+ * @param autoDismissDuration Optional duration after which the tooltip automatically dismisses.
+ * @param triggerFlow Optional flow of [TooltipTriggerEvent] to trigger showing or dismissing.
+ * @param isOutlined Whether the icon button should be outlined.
+ * @param onClick Optional callback when the button is clicked.
+ * @param onDismissRequest Optional callback invoked when the tooltip is dismissed.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TooltipIconButton(
+    icon: @Composable () -> Unit,
+    tooltipText: String,
+    modifier: Modifier = Modifier,
+    tooltipTitle: String? = null,
+    state: TooltipState = rememberTooltipState(isPersistent = true),
+    positioning: TooltipAnchorPosition = TooltipAnchorPosition.Above,
+    autoDismissDuration: Duration? = null,
+    triggerFlow: Flow<TooltipTriggerEvent>? = null,
+    isOutlined: Boolean = false,
+    onClick: () -> Unit = {},
+    onDismissRequest: (() -> Unit)? = null
+) {
+    val scope = rememberCoroutineScope()
+    val toggleTooltip = remember(state, scope, onClick, onDismissRequest) {
+        {
+            scope.launch {
+                if (state.transition.targetState) {
+                    state.dismiss()
+                    onDismissRequest?.invoke()
+                } else {
+                    state.show()
                 }
-                onClick()
             }
+            onClick()
         }
+    }
+
+    JcaTooltipBox(
+        tooltipText = tooltipText,
+        modifier = modifier,
+        tooltipTitle = tooltipTitle,
+        state = state,
+        positioning = positioning,
+        autoDismissDuration = autoDismissDuration,
+        triggerFlow = triggerFlow,
+        enableUserInput = false,
+        onDismissRequest = onDismissRequest
+    ) {
+        val buttonModifier = Modifier
+            .testTag(TOOLTIP_ANCHOR_BUTTON_TAG)
 
         if (isOutlined) {
             OutlinedIconButton(
-                onClick = showTooltipAction,
+                onClick = toggleTooltip,
+                modifier = buttonModifier,
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
             ) {
                 icon()
             }
         } else {
-            IconButton(onClick = showTooltipAction) {
+            IconButton(
+                onClick = toggleTooltip,
+                modifier = buttonModifier
+            ) {
                 icon()
             }
         }
