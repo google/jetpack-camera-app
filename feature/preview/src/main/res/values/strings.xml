@@ -41,7 +41,7 @@
     <string name="camera_error_fatal_title">Something went wrong</string>
     <!-- Dialog body text shown under "Something went wrong" (camera_error_fatal_title) when the camera encounters an unrecoverable error. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="camera_error_fatal_body">Camera isn\u2019t available</string>
-    <!-- Dialog title shown on the preview screen when the camera cannot be opened because Do Not Disturb mode is active. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <!-- Dialog title shown on the preview screen when the camera cannot be opened because Do Not Disturb is active. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="camera_error_dnd_title">Can\u2019t use camera</string>
     <!-- Dialog body text shown under "Can't use camera" (camera_error_dnd_title) instructing the user to disable Android's "Do Not Disturb" system setting and reopen the camera. Use the standard Android system term for "Do Not Disturb" in the target language. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="camera_error_dnd_body">Turn off Do Not Disturb and open the camera again</string>

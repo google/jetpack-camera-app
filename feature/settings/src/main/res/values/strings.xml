@@ -37,19 +37,19 @@
     <!-- Accessibility state description (read aloud by screen readers, never shown visually) for the "Default to Front Camera" switch on the settings screen when the rear-facing camera is the default. Noun phrase naming the selected lens. "Back" refers to the rear-facing camera on the back of the device, not the navigation action to go back. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="default_facing_camera_description_back">Back camera</string>
 
-    <!-- Title of the setting dialog and row for configuring the app dark mode theme. [CHAR LIMIT=NONE] -->
+    <!-- Title of the setting dialog and row for configuring the app dark theme. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_title">Set Dark Mode</string>
 
-    <!-- Radio option label in the "Set Dark Mode" dialog on the settings screen that turns the dark theme on. "On" is a state value (dark mode is on), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
+    <!-- Radio option label in the "Set Dark Mode" dialog on the settings screen that turns the dark theme on. "On" is a state value (the dark theme is on), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_selector_dark">On</string>
-    <!-- Radio option label in the "Set Dark Mode" dialog on the settings screen that turns the dark theme off (the light theme is used). "Off" is a state value (dark mode is off), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
+    <!-- Radio option label in the "Set Dark Mode" dialog on the settings screen that turns the dark theme off (the light theme is used). "Off" is a state value (the dark theme is off), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_selector_light">Off</string>
     <!-- Radio option label in the "Set Dark Mode" dialog on the settings screen that makes the app follow the device's system-wide dark theme setting. "System" means "use the system setting" (as in Android's "System default" theme option), not a technical component. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_selector_system">System</string>
 
-    <!-- Subtitle under the "Set Dark Mode" row on the settings screen showing the current selection when the dark theme is on. "On" is a state value (dark mode is on), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
+    <!-- Subtitle under the "Set Dark Mode" row on the settings screen showing the current selection when the dark theme is on. "On" is a state value (the dark theme is on), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_description_dark">On</string>
-    <!-- Subtitle under the "Set Dark Mode" row on the settings screen showing the current selection when the dark theme is off (the light theme is used). "Off" is a state value (dark mode is off), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
+    <!-- Subtitle under the "Set Dark Mode" row on the settings screen showing the current selection when the dark theme is off (the light theme is used). "Off" is a state value (the dark theme is off), not an imperative verb; it should agree grammatically with "mode" in the target language. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_description_light">Off</string>
     <!-- Subtitle under the "Set Dark Mode" row on the settings screen showing the current selection when the app follows the device's system-wide dark theme setting. "System" means "use the system setting" (as in Android's "System default" theme option), not a technical component. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_description_system">System</string>
@@ -184,11 +184,8 @@
     <string name="duration_title">Set Maximum Video Duration</string>
     <!-- Option label and subtitle indicating there is no time limit for video recordings. [CHAR LIMIT=NONE] -->
     <string name="duration_description_none">Unlimited duration</string>
-    <!-- Option label and subtitle showing the maximum video duration in seconds (e.g. 10 seconds). [CHAR LIMIT=NONE] -->
-    <plurals name="duration_description_seconds">
-        <item quantity="one"><xliff:g id="seconds" example="1">%1$d</xliff:g> second</item>
-        <item quantity="other"><xliff:g id="seconds" example="10">%1$d</xliff:g> seconds</item>
-    </plurals>
+    <!-- Option label and subtitle showing the maximum video duration in seconds (e.g. 10 seconds). {count} (#) is the maximum video duration in seconds. [CHAR LIMIT=NONE] [ICU SYNTAX] -->
+    <string name="duration_description_seconds">{count, plural, =1{# second} other{# seconds}}</string>
 
     <!-- Title of the setting dialog and row for selecting the video recording resolution/quality. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="video_quality_title">Set Video Quality</string>

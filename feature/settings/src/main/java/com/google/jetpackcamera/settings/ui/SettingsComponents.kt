@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.settings.ui
 
 import android.content.res.Configuration
+import android.icu.text.MessageFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,7 +49,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -431,7 +431,10 @@ fun MaxVideoDurationSetting(
             UNLIMITED_VIDEO_DURATION -> stringResource(R.string.duration_description_none)
             else -> {
                 val seconds = (maxDuration / 1000).toInt()
-                pluralStringResource(R.plurals.duration_description_seconds, seconds, seconds)
+                MessageFormat.format(
+                    stringResource(R.string.duration_description_seconds),
+                    mapOf("count" to seconds)
+                )
             }
         },
         popupContents = {
@@ -458,10 +461,9 @@ fun MaxVideoDurationSetting(
                     SingleChoiceSelector(
                         modifier = Modifier.testTag(getMaxVideoDurationTestTag(maxDuration)),
                         enabled = true,
-                        text = pluralStringResource(
-                            R.plurals.duration_description_seconds,
-                            seconds,
-                            seconds
+                        text = MessageFormat.format(
+                            stringResource(R.string.duration_description_seconds),
+                            mapOf("count" to seconds)
                         ),
                         selected = maxVideoDurationUiState.currentMaxDurationMillis == maxDuration,
                         onClick = { setMaxDuration(maxDuration) }

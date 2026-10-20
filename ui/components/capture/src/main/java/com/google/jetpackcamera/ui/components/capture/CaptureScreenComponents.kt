@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
+import android.icu.text.MessageFormat
 import android.os.Build
 import android.util.Log
 import androidx.annotation.VisibleForTesting
@@ -110,7 +111,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -166,7 +166,7 @@ private val SnackbarTextToActionSpacing = 8.dp
 private val SnackbarElevation = 6.dp
 
 /**
- * A custom [SnackbarHost] that displays snackbars with a pill shape and a leading status icon.
+ * A custom [SnackbarHost] that displays snackbars with a rounded shape and a leading status icon.
  *
  * @param snackbarHostState the [SnackbarHostState] for the host.
  * @param modifier the modifier for this component.
@@ -408,15 +408,13 @@ fun ElapsedTimeText(
         }
         val minutesInt = minutes.toInt()
         val secondsInt = seconds.toInt()
-        val minutesText = pluralStringResource(
-            R.plurals.elapsed_time_accessibility_minutes,
-            minutesInt,
-            minutesInt
+        val minutesText = MessageFormat.format(
+            stringResource(R.string.elapsed_time_accessibility_minutes),
+            mapOf("count" to minutesInt)
         )
-        val secondsText = pluralStringResource(
-            R.plurals.elapsed_time_accessibility_seconds,
-            secondsInt,
-            secondsInt
+        val secondsText = MessageFormat.format(
+            stringResource(R.string.elapsed_time_accessibility_seconds),
+            mapOf("count" to secondsInt)
         )
         val accessibilityRes = if (state.isPaused) {
             R.string.elapsed_time_accessibility_paused
