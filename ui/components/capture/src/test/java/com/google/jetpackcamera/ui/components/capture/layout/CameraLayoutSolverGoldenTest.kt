@@ -148,19 +148,6 @@ class CameraLayoutSolverGoldenTest {
         }
     }
 
-    @Test
-    fun viewfinderTopStartModeIsCollisionFreeAcrossEvaluationSet() {
-        val spec = CameraLayoutDefaults.spec(
-            topStartPlacement = TopStartPlacement.VIEWFINDER_TOP_START
-        )
-        cases.forEach { case ->
-            val solution = CameraLayoutSolver.solve(spec, case.window)
-            assertWithMessage("%s collisions", case.label)
-                .that(solution.collisions)
-                .isEmpty()
-        }
-    }
-
     /**
      * The design reference for a 360 x 740 window, checked independently of the fixture so that
      * regenerating the fixture cannot quietly lose it.

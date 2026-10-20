@@ -306,11 +306,7 @@ object CameraLayoutSolver {
         if (firstPass != null && firstPass.collisions.isEmpty() && !primaryFlush(firstPass)) {
             val search = RepairSearch(context, preferredPadding, preferredGaps)
             search.sweepPadding(minBottomPadding, incidentalLiftCeiling, allowTightDaylight = false)
-            if (
-                spec.topStartPlacement == TopStartPlacement.FIXED_BELOW_TOP_BAR &&
-                tallFitsBelowTopBar &&
-                (search.best == null || !primaryFlush(search.best!!))
-            ) {
+            if (tallFitsBelowTopBar && (search.best == null || !primaryFlush(search.best!!))) {
                 search.sweepZeroDrop(minBottomPadding, incidentalLiftCeiling)
             }
             evaluations += search.evaluations
@@ -343,44 +339,27 @@ object CameraLayoutSolver {
             } else {
                 max(minBottomPadding, preferredPadding) + liftBudget
             }
-            val padHardMax = if (
-                isCompactBand &&
-                spec.topStartPlacement == TopStartPlacement.VIEWFINDER_TOP_START
-            ) {
-                maxCompactPad
-            } else {
-                max(minBottomPadding, (navTop - topInset).roundToJs())
-            }
+            val padHardMax = max(minBottomPadding, (navTop - topInset).roundToJs())
 
             val search = RepairSearch(context, preferredPadding, preferredGaps)
 
             search.sweepPadding(minBottomPadding, padCeiling, allowTightDaylight = false)
-            if (spec.topStartPlacement == TopStartPlacement.FIXED_BELOW_TOP_BAR) {
-                val cappedBest = search.lowestAcceptablePadding?.let {
-                    search.bestAtOrBelow(max(incidentalLiftCeiling, it + INCIDENTAL_LIFT_BUDGET))
-                }
-                val tallId = CameraViewfinderIds.RATIO_9_16
-                val tallDropped = cappedBest?.frames?.get(tallId)?.let {
-                    it.first > topInset + 0.05f
-                } ?: true
-                val primaryDropped = cappedBest?.let { !primaryFlush(it) } ?: true
-                if (cappedBest == null || tallDropped || (tallFitsBelowTopBar && primaryDropped)) {
-                    search.sweepZeroDrop(minBottomPadding, padCeiling)
-                }
+            val cappedBest = search.lowestAcceptablePadding?.let {
+                search.bestAtOrBelow(max(incidentalLiftCeiling, it + INCIDENTAL_LIFT_BUDGET))
+            }
+            val tallId = CameraViewfinderIds.RATIO_9_16
+            val tallDropped = cappedBest?.frames?.get(tallId)?.let {
+                it.first > topInset + 0.05f
+            } ?: true
+            val primaryDropped = cappedBest?.let { !primaryFlush(it) } ?: true
+            if (cappedBest == null || tallDropped || (tallFitsBelowTopBar && primaryDropped)) {
+                search.sweepZeroDrop(minBottomPadding, padCeiling)
             }
             if (search.best == null) {
                 search.sweepPaddingAndGaps(minBottomPadding, padCeiling, allowTightDaylight = false)
             }
-            if (
-                search.best == null &&
-                spec.topStartPlacement == TopStartPlacement.VIEWFINDER_TOP_START
-            ) {
-                search.sweepPaddingAndGaps(minBottomPadding, padCeiling, allowTightDaylight = true)
-            }
             if (search.best == null) {
-                if (spec.topStartPlacement == TopStartPlacement.FIXED_BELOW_TOP_BAR) {
-                    search.sweepPadding(minBottomPadding, padHardMax, allowTightDaylight = false)
-                }
+                search.sweepPadding(minBottomPadding, padHardMax, allowTightDaylight = false)
                 if (search.best == null) {
                     search.sweepPaddingAndGaps(
                         minBottomPadding,
@@ -388,10 +367,7 @@ object CameraLayoutSolver {
                         allowTightDaylight = false
                     )
                 }
-                if (
-                    search.best == null &&
-                    spec.topStartPlacement == TopStartPlacement.FIXED_BELOW_TOP_BAR
-                ) {
+                if (search.best == null) {
                     search.sweepPaddingAndGaps(
                         minBottomPadding,
                         padCeiling,
@@ -479,8 +455,6 @@ object CameraLayoutSolver {
         val windowHeight: Float,
         val windowWidth: Float
     ) {
-        val enforceFixedTopStart: Boolean =
-            spec.topStartPlacement == TopStartPlacement.FIXED_BELOW_TOP_BAR
         val fixedTopStartBottom: Float = topInset + spec.topStartHeight.value
 
         /** Row edges of the most recent [evaluate] call, indexed like [CameraLayoutSpec.rows]. */
@@ -492,14 +466,10 @@ object CameraLayoutSolver {
 
         /**
          * Lowest frame top that still passes behind the top-start control rather than bisecting
-         * it: the control's visible top, less the minimum edge gap. Without a fixed control there
-         * is nothing to pass behind, so a frame top must sit flush below the top bar.
+         * it: the control's visible top, less the minimum edge gap.
          */
-        val behindTopStartLimit: Float = if (enforceFixedTopStart) {
+        val behindTopStartLimit: Float =
             topInset + max(0f, spec.topStartVisibleInset.value - spec.topStartMinEdgeGap.value)
-        } else {
-            topInset
-        }
 
         /**
          * Whether a [PlacementPolicy.BINARY_TOP_EDGE] frame of [rawHeight] has any position that
@@ -811,7 +781,7 @@ object CameraLayoutSolver {
             topStartBottom: Float = fixedTopStartBottom
         ): Float {
             if (!spec.enforceTopWeighting) return maxBottom
-            val firstShiftedTop = if (enforceFixedTopStart && minTop >= topInset - 0.05f) {
+            val firstShiftedTop = if (minTop >= topInset - 0.05f) {
                 max(minTop, topStartBottom + clearance)
             } else {
                 minTop
@@ -847,11 +817,9 @@ object CameraLayoutSolver {
             candidates[count++] = lowerBound
             candidates[count++] = upperBound
 
-            if (enforceFixedTopStart) {
-                val afterTopStart = quantize(keepOut.bottom + clearance + rawHeight)
-                if (afterTopStart >= lowerBound && afterTopStart <= upperBound) {
-                    candidates[count++] = afterTopStart
-                }
+            val afterTopStart = quantize(keepOut.bottom + clearance + rawHeight)
+            if (afterTopStart >= lowerBound && afterTopStart <= upperBound) {
+                candidates[count++] = afterTopStart
             }
 
             for (i in obstacles.lastIndex downTo 0) {
@@ -911,12 +879,10 @@ object CameraLayoutSolver {
                     total += INTRUSION_COST + obstacle.weight * depth * depth
                 }
             }
-            if (enforceFixedTopStart) {
-                val keepOutBottom = keepOut.bottom + clearance
-                if (top > keepOut.behindLimit + 0.05f && top < keepOutBottom) {
-                    val depth = min(top - keepOut.behindLimit, keepOutBottom - top)
-                    total += INTRUSION_COST + 8f * depth * depth
-                }
+            val topStartKeepOutBottom = keepOut.bottom + clearance
+            if (top > keepOut.behindLimit + 0.05f && top < topStartKeepOutBottom) {
+                val depth = min(top - keepOut.behindLimit, topStartKeepOutBottom - top)
+                total += INTRUSION_COST + 8f * depth * depth
             }
             val distance = bottom - preferredBottom
             return total + PREFERENCE_WEIGHT * distance * distance
@@ -939,8 +905,7 @@ object CameraLayoutSolver {
                     return true
                 }
             }
-            return enforceFixedTopStart &&
-                frame.first > keepOut.behindLimit + 0.05f &&
+            return frame.first > keepOut.behindLimit + 0.05f &&
                 frame.first < keepOut.bottom + margin
         }
 
@@ -964,7 +929,6 @@ object CameraLayoutSolver {
                 }
             }
             if (
-                enforceFixedTopStart &&
                 frame.first > keepOut.behindLimit + 0.05f &&
                 frame.first < keepOut.bottom + margin
             ) {
@@ -995,7 +959,7 @@ object CameraLayoutSolver {
                     if (distance < smallest) smallest = distance
                 }
             }
-            if (enforceFixedTopStart && frame.first > keepOut.behindLimit + 0.05f) {
+            if (frame.first > keepOut.behindLimit + 0.05f) {
                 if (frame.first <= keepOut.bottom) return 0f
                 val distance = frame.first - keepOut.bottom
                 if (distance < smallest) smallest = distance
@@ -1132,8 +1096,7 @@ object CameraLayoutSolver {
                 if (cleanTopAt(belowRow, frame, placedRows, margin)) return true
                 if (cleanTopAt(belowRow - height, frame, placedRows, margin)) return true
             }
-            return context.enforceFixedTopStart &&
-                cleanTopAt(context.fixedTopStartBottom + margin, frame, placedRows, margin)
+            return cleanTopAt(context.fixedTopStartBottom + margin, frame, placedRows, margin)
         }
 
         /** Whether [top] is within [frame]'s range and leaves both of its edges clean. */
@@ -1153,11 +1116,7 @@ object CameraLayoutSolver {
                 val hi = rowBottom + margin
                 if ((top > lo && top < hi) || (bottom > lo && bottom < hi)) return false
             }
-            return !(
-                context.enforceFixedTopStart &&
-                    top > context.topInset + 0.05f &&
-                    top < context.fixedTopStartBottom + margin
-                )
+            return !(top > context.topInset + 0.05f && top < context.fixedTopStartBottom + margin)
         }
 
         /**
@@ -1197,7 +1156,7 @@ object CameraLayoutSolver {
         }
 
         fun sweepPadding(from: Int, to: Int, allowTightDaylight: Boolean) {
-            if (!context.enforceFixedTopStart || rows.size != 4) {
+            if (rows.size != 4) {
                 for (padding in from..to) {
                     placedAny = false
                     consider(padding, preferredGaps, allowTightDaylight)
@@ -1408,7 +1367,7 @@ object CameraLayoutSolver {
         }
 
         fun sweepPaddingAndGaps(from: Int, to: Int, allowTightDaylight: Boolean) {
-            if (!context.enforceFixedTopStart || rows.size != 4) {
+            if (rows.size != 4) {
                 val grids =
                     Array(preferredGaps.size) { index -> gapGrid(index, preferredGaps[index]) }
                 val working = IntArray(preferredGaps.size)

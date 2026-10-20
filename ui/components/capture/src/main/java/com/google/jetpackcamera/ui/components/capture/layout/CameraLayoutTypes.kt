@@ -177,25 +177,6 @@ enum class ToolbarCompaction {
 }
 
 /**
- * How the top-start control slot (such as the close button) is positioned relative to the top bar
- * and the active viewfinder.
- */
-enum class TopStartPlacement {
-    /**
-     * Keep the top-start control at a fixed window coordinate immediately below the top bar across
-     * all aspect ratios, enforcing a top-edge keep-out zone so a downward-shifted viewfinder never
-     * bisects the control.
-     */
-    FIXED_BELOW_TOP_BAR,
-
-    /**
-     * Attach the top-start control to the top-start corner of the active viewfinder so it moves
-     * vertically with the preview frame.
-     */
-    VIEWFINDER_TOP_START
-}
-
-/**
  * Pulls a row closer to the row above it when no viewfinder border runs between them.
  *
  * On mid-height screens a frame edge often lands below the identified row, putting that row inside
@@ -233,10 +214,9 @@ data class GroupingRule(val rowId: String, val tightenedGapAbove: Dp)
  * @param enforceTopWeighting cap a downward shift so the black band above a frame never exceeds the
  *   band below it, measured to the bottom of the window.
  * @param toolbarCompaction strategy for the mid-height toolbar case.
- * @param topStartPlacement how the top-start control is positioned relative to the top bar and
- *   viewfinder.
- * @param topStartHeight reserved height below the top bar for the top-start control when
- *   [topStartPlacement] is [TopStartPlacement.FIXED_BELOW_TOP_BAR].
+ * @param topStartHeight reserved height below the top bar for the top-start control (such as the
+ *   close button). The control stays at this fixed window position across all aspect ratios, and
+ *   the solver keeps a downward-shifted viewfinder from bisecting it.
  * @param topStartVisibleInset inset of the visible top-start control within its reserved slot. A
  *   viewfinder's top edge may pass behind the control as long as it stays at least
  *   [topStartMinEdgeGap] above the visible control.
@@ -254,7 +234,6 @@ data class CameraLayoutSpec(
     val maxStackLift: Dp = 72.dp,
     val enforceTopWeighting: Boolean = true,
     val toolbarCompaction: ToolbarCompaction = ToolbarCompaction.COMPACT_TOOLBAR,
-    val topStartPlacement: TopStartPlacement = TopStartPlacement.FIXED_BELOW_TOP_BAR,
     val topStartHeight: Dp = 48.dp,
     val topStartVisibleInset: Dp = 4.dp,
     val topStartMinEdgeGap: Dp = 1.dp,
