@@ -1150,7 +1150,7 @@ fun FlipCameraButton(
             colors = IconButtonDefaults.filledIconButtonColors(
                 containerColor = backgroundStyle.containerColor,
                 contentColor = Color.White,
-                disabledContainerColor = backgroundStyle.disabledContainerColor,
+                disabledContainerColor = backgroundStyle.containerColor,
                 disabledContentColor = Color.White.copy(alpha = 0.38f)
             )
         ) {
@@ -1166,7 +1166,7 @@ fun FlipCameraButton(
                 painter = painterResource(R.drawable.ic_flip_camera_android),
                 contentDescription = contentDescription,
                 modifier = Modifier
-                    .size(IconButtonDefaults.mediumIconSize)
+                    .size(IconButtonDefaults.largeIconSize)
                     .rotate(animatedRotation.value)
             )
         }

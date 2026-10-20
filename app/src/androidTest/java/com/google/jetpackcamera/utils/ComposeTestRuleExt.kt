@@ -833,6 +833,12 @@ internal fun buildGeneralErrorMessage(
     return sb.toString()
 }
 
+/**
+ * Assumes that the flip camera button is available on the test device, skipping the test if it is not.
+ *
+ * @param message The message to include if the assumption fails.
+ * @throws AssumptionViolatedException if the flip camera button is not available
+ */
 fun ComposeTestRule.assumeFlipCameraAvailable(
     message: String = "Device does not have multiple cameras to flip between."
 ) {
