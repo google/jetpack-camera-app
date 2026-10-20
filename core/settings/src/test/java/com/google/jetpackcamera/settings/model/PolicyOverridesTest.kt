@@ -134,42 +134,22 @@ class PolicyOverridesTest {
     }
 
     @Test
-    fun restore_returnsCameraEffectToItsPreviousValue() {
+    fun restore_returnsCameraEffectAndVideoQualityToTheirPreviousValues() {
         val effect = CameraEffectId("single_stream")
         val policy = CameraFeaturePolicy(
-            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden),
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
         )
-        val settings = userSettings.copy(selectedCameraEffect = effect)
+        val settings =
+            userSettings.copy(selectedCameraEffect = effect, videoQuality = VideoQuality.UHD)
         val (enforced, overrides) = enforce(policy, settings)
         assertThat(enforced.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
-
-        assertThat(overrides.restore(enforced).selectedCameraEffect).isEqualTo(effect)
-    }
-
-    @Test
-    fun restore_returnsVideoQualityToItsPreviousValue() {
-        val policy = CameraFeaturePolicy(
-            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
-        )
-        val settings = userSettings.copy(videoQuality = VideoQuality.UHD)
-        val (enforced, overrides) = enforce(policy, settings)
         assertThat(enforced.videoQuality).isEqualTo(VideoQuality.UNSPECIFIED)
 
-        assertThat(overrides.restore(enforced).videoQuality).isEqualTo(VideoQuality.UHD)
-    }
+        val restored = overrides.restore(enforced)
 
-    @Test
-    fun withRequestedChange_whenPolicyBlocksTheVideoQuality_restoresTheUserChoice() {
-        val policy = CameraFeaturePolicy(
-            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
-        )
-        val settings = userSettings.copy(videoQuality = VideoQuality.UHD)
-        val (enforced, overrides) = enforce(policy, settings)
-
-        // The policy keeps the quality unspecified, but the user's choice returns afterwards.
-        val updated = overrides.withRequestedChange { it.copy(videoQuality = VideoQuality.HD) }
-
-        assertThat(updated.restore(enforced).videoQuality).isEqualTo(VideoQuality.HD)
+        assertThat(restored.selectedCameraEffect).isEqualTo(effect)
+        assertThat(restored.videoQuality).isEqualTo(VideoQuality.UHD)
     }
 
     @Test
@@ -186,15 +166,59 @@ class PolicyOverridesTest {
 
     @Test
     fun withRequestedChange_whenPolicyBlocksTheChoice_restoresTheUserChoice() {
-        val (enforced, overrides) = enforce(restrictivePolicy, userSettings)
+        val policy = restrictivePolicy.copy(
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+        )
+        val settings = userSettings.copy(videoQuality = VideoQuality.UHD)
+        val (enforced, overrides) = enforce(policy, settings)
 
-        // The policy keeps the frame rate at auto, but the user's choice returns afterwards.
-        val updated = overrides.withRequestedChange { it.copy(targetFrameRate = TARGET_FPS_30) }
+        // The policy keeps the frame rate at auto and the quality unspecified, but the user's
+        // choices return afterwards.
+        val updated = overrides.withRequestedChange {
+            it.copy(targetFrameRate = TARGET_FPS_30, videoQuality = VideoQuality.HD)
+        }
 
         val restored = updated.restore(enforced)
         assertThat(restored.targetFrameRate).isEqualTo(TARGET_FPS_30)
+        assertThat(restored.videoQuality).isEqualTo(VideoQuality.HD)
         assertThat(restored.aspectRatio).isEqualTo(userSettings.aspectRatio)
         assertThat(restored.selectedCameraEffect).isEqualTo(userSettings.selectedCameraEffect)
+    }
+
+    @Test
+    fun withRequestedChange_appliesToEveryRestoredSetting() {
+        val policy = restrictivePolicy.copy(
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden),
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+        )
+        val (enforced, overrides) = enforce(policy, userSettings)
+        // Each value differs from the value before enforcement, so a setting the change doesn't
+        // reach would be restored to its previous value instead.
+        val requested = userSettings.copy(
+            aspectRatio = AspectRatio.NINE_SIXTEEN,
+            flashMode = FlashMode.AUTO,
+            imageFormat = ImageOutputFormat.JPEG,
+            dynamicRange = DynamicRange.SDR,
+            stabilizationMode = StabilizationMode.HIGH_QUALITY,
+            targetFrameRate = TARGET_FPS_30,
+            selectedCameraEffect = CameraEffectId("single_stream"),
+            videoQuality = VideoQuality.HD
+        )
+
+        val updated = overrides.withRequestedChange {
+            it.copy(
+                aspectRatio = requested.aspectRatio,
+                flashMode = requested.flashMode,
+                imageFormat = requested.imageFormat,
+                dynamicRange = requested.dynamicRange,
+                stabilizationMode = requested.stabilizationMode,
+                targetFrameRate = requested.targetFrameRate,
+                selectedCameraEffect = requested.selectedCameraEffect,
+                videoQuality = requested.videoQuality
+            )
+        }
+
+        assertThat(updated.restore(enforced)).isEqualTo(requested)
     }
 
     @Test

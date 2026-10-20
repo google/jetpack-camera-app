@@ -101,6 +101,8 @@ class CameraFeaturePolicyTest {
         assertThat(config.dynamicRange).isNull()
         assertThat(config.stabilizationMode).isNull()
         assertThat(config.targetFrameRate).isNull()
+        assertThat(config.cameraEffect).isNull()
+        assertThat(config.videoQuality).isNull()
     }
 
     @Test
@@ -563,34 +565,47 @@ class CameraFeaturePolicyTest {
     }
 
     @Test
-    fun toCameraAppSettings_appliesCameraEffectDefault() {
+    fun toCameraAppSettings_appliesCameraEffectAndVideoQualityDefaults() {
         val effect = CameraEffectId("single_stream")
-        val policy = CameraFeaturePolicy(cameraEffect = SettingConfig(defaultValue = effect))
+        val policy = CameraFeaturePolicy(
+            cameraEffect = SettingConfig(defaultValue = effect),
+            videoQuality = SettingConfig(defaultValue = VideoQuality.FHD)
+        )
 
-        assertThat(policy.toCameraAppSettings().selectedCameraEffect).isEqualTo(effect)
-        assertThat(CameraFeaturePolicy().toCameraAppSettings().selectedCameraEffect)
-            .isEqualTo(NONE_EFFECT_ID)
+        val appSettings = policy.toCameraAppSettings()
+        assertThat(appSettings.selectedCameraEffect).isEqualTo(effect)
+        assertThat(appSettings.videoQuality).isEqualTo(VideoQuality.FHD)
+
+        val unconfigured = CameraFeaturePolicy().toCameraAppSettings()
+        assertThat(unconfigured.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+        assertThat(unconfigured.videoQuality).isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.videoQuality)
     }
 
     @Test
-    fun enforceRestrictions_whenCameraEffectHidden_clampsToDefaultValue() {
+    fun enforceRestrictions_whenCameraEffectAndVideoQualityHidden_clampsToDefaultValues() {
         val policy = CameraFeaturePolicy(
-            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden),
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
         )
         val settings = DEFAULT_CAMERA_APP_SETTINGS.copy(
-            selectedCameraEffect = CameraEffectId("single_stream")
+            selectedCameraEffect = CameraEffectId("single_stream"),
+            videoQuality = VideoQuality.UHD
         )
 
-        assertThat(policy.enforceRestrictions(settings).selectedCameraEffect)
-            .isEqualTo(NONE_EFFECT_ID)
+        val enforced = policy.enforceRestrictions(settings)
+        assertThat(enforced.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+        assertThat(enforced.videoQuality).isEqualTo(VideoQuality.UNSPECIFIED)
+        assertThat(CameraFeaturePolicy().enforceRestrictions(settings).videoQuality)
+            .isEqualTo(VideoQuality.UHD)
     }
 
     @Test
-    fun isCompatibleWith_comparesStabilizationFrameRateAndCameraEffect() {
+    fun isCompatibleWith_comparesStabilizationFrameRateCameraEffectAndVideoQuality() {
         val subModePolicy = CameraFeaturePolicy(
             stabilizationMode = SettingConfig(StabilizationMode.OFF, OptionVisibility.Hidden),
             targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden),
-            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden),
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
         )
         val hostPermittingSubMode = CameraFeaturePolicy(
             stabilizationMode = SettingConfig(
@@ -601,7 +616,11 @@ class CameraFeaturePolicyTest {
                 defaultValue = TARGET_FPS_30,
                 visibility = OptionVisibility.Only(TARGET_FPS_AUTO, TARGET_FPS_30)
             ),
-            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Visible)
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Visible),
+            videoQuality = SettingConfig(
+                defaultValue = VideoQuality.FHD,
+                visibility = OptionVisibility.Only(VideoQuality.UNSPECIFIED, VideoQuality.FHD)
+            )
         )
 
         assertThat(hostPermittingSubMode.isCompatibleWith(subModePolicy)).isTrue()
@@ -623,15 +642,28 @@ class CameraFeaturePolicyTest {
                 )
             ).isCompatibleWith(subModePolicy)
         ).isFalse()
+        assertThat(
+            CameraFeaturePolicy(
+                videoQuality = SettingConfig(VideoQuality.UHD, OptionVisibility.Hidden)
+            ).isCompatibleWith(subModePolicy)
+        ).isFalse()
     }
 
     @Test
-    fun intersect_narrowsStabilizationFrameRateAndCameraEffect() {
+    fun intersect_narrowsStabilizationFrameRateCameraEffectAndVideoQuality() {
         val hostPolicy = CameraFeaturePolicy(
             stabilizationMode = SettingConfig(StabilizationMode.AUTO, OptionVisibility.Visible),
             targetFrameRate = SettingConfig(
                 defaultValue = TARGET_FPS_30,
                 visibility = OptionVisibility.Only(TARGET_FPS_AUTO, TARGET_FPS_15, TARGET_FPS_30)
+            ),
+            videoQuality = SettingConfig(
+                defaultValue = VideoQuality.FHD,
+                visibility = OptionVisibility.Only(
+                    VideoQuality.HD,
+                    VideoQuality.FHD,
+                    VideoQuality.UHD
+                )
             )
         )
         val subModePolicy = CameraFeaturePolicy(
@@ -640,7 +672,15 @@ class CameraFeaturePolicyTest {
                 defaultValue = TARGET_FPS_AUTO,
                 visibility = OptionVisibility.Only(TARGET_FPS_AUTO, TARGET_FPS_30, TARGET_FPS_60)
             ),
-            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden),
+            videoQuality = SettingConfig(
+                defaultValue = VideoQuality.HD,
+                visibility = OptionVisibility.Only(
+                    VideoQuality.SD,
+                    VideoQuality.HD,
+                    VideoQuality.FHD
+                )
+            )
         )
 
         val intersected = hostPolicy.intersect(subModePolicy)
@@ -655,77 +695,7 @@ class CameraFeaturePolicyTest {
         )
         assertThat(intersected.cameraEffect)
             .isEqualTo(SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden))
-    }
-
-    @Test
-    fun toCameraAppSettings_appliesVideoQualityDefault() {
-        val policy = CameraFeaturePolicy(
-            videoQuality = SettingConfig(defaultValue = VideoQuality.FHD)
-        )
-
-        assertThat(policy.toCameraAppSettings().videoQuality).isEqualTo(VideoQuality.FHD)
-        assertThat(CameraFeaturePolicy().toCameraAppSettings().videoQuality)
-            .isEqualTo(DEFAULT_CAMERA_APP_SETTINGS.videoQuality)
-    }
-
-    @Test
-    fun enforceRestrictions_whenVideoQualityHidden_clampsToDefaultValue() {
-        val policy = CameraFeaturePolicy(
-            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
-        )
-        val settings = DEFAULT_CAMERA_APP_SETTINGS.copy(videoQuality = VideoQuality.UHD)
-
-        assertThat(policy.enforceRestrictions(settings).videoQuality)
-            .isEqualTo(VideoQuality.UNSPECIFIED)
-        assertThat(CameraFeaturePolicy().enforceRestrictions(settings).videoQuality)
-            .isEqualTo(VideoQuality.UHD)
-    }
-
-    @Test
-    fun isCompatibleWith_comparesVideoQuality() {
-        val subModePolicy = CameraFeaturePolicy(
-            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
-        )
-
-        assertThat(
-            CameraFeaturePolicy(
-                videoQuality = SettingConfig(
-                    defaultValue = VideoQuality.FHD,
-                    visibility = OptionVisibility.Only(VideoQuality.UNSPECIFIED, VideoQuality.FHD)
-                )
-            ).isCompatibleWith(subModePolicy)
-        ).isTrue()
-        assertThat(
-            CameraFeaturePolicy(
-                videoQuality = SettingConfig(VideoQuality.UHD, OptionVisibility.Hidden)
-            ).isCompatibleWith(subModePolicy)
-        ).isFalse()
-    }
-
-    @Test
-    fun intersect_narrowsVideoQuality() {
-        val hostPolicy = CameraFeaturePolicy(
-            videoQuality = SettingConfig(
-                defaultValue = VideoQuality.FHD,
-                visibility = OptionVisibility.Only(
-                    VideoQuality.HD,
-                    VideoQuality.FHD,
-                    VideoQuality.UHD
-                )
-            )
-        )
-        val subModePolicy = CameraFeaturePolicy(
-            videoQuality = SettingConfig(
-                defaultValue = VideoQuality.HD,
-                visibility = OptionVisibility.Only(
-                    VideoQuality.SD,
-                    VideoQuality.HD,
-                    VideoQuality.FHD
-                )
-            )
-        )
-
-        assertThat(hostPolicy.intersect(subModePolicy).videoQuality).isEqualTo(
+        assertThat(intersected.videoQuality).isEqualTo(
             SettingConfig(
                 defaultValue = VideoQuality.HD,
                 visibility = OptionVisibility.Only(VideoQuality.HD, VideoQuality.FHD)
