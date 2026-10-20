@@ -117,10 +117,7 @@ object CameraLayoutDefaults {
      */
     val MaxStackLift = 72.dp
 
-    /**
-     * Reserved height below the top bar for the top-start control's 48.dp touch target when
-     * [TopStartPlacement.FIXED_BELOW_TOP_BAR] is active.
-     */
+    /** Reserved height below the top bar for the top-start control's 48.dp touch target. */
     val TopStartHeight = 48.dp
 
     /** Inset of the 40.dp visible top-start button within its 48.dp touch target. */
@@ -211,12 +208,9 @@ object CameraLayoutDefaults {
      *
      * @param toolbarCompaction how to handle screens where the black bar below a full-width `9:16`
      *   frame is slightly too short for a full-height toolbar.
-     * @param topStartPlacement how the top-start control slot is positioned relative to the top bar
-     *   and active viewfinder.
      */
     fun spec(
         toolbarCompaction: ToolbarCompaction = ToolbarCompaction.COMPACT_TOOLBAR,
-        topStartPlacement: TopStartPlacement = TopStartPlacement.FIXED_BELOW_TOP_BAR,
         topStartHeight: Dp = TopStartHeight,
         bottomToolbarHeight: Dp = BottomToolbarHeight,
         modeSwitcherHeight: Dp = ModeSwitcherHeight,
@@ -238,7 +232,6 @@ object CameraLayoutDefaults {
         maxStackLift = MaxStackLift,
         enforceTopWeighting = true,
         toolbarCompaction = toolbarCompaction,
-        topStartPlacement = topStartPlacement,
         topStartHeight = topStartHeight,
         topStartVisibleInset = TopStartVisibleInset,
         topStartMinEdgeGap = TopStartMinEdgeGap,

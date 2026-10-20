@@ -307,13 +307,8 @@ class CameraLayoutSolverPropertyTest {
             // The navigation bar reads as black, so the band below a frame is measured to the
             // bottom of the window, matching the solver's top-weighting cap.
             val bottomLimit = window.height.value
-            val firstShiftedTop = if (
-                spec.topStartPlacement == TopStartPlacement.FIXED_BELOW_TOP_BAR
-            ) {
+            val firstShiftedTop =
                 window.topInset.value + spec.topStartHeight.value + spec.minControlClearance.value
-            } else {
-                window.topInset.value
-            }
             solution.viewfinders.forEach { (id, band) ->
                 val above = band.top.value
                 val below = bottomLimit - band.bottom.value
@@ -365,8 +360,8 @@ class CameraLayoutSolverPropertyTest {
 
     @Test
     fun shiftedFramesClearFixedTopStartControl() {
-        // Under FIXED_BELOW_TOP_BAR, any frame whose top edge shifts past the behind-control limit
-        // must clear the full top-start keep-out band rather than bisecting the top-start control.
+        // Any frame whose top edge shifts past the behind-control limit must clear the full
+        // top-start keep-out band rather than bisecting the top-start control.
         Grid.inScope().forEach { window ->
             val solution = solutionFor(window)
             val topInset = window.topInset.value
@@ -431,21 +426,6 @@ class CameraLayoutSolverPropertyTest {
                 }
             }
         }
-    }
-
-    @Test
-    fun viewfinderTopStartPlacementIsAlsoCollisionFreeAcrossInScopeGrid() {
-        val vfSpec = CameraLayoutDefaults.spec(
-            topStartPlacement = TopStartPlacement.VIEWFINDER_TOP_START
-        )
-        val failures = Grid.inScope()
-            .map { it to CameraLayoutSolver.solve(vfSpec, it) }
-            .filter { (_, solution) -> solution.collisions.isNotEmpty() }
-            .map { (window, solution) -> "${window.describe()} -> ${solution.collisions}" }
-            .take(10)
-            .toList()
-
-        assertThat(failures).isEmpty()
     }
 
     /**
