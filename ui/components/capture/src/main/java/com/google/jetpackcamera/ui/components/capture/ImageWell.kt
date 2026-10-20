@@ -79,6 +79,7 @@ fun ImageWell(
             modifier = modifier
                 .testTag(IMAGE_WELL_TAG)
                 .size(IconButtonDefaults.mediumContainerSize())
+                .animateToUpright()
                 .border(2.dp, Color.White, shape)
                 .clip(shape)
                 .clickable(onClick = onClick, enabled = enabled)

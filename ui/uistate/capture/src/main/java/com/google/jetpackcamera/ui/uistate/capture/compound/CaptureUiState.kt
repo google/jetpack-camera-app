@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.uistate.capture.compound
 
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -97,7 +98,8 @@ sealed interface CaptureUiState {
         val hdrUiState: HdrUiState = HdrUiState.Unavailable,
         val focusMeteringUiState: FocusMeteringUiState = FocusMeteringUiState.Unspecified,
         val screenFlashUiState: ScreenFlashUiState = ScreenFlashUiState(),
-        val cameraErrorUiState: CameraErrorUiState = CameraErrorUiState.Hidden
+        val cameraErrorUiState: CameraErrorUiState = CameraErrorUiState.Hidden,
+        val deviceRotation: DeviceRotation = DeviceRotation.Natural
     ) : CaptureUiState
 
     companion object

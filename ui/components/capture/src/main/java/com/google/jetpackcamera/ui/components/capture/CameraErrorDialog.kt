@@ -85,6 +85,7 @@ fun CameraErrorDialog(
     ) {
         Surface(
             modifier = Modifier
+                .rotatedLayout(LocalDeviceRotation.current)
                 .padding(horizontal = 24.dp)
                 .widthIn(min = 280.dp, max = 560.dp)
                 .pointerInput(Unit) {

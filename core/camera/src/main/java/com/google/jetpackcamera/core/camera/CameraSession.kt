@@ -34,6 +34,7 @@ import android.util.Log
 import android.util.Range
 import android.util.Rational
 import android.util.Size
+import android.view.Surface
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
@@ -786,6 +787,7 @@ private fun createPreviewUseCase(
     stabilizationMode: StabilizationMode,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null
 ): Preview = Preview.Builder().apply {
+    setTargetRotation(Surface.ROTATION_0)
     updateCameraStateWithCaptureResults(
         targetCameraInfo = cameraInfo,
         captureResults = captureResults

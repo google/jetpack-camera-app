@@ -813,7 +813,10 @@ private fun LockSwitchCaptureButtonNucleus(
                     }
             ) {
                 Icon(
-                    modifier = Modifier.size(switchHeight * .75f).align(Alignment.Center),
+                    modifier = Modifier
+                        .size(switchHeight * .75f)
+                        .align(Alignment.Center)
+                        .animateToUpright(),
                     tint = Color.White,
                     painter = if (shouldBeLocked()) {
                         painterResource(R.drawable.ic_lock)

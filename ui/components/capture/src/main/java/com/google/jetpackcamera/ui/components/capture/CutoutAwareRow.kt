@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import com.google.jetpackcamera.core.common.ignoreResult
+import com.google.jetpackcamera.model.DeviceRotation
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -80,6 +81,7 @@ fun CutoutAwareRow(
     content: @Composable RowScope.() -> Unit
 ) {
     val view = LocalView.current
+    val windowRotation = LocalWindowRotation.current
     val cutoutInsets = WindowInsets.displayCutout
     var rowBoundsInWindow by remember { mutableStateOf<IntRect?>(null) }
     val lockedMinX = remember { mutableMapOf<Int, Int>() }
@@ -134,7 +136,8 @@ fun CutoutAwareRow(
                     ?.displayCutout?.boundingRects.orEmpty(),
                 rowBoundsInWindow = rowBoundsInWindow,
                 isRtl = isRtl,
-                rtlReferenceWidth = rtlReferenceWidth
+                rtlReferenceWidth = rtlReferenceWidth,
+                windowRotation = windowRotation
             )
 
             // Convert vertically overlapping cutout rects into sorted horizontal keep-out ranges.
@@ -226,23 +229,59 @@ internal fun resolveLocalCutoutRects(
     windowCutoutRects: List<android.graphics.Rect>,
     rowBoundsInWindow: IntRect?,
     isRtl: Boolean,
-    rtlReferenceWidth: Int
+    rtlReferenceWidth: Int,
+    windowRotation: DeviceRotation = DeviceRotation.Natural
 ): List<IntRect> {
     val ltrRects = cutoutRectsOverride ?: run {
-        val offsetX = rowBoundsInWindow?.left ?: 0
-        val offsetY = rowBoundsInWindow?.top ?: 0
+        val bounds = rowBoundsInWindow
         windowCutoutRects.map { rect ->
-            IntRect(
-                left = rect.left - offsetX,
-                top = rect.top - offsetY,
-                right = rect.right - offsetX,
-                bottom = rect.bottom - offsetY
-            )
+            when (windowRotation) {
+                DeviceRotation.Natural -> {
+                    val offsetX = bounds?.left ?: 0
+                    val offsetY = bounds?.top ?: 0
+                    IntRect(
+                        left = rect.left - offsetX,
+                        top = rect.top - offsetY,
+                        right = rect.right - offsetX,
+                        bottom = rect.bottom - offsetY
+                    )
+                }
+                DeviceRotation.Rotated270 -> {
+                    val refBottom = bounds?.bottom ?: 0
+                    val refLeft = bounds?.left ?: 0
+                    IntRect(
+                        left = refBottom - rect.bottom,
+                        top = rect.left - refLeft,
+                        right = refBottom - rect.top,
+                        bottom = rect.right - refLeft
+                    )
+                }
+                DeviceRotation.Rotated90 -> {
+                    val refTop = bounds?.top ?: 0
+                    val refRight = bounds?.right ?: 0
+                    IntRect(
+                        left = rect.top - refTop,
+                        top = refRight - rect.right,
+                        right = rect.bottom - refTop,
+                        bottom = refRight - rect.left
+                    )
+                }
+                DeviceRotation.Rotated180 -> {
+                    val refRight = bounds?.right ?: 0
+                    val refBottom = bounds?.bottom ?: 0
+                    IntRect(
+                        left = refRight - rect.right,
+                        top = refBottom - rect.bottom,
+                        right = refRight - rect.left,
+                        bottom = refBottom - rect.top
+                    )
+                }
+            }
         }
     }
     return if (isRtl) {
         val startEdgeX = if (cutoutRectsOverride == null && rowBoundsInWindow != null) {
-            rowBoundsInWindow.width
+            if (windowRotation.isLandscape) rowBoundsInWindow.height else rowBoundsInWindow.width
         } else {
             rtlReferenceWidth
         }

@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.util.Log
 import android.util.Range
 import androidx.activity.compose.BackHandler
@@ -43,6 +45,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -70,6 +73,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensToZoom
@@ -269,6 +273,28 @@ private fun ContentScreen(
     val isVideoRecordingActive = remember {
         derivedStateOf {
             currentCaptureUiStateProvider().videoRecordingState is VideoRecordingState.Active
+        }
+    }
+    val deviceRotation by remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().deviceRotation
+        }
+    }
+
+    val context = LocalContext.current
+    DisposableEffect(context) {
+        val activity = context as? Activity
+        onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+        }
+    }
+
+    LaunchedEffect(isVideoRecordingActive.value) {
+        val activity = context as? Activity
+        if (isVideoRecordingActive.value) {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+        } else {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
         }
     }
 
@@ -821,7 +847,8 @@ private fun ContentScreen(
         snackBar = snackBarLambda,
         pauseToggleButton = pauseToggleButtonLambda,
         imageWell = imageWellLambda,
-        errorDialog = errorDialogLambda
+        errorDialog = errorDialogLambda,
+        deviceRotation = deviceRotation
     )
 }
 
@@ -918,7 +945,8 @@ private fun LayoutWrapper(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
-    errorDialog: @Composable (modifier: Modifier) -> Unit = {}
+    errorDialog: @Composable (modifier: Modifier) -> Unit = {},
+    deviceRotation: DeviceRotation = DeviceRotation.Natural
 ) {
     PreviewLayout(
         modifier = modifier,
@@ -933,6 +961,7 @@ private fun LayoutWrapper(
         quickSettingsButton = quickSettingsButton,
         captureModeToggle = captureModeToggle,
         quickSettingsOverlay = quickSettingsOverlay,
+        deviceRotation = deviceRotation,
         indicatorRow = { modifier ->
             if (!isErrorDialogShowing) {
                 CutoutAwareRow(

@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -56,15 +57,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.takeOrElse
+import com.google.jetpackcamera.model.DeviceRotation
+
+private val QuickSettingsLandscapeMaxSheetHeight = 380.dp
 
 /**
  * The base layout for the camera capture screen.
@@ -116,13 +125,33 @@ fun PreviewLayout(
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
+    errorDialog: @Composable (Modifier) -> Unit = {},
+    deviceRotation: DeviceRotation = DeviceRotation.Natural
 ) {
+    val windowRotation = rememberWindowRotation()
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
+    val consumeRemainingScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset = available
 
-    CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
+                available
+        }
+    }
+
+    CompositionLocalProvider(
+        LocalOverlapTargetBounds provides overlapTargetBounds,
+        LocalDeviceRotation provides deviceRotation,
+        LocalWindowRotation provides windowRotation
+    ) {
         BottomSheetScaffold(
-            modifier = modifier.fillMaxSize(),
+            modifier = modifier
+                .fillMaxSize()
+                .counterRotateToPortrait(windowRotation),
             scaffoldState = scaffoldState,
             sheetPeekHeight = 0.dp,
             sheetDragHandle = {
@@ -141,10 +170,30 @@ fun PreviewLayout(
             sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             sheetContent = {
-                quickSettingsOverlay(Modifier)
+                if (deviceRotation.isLandscape) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = QuickSettingsLandscapeMaxSheetHeight)
+                            .nestedScroll(consumeRemainingScrollConnection)
+                            .rotatedLayout(deviceRotation),
+                        contentAlignment = Alignment.TopStart
+                    ) {
+                        quickSettingsOverlay(Modifier)
+                    }
+                } else {
+                    quickSettingsOverlay(Modifier)
+                }
             },
             snackbarHost = {}
         ) {
+            val portraitCutoutInsets = WindowInsets.displayCutout.toPortraitWindowInsets(
+                windowRotation
+            )
+            val portraitSystemBarsAndCutoutInsets = WindowInsets.systemBarsIgnoringVisibility
+                .union(WindowInsets.displayCutout)
+                .toPortraitWindowInsets(windowRotation)
+
             Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
                 Column {
                     // The indicator row occupies the top bar real estate in the hidden status bar
@@ -152,7 +201,7 @@ fun PreviewLayout(
                     // minimum interactive touch target (defaulting to 48dp), while CutoutAwareRow
                     // shifts individual indicator icons around any intersecting cutout bounds.
                     val cutoutTopInset =
-                        WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+                        portraitCutoutInsets.asPaddingValues().calculateTopPadding()
                     val minTouchTarget =
                         LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
                     val topBarHeight = max(cutoutTopInset, minTouchTarget)
@@ -161,27 +210,32 @@ fun PreviewLayout(
                             .fillMaxWidth()
                             .height(topBarHeight)
                             .windowInsetsPadding(
-                                WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
+                                portraitCutoutInsets.only(WindowInsetsSides.Horizontal)
                             )
                             .padding(horizontal = 16.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         indicatorRow(Modifier)
                     }
+                    val topStartAlignment = if (deviceRotation == DeviceRotation.Rotated270) {
+                        Alignment.TopEnd
+                    } else {
+                        Alignment.TopStart
+                    }
                     Box {
                         viewfinder(Modifier)
-                        topStartContent(Modifier.align(Alignment.TopStart))
+                        topStartContent(
+                            Modifier
+                                .align(topStartAlignment)
+                                .animateToUpright(deviceRotation)
+                        )
                     }
                 }
 
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .windowInsetsPadding(
-                            WindowInsets.systemBarsIgnoringVisibility
-                                .union(WindowInsets.displayCutout)
-                        )
-
+                        .windowInsetsPadding(portraitSystemBarsAndCutoutInsets)
                 ) {
                     debugVisibilityWrapper {
                         VerticalMaterialControls(
@@ -192,13 +246,29 @@ fun PreviewLayout(
                             captureModeToggleSwitch = captureModeToggle,
                             zoomControls = zoomLevelDisplay,
                             elapsedTimeDisplay = elapsedTimeDisplay,
-                            snackbarHost = { modifier ->
-                                PillSnackbarHost(
-                                    snackbarHostState = scaffoldState.snackbarHostState,
-                                    modifier = modifier
-                                )
+                            snackbarHost = { snackbarModifier ->
+                                if (!deviceRotation.isLandscape) {
+                                    PillSnackbarHost(
+                                        snackbarHostState = scaffoldState.snackbarHostState,
+                                        modifier = snackbarModifier
+                                    )
+                                }
                             }
                         )
+                        if (deviceRotation.isLandscape) {
+                            val landscapeSnackbarAlignment =
+                                if (deviceRotation == DeviceRotation.Rotated270) {
+                                    Alignment.CenterStart
+                                } else {
+                                    Alignment.CenterEnd
+                                }
+                            PillSnackbarHost(
+                                snackbarHostState = scaffoldState.snackbarHostState,
+                                modifier = Modifier
+                                    .align(landscapeSnackbarAlignment)
+                                    .rotatedLayout(deviceRotation)
+                            )
+                        }
                     }
                     // controls overlay
                     snackBar(Modifier, scaffoldState.snackbarHostState)

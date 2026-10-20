@@ -70,9 +70,10 @@
         <profileable android:shell="true"/>
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
             android:exported="true"
             android:label="@string/app_name_short"
-            android:screenOrientation="nosensor"
+            android:screenOrientation="user"
             android:theme="@style/Theme.JetpackCamera">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

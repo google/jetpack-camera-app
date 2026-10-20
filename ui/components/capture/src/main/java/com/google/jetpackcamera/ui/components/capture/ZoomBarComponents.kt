@@ -158,7 +158,9 @@ private fun ZoomButton(
     ToggleButton(
         checked = isSelected,
         onCheckedChange = { onChangeZoom(targetZoom) },
-        modifier = modifier.heightIn(buttonSize)
+        modifier = modifier
+            .heightIn(buttonSize)
+            .animateToUpright()
             .semantics {
                 testTag = getZoomButtonTestTag(targetZoom)
                 // todo(kc): move to text resource
