@@ -492,11 +492,13 @@ private fun AdaptivePortraitCaptureLayout(
                                     .fillMaxHeight(),
                                 contentAlignment = Alignment.Center
                             ) {
-                                imageWell(Modifier)
+                                OverlapAwareStyleProvider {
+                                    imageWell(Modifier)
+                                }
                             }
                         }
 
-                        OverlapAwareStyleProvider(overlapThreshold = 0.5f) {
+                        OverlapAwareStyleProvider {
                             captureButton(Modifier)
                         }
 
@@ -506,7 +508,9 @@ private fun AdaptivePortraitCaptureLayout(
                                 .fillMaxHeight(),
                             contentAlignment = Alignment.Center
                         ) {
-                            flipCameraButton(Modifier)
+                            OverlapAwareStyleProvider {
+                                flipCameraButton(Modifier)
+                            }
                         }
                     }
 
@@ -538,7 +542,9 @@ private fun AdaptivePortraitCaptureLayout(
                             modifier = Modifier.weight(1f),
                             contentAlignment = Alignment.Center
                         ) {
-                            captureModeToggleSwitch(Modifier)
+                            OverlapAwareStyleProvider {
+                                captureModeToggleSwitch(Modifier)
+                            }
                         }
 
                         Box(
