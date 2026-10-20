@@ -32,7 +32,7 @@ import androidx.core.location.LocationRequestCompat
 import com.google.jetpackcamera.core.location.LocationProvider
 import java.util.concurrent.TimeUnit
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -179,13 +179,15 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
         val activeProviders = getActiveProviders()
         if (activeProviders.isEmpty()) return false
 
-        // The listener and deferred are scoped to this session, so overlapping sessions cannot
-        // complete or unregister each other.
-        val accurateFixReceived = CompletableDeferred<Unit>()
+        // The listener and channel are scoped to this session, so overlapping sessions cannot
+        // signal or unregister each other.
+        val accurateFixes = Channel<Location>(Channel.CONFLATED)
         val listener = LocationListenerCompat { location ->
             // A rejected fix leaves the cache unchanged, so it must not end the session.
             if (cacheIfBetter(location) && location.accuracyOrMax <= ACCURACY_THRESHOLD_METERS) {
-                accurateFixReceived.complete(Unit)
+                if (accurateFixes.trySend(location).isFailure) {
+                    Log.w(TAG, "Dropped accurate fix: session already ended")
+                }
             }
         }
 
@@ -220,7 +222,7 @@ class LocationManagerLocationProvider(private val context: Context) : LocationPr
 
             Log.d(TAG, "Started location updates across $registeredCount providers")
             withTimeoutOrNull(ACQUISITION_TIMEOUT_MS) {
-                accurateFixReceived.await()
+                accurateFixes.receive()
             }
         } finally {
             removeLocationUpdates(locationManager, listener)

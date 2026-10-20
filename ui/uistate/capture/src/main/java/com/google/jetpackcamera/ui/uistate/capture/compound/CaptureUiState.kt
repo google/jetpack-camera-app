@@ -55,7 +55,7 @@ sealed interface CaptureUiState {
      * @property flipLensUiState The UI state for the flip lens (front/back camera) button.
      * @property snackBarUiState The UI state for the snack bar, used for showing messages to the user.
      * @property previewDisplayUiState The UI state for the preview display.
-     * @property lastBlinkTimeStamp The timestamp of the last image capture blink animation.
+     * @property captureBlinkCount The number of image capture blink animations requested so far.
      * @property externalCaptureMode The external capture mode used by the intent that launched the camera. Default is [ExternalCaptureMode.Standard].
      * @property captureModeToggleUiState The UI state for the photo/video toggle.
      * @property sessionFirstFrameTimestamp The timestamp of the first frame of the current camera session.
@@ -80,7 +80,7 @@ sealed interface CaptureUiState {
         val flipLensUiState: FlipLensUiState = FlipLensUiState.Unavailable,
         val previewDisplayUiState: PreviewDisplayUiState =
             PreviewDisplayUiState(aspectRatioUiState = AspectRatioUiState.Unavailable),
-        val lastBlinkTimeStamp: Long = 0,
+        val captureBlinkCount: Int = 0,
         val externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard,
         val captureModeToggleUiState: CaptureModeToggleUiState =
             CaptureModeToggleUiState.Unavailable,

@@ -202,6 +202,18 @@ class CaptureControllerImplTest {
     }
 
     @Test
+    fun captureImage_onCaptureStarted_incrementsCaptureBlinkCount() = runCameraTest {
+        val controller = createCaptureController()
+
+        controller.captureImage(contentResolver)
+        advanceUntilIdle()
+        controller.captureImage(contentResolver)
+        advanceUntilIdle()
+
+        assertThat(trackedCaptureUiState.value.captureBlinkCount).isEqualTo(2)
+    }
+
+    @Test
     fun startVideoRecording_standardSaveLocation_emitsVideoSaved() = runCameraTest {
         var videoCachedUri: Uri? = null
         val controller = createCaptureController(
@@ -397,6 +409,7 @@ private class TestCameraSystem(private val delegate: FakeCameraSystem) :
         onCaptureStarted: () -> Unit
     ): ImageCapture.OutputFileResults {
         val unused = delegate.takePicture(contentResolver, saveLocation, location, onCaptureStarted)
+        onCaptureStarted()
         return ImageCapture.OutputFileResults(savedImageUri)
     }
 

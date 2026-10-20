@@ -194,9 +194,9 @@ fun PillSnackbarHost(snackbarHostState: SnackbarHostState, modifier: Modifier = 
 @Composable
 internal fun PillSnackbar(
     visuals: SnackbarVisuals,
+    modifier: Modifier = Modifier,
     onAction: () -> Unit = {},
-    onDismiss: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onDismiss: () -> Unit = {}
 ) {
     val isError = (visuals as? CustomSnackbarVisuals)?.isError ?: false
     val containerColor = if (isError) {
@@ -276,10 +276,10 @@ internal fun PillSnackbar(
 @Composable
 private fun PreviewPillSnackbar(
     message: String,
+    modifier: Modifier = Modifier,
     isError: Boolean = true,
     withDismissAction: Boolean = false,
-    actionLabel: String? = null,
-    modifier: Modifier = Modifier
+    actionLabel: String? = null
 ) {
     MaterialTheme(colorScheme = darkColorScheme()) {
         PillSnackbar(
@@ -825,8 +825,8 @@ fun PreviewDisplay(
                 label = ""
             )
 
-            LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
-                if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
+            LaunchedEffect(previewDisplayUiState.captureBlinkCount) {
+                if (previewDisplayUiState.captureBlinkCount != 0) {
                     imageVisible = false
                     delay(BLINK_TIME)
                     imageVisible = true

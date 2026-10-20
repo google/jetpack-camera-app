@@ -141,7 +141,7 @@ fun captureUiState(
             flipLensUiState = flipLensUiState,
             aspectRatioUiState = aspectRatioUiState,
             previewDisplayUiState = PreviewDisplayUiState(
-                trackedUiState.lastBlinkTimeStamp,
+                trackedUiState.captureBlinkCount,
                 previewAspectRatioUiState
             ),
             // TODO: add updateFrom() for all ui states to prevent re-updating if

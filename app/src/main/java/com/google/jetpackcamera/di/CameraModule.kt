@@ -76,7 +76,6 @@ internal object CameraModule {
     @ActivityRetainedScoped
     fun providesCameraXCameraSystem(
         @ApplicationContext context: Context,
-        @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
         @IODispatcher ioDispatcher: CoroutineDispatcher,
         @DefaultFilePathGenerator filePathGenerator: FilePathGenerator,
         availabilityCheckers: Map<
@@ -98,7 +97,6 @@ internal object CameraModule {
     ): CameraXCameraSystem {
         return CameraXCameraSystem(
             context as Application,
-            defaultDispatcher,
             ioDispatcher,
             filePathGenerator,
             availabilityCheckers,
