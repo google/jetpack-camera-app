@@ -16,8 +16,11 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -26,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -297,6 +301,211 @@ class CaptureLayoutPositionTest {
         assertThat(topOf(VIEWFINDER_TAG)).isGreaterThan(topStart11 + 48f)
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun TopSlotsTestLayout(viewfinder: @Composable (Modifier) -> Unit) {
+        PreviewLayout(
+            viewfinder = viewfinder,
+            topStartContent = { topStartModifier ->
+                Box(
+                    topStartModifier
+                        .testTag(TOP_START_TAG)
+                        .size(48.dp)
+                )
+            },
+            viewfinderTopEndContent = { topEndModifier ->
+                Box(
+                    topEndModifier
+                        .testTag(VIEWFINDER_TOP_END_TAG)
+                        .size(width = 120.dp, height = 56.dp)
+                )
+            },
+            captureButton = {},
+            imageWell = {},
+            flipCameraButton = {},
+            zoomLevelDisplay = {},
+            elapsedTimeDisplay = {},
+            quickSettingsButton = {},
+            indicatorRow = {},
+            captureModeToggle = {},
+            quickSettingsOverlay = {},
+            debugOverlay = {},
+            debugVisibilityWrapper = { it() },
+            screenFlashOverlay = {},
+            snackBar = { _, _ -> }
+        )
+    }
+
+    private fun boundsOf(tag: String) =
+        composeTestRule.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+
+    /**
+     * `viewfinderTopEndContent` shares the vertical origin of `topStartContent` while
+     * `topStartContent` is inside the viewfinder (flush 3:4, 9:16), and follows the top edge of
+     * the viewfinder once it shifts below `topStartContent` (1:1). It always stays aligned to the
+     * end edge of the viewfinder.
+     */
+    @Config(qualifiers = "w412dp-h915dp")
+    @Test
+    fun viewfinderTopEndContent_alignsWithTopStart_untilViewfinderShiftsBelowIt() {
+        var aspectRatio by mutableStateOf(3f / 4f)
+
+        composeTestRule.setContent {
+            TopSlotsTestLayout(
+                viewfinder = { vfModifier ->
+                    Box(
+                        vfModifier
+                            .testTag(VIEWFINDER_TAG)
+                            .fillMaxWidth()
+                            .height(412.dp / aspectRatio)
+                    )
+                }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        // 3:4 is flush with the top bar.
+        assertThat(topOf(VIEWFINDER_TAG)).isWithin(TOLERANCE).of(TOP_BAR_HEIGHT)
+        assertThat(topOf(VIEWFINDER_TOP_END_TAG)).isWithin(TOLERANCE).of(TOP_BAR_HEIGHT)
+        assertThat(topOf(VIEWFINDER_TOP_END_TAG)).isEqualTo(topOf(TOP_START_TAG))
+        assertThat(boundsOf(VIEWFINDER_TOP_END_TAG).right.value).isWithin(TOLERANCE).of(412f)
+
+        // 9:16 starts at or above the bottom of topStartContent.
+        aspectRatio = 9f / 16f
+        composeTestRule.waitForIdle()
+        assertThat(topOf(VIEWFINDER_TAG)).isAtMost(TOP_BAR_HEIGHT + TOP_START_HEIGHT)
+        assertThat(topOf(VIEWFINDER_TOP_END_TAG)).isWithin(TOLERANCE).of(TOP_BAR_HEIGHT)
+
+        // 1:1 shifts below topStartContent, so the top-end content moves down with it while
+        // topStartContent stays fixed below the top bar.
+        aspectRatio = 1f
+        composeTestRule.waitForIdle()
+        val vfTop11 = topOf(VIEWFINDER_TAG)
+        assertThat(vfTop11).isGreaterThan(TOP_BAR_HEIGHT + TOP_START_HEIGHT)
+        assertThat(topOf(VIEWFINDER_TOP_END_TAG)).isWithin(TOLERANCE).of(vfTop11)
+        assertThat(topOf(TOP_START_TAG)).isWithin(TOLERANCE).of(TOP_BAR_HEIGHT)
+        assertThat(boundsOf(VIEWFINDER_TOP_END_TAG).right.value).isWithin(TOLERANCE).of(412f)
+    }
+
+    /**
+     * A viewfinder that fills its slot and offsets its own frame, as [PreviewDisplay] does,
+     * reports the frame's top edge through [ViewfinderTopLine], so `viewfinderTopEndContent`
+     * still follows a shifted frame.
+     */
+    @Config(qualifiers = "w412dp-h915dp")
+    @Test
+    fun viewfinderTopEndContent_followsSelfPositioningViewfinder() {
+        var aspectRatio by mutableStateOf(3f / 4f)
+
+        composeTestRule.setContent {
+            TopSlotsTestLayout(
+                viewfinder = { vfModifier ->
+                    SelfPositioningViewfinder(aspectRatio = aspectRatio, modifier = vfModifier)
+                }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(topOf(VIEWFINDER_TAG)).isWithin(TOLERANCE).of(TOP_BAR_HEIGHT)
+        assertThat(topOf(VIEWFINDER_TOP_END_TAG)).isWithin(TOLERANCE).of(TOP_BAR_HEIGHT)
+
+        aspectRatio = 1f
+        composeTestRule.waitForIdle()
+        val vfTop11 = topOf(VIEWFINDER_TAG)
+        assertThat(vfTop11).isGreaterThan(TOP_BAR_HEIGHT + TOP_START_HEIGHT)
+        assertThat(topOf(VIEWFINDER_TOP_END_TAG)).isWithin(TOLERANCE).of(vfTop11)
+        assertThat(topOf(TOP_START_TAG)).isWithin(TOLERANCE).of(TOP_BAR_HEIGHT)
+    }
+
+    /**
+     * While the two top slots share rows, `viewfinderTopEndContent` is limited to the width beside
+     * `topStartContent`, so wide content (such as a long label) never overlaps it. Once the
+     * viewfinder shifts below `topStartContent`, the full viewfinder width is available again.
+     */
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Config(qualifiers = "w412dp-h915dp")
+    @Test
+    fun viewfinderTopEndContent_neverOverlapsTopStartContent() {
+        var aspectRatio by mutableStateOf(3f / 4f)
+
+        composeTestRule.setContent {
+            PreviewLayout(
+                viewfinder = { vfModifier ->
+                    Box(
+                        vfModifier
+                            .fillMaxWidth()
+                            .height(412.dp / aspectRatio)
+                    )
+                },
+                topStartContent = { topStartModifier ->
+                    Box(
+                        topStartModifier
+                            .testTag(TOP_START_TAG)
+                            .size(width = 114.dp, height = 54.dp)
+                    )
+                },
+                viewfinderTopEndContent = { topEndModifier ->
+                    Box(
+                        topEndModifier
+                            .testTag(VIEWFINDER_TOP_END_TAG)
+                            .fillMaxWidth()
+                            .height(56.dp)
+                    )
+                },
+                captureButton = {},
+                imageWell = {},
+                flipCameraButton = {},
+                zoomLevelDisplay = {},
+                elapsedTimeDisplay = {},
+                quickSettingsButton = {},
+                indicatorRow = {},
+                captureModeToggle = {},
+                quickSettingsOverlay = {},
+                debugOverlay = {},
+                debugVisibilityWrapper = { it() },
+                screenFlashOverlay = {},
+                snackBar = { _, _ -> }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        val topStart = boundsOf(TOP_START_TAG)
+        val sharedRow = boundsOf(VIEWFINDER_TOP_END_TAG)
+        assertThat(sharedRow.left.value).isWithin(TOLERANCE).of(topStart.right.value)
+        assertThat(sharedRow.right.value).isWithin(TOLERANCE).of(412f)
+
+        aspectRatio = 1f
+        composeTestRule.waitForIdle()
+        val shifted = boundsOf(VIEWFINDER_TOP_END_TAG)
+        assertThat(shifted.top.value).isAtLeast(topStart.bottom.value)
+        assertThat(shifted.width.value).isWithin(TOLERANCE).of(412f)
+    }
+
+    /** Mirrors how [PreviewDisplay] fills its slot and offsets its frame to the solved band. */
+    @Composable
+    private fun SelfPositioningViewfinder(aspectRatio: Float, modifier: Modifier = Modifier) {
+        BoxWithConstraints(modifier.fillMaxSize()) {
+            val band = LocalCameraLayoutSolution.current?.viewfinderBandFor(aspectRatio)
+            Box(
+                Modifier
+                    .padding(top = band?.top ?: 0.dp)
+                    .layout { measurable, frameConstraints ->
+                        val placeable = measurable.measure(frameConstraints)
+                        layout(
+                            placeable.width,
+                            placeable.height,
+                            alignmentLines = mapOf(ViewfinderTopLine to 0)
+                        ) {
+                            placeable.place(0, 0)
+                        }
+                    }
+                    .testTag(VIEWFINDER_TAG)
+                    .fillMaxWidth()
+                    .height(band?.height ?: (maxWidth / aspectRatio))
+            )
+        }
+    }
+
     /**
      * Content taller than the mode switcher band, such as a carousel with a larger touch target,
      * is centered on the band without moving any row, and is limited to the band plus the smaller
@@ -532,6 +741,7 @@ class CaptureLayoutPositionTest {
         const val ZOOM_BAR_TAG = "test_zoom_bar"
         const val VIEWFINDER_TAG = "test_viewfinder"
         const val TOP_START_TAG = "test_top_start"
+        const val VIEWFINDER_TOP_END_TAG = "test_viewfinder_top_end"
         const val TOGGLE_SWITCH_TAG = "test_toggle_switch"
         const val CAROUSEL_TAG = "test_carousel"
         val CAPTURE_BUTTON_SIZE = 80.dp
@@ -576,5 +786,11 @@ class CaptureLayoutPositionTest {
         const val EXPECTED_SHORT_BUTTON_TOP = 285f
 
         const val TOLERANCE = 0.5f
+
+        /** Top bar height with no display cutout: the 48dp minimum touch target. */
+        const val TOP_BAR_HEIGHT = 48f
+
+        /** Reserved height of the top-start control, CameraLayoutDefaults.TopStartHeight. */
+        const val TOP_START_HEIGHT = 48f
     }
 }

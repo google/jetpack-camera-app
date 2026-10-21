@@ -107,6 +107,7 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -849,6 +850,18 @@ fun PreviewDisplay(
             Box(
                 modifier = Modifier
                     .padding(top = topOffset)
+                    // Reports the top edge of the visible frame to PreviewLayout, which anchors
+                    // viewfinder-relative content to it.
+                    .layout { measurable, frameConstraints ->
+                        val placeable = measurable.measure(frameConstraints)
+                        layout(
+                            placeable.width,
+                            placeable.height,
+                            alignmentLines = mapOf(ViewfinderTopLine to 0)
+                        ) {
+                            placeable.place(0, 0)
+                        }
+                    }
                     .testTag(PREVIEW_DISPLAY)
                     .onGloballyPositioned { coordinates ->
                         val bounds = coordinates.boundsInWindow()

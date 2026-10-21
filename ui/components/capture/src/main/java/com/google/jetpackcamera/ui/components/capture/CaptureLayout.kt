@@ -64,6 +64,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layoutId
@@ -142,6 +144,16 @@ private const val PORTRAIT_ASPECT_RATIO_THRESHOLD = 16f / 9f - 0.01f
 private val MIN_GESTURE_INSET = 32.dp
 
 /**
+ * The top edge of the visible viewfinder, reported by a viewfinder that fills its slot and offsets
+ * its own frame (such as [PreviewDisplay]).
+ *
+ * [PreviewLayout] reads this line to anchor viewfinder-relative content when the viewfinder slot
+ * itself starts at the top of the window. A viewfinder that does not report the line is treated
+ * as starting at its own top edge.
+ */
+internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
+
+/**
  * The base layout for the camera capture screen.
  *
  * @param modifier the modifier for this component
@@ -169,6 +181,11 @@ private val MIN_GESTURE_INSET = 32.dp
  * @param snackBar the snack bar composable for showing messages
  * @param topStartContent optional composable content placed at the top-start of the capture
  * screen, at a fixed position directly below the top status/indicator bar
+ * @param viewfinderTopEndContent optional composable content anchored to the top-end corner of the
+ * viewfinder. While [topStartContent] is inside the viewfinder, this content shares its vertical
+ * origin directly below the top bar, so both top slots stay aligned. When the viewfinder shifts
+ * below [topStartContent], this content moves down with the top edge of the viewfinder while
+ * [topStartContent] stays in place.
  * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
  * tallest viewfinder to clear a persistent navigation bar, and with `false` when it no longer is
  * or when the adaptive portrait layout leaves the composition. The owner of the system bars should
@@ -205,6 +222,7 @@ fun PreviewLayout(
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
+    viewfinderTopEndContent: @Composable (Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
@@ -248,6 +266,7 @@ fun PreviewLayout(
                         windowHeight = maxHeight,
                         viewfinder = viewfinder,
                         topStartContent = topStartContent,
+                        viewfinderTopEndContent = viewfinderTopEndContent,
                         onRequiresImmersiveChange = onRequiresImmersiveChange,
                         indicatorRow = indicatorRow,
                         elapsedTimeDisplay = elapsedTimeDisplay,
@@ -299,6 +318,7 @@ fun PreviewLayout(
                         Box {
                             viewfinder(Modifier)
                             topStartContent(Modifier.align(Alignment.TopStart))
+                            viewfinderTopEndContent(Modifier.align(Alignment.TopEnd))
                         }
                     }
 
@@ -360,6 +380,7 @@ fun PreviewLayout(
 private enum class CaptureSlotId {
     Viewfinder,
     TopStartContent,
+    ViewfinderTopEndContent,
     TopBar,
     ElapsedTime,
     ZoomBar,
@@ -375,6 +396,7 @@ private fun AdaptivePortraitCaptureLayout(
     windowHeight: Dp,
     viewfinder: @Composable (Modifier) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit,
+    viewfinderTopEndContent: @Composable (Modifier) -> Unit,
     onRequiresImmersiveChange: (Boolean) -> Unit,
     indicatorRow: @Composable (Modifier) -> Unit,
     elapsedTimeDisplay: @Composable (Modifier) -> Unit,
@@ -444,6 +466,10 @@ private fun AdaptivePortraitCaptureLayout(
 
                 Box(modifier = Modifier.layoutId(CaptureSlotId.TopStartContent)) {
                     topStartContent(Modifier)
+                }
+
+                Box(modifier = Modifier.layoutId(CaptureSlotId.ViewfinderTopEndContent)) {
+                    viewfinderTopEndContent(Modifier)
                 }
 
                 Box(
@@ -616,23 +642,62 @@ private fun AdaptivePortraitCaptureLayout(
                 .firstOrNull { it.layoutId == CaptureSlotId.Viewfinder }
                 ?.measure(looseConstraints)
 
-            val activeVfTopDp = viewfinderPlaceable?.let { vf ->
+            // A viewfinder that is exactly as tall as one of the solved frames is placed at that
+            // frame's band. A viewfinder that fills the slot (such as PreviewDisplay) positions its
+            // own frame and is placed at the top.
+            val viewfinderY = viewfinderPlaceable?.let { vf ->
                 if (vf.height in 1 until constraints.maxHeight) {
                     val ratio = vf.width.toFloat() / vf.height.toFloat()
-                    solution.viewfinderBandFor(ratio, spec.viewfinders)?.top
+                    solution.viewfinderBandFor(ratio, spec.viewfinders)?.top?.roundToPx()
                 } else {
                     null
                 }
+            } ?: 0
+            // The top edge of the visible frame, in this layout's coordinates. Viewfinders that
+            // position their own frame report it through ViewfinderTopLine.
+            val activeVfTopPx = viewfinderPlaceable?.let { vf ->
+                val reportedTop = vf[ViewfinderTopLine]
+                viewfinderY + if (reportedTop == AlignmentLine.Unspecified) 0 else reportedTop
             }
+
+            // While topStartContent is inside the viewfinder (full-bleed, flush with the top bar,
+            // or a frame that passes behind it), viewfinderTopEndContent shares its vertical
+            // origin. Once the frame shifts below topStartContent, it follows the frame's top edge.
+            val topBarHeightPx = topBarHeight.roundToPx()
+            val viewfinderTopEndY = if (
+                activeVfTopPx == null ||
+                activeVfTopPx <= (topBarHeight + spec.topStartHeight).roundToPx()
+            ) {
+                topBarHeightPx
+            } else {
+                activeVfTopPx
+            }
+            val viewfinderEnd = viewfinderPlaceable?.let { vf ->
+                (constraints.maxWidth + vf.width) / 2
+            } ?: constraints.maxWidth
+            // While the two top slots overlap vertically, viewfinderTopEndContent is limited to
+            // the width left beside topStartContent so that the two never overlap.
+            val sharesTopStartRows = topStartPlaceable != null &&
+                viewfinderTopEndY < topBarHeightPx + topStartPlaceable.height
+            val viewfinderTopEndMaxWidth = if (sharesTopStartRows) {
+                viewfinderEnd - topStartPlaceable!!.width
+            } else {
+                viewfinderEnd
+            }.coerceAtLeast(0)
+            val viewfinderTopEndPlaceable = measurables
+                .firstOrNull { it.layoutId == CaptureSlotId.ViewfinderTopEndContent }
+                ?.measure(looseConstraints.copy(maxWidth = viewfinderTopEndMaxWidth))
 
             layout(constraints.maxWidth, constraints.maxHeight) {
                 viewfinderPlaceable?.let { vf ->
-                    val vfY = activeVfTopDp?.roundToPx() ?: 0
                     val vfX = (constraints.maxWidth - vf.width) / 2
-                    vf.placeRelative(vfX, vfY)
+                    vf.placeRelative(vfX, viewfinderY)
                 }
 
-                topStartPlaceable?.placeRelative(0, topBarHeight.roundToPx())
+                topStartPlaceable?.placeRelative(0, topBarHeightPx)
+                viewfinderTopEndPlaceable?.let { topEnd ->
+                    topEnd.placeRelative(viewfinderEnd - topEnd.width, viewfinderTopEndY)
+                }
 
                 topBarPlaceable?.placeRelative(0, 0)
 
