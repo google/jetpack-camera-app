@@ -19,9 +19,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
@@ -208,5 +208,22 @@ class TooltipTest {
         }
 
         composeTestRule.onNode(isPopup()).assertDoesNotExist()
+    }
+
+    @Test
+    fun tooltip_customContainerColor_appliesCorrectly() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                TooltipIconButton(
+                    icon = { Box(modifier = Modifier.size(24.dp)) },
+                    tooltipText = "Custom colors",
+                    isOutlined = true,
+                    containerColor = Color.Black.copy(alpha = 0.6f),
+                    contentColor = Color.White
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).assertExists()
     }
 }

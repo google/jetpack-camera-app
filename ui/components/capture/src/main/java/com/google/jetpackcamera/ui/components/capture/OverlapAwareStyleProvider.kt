@@ -33,26 +33,32 @@ import androidx.compose.ui.layout.onGloballyPositioned
  *
  * @param modifier The [Modifier] to be applied to the outer layout.
  * @param overlapThreshold The ratio of overlap (between 0.0 and 1.0) required to switch the style.
+ * @param initialStyle The initial style to provide before spatial bounds are measured, preventing visual flicker on launch.
  * @param content The composable content that will receive the computed [LocalCameraControlBackgroundStyle].
  */
 @Composable
 internal fun OverlapAwareStyleProvider(
     modifier: Modifier = Modifier,
     overlapThreshold: Float = 0.5f,
+    initialStyle: CameraControlBackgroundStyle = CameraControlBackgroundStyle.WHITE_20,
     content: @Composable () -> Unit
 ) {
     val targetBounds = LocalOverlapTargetBounds.current.value
     var myBounds by remember { mutableStateOf(Rect.Zero) }
 
-    val intersect = targetBounds.intersect(myBounds)
-    val intersectArea = if (intersect.isEmpty) 0f else intersect.width * intersect.height
-    val myArea = myBounds.width * myBounds.height
-    val isOverlapping = myArea > 0f && (intersectArea / myArea) >= overlapThreshold
-
-    val style = if (isOverlapping) {
-        CameraControlBackgroundStyle.BLACK_60
+    val hasMeasured = myBounds != Rect.Zero && targetBounds != Rect.Zero
+    val style = if (hasMeasured) {
+        val intersect = targetBounds.intersect(myBounds)
+        val intersectArea = if (intersect.isEmpty) 0f else intersect.width * intersect.height
+        val myArea = myBounds.width * myBounds.height
+        val isOverlapping = myArea > 0f && (intersectArea / myArea) >= overlapThreshold
+        if (isOverlapping) {
+            CameraControlBackgroundStyle.BLACK_60
+        } else {
+            CameraControlBackgroundStyle.WHITE_20
+        }
     } else {
-        CameraControlBackgroundStyle.WHITE_20
+        initialStyle
     }
 
     Box(

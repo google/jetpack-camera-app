@@ -43,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -805,6 +806,29 @@ private fun ContentScreen(
         }
     }
 
+    val topEndContentLambda = remember(isErrorDialogShowing) {
+        @Composable { modifier: Modifier, containerColor: Color ->
+            if (!isErrorDialogShowing) {
+                // TODO: Finalize UX design and positioning with design team.
+                TooltipIconButton(
+                    modifier = modifier,
+                    icon = {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color.White, shape = CircleShape)
+                        )
+                    },
+                    tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
+                        " text wraps and aligns.",
+                    positioning = TooltipAnchorPosition.Below,
+                    isOutlined = true,
+                    containerColor = containerColor
+                )
+            }
+        }
+    }
+
     LayoutWrapper(
         modifier = modifier,
         scaffoldState = scaffoldState,
@@ -830,6 +854,7 @@ private fun ContentScreen(
         snackBar = snackBarLambda,
         pauseToggleButton = pauseToggleButtonLambda,
         imageWell = imageWellLambda,
+        topEndContent = topEndContentLambda,
         errorDialog = errorDialogLambda
     )
 }
@@ -927,6 +952,8 @@ private fun LayoutWrapper(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    topStartContent: @Composable (modifier: Modifier) -> Unit = {},
+    topEndContent: @Composable (modifier: Modifier, containerColor: Color) -> Unit = { _, _ -> },
     errorDialog: @Composable (modifier: Modifier) -> Unit = {}
 ) {
     PreviewLayout(
@@ -955,22 +982,10 @@ private fun LayoutWrapper(
                     videoQualityIndicator(Modifier)
                     stabilizationIndicator(Modifier)
                 }
-
-                // TODO: this whole button is currently a PLACEHOLDER
-                TooltipIconButton(
-                    icon = {
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .background(Color.White, shape = CircleShape)
-                        )
-                    },
-                    tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
-                        " text wraps and aligns.",
-                    isOutlined = true
-                )
             }
         },
+        topStartContent = topStartContent,
+        topEndContent = topEndContent,
         debugOverlay = { modifier ->
             debugOverlay(
                 modifier,

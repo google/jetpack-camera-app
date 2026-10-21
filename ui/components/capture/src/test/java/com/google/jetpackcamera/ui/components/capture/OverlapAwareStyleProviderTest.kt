@@ -23,7 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -151,6 +151,58 @@ class OverlapAwareStyleProviderTest {
 
         // Because the missing provider falls back to Rect.Zero,
         // the 0f intersection correctly results in WHITE_20.
+        assertThat(detectedStyle).isEqualTo(CameraControlBackgroundStyle.WHITE_20)
+    }
+
+    @Test
+    fun overlapAware_initialStyleBlack60_providesBlack60BeforeMeasurement() {
+        var detectedStyle: CameraControlBackgroundStyle? = null
+
+        composeTestRule.setContent {
+            // Target bounds are Rect.Zero (unmeasured preview)
+            Box(Modifier.size(500.dp)) {
+                OverlapAwareStyleProvider(
+                    modifier = Modifier.size(100.dp),
+                    initialStyle = CameraControlBackgroundStyle.BLACK_60
+                ) {
+                    detectedStyle = LocalCameraControlBackgroundStyle.current
+                }
+            }
+        }
+        // Before bounds are available, it provides initialStyle
+        assertThat(detectedStyle).isEqualTo(CameraControlBackgroundStyle.BLACK_60)
+    }
+
+    @Test
+    fun overlapAware_initialStyleBlack60_transitionsToWhite20WhenNoOverlapMeasured() {
+        var detectedStyle: CameraControlBackgroundStyle? = null
+
+        composeTestRule.setContent {
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val targetBoundsPx = remember(density) {
+                with(density) {
+                    Rect(0f, 0f, 100.dp.toPx(), 100.dp.toPx())
+                }
+            }
+            Box(Modifier.size(500.dp)) {
+                CompositionLocalProvider(
+                    LocalOverlapTargetBounds provides remember(
+                        targetBoundsPx
+                    ) { mutableStateOf(targetBoundsPx) }
+                ) {
+                    OverlapAwareStyleProvider(
+                        modifier = Modifier
+                            .offset(x = 0.dp, y = 110.dp)
+                            .size(100.dp),
+                        initialStyle = CameraControlBackgroundStyle.BLACK_60
+                    ) {
+                        detectedStyle = LocalCameraControlBackgroundStyle.current
+                    }
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+        // Once measured with no overlap, it transitions to WHITE_20
         assertThat(detectedStyle).isEqualTo(CameraControlBackgroundStyle.WHITE_20)
     }
 }

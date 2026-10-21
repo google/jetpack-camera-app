@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.RichTooltip
@@ -186,6 +187,8 @@ fun JcaTooltipBox(
  * @param autoDismissDuration Optional duration after which the tooltip automatically dismisses.
  * @param triggerFlow Optional flow of [TooltipTriggerEvent] to trigger showing or dismissing.
  * @param isOutlined Whether the icon button should be outlined.
+ * @param containerColor The background container color for the button.
+ * @param contentColor The content/tint color for the icon.
  * @param onClick Optional callback when the button is clicked.
  * @param onDismissRequest Optional callback invoked when the tooltip is dismissed.
  */
@@ -201,6 +204,8 @@ fun TooltipIconButton(
     autoDismissDuration: Duration? = null,
     triggerFlow: Flow<TooltipTriggerEvent>? = null,
     isOutlined: Boolean = false,
+    containerColor: Color = Color.Transparent,
+    contentColor: Color = Color.White,
     onClick: () -> Unit = {},
     onDismissRequest: (() -> Unit)? = null
 ) {
@@ -237,6 +242,10 @@ fun TooltipIconButton(
             OutlinedIconButton(
                 onClick = toggleTooltip,
                 modifier = buttonModifier,
+                colors = IconButtonDefaults.outlinedIconButtonColors(
+                    containerColor = containerColor,
+                    contentColor = contentColor
+                ),
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
             ) {
                 icon()
@@ -244,7 +253,11 @@ fun TooltipIconButton(
         } else {
             IconButton(
                 onClick = toggleTooltip,
-                modifier = buttonModifier
+                modifier = buttonModifier,
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = containerColor,
+                    contentColor = contentColor
+                )
             ) {
                 icon()
             }
