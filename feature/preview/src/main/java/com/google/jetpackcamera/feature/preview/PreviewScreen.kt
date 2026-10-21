@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.google.jetpackcamera.feature.preview
 
 import android.util.Log
@@ -28,10 +30,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -74,6 +79,7 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.VideoCaptureEvent
+import com.google.jetpackcamera.ui.components.TooltipIconButton
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CameraErrorDialog
@@ -796,6 +802,29 @@ private fun ContentScreen(
         }
     }
 
+    val topEndContentLambda = remember(isErrorDialogShowing) {
+        @Composable { modifier: Modifier, containerColor: Color ->
+            if (!isErrorDialogShowing) {
+                // TODO: Finalize UX design and positioning with design team.
+                TooltipIconButton(
+                    modifier = modifier,
+                    icon = {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color.White, shape = CircleShape)
+                        )
+                    },
+                    tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
+                        " text wraps and aligns.",
+                    positioning = TooltipAnchorPosition.Below,
+                    isOutlined = true,
+                    containerColor = containerColor
+                )
+            }
+        }
+    }
+
     LayoutWrapper(
         modifier = modifier,
         scaffoldState = scaffoldState,
@@ -821,6 +850,7 @@ private fun ContentScreen(
         snackBar = snackBarLambda,
         pauseToggleButton = pauseToggleButtonLambda,
         imageWell = imageWellLambda,
+        topEndContent = topEndContentLambda,
         errorDialog = errorDialogLambda
     )
 }
@@ -918,6 +948,8 @@ private fun LayoutWrapper(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    topStartContent: @Composable (modifier: Modifier) -> Unit = {},
+    topEndContent: @Composable (modifier: Modifier, containerColor: Color) -> Unit = { _, _ -> },
     errorDialog: @Composable (modifier: Modifier) -> Unit = {}
 ) {
     PreviewLayout(
@@ -948,6 +980,8 @@ private fun LayoutWrapper(
                 }
             }
         },
+        topStartContent = topStartContent,
+        topEndContent = topEndContent,
         debugOverlay = { modifier ->
             debugOverlay(
                 modifier,
