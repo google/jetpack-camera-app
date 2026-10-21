@@ -173,7 +173,9 @@ fun PreviewLayout(
                     ) {
                         indicatorRow(Modifier)
                         OverlapAwareStyleProvider(
-                            modifier = Modifier.align(Alignment.CenterEnd),
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .padding(end = 24.dp),
                             initialStyle = CameraControlBackgroundStyle.WHITE_20
                         ) {
                             val backgroundStyle = LocalCameraControlBackgroundStyle.current

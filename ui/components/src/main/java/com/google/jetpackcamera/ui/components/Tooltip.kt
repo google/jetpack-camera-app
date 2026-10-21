@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
@@ -46,6 +47,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.time.Duration
 import kotlinx.coroutines.delay
@@ -189,6 +191,7 @@ fun JcaTooltipBox(
  * @param isOutlined Whether the icon button should be outlined.
  * @param containerColor The background container color for the button.
  * @param contentColor The content/tint color for the icon.
+ * @param size The size of the button container, defaulting to [IconButtonDefaults.extraSmallContainerSize] (32.dp).
  * @param onClick Optional callback when the button is clicked.
  * @param onDismissRequest Optional callback invoked when the tooltip is dismissed.
  */
@@ -206,6 +209,7 @@ fun TooltipIconButton(
     isOutlined: Boolean = false,
     containerColor: Color = Color.Transparent,
     contentColor: Color = Color.White,
+    size: Dp = IconButtonDefaults.extraSmallContainerSize().width,
     onClick: () -> Unit = {},
     onDismissRequest: (() -> Unit)? = null
 ) {
@@ -236,6 +240,7 @@ fun TooltipIconButton(
         onDismissRequest = onDismissRequest
     ) {
         val buttonModifier = Modifier
+            .size(size)
             .testTag(TOOLTIP_ANCHOR_BUTTON_TAG)
 
         if (isOutlined) {

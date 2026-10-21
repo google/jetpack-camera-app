@@ -39,6 +39,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
@@ -815,7 +816,7 @@ private fun ContentScreen(
                     icon = {
                         Box(
                             modifier = Modifier
-                                .size(24.dp)
+                                .size(IconButtonDefaults.extraSmallIconSize)
                                 .background(Color.White, shape = CircleShape)
                         )
                     },

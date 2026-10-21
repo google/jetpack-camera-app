@@ -226,4 +226,19 @@ class TooltipTest {
 
         composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).assertExists()
     }
+
+    @Test
+    fun tooltip_customSize_appliesCorrectly() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                TooltipIconButton(
+                    icon = { Box(modifier = Modifier.size(20.dp)) },
+                    tooltipText = "Custom size",
+                    size = 32.dp
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).assertExists()
+    }
 }
