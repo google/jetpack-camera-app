@@ -155,7 +155,9 @@ fun PreviewScreen(
 
     LifecycleStartEffect(Unit) {
         viewModel.cameraController.startCamera()
+        viewModel.startLocationUpdates()
         onStopOrDispose {
+            viewModel.stopLocationUpdates()
             viewModel.cameraController.stopCamera()
         }
     }
@@ -521,11 +523,7 @@ private fun ContentScreen(
             FlipCameraButton(
                 modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
                 onClick = onFlipCamera,
-                flipLensUiState = flipLensState.value,
-                enabledCondition = when (val uiState = flipLensState.value) {
-                    is FlipLensUiState.Available -> uiState.availableLensFacings.size > 1
-                    FlipLensUiState.Unavailable -> false
-                }
+                flipLensUiState = flipLensState.value
             )
         }
     }

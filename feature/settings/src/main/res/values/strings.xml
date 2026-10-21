@@ -83,6 +83,15 @@
     <!-- Subtitle under the Enable Audio setting when videos start muted. [CHAR LIMIT=NONE] -->
     <string name="audio_selector_off">Recordings will start muted</string>
 
+    <!-- Location setting strings -->
+    <string name="location_setting_title" description="Title for setting to save location in captured media. [CHAR LIMIT=30]">Save Location</string>
+    <string name="location_setting_description_on" description="Description when location is enabled. Photos is a generic term referring to media captured by the app. [CHAR LIMIT=100]">Photos and videos will be saved with location coordinates</string>
+    <string name="location_setting_description_off" description="Description when location is disabled. Photos is a generic term referring to media captured by the app. [CHAR LIMIT=100]">Photos and videos will be saved without location</string>
+    <string name="location_permission_dialog_title" description="Title for dialog requesting location permission. [CHAR LIMIT=40]">Location permission required</string>
+    <string name="location_permission_dialog_message" description="Message explaining to grant location permission in system settings. Jetpack Camera is a product name. [CHAR LIMIT=NONE]">To save location with your photos and videos, grant location permissions for Jetpack Camera in system settings.</string>
+    <string name="location_permission_dialog_open_settings" description="Button label to open app system settings. [CHAR LIMIT=25]">Open Settings</string>
+    <string name="location_permission_dialog_cancel" description="Button label to dismiss dialog. [CHAR LIMIT=20]">Cancel</string>
+
     <!-- Title of the setting toggle for enabling concurrent dual-camera recording. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="concurrent_camera_title">Enable Concurrent Camera</string>
     <!-- Subtitle under the Concurrent Camera setting when dual-camera recording is enabled. [CHAR LIMIT=NONE] -->
@@ -225,6 +234,7 @@
     <string name="video_quality_unsupported"><xliff:g id="setting_name" example="Front lens">%1$s</xliff:g> is unsupported by the current video quality</string>
     <!-- Subtitle under the disabled "Enable Audio" switch row on the settings screen, shown when the microphone permission has not been granted. %1$s is the name of the disabled setting, a capitalized noun phrase (currently "Microphone"), so the full sentence reads "Microphone requires permission to record audio". [CHAR LIMIT=NONE] -->
     <string name="permission_record_audio_unsupported"><xliff:g id="setting_name" example="Microphone">%1$s</xliff:g> requires permission to record audio</string>
+    <string name="permission_location_unsupported" description="Rationale explaining that a feature requires location permission. %1$s is the feature name. [CHAR LIMIT=60]">%1$s requires location permission</string>
 
     <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the setting cannot be used while the "Enable Concurrent Camera" (two cameras recording at once) setting is on. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Stabilization", "Low Light Boost" or "Stream configuration", so the full sentence reads e.g. "Stream configuration is unsupported when Concurrent Camera is active". "Concurrent Camera" is the setting name; translate it as in concurrent_camera_title. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="concurrent_camera_enabled"><xliff:g id="setting_name" example="Stream configuration">%1$s</xliff:g> is unsupported when Concurrent Camera is active</string>
@@ -256,6 +266,7 @@
 
     <!-- Capitalized noun naming the microphone, substituted as the grammatical subject (%1$s) of the disabled setting rationale sentence "%1$s requires permission to record audio" under the "Enable Audio" switch on the settings screen, so the full sentence reads "Microphone requires permission to record audio". Translate as a noun, not an imperative verb. [CHAR LIMIT=NONE] -->
     <string name="mute_audio_rationale_prefix">Microphone</string>
+    <string name="save_location_rationale_prefix" description="Prefix title for save location rationale. [CHAR LIMIT=30]">Save Location</string>
     <!-- Capitalized noun phrase for Concurrent Camera mode, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="concurrent_camera_rationale_prefix">Concurrent camera</string>
 
