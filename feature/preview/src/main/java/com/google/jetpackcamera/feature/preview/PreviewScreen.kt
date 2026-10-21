@@ -394,12 +394,22 @@ private fun ContentScreen(
     }
     val videoQualityState =
         remember { derivedStateOf { currentCaptureUiStateProvider().videoQuality } }
+    val activeCaptureModeState = remember {
+        derivedStateOf {
+            val buttonState = currentCaptureUiStateProvider().captureButtonUiState
+            (buttonState as? CaptureButtonUiState.Enabled.Idle)?.captureMode
+        }
+    }
+    var lastCaptureMode by remember { mutableStateOf<CaptureMode?>(null) }
+    activeCaptureModeState.value?.let { lastCaptureMode = it }
     val videoQualityIndicatorLambda = remember {
         @Composable { modifier: Modifier ->
-            VideoQualityIcon(
-                videoQualityState.value,
-                modifier.testTag(VIDEO_QUALITY_TAG)
-            )
+            if (lastCaptureMode != CaptureMode.IMAGE_ONLY) {
+                VideoQualityIcon(
+                    videoQualityState.value,
+                    modifier.testTag(VIDEO_QUALITY_TAG)
+                )
+            }
         }
     }
     val stabilizationState = remember {

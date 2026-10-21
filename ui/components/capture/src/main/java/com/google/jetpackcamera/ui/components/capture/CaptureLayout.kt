@@ -116,6 +116,7 @@ fun PreviewLayout(
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
+    topBarTrailingContent: @Composable (Modifier) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
@@ -167,6 +168,7 @@ fun PreviewLayout(
                         contentAlignment = Alignment.CenterStart
                     ) {
                         indicatorRow(Modifier)
+                        topBarTrailingContent(Modifier.align(Alignment.CenterEnd))
                     }
                     Box {
                         viewfinder(Modifier)

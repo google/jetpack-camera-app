@@ -1056,42 +1056,72 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
 fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         if (videoQuality != VideoQuality.UNSPECIFIED) {
-            Icon(
-                modifier = modifier.size(IconButtonDefaults.smallIconSize),
+            IndicatorPill(modifier = modifier) {
+                Icon(
+                    modifier = Modifier.size(IconButtonDefaults.smallIconSize),
 
-                painter = when (videoQuality) {
-                    VideoQuality.SD ->
-                        painterResource(R.drawable.video_resolution_sd_icon)
+                    painter = when (videoQuality) {
+                        VideoQuality.SD ->
+                            painterResource(R.drawable.video_resolution_sd_icon)
 
-                    VideoQuality.HD ->
-                        painterResource(R.drawable.video_resolution_hd_icon)
+                        VideoQuality.HD ->
+                            painterResource(R.drawable.video_resolution_hd_icon)
 
-                    VideoQuality.FHD ->
-                        painterResource(R.drawable.video_resolution_fhd_icon)
+                        VideoQuality.FHD ->
+                            painterResource(R.drawable.video_resolution_fhd_icon)
 
-                    VideoQuality.UHD ->
-                        painterResource(R.drawable.video_resolution_uhd_icon)
+                        VideoQuality.UHD ->
+                            painterResource(R.drawable.video_resolution_uhd_icon)
 
-                    VideoQuality.UNSPECIFIED ->
-                        throw IllegalStateException("Illegal video quality state")
-                },
-                contentDescription = when (videoQuality) {
-                    VideoQuality.SD ->
-                        stringResource(R.string.video_quality_description_sd)
+                        VideoQuality.UNSPECIFIED ->
+                            throw IllegalStateException("Illegal video quality state")
+                    },
+                    contentDescription = when (videoQuality) {
+                        VideoQuality.SD ->
+                            stringResource(R.string.video_quality_description_sd)
 
-                    VideoQuality.HD ->
-                        stringResource(R.string.video_quality_description_hd)
+                        VideoQuality.HD ->
+                            stringResource(R.string.video_quality_description_hd)
 
-                    VideoQuality.FHD ->
-                        stringResource(R.string.video_quality_description_fhd)
+                        VideoQuality.FHD ->
+                            stringResource(R.string.video_quality_description_fhd)
 
-                    VideoQuality.UHD ->
-                        stringResource(R.string.video_quality_description_uhd)
+                        VideoQuality.UHD ->
+                            stringResource(R.string.video_quality_description_uhd)
 
-                    VideoQuality.UNSPECIFIED -> null
-                }
-            )
+                        VideoQuality.UNSPECIFIED -> null
+                    }
+                )
+            }
         }
+    }
+}
+
+private object IndicatorPillTokens {
+    val MinWidth = 28.dp
+    val MinHeight = 32.dp
+    val HorizontalPadding = 6.dp
+}
+
+/**
+ * A pill-shaped container used for top bar status indicators.
+ */
+@Composable
+fun IndicatorPill(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Box(
+        modifier = modifier
+            .defaultMinSize(
+                minWidth = IndicatorPillTokens.MinWidth,
+                minHeight = IndicatorPillTokens.MinHeight
+            )
+            .background(
+                color = CameraControlBackgroundStyle.BLACK_60.containerColor,
+                shape = CircleShape
+            )
+            .padding(horizontal = IndicatorPillTokens.HorizontalPadding),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
     }
 }
 

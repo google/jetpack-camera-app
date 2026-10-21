@@ -77,6 +77,7 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.IndicatorPill
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
@@ -87,6 +88,7 @@ import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
+import com.google.jetpackcamera.ui.components.capture.containerColor
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
@@ -516,23 +518,23 @@ private fun QuickSettingToggleSelectorButton(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
-    val enum =
-        if (hdrUiState is HdrUiState.Available &&
+    val isHdrActive =
+        hdrUiState is HdrUiState.Available &&
             hdrUiState.isSupported &&
             (
                 hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
                     hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
                 )
-        ) {
-            CameraDynamicRange.HDR
-        } else {
-            CameraDynamicRange.SDR
+    if (isHdrActive) {
+        IndicatorPill(modifier = modifier) {
+            Icon(
+                modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+                painter = CameraDynamicRange.HDR.getPainter(),
+                contentDescription = stringResource(CameraDynamicRange.HDR.getDescriptionResId()),
+                tint = Color.White
+            )
         }
-    Icon(
-        modifier = modifier.size(IconButtonDefaults.smallIconSize),
-        painter = enum.getPainter(),
-        contentDescription = stringResource(enum.getDescriptionResId())
-    )
+    }
 }
 
 /**
@@ -576,18 +578,20 @@ private fun TopBarQuickSettingIcon(
         if (!enabled) it.copy(alpha = 0.38f) else it
     }
     CompositionLocalProvider(LocalContentColor provides contentColor) {
-        Icon(
-            painter = enum.getPainter(),
-            contentDescription = stringResource(id = enum.getDescriptionResId()),
-            modifier = modifier
-                .size(IconButtonDefaults.smallIconSize)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onClick,
-                    enabled = enabled
-                )
-        )
+        IndicatorPill(
+            modifier = modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+                enabled = enabled
+            )
+        ) {
+            Icon(
+                painter = enum.getPainter(),
+                contentDescription = stringResource(id = enum.getDescriptionResId()),
+                modifier = Modifier.size(IconButtonDefaults.smallIconSize)
+            )
+        }
     }
 }
 
