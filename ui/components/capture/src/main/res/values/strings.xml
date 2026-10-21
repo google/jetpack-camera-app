@@ -30,13 +30,13 @@
     <string name="elapsed_time_accessibility_paused">Recording paused: <xliff:g id="minutes" example="1 minute">%1$s</xliff:g> and <xliff:g id="seconds" example="30 seconds">%2$s</xliff:g></string>
 
     <!-- Accessibility label for the toggle option to switch to photo capture mode. [CHAR LIMIT=NONE] -->
-    <string name="capture_mode_image_capture_content_description">Image capture mode</string>
+    <string name="capture_mode_image_capture_content_description">Photo mode</string>
     <!-- Accessibility label for the toggle option to switch to video recording mode. [CHAR LIMIT=NONE] -->
-    <string name="capture_mode_video_recording_content_description">Video recording mode</string>
+    <string name="capture_mode_video_recording_content_description">Video mode</string>
     <!-- Accessibility label for the capture mode toggle when locked to photo capture mode only. [CHAR LIMIT=NONE] -->
-    <string name="capture_mode_image_capture_content_description_disabled">Image capture mode only</string>
+    <string name="capture_mode_image_capture_content_description_disabled">Photo mode only</string>
     <!-- Accessibility label for the capture mode toggle when locked to video recording mode only. [CHAR LIMIT=NONE] -->
-    <string name="capture_mode_video_recording_content_description_disabled">Video recording mode only</string>
+    <string name="capture_mode_video_recording_content_description_disabled">Video mode only</string>
 
     <!-- Accessibility label for the button that pauses or resumes an active video recording. [CHAR LIMIT=NONE] -->
     <string name="pause_resume_button_description">Pause or resume video recording</string>
@@ -117,21 +117,21 @@
     <string name="quick_settings_description_capture_mode_image_only">Image only capture</string>
 
     <!-- Button label in the Quick Settings panel that navigates to the full camera settings screen. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_more_text">More Settings</string>
+    <string name="quick_settings_more_text">More settings</string>
 
     <!-- Accessibility label for the thumbnail preview button (image well) that opens the most recently captured photo or video. [CHAR LIMIT=NONE] -->
-    <string name="image_well_content_description">View recently saved media</string>
+    <string name="image_well_content_description">View recently saved photos and videos</string>
 
     <!-- Accessibility label for the capture button while the camera is in photo mode. Activating the button takes a photo. [CHAR LIMIT=NONE] -->
-    <string name="capture_button_capture_photo">Capture Photo</string>
-    <!-- Accessibility label for the large round capture button on the capture screen when the camera is in video-only mode and idle; also the label of the long-press accessibility action in hybrid mode ("double-tap and hold to Start Video Recording"). Imperative verb phrase: activating starts recording a video. [CHAR LIMIT=NONE] -->
-    <string name="capture_button_start_video_recording">Start Video Recording</string>
+    <string name="capture_button_capture_photo">Capture photo</string>
+    <!-- Accessibility label for the large round capture button on the capture screen when the camera is in video-only mode and idle; also the label of the long-press accessibility action in hybrid mode ("double-tap and hold to start video recording"). Imperative verb phrase: activating starts recording a video. [CHAR LIMIT=NONE] -->
+    <string name="capture_button_start_video_recording">Start video recording</string>
     <!-- Accessibility label for the large round capture button on the capture screen while the user is holding it down to record a video. Describes the current state ("a video is being recorded") as a present-progressive verb phrase; not a command and not a noun meaning "a video of a recording". [CHAR LIMIT=NONE] -->
-    <string name="capture_button_recording_video">Recording Video</string>
+    <string name="capture_button_recording_video">Recording video</string>
     <!-- Accessibility label for the capture button while a video is being recorded. Activating the button stops the recording. [CHAR LIMIT=NONE] -->
-    <string name="capture_button_stop_video_recording">Stop Video Recording</string>
+    <string name="capture_button_stop_video_recording">Stop video recording</string>
     <!-- Accessibility label for the control that locks video recording, so the user can keep recording without holding down the capture button. [CHAR LIMIT=NONE] -->
-    <string name="capture_button_lock_video_recording">Lock Video Recording</string>
+    <string name="capture_button_lock_video_recording">Lock video recording</string>
     <!-- Accessibility label for the capture button when it is disabled, for example while the camera is busy, and cannot be activated. "Capture" is used as an action verb (to take a photo or record a video), not a noun. [CHAR LIMIT=NONE] -->
     <string name="capture_button_unavailable">Capture</string>
 
@@ -158,9 +158,9 @@
     <!-- Title for the HDR (High Dynamic Range) setting row in the Quick Settings panel. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_title_hdr">HDR</string>
     <!-- Title for the Aspect Ratio setting row in the Quick Settings panel. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_title_aspect_ratio">Aspect Ratio</string>
+    <string name="quick_settings_title_aspect_ratio">Aspect ratio</string>
     <!-- Title for the Flash Mode setting row in the Quick Settings panel. [CHAR LIMIT=NONE] -->
-    <string name="quick_settings_title_flash_mode">Flash Mode</string>
+    <string name="quick_settings_title_flash_mode">Flash mode</string>
 
     <string name="quick_settings_aspect_ratio_subtitle_three_four" translatable="false">3:4</string>
     <string name="quick_settings_aspect_ratio_subtitle_nine_sixteen" translatable="false">9:16</string>
