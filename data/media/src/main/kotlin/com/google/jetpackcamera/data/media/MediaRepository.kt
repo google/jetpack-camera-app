@@ -43,7 +43,15 @@ interface MediaRepository {
      */
     fun refreshLastCapturedMedia()
 
-    suspend fun setCurrentMedia(pendingMedia: MediaDescriptor)
+    fun setCurrentMedia(pendingMedia: MediaDescriptor)
+
+    /**
+     * Deletes the [currentMedia] from the cache if it is a cached [MediaDescriptor.Content] and
+     * resets [currentMedia] to [lastCapturedMedia].
+     *
+     * Does nothing if [currentMedia] is not cached.
+     */
+    fun clearCurrentCachedMedia()
 
     suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean
 
