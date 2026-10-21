@@ -36,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -47,9 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
@@ -213,11 +212,21 @@ fun CaptureModeCarousel(
         }
     }
 
-    // A change to the items replaces the state. This ends any drag or animation of the previous
-    // items and centers the new row on the selected item.
-    val state = remember(anchors) {
+    // A different set of items replaces the state. This ends any drag or animation of the previous
+    // items and centers the new row on the selected item, rather than on whichever new item is
+    // nearest to the previous offset.
+    val state = remember(ids) {
         AnchoredDraggableState(initialValue = selectedId, anchors = anchors)
     }
+    // For the same items, a change to the anchors, for example when an item is disabled or
+    // enabled, keeps the state, so that a drag or animation in progress continues. The row
+    // keeps its target if that is still an anchor, and otherwise moves to the selected item.
+    // Side effects run before the effects below resume, so they always see the current anchors.
+    SideEffect {
+        val target = state.targetValue.takeIf { anchors.hasPositionFor(it) } ?: selectedId
+        state.updateAnchors(anchors, target)
+    }
+
     // Settling, flinging, and tapping snap to the target item when animations are disabled.
     val disableAnimations = LocalDisableAnimations.current
     val settleSpec: AnimationSpec<Float> = remember(disableAnimations) {
@@ -339,15 +348,18 @@ fun CaptureModeCarousel(
                 .drawWithContent {
                     val pillWidth = geometry.pillWidth(position())
                     val pillHeight = PillHeight.toPx()
-                    val pillRect = Rect(
-                        offset = Offset(
-                            x = (size.width - pillWidth) / 2f,
-                            y = (size.height - pillHeight) / 2f
-                        ),
-                        size = Size(pillWidth, pillHeight)
-                    )
+                    val left = (size.width - pillWidth) / 2f
+                    val top = (size.height - pillHeight) / 2f
                     pillPath.reset()
-                    pillPath.addRoundRect(RoundRect(pillRect, CornerRadius(pillHeight / 2f)))
+                    pillPath.addRoundRect(
+                        RoundRect(
+                            left = left,
+                            top = top,
+                            right = left + pillWidth,
+                            bottom = top + pillHeight,
+                            cornerRadius = CornerRadius(pillHeight / 2f)
+                        )
+                    )
                     clipPath(pillPath) {
                         drawRect(selectedContainerColor)
                         this@drawWithContent.drawContent()
