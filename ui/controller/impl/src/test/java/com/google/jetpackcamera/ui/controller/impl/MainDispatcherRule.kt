@@ -24,6 +24,10 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
+/**
+ * A JUnit [TestRule] that overrides the Main dispatcher with a test dispatcher
+ * for the duration of the test.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainDispatcherRule(private val dispatcher: CoroutineDispatcher) : TestRule {
     override fun apply(base: Statement, description: Description) = object : Statement() {

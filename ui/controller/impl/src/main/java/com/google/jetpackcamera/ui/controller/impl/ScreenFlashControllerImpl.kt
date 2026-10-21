@@ -80,10 +80,8 @@ class ScreenFlashControllerImpl(
                         {
                             event.onComplete()
                             // reset ui state on CLEAR_UI event completion
-                            scope.launch {
-                                trackedCaptureUiState.update { o ->
-                                    o.copy(screenFlashUiState = ScreenFlashUiState())
-                                }
+                            trackedCaptureUiState.update { o ->
+                                o.copy(screenFlashUiState = ScreenFlashUiState())
                             }
                         }
                     }
