@@ -75,6 +75,13 @@ class CaptureModeCarouselTest {
         labelResId = R.string.quick_settings_text_capture_mode_standard
     )
 
+    /** A different sub-mode with the same label, and therefore the same width, as [secondOption]. */
+    private val otherSecondId = CaptureSubModeId("submode_other_two")
+    private val otherSecondOption = CaptureSubModeOption(
+        id = otherSecondId,
+        labelResId = R.string.quick_settings_text_capture_mode_video_only
+    )
+
     @Test
     fun carousel_whenUnavailable_doesNotRender() {
         composeTestRule.setContent {
@@ -347,6 +354,96 @@ class CaptureModeCarouselTest {
     }
 
     @Test
+    fun carousel_whenItemDisabledDuringDrag_continuesDrag() {
+        var uiState by mutableStateOf(availableState(CaptureSubModeId.DEFAULT))
+        val selections = mutableListOf<CaptureSubModeId>()
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureModeCarousel(
+                    uiState = uiState,
+                    onSelectSubMode = {
+                        selections += it
+                        uiState = stateWithDisabledThirdItem(it)
+                    }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput {
+            down(center)
+            moveBy(Offset(-(viewConfiguration.touchSlop + DRAG_DISTANCE_PX), 0f))
+        }
+        // The same items, with the third item now disabled.
+        uiState = stateWithDisabledThirdItem(CaptureSubModeId.DEFAULT)
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput {
+            moveBy(Offset(-DRAG_DISTANCE_PX, 0f))
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        // The drag continued, so it selects the item it was dragged to.
+        assertThat(selections).containsExactly(secondId)
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag).assertIsSelected()
+    }
+
+    @Test
+    fun carousel_whenItemDisabledWhileSettling_settlesOnTappedItem() {
+        var uiState by mutableStateOf(availableState(CaptureSubModeId.DEFAULT))
+        val selections = mutableListOf<CaptureSubModeId>()
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureModeCarousel(
+                    uiState = uiState,
+                    onSelectSubMode = {
+                        selections += it
+                        uiState = stateWithDisabledSecondItem(it)
+                    }
+                )
+            }
+        }
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).performClick()
+        composeTestRule.mainClock.advanceTimeByFrame()
+        // The same items, with an item between the start and the tapped item now disabled.
+        uiState = stateWithDisabledSecondItem(CaptureSubModeId.DEFAULT)
+        composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
+
+        assertThat(selections).containsExactly(thirdId)
+        composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).assertIsSelected()
+    }
+
+    @Test
+    fun carousel_whenItemsChangeToDifferentSubModes_centersSelectionWithoutCommitting() {
+        // The second item of each list is at the same position, so a row that kept its offset
+        // would come to rest on the new list's second item.
+        var uiState by mutableStateOf(twoItemState(secondId))
+        val selections = mutableListOf<CaptureSubModeId>()
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureModeCarousel(uiState = uiState, onSelectSubMode = { selections += it })
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        uiState = CaptureSubModeUiState.Available(
+            selectedSubMode = CaptureSubModeId.DEFAULT,
+            availableSubModes = listOf(
+                SingleSelectableUiState.SelectableUi(defaultOption),
+                SingleSelectableUiState.SelectableUi(otherSecondOption)
+            )
+        )
+        composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
+        composeTestRule.waitForIdle()
+
+        assertThat(selections).isEmpty()
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+            .assertIsSelected()
+        composeTestRule.onNodeWithTag(otherSecondId.carouselOptionTag).assertIsNotSelected()
+    }
+
+    @Test
     fun carousel_whenFlickedTowardsDisabledItem_skipsToNextEnabledItem() {
         val selections = mutableListOf<CaptureSubModeId>()
         composeTestRule.setContent {
@@ -509,6 +606,21 @@ class CaptureModeCarouselTest {
                     }
                 ),
                 SingleSelectableUiState.SelectableUi(thirdOption)
+            )
+        )
+
+    private fun stateWithDisabledThirdItem(selected: CaptureSubModeId) =
+        CaptureSubModeUiState.Available(
+            selectedSubMode = selected,
+            availableSubModes = listOf(
+                SingleSelectableUiState.SelectableUi(defaultOption),
+                SingleSelectableUiState.SelectableUi(secondOption),
+                SingleSelectableUiState.Disabled(
+                    thirdOption,
+                    object : DisableRationale {
+                        override val reasonTextResId: Int = 0
+                    }
+                )
             )
         )
 
