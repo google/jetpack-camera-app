@@ -269,13 +269,13 @@ private fun VerticalMaterialControls(
                                     .height(120.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                imageWell(Modifier)
+                                OverlapAwareStyleProvider {
+                                    imageWell(Modifier)
+                                }
                             }
                         }
 
-                        OverlapAwareStyleProvider(
-                            overlapThreshold = 0.5f
-                        ) {
+                        OverlapAwareStyleProvider {
                             captureButton(Modifier)
                         }
 
@@ -286,7 +286,9 @@ private fun VerticalMaterialControls(
                                 .height(120.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            flipCameraButton(Modifier)
+                            OverlapAwareStyleProvider {
+                                flipCameraButton(Modifier)
+                            }
                         }
                     }
                 }
@@ -325,7 +327,9 @@ private fun VerticalMaterialControls(
                         modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
-                        captureModeToggleSwitch(Modifier)
+                        OverlapAwareStyleProvider {
+                            captureModeToggleSwitch(Modifier)
+                        }
                     }
 
                     // right toggle switch item to the right

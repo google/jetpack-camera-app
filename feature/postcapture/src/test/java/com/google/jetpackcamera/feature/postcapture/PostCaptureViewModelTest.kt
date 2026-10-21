@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -195,8 +196,23 @@ internal class PostCaptureViewModelTest {
     }
 
     @Test
-    fun onCleared_deleteCachedMediaFails_mediaNotCleared() = runTest(testDispatcher) {
+    fun onCleared_beforeLoadCompletes_deletesCachedMedia() = runTest(testDispatcher) {
+        // Arrange: set cached media without advancing dispatcher so loadedMediaFlow has not loaded yet
+        mediaRepository.setCurrentMedia(testCacheImageDesc)
+
+        // Act
+        callOnCleared(viewModel)
+        advanceUntilIdle()
+        testExternalScope.advanceUntilIdle()
+
+        // Assert
+        assertThat(mediaRepository.currentMedia.value).isEqualTo(MediaDescriptor.None)
+    }
+
+    @Test
+    fun onCleared_deleteCachedMediaFails_fallsBackToLastCapturedMedia() = runTest(testDispatcher) {
         // Arrange
+        mediaRepository.setLastCapturedMedia(testImageDesc)
         mediaRepository.setCurrentMedia(testCacheImageDesc)
         mediaRepository.deleteMediaHandler = { false } // Simulate failure
         advanceUntilIdle()
@@ -206,9 +222,8 @@ internal class PostCaptureViewModelTest {
         testExternalScope.advanceUntilIdle() // Run the external scope job
 
         // Assert
-        // The ViewModel should have attempted to delete, but the fake repository
-        // should not have cleared the media on failure.
-        assertThat(mediaRepository.currentMedia.value).isEqualTo(testCacheImageDesc)
+        // Even if deleting the cached file fails, currentMedia should fall back to lastCapturedMedia.
+        assertThat(mediaRepository.currentMedia.value).isEqualTo(testImageDesc)
     }
 
     @Test
@@ -331,6 +346,89 @@ internal class PostCaptureViewModelTest {
         assertThat(snackBarUiState.snackBarQueue.first().stringResource)
             .isEqualTo(R.string.snackbar_delete_video_failure)
     }
+
+    @Test
+    fun deleteCurrentMedia_onSuccess_doesNotLoadFallbackMediaIntoUiState() =
+        runTest(testDispatcher) {
+            val fallbackBitmap = Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
+            val fallbackImageUri = Uri.parse("content://media/external/images/media/1")
+            val fallbackImageDesc = MediaDescriptor.Content.Image(
+                fallbackImageUri,
+                fallbackBitmap,
+                isCached = false
+            )
+            val fallbackImageMedia = Media.Image(fallbackBitmap)
+
+            mediaRepository.loadHandler = { descriptor ->
+                when (descriptor) {
+                    testCacheImageDesc -> testImageMedia
+                    fallbackImageDesc -> fallbackImageMedia
+                    else -> Media.None
+                }
+            }
+            mediaRepository.setLastCapturedMedia(fallbackImageDesc)
+            mediaRepository.setCurrentMedia(testCacheImageDesc)
+
+            val collectJob = backgroundScope.launch {
+                viewModel.postCaptureUiState.collect {}
+            }
+
+            viewModel.postCaptureUiState.first {
+                it is PostCaptureUiState.Ready &&
+                    it.viewerUiState is MediaViewerUiState.Content.Image
+            }
+
+            var deleteSuccessCalled = false
+            viewModel.deleteCurrentMedia { deleteSuccessCalled = true }
+            advanceUntilIdle()
+
+            assertThat(deleteSuccessCalled).isTrue()
+            assertThat(mediaRepository.currentMedia.value).isEqualTo(fallbackImageDesc)
+            val uiState = viewModel.postCaptureUiState.value as PostCaptureUiState.Ready
+            val viewerState = uiState.viewerUiState as MediaViewerUiState.Content.Image
+            assertThat(viewerState.imageBitmap).isEqualTo(testImageMedia.bitmap)
+
+            collectJob.cancel()
+        }
+
+    @Test
+    fun deleteCurrentMedia_concurrentCalls_deletesOnlyOnceAndDoesNotShowErrorSnackbar() =
+        runTest(testDispatcher) {
+            var deleteCallCount = 0
+            mediaRepository.deleteMediaHandler = {
+                deleteCallCount++
+                deleteCallCount == 1
+            }
+            mediaRepository.setCurrentMedia(testImageDesc)
+            advanceUntilIdle()
+
+            var successCount = 0
+            viewModel.deleteCurrentMedia { successCount++ }
+            viewModel.deleteCurrentMedia { successCount++ }
+            advanceUntilIdle()
+
+            assertThat(deleteCallCount).isEqualTo(1)
+            assertThat(successCount).isEqualTo(1)
+            assertThat(viewModel.snackBarUiState.value.asEnabled().snackBarQueue).isEmpty()
+        }
+
+    @Test
+    fun deleteCurrentMedia_cachedMedia_onFailure_keepsCurrentMediaInSync() =
+        runTest(testDispatcher) {
+            mediaRepository.setLastCapturedMedia(testImageDesc)
+            mediaRepository.setCurrentMedia(testCacheImageDesc)
+            mediaRepository.deleteMediaHandler = { false }
+            advanceUntilIdle()
+
+            viewModel.deleteCurrentMedia()
+            advanceUntilIdle()
+
+            assertThat(mediaRepository.currentMedia.value).isEqualTo(testCacheImageDesc)
+            val snackBarUiState = viewModel.snackBarUiState.value.asEnabled()
+            assertThat(snackBarUiState.snackBarQueue).hasSize(1)
+            assertThat(snackBarUiState.snackBarQueue.first().stringResource)
+                .isEqualTo(R.string.snackbar_delete_image_failure)
+        }
 
     @Test
     fun onSnackBarResult_removesFromQueue() = runTest(testDispatcher) {

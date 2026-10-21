@@ -38,6 +38,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,8 +50,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -133,6 +136,15 @@ class LocalMediaRepository(
                 }
             }
             .distinctUntilChanged()
+            .onEach { mediaDescriptor ->
+                _currentMedia.update { current ->
+                    if ((current as? MediaDescriptor.Content)?.isCached == true) {
+                        current
+                    } else {
+                        mediaDescriptor
+                    }
+                }
+            }
             .stateIn(
                 scope = repositoryScope,
                 started = SharingStarted.Eagerly,
@@ -167,7 +179,7 @@ class LocalMediaRepository(
      *
      * @param pendingMedia The [MediaDescriptor] to set as current.
      */
-    override suspend fun setCurrentMedia(pendingMedia: MediaDescriptor) {
+    override fun setCurrentMedia(pendingMedia: MediaDescriptor) {
         _currentMedia.update { pendingMedia }
     }
 
@@ -287,6 +299,20 @@ class LocalMediaRepository(
         latestPair?.first
     }
 
+    override fun clearCurrentCachedMedia() {
+        val mediaDescriptor = currentMedia.value
+        if (mediaDescriptor is MediaDescriptor.Content && mediaDescriptor.isCached) {
+            repositoryScope.launch {
+                if (!deleteMedia(mediaDescriptor)) {
+                    Log.e(TAG, "Failed to delete media from cache: ${mediaDescriptor.uri}")
+                    _currentMedia.update { current ->
+                        if (current == mediaDescriptor) lastCapturedMedia.value else current
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Deletes the specified media from either the cache or the MediaStore.
      *
@@ -295,26 +321,35 @@ class LocalMediaRepository(
      *   cached file and deleted directly using [deleteCachedMedia].
      * - Otherwise, the media is deleted from the MediaStore using the [ContentResolver].
      *
-     * If the deleted media was the currently active media, [currentMedia] is reset to [MediaDescriptor.None].
+     * If the deleted media was the currently active media, [currentMedia] falls back to
+     * [lastCapturedMedia] when `isCached` is `true`, or resets to [MediaDescriptor.None] otherwise.
      *
      * @param mediaDescriptor The [MediaDescriptor.Content] of the media to delete.
      * @return `true` if the media was successfully deleted, `false` otherwise.
      */
-    override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
-        val finalResult = withContext(iODispatcher) {
-            val result =
+    override suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
+        repositoryScope.async {
+            val finalResult =
                 if (mediaDescriptor.uri.scheme == ContentResolver.SCHEME_CONTENT) {
                     deleteContentMedia(mediaDescriptor.uri)
                 } else {
                     deleteCachedMedia(mediaDescriptor.uri)
                 }
-            result
-        }
-        if (finalResult && currentMedia.value == mediaDescriptor) {
-            setCurrentMedia(MediaDescriptor.None)
-        }
-        return finalResult
-    }
+            if (finalResult) {
+                _currentMedia.update { current ->
+                    if (current == mediaDescriptor) {
+                        if (mediaDescriptor.isCached) {
+                            lastCapturedMedia.value
+                        } else {
+                            MediaDescriptor.None
+                        }
+                    } else {
+                        current
+                    }
+                }
+            }
+            finalResult
+        }.await()
 
     /**
      * Deletes a cached media file.
@@ -503,16 +538,20 @@ class LocalMediaRepository(
     @Throws(IOException::class)
     private suspend fun loadImage(uri: Uri): Bitmap? = withContext(iODispatcher) {
         try {
-            val loadedBitmap = if (uri.scheme == ContentResolver.SCHEME_FILE) {
-                BitmapFactory.decodeFile(uri.path)
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Android 10 (API 29) and above: Use ImageDecoder
-                val source = ImageDecoder.createSource(context.contentResolver, uri)
-                ImageDecoder.decodeBitmap(source)
-            } else {
-                // Android 9 (API 28) and below: Use BitmapFactory
-                context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                    BitmapFactory.decodeStream(inputStream)
+            val loadedBitmap = when {
+                uri.scheme == ContentResolver.SCHEME_FILE -> {
+                    BitmapFactory.decodeFile(uri.path)
+                }
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
+                    // Android 10 (API 29) and above: Use ImageDecoder
+                    val source = ImageDecoder.createSource(context.contentResolver, uri)
+                    ImageDecoder.decodeBitmap(source)
+                }
+                else -> {
+                    // Android 9 (API 28) and below: Use BitmapFactory
+                    context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                        BitmapFactory.decodeStream(inputStream)
+                    }
                 }
             }
 
