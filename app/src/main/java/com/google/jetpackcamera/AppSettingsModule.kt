@@ -32,7 +32,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AppSettingsModule {
+internal object AppSettingsModule {
 
     @Provides
     @Singleton

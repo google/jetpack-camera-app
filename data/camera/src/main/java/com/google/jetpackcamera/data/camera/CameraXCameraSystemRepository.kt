@@ -19,7 +19,6 @@ import android.util.Log
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
-import com.google.jetpackcamera.core.camera.CameraXCameraSystem
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -44,7 +43,8 @@ private const val TAG = "CameraXCameraSystemRepo"
 
 /**
  * Implementation of [CameraSystemRepository] and [ConstraintsRepository] that manages
- * [CameraXCameraSystem] initialization and exposes camera streams.
+ * [CameraXCameraSystem][com.google.jetpackcamera.core.camera.CameraXCameraSystem]
+ * initialization and exposes camera streams.
  */
 class CameraXCameraSystemRepository(
     private val cameraXCameraSystemProvider: Provider<out CameraSystem>,
@@ -52,18 +52,6 @@ class CameraXCameraSystemRepository(
     private val launchConfigProvider: CameraLaunchConfigProvider,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) : CameraSystemRepository, ConstraintsRepository {
-
-    constructor(
-        cameraXCameraSystemProvider: Provider<out CameraSystem>,
-        settingsRepository: SettingsRepository,
-        launchConfig: CameraLaunchConfig = CameraLaunchConfig(),
-        scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    ) : this(
-        cameraXCameraSystemProvider = cameraXCameraSystemProvider,
-        settingsRepository = settingsRepository,
-        launchConfigProvider = CameraLaunchConfigProvider().apply { setConfig(launchConfig) },
-        scope = scope
-    )
 
     private val cameraSystem: CameraSystem by lazy {
         cameraXCameraSystemProvider.get()
