@@ -41,19 +41,19 @@ import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
 import com.google.jetpackcamera.ui.uistateadapter.postcapture.from
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -81,33 +81,8 @@ class PostCaptureViewModel @Inject constructor(
     private val _uiEvents = Channel<PostCaptureEvent>()
     val uiEvents: ReceiveChannel<PostCaptureEvent> = _uiEvents
 
-    /**
-     * This flow maps the latest [MediaRepository.currentMedia] and its loaded [Media] counterpart to a [Pair]
-     *
-     * - [Pair.first] - [MediaDescriptor]
-     * - [Pair.second] - [Media]
-     */
-    private val loadedMediaFlow: StateFlow<Pair<MediaDescriptor, Media>> =
-        mediaRepository.currentMedia
-            .map { mediaDescriptor -> mediaDescriptor to mediaRepository.load(mediaDescriptor) }
-            .distinctUntilChanged().stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(),
-                initialValue = (MediaDescriptor.None to Media.None)
-            )
-    private val _postCaptureUiState =
-        MutableStateFlow<PostCaptureUiState>(PostCaptureUiState.Loading)
+    private val isDeletingOrDeleted = AtomicBoolean(false)
 
-    val postCaptureUiState: StateFlow<PostCaptureUiState> = _postCaptureUiState
-
-    private val _snackBarUiState: MutableStateFlow<SnackBarUiState.Enabled> =
-        MutableStateFlow(SnackBarUiState.Enabled())
-    val snackBarUiState: StateFlow<SnackBarUiState.Enabled> =
-        _snackBarUiState.asStateFlow()
-    val snackBarController: SnackBarController = SnackBarControllerImpl(
-        snackBarUiState = _snackBarUiState,
-        coroutineContext = viewModelScope.coroutineContext
-    )
     private var player: ExoPlayer? = null
 
     private val playerState = MutableStateFlow<PlayerState>(PlayerState.Unavailable)
@@ -122,64 +97,73 @@ class PostCaptureViewModel @Inject constructor(
         }
     }
 
-    init {
-        // coroutine to update viewmodel
-        viewModelScope.launch {
-            combine(
-                loadedMediaFlow,
-                playerState.map { it is PlayerState.Available }.distinctUntilChanged()
-            ) { mediaPair, playerstate ->
-                _postCaptureUiState.update { old ->
-                    when (old) {
-                        PostCaptureUiState.Loading -> PostCaptureUiState.Ready()
-                        is PostCaptureUiState.Ready -> {
-                            old
-                        }
-                    }.copy(
-                        viewerUiState = MediaViewerUiState.from(
-                            mediaPair.first,
-                            mediaPair.second,
-                            player,
-                            playerstate
-                        ),
-                        shareButtonUiState = ShareButtonUiState.from(mediaPair.first),
-                        deleteButtonUiState = DeleteButtonUiState.from(mediaPair.first)
-
-                    )
-                }
-            }.collect { }
-        }
-
-        // release and remove player when no videos are loaded
-        viewModelScope.launch {
-            loadedMediaFlow.map { it.second is Media.Video }
-                .distinctUntilChanged()
-                .collectLatest { isVideoMedia ->
-                    if (isVideoMedia) {
+    /**
+     * This flow maps the latest [MediaRepository.currentMedia] and its loaded [Media] counterpart to a [Pair]
+     *
+     * - [Pair.first] - [MediaDescriptor]
+     * - [Pair.second] - [Media]
+     */
+    private val loadedMediaFlow: StateFlow<Pair<MediaDescriptor, Media>> =
+        mediaRepository.currentMedia
+            .filter { !isDeletingOrDeleted.get() }
+            .map { mediaDescriptor -> mediaDescriptor to mediaRepository.load(mediaDescriptor) }
+            .distinctUntilChanged()
+            .onEach { (_, media) ->
+                when {
+                    media is Media.Video -> {
                         if (player == null) {
                             initPlayer()
                         }
-                    } else if (player != null) {
+                    }
+                    player != null -> {
                         releasePlayer()
-                        player = null
                     }
                 }
-        }
-    }
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = (MediaDescriptor.None to Media.None)
+            )
+
+    val postCaptureUiState: StateFlow<PostCaptureUiState> =
+        combine(
+            loadedMediaFlow,
+            playerState.map { it is PlayerState.Available }.distinctUntilChanged()
+        ) { mediaPair, isPlayerAvailable ->
+            PostCaptureUiState.Ready(
+                viewerUiState = MediaViewerUiState.from(
+                    mediaPair.first,
+                    mediaPair.second,
+                    player,
+                    isPlayerAvailable
+                ),
+                shareButtonUiState = ShareButtonUiState.from(mediaPair.first),
+                deleteButtonUiState = DeleteButtonUiState.from(mediaPair.first)
+            )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = PostCaptureUiState.Loading
+        )
+
+    private val currentMediaDescriptor: MediaDescriptor.Content?
+        get() = (loadedMediaFlow.value.first as? MediaDescriptor.Content)
+            ?: (mediaRepository.currentMedia.value as? MediaDescriptor.Content)
+
+    private val _snackBarUiState: MutableStateFlow<SnackBarUiState.Enabled> =
+        MutableStateFlow(SnackBarUiState.Enabled())
+    val snackBarUiState: StateFlow<SnackBarUiState.Enabled> =
+        _snackBarUiState.asStateFlow()
+    val snackBarController: SnackBarController = SnackBarControllerImpl(
+        snackBarUiState = _snackBarUiState,
+        coroutineContext = viewModelScope.coroutineContext
+    )
 
     // todo(kc): improve cache cleanup strategy
     override fun onCleared() {
         releasePlayer()
-        val mediaDescriptor: MediaDescriptor = loadedMediaFlow.value.first
-
-        if (mediaDescriptor is MediaDescriptor.Content && mediaDescriptor.isCached) {
-            viewModelScope.launch(NonCancellable) {
-                if (!mediaRepository.deleteMedia(mediaDescriptor)) {
-                    Log.e(TAG, "Failed to delete media from cache: ${mediaDescriptor.uri}")
-                }
-            }
-        }
-        super.onCleared()
+        mediaRepository.clearCurrentCachedMedia()
     }
 
     private fun updatePlayerState(commands: Player.Commands?) {
@@ -273,8 +257,7 @@ class PostCaptureViewModel @Inject constructor(
      */
     fun saveCurrentMedia() {
         viewModelScope.launch {
-            val currentMediaDescriptor = loadedMediaFlow.value.first
-            (currentMediaDescriptor as? MediaDescriptor.Content)?.let {
+            currentMediaDescriptor?.let {
                 saveMedia(it)
             }
         }
@@ -282,8 +265,7 @@ class PostCaptureViewModel @Inject constructor(
 
     fun deleteCurrentMedia(onDeleteSuccess: () -> Unit = {}) {
         viewModelScope.launch {
-            val currentMediaDescriptor = loadedMediaFlow.value.first
-            (currentMediaDescriptor as? MediaDescriptor.Content)?.let {
+            currentMediaDescriptor?.let {
                 if (deleteMedia(mediaDescriptor = it)) {
                     onDeleteSuccess()
                 }
@@ -369,41 +351,43 @@ class PostCaptureViewModel @Inject constructor(
      *
      * @param mediaDescriptor the [MediaDescriptor] of the media to be deleted.
      */
-    private suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean =
-        viewModelScope.async {
-            val result = try {
-                mediaRepository.deleteMedia(mediaDescriptor)
-            } catch (e: Exception) {
-                false
-            }
-            if (!result) {
-                val cookieInt = snackBarController.incrementAndGetSnackBarCount()
-                val cookie = "MediaDelete-$cookieInt"
-                snackBarController.addSnackBarData(
-                    SnackbarData(
-                        cookie = cookie,
-                        stringResource = when (mediaDescriptor) {
-                            is MediaDescriptor.Content.Image ->
-                                R.string.snackbar_delete_image_failure
+    private suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean {
+        if (!isDeletingOrDeleted.compareAndSet(false, true)) {
+            return false
+        }
+        val result = try {
+            mediaRepository.deleteMedia(mediaDescriptor)
+        } catch (e: Exception) {
+            false
+        }
+        if (!result) {
+            isDeletingOrDeleted.set(false)
+            val cookieInt = snackBarController.incrementAndGetSnackBarCount()
+            val cookie = "MediaDelete-$cookieInt"
+            snackBarController.addSnackBarData(
+                SnackbarData(
+                    cookie = cookie,
+                    stringResource = when (mediaDescriptor) {
+                        is MediaDescriptor.Content.Image ->
+                            R.string.snackbar_delete_image_failure
 
-                            is MediaDescriptor.Content.Video ->
-                                R.string.snackbar_delete_video_failure
-                        },
-                        isError = true,
-                        withDismissAction = true
-                    )
+                        is MediaDescriptor.Content.Video ->
+                            R.string.snackbar_delete_video_failure
+                    },
+                    isError = true,
+                    withDismissAction = true
                 )
-            }
-            result
-        }.await()
+            )
+        }
+        return result
+    }
 
     /**
      * Sends a [ShareMedia] event to the UI to initiate sharing of the currently loaded media.
      * no-op if no media is currently loaded
      */
     fun onShareCurrentMedia() {
-        val currentMediaDescriptor = loadedMediaFlow.value.first
-        (currentMediaDescriptor as? MediaDescriptor.Content)?.let { content ->
+        currentMediaDescriptor?.let { content ->
             viewModelScope.launch {
                 _uiEvents.send(PostCaptureEvent.ShareMedia(content))
             }

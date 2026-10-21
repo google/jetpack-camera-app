@@ -46,13 +46,11 @@ import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
-import com.google.jetpackcamera.ui.controller.ImageWellController
 import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.ZoomController
 import com.google.jetpackcamera.ui.controller.impl.CameraControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.CaptureControllerImpl
-import com.google.jetpackcamera.ui.controller.impl.ImageWellControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.QuickSettingsControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.ScreenFlashControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.SnackBarControllerImpl
@@ -191,11 +189,6 @@ class PreviewViewModel @Inject constructor(
         coroutineContext = viewModelScope.coroutineContext
     )
 
-    val imageWellController: ImageWellController = ImageWellControllerImpl(
-        mediaRepository = mediaRepository,
-        coroutineContext = viewModelScope.coroutineContext
-    )
-
     val cameraController: CameraController = CameraControllerImpl(
         cameraSystemProvider = cameraSystemRepository::getCameraSystem,
         captureUiState = captureUiState,
@@ -238,18 +231,14 @@ class PreviewViewModel @Inject constructor(
             }
         },
         onImageCached = { uri ->
-            viewModelScope.launch {
-                mediaRepository.setCurrentMedia(
-                    MediaDescriptor.Content.Image(uri, null, true)
-                )
-            }
+            mediaRepository.setCurrentMedia(
+                MediaDescriptor.Content.Image(uri, null, true)
+            )
         },
         onVideoCached = { uri ->
-            viewModelScope.launch {
-                mediaRepository.setCurrentMedia(
-                    MediaDescriptor.Content.Video(uri, null, true)
-                )
-            }
+            mediaRepository.setCurrentMedia(
+                MediaDescriptor.Content.Video(uri, null, true)
+            )
         },
         coroutineContext = viewModelScope.coroutineContext
     )
