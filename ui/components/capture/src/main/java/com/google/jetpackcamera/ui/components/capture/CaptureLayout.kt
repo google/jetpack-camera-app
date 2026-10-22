@@ -249,7 +249,9 @@ private fun VerticalMaterialControls(
                 elapsedTimeDisplay(Modifier)
 
                 // zoom controls row
-                zoomControls(Modifier)
+                OverlapAwareStyleProvider {
+                    zoomControls(Modifier)
+                }
                 // capture button row
                 Column {
                     Row(
