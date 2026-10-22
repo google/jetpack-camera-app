@@ -29,6 +29,6 @@ import android.net.Uri
 sealed interface Media {
     data object None : Media
     data object Error : Media
-    class Image(val bitmap: Bitmap) : Media
-    class Video(val uri: Uri) : Media
+    data class Image(val bitmap: Bitmap) : Media
+    data class Video(val uri: Uri) : Media
 }
