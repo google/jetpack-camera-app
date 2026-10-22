@@ -449,8 +449,10 @@ private fun ContentScreen(
     }
     val selectedAspectRatio by remember {
         derivedStateOf {
-            (previewDisplayState.value.aspectRatioUiState as? AspectRatioUiState.Available)
-                ?.selectedAspectRatio
+            (
+                currentCaptureUiStateProvider().previewDisplayUiState.aspectRatioUiState
+                    as? AspectRatioUiState.Available
+                )?.selectedAspectRatio
         }
     }
     val focusMeteringState = remember {
