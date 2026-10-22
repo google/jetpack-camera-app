@@ -21,9 +21,9 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.data.media.Media
-import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
+import com.google.jetpackcamera.model.Media
+import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 import com.google.jetpackcamera.ui.uistate.postcapture.PostCaptureUiState
