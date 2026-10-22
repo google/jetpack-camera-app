@@ -68,7 +68,6 @@ dependencies {
     // Compose - Material Design 3
     implementation(libs.compose.material3)
 
-    implementation(project(":data:media"))
     implementation(project(":core:model"))
     implementation(project(":core:camera"))
     implementation(project(":ui:uistate"))
