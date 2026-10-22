@@ -77,9 +77,12 @@ private val DECIMAL_FORMATTER = ThreadLocal.withInitial {
 /**
  * Styling configuration for [ZoomBar].
  *
- * @param trackColor Background color of the stadium track capsule (e.g. 60% black over viewfinder, 20% white off viewfinder).
- * @param selectedIndicatorColor Background color of the sliding indicator pill behind the active stop (e.g. primaryFixed / #EBE1CF).
- * @param selectedContentColor Text color for the currently selected stop (e.g. onPrimaryFixed / #1C1B1F).
+ * @param trackColor Background color of the stadium track capsule (e.g. 60% black over
+ *   viewfinder, 20% white off viewfinder).
+ * @param selectedIndicatorColor Background color of the indicator pill behind the active stop (e.g.
+ *   primaryFixed / #EBE1CF).
+ * @param selectedContentColor Text color for the currently selected stop (e.g. onPrimaryFixed /
+ *   #1C1B1F).
  * @param unselectedContentColor Text color for unselected stops (e.g. Color.White).
  */
 @Immutable
@@ -160,11 +163,7 @@ object ZoomBarDefaults {
  * - Selected stop: ".5×", "1×", "2×", "5×" (with Unicode multiplication symbol \u00D7).
  * - In-between ratios (e.g. while pinching): "1.4×".
  */
-fun formatZoomLabel(
-    targetZoom: Float,
-    currentRatio: Float,
-    isSelected: Boolean
-): String {
+fun formatZoomLabel(targetZoom: Float, currentRatio: Float, isSelected: Boolean): String {
     val valueToFormat = if (isSelected) currentRatio else targetZoom
     val formattedNumber = if (valueToFormat < 1f && valueToFormat > 0f) {
         val formatted = SUB_ONE_FORMATTER.get()!!.format(valueToFormat)
@@ -185,7 +184,8 @@ fun formatZoomLabel(
  * A composable that displays zoom controls formatted as a unified capsule track
  * with a selected indicator pill appearing on the active stop.
  *
- * @param zoomControlUiState The [ZoomControlUiState] providing available zoom levels and current ratio.
+ * @param zoomControlUiState The [ZoomControlUiState] providing available zoom levels and
+ *   current ratio.
  * @param onChangeZoom Callback when a zoom level is tapped.
  * @param modifier Modifier for the component.
  * @param orientation Layout orientation ([Orientation.Horizontal] or [Orientation.Vertical]),
@@ -204,7 +204,8 @@ fun ZoomBar(
         val currentZoomState by rememberUpdatedState(zoomControlUiState)
         val selectedOptionIndex: Int by remember(zoomControlUiState.primaryLensFacing) {
             derivedStateOf {
-                // If animating towards a value, select that target; otherwise find closest matching stop
+                // If animating towards a value, select that target; otherwise find closest
+                // matching stop
                 val checkValue =
                     currentZoomState.animatingToValue ?: currentZoomState.primaryZoomRatio ?: 1f
                 val index = currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
@@ -237,7 +238,8 @@ fun ZoomBar(
             ZoomBarDefaults.VerticalEndPadding
         }
 
-        // In horizontal, clearance exists on all sides; in vertical, buttons are flush with the vertical sides.
+        // In horizontal, clearance exists on all sides; in vertical, buttons are flush with
+        // the vertical sides.
         val totalWidth = if (orientation == Orientation.Horizontal) {
             itemWidth * zoomLevels.size + endPadding * 2
         } else {
@@ -323,11 +325,21 @@ private fun ZoomBarItem(
     }
 
     val containerColor by animateColorAsState(
-        targetValue = if (isSelected) colors.selectedIndicatorColor else Color.Transparent,
+        targetValue =
+        if (isSelected) {
+            colors.selectedIndicatorColor
+        } else {
+            Color.Transparent
+        },
         label = "zoomItemContainerColor"
     )
     val contentColor by animateColorAsState(
-        targetValue = if (isSelected) colors.selectedContentColor else colors.unselectedContentColor,
+        targetValue =
+        if (isSelected) {
+            colors.selectedContentColor
+        } else {
+            colors.unselectedContentColor
+        },
         label = "zoomItemContentColor"
     )
 
