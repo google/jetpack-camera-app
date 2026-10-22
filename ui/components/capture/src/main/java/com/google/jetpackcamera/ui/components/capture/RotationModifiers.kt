@@ -27,10 +27,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -42,14 +44,11 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.google.jetpackcamera.model.DeviceRotation
 import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 private const val UI_ROTATION_DURATION_MS = 250
 
 /**
- * Provides the current physical [DeviceRotation] (from [debouncedOrientationFlow], or frozen while
- * video recording is active) to descendant composables in the capture screen.
+ * Provides the current UI [DeviceRotation] to descendant composables in the capture screen.
  */
 internal val LocalDeviceRotation = compositionLocalOf { DeviceRotation.Natural }
 
@@ -106,39 +105,29 @@ private fun Context.currentDisplayRotation(): Int {
 /**
  * Counter-rotates the root phone camera layout back to the device's canonical Portrait (`0°`)
  * coordinate system whenever the OS window rotates.
- *
- * Includes a synchronous window-bounds check so the counter-rotation is only applied when the
- * incoming layout constraints match the display rotation's aspect orientation.
  */
 internal fun Modifier.counterRotateToPortrait(windowRotation: DeviceRotation): Modifier =
     layout { measurable, constraints ->
-        val isConstraintsLandscape = constraints.maxWidth > constraints.maxHeight
-        val effectiveWindowRotation = when {
-            !isConstraintsLandscape && windowRotation.isLandscape -> DeviceRotation.Natural
-            isConstraintsLandscape && !windowRotation.isLandscape -> DeviceRotation.Rotated270
-            else -> windowRotation
-        }
-
-        val portraitMinWidth = min(constraints.minWidth, constraints.minHeight)
-        val portraitMaxWidth = min(constraints.maxWidth, constraints.maxHeight)
-        val portraitMinHeight = max(constraints.minWidth, constraints.minHeight)
-        val portraitMaxHeight = max(constraints.maxWidth, constraints.maxHeight)
-
+        val isLandscape = windowRotation.isLandscape
         val placeable = measurable.measure(
-            constraints.copy(
-                minWidth = portraitMinWidth,
-                maxWidth = portraitMaxWidth,
-                minHeight = portraitMinHeight,
-                maxHeight = portraitMaxHeight
-            )
+            if (isLandscape) {
+                constraints.copy(
+                    minWidth = constraints.minHeight,
+                    maxWidth = constraints.maxHeight,
+                    minHeight = constraints.minWidth,
+                    maxHeight = constraints.maxWidth
+                )
+            } else {
+                constraints
+            }
         )
 
-        val layoutWidth = if (effectiveWindowRotation.isLandscape) {
+        val layoutWidth = if (isLandscape) {
             placeable.height
         } else {
             placeable.width
         }
-        val layoutHeight = if (effectiveWindowRotation.isLandscape) {
+        val layoutHeight = if (isLandscape) {
             placeable.width
         } else {
             placeable.height
@@ -148,7 +137,7 @@ internal fun Modifier.counterRotateToPortrait(windowRotation: DeviceRotation): M
             val offsetX = (layoutWidth - placeable.width) / 2
             val offsetY = (layoutHeight - placeable.height) / 2
             placeable.placeWithLayer(offsetX, offsetY) {
-                rotationZ = effectiveWindowRotation.toWindowCounterRotationDegrees()
+                rotationZ = windowRotation.toWindowCounterRotationDegrees()
             }
         }
     }
@@ -163,7 +152,7 @@ internal fun Modifier.counterRotateToPortrait(windowRotation: DeviceRotation): M
 @Composable
 internal fun rememberAnimatedUiRotationDegrees(
     deviceRotation: DeviceRotation = LocalDeviceRotation.current
-): Float {
+): State<Float> {
     val disableAnimations = LocalDisableAnimations.current
     val targetDegrees = deviceRotation.toUiRotationDegrees()
     val animatable = remember { Animatable(targetDegrees) }
@@ -185,7 +174,11 @@ internal fun rememberAnimatedUiRotationDegrees(
         }
     }
 
-    return if (disableAnimations) targetDegrees else animatable.value
+    return if (disableAnimations) {
+        rememberUpdatedState(targetDegrees)
+    } else {
+        animatable.asState()
+    }
 }
 
 /**
@@ -197,7 +190,7 @@ internal fun Modifier.animateToUpright(deviceRotation: DeviceRotation? = null): 
         val effectiveRotation = deviceRotation ?: LocalDeviceRotation.current
         val rotationDegrees = rememberAnimatedUiRotationDegrees(effectiveRotation)
         graphicsLayer {
-            rotationZ = rotationDegrees
+            rotationZ = rotationDegrees.value
         }
     }
 

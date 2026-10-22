@@ -137,7 +137,9 @@ fun CutoutAwareRow(
                 rowBoundsInWindow = rowBoundsInWindow,
                 isRtl = isRtl,
                 rtlReferenceWidth = rtlReferenceWidth,
-                windowRotation = windowRotation
+                windowRotation = windowRotation,
+                fallbackViewWidth = view.width,
+                fallbackViewHeight = view.height
             )
 
             // Convert vertically overlapping cutout rects into sorted horizontal keep-out ranges.
@@ -230,7 +232,9 @@ internal fun resolveLocalCutoutRects(
     rowBoundsInWindow: IntRect?,
     isRtl: Boolean,
     rtlReferenceWidth: Int,
-    windowRotation: DeviceRotation = DeviceRotation.Natural
+    windowRotation: DeviceRotation = DeviceRotation.Natural,
+    fallbackViewWidth: Int = 0,
+    fallbackViewHeight: Int = 0
 ): List<IntRect> {
     val ltrRects = cutoutRectsOverride ?: run {
         val bounds = rowBoundsInWindow
@@ -247,7 +251,7 @@ internal fun resolveLocalCutoutRects(
                     )
                 }
                 DeviceRotation.Rotated270 -> {
-                    val refBottom = bounds?.bottom ?: 0
+                    val refBottom = bounds?.bottom ?: fallbackViewHeight
                     val refLeft = bounds?.left ?: 0
                     IntRect(
                         left = refBottom - rect.bottom,
@@ -258,7 +262,7 @@ internal fun resolveLocalCutoutRects(
                 }
                 DeviceRotation.Rotated90 -> {
                     val refTop = bounds?.top ?: 0
-                    val refRight = bounds?.right ?: 0
+                    val refRight = bounds?.right ?: fallbackViewWidth
                     IntRect(
                         left = rect.top - refTop,
                         top = refRight - rect.right,
@@ -267,8 +271,8 @@ internal fun resolveLocalCutoutRects(
                     )
                 }
                 DeviceRotation.Rotated180 -> {
-                    val refRight = bounds?.right ?: 0
-                    val refBottom = bounds?.bottom ?: 0
+                    val refRight = bounds?.right ?: fallbackViewWidth
+                    val refBottom = bounds?.bottom ?: fallbackViewHeight
                     IntRect(
                         left = refRight - rect.right,
                         top = refBottom - rect.bottom,

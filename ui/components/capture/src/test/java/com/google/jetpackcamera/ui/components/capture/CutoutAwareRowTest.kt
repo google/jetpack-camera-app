@@ -304,5 +304,34 @@ class CutoutAwareRowTest {
                 rtlReferenceWidth = 360
             )
         ).containsExactly(IntRect(left = 310, top = 0, right = 350, bottom = 40))
+
+        // Verify fallbackViewWidth / fallbackViewHeight when rowBoundsInWindow is null on first pass
+        val landscapeLeftCutout = listOf(android.graphics.Rect(0, 300, 48, 340))
+        assertThat(
+            resolveLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = landscapeLeftCutout,
+                rowBoundsInWindow = null,
+                isRtl = false,
+                rtlReferenceWidth = 360,
+                windowRotation = com.google.jetpackcamera.model.DeviceRotation.Rotated270,
+                fallbackViewWidth = 800,
+                fallbackViewHeight = 360
+            )
+        ).containsExactly(IntRect(left = 20, top = 0, right = 60, bottom = 48))
+
+        val landscapeRightCutout = listOf(android.graphics.Rect(752, 20, 800, 60))
+        assertThat(
+            resolveLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = landscapeRightCutout,
+                rowBoundsInWindow = null,
+                isRtl = false,
+                rtlReferenceWidth = 360,
+                windowRotation = com.google.jetpackcamera.model.DeviceRotation.Rotated90,
+                fallbackViewWidth = 800,
+                fallbackViewHeight = 360
+            )
+        ).containsExactly(IntRect(left = 20, top = 0, right = 60, bottom = 48))
     }
 }

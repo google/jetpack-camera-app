@@ -415,7 +415,6 @@ fun ElapsedTimeText(
         val accessibilityText = stringResource(accessibilityRes, minutes, seconds)
         Box(
             modifier = modifier
-                .rotatedLayout(LocalDeviceRotation.current)
                 .testTag(ELAPSED_TIME_TAG)
                 .semantics(mergeDescendants = true) {
                     contentDescription = accessibilityText
@@ -1144,8 +1143,7 @@ fun FlipCameraButton(
         val backgroundStyle = LocalCameraControlBackgroundStyle.current
         FilledIconButton(
             modifier = modifier
-                .size(56.dp)
-                .animateToUpright(),
+                .size(56.dp),
             onClick = onClick,
             enabled = enabled,
             shape = RoundedCornerShape(12.dp),
@@ -1169,6 +1167,7 @@ fun FlipCameraButton(
                 contentDescription = contentDescription,
                 modifier = Modifier
                     .size(IconButtonDefaults.largeIconSize)
+                    .animateToUpright()
                     .rotate(animatedRotation.value)
             )
         }

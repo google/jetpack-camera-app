@@ -160,7 +160,6 @@ private fun ZoomButton(
         onCheckedChange = { onChangeZoom(targetZoom) },
         modifier = modifier
             .heightIn(buttonSize)
-            .animateToUpright()
             .semantics {
                 testTag = getZoomButtonTestTag(targetZoom)
                 // todo(kc): move to text resource
@@ -181,7 +180,9 @@ private fun ZoomButton(
         }
     ) {
         Text(
-            modifier = Modifier.animateContentSize(),
+            modifier = Modifier
+                .animateContentSize()
+                .animateToUpright(),
             text = displayText,
             style = MaterialTheme.typography.labelSmall,
             textAlign = TextAlign.Center

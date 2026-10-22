@@ -15,6 +15,10 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -53,13 +57,17 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -72,8 +80,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.takeOrElse
 import com.google.jetpackcamera.model.DeviceRotation
+import kotlinx.coroutines.delay
 
 private val QuickSettingsLandscapeMaxSheetHeight = 380.dp
+private const val QUICK_SETTINGS_FADE_DURATION_MS = 150
+private const val QUICK_SETTINGS_RESIZE_DURATION_MS = 250
 
 /**
  * The base layout for the camera capture screen.
@@ -126,9 +137,44 @@ fun PreviewLayout(
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {},
-    deviceRotation: DeviceRotation = DeviceRotation.Natural
+    deviceRotation: DeviceRotation? = null
 ) {
     val windowRotation = rememberWindowRotation()
+    val uiRotation = deviceRotation ?: windowRotation
+    val disableAnimations = LocalDisableAnimations.current
+    val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
+        scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+    var displayedSheetRotation by remember { mutableStateOf(uiRotation) }
+    val sheetContentAlpha = remember { Animatable(1f) }
+
+    LaunchedEffect(uiRotation, isSheetVisible, disableAnimations) {
+        if (displayedSheetRotation != uiRotation) {
+            if (isSheetVisible && !disableAnimations) {
+                sheetContentAlpha.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(
+                        durationMillis = QUICK_SETTINGS_FADE_DURATION_MS,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+                displayedSheetRotation = uiRotation
+                delay(QUICK_SETTINGS_RESIZE_DURATION_MS.toLong())
+                sheetContentAlpha.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(
+                        durationMillis = QUICK_SETTINGS_FADE_DURATION_MS,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            } else {
+                displayedSheetRotation = uiRotation
+                sheetContentAlpha.snapTo(1f)
+            }
+        } else if (sheetContentAlpha.value < 1f && (!isSheetVisible || disableAnimations)) {
+            sheetContentAlpha.snapTo(1f)
+        }
+    }
+
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val consumeRemainingScrollConnection = remember {
         object : NestedScrollConnection {
@@ -145,7 +191,7 @@ fun PreviewLayout(
 
     CompositionLocalProvider(
         LocalOverlapTargetBounds provides overlapTargetBounds,
-        LocalDeviceRotation provides deviceRotation,
+        LocalDeviceRotation provides uiRotation,
         LocalWindowRotation provides windowRotation
     ) {
         BottomSheetScaffold(
@@ -170,19 +216,41 @@ fun PreviewLayout(
             sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             sheetContent = {
-                if (deviceRotation.isLandscape) {
+                CompositionLocalProvider(LocalDeviceRotation provides displayedSheetRotation) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = QuickSettingsLandscapeMaxSheetHeight)
-                            .nestedScroll(consumeRemainingScrollConnection)
-                            .rotatedLayout(deviceRotation),
-                        contentAlignment = Alignment.TopStart
+                            .then(
+                                if (disableAnimations) {
+                                    Modifier
+                                } else {
+                                    Modifier.animateContentSize(
+                                        animationSpec = tween(
+                                            durationMillis = QUICK_SETTINGS_RESIZE_DURATION_MS,
+                                            easing = FastOutSlowInEasing
+                                        )
+                                    )
+                                }
+                            )
+                            .graphicsLayer {
+                                alpha = sheetContentAlpha.value
+                            }
                     ) {
-                        quickSettingsOverlay(Modifier)
+                        if (displayedSheetRotation.isLandscape) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = QuickSettingsLandscapeMaxSheetHeight)
+                                    .nestedScroll(consumeRemainingScrollConnection)
+                                    .rotatedLayout(displayedSheetRotation),
+                                contentAlignment = Alignment.TopStart
+                            ) {
+                                quickSettingsOverlay(Modifier)
+                            }
+                        } else {
+                            quickSettingsOverlay(Modifier)
+                        }
                     }
-                } else {
-                    quickSettingsOverlay(Modifier)
                 }
             },
             snackbarHost = {}
@@ -217,7 +285,7 @@ fun PreviewLayout(
                     ) {
                         indicatorRow(Modifier)
                     }
-                    val topStartAlignment = if (deviceRotation == DeviceRotation.Rotated270) {
+                    val topStartAlignment = if (uiRotation == DeviceRotation.Rotated270) {
                         Alignment.TopEnd
                     } else {
                         Alignment.TopStart
@@ -227,7 +295,7 @@ fun PreviewLayout(
                         topStartContent(
                             Modifier
                                 .align(topStartAlignment)
-                                .animateToUpright(deviceRotation)
+                                .animateToUpright(uiRotation)
                         )
                     }
                 }
@@ -235,7 +303,9 @@ fun PreviewLayout(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .windowInsetsPadding(portraitSystemBarsAndCutoutInsets)
+                        .windowInsetsPadding(
+                            portraitSystemBarsAndCutoutInsets.only(WindowInsetsSides.Vertical)
+                        )
                 ) {
                     debugVisibilityWrapper {
                         VerticalMaterialControls(
@@ -245,9 +315,13 @@ fun PreviewLayout(
                             quickSettingsToggleButton = quickSettingsButton,
                             captureModeToggleSwitch = captureModeToggle,
                             zoomControls = zoomLevelDisplay,
-                            elapsedTimeDisplay = elapsedTimeDisplay,
+                            elapsedTimeDisplay = { elapsedTimeModifier ->
+                                if (!uiRotation.isLandscape) {
+                                    elapsedTimeDisplay(elapsedTimeModifier)
+                                }
+                            },
                             snackbarHost = { snackbarModifier ->
-                                if (!deviceRotation.isLandscape) {
+                                if (!uiRotation.isLandscape) {
                                     PillSnackbarHost(
                                         snackbarHostState = scaffoldState.snackbarHostState,
                                         modifier = snackbarModifier
@@ -255,19 +329,24 @@ fun PreviewLayout(
                                 }
                             }
                         )
-                        if (deviceRotation.isLandscape) {
-                            val landscapeSnackbarAlignment =
-                                if (deviceRotation == DeviceRotation.Rotated270) {
+                        if (uiRotation.isLandscape) {
+                            val landscapeTopAlignment =
+                                if (uiRotation == DeviceRotation.Rotated270) {
                                     Alignment.CenterStart
                                 } else {
                                     Alignment.CenterEnd
                                 }
-                            PillSnackbarHost(
-                                snackbarHostState = scaffoldState.snackbarHostState,
+                            Column(
                                 modifier = Modifier
-                                    .align(landscapeSnackbarAlignment)
-                                    .rotatedLayout(deviceRotation)
-                            )
+                                    .align(landscapeTopAlignment)
+                                    .rotatedLayout(uiRotation),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                PillSnackbarHost(
+                                    snackbarHostState = scaffoldState.snackbarHostState
+                                )
+                                elapsedTimeDisplay(Modifier)
+                            }
                         }
                     }
                     // controls overlay
@@ -276,8 +355,6 @@ fun PreviewLayout(
                 }
                 debugOverlay(Modifier)
 
-                val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
-                    scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
                 if (isSheetVisible) {
                     Box(
                         modifier = Modifier
@@ -390,7 +467,6 @@ private fun VerticalMaterialControls(
 
                     // capture mode toggle switch center
                     Box(
-                        modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
                         captureModeToggleSwitch(Modifier)

@@ -79,7 +79,6 @@ fun ImageWell(
             modifier = modifier
                 .testTag(IMAGE_WELL_TAG)
                 .size(IconButtonDefaults.mediumContainerSize())
-                .animateToUpright()
                 .border(2.dp, Color.White, shape)
                 .clip(shape)
                 .clickable(onClick = onClick, enabled = enabled)
@@ -107,7 +106,9 @@ fun ImageWell(
                     val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
                     Image(
                         bitmap = imageBitmap,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .animateToUpright(),
                         contentDescription = stringResource(
                             id = R.string.image_well_content_description
                         ),

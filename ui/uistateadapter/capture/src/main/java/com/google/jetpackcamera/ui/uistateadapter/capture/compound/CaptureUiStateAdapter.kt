@@ -17,7 +17,6 @@ package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
@@ -81,7 +80,6 @@ fun captureUiState(
 ): Flow<CaptureUiState> {
     var flashModeUiState: FlashModeUiState? = null
     var focusMeteringUiState: FocusMeteringUiState? = null
-    var lockedDeviceRotation: DeviceRotation? = null
 
     return combine(
         currentSettings.filterNotNull(),
@@ -93,17 +91,6 @@ fun captureUiState(
         val roundedVideoRecordingState =
             roundVideoRecordingState(videoRecordingState, timePrecision)
         val roundedCameraState = cameraState.copy(videoRecordingState = roundedVideoRecordingState)
-
-        val effectiveDeviceRotation = if (
-            roundedVideoRecordingState !is VideoRecordingState.Inactive
-        ) {
-            lockedDeviceRotation ?: cameraAppSettings.deviceRotation.also {
-                lockedDeviceRotation = it
-            }
-        } else {
-            lockedDeviceRotation = null
-            cameraAppSettings.deviceRotation
-        }
 
         val captureModeUiState = CaptureModeUiState.from(
             systemConstraints = systemConstraints,
@@ -208,8 +195,7 @@ fun captureUiState(
                 roundedVideoRecordingState
             ),
             screenFlashUiState = ScreenFlashUiState.from(trackedUiState),
-            cameraErrorUiState = CameraErrorUiState.from(roundedCameraState),
-            deviceRotation = effectiveDeviceRotation
+            cameraErrorUiState = CameraErrorUiState.from(roundedCameraState)
         )
     }
 }

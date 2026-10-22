@@ -17,12 +17,10 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.AudioStreamState
-import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
@@ -307,48 +305,6 @@ internal class CaptureUiStateAdapterTest {
                 )
             )
         )
-    }
-
-    @Test
-    fun captureUiState_deviceRotation_freezesWhileRecordingAndUnlocksWhenInactive() = runTest {
-        val uiStateFlow = createCaptureUiStateFlow()
-        val states = mutableListOf<CaptureUiState>()
-        backgroundScope.launch {
-            uiStateFlow.collect { states.add(it) }
-        }
-
-        runCurrent()
-        assertThat(assertIsReady(states.last()).deviceRotation).isEqualTo(DeviceRotation.Natural)
-
-        // Rotate to landscape while idle -> updates immediately
-        cameraSystem.setDeviceRotation(DeviceRotation.Rotated270)
-        runCurrent()
-        assertThat(assertIsReady(states.last()).deviceRotation).isEqualTo(DeviceRotation.Rotated270)
-
-        // Start video recording -> locks at Rotated270
-        cameraSystem.setCurrentCameraState(
-            CameraState(
-                videoRecordingState = VideoRecordingState.Active.Recording(
-                    maxDurationMillis = 0L,
-                    audioStreamState = AudioStreamState.Active(0.0),
-                    elapsedTimeNanos = 1_000_000_000L
-                )
-            )
-        )
-        runCurrent()
-        assertThat(assertIsReady(states.last()).deviceRotation).isEqualTo(DeviceRotation.Rotated270)
-
-        // Rotate physical device to Natural during active recording -> UI state stays Rotated270
-        cameraSystem.setDeviceRotation(DeviceRotation.Natural)
-        runCurrent()
-        assertThat(assertIsReady(states.last()).deviceRotation).isEqualTo(DeviceRotation.Rotated270)
-
-        // Stop video recording -> unlocks and updates to Natural
-        cameraSystem.setCurrentCameraState(
-            CameraState(videoRecordingState = VideoRecordingState.Inactive())
-        )
-        runCurrent()
-        assertThat(assertIsReady(states.last()).deviceRotation).isEqualTo(DeviceRotation.Natural)
     }
 
     private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready = when (uiState) {

@@ -79,14 +79,10 @@ fun QuickSettingsScaffoldContent(
             modifier = modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .then(
-                    if (deviceRotation.isLandscape) {
-                        Modifier.padding(top = 24.dp, bottom = 24.dp)
-                    } else {
-                        Modifier
-                            .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
-                            .padding(bottom = 24.dp)
-                    }
+                .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
+                .padding(
+                    top = if (deviceRotation.isLandscape) 24.dp else 0.dp,
+                    bottom = 24.dp
                 )
                 .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
         ) {

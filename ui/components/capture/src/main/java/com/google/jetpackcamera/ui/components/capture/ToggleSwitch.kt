@@ -107,13 +107,16 @@ fun ToggleSwitch(
 
     // --- 2. Drag and Animation State ---
     var dragOffset by remember { mutableFloatStateOf(0f) }
+    var canvasWidthPx by remember(dims.switchWidthPx) { mutableFloatStateOf(dims.switchWidthPx) }
+    val effectiveDragRange =
+        (canvasWidthPx - dims.paddingPx - dims.thumbRadiusPx - dims.startX).coerceAtLeast(1f)
     val targetPosition = if (checked) 1f else 0f
     val disableAnimations = LocalDisableAnimations.current
 
     // Animate the thumb position.
     // This snaps (0ms) during drag and animates (300ms) on tap or drag release.
     val animatedPosition by animateFloatAsState(
-        targetValue = (targetPosition + (dragOffset / dims.dragRange)).coerceIn(0f, 1f),
+        targetValue = (targetPosition + (dragOffset / effectiveDragRange)).coerceIn(0f, 1f),
         animationSpec = if (disableAnimations) {
             snap()
         } else {
@@ -123,7 +126,7 @@ fun ToggleSwitch(
         },
         label = "thumbPosition"
     )
-    val initialThumbX = dims.startX + dims.dragRange * animatedPosition
+    val initialThumbX = dims.startX + effectiveDragRange * animatedPosition
 
     // --- 3. Color Animations ---
     // color changes if togglemode is off (to indicate on/off state)
@@ -147,8 +150,8 @@ fun ToggleSwitch(
     val draggableState = rememberDraggableState { delta ->
         val newOffset = dragOffset + delta
         // Constrain drag within the allowed range based on the *current* state
-        val dragMin = if (checked) -dims.dragRange else 0f
-        val dragMax = if (checked) 0f else dims.dragRange
+        val dragMin = if (checked) -effectiveDragRange else 0f
+        val dragMax = if (checked) 0f else effectiveDragRange
         dragOffset = newOffset.coerceIn(dragMin, dragMax)
     }
 
@@ -169,7 +172,7 @@ fun ToggleSwitch(
                     onDragStopped = {
                         // Determine new state based on final drag position
                         val finalThumbPos = initialThumbX - dims.startX
-                        val newCheckedState = finalThumbPos > (dims.dragRange / 2)
+                        val newCheckedState = finalThumbPos > (effectiveDragRange / 2)
                         if (newCheckedState != checked) {
                             onCheckedChange(newCheckedState)
                         }
@@ -195,6 +198,12 @@ fun ToggleSwitch(
             .size(dims.switchWidthDp, dims.switchHeightDp)
             .then(gestureModifier)
     ) {
+        if (canvasWidthPx != size.width && size.width > 0f) {
+            canvasWidthPx = size.width
+        }
+        val endX = (size.width - dims.paddingPx - dims.thumbRadiusPx).coerceAtLeast(dims.startX)
+        val thumbX = dims.startX + (endX - dims.startX) * animatedPosition
+
         // 1. Draw the Track
         drawSwitchTrack(
             color = trackAnimatedColor,
@@ -203,16 +212,16 @@ fun ToggleSwitch(
 
         // 2. Calculate Thumb Rect and Icon Padding
         val thumbRect = Rect(
-            left = initialThumbX - dims.thumbRadiusPx,
+            left = thumbX - dims.thumbRadiusPx,
             top = thumbY - dims.thumbRadiusPx,
-            right = initialThumbX + dims.thumbRadiusPx,
+            right = thumbX + dims.thumbRadiusPx,
             bottom = thumbY + dims.thumbRadiusPx
         )
         val iconPadding = (dims.switchHeightPx - dims.iconSizePx) / 2
 
         // 4. Draw the Thumb (under Icons)
         drawSwitchThumb(
-            center = Offset(initialThumbX, thumbY),
+            center = Offset(thumbX, thumbY),
             radius = dims.thumbRadiusPx,
             color = thumbAnimatedColor
         )
@@ -223,7 +232,7 @@ fun ToggleSwitch(
                 thumbRect = thumbRect,
                 iconSizePx = dims.iconSizePx,
                 iconPadding = iconPadding,
-                iconRotationDegrees = iconRotationDegrees,
+                iconRotationDegrees = iconRotationDegrees.value,
                 leftIconPainter = offIconPainter,
                 rightIconPainter = onIconPainter,
                 offIconColor = if (enabled) {
@@ -256,6 +265,7 @@ private class SwitchDimensions(
     val switchWidthPx: Float,
     val switchHeightPx: Float,
     val thumbRadiusPx: Float,
+    val paddingPx: Float,
     val iconSizePx: Float,
     val startX: Float,
     val dragRange: Float
@@ -289,6 +299,7 @@ private fun rememberSwitchDimensions(
             switchWidthPx = switchWidthPx,
             switchHeightPx = switchHeightPx,
             thumbRadiusPx = thumbRadiusPx,
+            paddingPx = paddingPx,
             iconSizePx = iconSizePx,
             startX = startX,
             dragRange = dragRange

@@ -73,7 +73,6 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensToZoom
@@ -208,13 +207,6 @@ fun PreviewScreen(
             }
         }
 
-        val context = LocalContext.current
-        LaunchedEffect(Unit) {
-            debouncedOrientationFlow(context).collect(
-                viewModel.cameraController::setDisplayRotation
-            )
-        }
-
         ContentScreen(
             modifier = modifier,
             captureUiStateProvider = readyStateProvider,
@@ -275,9 +267,9 @@ private fun ContentScreen(
             currentCaptureUiStateProvider().videoRecordingState is VideoRecordingState.Active
         }
     }
-    val deviceRotation by remember {
+    val isVideoRecordingInProgress = remember {
         derivedStateOf {
-            currentCaptureUiStateProvider().deviceRotation
+            currentCaptureUiStateProvider().videoRecordingState !is VideoRecordingState.Inactive
         }
     }
 
@@ -289,12 +281,15 @@ private fun ContentScreen(
         }
     }
 
-    LaunchedEffect(isVideoRecordingActive.value) {
+    LaunchedEffect(isVideoRecordingInProgress.value, cameraController) {
         val activity = context as? Activity
-        if (isVideoRecordingActive.value) {
+        if (isVideoRecordingInProgress.value) {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         } else {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+            cameraController?.let { controller ->
+                debouncedOrientationFlow(context).collect(controller::setDisplayRotation)
+            }
         }
     }
 
@@ -847,8 +842,7 @@ private fun ContentScreen(
         snackBar = snackBarLambda,
         pauseToggleButton = pauseToggleButtonLambda,
         imageWell = imageWellLambda,
-        errorDialog = errorDialogLambda,
-        deviceRotation = deviceRotation
+        errorDialog = errorDialogLambda
     )
 }
 
@@ -945,8 +939,7 @@ private fun LayoutWrapper(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
-    errorDialog: @Composable (modifier: Modifier) -> Unit = {},
-    deviceRotation: DeviceRotation = DeviceRotation.Natural
+    errorDialog: @Composable (modifier: Modifier) -> Unit = {}
 ) {
     PreviewLayout(
         modifier = modifier,
@@ -961,7 +954,6 @@ private fun LayoutWrapper(
         quickSettingsButton = quickSettingsButton,
         captureModeToggle = captureModeToggle,
         quickSettingsOverlay = quickSettingsOverlay,
-        deviceRotation = deviceRotation,
         indicatorRow = { modifier ->
             if (!isErrorDialogShowing) {
                 CutoutAwareRow(
