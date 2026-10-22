@@ -42,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -164,7 +163,7 @@ object ZoomBarDefaults {
  * - Selected stop: ".5×", "1×", "2×", "5×" (with Unicode multiplication symbol \u00D7).
  * - In-between ratios (e.g. while pinching): "1.4×".
  */
-fun formatZoomLabel(targetZoom: Float, currentRatio: Float, isSelected: Boolean): String {
+internal fun formatZoomLabel(targetZoom: Float, currentRatio: Float, isSelected: Boolean): String {
     val valueToFormat = if (isSelected) currentRatio else targetZoom
     val formattedNumber = if (valueToFormat < 1f && valueToFormat > 0f) {
         val formatted = SUB_ONE_FORMATTER.get()!!.format(valueToFormat)
@@ -220,7 +219,7 @@ fun ZoomBar(
         if (zoomLevels.isEmpty()) return
 
         val validIndex = selectedOptionIndex.coerceIn(0, zoomLevels.size - 1)
-        val currentRatio = currentZoomState.primaryZoomRatio ?: 1f
+        val currentRatioProvider = remember { { currentZoomState.primaryZoomRatio ?: 1f } }
 
         val itemWidth = if (orientation == Orientation.Horizontal) {
             ZoomBarDefaults.HorizontalItemWidth
@@ -276,7 +275,7 @@ fun ZoomBar(
                         val isSelected = index == validIndex
                         ZoomBarItem(
                             value = value,
-                            currentRatio = if (isSelected) currentRatio else null,
+                            currentRatioProvider = currentRatioProvider,
                             isSelected = isSelected,
                             colors = colors,
                             modifier = Modifier.size(itemWidth, itemHeight),
@@ -295,7 +294,7 @@ fun ZoomBar(
                         val isSelected = index == validIndex
                         ZoomBarItem(
                             value = value,
-                            currentRatio = if (isSelected) currentRatio else null,
+                            currentRatioProvider = currentRatioProvider,
                             isSelected = isSelected,
                             colors = colors,
                             modifier = Modifier.size(itemWidth, itemHeight),
@@ -311,18 +310,20 @@ fun ZoomBar(
 @Composable
 private fun ZoomBarItem(
     value: Float,
-    currentRatio: Float?,
+    currentRatioProvider: () -> Float,
     isSelected: Boolean,
     colors: ZoomBarColors,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val displayText = remember(value, isSelected, currentRatio) {
-        formatZoomLabel(
-            targetZoom = value,
-            currentRatio = currentRatio ?: value,
-            isSelected = isSelected
-        )
+    val displayText by remember(value, isSelected) {
+        derivedStateOf {
+            formatZoomLabel(
+                targetZoom = value,
+                currentRatio = if (isSelected) currentRatioProvider() else value,
+                isSelected = isSelected
+            )
+        }
     }
 
     val containerColor by animateColorAsState(
@@ -358,7 +359,6 @@ private fun ZoomBarItem(
             )
             .semantics {
                 testTag = getZoomButtonTestTag(value)
-                contentDescription = if (isSelected) "selected" else "not selected"
                 selected = isSelected
             },
         contentAlignment = Alignment.Center
