@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
 /**

@@ -119,8 +119,7 @@ sealed interface DisabledRationale {
     }
 
     data class VideoQualityUnsupportedRationale(
-        override val affectedSettingNameResId: Int,
-        val currentDynamicRange: Int = R.string.video_quality_rationale_suffix_default
+        override val affectedSettingNameResId: Int
     ) : DisabledRationale {
         override val reasonTextResId = R.string.video_quality_unsupported
         override val testTag = VIDEO_QUALITY_UNSUPPORTED_TAG
