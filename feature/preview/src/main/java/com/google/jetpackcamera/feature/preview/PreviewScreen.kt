@@ -103,6 +103,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSetting
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
+import com.google.jetpackcamera.ui.components.capture.shouldOverlayTopBar
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
 import com.google.jetpackcamera.ui.controller.ScreenFlashController
@@ -446,10 +447,10 @@ private fun ContentScreen(
             currentCaptureUiStateProvider().previewDisplayUiState
         }
     }
-    val isViewfinderFullScreen by remember {
+    val selectedAspectRatio by remember {
         derivedStateOf {
             (previewDisplayState.value.aspectRatioUiState as? AspectRatioUiState.Available)
-                ?.selectedAspectRatio == AspectRatio.NINE_SIXTEEN
+                ?.selectedAspectRatio
         }
     }
     val focusMeteringState = remember {
@@ -799,7 +800,7 @@ private fun ContentScreen(
 
     LayoutWrapper(
         modifier = modifier,
-        isViewfinderFullScreen = isViewfinderFullScreen,
+        selectedAspectRatio = selectedAspectRatio,
         scaffoldState = scaffoldState,
         onDismissQuickSettings = onDismissQuickSettings,
         isErrorDialogShowing = isErrorDialogShowing,
@@ -895,7 +896,8 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun LayoutWrapper(
     modifier: Modifier = Modifier,
-    isViewfinderFullScreen: Boolean = false,
+    selectedAspectRatio: AspectRatio? = null,
+    isViewfinderFullScreen: Boolean = shouldOverlayTopBar(selectedAspectRatio),
     scaffoldState: BottomSheetScaffoldState,
     onDismissQuickSettings: () -> Unit = {},
     isErrorDialogShowing: Boolean = false,
@@ -921,10 +923,13 @@ private fun LayoutWrapper(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    topStartContent: @Composable (Modifier) -> Unit = {},
     errorDialog: @Composable (modifier: Modifier) -> Unit = {}
 ) {
     PreviewLayout(
         modifier = modifier,
+        topStartContent = topStartContent,
+        selectedAspectRatio = selectedAspectRatio,
         isViewfinderFullScreen = isViewfinderFullScreen,
         scaffoldState = scaffoldState,
         onDismissQuickSettings = onDismissQuickSettings,

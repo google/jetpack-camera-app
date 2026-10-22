@@ -65,11 +65,31 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.takeOrElse
+import com.google.jetpackcamera.model.AspectRatio
+
+/**
+ * Determines whether the top bar should overlay the camera preview
+ * rather than having a dedicated black cutout bar.
+ *
+ * @param aspectRatio the selected [AspectRatio], if available.
+ * @param isFullBleedEnabled whether full bleed mode is enabled for 9:16 aspect ratio.
+ */
+fun shouldOverlayTopBar(aspectRatio: AspectRatio?, isFullBleedEnabled: Boolean = false): Boolean {
+    return when (aspectRatio) {
+        AspectRatio.THREE_FOUR,
+        AspectRatio.ONE_ONE -> false
+        AspectRatio.NINE_SIXTEEN -> isFullBleedEnabled
+        null -> false
+    }
+}
 
 /**
  * The base layout for the camera capture screen.
  *
  * @param modifier the modifier for this component
+ * @param selectedAspectRatio the current aspect ratio of the viewfinder
+ * @param isViewfinderFullScreen whether the viewfinder occupies the entire screen, causing the
+ *   top bar to be overlaid rather than having its own cutout
  * @param scaffoldState the bottom sheet scaffold state
  * @param onDismissQuickSettings callback to dismiss quick settings when clicking the drag handle
  * @param viewfinder the viewfinder composable
@@ -88,8 +108,6 @@ import androidx.compose.ui.unit.takeOrElse
  *   (including the quick settings sheet) and across the entire window, including the system bar
  *   and display cutout areas
  * @param snackBar the snack bar composable for showing messages
- * @param isViewfinderFullScreen whether the viewfinder occupies the entire screen, causing the
- *   top bar to be overlaid rather than having its own cutout
  * @param topStartContent optional composable content aligned to the top-start of the viewfinder
  * @param errorDialog the camera error alert dialog composable
  */
@@ -98,7 +116,8 @@ import androidx.compose.ui.unit.takeOrElse
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
-    isViewfinderFullScreen: Boolean = false,
+    selectedAspectRatio: AspectRatio? = null,
+    isViewfinderFullScreen: Boolean = shouldOverlayTopBar(selectedAspectRatio),
     scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.Hidden,
@@ -157,17 +176,35 @@ fun PreviewLayout(
                     val minTouchTarget =
                         LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
                     val topBarHeight = max(cutoutTopInset, minTouchTarget)
+                    val isOverlay = isViewfinderFullScreen || shouldOverlayTopBar(
+                        selectedAspectRatio
+                    )
 
+                    // 1. Viewfinder layer
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(top = if (isViewfinderFullScreen) 0.dp else topBarHeight)
+                            .padding(top = if (isOverlay) 0.dp else topBarHeight)
                     ) {
                         viewfinder(Modifier)
-                        topStartContent(Modifier.align(Alignment.TopStart))
                     }
 
-                    // The indicator row occupies the top bar real estate in the hidden status
+                    // 2. Static top-start content (e.g. close/back button) anchored underneath the top bar.
+                    // Stays static at topBarHeight regardless of aspect ratio:
+                    // In 3:4 and 9:16, it overlays the viewfinder. In 1:1, it rests in the black letterbox gap.
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = topBarHeight)
+                            .windowInsetsPadding(
+                                WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
+                            ),
+                        contentAlignment = Alignment.TopStart
+                    ) {
+                        topStartContent(Modifier)
+                    }
+
+                    // 3. The indicator row occupies the top bar real estate in the hidden status
                     // bar region. We size the top bar to accommodate any top display cutout or
                     // the minimum interactive touch target (defaulting to 48dp), while
                     // CutoutAwareRow shifts individual indicator icons around any intersecting

@@ -126,6 +126,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
@@ -844,9 +845,18 @@ fun PreviewDisplay(
                 }
             }
 
+            val topOffset = if (aspectRatio == AspectRatio.ONE_ONE) {
+                // Center the 1:1 square vertically within the 3:4 active zone.
+                // 3:4 height is width * 4 / 3. Offset is (3:4 height - 1:1 height) / 2 = width / 6.
+                width / 6f
+            } else {
+                0.dp
+            }
+
             Box(
                 modifier = Modifier
                     .testTag(PREVIEW_DISPLAY)
+                    .offset(y = topOffset)
                     .onGloballyPositioned { coordinates ->
                         val bounds = coordinates.boundsInWindow()
                         if (targetBoundsState.value != bounds) {
