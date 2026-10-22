@@ -44,10 +44,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:settings:datastore-prefs"))
-    implementation(project(":core:settings"))
-    implementation(project(":core:model"))
-
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.datastore.preferences)
 }
