@@ -25,7 +25,6 @@ import com.google.jetpackcamera.core.camera.CameraSystem.Companion.applyDiffs
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.location.LocationProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
-import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
@@ -37,6 +36,7 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.LowLightBoostState
+import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.model.VideoCaptureEvent
