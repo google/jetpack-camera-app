@@ -29,11 +29,10 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.data.media.LocalMediaRepository
-import com.google.jetpackcamera.data.media.Media
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.model.Media
+import com.google.jetpackcamera.model.MediaDescriptor
 import java.io.File
 import java.io.FileOutputStream
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.fail
@@ -49,7 +48,6 @@ import org.robolectric.shadows.ShadowMediaStore
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
-@OptIn(ExperimentalCoroutinesApi::class)
 class LocalMediaRepositoryTest {
 
     private lateinit var context: Context

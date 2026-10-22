@@ -45,7 +45,6 @@ android {
 
 dependencies {
     implementation(project(":core:settings:datastore-prefs"))
-    implementation(project(":data:settings"))
     implementation(project(":core:settings"))
     implementation(project(":core:model"))
 

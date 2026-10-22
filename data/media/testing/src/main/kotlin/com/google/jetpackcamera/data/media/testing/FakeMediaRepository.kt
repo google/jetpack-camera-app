@@ -18,9 +18,9 @@ package com.google.jetpackcamera.data.media.testing
 import android.net.Uri
 import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
-import com.google.jetpackcamera.data.media.Media
-import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
+import com.google.jetpackcamera.model.Media
+import com.google.jetpackcamera.model.MediaDescriptor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
