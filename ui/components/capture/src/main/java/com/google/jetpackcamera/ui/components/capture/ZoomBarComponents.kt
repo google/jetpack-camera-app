@@ -15,9 +15,8 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -26,7 +25,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,7 +51,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
@@ -97,10 +94,12 @@ data class ZoomBarColors(
  * Default color palettes and dimensions for [ZoomBar].
  */
 object ZoomBarDefaults {
-    val HorizontalItemWidth = 44.dp
+    val HorizontalItemWidth = 40.dp
     val HorizontalItemHeight = 36.dp
     val VerticalItemWidth = 40.dp
     val VerticalItemHeight = 40.dp
+    val HorizontalEndPadding = 6.dp
+    val VerticalEndPadding = 4.dp
     val EndPadding = 4.dp
     val HorizontalClearance = 4.dp
 
@@ -184,7 +183,7 @@ fun formatZoomLabel(
 
 /**
  * A composable that displays zoom controls formatted as a unified capsule track
- * with a sliding selected indicator pill.
+ * with a selected indicator pill appearing on the active stop.
  *
  * @param zoomControlUiState The [ZoomControlUiState] providing available zoom levels and current ratio.
  * @param onChangeZoom Callback when a zoom level is tapped.
@@ -232,23 +231,22 @@ fun ZoomBar(
             ZoomBarDefaults.VerticalItemHeight
         }
 
-        // Layout-phase animated offset prevents recompositions during slider animation
-        val animatedOffset by animateDpAsState(
-            targetValue = ZoomBarDefaults.EndPadding + (validIndex * if (orientation == Orientation.Horizontal) itemWidth.value else itemHeight.value).dp,
-            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-            label = "zoomIndicatorOffset"
-        )
+        val endPadding = if (orientation == Orientation.Horizontal) {
+            ZoomBarDefaults.HorizontalEndPadding
+        } else {
+            ZoomBarDefaults.VerticalEndPadding
+        }
 
         // In horizontal, clearance exists on all sides; in vertical, buttons are flush with the vertical sides.
         val totalWidth = if (orientation == Orientation.Horizontal) {
-            itemWidth * zoomLevels.size + ZoomBarDefaults.EndPadding * 2
+            itemWidth * zoomLevels.size + endPadding * 2
         } else {
             itemWidth
         }
         val totalHeight = if (orientation == Orientation.Horizontal) {
             itemHeight + ZoomBarDefaults.HorizontalClearance * 2
         } else {
-            itemHeight * zoomLevels.size + ZoomBarDefaults.EndPadding * 2
+            itemHeight * zoomLevels.size + endPadding * 2
         }
 
         Box(
@@ -260,41 +258,13 @@ fun ZoomBar(
                     stateDescription = zoomControlUiState.primaryZoomRatio.toString()
                 }
         ) {
-            // Animated sliding indicator pill rendered with layout-phase offset
-            val indicatorModifier = if (orientation == Orientation.Horizontal) {
-                Modifier
-                    .offset {
-                        IntOffset(
-                            x = animatedOffset.roundToPx(),
-                            y = ZoomBarDefaults.HorizontalClearance.roundToPx()
-                        )
-                    }
-                    .size(itemWidth, itemHeight)
-            } else {
-                Modifier
-                    .offset {
-                        IntOffset(
-                            x = 0,
-                            y = animatedOffset.roundToPx()
-                        )
-                    }
-                    .size(itemWidth, itemHeight)
-            }
-            Box(
-                modifier = indicatorModifier
-                    .background(
-                        color = colors.selectedIndicatorColor,
-                        shape = ZoomBarDefaults.IndicatorShape
-                    )
-            )
-
             // Stops
             if (orientation == Orientation.Horizontal) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(
-                            horizontal = ZoomBarDefaults.EndPadding,
+                            horizontal = endPadding,
                             vertical = ZoomBarDefaults.HorizontalClearance
                         ),
                     verticalAlignment = Alignment.CenterVertically
@@ -315,7 +285,7 @@ fun ZoomBar(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(vertical = ZoomBarDefaults.EndPadding),
+                        .padding(vertical = endPadding),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     zoomLevels.forEachIndexed { index, value ->
@@ -352,8 +322,21 @@ private fun ZoomBarItem(
         )
     }
 
+    val containerColor by animateColorAsState(
+        targetValue = if (isSelected) colors.selectedIndicatorColor else Color.Transparent,
+        label = "zoomItemContainerColor"
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) colors.selectedContentColor else colors.unselectedContentColor,
+        label = "zoomItemContentColor"
+    )
+
     Box(
         modifier = modifier
+            .background(
+                color = containerColor,
+                shape = ZoomBarDefaults.IndicatorShape
+            )
             .clip(ZoomBarDefaults.IndicatorShape)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -368,11 +351,12 @@ private fun ZoomBarItem(
         contentAlignment = Alignment.Center
     ) {
         Text(
+            modifier = Modifier.animateContentSize(),
             text = displayText,
             style = MaterialTheme.typography.labelMedium.copy(
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
             ),
-            color = if (isSelected) colors.selectedContentColor else colors.unselectedContentColor,
+            color = contentColor,
             textAlign = TextAlign.Center,
             maxLines = 1
         )
