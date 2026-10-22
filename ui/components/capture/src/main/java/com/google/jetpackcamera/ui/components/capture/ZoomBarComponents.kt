@@ -80,9 +80,8 @@ private val DECIMAL_FORMATTER = ThreadLocal.withInitial {
  * @param trackColor Background color of the stadium track capsule (e.g. 60% black over
  *   viewfinder, 20% white off viewfinder).
  * @param selectedIndicatorColor Background color of the indicator pill behind the active stop (e.g.
- *   primaryFixed / #EBE1CF).
- * @param selectedContentColor Text color for the currently selected stop (e.g. onPrimaryFixed /
- *   #1C1B1F).
+ *   primaryFixed).
+ * @param selectedContentColor Text color for the currently selected stop (e.g. onPrimaryFixed).
  * @param unselectedContentColor Text color for unselected stops (e.g. Color.White).
  */
 @Immutable
@@ -129,10 +128,11 @@ object ZoomBarDefaults {
     /**
      * Colors for overlapping the viewfinder (60% black background).
      */
+    @Composable
     fun black60Colors(
         trackColor: Color = Color.Black.copy(alpha = 0.60f),
-        selectedIndicatorColor: Color = Color(0xFFEBE1CF),
-        selectedContentColor: Color = Color(0xFF1C1B1F),
+        selectedIndicatorColor: Color = MaterialTheme.colorScheme.primaryFixed,
+        selectedContentColor: Color = MaterialTheme.colorScheme.onPrimaryFixed,
         unselectedContentColor: Color = Color.White
     ) = ZoomBarColors(
         trackColor = trackColor,
@@ -144,10 +144,11 @@ object ZoomBarDefaults {
     /**
      * Colors when not overlapping the viewfinder (lighter translucent background).
      */
+    @Composable
     fun white20Colors(
         trackColor: Color = Color.White.copy(alpha = 0.20f),
-        selectedIndicatorColor: Color = Color(0xFFEBE1CF),
-        selectedContentColor: Color = Color(0xFF1C1B1F),
+        selectedIndicatorColor: Color = MaterialTheme.colorScheme.primaryFixed,
+        selectedContentColor: Color = MaterialTheme.colorScheme.onPrimaryFixed,
         unselectedContentColor: Color = Color.White
     ) = ZoomBarColors(
         trackColor = trackColor,
@@ -386,6 +387,7 @@ private fun ZoomBarItem(
  * @param buttonSize the size of the buttons (retained for backward compatibility)
  * @param spacing the spacing between the buttons (retained for backward compatibility)
  * @param orientation the layout orientation ([Orientation.Horizontal] or [Orientation.Vertical])
+ * @param colors the [ZoomBarColors] styling configuration for track and indicator colors
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -395,13 +397,15 @@ fun ZoomButtonRow(
     zoomControlUiState: ZoomControlUiState,
     buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
     spacing: Dp = 16.dp,
-    orientation: Orientation = Orientation.Horizontal
+    orientation: Orientation = Orientation.Horizontal,
+    colors: ZoomBarColors = ZoomBarDefaults.colors()
 ) {
     ZoomBar(
         zoomControlUiState = zoomControlUiState,
         onChangeZoom = onChangeZoom,
         modifier = modifier,
-        orientation = orientation
+        orientation = orientation,
+        colors = colors
     )
 }
 
