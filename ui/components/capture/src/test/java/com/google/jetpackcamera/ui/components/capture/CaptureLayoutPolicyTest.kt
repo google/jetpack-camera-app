@@ -35,14 +35,14 @@ class CaptureLayoutPolicyTest {
     }
 
     @Test
-    fun shouldOverlayTopBar_nineSixteen_isTrueByDefault() {
-        assertThat(shouldOverlayTopBar(AspectRatio.NINE_SIXTEEN)).isTrue()
+    fun shouldOverlayTopBar_nineSixteen_isFalseByDefault() {
+        assertThat(shouldOverlayTopBar(AspectRatio.NINE_SIXTEEN)).isFalse()
     }
 
     @Test
     fun shouldOverlayTopBar_nineSixteen_respectsFullBleedFlag() {
-        assertThat(shouldOverlayTopBar(AspectRatio.NINE_SIXTEEN, isFullBleedEnabled = false))
-            .isFalse()
+        assertThat(shouldOverlayTopBar(AspectRatio.NINE_SIXTEEN, isFullBleedEnabled = true))
+            .isTrue()
     }
 
     @Test
