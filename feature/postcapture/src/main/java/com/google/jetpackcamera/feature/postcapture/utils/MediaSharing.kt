@@ -20,8 +20,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
-import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.feature.postcapture.R
+import com.google.jetpackcamera.model.MediaDescriptor
 import java.io.File
 import java.io.FileNotFoundException
 

@@ -87,7 +87,7 @@ class CaptureButtonTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertExists()
         composeTestRule.onNodeWithTag(
             CAPTURE_BUTTON
-        ).assertContentDescriptionEquals("Capture Photo")
+        ).assertContentDescriptionEquals("Capture photo")
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON, useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
@@ -122,7 +122,7 @@ class CaptureButtonTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
         composeTestRule.onNodeWithTag(
             CAPTURE_BUTTON
-        ).assertContentDescriptionEquals("Capture Photo")
+        ).assertContentDescriptionEquals("Capture photo")
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON, useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
@@ -150,7 +150,7 @@ class CaptureButtonTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
         composeTestRule.onNodeWithTag(
             CAPTURE_BUTTON
-        ).assertContentDescriptionEquals("Start Video Recording")
+        ).assertContentDescriptionEquals("Start video recording")
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON, useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
@@ -178,7 +178,7 @@ class CaptureButtonTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
         composeTestRule.onNodeWithTag(
             CAPTURE_BUTTON
-        ).assertContentDescriptionEquals("Stop Video Recording")
+        ).assertContentDescriptionEquals("Stop video recording")
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON, useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
@@ -204,7 +204,7 @@ class CaptureButtonTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
         composeTestRule.onNodeWithTag(
             CAPTURE_BUTTON
-        ).assertContentDescriptionEquals("Recording Video")
+        ).assertContentDescriptionEquals("Recording video")
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON, useUnmergedTree = true)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
     }
