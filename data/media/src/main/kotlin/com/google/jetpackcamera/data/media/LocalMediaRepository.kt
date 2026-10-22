@@ -38,6 +38,7 @@ import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
@@ -117,6 +118,7 @@ class LocalMediaRepository(
     /**
      * A [StateFlow] that emits the most recently captured media (image or video) from the MediaStore.
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     override val lastCapturedMedia: StateFlow<MediaDescriptor> =
         merge(
             mediaStoreChangesFlow(context.contentResolver),
