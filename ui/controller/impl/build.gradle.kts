@@ -87,7 +87,6 @@ dependencies {
     testImplementation(project(":core:common"))
     testImplementation(project(":core:camera:testing"))
     testImplementation(project(":core:location:testing"))
-    testImplementation(project(":data:settings"))
     testImplementation(project(":core:settings"))
 }
 

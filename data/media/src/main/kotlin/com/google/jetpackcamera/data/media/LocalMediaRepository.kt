@@ -31,6 +31,8 @@ import android.util.Size
 import androidx.core.net.toFile
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.core.common.ignoreResult
+import com.google.jetpackcamera.model.Media
+import com.google.jetpackcamera.model.MediaDescriptor
 import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
