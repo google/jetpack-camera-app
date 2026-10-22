@@ -13,19 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.controller
+package com.google.jetpackcamera.ui.components.capture
 
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.tooling.preview.Preview
+import com.android.tools.screenshot.PreviewTest
 
-/**
- * Interface for controlling the image well.
- */
-interface ImageWellController {
-    /**
-     * Sets the specified media as the current item in the media repository, typically before
-     * navigating to the post-capture screen.
-     *
-     * @param mediaDescriptor The media descriptor to be set.
-     */
-    fun imageWellToRepository(mediaDescriptor: MediaDescriptor)
+@PreviewTest
+@Preview
+@Composable
+fun ImageWellScreenshotPreview() {
+    ImageWellPreview()
+}
+
+@PreviewTest
+@Preview
+@Composable
+fun ImageWellBlack60ScreenshotPreview() {
+    CompositionLocalProvider(
+        LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
+    ) {
+        ImageWellPreview()
+    }
 }
