@@ -54,10 +54,10 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class SettingsScreenTest {
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule = createComposeRule()
 
-    @get:Rule
+    @get:Rule(order = 0)
     val tempFolder = TemporaryFolder()
 
     private fun createSettingsViewModel(): SettingsViewModel {

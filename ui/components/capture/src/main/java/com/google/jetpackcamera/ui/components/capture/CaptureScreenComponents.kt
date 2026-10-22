@@ -110,11 +110,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -1253,22 +1254,6 @@ internal fun FocusMeteringIndicator(
         null -> ""
     }
 
-    // Accessibility: announce focus state transitions to TalkBack
-    val view = LocalView.current
-    LaunchedEffect(currentStatus) {
-        when (currentStatus) {
-            FocusMeteringUiState.Status.RUNNING ->
-                view.announceForAccessibility(focusScanningDescription)
-            FocusMeteringUiState.Status.SUCCESS ->
-                view.announceForAccessibility(focusLockedDescription)
-            FocusMeteringUiState.Status.FAILURE ->
-                view.announceForAccessibility(focusFailedDescription)
-            FocusMeteringUiState.Status.CANCELLED ->
-                view.announceForAccessibility(focusReleasedDescription)
-            null -> {}
-        }
-    }
-
     val isVisible = currentStatus == FocusMeteringUiState.Status.RUNNING ||
         currentStatus == FocusMeteringUiState.Status.SUCCESS ||
         showFailureIndicator
@@ -1353,6 +1338,9 @@ internal fun FocusMeteringIndicator(
                         if (focusStatusDescription.isNotEmpty()) {
                             contentDescription = focusStatusDescription
                         }
+                        // Accessibility services announce changes to the description, such as
+                        // "Focused", without moving accessibility focus away from other controls.
+                        liveRegion = LiveRegionMode.Polite
                     }
                     .graphicsLayer {
                         alpha = reticleAlphaProvider()

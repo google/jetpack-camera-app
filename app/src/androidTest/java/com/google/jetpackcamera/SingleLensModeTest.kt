@@ -35,14 +35,14 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 class SingleLensModeTest(private val lensFacing: String) {
-    @get:Rule
+    @get:Rule(order = 0)
     val cameraXResetRule = CameraXResetRule()
 
-    @get:Rule
+    @get:Rule(order = 1)
     val permissionsRule: GrantPermissionRule =
         GrantPermissionRule.grant(*(TEST_REQUIRED_PERMISSIONS).toTypedArray())
 
-    @get:Rule
+    @get:Rule(order = 2)
     val composeTestRule = createEmptyComposeRule()
 
     companion object {

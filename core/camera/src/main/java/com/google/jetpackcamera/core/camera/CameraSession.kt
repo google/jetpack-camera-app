@@ -1023,9 +1023,9 @@ private fun getPendingRecording(
 
         is SaveLocation.Cache -> {
             try {
-                // 1. Get the app's cache directory
+                // 1. Get the cache directory for captures
                 val cacheDir = saveLocation.cacheDir?.toFile()
-                    ?: context.applicationContext.cacheDir
+                    ?: context.applicationContext.defaultCaptureCacheDir()
 
                 // 2. Create a unique temporary file for the video
                 val tempFile = File.createTempFile(

@@ -27,7 +27,7 @@ sealed interface SaveLocation {
      *
      * @param cacheDir the [Uri] where captured media should be cached.
      *
-     * If [cacheDir] is null, then the app's cache location will default to
+     * If [cacheDir] is null, captured media is cached in a `captures` subdirectory of
      * [android.content.Context.getCacheDir].
      */
     data class Cache(val cacheDir: Uri? = null) : SaveLocation

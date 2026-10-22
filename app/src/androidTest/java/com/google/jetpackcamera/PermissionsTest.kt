@@ -58,16 +58,16 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PermissionsTest {
-    @get:Rule
+    @get:Rule(order = 4)
     val composeTestRule = createEmptyComposeRule()
 
-    @get:Rule
+    @get:Rule(order = 0)
     val allPermissionsRule = IndividualTestGrantPermissionRule(
         permissions = TEST_REQUIRED_PERMISSIONS.toTypedArray(),
         targetTestNames = arrayOf("allPermissions_alreadyGranted_screenNotShown")
     )
 
-    @get:Rule
+    @get:Rule(order = 1)
     val storagePermissionsRule = IndividualTestGrantPermissionRule(
         permissions = arrayOf(CAMERA, RECORD_AUDIO, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION),
         targetTestNames = arrayOf(
@@ -76,7 +76,7 @@ class PermissionsTest {
         )
     )
 
-    @get:Rule
+    @get:Rule(order = 2)
     val cameraAudioPermissionRule = IndividualTestGrantPermissionRule(
         permissions = arrayOf(CAMERA, RECORD_AUDIO),
         targetTestNames = arrayOf(
@@ -85,7 +85,7 @@ class PermissionsTest {
         )
     )
 
-    @get:Rule
+    @get:Rule(order = 3)
     val cameraPermissionRule = IndividualTestGrantPermissionRule(
         permissions = arrayOf(CAMERA),
         targetTestNames = arrayOf(
