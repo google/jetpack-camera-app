@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
+import android.icu.text.MessageFormat
 import android.os.Build
 import android.util.Log
 import androidx.annotation.VisibleForTesting
@@ -102,6 +103,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.graphicsLayer
@@ -170,7 +172,7 @@ private val SnackbarTextToActionSpacing = 8.dp
 private val SnackbarElevation = 6.dp
 
 /**
- * A custom [SnackbarHost] that displays snackbars with a pill shape and a leading status icon.
+ * A custom [SnackbarHost] that displays snackbars with a rounded shape and a leading status icon.
  *
  * @param snackbarHostState the [SnackbarHostState] for the host.
  * @param modifier the modifier for this component.
@@ -410,12 +412,22 @@ fun ElapsedTimeText(
         val formattedTime = remember(elapsedSeconds, format) {
             format.format(minutes, seconds)
         }
+        val minutesInt = minutes.toInt()
+        val secondsInt = seconds.toInt()
+        val minutesText = MessageFormat.format(
+            stringResource(R.string.elapsed_time_accessibility_minutes),
+            mapOf("count" to minutesInt)
+        )
+        val secondsText = MessageFormat.format(
+            stringResource(R.string.elapsed_time_accessibility_seconds),
+            mapOf("count" to secondsInt)
+        )
         val accessibilityRes = if (state.isPaused) {
             R.string.elapsed_time_accessibility_paused
         } else {
             R.string.elapsed_time_accessibility_recording
         }
-        val accessibilityText = stringResource(accessibilityRes, minutes, seconds)
+        val accessibilityText = stringResource(accessibilityRes, minutesText, secondsText)
         Box(
             modifier = modifier
                 .testTag(ELAPSED_TIME_TAG)
@@ -576,7 +588,9 @@ fun AmplitudeToggleButton(
  * A toggle switch that allows the user to switch between image and video capture modes.
  *
  * This component visually represents the selected mode with distinct icons for photo and video.
- * It is only enabled when both capture modes are available to the camera.
+ * It is only enabled when both capture modes are available to the camera. The track color is
+ * determined by [LocalCameraControlBackgroundStyle], so that the toggle remains legible when drawn
+ * over the viewfinder.
  *
  * @param uiState the [CaptureModeToggleUiState.Available] for this component.
  * @param onChangeCaptureMode the callback for changing the capture mode.
@@ -606,6 +620,8 @@ fun CaptureModeToggleButton(
 
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
+        // The track keeps its color when disabled; ToggleSwitch dims the thumb and icons instead.
+        trackColor = LocalCameraControlBackgroundStyle.current.containerColor,
         checked = toggleState,
         onCheckedChange = { isChecked ->
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
@@ -1541,4 +1557,73 @@ private fun FlipCameraButtonPreview() {
             }
         }
     }
+}
+
+/**
+ * Shows a [CaptureModeToggleButton] over a gray gradient, using the
+ * [LocalCameraControlBackgroundStyle] provided by the caller.
+ *
+ * @param selectedCaptureMode the selected mode; must be [CaptureMode.IMAGE_ONLY] or
+ * [CaptureMode.VIDEO_ONLY].
+ * @param enabled whether video capture is selectable. When `false`, the toggle is shown disabled.
+ */
+@Composable
+internal fun PreviewCaptureModeToggleButton(
+    selectedCaptureMode: CaptureMode,
+    enabled: Boolean = true
+) {
+    val disabledRationale = object : DisableRationale {
+        override val reasonTextResId: Int =
+            R.string.capture_mode_video_recording_content_description_disabled
+    }
+    val uiState = CaptureModeToggleUiState.Available(
+        selectedCaptureMode = selectedCaptureMode,
+        imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+        videoOnlyUiState = if (enabled) {
+            SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+        } else {
+            SingleSelectableUiState.Disabled(CaptureMode.VIDEO_ONLY, disabledRationale)
+        }
+    )
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(
+            modifier = Modifier
+                .background(Brush.verticalGradient(colors = listOf(Color.Gray, Color.DarkGray)))
+                .padding(8.dp)
+        ) {
+            CaptureModeToggleButton(
+                uiState = uiState,
+                onChangeCaptureMode = {},
+                onToggleWhenDisabled = {}
+            )
+        }
+    }
+}
+
+/**
+ * Preview of the [CaptureModeToggleButton] with image capture selected.
+ */
+@Preview
+@Composable
+internal fun CaptureModeToggleImageSelectedPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY)
+}
+
+/**
+ * Preview of the [CaptureModeToggleButton] with video capture selected.
+ */
+@Preview
+@Composable
+internal fun CaptureModeToggleVideoSelectedPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.VIDEO_ONLY)
+}
+
+/**
+ * Preview of the [CaptureModeToggleButton] when video capture is unavailable. The track keeps its
+ * container color while the thumb and icons are dimmed.
+ */
+@Preview
+@Composable
+internal fun CaptureModeToggleDisabledPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY, enabled = false)
 }
