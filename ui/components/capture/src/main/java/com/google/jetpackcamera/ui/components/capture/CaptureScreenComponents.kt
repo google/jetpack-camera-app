@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
+import android.icu.text.MessageFormat
 import android.os.Build
 import android.util.Log
 import androidx.annotation.VisibleForTesting
@@ -68,6 +69,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -100,6 +102,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.graphicsLayer
@@ -124,6 +127,7 @@ import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.controller.SnackBarController
@@ -165,7 +169,7 @@ private val SnackbarTextToActionSpacing = 8.dp
 private val SnackbarElevation = 6.dp
 
 /**
- * A custom [SnackbarHost] that displays snackbars with a pill shape and a leading status icon.
+ * A custom [SnackbarHost] that displays snackbars with a rounded shape and a leading status icon.
  *
  * @param snackbarHostState the [SnackbarHostState] for the host.
  * @param modifier the modifier for this component.
@@ -405,12 +409,22 @@ fun ElapsedTimeText(
         val formattedTime = remember(elapsedSeconds, format) {
             format.format(minutes, seconds)
         }
+        val minutesInt = minutes.toInt()
+        val secondsInt = seconds.toInt()
+        val minutesText = MessageFormat.format(
+            stringResource(R.string.elapsed_time_accessibility_minutes),
+            mapOf("count" to minutesInt)
+        )
+        val secondsText = MessageFormat.format(
+            stringResource(R.string.elapsed_time_accessibility_seconds),
+            mapOf("count" to secondsInt)
+        )
         val accessibilityRes = if (state.isPaused) {
             R.string.elapsed_time_accessibility_paused
         } else {
             R.string.elapsed_time_accessibility_recording
         }
-        val accessibilityText = stringResource(accessibilityRes, minutes, seconds)
+        val accessibilityText = stringResource(accessibilityRes, minutesText, secondsText)
         Box(
             modifier = modifier
                 .testTag(ELAPSED_TIME_TAG)
@@ -571,7 +585,9 @@ fun AmplitudeToggleButton(
  * A toggle switch that allows the user to switch between image and video capture modes.
  *
  * This component visually represents the selected mode with distinct icons for photo and video.
- * It is only enabled when both capture modes are available to the camera.
+ * It is only enabled when both capture modes are available to the camera. The track color is
+ * determined by [LocalCameraControlBackgroundStyle], so that the toggle remains legible when drawn
+ * over the viewfinder.
  *
  * @param uiState the [CaptureModeToggleUiState.Available] for this component.
  * @param onChangeCaptureMode the callback for changing the capture mode.
@@ -601,6 +617,8 @@ fun CaptureModeToggleButton(
 
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
+        // The track keeps its color when disabled; ToggleSwitch dims the thumb and icons instead.
+        trackColor = LocalCameraControlBackgroundStyle.current.containerColor,
         checked = toggleState,
         onCheckedChange = { isChecked ->
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
@@ -1093,7 +1111,7 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
  *
  * This button is only visible and enabled if the device has more than one camera lens available.
  *
- * @param enabledCondition the enabled condition for this component.
+ * @param enabled the enabled condition for this component.
  * @param flipLensUiState the [FlipLensUiState] for this component.
  * @param onClick the callback for when the button is clicked.
  * @param modifier the modifier for this component.
@@ -1101,10 +1119,10 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FlipCameraButton(
-    enabledCondition: Boolean,
     flipLensUiState: FlipLensUiState,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     if (flipLensUiState is FlipLensUiState.Available) {
         var rotation by remember { mutableFloatStateOf(0f) }
@@ -1134,16 +1152,24 @@ fun FlipCameraButton(
                 initialLaunch = true
             }
         }
-        IconButton(
-            modifier = modifier,
+        val backgroundStyle = LocalCameraControlBackgroundStyle.current
+        FilledIconButton(
+            modifier = modifier.size(56.dp),
             onClick = onClick,
-            enabled = enabledCondition
+            enabled = enabled,
+            shape = RoundedCornerShape(12.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = backgroundStyle.containerColor,
+                contentColor = Color.White,
+                disabledContainerColor = backgroundStyle.containerColor,
+                disabledContentColor = Color.White.copy(alpha = 0.38f)
+            )
         ) {
             val contentDescription = when (flipLensUiState.selectedLensFacing) {
-                com.google.jetpackcamera.model.LensFacing.FRONT -> stringResource(
+                LensFacing.FRONT -> stringResource(
                     R.string.quick_settings_front_camera_description
                 )
-                com.google.jetpackcamera.model.LensFacing.BACK -> stringResource(
+                LensFacing.BACK -> stringResource(
                     R.string.quick_settings_back_camera_description
                 )
             }
@@ -1151,7 +1177,7 @@ fun FlipCameraButton(
                 painter = painterResource(R.drawable.ic_flip_camera_android),
                 contentDescription = contentDescription,
                 modifier = Modifier
-                    .size(IconButtonDefaults.extraLargeIconSize)
+                    .size(IconButtonDefaults.largeIconSize)
                     .rotate(animatedRotation.value)
             )
         }
@@ -1399,4 +1425,198 @@ private fun ElapsedTimeTextPreview() {
             )
         }
     }
+}
+
+@Preview(name = "Flip Camera Button Previews")
+@Composable
+private fun FlipCameraButtonPreview() {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Black Background (WHITE_20)
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            FlipCameraButton(
+                enabled = true,
+                flipLensUiState = FlipLensUiState.Available(
+                    selectedLensFacing = LensFacing.BACK,
+                    availableLensFacings = listOf(
+                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                    )
+                ),
+                onClick = {}
+            )
+        }
+
+        // Dark Gray Background (BLACK_60)
+        Box(
+            modifier = Modifier
+                .background(Color.DarkGray)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CompositionLocalProvider(
+                LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
+            ) {
+                FlipCameraButton(
+                    enabled = true,
+                    flipLensUiState = FlipLensUiState.Available(
+                        selectedLensFacing = LensFacing.BACK,
+                        availableLensFacings = listOf(
+                            SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                            SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                        )
+                    ),
+                    onClick = {}
+                )
+            }
+        }
+
+        // Light Gray Background (BLACK_60)
+        Box(
+            modifier = Modifier
+                .background(Color.LightGray)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CompositionLocalProvider(
+                LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
+            ) {
+                FlipCameraButton(
+                    enabled = true,
+                    flipLensUiState = FlipLensUiState.Available(
+                        selectedLensFacing = LensFacing.BACK,
+                        availableLensFacings = listOf(
+                            SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                            SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                        )
+                    ),
+                    onClick = {}
+                )
+            }
+        }
+
+        // Disabled - Dark Background (WHITE_20)
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CompositionLocalProvider(
+                LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.WHITE_20
+            ) {
+                FlipCameraButton(
+                    enabled = false,
+                    flipLensUiState = FlipLensUiState.Available(
+                        selectedLensFacing = LensFacing.BACK,
+                        availableLensFacings = listOf(
+                            SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                            SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                        )
+                    ),
+                    onClick = {}
+                )
+            }
+        }
+
+        // Disabled - Light Background (BLACK_60)
+        Box(
+            modifier = Modifier
+                .background(Color.LightGray)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CompositionLocalProvider(
+                LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
+            ) {
+                FlipCameraButton(
+                    enabled = false,
+                    flipLensUiState = FlipLensUiState.Available(
+                        selectedLensFacing = LensFacing.BACK,
+                        availableLensFacings = listOf(
+                            SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                            SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                        )
+                    ),
+                    onClick = {}
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Shows a [CaptureModeToggleButton] over a gray gradient, using the
+ * [LocalCameraControlBackgroundStyle] provided by the caller.
+ *
+ * @param selectedCaptureMode the selected mode; must be [CaptureMode.IMAGE_ONLY] or
+ * [CaptureMode.VIDEO_ONLY].
+ * @param enabled whether video capture is selectable. When `false`, the toggle is shown disabled.
+ */
+@Composable
+internal fun PreviewCaptureModeToggleButton(
+    selectedCaptureMode: CaptureMode,
+    enabled: Boolean = true
+) {
+    val disabledRationale = object : DisableRationale {
+        override val reasonTextResId: Int =
+            R.string.capture_mode_video_recording_content_description_disabled
+    }
+    val uiState = CaptureModeToggleUiState.Available(
+        selectedCaptureMode = selectedCaptureMode,
+        imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+        videoOnlyUiState = if (enabled) {
+            SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+        } else {
+            SingleSelectableUiState.Disabled(CaptureMode.VIDEO_ONLY, disabledRationale)
+        }
+    )
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(
+            modifier = Modifier
+                .background(Brush.verticalGradient(colors = listOf(Color.Gray, Color.DarkGray)))
+                .padding(8.dp)
+        ) {
+            CaptureModeToggleButton(
+                uiState = uiState,
+                onChangeCaptureMode = {},
+                onToggleWhenDisabled = {}
+            )
+        }
+    }
+}
+
+/**
+ * Preview of the [CaptureModeToggleButton] with image capture selected.
+ */
+@Preview
+@Composable
+internal fun CaptureModeToggleImageSelectedPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY)
+}
+
+/**
+ * Preview of the [CaptureModeToggleButton] with video capture selected.
+ */
+@Preview
+@Composable
+internal fun CaptureModeToggleVideoSelectedPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.VIDEO_ONLY)
+}
+
+/**
+ * Preview of the [CaptureModeToggleButton] when video capture is unavailable. The track keeps its
+ * container color while the thumb and icons are dimmed.
+ */
+@Preview
+@Composable
+internal fun CaptureModeToggleDisabledPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY, enabled = false)
 }

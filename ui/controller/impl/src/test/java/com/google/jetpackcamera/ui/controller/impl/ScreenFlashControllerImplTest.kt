@@ -27,8 +27,6 @@ import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -37,17 +35,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestRule
-import org.junit.runner.Description
 import org.junit.runner.RunWith
-import org.junit.runners.model.Statement
 import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -68,7 +63,8 @@ class ScreenFlashControllerImplTest {
         screenFlash = ScreenFlashControllerImpl(
             cameraSystemProvider = { cameraSystem },
             trackedCaptureUiState = trackedCaptureUiState,
-            coroutineContext = testScope.coroutineContext
+            coroutineContext = testScope.coroutineContext,
+            minApplyUiDurationMillis = MIN_APPLY_UI_DURATION_MILLIS
         )
     }
 
@@ -129,6 +125,66 @@ class ScreenFlashControllerImplTest {
             .isEqualTo(trackedCaptureUiState.value.screenFlashUiState)
     }
 
+    @Test
+    fun applyUiEvent_uiChangeCompletesImmediately_onCompleteInvokedAfterMinDuration() =
+        runCameraTest {
+            var isApplyUiComplete = false
+            cameraSystem.emitScreenFlashEvent(
+                CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.APPLY_UI) {
+                    isApplyUiComplete = true
+                }
+            )
+            runCurrent()
+
+            trackedCaptureUiState.value.screenFlashUiState.onChangeComplete()
+            advanceTimeBy(MIN_APPLY_UI_DURATION_MILLIS - 1)
+            runCurrent()
+            assertThat(isApplyUiComplete).isFalse()
+
+            advanceTimeBy(1)
+            runCurrent()
+            assertThat(isApplyUiComplete).isTrue()
+        }
+
+    @Test
+    fun applyUiEvent_uiChangeCompletesAfterMinDuration_onCompleteInvokedAfterUiChange() =
+        runCameraTest {
+            var isApplyUiComplete = false
+            cameraSystem.emitScreenFlashEvent(
+                CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.APPLY_UI) {
+                    isApplyUiComplete = true
+                }
+            )
+            runCurrent()
+
+            advanceTimeBy(MIN_APPLY_UI_DURATION_MILLIS * 2)
+            runCurrent()
+            assertThat(isApplyUiComplete).isFalse()
+
+            trackedCaptureUiState.value.screenFlashUiState.onChangeComplete()
+            runCurrent()
+            assertThat(isApplyUiComplete).isTrue()
+        }
+
+    @Test
+    fun clearUiEventBeforeApplyUiCompletes_applyUiOnCompleteNotInvoked() = runCameraTest {
+        var isApplyUiComplete = false
+        cameraSystem.emitScreenFlashEvent(
+            CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.APPLY_UI) {
+                isApplyUiComplete = true
+            }
+        )
+        runCurrent()
+        trackedCaptureUiState.value.screenFlashUiState.onChangeComplete()
+
+        cameraSystem.emitScreenFlashEvent(
+            CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.CLEAR_UI) { }
+        )
+        advanceUntilIdle()
+
+        assertThat(isApplyUiComplete).isFalse()
+    }
+
     private fun runCameraTest(testBody: suspend TestScope.() -> Unit) = runTest(testDispatcher) {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             cameraSystem.initialize(
@@ -142,19 +198,6 @@ class ScreenFlashControllerImplTest {
 
     companion object {
         const val FLOAT_TOLERANCE = 0.001f
-    }
-}
-
-class MainDispatcherRule(private val dispatcher: CoroutineDispatcher) : TestRule {
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override fun apply(base: Statement?, description: Description?) = object : Statement() {
-        override fun evaluate() {
-            Dispatchers.setMain(dispatcher)
-            try {
-                base!!.evaluate()
-            } finally {
-                Dispatchers.resetMain()
-            }
-        }
+        const val MIN_APPLY_UI_DURATION_MILLIS = 1000L
     }
 }

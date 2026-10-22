@@ -17,7 +17,6 @@ package com.google.jetpackcamera.featurepolicy
 
 import android.content.pm.PackageManager
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -39,7 +38,7 @@ import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
-import com.google.jetpackcamera.utils.assume
+import com.google.jetpackcamera.utils.assumeFlipCameraAvailable
 import com.google.jetpackcamera.utils.getCurrentLensFacing
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.visitQuickSettings
@@ -87,9 +86,8 @@ internal class HdrFeaturePolicyDeviceTest(
         waitForCaptureButton()
         val currentLens = getCurrentLensFacing()
         if (currentLens != lensFacing) {
-            onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
-                "Device does not have a $lensFacing camera to flip to."
-            }.performClick()
+            assumeFlipCameraAvailable("Device does not have a $lensFacing camera to flip to.")
+            onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
             waitUntil(DEFAULT_TIMEOUT_MILLIS) { getCurrentLensFacing() == lensFacing }
         }
     }

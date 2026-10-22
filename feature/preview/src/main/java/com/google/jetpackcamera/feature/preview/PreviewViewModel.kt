@@ -26,7 +26,6 @@ import com.google.jetpackcamera.core.camera.CaptureSubModeState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.location.LocationProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
-import com.google.jetpackcamera.data.media.MediaDescriptor
 import com.google.jetpackcamera.data.media.MediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.getCaptureUris
 import com.google.jetpackcamera.feature.preview.navigation.getDebugSettings
@@ -38,6 +37,7 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.IntProgress
 import com.google.jetpackcamera.model.LowLightBoostState
+import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.model.VideoCaptureEvent
@@ -47,13 +47,11 @@ import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
-import com.google.jetpackcamera.ui.controller.ImageWellController
 import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.ZoomController
 import com.google.jetpackcamera.ui.controller.impl.CameraControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.CaptureControllerImpl
-import com.google.jetpackcamera.ui.controller.impl.ImageWellControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.QuickSettingsControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.ScreenFlashControllerImpl
 import com.google.jetpackcamera.ui.controller.impl.SnackBarControllerImpl
@@ -192,11 +190,6 @@ class PreviewViewModel @Inject constructor(
         coroutineContext = viewModelScope.coroutineContext
     )
 
-    val imageWellController: ImageWellController = ImageWellControllerImpl(
-        mediaRepository = mediaRepository,
-        coroutineContext = viewModelScope.coroutineContext
-    )
-
     val cameraController: CameraController = CameraControllerImpl(
         cameraSystemProvider = cameraSystemRepository::getCameraSystem,
         captureUiState = captureUiState,
@@ -239,18 +232,14 @@ class PreviewViewModel @Inject constructor(
             }
         },
         onImageCached = { uri ->
-            viewModelScope.launch {
-                mediaRepository.setCurrentMedia(
-                    MediaDescriptor.Content.Image(uri, null, true)
-                )
-            }
+            mediaRepository.setCurrentMedia(
+                MediaDescriptor.Content.Image(uri, null, true)
+            )
         },
         onVideoCached = { uri ->
-            viewModelScope.launch {
-                mediaRepository.setCurrentMedia(
-                    MediaDescriptor.Content.Video(uri, null, true)
-                )
-            }
+            mediaRepository.setCurrentMedia(
+                MediaDescriptor.Content.Video(uri, null, true)
+            )
         },
         coroutineContext = viewModelScope.coroutineContext
     )
