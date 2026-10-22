@@ -64,13 +64,13 @@ private val US_SYMBOLS = DecimalFormatSymbols(Locale.US)
 private val SUB_ONE_FORMATTER = ThreadLocal.withInitial {
     DecimalFormat(".#", US_SYMBOLS).apply {
         minimumIntegerDigits = 0
-        roundingMode = RoundingMode.HALF_UP
+        setRoundingMode(RoundingMode.HALF_UP)
     }
 }
 
 private val DECIMAL_FORMATTER = ThreadLocal.withInitial {
     DecimalFormat("#.#", US_SYMBOLS).apply {
-        roundingMode = RoundingMode.HALF_UP
+        setRoundingMode(RoundingMode.HALF_UP)
     }
 }
 
