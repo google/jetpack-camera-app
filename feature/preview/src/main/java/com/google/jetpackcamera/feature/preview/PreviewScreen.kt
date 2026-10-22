@@ -67,6 +67,7 @@ import androidx.tracing.Trace
 import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.CaptureMode
@@ -112,6 +113,7 @@ import com.google.jetpackcamera.ui.debug.DebugController
 import com.google.jetpackcamera.ui.debug.DebugOverlay
 import com.google.jetpackcamera.ui.debug.DebugUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
@@ -442,6 +444,12 @@ private fun ContentScreen(
     val previewDisplayState = remember {
         derivedStateOf {
             currentCaptureUiStateProvider().previewDisplayUiState
+        }
+    }
+    val isViewfinderFullScreen by remember {
+        derivedStateOf {
+            (previewDisplayState.value.aspectRatioUiState as? AspectRatioUiState.Available)
+                ?.selectedAspectRatio == AspectRatio.NINE_SIXTEEN
         }
     }
     val focusMeteringState = remember {
@@ -791,6 +799,7 @@ private fun ContentScreen(
 
     LayoutWrapper(
         modifier = modifier,
+        isViewfinderFullScreen = isViewfinderFullScreen,
         scaffoldState = scaffoldState,
         onDismissQuickSettings = onDismissQuickSettings,
         isErrorDialogShowing = isErrorDialogShowing,
@@ -886,6 +895,7 @@ private fun LoadingScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun LayoutWrapper(
     modifier: Modifier = Modifier,
+    isViewfinderFullScreen: Boolean = false,
     scaffoldState: BottomSheetScaffoldState,
     onDismissQuickSettings: () -> Unit = {},
     isErrorDialogShowing: Boolean = false,
@@ -915,6 +925,7 @@ private fun LayoutWrapper(
 ) {
     PreviewLayout(
         modifier = modifier,
+        isViewfinderFullScreen = isViewfinderFullScreen,
         scaffoldState = scaffoldState,
         onDismissQuickSettings = onDismissQuickSettings,
         viewfinder = viewfinder,

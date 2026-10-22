@@ -88,6 +88,8 @@ import androidx.compose.ui.unit.takeOrElse
  *   (including the quick settings sheet) and across the entire window, including the system bar
  *   and display cutout areas
  * @param snackBar the snack bar composable for showing messages
+ * @param isViewfinderFullScreen whether the viewfinder occupies the entire screen, causing the
+ *   top bar to be overlaid rather than having its own cutout
  * @param topStartContent optional composable content aligned to the top-start of the viewfinder
  * @param errorDialog the camera error alert dialog composable
  */
@@ -96,6 +98,7 @@ import androidx.compose.ui.unit.takeOrElse
 @Composable
 fun PreviewLayout(
     modifier: Modifier = Modifier,
+    isViewfinderFullScreen: Boolean = false,
     scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.Hidden,
@@ -149,33 +152,40 @@ fun PreviewLayout(
                 snackbarHost = {}
             ) {
                 Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-                    Column {
-                        // The indicator row occupies the top bar real estate in the hidden status
-                        // bar region. We size the top bar to accommodate any top display cutout or
-                        // the minimum interactive touch target (defaulting to 48dp), while
-                        // CutoutAwareRow shifts individual indicator icons around any intersecting
-                        // cutout bounds.
-                        val cutoutTopInset =
-                            WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
-                        val minTouchTarget =
-                            LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
-                        val topBarHeight = max(cutoutTopInset, minTouchTarget)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(topBarHeight)
-                                .windowInsetsPadding(
-                                    WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
-                                )
-                                .padding(horizontal = 16.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            indicatorRow(Modifier)
-                        }
-                        Box {
-                            viewfinder(Modifier)
-                            topStartContent(Modifier.align(Alignment.TopStart))
-                        }
+                    val cutoutTopInset =
+                        WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+                    val minTouchTarget =
+                        LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
+                    val topBarHeight = max(cutoutTopInset, minTouchTarget)
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = if (isViewfinderFullScreen) 0.dp else topBarHeight)
+                    ) {
+                        viewfinder(Modifier)
+                        topStartContent(Modifier.align(Alignment.TopStart))
+                    }
+
+                    // The indicator row occupies the top bar real estate in the hidden status
+                    // bar region. We size the top bar to accommodate any top display cutout or
+                    // the minimum interactive touch target (defaulting to 48dp), while
+                    // CutoutAwareRow shifts individual indicator icons around any intersecting
+                    // cutout bounds.
+                    // When the viewfinder is full-screen, the top bar overlays on top of the
+                    // viewfinder. When non-full-screen, the viewfinder padding leaves a designated
+                    // black cutout region for the top bar.
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(topBarHeight)
+                            .windowInsetsPadding(
+                                WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
+                            )
+                            .padding(horizontal = 16.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        indicatorRow(Modifier)
                     }
 
                     Box(
