@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -101,7 +102,6 @@ object ZoomBarDefaults {
     val VerticalItemHeight = 40.dp
     val HorizontalEndPadding = 6.dp
     val VerticalEndPadding = 4.dp
-    val EndPadding = 4.dp
     val HorizontalClearance = 4.dp
 
     val TrackShape = RoundedCornerShape(56.dp)
@@ -355,6 +355,7 @@ private fun ZoomBarItem(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
+                role = Role.RadioButton,
                 onClick = onClick
             )
             .semantics {
@@ -429,7 +430,7 @@ private fun getZoomButtonTestTag(buttonValue: Float): String {
 
 @Preview(name = "Horizontal 60% Black (Overlapping Viewfinder)", showBackground = true)
 @Composable
-fun ZoomBarHorizontalDarkPreview() {
+private fun ZoomBarHorizontalDarkPreview() {
     Box(
         modifier = Modifier
             .background(Color(0xFF2B2B2B))
@@ -451,7 +452,7 @@ fun ZoomBarHorizontalDarkPreview() {
 
 @Preview(name = "Horizontal 20% White (Not Overlapping Viewfinder)", showBackground = true)
 @Composable
-fun ZoomBarHorizontalTranslucentPreview() {
+private fun ZoomBarHorizontalTranslucentPreview() {
     Box(
         modifier = Modifier
             .background(Color(0xFF2B2B2B))
@@ -473,7 +474,7 @@ fun ZoomBarHorizontalTranslucentPreview() {
 
 @Preview(name = "Horizontal - Fraction (.5x Selected)", showBackground = true)
 @Composable
-fun ZoomBarHorizontalFractionPreview() {
+private fun ZoomBarHorizontalFractionPreview() {
     Box(
         modifier = Modifier
             .background(Color(0xFF2B2B2B))
@@ -495,7 +496,7 @@ fun ZoomBarHorizontalFractionPreview() {
 
 @Preview(name = "Vertical 60% Black - Flush Sides", showBackground = true)
 @Composable
-fun ZoomBarVerticalDarkPreview() {
+private fun ZoomBarVerticalDarkPreview() {
     Box(
         modifier = Modifier
             .background(Color(0xFF2B2B2B))
@@ -517,7 +518,7 @@ fun ZoomBarVerticalDarkPreview() {
 
 @Preview(name = "Vertical 20% White - Flush Sides", showBackground = true)
 @Composable
-fun ZoomBarVerticalTranslucentPreview() {
+private fun ZoomBarVerticalTranslucentPreview() {
     Box(
         modifier = Modifier
             .background(Color(0xFF2B2B2B))
@@ -539,7 +540,7 @@ fun ZoomBarVerticalTranslucentPreview() {
 
 @Preview(name = "Single Value Range (1.0x only)", showBackground = true)
 @Composable
-fun ZoomBarSingleValuePreview() {
+private fun ZoomBarSingleValuePreview() {
     Box(
         modifier = Modifier
             .background(Color(0xFF2B2B2B))
@@ -560,7 +561,7 @@ fun ZoomBarSingleValuePreview() {
 
 @Preview(name = "Extended Telephoto Range (2x Selected)", showBackground = true)
 @Composable
-fun ZoomBarExtendedRangePreview() {
+private fun ZoomBarExtendedRangePreview() {
     Box(
         modifier = Modifier
             .background(Color(0xFF2B2B2B))
@@ -581,12 +582,12 @@ fun ZoomBarExtendedRangePreview() {
 
 @Preview(name = "Legacy Delegate - One Selected", showBackground = true)
 @Composable
-fun ZoomBarPreviewOneSelected() {
+private fun ZoomBarPreviewOneSelected() {
     ZoomBarHorizontalDarkPreview()
 }
 
 @Preview(name = "Legacy Delegate - Fraction Selected", showBackground = true)
 @Composable
-fun ZoomBarPreviewFractionSelected() {
+private fun ZoomBarPreviewFractionSelected() {
     ZoomBarHorizontalFractionPreview()
 }
