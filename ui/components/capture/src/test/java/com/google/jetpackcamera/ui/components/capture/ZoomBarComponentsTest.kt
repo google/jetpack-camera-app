@@ -52,5 +52,7 @@ class ZoomBarComponentsTest {
             .isEqualTo("1.4\u00D7")
         assertThat(formatZoomLabel(targetZoom = 0.5f, currentRatio = 0.7f, isSelected = true))
             .isEqualTo(".7\u00D7")
+        assertThat(formatZoomLabel(targetZoom = 0.5f, currentRatio = 0.99f, isSelected = true))
+            .isEqualTo("1\u00D7")
     }
 }

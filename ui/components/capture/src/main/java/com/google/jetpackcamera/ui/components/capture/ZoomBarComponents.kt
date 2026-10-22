@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
@@ -60,6 +61,21 @@ import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+
+private val US_SYMBOLS = DecimalFormatSymbols(Locale.US)
+
+private val SUB_ONE_FORMATTER = ThreadLocal.withInitial {
+    DecimalFormat(".#", US_SYMBOLS).apply {
+        minimumIntegerDigits = 0
+        roundingMode = RoundingMode.HALF_UP
+    }
+}
+
+private val DECIMAL_FORMATTER = ThreadLocal.withInitial {
+    DecimalFormat("#.#", US_SYMBOLS).apply {
+        roundingMode = RoundingMode.HALF_UP
+    }
+}
 
 /**
  * Styling configuration for [ZoomBar].
@@ -151,20 +167,13 @@ fun formatZoomLabel(
     isSelected: Boolean
 ): String {
     val valueToFormat = if (isSelected) currentRatio else targetZoom
-    val symbols = DecimalFormatSymbols(Locale.US)
     val formattedNumber = if (valueToFormat < 1f && valueToFormat > 0f) {
-        val dec = DecimalFormat(".#", symbols).apply {
-            minimumIntegerDigits = 0
-            roundingMode = RoundingMode.HALF_UP
-        }
-        dec.format(valueToFormat)
+        val formatted = SUB_ONE_FORMATTER.get()!!.format(valueToFormat)
+        if (formatted == "1" || formatted == "1.0") "1" else formatted
     } else if (valueToFormat % 1.0f == 0f) {
         valueToFormat.toInt().toString()
     } else {
-        val dec = DecimalFormat("#.#", symbols).apply {
-            roundingMode = RoundingMode.HALF_UP
-        }
-        dec.format(valueToFormat)
+        DECIMAL_FORMATTER.get()!!.format(valueToFormat)
     }
     return if (isSelected) {
         "$formattedNumber\u00D7"
@@ -195,21 +204,14 @@ fun ZoomBar(
     if (zoomControlUiState is ZoomControlUiState.Enabled) {
         val currentZoomState by rememberUpdatedState(zoomControlUiState)
         val selectedOptionIndex: Int by remember(zoomControlUiState.primaryLensFacing) {
-            // checkValue will flash to 1.0 when flipping between camera lenses on API 30+.
-            // cameraState (cameraState's zoom value) should have an intermediate, "unknown", state when
-            // camera flip is in progress. Then we can ensure that the zoom controls don't flash to 1.0
-            // when cameraState is in this intermediate state.
             derivedStateOf {
+                // If animating towards a value, select that target; otherwise find closest matching stop
                 val checkValue =
                     currentZoomState.animatingToValue ?: currentZoomState.primaryZoomRatio ?: 1f
-                if (checkValue >= 1f) {
-                    val index = currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
-                        checkValue >= zoomLevelOption
-                    }
-                    if (index >= 0) index else 0
-                } else {
-                    0
+                val index = currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
+                    checkValue >= zoomLevelOption
                 }
+                if (index >= 0) index else 0
             }
         }
 
@@ -230,6 +232,7 @@ fun ZoomBar(
             ZoomBarDefaults.VerticalItemHeight
         }
 
+        // Layout-phase animated offset prevents recompositions during slider animation
         val animatedOffset by animateDpAsState(
             targetValue = ZoomBarDefaults.EndPadding + (validIndex * if (orientation == Orientation.Horizontal) itemWidth.value else itemHeight.value).dp,
             animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
@@ -257,14 +260,24 @@ fun ZoomBar(
                     stateDescription = zoomControlUiState.primaryZoomRatio.toString()
                 }
         ) {
-            // Animated sliding indicator pill
+            // Animated sliding indicator pill rendered with layout-phase offset
             val indicatorModifier = if (orientation == Orientation.Horizontal) {
                 Modifier
-                    .offset(x = animatedOffset, y = ZoomBarDefaults.HorizontalClearance)
+                    .offset {
+                        IntOffset(
+                            x = animatedOffset.roundToPx(),
+                            y = ZoomBarDefaults.HorizontalClearance.roundToPx()
+                        )
+                    }
                     .size(itemWidth, itemHeight)
             } else {
                 Modifier
-                    .offset(x = 0.dp, y = animatedOffset)
+                    .offset {
+                        IntOffset(
+                            x = 0,
+                            y = animatedOffset.roundToPx()
+                        )
+                    }
                     .size(itemWidth, itemHeight)
             }
             Box(
@@ -287,10 +300,11 @@ fun ZoomBar(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     zoomLevels.forEachIndexed { index, value ->
+                        val isSelected = index == validIndex
                         ZoomBarItem(
                             value = value,
-                            currentRatio = currentRatio,
-                            isSelected = index == validIndex,
+                            currentRatio = if (isSelected) currentRatio else null,
+                            isSelected = isSelected,
                             colors = colors,
                             modifier = Modifier.size(itemWidth, itemHeight),
                             onClick = { onChangeZoom(value) }
@@ -305,10 +319,11 @@ fun ZoomBar(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     zoomLevels.forEachIndexed { index, value ->
+                        val isSelected = index == validIndex
                         ZoomBarItem(
                             value = value,
-                            currentRatio = currentRatio,
-                            isSelected = index == validIndex,
+                            currentRatio = if (isSelected) currentRatio else null,
+                            isSelected = isSelected,
                             colors = colors,
                             modifier = Modifier.size(itemWidth, itemHeight),
                             onClick = { onChangeZoom(value) }
@@ -323,14 +338,18 @@ fun ZoomBar(
 @Composable
 private fun ZoomBarItem(
     value: Float,
-    currentRatio: Float,
+    currentRatio: Float?,
     isSelected: Boolean,
     colors: ZoomBarColors,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val displayText = remember(value, currentRatio, isSelected) {
-        formatZoomLabel(targetZoom = value, currentRatio = currentRatio, isSelected = isSelected)
+    val displayText = remember(value, isSelected, currentRatio) {
+        formatZoomLabel(
+            targetZoom = value,
+            currentRatio = currentRatio ?: value,
+            isSelected = isSelected
+        )
     }
 
     Box(
