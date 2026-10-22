@@ -47,6 +47,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.TruthJUnit.assume
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.jetpackcamera.core.camera.concurrent.CONCURRENT_SUB_MODE_ID
 import com.google.jetpackcamera.model.CaptureMode
@@ -456,12 +457,9 @@ fun ComposeTestRule.isHdrEnabled(): Boolean {
 }
 
 fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
-    onNodeWithTag(
-        FLIP_CAMERA_BUTTON
-    ).fetchSemanticsNode(
-        "Flip camera button is not visible on main screen."
-    ).let { node ->
-        for (description in node.config[SemanticsProperties.ContentDescription]) {
+    val flipNodes = onAllNodesWithTag(FLIP_CAMERA_BUTTON).fetchSemanticsNodes()
+    if (flipNodes.isNotEmpty()) {
+        for (description in flipNodes.first().config[SemanticsProperties.ContentDescription]) {
             when (description) {
                 getResString(CaptureR.string.quick_settings_front_camera_description) ->
                     return LensFacing.FRONT
@@ -471,6 +469,19 @@ fun ComposeTestRule.getCurrentLensFacing(): LensFacing {
             }
         }
         throw AssertionError("Unable to determine lens facing from flip camera button")
+    }
+    return visitSettingsScreen {
+        checkComponentStateDescriptionState(BTN_SWITCH_SETTING_LENS_FACING_TAG) { description ->
+            when (description) {
+                getResString(SettingsR.string.default_facing_camera_description_front) ->
+                    LensFacing.FRONT
+
+                getResString(SettingsR.string.default_facing_camera_description_back) ->
+                    LensFacing.BACK
+
+                else -> null
+            }
+        }
     }
 }
 
@@ -912,4 +923,17 @@ internal fun buildGeneralErrorMessage(
     sb.appendLine(nodeInteraction.printToString())
 
     return sb.toString()
+}
+
+/**
+ * Assumes that the flip camera button is available on the test device, skipping the test if it is not.
+ *
+ * @param message The message to include if the assumption fails.
+ * @throws AssumptionViolatedException if the flip camera button is not available
+ */
+fun ComposeTestRule.assumeFlipCameraAvailable(
+    message: String = "Device does not have multiple cameras to flip between."
+) {
+    val isFlipAvailable = onAllNodesWithTag(FLIP_CAMERA_BUTTON).fetchSemanticsNodes().isNotEmpty()
+    assume().withMessage(message).that(isFlipAvailable).isTrue()
 }

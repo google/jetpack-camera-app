@@ -16,8 +16,8 @@
 package com.google.jetpackcamera.featurepolicy
 
 import android.content.pm.PackageManager
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -41,7 +41,7 @@ import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
-import com.google.jetpackcamera.utils.assume
+import com.google.jetpackcamera.utils.assumeFlipCameraAvailable
 import com.google.jetpackcamera.utils.getCurrentFlashMode
 import com.google.jetpackcamera.utils.getCurrentLensFacing
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
@@ -90,9 +90,8 @@ internal class FlashModeFeaturePolicyDeviceTest(
         waitForCaptureButton()
         val currentLens = getCurrentLensFacing()
         if (currentLens != lensFacing) {
-            onNodeWithTag(FLIP_CAMERA_BUTTON).assume(isEnabled()) {
-                "Device does not have a $lensFacing camera to flip to."
-            }.performClick()
+            assumeFlipCameraAvailable("Device does not have a $lensFacing camera to flip to.")
+            onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
             waitUntil(DEFAULT_TIMEOUT_MILLIS) { getCurrentLensFacing() == lensFacing }
         }
     }
@@ -112,20 +111,15 @@ internal class FlashModeFeaturePolicyDeviceTest(
         runMainActivityScenarioTest {
             composeTestRule.prepareLens()
             composeTestRule.visitQuickSettings {
-                val onExists = onAllNodesWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON)
+                val flashRowExists = onAllNodesWithTag(ROW_QUICK_SETTINGS_FLASH)
                     .fetchSemanticsNodes().isNotEmpty()
-                if (onExists) {
+                if (!flashRowExists) {
+                    onNodeWithTag(ROW_QUICK_SETTINGS_FLASH).assertDoesNotExist()
+                } else {
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON).assertExists()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON).assertIsEnabled()
                     onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON).assertIsOn()
                     assertThat(getCurrentFlashMode()).isEqualTo(FlashMode.ON)
-                } else {
-                    // If the lens does not support flash/screen-flash ON, verify fallback
-                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON).assertDoesNotExist()
-                    if (onAllNodesWithTag(
-                            ROW_QUICK_SETTINGS_FLASH
-                        ).fetchSemanticsNodes().isNotEmpty()
-                    ) {
-                        onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
-                    }
                 }
             }
         }
@@ -140,19 +134,22 @@ internal class FlashModeFeaturePolicyDeviceTest(
         runMainActivityScenarioTest {
             composeTestRule.prepareLens()
             composeTestRule.visitQuickSettings {
-                val autoExists = onAllNodesWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO)
+                val flashRowExists = onAllNodesWithTag(ROW_QUICK_SETTINGS_FLASH)
                     .fetchSemanticsNodes().isNotEmpty()
-                if (autoExists) {
-                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO).assertIsOn()
-                    assertThat(getCurrentFlashMode()).isEqualTo(FlashMode.AUTO)
+                if (!flashRowExists) {
+                    onNodeWithTag(ROW_QUICK_SETTINGS_FLASH).assertDoesNotExist()
                 } else {
-                    // If AUTO is not supported on this lens, option must not be in view
-                    // and active selection must fall back to OFF (if flash row is present)
-                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO).assertDoesNotExist()
-                    if (onAllNodesWithTag(
-                            ROW_QUICK_SETTINGS_FLASH
-                        ).fetchSemanticsNodes().isNotEmpty()
-                    ) {
+                    val autoExists = onAllNodesWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO)
+                        .fetchSemanticsNodes().isNotEmpty()
+                    if (autoExists) {
+                        onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO).assertIsEnabled()
+                        onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO).assertIsOn()
+                        assertThat(getCurrentFlashMode()).isEqualTo(FlashMode.AUTO)
+                    } else {
+                        // If AUTO is not supported on this lens, option must not be in view
+                        // and active selection must fall back to OFF
+                        onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO).assertDoesNotExist()
+                        onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsEnabled()
                         onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
                     }
                 }
@@ -169,21 +166,28 @@ internal class FlashModeFeaturePolicyDeviceTest(
         runMainActivityScenarioTest {
             composeTestRule.prepareLens()
             composeTestRule.visitQuickSettings {
-                val llbExists = onAllNodesWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST)
+                val flashRowExists = onAllNodesWithTag(ROW_QUICK_SETTINGS_FLASH)
                     .fetchSemanticsNodes().isNotEmpty()
-                if (llbExists) {
-                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST).assertIsOn()
-                    assertThat(getCurrentFlashMode()).isEqualTo(FlashMode.LOW_LIGHT_BOOST)
+                if (!flashRowExists) {
+                    onNodeWithTag(ROW_QUICK_SETTINGS_FLASH).assertDoesNotExist()
                 } else {
-                    // If Low Light Boost is not supported on this lens, option must not be in view
-                    // and active selection must fall back to OFF (if flash row is present)
-                    onNodeWithTag(
+                    val llbExists = onAllNodesWithTag(
                         BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
-                    ).assertDoesNotExist()
-                    if (onAllNodesWithTag(
-                            ROW_QUICK_SETTINGS_FLASH
-                        ).fetchSemanticsNodes().isNotEmpty()
-                    ) {
+                    )
+                        .fetchSemanticsNodes().isNotEmpty()
+                    if (llbExists) {
+                        onNodeWithTag(
+                            BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
+                        ).assertIsEnabled()
+                        onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST).assertIsOn()
+                        assertThat(getCurrentFlashMode()).isEqualTo(FlashMode.LOW_LIGHT_BOOST)
+                    } else {
+                        // If Low Light Boost is not supported on this lens, option must not be in view
+                        // and active selection must fall back to OFF
+                        onNodeWithTag(
+                            BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
+                        ).assertDoesNotExist()
+                        onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsEnabled()
                         onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
                     }
                 }
@@ -234,17 +238,22 @@ internal class FlashModeFeaturePolicyDeviceTest(
         runMainActivityScenarioTest {
             composeTestRule.prepareLens()
             composeTestRule.visitQuickSettings {
-                // AUTO and LOW_LIGHT_BOOST must never be present
-                onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO).assertDoesNotExist()
-                onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST).assertDoesNotExist()
-
-                val onExists = onAllNodesWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON)
+                val flashRowExists = onAllNodesWithTag(ROW_QUICK_SETTINGS_FLASH)
                     .fetchSemanticsNodes().isNotEmpty()
-                if (onExists) {
-                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertExists()
-                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
-                } else {
+                if (!flashRowExists) {
                     onNodeWithTag(ROW_QUICK_SETTINGS_FLASH).assertDoesNotExist()
+                } else {
+                    // AUTO and LOW_LIGHT_BOOST must never be present
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO).assertDoesNotExist()
+                    onNodeWithTag(
+                        BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
+                    ).assertDoesNotExist()
+
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertExists()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsEnabled()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON).assertExists()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON).assertIsEnabled()
                 }
             }
         }
@@ -264,17 +273,22 @@ internal class FlashModeFeaturePolicyDeviceTest(
         runMainActivityScenarioTest {
             composeTestRule.prepareLens()
             composeTestRule.visitQuickSettings {
-                // ON and LOW_LIGHT_BOOST must never be present
-                onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON).assertDoesNotExist()
-                onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST).assertDoesNotExist()
-
-                val autoExists = onAllNodesWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO)
+                val flashRowExists = onAllNodesWithTag(ROW_QUICK_SETTINGS_FLASH)
                     .fetchSemanticsNodes().isNotEmpty()
-                if (autoExists) {
-                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertExists()
-                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
-                } else {
+                if (!flashRowExists) {
                     onNodeWithTag(ROW_QUICK_SETTINGS_FLASH).assertDoesNotExist()
+                } else {
+                    // ON and LOW_LIGHT_BOOST must never be present
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON).assertDoesNotExist()
+                    onNodeWithTag(
+                        BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST
+                    ).assertDoesNotExist()
+
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertExists()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsEnabled()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO).assertExists()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO).assertIsEnabled()
                 }
             }
         }
@@ -294,17 +308,20 @@ internal class FlashModeFeaturePolicyDeviceTest(
         runMainActivityScenarioTest {
             composeTestRule.prepareLens()
             composeTestRule.visitQuickSettings {
-                // ON and AUTO must never be present
-                onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON).assertDoesNotExist()
-                onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO).assertDoesNotExist()
-
-                val llbExists = onAllNodesWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST)
+                val flashRowExists = onAllNodesWithTag(ROW_QUICK_SETTINGS_FLASH)
                     .fetchSemanticsNodes().isNotEmpty()
-                if (llbExists) {
-                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertExists()
-                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
-                } else {
+                if (!flashRowExists) {
                     onNodeWithTag(ROW_QUICK_SETTINGS_FLASH).assertDoesNotExist()
+                } else {
+                    // ON and AUTO must never be present
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON).assertDoesNotExist()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO).assertDoesNotExist()
+
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertExists()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsEnabled()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF).assertIsOn()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST).assertExists()
+                    onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_LOW_LIGHT_BOOST).assertIsEnabled()
                 }
             }
         }
