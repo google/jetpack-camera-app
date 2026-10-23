@@ -22,6 +22,7 @@ import android.graphics.ImageFormat
 import android.net.Uri
 import android.util.Size
 import androidx.camera.camera2.interop.cameraCharacteristics
+import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraFilter
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -46,6 +47,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecordError
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent.OnVideoRecorded
+import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.di.PostProcessModule.Companion.provideImagePostProcessorMap
@@ -57,6 +59,8 @@ import com.google.jetpackcamera.core.camera.utils.provideUpdatingSurface
 import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
+import com.google.jetpackcamera.model.CameraEffectTarget
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.CaptureSubModeId
@@ -67,8 +71,11 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -388,6 +395,8 @@ class CameraXCameraSystemTest {
         Map<CaptureSubModeFeatureKey, Provider<CaptureSubModeProvider>> = emptyMap(),
         defaultCaptureSubModes: Map<CaptureMode, CaptureSubModeFeatureKey> = emptyMap(),
         externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard,
+        cameraEffectProviders: Map<CameraEffectFeatureKey, Provider<CameraEffectProvider>> =
+            emptyMap(),
         cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy()
     ) = CameraXCameraSystem(
         application = application,
@@ -396,7 +405,7 @@ class CameraXCameraSystemTest {
         availabilityCheckers = emptyMap(),
         effectProviders = emptyMap(),
         imagePostProcessors = getFakePostProcessorMap(fakeImagePostProcessor),
-        cameraEffectProviders = emptyMap(),
+        cameraEffectProviders = cameraEffectProviders,
         filePathGenerator = FakeFilePathGenerator(),
         captureSubModeProviders = (
             captureSubModeProvider?.let { provider ->
@@ -835,27 +844,506 @@ class CameraXCameraSystemTest {
 
     @Test
     fun setImageFormatAndDynamicRange_inCaptureSubMode_keepsPolicyValues(): Unit = runBlocking {
-        // Arrange. The sub-mode's policy locks the image format and dynamic range.
+        // Arrange. The sub-mode's policy locks the image format, dynamic range, stabilization mode,
+        // and target frame rate.
         val cameraSystem = createAndInitCameraXCameraSystem(
             captureSubModeProvider = FakeCaptureSubModeProvider(
                 CameraFeaturePolicy(
                     imageFormat = SettingConfig(ImageOutputFormat.JPEG, OptionVisibility.Hidden),
-                    dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden)
+                    dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden),
+                    stabilizationMode = SettingConfig(
+                        StabilizationMode.OFF,
+                        OptionVisibility.Hidden
+                    ),
+                    targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden)
                 )
             )
         )
         cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setStabilizationMode(StabilizationMode.ON)
         cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
 
         // Act.
         cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
         cameraSystem.setDynamicRange(DynamicRange.HLG10)
+        cameraSystem.setStabilizationMode(StabilizationMode.ON)
+        cameraSystem.setTargetFrameRate(60)
 
         // Assert. The sub-mode stays active and its policy values are kept.
-        val settings = cameraSystem.getCurrentSettings().value!!
+        var settings = cameraSystem.getCurrentSettings().value!!
         assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
         assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(settings.dynamicRange).isEqualTo(DynamicRange.SDR)
+        assertThat(settings.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
+
+        // Act. Leave the sub-mode -> the latest choices made during the sub-mode are restored:
+        // 60 fps (if supported on lens) and stabilization ON (if supported on lens at that fps).
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+        settings = cameraSystem.getCurrentSettings().value!!
+        val lensConstraints =
+            cameraSystem.getSystemConstraints().value!!.perLensConstraints[
+                settings.cameraLensFacing
+            ]!!
+        val expectedRestoredFrameRate =
+            if (60 in lensConstraints.supportedFixedFrameRates) 60 else TARGET_FPS_AUTO
+        val expectedRestoredStabilization = with(lensConstraints) {
+            if (StabilizationMode.ON in supportedStabilizationModes &&
+                expectedRestoredFrameRate !in StabilizationMode.ON.unsupportedFpsSet
+            ) {
+                StabilizationMode.ON
+            } else {
+                StabilizationMode.AUTO
+            }
+        }
+        assertThat(settings.targetFrameRate).isEqualTo(expectedRestoredFrameRate)
+        assertThat(settings.stabilizationMode).isEqualTo(expectedRestoredStabilization)
+    }
+
+    @Test
+    fun setCaptureSubMode_toDefault_restoresCameraEffect(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy turns off the camera effect.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        // No effect provider is registered, so this only exercises the settings, not a session
+        // with the effect applied.
+        val cameraEffect = CameraEffectId("test_effect")
+        cameraSystem.setCameraEffect(cameraEffect)
+
+        // Act. Enter the sub-mode -> the effect is turned off.
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Assert.
+        var settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+
+        // Act. Leave the sub-mode -> the effect is restored.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert.
+        settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.selectedCameraEffect).isEqualTo(cameraEffect)
+    }
+
+    @Test
+    fun setCaptureSubMode_toDefault_restoresTargetFrameRate(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the target frame rate.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        val fixedFrameRate = cameraSystem.firstFixedFrameRateOnCurrentLens()
+        cameraSystem.setTargetFrameRate(fixedFrameRate)
+
+        // Act. Enter the sub-mode -> the frame rate is locked to auto.
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Assert.
+        assertThat(cameraSystem.getCurrentSettings().value!!.targetFrameRate)
+            .isEqualTo(TARGET_FPS_AUTO)
+
+        // Act. Leave the sub-mode -> the frame rate is restored.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert.
+        assertThat(cameraSystem.getCurrentSettings().value!!.targetFrameRate)
+            .isEqualTo(fixedFrameRate)
+    }
+
+    @Test
+    fun setCaptureSubMode_toDefault_restoresVideoQualityChosenDuringSubMode(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the video quality.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        val settingsBefore = cameraSystem.getCurrentSettings().value!!
+        val supportedQualities = cameraSystem.getSystemConstraints().value!!
+            .perLensConstraints[settingsBefore.cameraLensFacing]
+            ?.supportedVideoQualitiesMap
+            ?.get(settingsBefore.dynamicRange)
+            .orEmpty()
+            .filter { it != VideoQuality.UNSPECIFIED }
+        assume().withMessage("No specific video quality is supported, skip the test.")
+            .that(supportedQualities)
+            .isNotEmpty()
+        cameraSystem.setVideoQuality(supportedQualities.first())
+
+        // Act. Enter the sub-mode -> the video quality is locked.
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Assert.
+        assertThat(cameraSystem.getCurrentSettings().value!!.videoQuality)
+            .isEqualTo(VideoQuality.UNSPECIFIED)
+
+        // Act. Choose another quality while the sub-mode is active -> it stays locked.
+        val chosenDuringSubMode = supportedQualities.last()
+        cameraSystem.setVideoQuality(chosenDuringSubMode)
+
+        // Assert.
+        assertThat(cameraSystem.getCurrentSettings().value!!.videoQuality)
+            .isEqualTo(VideoQuality.UNSPECIFIED)
+
+        // Act. Leave the sub-mode -> the quality chosen during the sub-mode is restored.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert.
+        assertThat(cameraSystem.getCurrentSettings().value!!.videoQuality)
+            .isEqualTo(chosenDuringSubMode)
+    }
+
+    @Test
+    fun setLensFacing_inCaptureSubMode_keepsLockedFrameRateAndEffectAndRestoresOnExit(): Unit =
+        runBlocking {
+            // Arrange. The sub-mode's policy locks the frame rate and turns off the camera effect.
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    CameraFeaturePolicy(
+                        targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden),
+                        cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+                    )
+                )
+            )
+            val systemConstraints = cameraSystem.getSystemConstraints().value!!
+            assume().withMessage("Both lenses are needed to flip.")
+                .that(systemConstraints.availableLenses)
+                .containsAtLeast(LensFacing.BACK, LensFacing.FRONT)
+            val sharedFrameRate = systemConstraints.perLensConstraints.getValue(LensFacing.BACK)
+                .supportedFixedFrameRates
+                .intersect(
+                    systemConstraints.perLensConstraints.getValue(LensFacing.FRONT)
+                        .supportedFixedFrameRates
+                )
+                .firstOrNull()
+            assume().withMessage("No fixed frame rate is supported by both lenses.")
+                .that(sharedFrameRate)
+                .isNotNull()
+            cameraSystem.setLensFacing(LensFacing.BACK)
+            cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+            cameraSystem.setTargetFrameRate(sharedFrameRate!!)
+            // No effect provider is registered, so this only exercises the settings.
+            val cameraEffect = CameraEffectId("test_effect")
+            cameraSystem.setCameraEffect(cameraEffect)
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+            // Act. Flip the lens while the sub-mode is active.
+            cameraSystem.setLensFacing(LensFacing.FRONT)
+
+            // Assert. The sub-mode is still active and its policy still applies.
+            var settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.cameraLensFacing).isEqualTo(LensFacing.FRONT)
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
+            assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+
+            // Act. Leave the sub-mode.
+            cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+            // Assert. The values from before the sub-mode are restored on the new lens.
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.targetFrameRate).isEqualTo(sharedFrameRate)
+            assertThat(settings.selectedCameraEffect).isEqualTo(cameraEffect)
+        }
+
+    @Test
+    fun setCaptureSubMode_toDefault_restoredImageEffectTakesPrecedenceOverUltraHdr(): Unit =
+        runBlocking {
+            // Arrange. An effect applied to image capture, which can't be combined with Ultra HDR,
+            // and a sub-mode that turns the effect off.
+            val effectKey = object : CameraEffectFeatureKey {
+                override val id = CameraEffectId("image_capture_effect")
+            }
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY
+                ),
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    CameraFeaturePolicy(
+                        cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+                    )
+                ),
+                cameraEffectProviders = mapOf(
+                    effectKey to Provider<CameraEffectProvider> { FakeImageCaptureEffectProvider }
+                )
+            )
+            val lensFacing = cameraSystem.getCurrentSettings().value!!.cameraLensFacing
+            val lensConstraints =
+                cameraSystem.getSystemConstraints().value!!.perLensConstraints[lensFacing]!!
+            assume()
+                .withMessage("Ultra HDR not supported on $lensFacing.")
+                .that(
+                    lensConstraints.supportedImageFormatsMap[false]
+                        ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+                )
+                .isTrue()
+            cameraSystem.setCameraEffect(effectKey.id)
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+            // Act. Turn on Ultra HDR while the sub-mode has turned the effect off.
+            cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+            // Assert.
+            var settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+            assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+            // Act. Leave the sub-mode.
+            cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+            // Assert. The effect is restored, so Ultra HDR is turned off.
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.selectedCameraEffect).isEqualTo(effectKey.id)
+            assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        }
+
+    @Test
+    fun setTargetFrameRate_inCaptureSubMode_keepsPolicyValueAndRestoresChoiceOnExit(): Unit =
+        runBlocking {
+            // Arrange. The sub-mode's policy locks the target frame rate.
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    CameraFeaturePolicy(
+                        targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden)
+                    )
+                )
+            )
+            cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+            // A frame rate the lens supports, so only the policy can keep it at auto.
+            val fixedFrameRate = cameraSystem.firstFixedFrameRateOnCurrentLens()
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+            // Act.
+            cameraSystem.setTargetFrameRate(fixedFrameRate)
+
+            // Assert. The policy value is kept while the sub-mode is active.
+            assertThat(cameraSystem.getCurrentSettings().value!!.targetFrameRate)
+                .isEqualTo(TARGET_FPS_AUTO)
+
+            // Act. Leave the sub-mode -> the user's choice is applied.
+            cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+            // Assert.
+            assertThat(cameraSystem.getCurrentSettings().value!!.targetFrameRate)
+                .isEqualTo(fixedFrameRate)
+        }
+
+    @Test
+    fun setFlashMode_inCaptureSubMode_restoresTheUserChoiceOnExit(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the flash mode to OFF.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    flashMode = SettingConfig(FlashMode.OFF, OptionVisibility.Hidden)
+                )
+            )
+        )
+        val settingsBefore = cameraSystem.getCurrentSettings().value!!
+        val supportedFlashModes = cameraSystem.getSystemConstraints().value!!
+            .perLensConstraints[settingsBefore.cameraLensFacing]!!.supportedFlashModes
+        assume().withMessage("Flash modes ON and AUTO not supported, skip the test.")
+            .that(supportedFlashModes).containsAtLeast(FlashMode.ON, FlashMode.AUTO)
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setFlashMode(FlashMode.ON)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act. The user picks a value the policy doesn't allow.
+        cameraSystem.setFlashMode(FlashMode.AUTO)
+
+        // Assert. The policy value is kept while the sub-mode is active.
+        assertThat(cameraSystem.getCurrentSettings().value!!.flashMode).isEqualTo(FlashMode.OFF)
+
+        // Act. Leave the sub-mode.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The user's choice, not the value from before the sub-mode, is applied.
+        assertThat(cameraSystem.getCurrentSettings().value!!.flashMode).isEqualTo(FlashMode.AUTO)
+    }
+
+    @Test
+    fun setStabilizationMode_inCaptureSubMode_restoresTheUserChoiceOnExit(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks stabilization to OFF.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    stabilizationMode = SettingConfig(
+                        StabilizationMode.OFF,
+                        OptionVisibility.Hidden
+                    )
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        val settingsBefore = cameraSystem.getCurrentSettings().value!!
+        // A supported mode other than the value from before the sub-mode (AUTO) and the policy
+        // value (OFF), so that only the user's choice can restore it.
+        val lensConstraints = cameraSystem.getSystemConstraints().value!!
+            .perLensConstraints[settingsBefore.cameraLensFacing]!!
+        val chosenMode = with(lensConstraints) {
+            supportedStabilizationModes.firstOrNull {
+                it != StabilizationMode.AUTO &&
+                    it != StabilizationMode.OFF &&
+                    settingsBefore.targetFrameRate !in it.unsupportedFpsSet
+            }
+        }
+        assume().withMessage("No stabilization mode to choose, skip the test.")
+            .that(chosenMode)
+            .isNotNull()
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act. The user picks a mode the policy doesn't allow.
+        cameraSystem.setStabilizationMode(chosenMode!!)
+
+        // Assert. The policy keeps the user's choice from applying while the sub-mode is active.
+        assertThat(cameraSystem.getCurrentSettings().value!!.stabilizationMode)
+            .isNotEqualTo(chosenMode)
+
+        // Act. Leave the sub-mode.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The user's choice is applied.
+        assertThat(cameraSystem.getCurrentSettings().value!!.stabilizationMode)
+            .isEqualTo(chosenMode)
+    }
+
+    @Test
+    fun setImageFormat_inCaptureSubMode_restoresTheUserChoiceOnExit(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the image format to JPEG.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(captureMode = CaptureMode.IMAGE_ONLY),
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    imageFormat = SettingConfig(ImageOutputFormat.JPEG, OptionVisibility.Hidden)
+                )
+            )
+        )
+        val lensFacing = cameraSystem.getCurrentSettings().value!!.cameraLensFacing
+        val lensConstraints =
+            cameraSystem.getSystemConstraints().value!!.perLensConstraints[lensFacing]!!
+        assume()
+            .withMessage("Ultra HDR not supported on $lensFacing, skip the test.")
+            .that(
+                lensConstraints.supportedImageFormatsMap[false]
+                    ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+            )
+            .isTrue()
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act. The user picks Ultra HDR, which the policy doesn't allow.
+        cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+        // Assert. The policy value is kept while the sub-mode is active.
+        assertThat(cameraSystem.getCurrentSettings().value!!.imageFormat)
+            .isEqualTo(ImageOutputFormat.JPEG)
+
+        // Act. Leave the sub-mode.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The user's choice is applied.
+        assertThat(cameraSystem.getCurrentSettings().value!!.imageFormat)
+            .isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
+
+    @Test
+    fun setDynamicRange_inCaptureSubMode_restoresTheUserChoiceOnExit(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the dynamic range to SDR.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(captureMode = CaptureMode.IMAGE_ONLY),
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden)
+                )
+            )
+        )
+        val lensFacing = cameraSystem.getCurrentSettings().value!!.cameraLensFacing
+        assume()
+            .withMessage("HLG10 not supported on $lensFacing, skip the test.")
+            .that(
+                cameraSystem.getSystemConstraints().value!!.perLensConstraints[lensFacing]!!
+                    .supportedDynamicRanges
+            )
+            .contains(DynamicRange.HLG10)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act. The user picks HLG10, which the policy doesn't allow.
+        cameraSystem.setDynamicRange(DynamicRange.HLG10)
+
+        // Assert. The policy value is kept while the sub-mode is active.
+        assertThat(cameraSystem.getCurrentSettings().value!!.dynamicRange)
+            .isEqualTo(DynamicRange.SDR)
+
+        // Act. Leave the sub-mode.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The user's choice is applied.
+        assertThat(cameraSystem.getCurrentSettings().value!!.dynamicRange)
+            .isEqualTo(DynamicRange.HLG10)
+    }
+
+    @Test
+    fun setStabilizationMode_inSubModeWithoutStabilizationPolicy_isNotChanged(): Unit =
+        runBlocking {
+            // Arrange. The sub-mode's policy doesn't restrict stabilization.
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                captureSubModeProvider = FakeCaptureSubModeProvider(
+                    CameraFeaturePolicy(
+                        aspectRatio = SettingConfig(
+                            AspectRatio.NINE_SIXTEEN,
+                            OptionVisibility.Hidden
+                        )
+                    )
+                )
+            )
+            cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+            val lensFacing = cameraSystem.getCurrentSettings().value!!.cameraLensFacing
+            val supportedModes = cameraSystem.getSystemConstraints().value!!
+                .perLensConstraints[lensFacing]!!
+                .supportedStabilizationModes
+            val unsupportedMode = listOf(
+                StabilizationMode.ON,
+                StabilizationMode.HIGH_QUALITY,
+                StabilizationMode.OPTICAL
+            ).firstOrNull { it !in supportedModes }
+            assume()
+                .withMessage("All stabilization modes supported on $lensFacing, skip the test.")
+                .that(unsupportedMode)
+                .isNotNull()
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+            // Act.
+            cameraSystem.setStabilizationMode(unsupportedMode!!)
+
+            // Assert. As outside a sub-mode, the requested mode is kept in the settings and
+            // resolved when the session starts.
+            assertThat(cameraSystem.getCurrentSettings().value!!.stabilizationMode)
+                .isEqualTo(unsupportedMode)
+        }
+
+    /** Returns the first fixed frame rate the current lens supports, or skips the test. */
+    private fun CameraXCameraSystem.firstFixedFrameRateOnCurrentLens(): Int {
+        val lensFacing = getCurrentSettings().value!!.cameraLensFacing
+        val fixedFrameRate = getSystemConstraints().value!!
+            .perLensConstraints[lensFacing]!!
+            .supportedFixedFrameRates
+            .firstOrNull()
+        assume().withMessage("No fixed frame rate supported on $lensFacing, skip the test.")
+            .that(fixedFrameRate)
+            .isNotNull()
+        return fixedFrameRate!!
     }
 
     @Test
@@ -1205,6 +1693,82 @@ class CameraXCameraSystemTest {
             assertThat(settings.captureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
             assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
             assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+        }
+
+    @Test
+    fun setCaptureSubMode_switchingSubModesWithUserChanges_keepsLatestChoices(): Unit =
+        runBlocking {
+            val secondaryKey = object : CaptureSubModeFeatureKey {
+                override val id = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+            }
+            // The first sub-mode allows 9:16 or 1:1 and turns off the camera effect.
+            val firstProvider = FakeCaptureSubModeProvider(
+                featurePolicy = CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(
+                        defaultValue = AspectRatio.NINE_SIXTEEN,
+                        visibility = OptionVisibility.Only(
+                            AspectRatio.NINE_SIXTEEN,
+                            AspectRatio.ONE_ONE
+                        )
+                    ),
+                    cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+                )
+            )
+            // The second sub-mode locks 9:16 and doesn't restrict the camera effect.
+            val secondProvider = FakeCaptureSubModeProvider(
+                featurePolicy = CameraFeaturePolicy(
+                    aspectRatio = SettingConfig(AspectRatio.NINE_SIXTEEN, OptionVisibility.Hidden)
+                ),
+                subModeId = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+            )
+            // No effect provider is registered, so this only exercises the settings.
+            val initialEffect = CameraEffectId("initial_effect")
+            val requestedEffect = CameraEffectId("requested_effect")
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    aspectRatio = AspectRatio.THREE_FOUR,
+                    selectedCameraEffect = initialEffect
+                ),
+                extraCaptureSubModeProviders = mapOf(
+                    FakeCaptureSubModeFeatureKey to Provider { firstProvider },
+                    secondaryKey to Provider { secondProvider }
+                )
+            )
+
+            // Enter the first sub-mode -> its policy applies.
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+            var settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+            assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+
+            // A permitted choice applies now; a blocked choice is remembered.
+            cameraSystem.setAspectRatio(AspectRatio.ONE_ONE)
+            cameraSystem.setCameraEffect(requestedEffect)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+            assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+
+            // Switch directly to the second sub-mode -> the first one is undone with the user's
+            // choices, then the second one's policy applies. The second sub-mode allows the
+            // effect that the first one blocked, so it is now on.
+            cameraSystem.setCaptureSubMode(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+            assertThat(settings.selectedCameraEffect).isEqualTo(requestedEffect)
+
+            // A choice the second sub-mode blocks is remembered.
+            cameraSystem.setAspectRatio(AspectRatio.THREE_FOUR)
+            assertThat(cameraSystem.getCurrentSettings().value!!.aspectRatio)
+                .isEqualTo(AspectRatio.NINE_SIXTEEN)
+
+            // Return to the default sub-mode -> the latest choices from both sub-modes apply.
+            cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(CaptureSubModeId.DEFAULT)
+            assertThat(settings.aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
+            assertThat(settings.selectedCameraEffect).isEqualTo(requestedEffect)
         }
 
     @Test
@@ -1686,6 +2250,14 @@ private val SECOND_FAKE_CAPTURE_SUB_MODE_ID = CaptureSubModeId("second_fake_sub_
 
 private object FakeCaptureSubModeFeatureKey : CaptureSubModeFeatureKey {
     override val id = FAKE_CAPTURE_SUB_MODE_ID
+}
+
+/** An effect applied to image capture. The camera is not started in the tests that use it. */
+private object FakeImageCaptureEffectProvider : CameraEffectProvider {
+    override val targets = setOf(CameraEffectTarget.IMAGE_CAPTURE)
+
+    override fun create(coroutineScope: CoroutineScope): CameraEffect =
+        throw UnsupportedOperationException("The camera is not started in this test.")
 }
 
 /** An image sub-mode that enforces [featurePolicy]. */

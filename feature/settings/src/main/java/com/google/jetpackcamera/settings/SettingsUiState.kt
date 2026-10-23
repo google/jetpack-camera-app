@@ -28,6 +28,7 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.DisabledRationale.DeviceUnsupportedRationale
 import com.google.jetpackcamera.settings.DisabledRationale.LensUnsupportedRationale
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
+import com.google.jetpackcamera.settings.ui.CAPTURE_SUB_MODE_ACTIVE_TAG
 import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_ENABLED_TAG
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
@@ -129,6 +130,17 @@ sealed interface DisabledRationale {
         DisabledRationale {
         override val reasonTextResId: Int = R.string.concurrent_camera_enabled
         override val testTag = CONCURRENT_CAMERA_ENABLED_TAG
+    }
+
+    /**
+     * Text will be [affectedSettingNameResId] is unsupported in [captureSubModeLabelResId] mode.
+     */
+    data class CaptureSubModeActiveRationale(
+        override val affectedSettingNameResId: Int,
+        val captureSubModeLabelResId: Int
+    ) : DisabledRationale {
+        override val reasonTextResId: Int = R.string.capture_sub_mode_active
+        override val testTag = CAPTURE_SUB_MODE_ACTIVE_TAG
     }
 
     data class UltraHdrUnsupportedRationale(override val affectedSettingNameResId: Int) :
@@ -302,8 +314,15 @@ sealed interface ConcurrentCameraUiState {
 // ////////////////////////////////////////////////////////////
 
 sealed interface AspectRatioUiState {
-    data class Enabled(val currentAspectRatio: AspectRatio, val additionalContext: String = "") :
-        AspectRatioUiState
+    data class Enabled(
+        val currentAspectRatio: AspectRatio,
+        val additionalContext: String = "",
+        val nineSixteenState: SingleSelectableState = SingleSelectableState.Selectable,
+        val threeFourState: SingleSelectableState = SingleSelectableState.Selectable,
+        val oneOneState: SingleSelectableState = SingleSelectableState.Selectable
+    ) : AspectRatioUiState
+
+    data class Disabled(val disabledRationale: DisabledRationale) : AspectRatioUiState
 }
 
 sealed interface CameraEffectUiState {

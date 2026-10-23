@@ -248,6 +248,9 @@
     <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the setting cannot be used while Ultra HDR photo capture is on. %1$s is the name of the disabled setting, a capitalized noun phrase such as "Stream configuration", so the full sentence reads e.g. "Stream configuration is unsupported when Ultra HDR is enabled". "Ultra HDR" is the name of an Android photo format and should not be translated. [CHAR LIMIT=NONE] -->
     <string name="ultra_hdr_enabled"><xliff:g id="setting_name" example="Stream configuration">%1$s</xliff:g> is unsupported when Ultra HDR is enabled</string>
 
+    <!-- Subtitle under a disabled setting row on the settings screen, shown in place of the normal subtitle, explaining that the setting cannot be used while a capture mode selected in the mode carousel, such as Dual or Night, is active. %1$s is the name of the disabled setting, a capitalized noun phrase (for example, "Frame rate"); %2$s is the name of the active capture mode as shown in the mode carousel. [CHAR LIMIT=NONE] -->
+    <string name="capture_sub_mode_active"><xliff:g id="setting_name" example="Frame rate">%1$s</xliff:g> is unsupported in <xliff:g id="capture_mode_name" example="Night">%2$s</xliff:g> mode</string>
+
     <!-- Capitalized noun phrase for Video Stabilization, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="stabilization_rationale_prefix">Stabilization</string>
     <!-- Capitalized noun phrase for the Frame Rate (frames per second) setting, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device" or "%1$s is unsupported by the rear lens". Translate as the same term used in the "Set Frame Rate" title (fps_title). [CHAR LIMIT=NONE] -->
@@ -263,6 +266,8 @@
 
     <!-- Capitalized noun phrase for Video Quality, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="video_quality_rationale_prefix">Video quality</string>
+    <!-- Capitalized noun phrase for Aspect Ratio, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported in Night mode". [CHAR LIMIT=NONE] -->
+    <string name="aspect_ratio_rationale_prefix">Aspect ratio</string>
 
     <!-- Capitalized noun phrase for the front-facing camera lens, substituted as the grammatical subject (%1$s) at the start of disabled setting rationale sentences like "%1$s is unsupported by the device". [CHAR LIMIT=NONE] -->
     <string name="front_lens_rationale_prefix">Front lens</string>
