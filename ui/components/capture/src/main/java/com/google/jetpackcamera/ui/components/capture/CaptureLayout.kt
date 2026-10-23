@@ -680,7 +680,7 @@ private fun AdaptivePortraitCaptureLayout(
             val sharesTopStartRows = topStartPlaceable != null &&
                 viewfinderTopEndY < topBarHeightPx + topStartPlaceable.height
             val viewfinderTopEndMaxWidth = if (sharesTopStartRows) {
-                viewfinderEnd - topStartPlaceable!!.width
+                viewfinderEnd - topStartPlaceable.width
             } else {
                 viewfinderEnd
             }.coerceAtLeast(0)
