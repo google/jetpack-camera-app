@@ -126,6 +126,7 @@ fun ToggleQuickSettingsButton(
     )
     val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
     val closedDescription = stringResource(R.string.quick_settings_toggle_closed_description)
+    val containerColor = LocalCameraControlBackgroundStyle.current.containerColor
     IconButton(
         modifier = modifier
             .size(buttonSize)
@@ -142,10 +143,10 @@ fun ToggleQuickSettingsButton(
         enabled = enabled,
         colors = IconButtonDefaults.iconButtonColors(
             // Set the background color of the button
-            containerColor = LocalCameraControlBackgroundStyle.current.containerColor,
+            containerColor = containerColor,
             // Set the color of the icon inside the button
             contentColor = Color.White,
-            disabledContainerColor = Color.White.copy(alpha = 0.08f),
+            disabledContainerColor = containerColor,
             disabledContentColor = Color.White.copy(alpha = 0.38f)
         )
     ) {
