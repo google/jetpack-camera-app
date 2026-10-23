@@ -30,24 +30,18 @@ import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
-import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
-import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
-import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.testing.FakeActiveCaptureSubModeRepository
 import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
+import com.google.jetpackcamera.settings.testing.FakeSettingsDataSource
 import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CANCEL_TAG
 import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LOCATION_TAG
 import com.google.jetpackcamera.settings.ui.DIALOG_LOCATION_PERMISSION_RATIONALE_TAG
 import com.google.jetpackcamera.settings.ui.LocationSetting
 import java.util.Optional
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
@@ -58,19 +52,9 @@ class SettingsScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    @get:Rule
-    val tempFolder = TemporaryFolder()
-
     private fun createSettingsViewModel(): SettingsViewModel {
-        val testDataStore = FakeDataStoreModule.providePreferenceDataStore(
-            scope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob()),
-            file = tempFolder.newFile("test_settings.preferences_pb")
-        )
         val settingsRepository = LocalSettingsRepository(
-            settingsDataSource = PrefsDataStoreSettingsDataSource(
-                dataStore = testDataStore,
-                defaultCaptureModeOverride = CaptureMode.STANDARD
-            )
+            settingsDataSource = FakeSettingsDataSource()
         )
         val constraintsRepository = FakeConstraintsRepository(TYPICAL_SYSTEM_CONSTRAINTS)
         return SettingsViewModel(
