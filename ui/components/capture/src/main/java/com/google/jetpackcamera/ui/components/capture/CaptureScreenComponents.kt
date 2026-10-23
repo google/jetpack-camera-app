@@ -107,6 +107,7 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -129,6 +130,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.DisableRationale
@@ -805,9 +807,21 @@ fun PreviewDisplay(
                 aspectRatioUiState.selectedAspectRatio
             val maxAspectRatio: Float = maxWidth / maxHeight
             val aspectRatioFloat: Float = aspectRatio.toFloat()
+            val layoutSolution = LocalCameraLayoutSolution.current
+            val solvedBand = if (maxHeight > maxWidth) {
+                layoutSolution?.viewfinderBandFor(aspectRatioFloat)
+            } else {
+                null
+            }
             val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+            val width = if (solvedBand != null || shouldUseMaxWidth) {
+                maxWidth
+            } else {
+                maxHeight * aspectRatioFloat
+            }
+            val height = solvedBand?.height
+                ?: if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+            val topOffset = solvedBand?.top ?: 0.dp
             var imageVisible by remember { mutableStateOf(true) }
             val targetBoundsState = LocalOverlapTargetBounds.current
 
@@ -835,6 +849,19 @@ fun PreviewDisplay(
 
             Box(
                 modifier = Modifier
+                    .padding(top = topOffset)
+                    // Reports the top edge of the visible frame to PreviewLayout, which anchors
+                    // viewfinder-relative content to it.
+                    .layout { measurable, frameConstraints ->
+                        val placeable = measurable.measure(frameConstraints)
+                        layout(
+                            placeable.width,
+                            placeable.height,
+                            alignmentLines = mapOf(ViewfinderTopLine to 0)
+                        ) {
+                            placeable.place(0, 0)
+                        }
+                    }
                     .testTag(PREVIEW_DISPLAY)
                     .onGloballyPositioned { coordinates ->
                         val bounds = coordinates.boundsInWindow()

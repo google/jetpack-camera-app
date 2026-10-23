@@ -108,7 +108,8 @@ fun NavGraphBuilder.previewScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToPostCapture: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
-    onCloseCamera: () -> Unit = {}
+    onCloseCamera: () -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {}
 ) {
     composable(
         route = FULL_ROUTE_DEF,
@@ -138,7 +139,8 @@ fun NavGraphBuilder.previewScreen(
             onRequestWindowColorMode = onRequestWindowColorMode,
             onFirstFrameCaptureCompleted = onFirstFrameCaptureCompleted,
             onCaptureEvent = onCaptureEvent,
-            onCloseCamera = onCloseCamera
+            onCloseCamera = onCloseCamera,
+            onRequiresImmersiveChange = onRequiresImmersiveChange
         )
     }
 }
