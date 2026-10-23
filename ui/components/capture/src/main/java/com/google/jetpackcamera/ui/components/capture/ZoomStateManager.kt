@@ -52,6 +52,9 @@ class ZoomStateManager(
     // The valid zoom range for the current camera lens.
     private var functionalZoomRange = zoomRange
 
+    // Tracks the active animated zoom target and lens to avoid restarting an identical animation.
+    private var currentAnimationTarget: Pair<LensToZoom, Float>? = null
+
     // A mutex to ensure that zoom operations are atomic and thread-safe. This is crucial for
     // preventing race conditions, as multiple zoom actions (e.g., pinch-to-zoom and button
     // clicks) can be triggered concurrently. By using a MutatorMutex, we can ensure that
@@ -77,13 +80,14 @@ class ZoomStateManager(
      */
     suspend fun absoluteZoom(targetZoomLevel: Float, lensToZoom: LensToZoom) {
         mutateZoom {
+            val coercedZoom = targetZoomLevel.coerceIn(functionalZoomRange.toClosedRange())
             if (lensToZoom == LensToZoom.PRIMARY) {
-                functionalZoom = targetZoomLevel.coerceIn(functionalZoomRange.toClosedRange())
+                functionalZoom = coercedZoom
             }
             zoomController.setZoomRatio(
                 CameraZoomRatio(
                     ZoomStrategy.Absolute(
-                        targetZoomLevel.coerceIn(functionalZoomRange.toClosedRange()),
+                        coercedZoom,
                         lensToZoom = lensToZoom
                     )
                 )
@@ -131,23 +135,38 @@ class ZoomStateManager(
         animationSpec: AnimationSpec<Float> = tween(durationMillis = 500),
         lensToZoom: LensToZoom
     ) {
+        if (currentAnimationTarget ==
+            lensToZoom to targetZoomLevel.coerceIn(functionalZoomRange.toClosedRange())
+        ) {
+            return
+        }
         mutatorMutex.mutate {
-            zoomController.setZoomAnimationState(targetZoomLevel)
-
-            Animatable(initialValue = functionalZoom).animateTo(
-                targetValue = targetZoomLevel,
-                animationSpec = animationSpec
-            ) {
-                // this is called every animation frame
-                functionalZoom = value.coerceIn(functionalZoomRange.toClosedRange())
-                zoomController.setZoomRatio(
-                    CameraZoomRatio(
-                        ZoomStrategy.Absolute(
-                            functionalZoom,
-                            lensToZoom
+            val coercedTarget = targetZoomLevel.coerceIn(functionalZoomRange.toClosedRange())
+            if (lensToZoom == LensToZoom.PRIMARY && coercedTarget == functionalZoom) {
+                zoomController.setZoomAnimationState(null)
+                return@mutate
+            }
+            currentAnimationTarget = lensToZoom to coercedTarget
+            zoomController.setZoomAnimationState(coercedTarget)
+            try {
+                Animatable(initialValue = functionalZoom).animateTo(
+                    targetValue = coercedTarget,
+                    animationSpec = animationSpec
+                ) {
+                    // this is called every animation frame
+                    functionalZoom = value.coerceIn(functionalZoomRange.toClosedRange())
+                    zoomController.setZoomRatio(
+                        CameraZoomRatio(
+                            ZoomStrategy.Absolute(
+                                functionalZoom,
+                                lensToZoom
+                            )
                         )
                     )
-                )
+                }
+            } finally {
+                currentAnimationTarget = null
+                zoomController.setZoomAnimationState(null)
             }
         }
     }
@@ -163,6 +182,7 @@ class ZoomStateManager(
      */
     suspend fun onChangeLens(newInitialZoomLevel: Float, newZoomRange: Range<Float>) {
         mutatorMutex.mutate(MutatePriority.PreventUserInput) {
+            zoomController.setZoomAnimationState(null)
             functionalZoom = newInitialZoomLevel
             functionalZoomRange = newZoomRange
         }

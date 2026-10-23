@@ -17,6 +17,10 @@ package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -40,7 +44,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -52,12 +59,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+import kotlin.math.round
 
 private val US_SYMBOLS = DecimalFormatSymbols(Locale.US)
 
@@ -105,7 +114,9 @@ object ZoomBarDefaults {
     val HorizontalClearance = 4.dp
 
     val TrackShape = RoundedCornerShape(56.dp)
-    val IndicatorShape = RoundedCornerShape(12.dp)
+    val IndicatorCornerRadius = 12.dp
+    val IndicatorShape = RoundedCornerShape(IndicatorCornerRadius)
+    val UnselectedIndicatorSize = 32.dp
 
     /**
      * Default dynamic colors adapting to viewfinder overlap via [LocalCameraControlBackgroundStyle]
@@ -207,9 +218,14 @@ fun ZoomBar(
                 // If animating towards a value, select that target; otherwise find closest
                 // matching stop
                 val checkValue =
-                    currentZoomState.animatingToValue ?: currentZoomState.primaryZoomRatio ?: 1f
+                    currentZoomState.animatingToValue
+                        ?: currentZoomState.primaryZoomRatio
+                        ?: currentZoomState.initialZoomRatio
+                        ?: 1f
+                val roundedCheckValue = round(checkValue * 10f) / 10f
                 val index = currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
-                    checkValue >= zoomLevelOption
+                    val roundedOption = round(zoomLevelOption * 10f) / 10f
+                    roundedCheckValue >= roundedOption
                 }
                 if (index >= 0) index else 0
             }
@@ -219,7 +235,13 @@ fun ZoomBar(
         if (zoomLevels.isEmpty()) return
 
         val validIndex = selectedOptionIndex.coerceIn(0, zoomLevels.size - 1)
-        val currentRatioProvider = remember { { currentZoomState.primaryZoomRatio ?: 1f } }
+        val currentRatioProvider = remember {
+            {
+                currentZoomState.primaryZoomRatio
+                    ?: currentZoomState.initialZoomRatio
+                    ?: 1f
+            }
+        }
 
         val itemWidth = if (orientation == Orientation.Horizontal) {
             ZoomBarDefaults.HorizontalItemWidth
@@ -278,6 +300,8 @@ fun ZoomBar(
                             currentRatioProvider = currentRatioProvider,
                             isSelected = isSelected,
                             colors = colors,
+                            itemWidth = itemWidth,
+                            itemHeight = itemHeight,
                             modifier = Modifier.size(itemWidth, itemHeight),
                             onClick = { onChangeZoom(value) }
                         )
@@ -297,6 +321,8 @@ fun ZoomBar(
                             currentRatioProvider = currentRatioProvider,
                             isSelected = isSelected,
                             colors = colors,
+                            itemWidth = itemWidth,
+                            itemHeight = itemHeight,
                             modifier = Modifier.size(itemWidth, itemHeight),
                             onClick = { onChangeZoom(value) }
                         )
@@ -313,6 +339,8 @@ private fun ZoomBarItem(
     currentRatioProvider: () -> Float,
     isSelected: Boolean,
     colors: ZoomBarColors,
+    itemWidth: Dp,
+    itemHeight: Dp,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -326,18 +354,25 @@ private fun ZoomBarItem(
         }
     }
 
-    val containerColor by animateColorAsState(
-        targetValue =
-        if (isSelected) {
-            colors.selectedIndicatorColor
+    val unselectedSize = (if (itemWidth < itemHeight) itemWidth else itemHeight)
+        .coerceAtMost(ZoomBarDefaults.UnselectedIndicatorSize)
+    val unselectedCornerRadius = unselectedSize / 2
+
+    val indicatorProgress by animateFloatAsState(
+        targetValue = if (isSelected) 1f else 0f,
+        animationSpec = if (isSelected) {
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
         } else {
-            Color.Transparent
+            snap()
         },
-        label = "zoomItemContainerColor"
+        label = "zoomIndicatorProgress"
     )
+
     val contentColor by animateColorAsState(
-        targetValue =
-        if (isSelected) {
+        targetValue = if (isSelected) {
             colors.selectedContentColor
         } else {
             colors.unselectedContentColor
@@ -347,11 +382,27 @@ private fun ZoomBarItem(
 
     Box(
         modifier = modifier
-            .background(
-                color = containerColor,
-                shape = ZoomBarDefaults.IndicatorShape
-            )
-            .clip(ZoomBarDefaults.IndicatorShape)
+            .drawBehind {
+                val progress = indicatorProgress
+                if (isSelected || progress > 0f) {
+                    val width = lerp(unselectedSize, itemWidth, progress).toPx().coerceAtLeast(0f)
+                    val height = lerp(unselectedSize, itemHeight, progress).toPx().coerceAtLeast(0f)
+                    val cornerRadius = lerp(
+                        unselectedCornerRadius,
+                        ZoomBarDefaults.IndicatorCornerRadius,
+                        progress
+                    ).toPx().coerceAtLeast(0f)
+                    drawRoundRect(
+                        color = colors.selectedIndicatorColor,
+                        topLeft = Offset(
+                            x = (size.width - width) / 2f,
+                            y = (size.height - height) / 2f
+                        ),
+                        size = Size(width = width, height = height),
+                        cornerRadius = CornerRadius(cornerRadius, cornerRadius)
+                    )
+                }
+            }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
