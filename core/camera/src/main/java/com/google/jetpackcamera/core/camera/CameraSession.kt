@@ -416,11 +416,14 @@ internal suspend fun runSingleCameraSession(
                                 .collectLatest { zoomState ->
                                     // TODO(b/405987189): remove checks after buggy zoomState is fixed
                                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                                        // Ignore the initial 1.0f zoomState emitted on camera bind
+                                        // unless 1.0f is the actual target zoom for this lens.
+                                        val targetZoomRatio =
+                                            (transientSettings.value ?: currentTransientSettings)
+                                                .zoomRatios[camera.cameraInfo.appLensFacing]
+                                                ?: 1.0f
                                         if (zoomState.zoomRatio != 1.0f ||
-                                            zoomState.zoomRatio == currentTransientSettings
-                                                .zoomRatios[
-                                                currentTransientSettings.primaryLensFacing
-                                            ]
+                                            zoomState.zoomRatio == targetZoomRatio
                                         ) {
                                             currentCameraState.update { old ->
                                                 old.copy(
@@ -1491,9 +1494,22 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 ) {
                     // update camerastate with zoom ratio
                     val newZoomRatio = result.get(CaptureResult.CONTROL_ZOOM_RATIO)
+                    val targetZoomRatio =
+                        transientSettings.value?.zoomRatios?.get(targetCameraInfo.appLensFacing)
+                            ?: 1.0f
                     currentCameraState.update { old ->
+                        val currentZoomRatio = old.zoomRatios[targetCameraInfo.appLensFacing]
+                        // When a lens is newly bound, initial capture results emit the hardware
+                        // default 1.0f before cameraControl.setZoomRatio(initialZoomRatio) takes
+                        // effect in the repeating request. Ignore those initial 1.0f frames if
+                        // the lens is restoring a non-1.0f target zoom so the UI doesn't flash 1x.
+                        val isInitialDefaultEmission =
+                            currentZoomRatio == null &&
+                                newZoomRatio == 1.0f &&
+                                targetZoomRatio != 1.0f
                         if (newZoomRatio != null &&
-                            old.zoomRatios[targetCameraInfo.appLensFacing] != newZoomRatio
+                            !isInitialDefaultEmission &&
+                            currentZoomRatio != newZoomRatio
                         ) {
                             old.copy(
                                 zoomRatios = old.zoomRatios

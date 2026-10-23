@@ -15,50 +15,431 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import java.math.RoundingMode
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+import kotlin.math.round
+
+private val US_SYMBOLS = DecimalFormatSymbols(Locale.US)
+
+private val SUB_ONE_FORMATTER = ThreadLocal.withInitial {
+    DecimalFormat(".#", US_SYMBOLS).apply {
+        minimumIntegerDigits = 0
+        setRoundingMode(RoundingMode.HALF_UP)
+    }
+}
+
+private val DECIMAL_FORMATTER = ThreadLocal.withInitial {
+    DecimalFormat("#.#", US_SYMBOLS).apply {
+        setRoundingMode(RoundingMode.HALF_UP)
+    }
+}
+
+/**
+ * Styling configuration for [ZoomBar].
+ *
+ * @param trackColor Background color of the stadium track capsule (e.g. 60% black over
+ *   viewfinder, 20% white off viewfinder).
+ * @param selectedIndicatorColor Background color of the indicator pill behind the active stop (e.g.
+ *   primaryFixed).
+ * @param selectedContentColor Text color for the currently selected stop (e.g. onPrimaryFixed).
+ * @param unselectedContentColor Text color for unselected stops (e.g. Color.White).
+ */
+@Immutable
+data class ZoomBarColors(
+    val trackColor: Color,
+    val selectedIndicatorColor: Color,
+    val selectedContentColor: Color,
+    val unselectedContentColor: Color
+)
+
+/**
+ * Default color palettes and dimensions for [ZoomBar].
+ */
+object ZoomBarDefaults {
+    val HorizontalItemWidth = 40.dp
+    val HorizontalItemHeight = 36.dp
+    val VerticalItemWidth = 40.dp
+    val VerticalItemHeight = 40.dp
+    val HorizontalEndPadding = 6.dp
+    val VerticalEndPadding = 4.dp
+    val HorizontalClearance = 4.dp
+
+    val TrackShape = RoundedCornerShape(56.dp)
+    val IndicatorCornerRadius = 12.dp
+    val IndicatorShape = RoundedCornerShape(IndicatorCornerRadius)
+    val UnselectedIndicatorSize = 32.dp
+
+    /**
+     * Default dynamic colors adapting to viewfinder overlap via [LocalCameraControlBackgroundStyle]
+     * and Material 3 theme color tokens.
+     */
+    @Composable
+    fun colors(
+        trackColor: Color = LocalCameraControlBackgroundStyle.current.containerColor,
+        selectedIndicatorColor: Color = MaterialTheme.colorScheme.primaryFixed,
+        selectedContentColor: Color = MaterialTheme.colorScheme.onPrimaryFixed,
+        unselectedContentColor: Color = Color.White
+    ) = ZoomBarColors(
+        trackColor = trackColor,
+        selectedIndicatorColor = selectedIndicatorColor,
+        selectedContentColor = selectedContentColor,
+        unselectedContentColor = unselectedContentColor
+    )
+
+    /**
+     * Colors for overlapping the viewfinder (60% black background).
+     */
+    @Composable
+    fun black60Colors(
+        trackColor: Color = Color.Black.copy(alpha = 0.60f),
+        selectedIndicatorColor: Color = MaterialTheme.colorScheme.primaryFixed,
+        selectedContentColor: Color = MaterialTheme.colorScheme.onPrimaryFixed,
+        unselectedContentColor: Color = Color.White
+    ) = ZoomBarColors(
+        trackColor = trackColor,
+        selectedIndicatorColor = selectedIndicatorColor,
+        selectedContentColor = selectedContentColor,
+        unselectedContentColor = unselectedContentColor
+    )
+
+    /**
+     * Colors when not overlapping the viewfinder (lighter translucent background).
+     */
+    @Composable
+    fun white20Colors(
+        trackColor: Color = Color.White.copy(alpha = 0.20f),
+        selectedIndicatorColor: Color = MaterialTheme.colorScheme.primaryFixed,
+        selectedContentColor: Color = MaterialTheme.colorScheme.onPrimaryFixed,
+        unselectedContentColor: Color = Color.White
+    ) = ZoomBarColors(
+        trackColor = trackColor,
+        selectedIndicatorColor = selectedIndicatorColor,
+        selectedContentColor = selectedContentColor,
+        unselectedContentColor = unselectedContentColor
+    )
+}
+
+/**
+ * Formats zoom ratios for camera controls:
+ * - Unselected stops: ".5", "1", "2", "5" (no leading zero, no multiplication symbol).
+ * - Selected stop: ".5×", "1×", "2×", "5×" (with Unicode multiplication symbol \u00D7).
+ * - In-between ratios (e.g. while pinching): "1.4×".
+ */
+internal fun formatZoomLabel(targetZoom: Float, currentRatio: Float, isSelected: Boolean): String {
+    val valueToFormat = if (isSelected) currentRatio else targetZoom
+    val formattedNumber = if (valueToFormat < 1f && valueToFormat > 0f) {
+        val formatted = SUB_ONE_FORMATTER.get()!!.format(valueToFormat)
+        if (formatted == "1" || formatted == "1.0") "1" else formatted
+    } else if (valueToFormat % 1.0f == 0f) {
+        valueToFormat.toInt().toString()
+    } else {
+        DECIMAL_FORMATTER.get()!!.format(valueToFormat)
+    }
+    return if (isSelected) {
+        "$formattedNumber\u00D7"
+    } else {
+        formattedNumber
+    }
+}
+
+/**
+ * A composable that displays zoom controls formatted as a unified capsule track
+ * with a selected indicator pill appearing on the active stop.
+ *
+ * @param zoomControlUiState The [ZoomControlUiState] providing available zoom levels and
+ *   current ratio.
+ * @param onChangeZoom Callback when a zoom level is tapped.
+ * @param modifier Modifier for the component.
+ * @param orientation Layout orientation ([Orientation.Horizontal] or [Orientation.Vertical]),
+ *   allowing flexible placement across portrait phones, landscape mode, and open foldables/tablets.
+ * @param colors Styling configuration for track and indicator colors.
+ */
+@Composable
+fun ZoomBar(
+    zoomControlUiState: ZoomControlUiState,
+    onChangeZoom: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    orientation: Orientation = Orientation.Horizontal,
+    colors: ZoomBarColors = ZoomBarDefaults.colors()
+) {
+    if (zoomControlUiState is ZoomControlUiState.Enabled) {
+        val currentZoomState by rememberUpdatedState(zoomControlUiState)
+        val selectedOptionIndex: Int by remember(zoomControlUiState.primaryLensFacing) {
+            derivedStateOf {
+                // If animating towards a value, select that target; otherwise find closest
+                // matching stop
+                val checkValue =
+                    currentZoomState.animatingToValue
+                        ?: currentZoomState.primaryZoomRatio
+                        ?: currentZoomState.initialZoomRatio
+                        ?: 1f
+                val roundedCheckValue = round(checkValue * 10f) / 10f
+                val index = currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
+                    val roundedOption = round(zoomLevelOption * 10f) / 10f
+                    roundedCheckValue >= roundedOption
+                }
+                if (index >= 0) index else 0
+            }
+        }
+
+        val zoomLevels = zoomControlUiState.zoomLevels
+        if (zoomLevels.isEmpty()) return
+
+        val validIndex = selectedOptionIndex.coerceIn(0, zoomLevels.size - 1)
+        val currentRatioProvider = remember {
+            {
+                currentZoomState.primaryZoomRatio
+                    ?: currentZoomState.initialZoomRatio
+                    ?: 1f
+            }
+        }
+
+        val itemWidth = if (orientation == Orientation.Horizontal) {
+            ZoomBarDefaults.HorizontalItemWidth
+        } else {
+            ZoomBarDefaults.VerticalItemWidth
+        }
+        val itemHeight = if (orientation == Orientation.Horizontal) {
+            ZoomBarDefaults.HorizontalItemHeight
+        } else {
+            ZoomBarDefaults.VerticalItemHeight
+        }
+
+        val endPadding = if (orientation == Orientation.Horizontal) {
+            ZoomBarDefaults.HorizontalEndPadding
+        } else {
+            ZoomBarDefaults.VerticalEndPadding
+        }
+
+        // In horizontal, clearance exists on all sides; in vertical, buttons are flush with
+        // the vertical sides.
+        val totalWidth = if (orientation == Orientation.Horizontal) {
+            itemWidth * zoomLevels.size + endPadding * 2
+        } else {
+            itemWidth
+        }
+        val totalHeight = if (orientation == Orientation.Horizontal) {
+            itemHeight + ZoomBarDefaults.HorizontalClearance * 2
+        } else {
+            itemHeight * zoomLevels.size + endPadding * 2
+        }
+
+        Box(
+            modifier = modifier
+                .size(totalWidth, totalHeight)
+                .background(color = colors.trackColor, shape = ZoomBarDefaults.TrackShape)
+                .semantics {
+                    testTag = ZOOM_BUTTON_ROW_TAG
+                    stateDescription = zoomControlUiState.primaryZoomRatio.toString()
+                }
+        ) {
+            // Stops
+            if (orientation == Orientation.Horizontal) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            horizontal = endPadding,
+                            vertical = ZoomBarDefaults.HorizontalClearance
+                        ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    zoomLevels.forEachIndexed { index, value ->
+                        val isSelected = index == validIndex
+                        ZoomBarItem(
+                            value = value,
+                            currentRatioProvider = currentRatioProvider,
+                            isSelected = isSelected,
+                            colors = colors,
+                            itemWidth = itemWidth,
+                            itemHeight = itemHeight,
+                            modifier = Modifier.size(itemWidth, itemHeight),
+                            onClick = { onChangeZoom(value) }
+                        )
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(vertical = endPadding),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    zoomLevels.forEachIndexed { index, value ->
+                        val isSelected = index == validIndex
+                        ZoomBarItem(
+                            value = value,
+                            currentRatioProvider = currentRatioProvider,
+                            isSelected = isSelected,
+                            colors = colors,
+                            itemWidth = itemWidth,
+                            itemHeight = itemHeight,
+                            modifier = Modifier.size(itemWidth, itemHeight),
+                            onClick = { onChangeZoom(value) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ZoomBarItem(
+    value: Float,
+    currentRatioProvider: () -> Float,
+    isSelected: Boolean,
+    colors: ZoomBarColors,
+    itemWidth: Dp,
+    itemHeight: Dp,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val displayText by remember(value, isSelected) {
+        derivedStateOf {
+            formatZoomLabel(
+                targetZoom = value,
+                currentRatio = if (isSelected) currentRatioProvider() else value,
+                isSelected = isSelected
+            )
+        }
+    }
+
+    val unselectedSize = (if (itemWidth < itemHeight) itemWidth else itemHeight)
+        .coerceAtMost(ZoomBarDefaults.UnselectedIndicatorSize)
+    val unselectedCornerRadius = unselectedSize / 2
+
+    val indicatorProgress by animateFloatAsState(
+        targetValue = if (isSelected) 1f else 0f,
+        animationSpec = if (isSelected) {
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        } else {
+            snap()
+        },
+        label = "zoomIndicatorProgress"
+    )
+
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            colors.selectedContentColor
+        } else {
+            colors.unselectedContentColor
+        },
+        label = "zoomItemContentColor"
+    )
+
+    Box(
+        modifier = modifier
+            .drawBehind {
+                val progress = indicatorProgress
+                if (isSelected || progress > 0f) {
+                    val width = lerp(unselectedSize, itemWidth, progress).toPx().coerceAtLeast(0f)
+                    val height = lerp(unselectedSize, itemHeight, progress).toPx().coerceAtLeast(0f)
+                    val cornerRadius = lerp(
+                        unselectedCornerRadius,
+                        ZoomBarDefaults.IndicatorCornerRadius,
+                        progress
+                    ).toPx().coerceAtLeast(0f)
+                    drawRoundRect(
+                        color = colors.selectedIndicatorColor,
+                        topLeft = Offset(
+                            x = (size.width - width) / 2f,
+                            y = (size.height - height) / 2f
+                        ),
+                        size = Size(width = width, height = height),
+                        cornerRadius = CornerRadius(cornerRadius, cornerRadius)
+                    )
+                }
+            }
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                role = Role.RadioButton,
+                onClick = onClick
+            )
+            .semantics {
+                testTag = getZoomButtonTestTag(value)
+                selected = isSelected
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            modifier = Modifier.animateContentSize(),
+            text = displayText,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+            ),
+            color = contentColor,
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
+    }
+}
 
 /**
  * A composable that displays a row of zoom buttons.
  *
+ * Maintained as a delegate to [ZoomBar] for backward compatibility with existing callers.
+ *
  * @param onChangeZoom the callback for when the zoom changes
  * @param modifier the modifier for this component
  * @param zoomControlUiState the [ZoomControlUiState] for this component
- * @param buttonSize the size of the buttons
- * @param spacing the spacing between the buttons
+ * @param buttonSize the size of the buttons (retained for backward compatibility)
+ * @param spacing the spacing between the buttons (retained for backward compatibility)
+ * @param orientation the layout orientation ([Orientation.Horizontal] or [Orientation.Vertical])
+ * @param colors the [ZoomBarColors] styling configuration for track and indicator colors
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -67,124 +448,17 @@ fun ZoomButtonRow(
     modifier: Modifier = Modifier,
     zoomControlUiState: ZoomControlUiState,
     buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
-    spacing: Dp = 16.dp
+    spacing: Dp = 16.dp,
+    orientation: Orientation = Orientation.Horizontal,
+    colors: ZoomBarColors = ZoomBarDefaults.colors()
 ) {
-    if (zoomControlUiState is ZoomControlUiState.Enabled) {
-        val currentZoomState by rememberUpdatedState(zoomControlUiState)
-        val selectedOptionIndex: Int by remember(zoomControlUiState.primaryLensFacing) {
-            // todo(kc): checkValue will flash to 1.0 when flipping between camera lenses on API 30+.
-            // cameraState (cameraState's zoom value) should have an intermediate, "unknown", state when
-            // camera flip is in progress. Then we can ensure that the zoom controls don't flash to 1.0
-            // when cameraState is in this intermediate state.
-
-            derivedStateOf {
-                // if animating towards a value, then that option will be selected
-                // otherwise, select the closest option that is less than the current zoom ratio
-
-                val checkValue =
-                    currentZoomState.animatingToValue ?: currentZoomState.primaryZoomRatio ?: 1f
-                if (checkValue >= 1f) {
-                    // -1 if no index is found
-                    currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
-                        checkValue >= zoomLevelOption
-                    }
-                } else {
-                    0
-                }
-            }
-        }
-
-        Row(
-            modifier = modifier
-                .background(
-                    color = Color.Black.copy(alpha = 0.32f),
-                    shape = CircleShape
-                )
-                .padding(horizontal = spacing / 2, vertical = spacing / 2)
-                .semantics {
-                    testTag = ZOOM_BUTTON_ROW_TAG
-                    stateDescription = zoomControlUiState.primaryZoomRatio.toString()
-                }
-                .height(buttonSize),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            zoomControlUiState.zoomLevels.forEachIndexed { index, value ->
-                Box(
-                    modifier = Modifier.width(buttonSize + spacing + 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    ZoomButton(
-                        targetZoom = value,
-                        zoomRatio = zoomControlUiState.primaryZoomRatio ?: 1f,
-                        isSelected = selectedOptionIndex == index,
-                        onChangeZoom = onChangeZoom
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun ZoomButton(
-    modifier: Modifier = Modifier,
-    buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
-    targetZoom: Float,
-    zoomRatio: Float,
-    isSelected: Boolean = false,
-    onChangeZoom: (Float) -> Unit
-) {
-    val selectedFormat = remember { DecimalFormat("#.0") }
-    val formatter = remember(targetZoom) {
-        DecimalFormat("#.#").apply {
-            minimumIntegerDigits = 0
-            roundingMode = if (targetZoom >= 1) {
-                RoundingMode.DOWN
-            } else {
-                RoundingMode.UP
-            }
-        }
-    }
-    val displayText by remember(isSelected, zoomRatio) {
-        derivedStateOf {
-            if (!isSelected) {
-                formatter.format(targetZoom)
-            } else {
-                "${selectedFormat.format(zoomRatio)}x"
-            }
-        }
-    }
-    ToggleButton(
-        checked = isSelected,
-        onCheckedChange = { onChangeZoom(targetZoom) },
-        modifier = modifier.heightIn(buttonSize)
-            .semantics {
-                testTag = getZoomButtonTestTag(targetZoom)
-                // todo(kc): move to text resource
-                contentDescription = if (isSelected) "selected" else "not selected"
-            },
-        shapes = ToggleButtonDefaults.shapesFor(buttonSize),
-        contentPadding = ButtonDefaults.contentPaddingFor(buttonSize),
-        colors = if (isSelected) {
-            ToggleButtonDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.primaryFixed,
-                contentColor = MaterialTheme.colorScheme.onPrimaryFixed
-            )
-        } else {
-            ToggleButtonDefaults.colors(
-                containerColor = Color.White.copy(alpha = .16f),
-                contentColor = Color.White
-            )
-        }
-    ) {
-        Text(
-            modifier = Modifier.animateContentSize(),
-            text = displayText,
-            style = MaterialTheme.typography.labelSmall,
-            textAlign = TextAlign.Center
-        )
-    }
+    ZoomBar(
+        zoomControlUiState = zoomControlUiState,
+        onChangeZoom = onChangeZoom,
+        modifier = modifier,
+        orientation = orientation,
+        colors = colors
+    )
 }
 
 private fun getZoomButtonTestTag(buttonValue: Float): String {
@@ -197,78 +471,174 @@ private fun getZoomButtonTestTag(buttonValue: Float): String {
     } else if (buttonValue == 5f) {
         ZOOM_BUTTON_5_TAG
     } else {
-        TODO("Zoom button with value $buttonValue needs a test tag")
+        "ZoomButton_${buttonValue}Tag"
     }
 }
 
-@Preview(showBackground = true)
+// ---------------------------------------------------------------------------
+// Previews
+// ---------------------------------------------------------------------------
+
+@Preview(name = "Horizontal 60% Black (Overlapping Viewfinder)", showBackground = true)
 @Composable
-fun ZoomButtonPreview() {
+private fun ZoomBarHorizontalDarkPreview() {
     Box(
-        Modifier
-            .padding(16.dp)
-            .background(Color.DarkGray)
+        modifier = Modifier
+            .background(Color(0xFF2B2B2B))
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row {
-            ZoomButton(
-                targetZoom = 1f,
-                onChangeZoom = {},
-                isSelected = false,
-                zoomRatio = 2f
-            )
-
-            ZoomButton(
-                targetZoom = 3f,
-                onChangeZoom = {},
-                zoomRatio = 3.3f,
-                isSelected = true
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ZoomBarPreviewOneSelected() {
-    val sampleValues = listOf(0.5f, 1.0f, 2.0f, 5.0f)
-    Box(
-        Modifier
-            .background(Color.DarkGray),
-        contentAlignment = Alignment.Center
-    ) {
-        ZoomButtonRow(
+        ZoomBar(
             zoomControlUiState = ZoomControlUiState.Enabled(
-                sampleValues,
-                primaryLensFacing = LensFacing.FRONT,
-                primaryZoomRatio = 1f
+                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 1.0f
             ),
-            onChangeZoom = {
-                println("Clicked value: $it")
-            }
+            onChangeZoom = {},
+            orientation = Orientation.Horizontal,
+            colors = ZoomBarDefaults.black60Colors()
         )
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Horizontal 20% White (Not Overlapping Viewfinder)", showBackground = true)
 @Composable
-fun ZoomBarPreviewFractionSelected() {
-    val sampleValues = listOf(0.5f, 1.0f, 2.0f, 5.0f, 25.0f)
+private fun ZoomBarHorizontalTranslucentPreview() {
     Box(
-        Modifier
-            .background(Color.DarkGray),
+        modifier = Modifier
+            .background(Color(0xFF2B2B2B))
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        ZoomButtonRow(
+        ZoomBar(
             zoomControlUiState = ZoomControlUiState.Enabled(
-                sampleValues,
-                primaryLensFacing = LensFacing.FRONT,
-                primaryZoomRatio = .6f
+                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 1.0f
             ),
-            onChangeZoom = {
-                println("Clicked value: $it")
-            }
+            onChangeZoom = {},
+            orientation = Orientation.Horizontal,
+            colors = ZoomBarDefaults.white20Colors()
         )
     }
+}
+
+@Preview(name = "Horizontal - Fraction (.5x Selected)", showBackground = true)
+@Composable
+private fun ZoomBarHorizontalFractionPreview() {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFF2B2B2B))
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        ZoomBar(
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 0.5f
+            ),
+            onChangeZoom = {},
+            orientation = Orientation.Horizontal,
+            colors = ZoomBarDefaults.black60Colors()
+        )
+    }
+}
+
+@Preview(name = "Vertical 60% Black - Flush Sides", showBackground = true)
+@Composable
+private fun ZoomBarVerticalDarkPreview() {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFF2B2B2B))
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        ZoomBar(
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 1.0f
+            ),
+            onChangeZoom = {},
+            orientation = Orientation.Vertical,
+            colors = ZoomBarDefaults.black60Colors()
+        )
+    }
+}
+
+@Preview(name = "Vertical 20% White - Flush Sides", showBackground = true)
+@Composable
+private fun ZoomBarVerticalTranslucentPreview() {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFF2B2B2B))
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        ZoomBar(
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 1.0f
+            ),
+            onChangeZoom = {},
+            orientation = Orientation.Vertical,
+            colors = ZoomBarDefaults.white20Colors()
+        )
+    }
+}
+
+@Preview(name = "Single Value Range (1.0x only)", showBackground = true)
+@Composable
+private fun ZoomBarSingleValuePreview() {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFF2B2B2B))
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        ZoomBar(
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(1.0f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 1.0f
+            ),
+            onChangeZoom = {},
+            orientation = Orientation.Horizontal
+        )
+    }
+}
+
+@Preview(name = "Extended Telephoto Range (2x Selected)", showBackground = true)
+@Composable
+private fun ZoomBarExtendedRangePreview() {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFF2B2B2B))
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        ZoomBar(
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f, 10.0f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 2.0f
+            ),
+            onChangeZoom = {},
+            orientation = Orientation.Horizontal
+        )
+    }
+}
+
+@Preview(name = "Legacy Delegate - One Selected", showBackground = true)
+@Composable
+private fun ZoomBarPreviewOneSelected() {
+    ZoomBarHorizontalDarkPreview()
+}
+
+@Preview(name = "Legacy Delegate - Fraction Selected", showBackground = true)
+@Composable
+private fun ZoomBarPreviewFractionSelected() {
+    ZoomBarHorizontalFractionPreview()
 }
