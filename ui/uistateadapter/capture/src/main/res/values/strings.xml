@@ -41,4 +41,10 @@
     <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be used at the same time</string>
     <!-- Toast message shown when Low Light Boost is disabled because HDR mode is active. [CHAR LIMIT=66] -->
     <string name="toast_llb_disabled_by_hdr">Low Light Boost is disabled when HDR is active</string>
+    <!-- Label for the default standard (combined photo and video) capture option in the camera mode carousel at the bottom of the preview screen. Noun, not a verb. [CHAR LIMIT=30] -->
+    <string name="capture_mode_standard_default">Standard</string>
+    <!-- Label for the default photo capture option in the camera mode carousel at the bottom of the preview screen. Noun, not a verb. [CHAR LIMIT=30] -->
+    <string name="capture_mode_photo_default">Photo</string>
+    <!-- Label for the default video recording option in the camera mode carousel at the bottom of the preview screen. Noun, not a verb. [CHAR LIMIT=30] -->
+    <string name="capture_mode_video_default">Video</string>
 </resources>

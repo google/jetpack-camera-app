@@ -21,6 +21,8 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeDescriptor
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
@@ -307,10 +309,109 @@ internal class CaptureUiStateAdapterTest {
         )
     }
 
+    @Test
+    fun captureUiState_activeSubModeWithHostPolicy_appliesIntersectedPolicy() = runTest {
+        setActiveSubMode(
+            subModePolicy = CameraFeaturePolicy(
+                aspectRatio = SettingConfig(AspectRatio.ONE_ONE, OptionVisibility.Hidden)
+            )
+        )
+
+        val uiStateFlow = createCaptureUiStateFlow(cameraFeaturePolicy = defaultPolicy)
+        val state = assertIsReady(uiStateFlow.first())
+
+        assertThat(state.aspectRatioUiState).isEqualTo(AspectRatioUiState.Unavailable)
+    }
+
+    @Test
+    fun captureUiState_activeSubModeWithoutHostPolicy_appliesSubModePolicy() = runTest {
+        setActiveSubMode(
+            subModePolicy = CameraFeaturePolicy(
+                aspectRatio = SettingConfig(AspectRatio.ONE_ONE, OptionVisibility.Hidden)
+            )
+        )
+
+        val state = assertIsReady(createCaptureUiStateFlow(cameraFeaturePolicy = null).first())
+
+        assertThat(state.aspectRatioUiState).isEqualTo(AspectRatioUiState.Unavailable)
+    }
+
+    @Test
+    fun captureUiState_selectedSubMode_usesSubModeQuickSettingsTitle() = runTest {
+        setActiveSubMode(subModePolicy = CameraFeaturePolicy())
+
+        val state = assertIsReady(createCaptureUiStateFlow().first())
+
+        val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
+        assertThat(quickSettings.titleResId).isEqualTo(SUB_MODE_QUICK_SETTINGS_TITLE_RES_ID)
+    }
+
+    @Test
+    fun captureUiState_defaultSubMode_hasNoQuickSettingsTitleOverride() = runTest {
+        val state = assertIsReady(createCaptureUiStateFlow().first())
+
+        val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
+        assertThat(quickSettings.titleResId).isNull()
+    }
+
+    @Test
+    fun captureUiState_defaultOverrideActive_keepsParentQuickSettingsTitle() = runTest {
+        setActiveSubMode(
+            subModePolicy = CameraFeaturePolicy(
+                aspectRatio = SettingConfig(AspectRatio.ONE_ONE, OptionVisibility.Hidden)
+            ),
+            selectedSubModeId = CaptureSubModeId.DEFAULT
+        )
+
+        val state = assertIsReady(createCaptureUiStateFlow(cameraFeaturePolicy = null).first())
+
+        val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
+        assertThat(quickSettings.titleResId).isNull()
+        // The active override's policy still applies even though its title does not.
+        assertThat(state.aspectRatioUiState).isEqualTo(AspectRatioUiState.Unavailable)
+    }
+
+    /**
+     * Registers a test sub-mode with [subModePolicy] and makes it the active sub-mode.
+     *
+     * @param selectedSubModeId the sub-mode the user explicitly selected. Pass
+     * [CaptureSubModeId.DEFAULT] to simulate the test sub-mode running as a default override.
+     */
+    private suspend fun setActiveSubMode(
+        subModePolicy: CameraFeaturePolicy,
+        selectedSubModeId: CaptureSubModeId = TEST_SUB_MODE_ID
+    ) {
+        cameraSystem.setSystemConstraints(
+            TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                captureSubModeDescriptors = mapOf(
+                    TEST_SUB_MODE_ID to CaptureSubModeDescriptor(
+                        id = TEST_SUB_MODE_ID,
+                        parentCaptureMode = CaptureMode.IMAGE_ONLY,
+                        labelResId = 0,
+                        quickSettingsTitleResId = SUB_MODE_QUICK_SETTINGS_TITLE_RES_ID
+                    )
+                ),
+                captureSubModePolicies = mapOf(TEST_SUB_MODE_ID to subModePolicy)
+            )
+        )
+        cameraSystem.initialize(
+            DEFAULT_CAMERA_APP_SETTINGS.copy(
+                captureMode = CaptureMode.IMAGE_ONLY,
+                captureSubModeId = selectedSubModeId,
+                activeCaptureSubModeId = TEST_SUB_MODE_ID
+            )
+        ) {}
+    }
+
     private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready = when (uiState) {
         is CaptureUiState.Ready -> uiState
         else -> throw AssertionError(
             "CaptureUiState expected to be Ready, but was ${uiState::class}"
         )
+    }
+
+    private companion object {
+        val TEST_SUB_MODE_ID = CaptureSubModeId("test_sub_mode")
+        const val SUB_MODE_QUICK_SETTINGS_TITLE_RES_ID = 2001
     }
 }
