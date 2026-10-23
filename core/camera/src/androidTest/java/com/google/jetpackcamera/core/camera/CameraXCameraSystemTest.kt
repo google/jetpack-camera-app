@@ -176,6 +176,7 @@ class CameraXCameraSystemTest {
 
         // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
+        assertThat(imagePostProcessor.savedContentResolver).isEqualTo(contentResolver)
     }
 
     @Test
@@ -196,6 +197,7 @@ class CameraXCameraSystemTest {
 
         // Assert.
         assertThat(imagePostProcessor.postProcessImageCalled).isFalse()
+        assertThat(imagePostProcessor.savedContentResolver).isNull()
     }
 
     @Test
@@ -216,6 +218,7 @@ class CameraXCameraSystemTest {
         } catch (e: RuntimeException) {
             // Assert.
             assertThat(imagePostProcessor.postProcessImageCalled).isTrue()
+            assertThat(imagePostProcessor.savedContentResolver).isEqualTo(contentResolver)
 
             val savedUri = imagePostProcessor.savedUri
             assertThat(savedUri).isNotNull()
@@ -1722,9 +1725,11 @@ private class FakeCaptureSubModeProvider(
 class FakeImagePostProcessor(val shouldError: Boolean = false) : ImagePostProcessor {
     var postProcessImageCalled = false
     var savedUri: Uri? = null
-    override suspend fun postProcessImage(uri: Uri) {
+    var savedContentResolver: ContentResolver? = null
+    override suspend fun postProcessImage(uri: Uri, contentResolver: ContentResolver) {
         postProcessImageCalled = true
         savedUri = uri
+        savedContentResolver = contentResolver
         if (shouldError) throw RuntimeException("Post process failed")
     }
 }
