@@ -24,7 +24,6 @@ import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -226,13 +225,6 @@ interface CameraSystem {
     fun setDeviceRotation(deviceRotation: DeviceRotation)
 
     /**
-     * Sets the concurrent camera mode.
-     *
-     * @param concurrentCameraMode The [ConcurrentCameraMode] to set.
-     */
-    suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
-
-    /**
      * Sets the image output format.
      *
      * @param imageFormat The [ImageOutputFormat] to set.
@@ -276,6 +268,10 @@ interface CameraSystem {
 
     /**
      * Sets the active capture sub-mode for the camera.
+     *
+     * The capture mode is never changed by this call; set it with [setCaptureMode] first. If the
+     * sub-mode's parent capture mode doesn't match, or the sub-mode is unsupported or incompatible
+     * with the current settings, the default sub-mode is used instead.
      *
      * While a sub-mode is active, its feature policy applies. When it ends, settings the policy
      * changed return to their earlier values, or to the values last set during the sub-mode.
@@ -341,11 +337,6 @@ interface CameraSystem {
                 new,
                 CameraAppSettings::lowLightBoostPriority,
                 cameraSystem::setLowLightBoostPriority
-            )
-            applyDiff(
-                new,
-                CameraAppSettings::concurrentCameraMode,
-                cameraSystem::setConcurrentCameraMode
             )
             applyDiff(
                 new,
