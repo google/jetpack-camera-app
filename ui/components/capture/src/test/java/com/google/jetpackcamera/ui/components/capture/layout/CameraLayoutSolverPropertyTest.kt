@@ -187,12 +187,12 @@ class CameraLayoutSolverPropertyTest {
             assertWithMessage("no rows at %s", window.describe())
                 .that(solution.rowBands)
                 .isNotEmpty()
-            solution.rowBands.forEach { (id, band) ->
+            for ((id, band) in solution.rowBands) {
                 assertWithMessage("row %s inverted at %s", id, window.describe())
                     .that(band.bottom.value)
                     .isAtLeast(band.top.value)
             }
-            solution.viewfinders.forEach { (id, band) ->
+            for ((id, band) in solution.viewfinders) {
                 assertWithMessage("frame %s inverted at %s", id, window.describe())
                     .that(band.bottom.value)
                     .isAtLeast(band.top.value)
@@ -309,7 +309,7 @@ class CameraLayoutSolverPropertyTest {
             val bottomLimit = window.height.value
             val firstShiftedTop =
                 window.topInset.value + spec.topStartHeight.value + spec.minControlClearance.value
-            solution.viewfinders.forEach { (id, band) ->
+            for ((id, band) in solution.viewfinders) {
                 val above = band.top.value
                 val below = bottomLimit - band.bottom.value
                 if (above > firstShiftedTop + 0.05f) {
@@ -371,7 +371,7 @@ class CameraLayoutSolverPropertyTest {
             )
             val minShiftedTop =
                 topInset + spec.topStartHeight.value + spec.minControlClearance.value - 0.05f
-            solution.viewfinders.forEach { (id, band) ->
+            for ((id, band) in solution.viewfinders) {
                 val maxUnshiftedTop = if (id == CameraViewfinderIds.RATIO_9_16) {
                     behindTopStartLimit
                 } else {
