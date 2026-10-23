@@ -90,6 +90,7 @@ camera-core = { module = "androidx.camera:camera-core", version.ref = "androidxC
 camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "androidxCamera" }
 camera-video = { module = "androidx.camera:camera-video", version.ref = "androidxCamera" }
 camera-compose = { module = "androidx.camera:camera-compose", version.ref = "androidxCamera" }
+camera-extensions = { module = "androidx.camera:camera-extensions", version.ref = "androidxCamera" }
 
 camera-testing = { module = "androidx.camera:camera-testing", version.ref = "androidxCamera" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
