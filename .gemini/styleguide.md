@@ -77,6 +77,11 @@ When reviewing a pull request, focus on the following key areas:
 
 8.  **Resource Management**
     * **No Hardcoded Strings:** Forbid hardcoded user-facing strings in composables. All text should be extracted into `strings.xml` to support localization and make updates easier.
+    * **Translator Notes in XML Comments:** Every translatable `<string>`, `<plurals>`, and `<string-array>` must have an XML comment directly above it that tells translators where the text appears, what it means, and any terms that must stay consistent or untranslated. End the comment with a character limit: `[CHAR LIMIT=N]` when space is constrained (toasts, snackbars, buttons, short labels), or `[CHAR LIMIT=NONE]` otherwise. Do not use the `description=` attribute for translator notes. Wrap each format argument in `<xliff:g>` with an `id` and an `example`, and mark strings that must not be translated with `translatable="false"`.
+        ```xml
+        <!-- Subtitle under a disabled setting row on the settings screen, explaining that the setting cannot be used while Ultra HDR photo capture is on. %1$s is the name of the disabled setting. "Ultra HDR" is the name of an Android photo format and should not be translated. [CHAR LIMIT=NONE] -->
+        <string name="ultra_hdr_enabled"><xliff:g id="setting_name" example="Stream configuration">%1$s</xliff:g> is unsupported when Ultra HDR is enabled</string>
+        ```
     * **Prefer Vector Drawables:** For icons and simple graphics, vector drawables (SVGs) should be preferred over raster images (PNGs) to reduce APK size and ensure sharp rendering on all screen densities.
     * **Delete Unused Resources:** When refactoring or removing components, ensure that any associated resources (such as strings in `strings.xml` or icons/drawables in the `res/drawable` directory) that are no longer used anywhere in the project are deleted to reduce the final file size and maintain codebase cleanliness.
 
