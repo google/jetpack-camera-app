@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.ui.components.capture.layout
 
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -306,6 +308,5 @@ data class CameraLayoutSolution(
 /**
  * Provides the active [CameraLayoutSolution] to descendants such as the viewfinder display.
  */
-val LocalCameraLayoutSolution = androidx.compose.runtime.compositionLocalOf<CameraLayoutSolution?> {
-    null
-}
+val LocalCameraLayoutSolution: ProvidableCompositionLocal<CameraLayoutSolution?> =
+    compositionLocalOf { null }

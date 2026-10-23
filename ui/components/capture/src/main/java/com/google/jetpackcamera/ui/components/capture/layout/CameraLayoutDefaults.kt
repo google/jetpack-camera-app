@@ -55,19 +55,19 @@ object CameraViewfinderIds {
 object CameraLayoutDefaults {
 
     /** Shutter button plus the image well and flip control either side of it. */
-    val CaptureRowHeight = 86.dp
+    val CaptureRowHeight: Dp = 86.dp
 
     /** Mode carousel. Reserved even in video mode, where the carousel is hidden. */
-    val ModeSwitcherHeight = 32.dp
+    val ModeSwitcherHeight: Dp = 32.dp
 
     /** Quick settings row. Equal to the toggle switch's own height, so it has no internal slack. */
-    val BottomToolbarHeight = 64.dp
+    val BottomToolbarHeight: Dp = 64.dp
 
     /** Zoom ratio selector. */
-    val ZoomBarHeight = 48.dp
+    val ZoomBarHeight: Dp = 48.dp
 
     /** Standard gap between adjacent control rows. */
-    val StandardGap = 24.dp
+    val StandardGap: Dp = 24.dp
 
     /**
      * Gap between the zoom bar and the shutter row.
@@ -75,30 +75,30 @@ object CameraLayoutDefaults {
      * Wider than [StandardGap] because the zoom bar usually sits over the live preview while the
      * shutter row sits on black, and the extra space stops the two reading as one block.
      */
-    val ZoomToCaptureGap = 32.dp
+    val ZoomToCaptureGap: Dp = 32.dp
 
     /**
      * Gap to aim for between the zoom bar and the shutter row when no viewfinder border separates
      * them. Keeps the zoom bar grouped with the shutter instead of floating toward the centre of
      * the photo.
      */
-    val ZoomToCaptureGroupedGap = 12.dp
+    val ZoomToCaptureGroupedGap: Dp = 12.dp
 
     /** Floor for any inter-row gap under compression. */
-    val MinGap = 8.dp
+    val MinGap: Dp = 8.dp
 
     /**
      * Preferred padding below the bottom toolbar in an immersive window, or when the spec sets no
      * bottom row anchor. Otherwise [BottomRowAnchor] sets the preferred padding.
      */
-    val BottomPadding = 30.dp
+    val BottomPadding: Dp = 30.dp
 
     /**
      * Floor for the padding below the bottom toolbar, raised where needed to keep the toolbar out
      * of the bottom gesture zone. Above a navigation bar at least as tall as the gesture zone, such
      * as 3-button navigation, the floor is [MinControlClearance] instead.
      */
-    val MinBottomPadding = 8.dp
+    val MinBottomPadding: Dp = 8.dp
 
     /**
      * Height of the bottom toolbar's lower edge above the bottom of the window at the preferred
@@ -106,28 +106,28 @@ object CameraLayoutDefaults {
      * above a 16.dp gesture bar, 6.dp above a 48.dp 3-button bar, and 54.dp when no bar is
      * reported, so every navigation configuration prefers the same control positions.
      */
-    val BottomRowAnchor = 54.dp
+    val BottomRowAnchor: Dp = 54.dp
 
     /** Required daylight between a viewfinder edge and any control row. */
-    val MinControlClearance = 4.dp
+    val MinControlClearance: Dp = 4.dp
 
     /**
      * How far the stack may be raised as a last resort before the layout is declared
      * infeasible.
      */
-    val MaxStackLift = 72.dp
+    val MaxStackLift: Dp = 72.dp
 
     /** Reserved height below the top bar for the top-start control's 48.dp touch target. */
-    val TopStartHeight = 48.dp
+    val TopStartHeight: Dp = 48.dp
 
     /** Inset of the 40.dp visible top-start button within its 48.dp touch target. */
-    val TopStartVisibleInset = 4.dp
+    val TopStartVisibleInset: Dp = 4.dp
 
     /**
      * Minimum gap between a viewfinder top edge that passes behind the top-start button and the
      * button's visible top.
      */
-    val TopStartMinEdgeGap = 1.dp
+    val TopStartMinEdgeGap: Dp = 1.dp
 
     // Relative cost of a viewfinder edge intruding on each row. The shutter is the control the user
     // reaches for without looking, so it is protected hardest; the mode switcher is the most

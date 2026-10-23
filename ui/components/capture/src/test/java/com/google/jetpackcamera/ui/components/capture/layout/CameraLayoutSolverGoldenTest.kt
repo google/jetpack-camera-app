@@ -70,7 +70,7 @@ class CameraLayoutSolverGoldenTest {
     @Test
     fun controlRowsMatchTheReference() {
         forEachCase { case, solution ->
-            case.rows.forEach { (rowId, expected) ->
+            for ((rowId, expected) in case.rows) {
                 val actual = solution.rowBands.getValue(rowId)
                 assertWithMessage("%s %s top", case.label, rowId)
                     .that(actual.top.value.toDouble())
@@ -85,7 +85,7 @@ class CameraLayoutSolverGoldenTest {
     @Test
     fun viewfinderPlacementsMatchTheReference() {
         forEachCase { case, solution ->
-            case.viewfinders.forEach { (id, expected) ->
+            for ((id, expected) in case.viewfinders) {
                 val actual = solution.viewfinders.getValue(id)
                 assertWithMessage("%s %s top", case.label, id)
                     .that(actual.top.value.toDouble())
@@ -162,7 +162,7 @@ class CameraLayoutSolverGoldenTest {
     fun window360x740MatchesTheDesignReference() {
         val spec = CameraLayoutDefaults.spec()
         val topInset = 48f
-        reportedBottomInsets.forEach { (navInset, gestureInset) ->
+        for ((navInset, gestureInset) in reportedBottomInsets) {
             val window = CameraWindow(
                 width = 360.dp,
                 height = 740.dp,
@@ -219,7 +219,7 @@ class CameraLayoutSolverGoldenTest {
     fun window443x986KeepsPrimaryAndTallFramesFlushWithTopBar() {
         val spec = CameraLayoutDefaults.spec()
         val topInset = 66f
-        reportedBottomInsets.forEach { (navInset, gestureInset) ->
+        for ((navInset, gestureInset) in reportedBottomInsets) {
             val window = CameraWindow(
                 width = 443.1.dp,
                 height = 986.3.dp,
@@ -259,7 +259,7 @@ class CameraLayoutSolverGoldenTest {
         val skipped = mutableListOf<String>()
         cases.filter { it.navMode == "gesture" && !it.requiresImmersive }.forEach { case ->
             val reference = CameraLayoutSolver.solve(spec, case.window)
-            reportedBottomInsets.forEach { (navInset, gestureInset) ->
+            for ((navInset, gestureInset) in reportedBottomInsets) {
                 val window = case.window.copy(
                     navInset = navInset.dp,
                     gestureInset = gestureInset.dp
@@ -291,7 +291,7 @@ class CameraLayoutSolverGoldenTest {
         expected: Map<String, DpRange>,
         actual: Map<String, DpRange>
     ) {
-        expected.forEach { (id, band) ->
+        for ((id, band) in expected) {
             assertWithMessage("%s %s top", label, id)
                 .that(actual.getValue(id).top.value.toDouble())
                 .isWithin(tolerance).of(band.top.value.toDouble())
@@ -303,6 +303,8 @@ class CameraLayoutSolverGoldenTest {
 
     private fun forEachCase(block: (GoldenCase, CameraLayoutSolution) -> Unit) {
         val spec = CameraLayoutDefaults.spec()
-        cases.forEach { case -> block(case, CameraLayoutSolver.solve(spec, case.window)) }
+        for (case in cases) {
+            block(case, CameraLayoutSolver.solve(spec, case.window))
+        }
     }
 }

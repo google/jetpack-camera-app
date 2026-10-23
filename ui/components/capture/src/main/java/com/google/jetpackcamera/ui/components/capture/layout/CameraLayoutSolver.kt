@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui.components.capture.layout
 
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import kotlin.math.floor
