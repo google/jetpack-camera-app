@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.controller
+package com.google.jetpackcamera.model
 
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import android.graphics.Bitmap
+import android.net.Uri
 
 /**
- * Interface for controlling the image well.
+ * Media items represented by a [MediaDescriptor].
+ *
+ * [Image] will have the bitmap data loaded.
+ * [Video] is still a reference to the video file, will switch to a loaded version later on.
+ *
+ * TODO(yasith): Load the video data to the Video object.
  */
-interface ImageWellController {
-    /**
-     * Sets the specified media as the current item in the media repository, typically before
-     * navigating to the post-capture screen.
-     *
-     * @param mediaDescriptor The media descriptor to be set.
-     */
-    fun imageWellToRepository(mediaDescriptor: MediaDescriptor)
+sealed interface Media {
+    data object None : Media
+    data object Error : Media
+    data class Image(val bitmap: Bitmap) : Media
+    data class Video(val uri: Uri) : Media
 }

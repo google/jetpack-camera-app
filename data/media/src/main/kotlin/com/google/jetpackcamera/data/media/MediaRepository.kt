@@ -15,8 +15,9 @@
  */
 package com.google.jetpackcamera.data.media
 
-import android.graphics.Bitmap
 import android.net.Uri
+import com.google.jetpackcamera.model.Media
+import com.google.jetpackcamera.model.MediaDescriptor
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -43,7 +44,15 @@ interface MediaRepository {
      */
     fun refreshLastCapturedMedia()
 
-    suspend fun setCurrentMedia(pendingMedia: MediaDescriptor)
+    fun setCurrentMedia(pendingMedia: MediaDescriptor)
+
+    /**
+     * Deletes the [currentMedia] from the cache if it is a cached [MediaDescriptor.Content] and
+     * resets [currentMedia] to [lastCapturedMedia].
+     *
+     * Does nothing if [currentMedia] is not cached.
+     */
+    fun clearCurrentCachedMedia()
 
     suspend fun deleteMedia(mediaDescriptor: MediaDescriptor.Content): Boolean
 
@@ -53,46 +62,4 @@ interface MediaRepository {
         outputFilename: String?
     ): Uri?
     suspend fun load(mediaDescriptor: MediaDescriptor): Media
-}
-
-/**
- * Descriptors used for [Media].
- *
- * Media descriptors contain a reference to a [Media] item that's not yet loaded.
- */
-sealed interface MediaDescriptor {
-    data object None : MediaDescriptor
-
-    sealed interface Content : MediaDescriptor {
-        val uri: Uri
-        val thumbnail: Bitmap?
-        val isCached: Boolean
-
-        data class Image(
-            override val uri: Uri,
-            override val thumbnail: Bitmap?,
-            override val isCached: Boolean = false
-        ) : Content
-
-        data class Video(
-            override val uri: Uri,
-            override val thumbnail: Bitmap?,
-            override val isCached: Boolean = false
-        ) : Content
-    }
-}
-
-/**
- * Media items that are supported by [MediaRepository].
- *
- * [Image] will have the bitmap data loaded.
- * [Video] is still a reference to the video file, will switch to a loaded version later on.
- *
- * TODO(yasith): Load the video data to the Video object.
- */
-sealed interface Media {
-    data object None : Media
-    data object Error : Media
-    class Image(val bitmap: Bitmap) : Media
-    class Video(val uri: Uri) : Media
 }

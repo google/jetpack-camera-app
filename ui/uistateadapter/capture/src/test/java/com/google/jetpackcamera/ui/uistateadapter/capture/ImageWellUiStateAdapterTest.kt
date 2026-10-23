@@ -20,7 +20,7 @@ import android.net.Uri
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import org.junit.Test
 import org.junit.runner.RunWith
