@@ -104,7 +104,9 @@ private const val QUICK_SETTINGS_RESIZE_DURATION_MS = 250
  * @param quickSettingsOverlay the quick settings overlay composable
  * @param debugOverlay the debug overlay composable
  * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug settings
- * @param screenFlashOverlay the screen flash overlay composable
+ * @param screenFlashOverlay the screen flash overlay composable, drawn above all other content
+ *   (including the quick settings sheet) and across the entire window, including the system bar
+ *   and display cutout areas
  * @param snackBar the snack bar composable for showing messages
  * @param topStartContent optional composable content aligned to the top-start of the viewfinder
  * @param errorDialog the camera error alert dialog composable
@@ -176,6 +178,8 @@ fun PreviewLayout(
     }
 
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
+    val dismissQuickSettingsLabel =
+        stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
     val consumeRemainingScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPostScroll(
@@ -194,184 +198,188 @@ fun PreviewLayout(
         LocalDeviceRotation provides uiRotation,
         LocalWindowRotation provides windowRotation
     ) {
-        BottomSheetScaffold(
+        Box(
             modifier = modifier
                 .fillMaxSize()
-                .counterRotateToPortrait(windowRotation),
-            scaffoldState = scaffoldState,
-            sheetPeekHeight = 0.dp,
-            sheetDragHandle = {
-                BottomSheetDefaults.DragHandle(
-                    modifier = Modifier
-                        .testTag(QUICK_SETTINGS_DRAG_HANDLE)
-                        .clickable(
-                            role = Role.Button,
-                            onClickLabel = stringResource(
-                                R.string.quick_settings_btn_close_expanded_settings_description
-                            ),
-                            onClick = onDismissQuickSettings
-                        )
-                )
-            },
-            sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            sheetContent = {
-                CompositionLocalProvider(LocalDeviceRotation provides displayedSheetRotation) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .then(
-                                if (disableAnimations) {
-                                    Modifier
-                                } else {
-                                    Modifier.animateContentSize(
-                                        animationSpec = tween(
-                                            durationMillis = QUICK_SETTINGS_RESIZE_DURATION_MS,
-                                            easing = FastOutSlowInEasing
-                                        )
-                                    )
-                                }
-                            )
-                            .graphicsLayer {
-                                alpha = sheetContentAlpha.value
-                            }
-                    ) {
-                        if (displayedSheetRotation.isLandscape) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(max = QuickSettingsLandscapeMaxSheetHeight)
-                                    .nestedScroll(consumeRemainingScrollConnection)
-                                    .rotatedLayout(displayedSheetRotation),
-                                contentAlignment = Alignment.TopStart
-                            ) {
-                                quickSettingsOverlay(Modifier)
-                            }
-                        } else {
-                            quickSettingsOverlay(Modifier)
-                        }
-                    }
-                }
-            },
-            snackbarHost = {}
+                .counterRotateToPortrait(windowRotation)
         ) {
-            val portraitCutoutInsets = WindowInsets.displayCutout.toPortraitWindowInsets(
-                windowRotation
-            )
-            val portraitSystemBarsAndCutoutInsets = WindowInsets.systemBarsIgnoringVisibility
-                .union(WindowInsets.displayCutout)
-                .toPortraitWindowInsets(windowRotation)
-
-            Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-                Column {
-                    // The indicator row occupies the top bar real estate in the hidden status bar
-                    // region. We size the top bar to accommodate any top display cutout or the
-                    // minimum interactive touch target (defaulting to 48dp), while CutoutAwareRow
-                    // shifts individual indicator icons around any intersecting cutout bounds.
-                    val cutoutTopInset =
-                        portraitCutoutInsets.asPaddingValues().calculateTopPadding()
-                    val minTouchTarget =
-                        LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
-                    val topBarHeight = max(cutoutTopInset, minTouchTarget)
-                    Box(
+            BottomSheetScaffold(
+                modifier = Modifier.fillMaxSize(),
+                scaffoldState = scaffoldState,
+                sheetPeekHeight = 0.dp,
+                sheetDragHandle = {
+                    BottomSheetDefaults.DragHandle(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(topBarHeight)
-                            .windowInsetsPadding(
-                                portraitCutoutInsets.only(WindowInsetsSides.Horizontal)
-                            )
-                            .padding(horizontal = 16.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        indicatorRow(Modifier)
-                    }
-                    val topStartAlignment = if (uiRotation == DeviceRotation.Rotated270) {
-                        Alignment.TopEnd
-                    } else {
-                        Alignment.TopStart
-                    }
-                    Box {
-                        viewfinder(Modifier)
-                        topStartContent(
-                            Modifier
-                                .align(topStartAlignment)
-                                .animateToUpright(uiRotation)
-                        )
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .windowInsetsPadding(
-                            portraitSystemBarsAndCutoutInsets.only(WindowInsetsSides.Vertical)
-                        )
-                ) {
-                    debugVisibilityWrapper {
-                        VerticalMaterialControls(
-                            captureButton = captureButton,
-                            imageWell = imageWell,
-                            flipCameraButton = flipCameraButton,
-                            quickSettingsToggleButton = quickSettingsButton,
-                            captureModeToggleSwitch = captureModeToggle,
-                            zoomControls = zoomLevelDisplay,
-                            elapsedTimeDisplay = { elapsedTimeModifier ->
-                                if (!uiRotation.isLandscape) {
-                                    elapsedTimeDisplay(elapsedTimeModifier)
-                                }
-                            },
-                            snackbarHost = { snackbarModifier ->
-                                if (!uiRotation.isLandscape) {
-                                    PillSnackbarHost(
-                                        snackbarHostState = scaffoldState.snackbarHostState,
-                                        modifier = snackbarModifier
-                                    )
-                                }
-                            }
-                        )
-                        if (uiRotation.isLandscape) {
-                            val landscapeTopAlignment =
-                                if (uiRotation == DeviceRotation.Rotated270) {
-                                    Alignment.CenterStart
-                                } else {
-                                    Alignment.CenterEnd
-                                }
-                            Column(
-                                modifier = Modifier
-                                    .align(landscapeTopAlignment)
-                                    .rotatedLayout(uiRotation),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                PillSnackbarHost(
-                                    snackbarHostState = scaffoldState.snackbarHostState
-                                )
-                                elapsedTimeDisplay(Modifier)
-                            }
-                        }
-                    }
-                    // controls overlay
-                    snackBar(Modifier, scaffoldState.snackbarHostState)
-                    screenFlashOverlay(Modifier)
-                }
-                debugOverlay(Modifier)
-
-                if (isSheetVisible) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag(QUICK_SETTINGS_SCRIM)
+                            .testTag(QUICK_SETTINGS_DRAG_HANDLE)
                             .clickable(
-                                onClickLabel = stringResource(
-                                    R.string.quick_settings_btn_close_expanded_settings_description
-                                ),
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
+                                role = Role.Button,
+                                onClickLabel = dismissQuickSettingsLabel,
                                 onClick = onDismissQuickSettings
                             )
                     )
+                },
+                sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                sheetContent = {
+                    CompositionLocalProvider(LocalDeviceRotation provides displayedSheetRotation) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(
+                                    if (disableAnimations) {
+                                        Modifier
+                                    } else {
+                                        Modifier.animateContentSize(
+                                            animationSpec = tween(
+                                                durationMillis = QUICK_SETTINGS_RESIZE_DURATION_MS,
+                                                easing = FastOutSlowInEasing
+                                            )
+                                        )
+                                    }
+                                )
+                                .graphicsLayer {
+                                    alpha = sheetContentAlpha.value
+                                }
+                        ) {
+                            if (displayedSheetRotation.isLandscape) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = QuickSettingsLandscapeMaxSheetHeight)
+                                        .nestedScroll(consumeRemainingScrollConnection)
+                                        .rotatedLayout(displayedSheetRotation),
+                                    contentAlignment = Alignment.TopStart
+                                ) {
+                                    quickSettingsOverlay(Modifier)
+                                }
+                            } else {
+                                quickSettingsOverlay(Modifier)
+                            }
+                        }
+                    }
+                },
+                snackbarHost = {}
+            ) {
+                val portraitCutoutInsets = WindowInsets.displayCutout.toPortraitWindowInsets(
+                    windowRotation
+                )
+                val portraitSystemBarsAndCutoutInsets = WindowInsets.systemBarsIgnoringVisibility
+                    .union(WindowInsets.displayCutout)
+                    .toPortraitWindowInsets(windowRotation)
+
+                Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                    Column {
+                        // The indicator row occupies the top bar real estate in the hidden status
+                        // bar region. We size the top bar to accommodate any top display cutout or
+                        // the minimum interactive touch target (defaulting to 48dp), while
+                        // CutoutAwareRow shifts individual indicator icons around any intersecting
+                        // cutout bounds.
+                        val cutoutTopInset =
+                            portraitCutoutInsets.asPaddingValues().calculateTopPadding()
+                        val minTouchTarget =
+                            LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
+                        val topBarHeight = max(cutoutTopInset, minTouchTarget)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(topBarHeight)
+                                .windowInsetsPadding(
+                                    portraitCutoutInsets.only(WindowInsetsSides.Horizontal)
+                                )
+                                .padding(horizontal = 16.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            indicatorRow(Modifier)
+                        }
+                        val topStartAlignment = if (uiRotation == DeviceRotation.Rotated270) {
+                            Alignment.TopEnd
+                        } else {
+                            Alignment.TopStart
+                        }
+                        Box {
+                            viewfinder(Modifier)
+                            topStartContent(
+                                Modifier
+                                    .align(topStartAlignment)
+                                    .animateToUpright(uiRotation)
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .windowInsetsPadding(
+                                portraitSystemBarsAndCutoutInsets.only(WindowInsetsSides.Vertical)
+                            )
+                    ) {
+                        debugVisibilityWrapper {
+                            VerticalMaterialControls(
+                                captureButton = captureButton,
+                                imageWell = imageWell,
+                                flipCameraButton = flipCameraButton,
+                                quickSettingsToggleButton = quickSettingsButton,
+                                captureModeToggleSwitch = captureModeToggle,
+                                zoomControls = zoomLevelDisplay,
+                                elapsedTimeDisplay = { elapsedTimeModifier ->
+                                    if (!uiRotation.isLandscape) {
+                                        elapsedTimeDisplay(elapsedTimeModifier)
+                                    }
+                                },
+                                snackbarHost = { snackbarModifier ->
+                                    if (!uiRotation.isLandscape) {
+                                        PillSnackbarHost(
+                                            snackbarHostState = scaffoldState.snackbarHostState,
+                                            modifier = snackbarModifier
+                                        )
+                                    }
+                                }
+                            )
+                            if (uiRotation.isLandscape) {
+                                val landscapeTopAlignment =
+                                    if (uiRotation == DeviceRotation.Rotated270) {
+                                        Alignment.CenterStart
+                                    } else {
+                                        Alignment.CenterEnd
+                                    }
+                                Column(
+                                    modifier = Modifier
+                                        .align(landscapeTopAlignment)
+                                        .rotatedLayout(uiRotation),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    PillSnackbarHost(
+                                        snackbarHostState = scaffoldState.snackbarHostState
+                                    )
+                                    elapsedTimeDisplay(Modifier)
+                                }
+                            }
+                        }
+                        // controls overlay
+                        snackBar(Modifier, scaffoldState.snackbarHostState)
+                    }
+                    debugOverlay(Modifier)
+
+                    if (isSheetVisible) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .testTag(QUICK_SETTINGS_SCRIM)
+                                .clickable(
+                                    onClickLabel = dismissQuickSettingsLabel,
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = onDismissQuickSettings
+                                )
+                        )
+                    }
+                    errorDialog(Modifier)
                 }
-                errorDialog(Modifier)
             }
+            // Drawn last and outside of both the inset-padded controls and the bottom sheet
+            // so that the flash covers the entire window, including the system bar and display
+            // cutout areas.
+            screenFlashOverlay(Modifier)
         }
     }
 }
@@ -414,13 +422,13 @@ private fun VerticalMaterialControls(
                                     .height(120.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                imageWell(Modifier)
+                                OverlapAwareStyleProvider {
+                                    imageWell(Modifier)
+                                }
                             }
                         }
 
-                        OverlapAwareStyleProvider(
-                            overlapThreshold = 0.5f
-                        ) {
+                        OverlapAwareStyleProvider {
                             captureButton(Modifier)
                         }
 
@@ -431,9 +439,7 @@ private fun VerticalMaterialControls(
                                 .height(120.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            OverlapAwareStyleProvider(
-                                overlapThreshold = 0.5f
-                            ) {
+                            OverlapAwareStyleProvider {
                                 flipCameraButton(Modifier)
                             }
                         }
@@ -469,7 +475,9 @@ private fun VerticalMaterialControls(
                     Box(
                         contentAlignment = Alignment.Center
                     ) {
-                        captureModeToggleSwitch(Modifier)
+                        OverlapAwareStyleProvider {
+                            captureModeToggleSwitch(Modifier)
+                        }
                     }
 
                     // right toggle switch item to the right

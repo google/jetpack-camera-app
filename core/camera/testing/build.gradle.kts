@@ -54,7 +54,6 @@ android {
 dependencies {
     implementation(project(":core:camera"))
     implementation(project(":core:model"))
-    implementation(project(":data:settings"))
     implementation(project(":core:settings"))
     
     implementation(libs.camera.core)

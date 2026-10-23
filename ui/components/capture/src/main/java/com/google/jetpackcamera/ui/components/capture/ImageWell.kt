@@ -25,19 +25,22 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
@@ -48,17 +51,37 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
 /**
+ * Dimensions and shapes for [ImageWell].
+ */
+private object ImageWellTokens {
+    /** The default shape of the image well container. */
+    val ContainerShape = RoundedCornerShape(12.dp)
+
+    /**
+     * The inset between the edge of the container and the thumbnail, which leaves a frame of the
+     * container color around the thumbnail.
+     */
+    val ThumbnailInset = 2.dp
+
+    /** The shape of the thumbnail, concentric with [ContainerShape]. */
+    val ThumbnailShape = RoundedCornerShape(10.dp)
+}
+
+/**
  * A composable that displays thumbnail image that can be clicked to open the full media in
- * post-capture
+ * post-capture.
+ *
+ * The container color is determined by [LocalCameraControlBackgroundStyle], so that the image well
+ * remains legible when drawn over the viewfinder.
  *
  * @param imageWellUiState the [ImageWellUiState] for this component
  * @param onClick the callback for when the image well is clicked
  * @param modifier the modifier for this component
- * @param shape the shape of the image well
+ * @param shape the shape of the image well's outer container
  * @param enabled true if the image well is enabled
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
@@ -67,7 +90,7 @@ fun ImageWell(
     imageWellUiState: ImageWellUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape = ImageWellTokens.ContainerShape,
     enabled: Boolean = true
 ) {
     if (imageWellUiState is ImageWellUiState.Content) {
@@ -75,13 +98,19 @@ fun ImageWell(
         val animationSpec: FiniteAnimationSpec<IntOffset> =
             if (disableAnimations) snap() else tween(300)
 
+        // The container keeps its color when disabled so the control does not fade out over the
+        // viewfinder.
+        val containerColor = LocalCameraControlBackgroundStyle.current.containerColor
+
         Box(
             modifier = modifier
                 .testTag(IMAGE_WELL_TAG)
                 .size(IconButtonDefaults.mediumContainerSize())
-                .border(2.dp, Color.White, shape)
                 .clip(shape)
+                .background(containerColor)
                 .clickable(onClick = onClick, enabled = enabled)
+                .padding(ImageWellTokens.ThumbnailInset)
+                .clip(ImageWellTokens.ThumbnailShape)
         ) {
             AnimatedContent(
                 targetState = imageWellUiState.mediaDescriptor,
@@ -120,24 +149,41 @@ fun ImageWell(
     }
 }
 
-@Preview
+/**
+ * Shows an [ImageWell] with a solid blue thumbnail over a gray gradient, using the
+ * [LocalCameraControlBackgroundStyle] provided by the caller.
+ */
 @Composable
-private fun ImageWellPreview() {
+internal fun PreviewImageWell() {
     val previewBitmap = createBitmap(1000, 1000).apply {
         eraseColor(android.graphics.Color.BLUE)
     }
-    val mediaDescriptor = MediaDescriptor.Content.Image(
-        uri = Uri.EMPTY,
-        thumbnail = previewBitmap
-    )
     val imageWellUiState = ImageWellUiState.Content(
-        mediaDescriptor = mediaDescriptor
+        mediaDescriptor = MediaDescriptor.Content.Image(
+            uri = Uri.EMPTY,
+            thumbnail = previewBitmap
+        )
     )
 
-    MaterialTheme {
-        ImageWell(
-            imageWellUiState = imageWellUiState,
-            onClick = {}
-        )
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(
+            modifier = Modifier
+                .background(Brush.verticalGradient(colors = listOf(Color.Gray, Color.DarkGray)))
+                .padding(8.dp)
+        ) {
+            ImageWell(
+                imageWellUiState = imageWellUiState,
+                onClick = {}
+            )
+        }
     }
+}
+
+/**
+ * Preview of the [ImageWell] with the default background style.
+ */
+@Preview
+@Composable
+internal fun ImageWellPreview() {
+    PreviewImageWell()
 }
