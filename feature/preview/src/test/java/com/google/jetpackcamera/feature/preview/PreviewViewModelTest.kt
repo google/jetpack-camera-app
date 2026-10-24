@@ -35,6 +35,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
@@ -361,6 +362,26 @@ class PreviewViewModelTest {
             startCameraUntilRunning()
 
             assertThat(cameraSystem.isLensFacingFront).isTrue()
+        }
+
+    @Test
+    fun defaultMirrorModeChangedBeforeCreation_propagatesToCameraSystem() =
+        runTest(StandardTestDispatcher()) {
+            previewViewModel = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(mirrorMode = MirrorMode.ON_FRONT_ONLY)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.empty(),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate,
+                cameraFeaturePolicy = defaultTestPolicy
+            )
+            startCameraUntilRunning()
+
+            assertThat(cameraSystem.getCurrentSettings().value?.mirrorMode)
+                .isEqualTo(MirrorMode.ON_FRONT_ONLY)
         }
 
     @Test
