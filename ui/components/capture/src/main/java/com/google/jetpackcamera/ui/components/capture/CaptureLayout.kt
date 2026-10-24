@@ -319,7 +319,9 @@ private fun VerticalMaterialControls(
                         modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.CenterStart
                     ) {
-                        quickSettingsToggleButton(Modifier)
+                        OverlapAwareStyleProvider {
+                            quickSettingsToggleButton(Modifier)
+                        }
                     }
 
                     // capture mode toggle switch center
