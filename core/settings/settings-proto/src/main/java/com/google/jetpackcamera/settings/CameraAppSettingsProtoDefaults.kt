@@ -25,6 +25,7 @@ import com.google.jetpackcamera.model.proto.FlashMode
 import com.google.jetpackcamera.model.proto.ImageOutputFormat
 import com.google.jetpackcamera.model.proto.LensFacing
 import com.google.jetpackcamera.model.proto.LowLightBoostPriority
+import com.google.jetpackcamera.model.proto.MirrorMode
 import com.google.jetpackcamera.model.proto.StabilizationMode
 import com.google.jetpackcamera.model.proto.VideoQuality
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
@@ -42,7 +43,7 @@ import com.google.jetpackcamera.settings.proto.cameraAppSettings
  *
  * The exceptions are the fields that can be configured through
  * [com.google.jetpackcamera.settings.model.CameraFeaturePolicy] (`flash_mode`, `aspect_ratio`,
- * `dynamic_range`, and `image_format`). These remain `<ENUM_NAME>_UNSPECIFIED` until the user
+ * `dynamic_range`, `image_format`, and `mirror_mode`). These remain `<ENUM_NAME>_UNSPECIFIED` until the user
  * selects a value, so that [toModel] can resolve them against the baseline defaults supplied at
  * read time instead of persisting a fixed default that would mask a policy default.
  */
@@ -54,6 +55,7 @@ val DEFAULT_CAMERA_APP_SETTINGS_PROTO: CameraAppSettingsProto = cameraAppSetting
     stabilizationMode = StabilizationMode.STABILIZATION_MODE_AUTO
     dynamicRange = DynamicRange.DYNAMIC_RANGE_UNSPECIFIED
     imageFormat = ImageOutputFormat.IMAGE_OUTPUT_FORMAT_UNSPECIFIED
+    mirrorMode = MirrorMode.MIRROR_MODE_UNSPECIFIED
     maxVideoDurationMillis = UNLIMITED_VIDEO_DURATION
     videoQuality = VideoQuality.VIDEO_QUALITY_UNSPECIFIED
     audioEnabled = true

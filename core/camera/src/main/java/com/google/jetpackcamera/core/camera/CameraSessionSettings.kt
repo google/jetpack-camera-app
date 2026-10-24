@@ -26,6 +26,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
@@ -48,11 +49,17 @@ internal sealed interface PerpetualSessionSettings {
         val stabilizationMode: StabilizationMode,
         val dynamicRange: DynamicRange,
         val videoQuality: VideoQuality,
+        val mirrorMode: MirrorMode,
         val imageFormat: ImageOutputFormat,
         val lowLightBoostPriority: LowLightBoostPriority,
         val activeCaptureSubMode: CaptureSubModeFeatureKey? = null
     ) : PerpetualSessionSettings
 
+    /**
+     * A session whose use cases are created by a capture sub-mode provider.
+     *
+     * The mirror mode is not applied to custom sessions, since JCA does not create their use cases.
+     */
     data class CustomSession(
         val subModeKey: CaptureSubModeFeatureKey,
         override val aspectRatio: AspectRatio,

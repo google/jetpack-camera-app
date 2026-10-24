@@ -26,6 +26,7 @@ import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.VideoQuality
@@ -71,6 +72,10 @@ internal suspend fun runConcurrentCameraSession(
                 StabilizationMode.OFF,
                 DynamicRange.SDR,
                 VideoQuality.UNSPECIFIED,
+                // TODO: Apply the mirror mode in concurrent camera mode. Use case mirror modes
+                //  apply to the whole composited frame, so mirroring only the front camera needs a
+                //  negative scaleX in that camera's CompositionSettings instead.
+                MirrorMode.OFF,
                 backgroundDispatcher
             )
         } else {

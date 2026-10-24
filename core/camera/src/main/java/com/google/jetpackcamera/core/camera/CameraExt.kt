@@ -28,6 +28,7 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.MirrorMode as CXMirrorMode
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.UseCaseGroup
@@ -39,6 +40,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostAvailability
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.VideoQuality.FHD
@@ -73,6 +75,24 @@ fun DynamicRange.toCXDynamicRange(): CXDynamicRange {
         DynamicRange.SDR -> CXDynamicRange.SDR
         DynamicRange.HLG10 -> CXDynamicRange.HLG_10_BIT
     }
+}
+
+internal fun MirrorMode.toCXMirrorMode(): Int = when (this) {
+    MirrorMode.OFF -> CXMirrorMode.MIRROR_MODE_OFF
+    MirrorMode.ON -> CXMirrorMode.MIRROR_MODE_ON
+    MirrorMode.ON_FRONT_ONLY -> CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY
+}
+
+/**
+ * Maps [MirrorMode] to the CameraX mirror mode for the preview.
+ *
+ * The preview is always mirrored for front-facing lenses so that it behaves like a mirror, so only
+ * [MirrorMode.ON] changes it, to also mirror the preview for other lenses.
+ */
+internal fun MirrorMode.toCXPreviewMirrorMode(): Int = when (this) {
+    MirrorMode.ON -> CXMirrorMode.MIRROR_MODE_ON
+    MirrorMode.OFF,
+    MirrorMode.ON_FRONT_ONLY -> CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY
 }
 
 fun LensFacing.toCameraSelector(): CameraSelector = when (this) {

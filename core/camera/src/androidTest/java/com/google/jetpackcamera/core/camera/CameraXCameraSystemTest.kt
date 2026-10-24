@@ -19,6 +19,7 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.ImageFormat
+import android.media.ExifInterface
 import android.net.Uri
 import android.util.Size
 import androidx.camera.camera2.interop.cameraCharacteristics
@@ -67,6 +68,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -116,6 +118,12 @@ class CameraXCameraSystemTest {
         private const val GENERAL_TIMEOUT_MS = 3_000L
         private const val RECORDING_TIMEOUT_MS = 10_000L
         private const val RECORDING_START_DURATION_MS = 500L
+        private val FLIPPED_EXIF_ORIENTATIONS = setOf(
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL,
+            ExifInterface.ORIENTATION_FLIP_VERTICAL,
+            ExifInterface.ORIENTATION_TRANSPOSE,
+            ExifInterface.ORIENTATION_TRANSVERSE
+        )
     }
 
     @get:Rule
@@ -161,6 +169,68 @@ class CameraXCameraSystemTest {
         if (savedUri != null) {
             filesToDelete.add(savedUri)
         }
+    }
+
+    @Test
+    fun captureImage_frontCameraWithMirrorModeOnFrontOnly_isFlipped(): Unit = runBlocking {
+        assertCaptureFlipped(
+            lensFacing = LensFacing.FRONT,
+            mirrorMode = MirrorMode.ON_FRONT_ONLY,
+            expectedFlipped = true
+        )
+    }
+
+    @Test
+    fun captureImage_backCameraWithMirrorModeOnFrontOnly_isNotFlipped(): Unit = runBlocking {
+        assertCaptureFlipped(
+            lensFacing = LensFacing.BACK,
+            mirrorMode = MirrorMode.ON_FRONT_ONLY,
+            expectedFlipped = false
+        )
+    }
+
+    @Test
+    fun captureImage_frontCameraWithMirrorModeOff_isNotFlipped(): Unit = runBlocking {
+        assertCaptureFlipped(
+            lensFacing = LensFacing.FRONT,
+            mirrorMode = MirrorMode.OFF,
+            expectedFlipped = false
+        )
+    }
+
+    private suspend fun assertCaptureFlipped(
+        lensFacing: LensFacing,
+        mirrorMode: MirrorMode,
+        expectedFlipped: Boolean
+    ) {
+        // Arrange.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                cameraLensFacing = lensFacing,
+                mirrorMode = mirrorMode
+            )
+        )
+        val availableLenses = cameraSystem.getSystemConstraints().value?.availableLenses
+        assume().withMessage("No $lensFacing camera, skip the test.")
+            .that(availableLenses?.contains(lensFacing)).isTrue()
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        // Act.
+        val savedUri = cameraSystem.takePicture(
+            context.contentResolver,
+            SaveLocation.Default
+        ) {}.savedUri
+        assertThat(savedUri).isNotNull()
+        filesToDelete.add(savedUri!!)
+
+        // Assert.
+        val orientation = contentResolver.openInputStream(savedUri)!!.use { inputStream ->
+            ExifInterface(inputStream).getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED
+            )
+        }
+        assertThat(orientation in FLIPPED_EXIF_ORIENTATIONS).isEqualTo(expectedFlipped)
     }
 
     @Test

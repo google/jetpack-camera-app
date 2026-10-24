@@ -37,6 +37,13 @@
     <!-- Accessibility state description (read aloud by screen readers, never shown visually) for the "Default to Front Camera" switch on the settings screen when the rear-facing camera is the default. Noun phrase naming the selected lens. "Back" refers to the rear-facing camera on the back of the device, not the navigation action to go back. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="default_facing_camera_description_back">Back camera</string>
 
+    <!-- Title of the settings switch that saves photos and videos taken with the front-facing camera mirrored, matching the mirrored on-screen preview. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="mirror_front_camera_title">Mirror Front Camera</string>
+    <!-- Subtitle under the "Mirror Front Camera" switch on the settings screen when the switch is on. "Photos" is a generic term for pictures, not a product name. [CHAR LIMIT=NONE] -->
+    <string name="mirror_front_camera_description_on">Front camera photos and videos are saved as shown in the preview</string>
+    <!-- Subtitle under the "Mirror Front Camera" switch on the settings screen when the switch is off, meaning photos and videos are saved without the left-right flip that the preview shows. "Photos" is a generic term for pictures, not a product name. [CHAR LIMIT=NONE] -->
+    <string name="mirror_front_camera_description_off">Front camera photos and videos are saved without mirroring</string>
+
     <!-- Title of the setting dialog and row for configuring the app dark theme. [CHAR LIMIT=NONE] -->
     <string name="dark_mode_title">Set Dark Mode</string>
 

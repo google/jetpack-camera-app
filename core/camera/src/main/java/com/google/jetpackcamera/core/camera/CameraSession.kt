@@ -84,6 +84,7 @@ import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
@@ -137,7 +138,7 @@ internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     cameraConstraints: CameraConstraints?,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture) -> Unit = {}
+    onImageCaptureCreated: (ImageCapture, LensFacing) -> Unit = { _, _ -> }
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
     val initialCameraSelector = transientSettings.filterNotNull().first()
@@ -154,6 +155,7 @@ internal suspend fun runSingleCameraSession(
                     sessionSettings.stabilizationMode,
                     sessionSettings.dynamicRange,
                     sessionSettings.videoQuality,
+                    sessionSettings.mirrorMode,
                     backgroundDispatcher
                 )
             }
@@ -294,11 +296,14 @@ internal suspend fun runSingleCameraSession(
                             imageFormat = sessionSettings.imageFormat,
                             captureMode = sessionSettings.captureMode,
                             effect = effect,
-                            captureResults = captureResults
+                            captureResults = captureResults,
+                            mirrorMode = sessionSettings.mirrorMode
                         )
                     }.apply {
                         attachPreviewSurfaceProvider(surfaceRequests)
-                        getImageCapture()?.let(onImageCaptureCreated)
+                        getImageCapture()?.let { imageCapture ->
+                            onImageCaptureCreated(imageCapture, cameraInfo.appLensFacing)
+                        }
                     }
 
                     cameraProvider.runWith(
@@ -727,13 +732,15 @@ internal fun createUseCaseGroup(
     imageFormat: ImageOutputFormat,
     captureMode: CaptureMode,
     effect: CameraEffect? = null,
-    captureResults: MutableStateFlow<TotalCaptureResult?>? = null
+    captureResults: MutableStateFlow<TotalCaptureResult?>? = null,
+    mirrorMode: MirrorMode = MirrorMode.OFF
 ): UseCaseGroup {
     val previewUseCase =
         createPreviewUseCase(
             cameraInfo,
             aspectRatio,
             stabilizationMode,
+            mirrorMode,
             captureResults
         )
 
@@ -819,6 +826,7 @@ internal fun createVideoUseCase(
     stabilizationMode: StabilizationMode,
     dynamicRange: DynamicRange,
     videoQuality: VideoQuality,
+    mirrorMode: MirrorMode,
     backgroundDispatcher: CoroutineDispatcher
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
@@ -839,18 +847,20 @@ internal fun createVideoUseCase(
             }
         }.build()
 
-    return VideoCapture.Builder(recorder).apply {
-        // set video stabilization
-        if (stabilizationMode == StabilizationMode.HIGH_QUALITY) {
-            setVideoStabilizationEnabled(true)
-        }
-        // set target fps
-        if (targetFrameRate != TARGET_FPS_AUTO) {
-            setTargetFrameRate(Range(targetFrameRate, targetFrameRate))
-        }
+    return VideoCapture.Builder(recorder)
+        .setMirrorMode(mirrorMode.toCXMirrorMode())
+        .apply {
+            // set video stabilization
+            if (stabilizationMode == StabilizationMode.HIGH_QUALITY) {
+                setVideoStabilizationEnabled(true)
+            }
+            // set target fps
+            if (targetFrameRate != TARGET_FPS_AUTO) {
+                setTargetFrameRate(Range(targetFrameRate, targetFrameRate))
+            }
 
-        setDynamicRange(dynamicRange.toCXDynamicRange())
-    }.build()
+            setDynamicRange(dynamicRange.toCXDynamicRange())
+        }.build()
 }
 
 private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int =
@@ -875,6 +885,7 @@ private fun createPreviewUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     stabilizationMode: StabilizationMode,
+    mirrorMode: MirrorMode,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null
 ): Preview = Preview.Builder().apply {
     updateCameraStateWithCaptureResults(
@@ -917,6 +928,8 @@ private fun createPreviewUseCase(
     setResolutionSelector(
         getResolutionSelector(cameraInfo.sensorLandscapeRatio, aspectRatio)
     )
+
+    setMirrorMode(mirrorMode.toCXPreviewMirrorMode())
 }.build()
 
 /**
