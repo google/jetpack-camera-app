@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.util.Log
 import android.util.Range
 import androidx.activity.compose.BackHandler
@@ -38,6 +40,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -190,13 +193,6 @@ fun PreviewScreen(
         }
     }
 
-    val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        debouncedOrientationFlow(context).collect(
-            viewModel.cameraController::setDisplayRotation
-        )
-    }
-
     ContentScreen(
         modifier = modifier,
         captureUiStateProvider = readyStateProvider,
@@ -252,6 +248,31 @@ private fun ContentScreen(
     val isVideoRecordingActive = remember {
         derivedStateOf {
             currentCaptureUiStateProvider().videoRecordingState is VideoRecordingState.Active
+        }
+    }
+    val isVideoRecordingInProgress = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().videoRecordingState !is VideoRecordingState.Inactive
+        }
+    }
+
+    val context = LocalContext.current
+    DisposableEffect(context) {
+        val activity = context as? Activity
+        onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+        }
+    }
+
+    LaunchedEffect(isVideoRecordingInProgress.value, cameraController) {
+        val activity = context as? Activity
+        if (isVideoRecordingInProgress.value) {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+        } else {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+            cameraController?.let { controller ->
+                debouncedOrientationFlow(context).collect(controller::setDisplayRotation)
+            }
         }
     }
 

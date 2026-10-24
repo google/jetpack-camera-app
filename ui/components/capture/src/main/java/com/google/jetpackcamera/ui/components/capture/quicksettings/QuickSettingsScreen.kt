@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +38,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.ui.components.capture.LocalDeviceRotation
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
@@ -71,11 +74,16 @@ fun QuickSettingsScaffoldContent(
     showMoreSettingsButton: Boolean = true
 ) {
     if (quickSettingsUiState is QuickSettingsUiState.Available) {
+        val deviceRotation = LocalDeviceRotation.current
         Column(
             modifier = modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
-                .padding(bottom = 24.dp)
+                .padding(
+                    top = if (deviceRotation.isLandscape) 24.dp else 0.dp,
+                    bottom = 24.dp
+                )
                 .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
         ) {
             QuickSettingsContent(

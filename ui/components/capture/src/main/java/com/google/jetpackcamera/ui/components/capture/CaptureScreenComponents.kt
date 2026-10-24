@@ -482,7 +482,9 @@ fun PauseResumeToggleButton(
                     currentRecordingState !is VideoRecordingState.Active.Paused
                 )
             },
-            modifier = modifier.size(size)
+            modifier = modifier
+                .size(size)
+                .animateToUpright()
         ) {
             Icon(
                 modifier = Modifier
@@ -538,6 +540,7 @@ fun AmplitudeToggleButton(
         FilledIconToggleButton(
             modifier = modifier
                 .size(buttonSize)
+                .animateToUpright()
                 .testTag(AUDIO_INPUT_TOGGLE)
                 .semantics {
                     stateDescription = if (audioUiState is AudioUiState.Enabled.On) {
@@ -861,10 +864,7 @@ fun PreviewDisplay(
             contentAlignment = Alignment.Center
         ) {
             if (surfaceRequest != null) {
-                val implementationMode = when {
-                    Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
-                    else -> ImplementationMode.EMBEDDED
-                }
+                val implementationMode = ImplementationMode.EMBEDDED
 
                 DetectWindowColorModeChanges(
                     surfaceRequest = surfaceRequest,
@@ -993,7 +993,9 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             if (stabilizationUiState.stabilizationMode != StabilizationMode.OFF) {
                 Icon(
-                    modifier = modifier.size(IconButtonDefaults.smallIconSize),
+                    modifier = modifier
+                        .size(IconButtonDefaults.smallIconSize)
+                        .animateToUpright(),
 
                     painter = when (stabilizationUiState) {
                         is StabilizationUiState.Specific ->
@@ -1075,7 +1077,9 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
     CompositionLocalProvider(LocalContentColor provides Color.White) {
         if (videoQuality != VideoQuality.UNSPECIFIED) {
             Icon(
-                modifier = modifier.size(IconButtonDefaults.smallIconSize),
+                modifier = modifier
+                    .size(IconButtonDefaults.smallIconSize)
+                    .animateToUpright(),
 
                 painter = when (videoQuality) {
                     VideoQuality.SD ->
@@ -1161,7 +1165,8 @@ fun FlipCameraButton(
         }
         val backgroundStyle = LocalCameraControlBackgroundStyle.current
         FilledIconButton(
-            modifier = modifier.size(56.dp),
+            modifier = modifier
+                .size(56.dp),
             onClick = onClick,
             enabled = enabled,
             shape = RoundedCornerShape(12.dp),
@@ -1185,6 +1190,7 @@ fun FlipCameraButton(
                 contentDescription = contentDescription,
                 modifier = Modifier
                     .size(IconButtonDefaults.largeIconSize)
+                    .animateToUpright()
                     .rotate(animatedRotation.value)
             )
         }
