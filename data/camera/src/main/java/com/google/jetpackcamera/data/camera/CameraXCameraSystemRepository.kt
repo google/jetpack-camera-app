@@ -79,7 +79,10 @@ class CameraXCameraSystemRepository(
             val initialSettings = defaultSettings
                 .applyExternalCaptureMode(launchConfig.externalCaptureMode)
                 .copy(debugSettings = launchConfig.debugSettings)
-            cameraSystem.initialize(initialSettings) { properties ->
+            cameraSystem.initialize(
+                initialSettings,
+                launchConfig.externalCaptureMode
+            ) { properties ->
                 _cameraPropertiesJSON.value = properties
             }
             defaultSettings
