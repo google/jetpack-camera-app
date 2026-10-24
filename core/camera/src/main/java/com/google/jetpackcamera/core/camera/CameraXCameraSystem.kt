@@ -1396,6 +1396,7 @@ class CameraXCameraSystem(
     override suspend fun setMirrorMode(mirrorMode: MirrorMode) {
         currentSettings.update { old ->
             old?.copy(mirrorMode = mirrorMode)
+                ?.tryApplyCaptureSubModeConstraints()
         }
     }
 

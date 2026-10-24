@@ -920,6 +920,28 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun setMirrorMode_inCaptureSubMode_keepsPolicyValue(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the mirror mode.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    mirrorMode = SettingConfig(MirrorMode.OFF, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act.
+        cameraSystem.setMirrorMode(MirrorMode.ON_FRONT_ONLY)
+
+        // Assert. The sub-mode stays active and its policy value is kept.
+        val settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.mirrorMode).isEqualTo(MirrorMode.OFF)
+    }
+
+    @Test
     fun initialize_offersHdrVideoOnlyWithTenBitCapability(): Unit = runBlocking {
         // Arrange.
         val cameraSystem = createAndInitCameraXCameraSystem()
