@@ -693,7 +693,8 @@ class CameraXCameraSystem(
                                     PerpetualSessionSettings.ConcurrentCamera(
                                         primaryCameraInfo = nonNullPrimary,
                                         secondaryCameraInfo = nonNullSecondary,
-                                        aspectRatio = currentCameraSettings.aspectRatio
+                                        aspectRatio = currentCameraSettings.aspectRatio,
+                                        mirrorMode = currentCameraSettings.mirrorMode
                                     )
                                 }
                             }

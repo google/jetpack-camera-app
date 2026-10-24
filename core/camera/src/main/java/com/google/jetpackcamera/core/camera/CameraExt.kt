@@ -95,6 +95,28 @@ internal fun MirrorMode.toCXPreviewMirrorMode(): Int = when (this) {
     MirrorMode.ON_FRONT_ONLY -> CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY
 }
 
+/**
+ * Maps [MirrorMode] to the CameraX mirror mode for the preview of a concurrent camera session.
+ *
+ * Use case mirror modes apply to the whole composited frame, so when this mode mirrors captures,
+ * each camera is mirrored in the composition instead (see [concurrentCompositionScaleX]) and the
+ * preview use case must not mirror the frame again. [MirrorMode.OFF] keeps the CameraX default.
+ */
+internal fun MirrorMode.toCXConcurrentPreviewMirrorMode(): Int = when (this) {
+    MirrorMode.OFF -> CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY
+    MirrorMode.ON,
+    MirrorMode.ON_FRONT_ONLY -> CXMirrorMode.MIRROR_MODE_OFF
+}
+
+/**
+ * Returns the horizontal composition scale for a camera in a concurrent camera session.
+ *
+ * A negative scale mirrors that camera's frame within the composited output, which applies to
+ * both the preview and the recording.
+ */
+internal fun MirrorMode.concurrentCompositionScaleX(scale: Float, lensFacing: LensFacing): Float =
+    if (appliesTo(lensFacing)) -scale else scale
+
 fun LensFacing.toCameraSelector(): CameraSelector = when (this) {
     LensFacing.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
     LensFacing.BACK -> CameraSelector.DEFAULT_BACK_CAMERA

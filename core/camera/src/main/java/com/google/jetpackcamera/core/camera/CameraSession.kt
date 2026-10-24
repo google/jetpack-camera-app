@@ -297,7 +297,7 @@ internal suspend fun runSingleCameraSession(
                             captureMode = sessionSettings.captureMode,
                             effect = effect,
                             captureResults = captureResults,
-                            mirrorMode = sessionSettings.mirrorMode
+                            previewMirrorMode = sessionSettings.mirrorMode.toCXPreviewMirrorMode()
                         )
                     }.apply {
                         attachPreviewSurfaceProvider(surfaceRequests)
@@ -733,14 +733,14 @@ internal fun createUseCaseGroup(
     captureMode: CaptureMode,
     effect: CameraEffect? = null,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null,
-    mirrorMode: MirrorMode = MirrorMode.OFF
+    previewMirrorMode: Int = MirrorMode.OFF.toCXPreviewMirrorMode()
 ): UseCaseGroup {
     val previewUseCase =
         createPreviewUseCase(
             cameraInfo,
             aspectRatio,
             stabilizationMode,
-            mirrorMode,
+            previewMirrorMode,
             captureResults
         )
 
@@ -885,7 +885,7 @@ private fun createPreviewUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     stabilizationMode: StabilizationMode,
-    mirrorMode: MirrorMode,
+    previewMirrorMode: Int,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null
 ): Preview = Preview.Builder().apply {
     updateCameraStateWithCaptureResults(
@@ -929,7 +929,7 @@ private fun createPreviewUseCase(
         getResolutionSelector(cameraInfo.sensorLandscapeRatio, aspectRatio)
     )
 
-    setMirrorMode(mirrorMode.toCXPreviewMirrorMode())
+    setMirrorMode(previewMirrorMode)
 }.build()
 
 /**

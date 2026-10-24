@@ -149,6 +149,28 @@ class CameraExtTest {
         assertThat(MirrorMode.ON.toCXPreviewMirrorMode()).isEqualTo(CXMirrorMode.MIRROR_MODE_ON)
     }
 
+    @Test
+    fun toCXConcurrentPreviewMirrorMode_disablesPreviewMirroringWhenCamerasAreMirrored() {
+        assertThat(MirrorMode.OFF.toCXConcurrentPreviewMirrorMode())
+            .isEqualTo(CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
+        assertThat(MirrorMode.ON_FRONT_ONLY.toCXConcurrentPreviewMirrorMode())
+            .isEqualTo(CXMirrorMode.MIRROR_MODE_OFF)
+        assertThat(MirrorMode.ON.toCXConcurrentPreviewMirrorMode())
+            .isEqualTo(CXMirrorMode.MIRROR_MODE_OFF)
+    }
+
+    @Test
+    fun concurrentCompositionScaleX_negatesScaleForMirroredLenses() {
+        assertThat(MirrorMode.ON_FRONT_ONLY.concurrentCompositionScaleX(0.5f, LensFacing.FRONT))
+            .isEqualTo(-0.5f)
+        assertThat(MirrorMode.ON_FRONT_ONLY.concurrentCompositionScaleX(0.5f, LensFacing.BACK))
+            .isEqualTo(0.5f)
+        assertThat(MirrorMode.OFF.concurrentCompositionScaleX(1.0f, LensFacing.FRONT))
+            .isEqualTo(1.0f)
+        assertThat(MirrorMode.ON.concurrentCompositionScaleX(1.0f, LensFacing.BACK))
+            .isEqualTo(-1.0f)
+    }
+
     private fun createCharacteristics(capabilities: IntArray): CameraCharacteristics {
         val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
         shadowOf(characteristics)
