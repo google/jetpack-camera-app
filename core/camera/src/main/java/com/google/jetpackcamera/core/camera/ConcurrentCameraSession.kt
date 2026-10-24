@@ -26,6 +26,7 @@ import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.VideoQuality
@@ -71,6 +72,9 @@ internal suspend fun runConcurrentCameraSession(
                 StabilizationMode.OFF,
                 DynamicRange.SDR,
                 VideoQuality.UNSPECIFIED,
+                // Use case mirror modes apply to the whole composited frame, so each camera is
+                // mirrored through its CompositionSettings below instead.
+                MirrorMode.OFF,
                 backgroundDispatcher
             )
         } else {
@@ -84,7 +88,8 @@ internal suspend fun runConcurrentCameraSession(
             aspectRatio = sessionSettings.aspectRatio,
             imageFormat = ImageOutputFormat.JPEG,
             captureMode = sessionSettings.captureMode,
-            videoCaptureUseCase = videoCapture
+            videoCaptureUseCase = videoCapture,
+            previewMirrorMode = sessionSettings.mirrorMode.toCXConcurrentPreviewMirrorMode()
         ).apply { attachPreviewSurfaceProvider(surfaceRequests) }
 
         val cameraConfigs = listOf(
@@ -93,7 +98,13 @@ internal suspend fun runConcurrentCameraSession(
                 CompositionSettings.Builder()
                     .setAlpha(1.0f)
                     .setOffset(0.0f, 0.0f)
-                    .setScale(1.0f, 1.0f)
+                    .setScale(
+                        sessionSettings.mirrorMode.concurrentCompositionScaleX(
+                            scale = 1.0f,
+                            lensFacing = primaryLensFacing
+                        ),
+                        1.0f
+                    )
                     .build()
             ),
             Pair(
@@ -101,7 +112,13 @@ internal suspend fun runConcurrentCameraSession(
                 CompositionSettings.Builder()
                     .setAlpha(1.0f)
                     .setOffset(2 / 3f - 0.1f, -2 / 3f + 0.1f)
-                    .setScale(1 / 3f, 1 / 3f)
+                    .setScale(
+                        sessionSettings.mirrorMode.concurrentCompositionScaleX(
+                            scale = 1 / 3f,
+                            lensFacing = secondaryLensFacing
+                        ),
+                        1 / 3f
+                    )
                     .build()
             )
         )

@@ -24,6 +24,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MirrorMode
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,14 +38,16 @@ class PolicyOverridesTest {
         aspectRatio = AspectRatio.ONE_ONE,
         flashMode = FlashMode.ON,
         imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
-        dynamicRange = DynamicRange.HLG10
+        dynamicRange = DynamicRange.HLG10,
+        mirrorMode = MirrorMode.ON_FRONT_ONLY
     )
 
     private val restrictivePolicy = CameraFeaturePolicy(
         aspectRatio = SettingConfig(AspectRatio.THREE_FOUR, OptionVisibility.Hidden),
         flashMode = SettingConfig(FlashMode.OFF, OptionVisibility.Hidden),
         imageFormat = SettingConfig(ImageOutputFormat.JPEG, OptionVisibility.Hidden),
-        dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden)
+        dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden),
+        mirrorMode = SettingConfig(MirrorMode.OFF, OptionVisibility.Hidden)
     )
 
     private fun enforce(
@@ -62,6 +65,7 @@ class PolicyOverridesTest {
         assertThat(enforced.flashMode).isEqualTo(FlashMode.OFF)
         assertThat(enforced.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(enforced.dynamicRange).isEqualTo(DynamicRange.SDR)
+        assertThat(enforced.mirrorMode).isEqualTo(MirrorMode.OFF)
 
         val restored = overrides.restore(enforced)
 
