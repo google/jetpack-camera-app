@@ -19,7 +19,6 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.ImageFormat
-import android.media.ExifInterface
 import android.net.Uri
 import android.util.Size
 import androidx.camera.camera2.interop.cameraCharacteristics
@@ -38,6 +37,7 @@ import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
+import androidx.exifinterface.media.ExifInterface
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -118,12 +118,6 @@ class CameraXCameraSystemTest {
         private const val GENERAL_TIMEOUT_MS = 3_000L
         private const val RECORDING_TIMEOUT_MS = 10_000L
         private const val RECORDING_START_DURATION_MS = 500L
-        private val FLIPPED_EXIF_ORIENTATIONS = setOf(
-            ExifInterface.ORIENTATION_FLIP_HORIZONTAL,
-            ExifInterface.ORIENTATION_FLIP_VERTICAL,
-            ExifInterface.ORIENTATION_TRANSPOSE,
-            ExifInterface.ORIENTATION_TRANSVERSE
-        )
     }
 
     @get:Rule
@@ -224,13 +218,10 @@ class CameraXCameraSystemTest {
         filesToDelete.add(savedUri!!)
 
         // Assert.
-        val orientation = contentResolver.openInputStream(savedUri)!!.use { inputStream ->
-            ExifInterface(inputStream).getAttributeInt(
-                ExifInterface.TAG_ORIENTATION,
-                ExifInterface.ORIENTATION_UNDEFINED
-            )
+        val isFlipped = contentResolver.openInputStream(savedUri)!!.use { inputStream ->
+            ExifInterface(inputStream).isFlipped
         }
-        assertThat(orientation in FLIPPED_EXIF_ORIENTATIONS).isEqualTo(expectedFlipped)
+        assertThat(isFlipped).isEqualTo(expectedFlipped)
     }
 
     @Test
