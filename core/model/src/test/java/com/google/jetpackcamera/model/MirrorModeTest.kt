@@ -17,31 +17,24 @@ package com.google.jetpackcamera.model
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
-import org.junit.runners.Parameterized.Parameters
 
-@RunWith(Parameterized::class)
-class MirrorModeTest(
-    private val mirrorMode: MirrorMode,
-    private val lensFacing: LensFacing,
-    private val expectedMirrored: Boolean
-) {
-    companion object {
-        @JvmStatic
-        @Parameters(name = "{0} with {1} lens mirrors: {2}")
-        fun data(): Collection<Array<Any>> = listOf(
-            arrayOf(MirrorMode.OFF, LensFacing.BACK, false),
-            arrayOf(MirrorMode.OFF, LensFacing.FRONT, false),
-            arrayOf(MirrorMode.ON, LensFacing.BACK, true),
-            arrayOf(MirrorMode.ON, LensFacing.FRONT, true),
-            arrayOf(MirrorMode.ON_FRONT_ONLY, LensFacing.BACK, false),
-            arrayOf(MirrorMode.ON_FRONT_ONLY, LensFacing.FRONT, true)
-        )
+class MirrorModeTest {
+
+    @Test
+    fun off_appliesToNoLens() {
+        assertThat(MirrorMode.OFF.appliesTo(LensFacing.BACK)).isFalse()
+        assertThat(MirrorMode.OFF.appliesTo(LensFacing.FRONT)).isFalse()
     }
 
     @Test
-    fun appliesTo_returnsWhetherCapturesAreMirrored() {
-        assertThat(mirrorMode.appliesTo(lensFacing)).isEqualTo(expectedMirrored)
+    fun on_appliesToAllLenses() {
+        assertThat(MirrorMode.ON.appliesTo(LensFacing.BACK)).isTrue()
+        assertThat(MirrorMode.ON.appliesTo(LensFacing.FRONT)).isTrue()
+    }
+
+    @Test
+    fun onFrontOnly_appliesToFrontLensOnly() {
+        assertThat(MirrorMode.ON_FRONT_ONLY.appliesTo(LensFacing.BACK)).isFalse()
+        assertThat(MirrorMode.ON_FRONT_ONLY.appliesTo(LensFacing.FRONT)).isTrue()
     }
 }

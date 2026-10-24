@@ -831,7 +831,7 @@ fun MirrorFrontCameraSetting(
             setMirrorMode(if (on) MirrorMode.ON_FRONT_ONLY else MirrorMode.OFF)
         },
         settingValue = isMirrored,
-        enabled = mirrorModeUiState is MirrorModeUiState.Enabled
+        enabled = true
     )
 }
 
