@@ -164,9 +164,9 @@ class ZoomStateManager(
                         )
                     )
                 }
+                zoomController.setZoomAnimationState(null)
             } finally {
                 currentAnimationTarget = null
-                zoomController.setZoomAnimationState(null)
             }
         }
     }

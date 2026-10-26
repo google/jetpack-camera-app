@@ -50,12 +50,16 @@ class ZoomControllerImpl(
         if (zoomRatio.changeType is ZoomStrategy.Absolute) {
             when (zoomRatio.changeType.lensToZoom) {
                 LensToZoom.PRIMARY -> {
+                    // Drop pending zoom updates while the camera system is still initializing;
+                    // once cameraSystemProvider() resolves, launches on Dispatchers.Main.immediate
+                    // execute synchronously.
                     primaryZoomJob?.cancel()
                     primaryZoomJob = scope.launch {
                         cameraSystemProvider().changeZoomRatio(newZoomState = zoomRatio)
                     }
                 }
                 LensToZoom.SECONDARY -> {
+                    // Drop pending zoom updates while the camera system is still initializing.
                     secondaryZoomJob?.cancel()
                     secondaryZoomJob = scope.launch {
                         cameraSystemProvider().changeZoomRatio(newZoomState = zoomRatio)

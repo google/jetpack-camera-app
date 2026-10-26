@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import com.google.common.truth.Truth.assertThat
+import java.util.Locale
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -25,37 +26,157 @@ class ZoomBarComponentsTest {
 
     @Test
     fun formatZoomLabel_unselectedStops_formatsWithoutMultiplierOrLeadingZero() {
-        assertThat(formatZoomLabel(targetZoom = 0.5f, currentRatio = 1.0f, isSelected = false))
-            .isEqualTo(".5")
-        assertThat(formatZoomLabel(targetZoom = 1.0f, currentRatio = 1.0f, isSelected = false))
-            .isEqualTo("1")
-        assertThat(formatZoomLabel(targetZoom = 2.0f, currentRatio = 1.0f, isSelected = false))
-            .isEqualTo("2")
-        assertThat(formatZoomLabel(targetZoom = 5.0f, currentRatio = 1.0f, isSelected = false))
-            .isEqualTo("5")
-        assertThat(formatZoomLabel(targetZoom = 10.0f, currentRatio = 1.0f, isSelected = false))
-            .isEqualTo("10")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 0.5f,
+                currentRatio = 1.0f,
+                isSelected = false,
+                locale = Locale.US
+            )
+        ).isEqualTo(".5")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 1.0f,
+                currentRatio = 1.0f,
+                isSelected = false,
+                locale = Locale.US
+            )
+        ).isEqualTo("1")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 2.0f,
+                currentRatio = 1.0f,
+                isSelected = false,
+                locale = Locale.US
+            )
+        ).isEqualTo("2")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 5.0f,
+                currentRatio = 1.0f,
+                isSelected = false,
+                locale = Locale.US
+            )
+        ).isEqualTo("5")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 10.0f,
+                currentRatio = 1.0f,
+                isSelected = false,
+                locale = Locale.US
+            )
+        ).isEqualTo("10")
     }
 
     @Test
     fun formatZoomLabel_selectedStops_formatsWithMultiplier() {
-        assertThat(formatZoomLabel(targetZoom = 0.5f, currentRatio = 0.5f, isSelected = true))
-            .isEqualTo(".5\u00D7")
-        assertThat(formatZoomLabel(targetZoom = 1.0f, currentRatio = 1.0f, isSelected = true))
-            .isEqualTo("1\u00D7")
-        assertThat(formatZoomLabel(targetZoom = 2.0f, currentRatio = 2.0f, isSelected = true))
-            .isEqualTo("2\u00D7")
-        assertThat(formatZoomLabel(targetZoom = 5.0f, currentRatio = 5.0f, isSelected = true))
-            .isEqualTo("5\u00D7")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 0.5f,
+                currentRatio = 0.5f,
+                isSelected = true,
+                locale = Locale.US
+            )
+        ).isEqualTo(".5\u00D7")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 1.0f,
+                currentRatio = 1.0f,
+                isSelected = true,
+                locale = Locale.US
+            )
+        ).isEqualTo("1\u00D7")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 2.0f,
+                currentRatio = 2.0f,
+                isSelected = true,
+                locale = Locale.US
+            )
+        ).isEqualTo("2\u00D7")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 5.0f,
+                currentRatio = 5.0f,
+                isSelected = true,
+                locale = Locale.US
+            )
+        ).isEqualTo("5\u00D7")
     }
 
     @Test
     fun formatZoomLabel_inBetweenPinchRatio_formatsCurrentRatio() {
-        assertThat(formatZoomLabel(targetZoom = 1.0f, currentRatio = 1.4f, isSelected = true))
-            .isEqualTo("1.4\u00D7")
-        assertThat(formatZoomLabel(targetZoom = 0.5f, currentRatio = 0.7f, isSelected = true))
-            .isEqualTo(".7\u00D7")
-        assertThat(formatZoomLabel(targetZoom = 0.5f, currentRatio = 0.99f, isSelected = true))
-            .isEqualTo("1\u00D7")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 1.0f,
+                currentRatio = 1.4f,
+                isSelected = true,
+                locale = Locale.US
+            )
+        ).isEqualTo("1.4\u00D7")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 0.5f,
+                currentRatio = 0.7f,
+                isSelected = true,
+                locale = Locale.US
+            )
+        ).isEqualTo(".7\u00D7")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 0.5f,
+                currentRatio = 0.99f,
+                isSelected = true,
+                locale = Locale.US
+            )
+        ).isEqualTo("1\u00D7")
+    }
+
+    @Test
+    fun formatZoomLabel_halfUpBoundaryCases_roundsCorrectly() {
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 1.0f,
+                currentRatio = 0.95f,
+                isSelected = true,
+                locale = Locale.US
+            )
+        ).isEqualTo("1\u00D7")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 5.0f,
+                currentRatio = 4.95f,
+                isSelected = true,
+                locale = Locale.US
+            )
+        ).isEqualTo("5\u00D7")
+    }
+
+    @Test
+    fun formatZoomLabel_localeWithCommaSeparator_usesLocalizedDecimalSeparator() {
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 0.5f,
+                currentRatio = 0.5f,
+                isSelected = true,
+                locale = Locale.GERMANY
+            )
+        ).isEqualTo(",5\u00D7")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 1.0f,
+                currentRatio = 1.4f,
+                isSelected = true,
+                locale = Locale.GERMANY
+            )
+        ).isEqualTo("1,4\u00D7")
+        assertThat(
+            formatZoomLabel(
+                targetZoom = 0.5f,
+                currentRatio = 1.0f,
+                isSelected = false,
+                locale = Locale.GERMANY
+            )
+        ).isEqualTo(",5")
     }
 }

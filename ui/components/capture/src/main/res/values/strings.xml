@@ -183,4 +183,7 @@
 
     <!-- Accessibility label for the close button (X icon) that dismisses a notification banner (snackbar) on the capture screen. "Dismiss" is an imperative verb meaning to close or hide the message. [CHAR LIMIT=NONE] -->
     <string name="snackbar_dismiss_content_description">Dismiss</string>
+
+    <!-- Accessibility action label for clicking a zoom stop button (read aloud by screen readers, e.g. "Double-tap to Zoom to 2x"). %1$s is the formatted zoom level (e.g. "0.5x", "1x", "2x"). [CHAR LIMIT=NONE] -->
+    <string name="zoom_stop_click_label">Zoom to <xliff:g id="zoom_level" example="2x">%1$s</xliff:g></string>
 </resources>

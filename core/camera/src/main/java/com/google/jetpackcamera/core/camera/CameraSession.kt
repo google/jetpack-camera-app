@@ -1377,6 +1377,11 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                     val targetZoomRatio =
                         transientSettings.value?.zoomRatios?.get(targetCameraInfo.appLensFacing)
                             ?: 1.0f
+                    val zoomState = targetCameraInfo.zoomState.value
+                    val minZoom = zoomState?.minZoomRatio ?: 1.0f
+                    val maxZoom = zoomState?.maxZoomRatio ?: 1.0f
+                    val clampedTarget = targetZoomRatio.coerceIn(minZoom, maxZoom)
+                    val isTargetEssentiallyOne = kotlin.math.abs(clampedTarget - 1.0f) < 0.01f
                     currentCameraState.update { old ->
                         val currentZoomRatio = old.zoomRatios[targetCameraInfo.appLensFacing]
                         // When a lens is newly bound, initial capture results emit the hardware
@@ -1385,8 +1390,9 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         // the lens is restoring a non-1.0f target zoom so the UI doesn't flash 1x.
                         val isInitialDefaultEmission =
                             currentZoomRatio == null &&
-                                newZoomRatio == 1.0f &&
-                                targetZoomRatio != 1.0f
+                                newZoomRatio != null &&
+                                kotlin.math.abs(newZoomRatio - 1.0f) < 0.001f &&
+                                !isTargetEssentiallyOne
                         if (newZoomRatio != null &&
                             !isInitialDefaultEmission &&
                             currentZoomRatio != newZoomRatio

@@ -95,7 +95,7 @@ import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import com.google.jetpackcamera.ui.components.capture.VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.ui.components.capture.VideoQualityIcon
-import com.google.jetpackcamera.ui.components.capture.ZoomButtonRow
+import com.google.jetpackcamera.ui.components.capture.ZoomBar
 import com.google.jetpackcamera.ui.components.capture.ZoomStateManager
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
@@ -528,7 +528,7 @@ private fun ContentScreen(
     val zoomLevelDisplayLambda = remember(zoomControlState) {
         @Composable { modifier: Modifier ->
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-                ZoomButtonRow(
+                ZoomBar(
                     zoomControlUiState = zoomControlState.value,
                     onChangeZoom = { targetZoom ->
                         scope.launch {
