@@ -21,7 +21,9 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
+import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -36,12 +38,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +80,7 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
@@ -117,9 +124,13 @@ private const val SELECTION_CONFIRMATION_TIMEOUT_MS = 500L
  * Dragging moves the row with the pointer. On release, the row settles on the nearest enabled
  * item, or on the next enabled item in the swipe direction for a flick. Tapping an item scrolls it
  * to the center. In both cases, [onSelectSubMode] is invoked only after the row has settled, so
- * that the resulting camera reconfiguration does not interrupt the scroll animation. If the
- * selected sub-mode in [uiState] does not change to the committed sub-mode shortly afterwards, the
- * row returns to the selected sub-mode.
+ * that the resulting camera reconfiguration does not interrupt the scroll animation.
+ *
+ * The row stays on the most recently committed sub-mode until the selected sub-mode in [uiState]
+ * changes to it, even if a selection for an earlier commit arrives first. If the selection does
+ * not change to it shortly afterwards, the row returns to the selected sub-mode. The row also
+ * follows selection changes made outside of the carousel. These corrections never start while
+ * the user is dragging the row or while a fling or tap is moving it.
  *
  * When the carousel is drawn over the viewfinder, as reported by [OverlapAwareStyleProvider], the
  * unselected labels are drawn with a dark shadow so that they stay legible on bright scenes.
@@ -245,6 +256,7 @@ fun CaptureModeCarousel(
 
     val currentSelectedId by rememberUpdatedState(selectedId)
     val currentOnSelectSubMode by rememberUpdatedState(onSelectSubMode)
+    val currentSettleSpec by rememberUpdatedState(settleSpec)
 
     // The content coordinate that is aligned with the horizontal center of the carousel.
     val position: () -> Float = { -state.requireOffset() }
@@ -252,29 +264,75 @@ fun CaptureModeCarousel(
         derivedStateOf { geometry.nearestIndex(position()) }
     }
 
-    // Commit the item that the row comes to rest on. If the selection does not follow, for
-    // example because the camera rejected the sub-mode, return to the selected item.
+    // Movement started by the user: the fling after a drag, and the scroll after a tap. The
+    // interaction source reports neither as a drag, and both run at the same mutation priority as
+    // the corrections below, so they are counted here to keep corrections from starting, and
+    // therefore from interrupting them, while the user is moving the row.
+    val userAnimationCount = remember(state) { mutableIntStateOf(0) }
+    val isUserMovingRow by remember(state, userAnimationCount) {
+        derivedStateOf { isDragged || userAnimationCount.intValue > 0 }
+    }
+    val defaultFlingBehavior =
+        AnchoredDraggableDefaults.flingBehavior(state = state, animationSpec = settleSpec)
+    val flingBehavior = remember(defaultFlingBehavior, userAnimationCount) {
+        object : FlingBehavior {
+            override suspend fun ScrollScope.performFling(initialVelocity: Float): Float =
+                userAnimationCount.countWhile {
+                    with(defaultFlingBehavior) { performFling(initialVelocity) }
+                }
+        }
+    }
+
+    // The sub-mode that the user committed most recently, until the selected sub-mode changes to
+    // it or the wait for that change expires. While it is set, the row stays on it, so that a
+    // selection that arrives for an earlier commit does not move the row away from the user's
+    // latest choice.
+    var pendingCommit by remember(state) { mutableStateOf<CaptureSubModeId?>(null) }
+
+    // Commits the item that the user brings the row to rest on. Otherwise, keeps the row on the
+    // pending commit or, when there is none, on the selected sub-mode. Both happen only while the
+    // user is not moving the row, and in this single coroutine, so that a commit is recorded
+    // before the row is corrected.
     LaunchedEffect(state) {
-        snapshotFlow { state.settledValue }.collectLatest { settledId ->
-            if (settledId == currentSelectedId) return@collectLatest
-            currentOnSelectSubMode(settledId)
-            val followed = withTimeoutOrNull(SELECTION_CONFIRMATION_TIMEOUT_MS) {
-                snapshotFlow { currentSelectedId }.first { it == settledId }
+        var lastSettledId = state.settledValue
+        snapshotFlow {
+            CarouselSnapshot(
+                settledId = state.settledValue,
+                isUserMovingRow = isUserMovingRow,
+                selectedId = currentSelectedId,
+                pendingCommitId = pendingCommit
+            )
+        }.collectLatest { snapshot ->
+            if (snapshot.isUserMovingRow) return@collectLatest
+            val settledId = snapshot.settledId
+            if (settledId != lastSettledId) {
+                lastSettledId = settledId
+                if (settledId != snapshot.selectedId && settledId != snapshot.pendingCommitId) {
+                    pendingCommit = settledId
+                    currentOnSelectSubMode(settledId)
+                    return@collectLatest
+                }
             }
-            if (followed == null) {
-                snapshotFlow { isDragged }.first { !it }
-                // Launched separately so that a drag that interrupts the animation does not end
-                // this collection.
-                scope.launch { state.animateTo(currentSelectedId, settleSpec) }
+            // A pending commit that is no longer an anchor, for example because it was disabled,
+            // cannot be shown, so the row returns to the selected sub-mode instead.
+            val targetId = snapshot.pendingCommitId?.takeIf { state.anchors.hasPositionFor(it) }
+                ?: snapshot.selectedId
+            if (settledId != targetId) {
+                // A drag, fling, or tap that starts during this animation takes over from it.
+                state.animateTo(targetId, currentSettleSpec)
             }
         }
     }
 
-    // Follow selection changes made outside of the carousel, once the user stops dragging.
-    LaunchedEffect(state, selectedId) {
-        snapshotFlow { isDragged }.first { !it }
-        if (state.settledValue != selectedId) {
-            state.animateTo(selectedId, settleSpec)
+    // Ends the pending commit once the selected sub-mode changes to it, or when the wait expires
+    // because the selection did not follow, for example because the camera rejected the sub-mode.
+    LaunchedEffect(state) {
+        snapshotFlow { pendingCommit }.collectLatest { pendingId ->
+            if (pendingId == null) return@collectLatest
+            withTimeoutOrNull(SELECTION_CONFIRMATION_TIMEOUT_MS) {
+                snapshotFlow { currentSelectedId }.first { it == pendingId }
+            }
+            pendingCommit = null
         }
     }
 
@@ -300,10 +358,7 @@ fun CaptureModeCarousel(
                 state = state,
                 orientation = Orientation.Horizontal,
                 interactionSource = interactionSource,
-                flingBehavior = AnchoredDraggableDefaults.flingBehavior(
-                    state = state,
-                    animationSpec = settleSpec
-                )
+                flingBehavior = flingBehavior
             )
     ) {
         // Base layer: interactive, unselected-styled labels.
@@ -330,7 +385,12 @@ fun CaptureModeCarousel(
                         interactionSource = null,
                         indication = null
                     ) {
-                        scope.launch { state.animateTo(ids[index], settleSpec) }
+                        // Started undispatched so that the tap counts as user movement at once.
+                        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                            userAnimationCount.countWhile {
+                                state.animateTo(ids[index], currentSettleSpec)
+                            }
+                        }
                     }
             }
         )
@@ -412,6 +472,32 @@ private fun CarouselRow(
                 placeable.placeRelative((origin + left).roundToInt(), 0)
             }
         }
+    }
+}
+
+/**
+ * The inputs that decide whether [CaptureModeCarousel] commits a sub-mode or moves the row.
+ *
+ * @param settledId the item that the row last came to rest on.
+ * @param isUserMovingRow whether the user is dragging the row, or a fling or tap is moving it.
+ * @param selectedId the selected sub-mode.
+ * @param pendingCommitId the sub-mode committed most recently, if the selection has not yet
+ *   changed to it and the wait for that change has not expired.
+ */
+private data class CarouselSnapshot(
+    val settledId: CaptureSubModeId,
+    val isUserMovingRow: Boolean,
+    val selectedId: CaptureSubModeId,
+    val pendingCommitId: CaptureSubModeId?
+)
+
+/** Runs [block] with this count incremented, so that the count reports how many such blocks run. */
+private inline fun <R> MutableIntState.countWhile(block: () -> R): R {
+    intValue++
+    try {
+        return block()
+    } finally {
+        intValue--
     }
 }
 
