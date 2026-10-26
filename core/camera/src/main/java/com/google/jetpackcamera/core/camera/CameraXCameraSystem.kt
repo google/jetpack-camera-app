@@ -48,6 +48,9 @@ import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
+import com.google.jetpackcamera.core.camera.submode.CameraSessionBinding
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
@@ -55,9 +58,11 @@ import com.google.jetpackcamera.model.CameraEffectTarget
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -78,11 +83,16 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.ZoomStrategy
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraConstraints
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.PolicyOverrides
 import com.google.jetpackcamera.settings.model.forCurrentLens
+import com.google.jetpackcamera.settings.model.permits
 import java.io.File
 import java.io.FileNotFoundException
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Provider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -114,7 +124,14 @@ class CameraXCameraSystem(
     val imagePostProcessors:
     Map<ImagePostProcessorFeatureKey, @JvmSuppressWildcards Provider<ImagePostProcessor>>,
     private val cameraEffectProviders:
-    Map<CameraEffectFeatureKey, @JvmSuppressWildcards Provider<CameraEffectProvider>>
+    Map<CameraEffectFeatureKey, @JvmSuppressWildcards Provider<CameraEffectProvider>>,
+    private val captureSubModeProviders:
+    Map<CaptureSubModeFeatureKey, @JvmSuppressWildcards Provider<CaptureSubModeProvider>> =
+        emptyMap(),
+    private val defaultCaptureSubModes:
+    Map<CaptureMode, @JvmSuppressWildcards CaptureSubModeFeatureKey> =
+        emptyMap(),
+    private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy()
 ) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -129,6 +146,56 @@ class CameraXCameraSystem(
     private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
+    private var externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
+
+    // Per-lens default sub-modes that failed to bind during the current initialization cycle.
+    // Excluded by defaultCaptureSubModeIdForLens() so that reverting to CaptureSubModeId.DEFAULT
+    // falls back to the base camera instead of re-resolving to the same failing override.
+    private val failedDefaultSubModes: MutableSet<Pair<LensFacing, CaptureSubModeId>> =
+        ConcurrentHashMap.newKeySet()
+
+    private val registeredSubModes: Map<CaptureSubModeId, RegisteredSubMode> by lazy {
+        buildMap {
+            for ((key, providerRef) in captureSubModeProviders) {
+                require(key.id != CaptureSubModeId.DEFAULT) {
+                    "CaptureSubModeFeatureKey must not use CaptureSubModeId.DEFAULT: $key"
+                }
+                val provider = providerRef.get()
+                require(key.id == provider.descriptor.id) {
+                    "CaptureSubModeFeatureKey.id (${key.id}) does not match " +
+                        "provider.descriptor.id (${provider.descriptor.id})"
+                }
+                val captureModeConfig = provider.featurePolicy.captureMode
+                require(
+                    captureModeConfig == null ||
+                        captureModeConfig.permits(provider.descriptor.parentCaptureMode)
+                ) {
+                    "Provider ${key.id} featurePolicy.captureMode ($captureModeConfig) " +
+                        "excludes its own parentCaptureMode " +
+                        "(${provider.descriptor.parentCaptureMode})"
+                }
+                val previous = put(key.id, RegisteredSubMode(key, provider))
+                require(previous == null) {
+                    "Duplicate CaptureSubModeId registered: ${key.id}"
+                }
+            }
+            for ((captureMode, defaultKey) in defaultCaptureSubModes) {
+                val registered = get(defaultKey.id)
+                require(registered != null) {
+                    "Default capture sub-mode ${defaultKey.id} for $captureMode is not " +
+                        "registered in captureSubModeProviders"
+                }
+                require(registered.provider.descriptor.parentCaptureMode == captureMode) {
+                    "Default capture sub-mode ${defaultKey.id} has parentCaptureMode " +
+                        "${registered.provider.descriptor.parentCaptureMode}, expected $captureMode"
+                }
+            }
+        }
+    }
+
+    private val subModeProviderMap: Map<CaptureSubModeFeatureKey, CaptureSubModeProvider> by lazy {
+        registeredSubModes.values.associate { it.key to it.provider }
+    }
 
     // Could be improved by setting initial value only when camera is initialized
     private var currentCameraState = MutableStateFlow(CameraState())
@@ -163,8 +230,11 @@ class CameraXCameraSystem(
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
+        externalCaptureMode: ExternalCaptureMode,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
+        failedDefaultSubModes.clear()
+        this.externalCaptureMode = externalCaptureMode
         val debugSettings = cameraAppSettings.debugSettings
         cameraProvider = try {
             configureAndGetCameraProvider(
@@ -218,6 +288,13 @@ class CameraXCameraSystem(
                 cameraAppSettings
             }
 
+        val subModeDescriptors = registeredSubModes.mapValues { (_, reg) ->
+            reg.provider.descriptor
+        }
+        val subModePolicies = registeredSubModes.mapValues { (_, reg) ->
+            reg.provider.featurePolicy
+        }
+
         // Build and update the system constraints
         systemConstraints = CameraSystemConstraints(
             availableLenses = availableCameraLenses,
@@ -225,6 +302,8 @@ class CameraXCameraSystem(
                 it.map { cameraInfo -> cameraInfo.appLensFacing }
                     .toSet() == setOf(LensFacing.FRONT, LensFacing.BACK)
             },
+            captureSubModeDescriptors = subModeDescriptors,
+            captureSubModePolicies = subModePolicies,
             perLensConstraints = buildMap {
                 val availableCameraInfos = cameraProvider.availableCameraInfos
                 for (lensFacing in availableCameraLenses) {
@@ -308,6 +387,50 @@ class CameraXCameraSystem(
                             setOf(TestPattern.Off)
                         }
 
+                        val supportedCaptureSubModes = registeredSubModes.values
+                            .filter { (_, provider) ->
+                                provider.isSupported(application, cameraProvider, camInfo) &&
+                                    cameraFeaturePolicy.isCompatibleWith(provider.featurePolicy)
+                            }
+                            .map { (key, _) -> key.id }
+                            .toSet()
+
+                        val lensDefaultCaptureSubModes = defaultCaptureSubModes
+                            .mapNotNull { (captureMode, key) ->
+                                key.id.takeIf { it in supportedCaptureSubModes }?.let {
+                                    captureMode to it
+                                }
+                            }
+                            .toMap()
+
+                        val supportedImageFormatsBySubMode = buildMap {
+                            for (subModeId in supportedCaptureSubModes) {
+                                val binding =
+                                    registeredSubModes[subModeId]?.provider?.sessionBinding
+                                if (binding is CameraSessionBinding.SingleCamera) {
+                                    try {
+                                        val subModeSelector =
+                                            binding.transformCameraSelector(
+                                                cameraProvider,
+                                                selector
+                                            )
+                                        val subModeCameraInfo =
+                                            cameraProvider.getCameraInfo(subModeSelector)
+                                        put(subModeId, subModeCameraInfo.supportedImageFormats)
+                                    } catch (e: CancellationException) {
+                                        throw e
+                                    } catch (e: Exception) {
+                                        Log.w(
+                                            TAG,
+                                            "Failed to query image formats for sub-mode " +
+                                                "$subModeId on $lensFacing",
+                                            e
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         put(
                             lensFacing,
                             CameraConstraints(
@@ -330,7 +453,10 @@ class CameraXCameraSystem(
                                 supportedFlashModes = supportedFlashModes,
                                 supportedZoomRange = supportedZoomRange,
                                 unsupportedStabilizationFpsMap = unsupportedStabilizationFpsMap,
-                                supportedTestPatterns = supportedTestPatterns
+                                supportedTestPatterns = supportedTestPatterns,
+                                supportedCaptureSubModes = supportedCaptureSubModes,
+                                defaultCaptureSubModes = lensDefaultCaptureSubModes,
+                                supportedImageFormatsBySubMode = supportedImageFormatsBySubMode
                             )
                         )
                     }
@@ -347,11 +473,13 @@ class CameraXCameraSystem(
                 .tryApplyImageFormatConstraints()
                 .tryApplyFrameRateConstraints()
                 .tryApplyStabilizationConstraints()
+                .tryApplyVideoOnlyForConcurrentCamera()
                 .tryApplyConcurrentCameraModeConstraints()
                 .tryApplyFlashModeConstraints()
                 .tryApplyCaptureModeConstraints()
                 .tryApplyVideoQualityConstraints()
                 .tryApplyTestPatternConstraints()
+                .tryApplyCaptureSubModeConstraints()
         if (debugSettings.isDebugModeEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             withContext(iODispatcher) {
                 val cameraPropertiesJSON =
@@ -444,6 +572,9 @@ class CameraXCameraSystem(
         launch {
             handleLowLightBoostErrors()
         }
+        launch {
+            handleCaptureSubModeErrors()
+        }
 
         if (!this@CameraXCameraSystem::cameraProvider.isInitialized) {
             Log.e(TAG, "CameraProvider is not initialized; emitting FatalCameraError.")
@@ -512,17 +643,31 @@ class CameraXCameraSystem(
                             it.id == currentCameraSettings.selectedCameraEffect
                         }
 
-                        PerpetualSessionSettings.SingleCamera(
-                            aspectRatio = currentCameraSettings.aspectRatio,
-                            captureMode = currentCameraSettings.captureMode,
-                            activeCameraEffect = activeCameraEffect,
-                            targetFrameRate = currentCameraSettings.targetFrameRate,
-                            stabilizationMode = resolvedStabilizationMode,
-                            dynamicRange = currentCameraSettings.dynamicRange,
-                            videoQuality = currentCameraSettings.videoQuality,
-                            imageFormat = currentCameraSettings.imageFormat,
-                            lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority
-                        )
+                        val activeSubMode =
+                            registeredSubModes[currentCameraSettings.activeCaptureSubModeId]
+                        val activeSubModeBinding = activeSubMode?.provider?.sessionBinding
+                        if (activeSubMode != null &&
+                            activeSubModeBinding is CameraSessionBinding.Custom
+                        ) {
+                            PerpetualSessionSettings.CustomSession(
+                                subModeKey = activeSubMode.key,
+                                aspectRatio = currentCameraSettings.aspectRatio,
+                                captureMode = currentCameraSettings.captureMode
+                            )
+                        } else {
+                            PerpetualSessionSettings.SingleCamera(
+                                aspectRatio = currentCameraSettings.aspectRatio,
+                                captureMode = currentCameraSettings.captureMode,
+                                activeCameraEffect = activeCameraEffect,
+                                targetFrameRate = currentCameraSettings.targetFrameRate,
+                                stabilizationMode = resolvedStabilizationMode,
+                                dynamicRange = currentCameraSettings.dynamicRange,
+                                videoQuality = currentCameraSettings.videoQuality,
+                                imageFormat = currentCameraSettings.imageFormat,
+                                lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority,
+                                activeCaptureSubMode = activeSubMode?.key
+                            )
+                        }
                     }
 
                     ConcurrentCameraMode.DUAL -> {
@@ -577,7 +722,8 @@ class CameraXCameraSystem(
                             surfaceRequests = _surfaceRequest,
                             transientSettings = transientSettings,
                             lowLightBoostEffectProvider = lowLightBoostEffectProvider,
-                            cameraEffectProviders = cameraEffectProviders
+                            cameraEffectProviders = cameraEffectProviders,
+                            captureSubModeProviders = subModeProviderMap
                         )
                     ) {
                         try {
@@ -589,6 +735,17 @@ class CameraXCameraSystem(
                                         imageCaptureUseCase = imageCapture
                                     }
                                 )
+
+                                is PerpetualSessionSettings.CustomSession -> {
+                                    val runner = requireNotNull(
+                                        captureSubModeProviders[sessionSettings.subModeKey]
+                                            ?.sessionBinding as? CameraSessionBinding.Custom
+                                    ) {
+                                        "Custom session runner missing for sub-mode: " +
+                                            "${sessionSettings.subModeKey}"
+                                    }
+                                    runner.runSession(this)
+                                }
 
                                 is PerpetualSessionSettings.ConcurrentCamera ->
                                     runConcurrentCameraSession(
@@ -794,12 +951,16 @@ class CameraXCameraSystem(
         // or fallback to SDR mid-recording if supported by CameraX).
         currentSettings.update { old ->
             if (systemConstraints.availableLenses.contains(lensFacing)) {
-                old?.copy(cameraLensFacing = lensFacing)
+                old?.copy(
+                    cameraLensFacing = lensFacing,
+                    activeCaptureSubModeId = CaptureSubModeId.DEFAULT
+                )
                     ?.tryApplyDynamicRangeConstraints()
                     ?.tryApplyImageFormatConstraints()
                     ?.tryApplyFlashModeConstraints()
                     ?.tryApplyCaptureModeConstraints()
                     ?.tryApplyTestPatternConstraints()
+                    ?.tryApplyCaptureSubModeConstraints()
             } else {
                 old
             }
@@ -922,7 +1083,12 @@ class CameraXCameraSystem(
 
     private fun CameraAppSettings.tryApplyImageFormatConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
-            with(constraints.supportedImageFormatsMap[affectsImageCapture()]) {
+            with(
+                constraints.supportedImageFormatsFor(
+                    activeCaptureSubModeId,
+                    affectsImageCapture()
+                )
+            ) {
                 // Prioritize Low Light Boost over Ultra HDR to maintain consistency with
                 // Video HDR / Low Light Boost conflict resolution.
                 val newImageFormat = if (this != null && contains(imageFormat) &&
@@ -992,6 +1158,31 @@ class CameraXCameraSystem(
                 }
         }
 
+    /**
+     * Concurrent camera only supports [CaptureMode.VIDEO_ONLY], which
+     * [tryApplyConcurrentCameraModeConstraints] requires. When concurrent camera is requested
+     * while the capture mode is unrestricted ([CaptureMode.STANDARD]), this switches to
+     * [CaptureMode.VIDEO_ONLY] so that the request is not rejected.
+     *
+     * The capture mode is left unchanged if concurrent camera would be rejected for another
+     * reason, or if the capture mode is already restricted, e.g. to [CaptureMode.IMAGE_ONLY] by an
+     * image capture intent.
+     */
+    private fun CameraAppSettings.tryApplyVideoOnlyForConcurrentCamera(): CameraAppSettings {
+        if (concurrentCameraMode == ConcurrentCameraMode.OFF ||
+            captureMode != CaptureMode.STANDARD
+        ) {
+            return this
+        }
+        val videoOnly = copy(captureMode = CaptureMode.VIDEO_ONLY)
+        val coercedSettings = videoOnly.tryApplyConcurrentCameraModeConstraints()
+        return if (coercedSettings.concurrentCameraMode == concurrentCameraMode) {
+            coercedSettings
+        } else {
+            this
+        }
+    }
+
     private fun CameraAppSettings.tryApplyVideoQualityConstraints(): CameraAppSettings =
         systemConstraints.perLensConstraints[cameraLensFacing]?.let { constraints ->
             with(constraints.supportedVideoQualitiesMap) {
@@ -1035,6 +1226,128 @@ class CameraXCameraSystem(
             }
         } ?: this
 
+    /**
+     * Keeps [CameraAppSettings.captureSubModeId] only if that sub-mode is supported and compatible
+     * with these settings, resolves the effective provider (including any per-lens default override
+     * for [CameraAppSettings.captureMode]), and enforces its [CaptureSubModeProvider.featurePolicy]
+     * intersected with the host application's [CameraFeaturePolicy].
+     *
+     * The values replaced by the policy are recorded in [CameraAppSettings.captureSubModeOverrides]
+     * when a sub-mode becomes active, and are restored when it ends (see [PolicyOverrides]).
+     *
+     * This has no side effects, so it is safe to call from `MutableStateFlow.update`, which may
+     * run its function more than once.
+     */
+    private fun CameraAppSettings.tryApplyCaptureSubModeConstraints(): CameraAppSettings {
+        val requestedSubModeId = if (captureSubModeId != CaptureSubModeId.DEFAULT) {
+            captureSubModeId
+        } else {
+            defaultCaptureSubModeIdForLens()
+        }
+
+        // The override record belongs to activeCaptureSubModeId, which is set together with it.
+        val isContinuingSameProvider = captureSubModeOverrides != null &&
+            activeCaptureSubModeId == requestedSubModeId &&
+            resolveCaptureSubModeProvider(requestedSubModeId) != null
+
+        val baseSettings = if (isContinuingSameProvider) {
+            this
+        } else {
+            // The sub-mode that replaced these values has ended. Restore them before evaluating the
+            // next provider, then check that the restored values are supported by the current lens.
+            restoreCaptureSubModeOverrides()
+        }
+
+        val explicitProvider = if (baseSettings.captureSubModeId != CaptureSubModeId.DEFAULT) {
+            baseSettings.resolveCaptureSubModeProvider(baseSettings.captureSubModeId)
+        } else {
+            null
+        }
+        val selectedSlotId = if (explicitProvider != null) {
+            baseSettings.captureSubModeId
+        } else {
+            CaptureSubModeId.DEFAULT
+        }
+        val settings = if (baseSettings.captureSubModeId == selectedSlotId) {
+            baseSettings
+        } else {
+            baseSettings.copy(captureSubModeId = selectedSlotId)
+        }
+
+        val resolvedProvider = explicitProvider
+            ?: settings.resolveCaptureSubModeProvider(settings.defaultCaptureSubModeIdForLens())
+        val resolvedSubModeId = resolvedProvider?.descriptor?.id ?: CaptureSubModeId.DEFAULT
+
+        if (resolvedProvider == null) {
+            return settings.copy(
+                captureSubModeId = CaptureSubModeId.DEFAULT,
+                activeCaptureSubModeId = CaptureSubModeId.DEFAULT
+            ).tryApplyImageFormatConstraints()
+        }
+
+        // Enforce the sub-mode's policy within the host application's policy.
+        val enforced = cameraFeaturePolicy.intersect(resolvedProvider.featurePolicy)
+            .enforceRestrictions(settings)
+            .copy(activeCaptureSubModeId = resolvedSubModeId)
+            .tryApplyDynamicRangeConstraints()
+            .tryApplyImageFormatConstraints()
+            .tryApplyFlashModeConstraints()
+            .tryApplyVideoQualityConstraints()
+
+        return enforced.copy(
+            // Keep the record from when a continuing sub-mode became active.
+            captureSubModeOverrides = settings.captureSubModeOverrides
+                ?: PolicyOverrides(beforeEnforcement = settings, afterEnforcement = enforced)
+        )
+    }
+
+    /**
+     * Restores the values recorded in [CameraAppSettings.captureSubModeOverrides] and clears the
+     * record. Returns these settings unchanged if there is no record.
+     */
+    private fun CameraAppSettings.restoreCaptureSubModeOverrides(): CameraAppSettings {
+        val overrides = captureSubModeOverrides ?: return this
+        return overrides.restore(
+            copy(
+                activeCaptureSubModeId = CaptureSubModeId.DEFAULT,
+                captureSubModeOverrides = null
+            )
+        )
+            .tryApplyDynamicRangeConstraints()
+            .tryApplyImageFormatConstraints()
+            .tryApplyFlashModeConstraints()
+            .tryApplyVideoQualityConstraints()
+    }
+
+    private fun CameraAppSettings.defaultCaptureSubModeIdForLens(): CaptureSubModeId =
+        systemConstraints.forCurrentLens(this)
+            ?.defaultCaptureSubModes
+            ?.get(captureMode)
+            ?.takeIf { (cameraLensFacing to it) !in failedDefaultSubModes }
+            ?: CaptureSubModeId.DEFAULT
+
+    /**
+     * Returns the provider of [subModeId] if that sub-mode is registered, supported on the current
+     * lens, matches [CameraAppSettings.captureMode], and is compatible with these settings;
+     * otherwise null.
+     */
+    private fun CameraAppSettings.resolveCaptureSubModeProvider(
+        subModeId: CaptureSubModeId = captureSubModeId
+    ): CaptureSubModeProvider? {
+        if (subModeId == CaptureSubModeId.DEFAULT) {
+            return null
+        }
+        val lensConstraints = systemConstraints.forCurrentLens(this)
+        val provider = registeredSubModes[subModeId]?.provider ?: return null
+        val isSupportedOnLens =
+            lensConstraints?.supportedCaptureSubModes?.contains(subModeId) == true
+        return provider.takeIf {
+            isSupportedOnLens &&
+                it.descriptor.parentCaptureMode == captureMode &&
+                it.isCompatibleWith(this, systemConstraints, externalCaptureMode)
+        }
+    }
+
     override suspend fun tapToFocus(x: Float, y: Float) {
         focusMeteringEvents.send(CameraEvent.FocusMeteringEvent(x, y))
     }
@@ -1048,6 +1361,7 @@ class CameraXCameraSystem(
                 ?.tryApplyDynamicRangeConstraints()
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
+                ?.tryApplyCaptureSubModeConstraints()
         }
     }
 
@@ -1058,6 +1372,7 @@ class CameraXCameraSystem(
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
             old?.copy(aspectRatio = aspectRatio)
+                ?.tryApplyCaptureSubModeConstraints()
         }
     }
 
@@ -1081,6 +1396,7 @@ class CameraXCameraSystem(
                 ?.tryApplyConcurrentCameraModeConstraints()
                 ?.tryApplyCaptureModeConstraints()
                 ?.tryApplyVideoQualityConstraints()
+                ?.tryApplyCaptureSubModeConstraints()
         }
     }
 
@@ -1090,6 +1406,7 @@ class CameraXCameraSystem(
                 ?.tryApplyDynamicRangeConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
                 ?.tryApplyCaptureModeConstraints()
+                ?.tryApplyCaptureSubModeConstraints()
         }
     }
 
@@ -1102,6 +1419,7 @@ class CameraXCameraSystem(
     override suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
         currentSettings.update { old ->
             old?.copy(concurrentCameraMode = concurrentCameraMode)
+                ?.tryApplyVideoOnlyForConcurrentCamera()
                 ?.tryApplyConcurrentCameraModeConstraints()
                 ?.tryApplyCaptureModeConstraints()
         }
@@ -1112,6 +1430,7 @@ class CameraXCameraSystem(
             old?.copy(imageFormat = imageFormat)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyCaptureModeConstraints()
+                ?.tryApplyCaptureSubModeConstraints()
         }
     }
 
@@ -1144,11 +1463,29 @@ class CameraXCameraSystem(
 
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
-            old?.copy(captureMode = captureMode)
+            val base = if (old != null && old.captureMode != captureMode) {
+                // Restore values replaced by an ending sub-mode before the new capture mode applies
+                // its own defaults, so that those defaults take precedence.
+                old.restoreCaptureSubModeOverrides().copy(
+                    captureMode = captureMode,
+                    captureSubModeId = CaptureSubModeId.DEFAULT
+                )
+            } else {
+                old
+            }
+            base
                 ?.tryApplyDynamicRangeConstraints()
                 ?.tryApplyAspectRatioForExternalCapture(captureMode)
                 ?.tryApplyImageFormatConstraints()
                 ?.tryApplyConcurrentCameraModeConstraints()
+                ?.tryApplyCaptureSubModeConstraints()
+        }
+    }
+
+    override suspend fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {
+        currentSettings.update { old ->
+            old?.copy(captureSubModeId = captureSubModeId)
+                ?.tryApplyCaptureSubModeConstraints()
         }
     }
 
@@ -1157,6 +1494,20 @@ class CameraXCameraSystem(
             if (state is LowLightBoostState.Error) {
                 if (currentSettings.value?.flashMode == FlashMode.LOW_LIGHT_BOOST) {
                     setFlashMode(FlashMode.OFF)
+                }
+            }
+        }
+    }
+
+    private suspend fun handleCaptureSubModeErrors() {
+        currentCameraState.map { it.captureSubModeState }.distinctUntilChanged().collect { state ->
+            if (state is CaptureSubModeState.Error) {
+                val settings = currentSettings.value
+                if (settings?.activeCaptureSubModeId == state.subModeId) {
+                    if (settings.captureSubModeId == CaptureSubModeId.DEFAULT) {
+                        failedDefaultSubModes.add(settings.cameraLensFacing to state.subModeId)
+                    }
+                    setCaptureSubMode(CaptureSubModeId.DEFAULT)
                 }
             }
         }
@@ -1187,3 +1538,8 @@ class CameraXCameraSystem(
         private val FIXED_FRAME_RATES = setOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60)
     }
 }
+
+private data class RegisteredSubMode(
+    val key: CaptureSubModeFeatureKey,
+    val provider: CaptureSubModeProvider
+)

@@ -29,8 +29,8 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.data.media.LocalMediaRepository
-import com.google.jetpackcamera.data.media.Media
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.model.Media
+import com.google.jetpackcamera.model.MediaDescriptor
 import java.io.File
 import java.io.FileOutputStream
 import kotlinx.coroutines.ExperimentalCoroutinesApi
