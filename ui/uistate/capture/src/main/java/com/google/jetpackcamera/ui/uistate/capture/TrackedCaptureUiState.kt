@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistate.capture
 
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.model.MediaDescriptor
 
 /**
  * Data class to track UI-specific states within the PreviewViewModel.

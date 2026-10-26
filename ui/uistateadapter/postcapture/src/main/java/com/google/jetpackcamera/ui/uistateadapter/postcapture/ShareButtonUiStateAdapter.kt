@@ -15,7 +15,7 @@
  */
 package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.ShareButtonUiState
 
 /**

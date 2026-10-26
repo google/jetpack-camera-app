@@ -26,19 +26,14 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetScaffoldState
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -55,12 +50,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
@@ -72,6 +65,7 @@ import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
@@ -79,17 +73,16 @@ import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CameraErrorDialog
 import com.google.jetpackcamera.ui.components.capture.CaptureButton
 import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
-import com.google.jetpackcamera.ui.components.capture.CutoutAwareRow
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.components.capture.ElapsedTimeText
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
 import com.google.jetpackcamera.ui.components.capture.ImageWell
+import com.google.jetpackcamera.ui.components.capture.IndicatorPill
 import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.PreviewLayout
-import com.google.jetpackcamera.ui.components.capture.R as CaptureComponentsR
 import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
 import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
@@ -104,7 +97,6 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndica
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
-import com.google.jetpackcamera.ui.controller.ImageWellController
 import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.ZoomController
@@ -112,6 +104,7 @@ import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsControl
 import com.google.jetpackcamera.ui.debug.DebugController
 import com.google.jetpackcamera.ui.debug.DebugOverlay
 import com.google.jetpackcamera.ui.debug.DebugUiState
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
@@ -147,8 +140,6 @@ fun PreviewScreen(
     val rawUiState = viewModel.captureUiState.collectAsState()
     val debugUiState: DebugUiState by viewModel.debugUiState.collectAsState()
     val snackBarUiState: SnackBarUiState by viewModel.snackBarUiState.collectAsState()
-
-    val isReady by remember { derivedStateOf { rawUiState.value is CaptureUiState.Ready } }
 
     val surfaceRequest: SurfaceRequest?
         by viewModel.surfaceRequest.collectAsState()
@@ -192,45 +183,37 @@ fun PreviewScreen(
         }
     }
 
-    if (!isReady) {
-        LoadingScreen()
-    } else {
-        val readyStateProvider: () -> CaptureUiState.Ready = remember {
-            {
-                requireNotNull(rawUiState.value as? CaptureUiState.Ready) {
-                    "Deferred read invoked when state was not Ready. " +
-                        "Current state: ${rawUiState.value}"
-                }
-            }
+    val readyStateProvider: () -> CaptureUiState.Ready = remember {
+        {
+            (rawUiState.value as? CaptureUiState.Ready) ?: LOADING_CAPTURE_UI_STATE_SKELETON
         }
+    }
 
-        val context = LocalContext.current
-        LaunchedEffect(Unit) {
-            debouncedOrientationFlow(context).collect(
-                viewModel.cameraController::setDisplayRotation
-            )
-        }
-
-        ContentScreen(
-            modifier = modifier,
-            captureUiStateProvider = readyStateProvider,
-            surfaceRequest = surfaceRequest,
-            onNavigateToSettings = onNavigateToSettings,
-            onRequestWindowColorMode = onRequestWindowColorMode,
-            onNavigatePostCapture = onNavigateToPostCapture,
-            onCloseCamera = onCloseCamera,
-            debugUiState = debugUiState,
-            snackBarUiState = snackBarUiState,
-            debugController = viewModel.debugController,
-            snackBarController = viewModel.snackBarController,
-            quickSettingsController = viewModel.quickSettingsController,
-            captureController = viewModel.captureController,
-            imageWellController = viewModel.imageWellController,
-            cameraController = viewModel.cameraController,
-            screenFlashController = viewModel.screenFlashController,
-            zoomController = viewModel.zoomController
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        debouncedOrientationFlow(context).collect(
+            viewModel.cameraController::setDisplayRotation
         )
     }
+
+    ContentScreen(
+        modifier = modifier,
+        captureUiStateProvider = readyStateProvider,
+        surfaceRequest = surfaceRequest,
+        onNavigateToSettings = onNavigateToSettings,
+        onRequestWindowColorMode = onRequestWindowColorMode,
+        onNavigatePostCapture = onNavigateToPostCapture,
+        onCloseCamera = onCloseCamera,
+        debugUiState = debugUiState,
+        snackBarUiState = snackBarUiState,
+        debugController = viewModel.debugController,
+        snackBarController = viewModel.snackBarController,
+        quickSettingsController = viewModel.quickSettingsController,
+        captureController = viewModel.captureController,
+        cameraController = viewModel.cameraController,
+        screenFlashController = viewModel.screenFlashController,
+        zoomController = viewModel.zoomController
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -249,7 +232,6 @@ private fun ContentScreen(
     quickSettingsController: QuickSettingsController? = null,
     snackBarController: SnackBarController? = null,
     captureController: CaptureController? = null,
-    imageWellController: ImageWellController? = null,
     cameraController: CameraController? = null,
     screenFlashController: ScreenFlashController? = null,
     zoomController: ZoomController? = null
@@ -316,12 +298,12 @@ private fun ContentScreen(
         scope.launch { scaffoldState.bottomSheetState.hide() }
     }
 
-    val onDismissQuickSettings: () -> Unit = remember(scope, scaffoldState.bottomSheetState) {
-        {
-            scope.launch { scaffoldState.bottomSheetState.hide() }
-            Unit
+    val onDismissQuickSettings: () -> Unit =
+        remember<() -> Unit>(scope, scaffoldState.bottomSheetState) {
+            {
+                scope.launch { scaffoldState.bottomSheetState.hide() }
+            }
         }
-    }
 
     var initialRecordingSettings by remember { mutableStateOf<InitialRecordingSettings?>(null) }
     LaunchedEffect(videoRecordingState.value) {
@@ -397,22 +379,12 @@ private fun ContentScreen(
     }
     val videoQualityState =
         remember { derivedStateOf { currentCaptureUiStateProvider().videoQuality } }
-    val activeCaptureModeState = remember {
-        derivedStateOf {
-            val buttonState = currentCaptureUiStateProvider().captureButtonUiState
-            (buttonState as? CaptureButtonUiState.Enabled.Idle)?.captureMode
-        }
-    }
-    var lastCaptureMode by remember { mutableStateOf<CaptureMode?>(null) }
-    activeCaptureModeState.value?.let { lastCaptureMode = it }
     val videoQualityIndicatorLambda = remember {
         @Composable { modifier: Modifier ->
-            if (lastCaptureMode != CaptureMode.IMAGE_ONLY) {
-                VideoQualityIcon(
-                    videoQualityState.value,
-                    modifier.testTag(VIDEO_QUALITY_TAG)
-                )
-            }
+            VideoQualityIcon(
+                videoQualityState.value,
+                modifier.testTag(VIDEO_QUALITY_TAG)
+            )
         }
     }
     val stabilizationState = remember {
@@ -530,10 +502,13 @@ private fun ContentScreen(
 
     val flipCameraButtonLambda = remember(flipLensState, onFlipCamera) {
         @Composable { modifier: Modifier ->
+            val currentFlipLensState = flipLensState.value
             FlipCameraButton(
                 modifier = modifier.testTag(FLIP_CAMERA_BUTTON),
                 onClick = onFlipCamera,
-                flipLensUiState = flipLensState.value
+                flipLensUiState = currentFlipLensState,
+                enabled = currentFlipLensState is FlipLensUiState.Available &&
+                    currentFlipLensState.availableLensFacings.size > 1
             )
         }
     }
@@ -627,7 +602,8 @@ private fun ContentScreen(
         scope
     ) {
         @Composable { modifier: Modifier ->
-            val isQuickSettingsVisible = !isVideoRecordingActive.value &&
+            val isQuickSettingsVisible = !isVideoRecordingActive.value
+            val isQuickSettingsEnabled =
                 quickSettingsState.value is QuickSettingsUiState.Available
             val disableAnimations = LocalDisableAnimations.current
             AnimatedVisibility(
@@ -643,6 +619,7 @@ private fun ContentScreen(
             ) {
                 ToggleQuickSettingsButton(
                     isOpen = isQuickSettingsOpen,
+                    enabled = isQuickSettingsEnabled,
                     onClick = {
                         scope.launch {
                             if (scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded) {
@@ -767,7 +744,6 @@ private fun ContentScreen(
     val imageWellLambda = remember(
         externalCaptureModeState,
         imageWellState,
-        imageWellController,
         onNavigatePostCapture
     ) {
         @Composable { modifier: Modifier ->
@@ -776,10 +752,7 @@ private fun ContentScreen(
                     ImageWell(
                         modifier = modifier,
                         imageWellUiState = contentState,
-                        onClick = {
-                            imageWellController?.imageWellToRepository(contentState.mediaDescriptor)
-                            onNavigatePostCapture()
-                        }
+                        onClick = onNavigatePostCapture
                     )
                 }
             }
@@ -885,20 +858,6 @@ internal fun CameraError.toDialogResources(): CameraErrorDialogResources? = when
     )
 }
 
-@Composable
-private fun LoadingScreen(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CircularProgressIndicator(modifier = Modifier.size(50.dp))
-        Text(text = stringResource(CaptureComponentsR.string.camera_not_ready), color = Color.White)
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LayoutWrapper(
@@ -945,11 +904,9 @@ private fun LayoutWrapper(
         quickSettingsOverlay = quickSettingsOverlay,
         indicatorRow = { modifier ->
             if (!isErrorDialogShowing) {
-                CutoutAwareRow(
+                IndicatorPill(
                     modifier = modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalSpacing = 8.dp
+                        .fillMaxWidth()
                 ) {
                     flashModeIndicator(Modifier)
                     hdrIndicator(Modifier)
@@ -1047,6 +1004,20 @@ private fun ContentScreen_Locked_Recording() {
         )
     }
 }
+
+private val LOADING_CAPTURE_UI_STATE_SKELETON = CaptureUiState.Ready(
+    videoRecordingState = VideoRecordingState.Inactive(),
+    externalCaptureMode = ExternalCaptureMode.Standard,
+    captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
+    captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
+        captureMode = CaptureMode.STANDARD,
+        isEnabled = false
+    ),
+    flipLensUiState = FlipLensUiState.Available(
+        selectedLensFacing = LensFacing.BACK,
+        availableLensFacings = listOf(SingleSelectableUiState.SelectableUi(LensFacing.BACK))
+    )
+)
 
 private val FAKE_PREVIEW_UI_STATE_READY = CaptureUiState.Ready(
     videoRecordingState = VideoRecordingState.Inactive(),

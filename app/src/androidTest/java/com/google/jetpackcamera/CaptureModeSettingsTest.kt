@@ -174,8 +174,8 @@ internal class CaptureModeSettingsTest {
             // set concurrent camera mode back to off in settings
             composeTestRule.setConcurrentCameraModeInSettings(ConcurrentCameraMode.OFF)
 
-            // capture mode should reset to standard
-            composeTestRule.checkCaptureModeSettingState(CaptureMode.STANDARD)
+            // capture mode is not switched back automatically; it remains video only
+            composeTestRule.checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
         }
     }
 
