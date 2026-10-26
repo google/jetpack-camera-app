@@ -34,6 +34,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.capture.PauseResumeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
@@ -195,7 +196,11 @@ fun captureUiState(
                 roundedVideoRecordingState
             ),
             screenFlashUiState = ScreenFlashUiState.from(trackedUiState),
-            cameraErrorUiState = CameraErrorUiState.from(roundedCameraState)
+            cameraErrorUiState = CameraErrorUiState.from(roundedCameraState),
+            pauseResumeUiState = PauseResumeUiState.from(
+                roundedCameraState,
+                trackedUiState.isRecordingLocked
+            )
         )
     }
 }

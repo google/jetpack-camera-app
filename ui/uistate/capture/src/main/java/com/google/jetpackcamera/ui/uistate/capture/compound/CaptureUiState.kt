@@ -29,6 +29,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.capture.PauseResumeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ScreenFlashUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
@@ -72,6 +73,7 @@ sealed interface CaptureUiState {
      * @property hdrUiState The UI state for the HDR setting.
      * @property focusMeteringUiState The UI state for focus and metering.
      * @property cameraErrorUiState The UI state for camera errors.
+     * @property pauseResumeUiState The UI state for the pause/resume toggle button during video recording.
      */
     data class Ready(
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
@@ -97,7 +99,8 @@ sealed interface CaptureUiState {
         val hdrUiState: HdrUiState = HdrUiState.Unavailable,
         val focusMeteringUiState: FocusMeteringUiState = FocusMeteringUiState.Unspecified,
         val screenFlashUiState: ScreenFlashUiState = ScreenFlashUiState(),
-        val cameraErrorUiState: CameraErrorUiState = CameraErrorUiState.Hidden
+        val cameraErrorUiState: CameraErrorUiState = CameraErrorUiState.Hidden,
+        val pauseResumeUiState: PauseResumeUiState = PauseResumeUiState.Hidden
     ) : CaptureUiState
 
     companion object

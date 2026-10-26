@@ -49,6 +49,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
+import com.google.jetpackcamera.ui.uistate.capture.PauseResumeUiState
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -105,7 +106,7 @@ class CaptureScreenComponentsTest {
             )
         }
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
-            .assertContentDescriptionEquals("Recording time: 1 minutes and 5 seconds")
+            .assertContentDescriptionEquals("Recording time: 1 minute and 5 seconds")
     }
 
     @Test
@@ -135,7 +136,7 @@ class CaptureScreenComponentsTest {
             )
         }
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
-            .assertContentDescriptionEquals("Recording paused: 1 minutes and 5 seconds")
+            .assertContentDescriptionEquals("Recording paused: 1 minute and 5 seconds")
     }
 
     @Test
@@ -345,6 +346,23 @@ class CaptureScreenComponentsTest {
     }
 
     @Test
+    fun pauseResumeToggleButton_whenHidden_doesNotRender() {
+        val description =
+            ApplicationProvider.getApplicationContext<Context>().getString(
+                R.string.pause_resume_button_description
+            )
+
+        composeTestRule.setContent {
+            PauseResumeToggleButton(
+                pauseResumeUiState = PauseResumeUiState.Hidden,
+                onSetPause = {}
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription(description).assertDoesNotExist()
+    }
+
+    @Test
     fun pauseResumeToggleButton_whenRecording_rendersPauseIcon() {
         val description =
             ApplicationProvider.getApplicationContext<Context>().getString(
@@ -353,8 +371,7 @@ class CaptureScreenComponentsTest {
 
         composeTestRule.setContent {
             PauseResumeToggleButton(
-                isActive = true,
-                isPaused = false,
+                pauseResumeUiState = PauseResumeUiState.Visible(isPaused = false),
                 onSetPause = {}
             )
         }
@@ -366,7 +383,7 @@ class CaptureScreenComponentsTest {
     }
 
     @Test
-    fun pauseResumeToggleButton_whenPaused_rendersPlayIcon() {
+    fun pauseResumeToggleButton_whenPaused_rendersResumeIcon() {
         val description =
             ApplicationProvider.getApplicationContext<Context>().getString(
                 R.string.pause_resume_button_description
@@ -374,8 +391,7 @@ class CaptureScreenComponentsTest {
 
         composeTestRule.setContent {
             PauseResumeToggleButton(
-                isActive = true,
-                isPaused = true,
+                pauseResumeUiState = PauseResumeUiState.Visible(isPaused = true),
                 onSetPause = {}
             )
         }
@@ -396,8 +412,7 @@ class CaptureScreenComponentsTest {
 
         composeTestRule.setContent {
             PauseResumeToggleButton(
-                isActive = true,
-                isPaused = false,
+                pauseResumeUiState = PauseResumeUiState.Visible(isPaused = false),
                 onSetPause = { pausedArg = it }
             )
         }
