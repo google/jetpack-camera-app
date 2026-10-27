@@ -434,6 +434,7 @@ private fun ZoomBarItem(
                 fontScale = density.fontScale.coerceAtMost(ZoomBarDefaults.MAX_LABEL_FONT_SCALE)
             )
         ) {
+            // TODO(#619): Apply Modifier.animateToUpright() to keep labels upright on rotation.
             BasicText(
                 text = labelText,
                 style = MaterialTheme.typography.labelLarge.copy(
