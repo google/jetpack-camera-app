@@ -27,9 +27,11 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
@@ -75,12 +77,16 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     private var screenFlashEvents = Channel<CameraSystem.ScreenFlashEvent>(capacity = UNLIMITED)
     private val zoomChanges = MutableStateFlow<CameraZoomRatio?>(null)
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
+    var externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
+        private set
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
+        externalCaptureMode: ExternalCaptureMode,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
         currentSettings.value = cameraAppSettings
+        this.externalCaptureMode = externalCaptureMode
         initialized = true
     }
 
@@ -304,6 +310,15 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
             old.copy(captureMode = captureMode)
+        }
+    }
+
+    override suspend fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {
+        currentSettings.update { old ->
+            old.copy(
+                captureSubModeId = captureSubModeId,
+                activeCaptureSubModeId = captureSubModeId
+            )
         }
     }
 

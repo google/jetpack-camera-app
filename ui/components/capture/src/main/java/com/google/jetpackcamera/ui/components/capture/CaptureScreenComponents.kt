@@ -15,8 +15,10 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
+import android.icu.text.MessageFormat
 import android.os.Build
 import android.util.Log
 import androidx.annotation.VisibleForTesting
@@ -42,10 +44,12 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -56,6 +60,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -67,6 +72,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
@@ -101,6 +107,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.graphicsLayer
@@ -120,10 +127,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
@@ -153,6 +162,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "CaptureScreenComponents"
+private val LOADING_SPINNER_SIZE = 40.dp
+private val ViewfinderCornerRadius = 16.dp
 
 private val SnackbarMinHeight = 48.dp
 private val SnackbarHorizontalMargin = 16.dp
@@ -167,7 +178,7 @@ private val SnackbarTextToActionSpacing = 8.dp
 private val SnackbarElevation = 6.dp
 
 /**
- * A custom [SnackbarHost] that displays snackbars with a pill shape and a leading status icon.
+ * A custom [SnackbarHost] that displays snackbars with a rounded shape and a leading status icon.
  *
  * @param snackbarHostState the [SnackbarHostState] for the host.
  * @param modifier the modifier for this component.
@@ -407,12 +418,22 @@ fun ElapsedTimeText(
         val formattedTime = remember(elapsedSeconds, format) {
             format.format(minutes, seconds)
         }
+        val minutesInt = minutes.toInt()
+        val secondsInt = seconds.toInt()
+        val minutesText = MessageFormat.format(
+            stringResource(R.string.elapsed_time_accessibility_minutes),
+            mapOf("count" to minutesInt)
+        )
+        val secondsText = MessageFormat.format(
+            stringResource(R.string.elapsed_time_accessibility_seconds),
+            mapOf("count" to secondsInt)
+        )
         val accessibilityRes = if (state.isPaused) {
             R.string.elapsed_time_accessibility_paused
         } else {
             R.string.elapsed_time_accessibility_recording
         }
-        val accessibilityText = stringResource(accessibilityRes, minutes, seconds)
+        val accessibilityText = stringResource(accessibilityRes, minutesText, secondsText)
         Box(
             modifier = modifier
                 .testTag(ELAPSED_TIME_TAG)
@@ -573,7 +594,9 @@ fun AmplitudeToggleButton(
  * A toggle switch that allows the user to switch between image and video capture modes.
  *
  * This component visually represents the selected mode with distinct icons for photo and video.
- * It is only enabled when both capture modes are available to the camera.
+ * It is only enabled when both capture modes are available to the camera. The track color is
+ * determined by [LocalCameraControlBackgroundStyle], so that the toggle remains legible when drawn
+ * over the viewfinder.
  *
  * @param uiState the [CaptureModeToggleUiState.Available] for this component.
  * @param onChangeCaptureMode the callback for changing the capture mode.
@@ -603,6 +626,8 @@ fun CaptureModeToggleButton(
 
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
+        // The track keeps its color when disabled; ToggleSwitch dims the thumb and icons instead.
+        trackColor = LocalCameraControlBackgroundStyle.current.containerColor,
         checked = toggleState,
         onCheckedChange = { isChecked ->
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
@@ -778,10 +803,10 @@ fun PreviewDisplay(
     focusMeteringUiState: FocusMeteringUiState,
     modifier: Modifier = Modifier
 ) {
-    val aspectRatioUiState = previewDisplayUiState.aspectRatioUiState
-    if (aspectRatioUiState !is AspectRatioUiState.Available) {
-        return
-    }
+    val aspectRatio =
+        (previewDisplayUiState.aspectRatioUiState as? AspectRatioUiState.Available)
+            ?.selectedAspectRatio ?: AspectRatio.THREE_FOUR
+
     @Suppress("DEPRECATION")
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
@@ -789,60 +814,58 @@ fun PreviewDisplay(
         }
     )
 
-    surfaceRequest?.let {
-        BoxWithConstraints(
-            modifier
-                .fillMaxSize()
-                .background(Color.Black),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            val aspectRatio =
-                aspectRatioUiState.selectedAspectRatio
-            val maxAspectRatio: Float = maxWidth / maxHeight
-            val aspectRatioFloat: Float = aspectRatio.toFloat()
-            val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
-            var imageVisible by remember { mutableStateOf(true) }
-            val targetBoundsState = LocalOverlapTargetBounds.current
+    BoxWithConstraints(
+        modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        val maxAspectRatio: Float = maxWidth / maxHeight
+        val aspectRatioFloat: Float = aspectRatio.toFloat()
+        val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
+        val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
+        val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+        var imageVisible by remember { mutableStateOf(true) }
+        val targetBoundsState = LocalOverlapTargetBounds.current
 
-            val disableAnimations = LocalDisableAnimations.current
-            val imageAlpha: Float by animateFloatAsState(
-                targetValue = if (imageVisible) 1f else 0f,
-                animationSpec = if (disableAnimations) {
-                    snap()
-                } else {
-                    tween(
-                        durationMillis = (BLINK_TIME / 2).toInt(),
-                        easing = LinearEasing
-                    )
-                },
-                label = ""
-            )
+        val disableAnimations = LocalDisableAnimations.current
+        val imageAlpha: Float by animateFloatAsState(
+            targetValue = if (imageVisible) 1f else 0f,
+            animationSpec = if (disableAnimations) {
+                snap()
+            } else {
+                tween(
+                    durationMillis = (BLINK_TIME / 2).toInt(),
+                    easing = LinearEasing
+                )
+            },
+            label = ""
+        )
 
-            LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
-                if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
-                    imageVisible = false
-                    delay(BLINK_TIME)
-                    imageVisible = true
-                }
+        LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
+            if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
+                imageVisible = false
+                delay(BLINK_TIME)
+                imageVisible = true
             }
+        }
 
-            Box(
-                modifier = Modifier
-                    .testTag(PREVIEW_DISPLAY)
-                    .onGloballyPositioned { coordinates ->
-                        val bounds = coordinates.boundsInWindow()
-                        if (targetBoundsState.value != bounds) {
-                            targetBoundsState.value = bounds
-                        }
+        Box(
+            modifier = Modifier
+                .testTag(PREVIEW_DISPLAY)
+                .onGloballyPositioned { coordinates ->
+                    val bounds = coordinates.boundsInWindow()
+                    if (targetBoundsState.value != bounds) {
+                        targetBoundsState.value = bounds
                     }
-                    .width(width)
-                    .height(height)
-                    .transformable(state = transformableState)
-                    .alpha(imageAlpha)
-                    .clip(RoundedCornerShape(16.dp))
-            ) {
+                }
+                .width(width)
+                .height(height)
+                .transformable(state = transformableState)
+                .alpha(imageAlpha)
+                .clip(RoundedCornerShape(ViewfinderCornerRadius))
+        ) {
+            if (surfaceRequest != null) {
                 val implementationMode = when {
                     Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
                     else -> ImplementationMode.EMBEDDED
@@ -881,13 +904,18 @@ fun PreviewDisplay(
                                 }
                             )
                         },
-                    surfaceRequest = it,
+                    surfaceRequest = surfaceRequest,
                     implementationMode = implementationMode,
                     coordinateTransformer = coordinateTransformer
                 )
                 FocusMeteringIndicator(
                     focusMeteringUiState = focusMeteringUiState,
                     coordinateTransformer = coordinateTransformer
+                )
+            } else {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center).size(LOADING_SPINNER_SIZE),
+                    color = Color.White
                 )
             }
         }
@@ -953,9 +981,7 @@ fun CaptureButton(
 /**
  * A composable that displays an icon indicating the current video stabilization mode.
  *
- * The icon is only visible when a stabilization mode other than 'OFF' is active. It is rendered in
- * full white when stabilization is actively being applied, and is greyed out (with reduced alpha)
- * if the stabilization mode is enabled but not currently active.
+ * The icon is only visible when a stabilization mode other than 'OFF' is actively being applied.
  *
  * @param stabilizationUiState the [StabilizationUiState] for this component.
  * @param modifier the modifier for this component.
@@ -963,76 +989,77 @@ fun CaptureButton(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modifier = Modifier) {
-    if (stabilizationUiState is StabilizationUiState.Enabled) {
-        val contentColor = Color.White.let {
-            if (!stabilizationUiState.active) it.copy(alpha = 0.38f) else it
-        }
-        CompositionLocalProvider(LocalContentColor provides contentColor) {
-            if (stabilizationUiState.stabilizationMode != StabilizationMode.OFF) {
-                Icon(
-                    modifier = modifier.size(IconButtonDefaults.smallIconSize),
+    val activeState = (stabilizationUiState as? StabilizationUiState.Enabled)?.takeIf {
+        it.active && it.stabilizationMode != StabilizationMode.OFF
+    }
+    val displayedState = rememberLastNonNull(activeState)
+    IndicatorPillIcon(
+        visible = activeState != null,
+        modifier = modifier
+    ) {
+        if (displayedState != null) {
+            Icon(
+                modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+                painter = when (displayedState) {
+                    is StabilizationUiState.Specific ->
+                        when (displayedState.stabilizationMode) {
+                            StabilizationMode.AUTO ->
+                                throw IllegalStateException(
+                                    "AUTO is not a specific StabilizationUiState."
+                                )
 
-                    painter = when (stabilizationUiState) {
-                        is StabilizationUiState.Specific ->
-                            when (stabilizationUiState.stabilizationMode) {
-                                StabilizationMode.AUTO ->
-                                    throw IllegalStateException(
-                                        "AUTO is not a specific StabilizationUiState."
-                                    )
+                            StabilizationMode.HIGH_QUALITY ->
+                                painterResource(R.drawable.video_stable_hq_filled_icon)
 
-                                StabilizationMode.HIGH_QUALITY ->
-                                    painterResource(R.drawable.video_stable_hq_filled_icon)
+                            StabilizationMode.OPTICAL ->
+                                painterResource(R.drawable.video_stable_ois_filled_icon)
 
-                                StabilizationMode.OPTICAL ->
-                                    painterResource(R.drawable.video_stable_ois_filled_icon)
+                            StabilizationMode.ON ->
+                                painterResource(R.drawable.ic_video_stable)
 
-                                StabilizationMode.ON ->
-                                    painterResource(R.drawable.ic_video_stable)
-
-                                else ->
-                                    TODO(
-                                        "Cannot retrieve icon for unimplemented " +
-                                            "stabilization mode:" +
-                                            "${stabilizationUiState.stabilizationMode}"
-                                    )
-                            }
-
-                        is StabilizationUiState.Auto -> {
-                            when (stabilizationUiState.stabilizationMode) {
-                                StabilizationMode.ON ->
-                                    painterResource(R.drawable.video_stable_auto_filled_icon)
-
-                                StabilizationMode.OPTICAL ->
-                                    painterResource(R.drawable.video_stable_ois_auto_filled_icon)
-
-                                else ->
-                                    TODO(
-                                        "Auto stabilization not yet implemented for " +
-                                            "${stabilizationUiState.stabilizationMode}, " +
-                                            "unable to retrieve icon."
-                                    )
-                            }
+                            else ->
+                                TODO(
+                                    "Cannot retrieve icon for unimplemented " +
+                                        "stabilization mode:" +
+                                        "${displayedState.stabilizationMode}"
+                                )
                         }
-                    },
-                    contentDescription = when (stabilizationUiState.stabilizationMode) {
-                        StabilizationMode.AUTO ->
-                            stringResource(R.string.stabilization_icon_description_auto)
 
-                        StabilizationMode.ON ->
-                            stringResource(
-                                R.string.stabilization_icon_description_preview_and_video
-                            )
+                    is StabilizationUiState.Auto -> {
+                        when (displayedState.stabilizationMode) {
+                            StabilizationMode.ON ->
+                                painterResource(R.drawable.video_stable_auto_filled_icon)
 
-                        StabilizationMode.HIGH_QUALITY ->
-                            stringResource(R.string.stabilization_icon_description_video_only)
+                            StabilizationMode.OPTICAL ->
+                                painterResource(R.drawable.video_stable_ois_auto_filled_icon)
 
-                        StabilizationMode.OPTICAL ->
-                            stringResource(R.string.stabilization_icon_description_optical)
-
-                        else -> null
+                            else ->
+                                TODO(
+                                    "Auto stabilization not yet implemented for " +
+                                        "${displayedState.stabilizationMode}, " +
+                                        "unable to retrieve icon."
+                                )
+                        }
                     }
-                )
-            }
+                },
+                contentDescription = when (displayedState.stabilizationMode) {
+                    StabilizationMode.AUTO ->
+                        stringResource(R.string.stabilization_icon_description_auto)
+
+                    StabilizationMode.ON ->
+                        stringResource(
+                            R.string.stabilization_icon_description_preview_and_video
+                        )
+
+                    StabilizationMode.HIGH_QUALITY ->
+                        stringResource(R.string.stabilization_icon_description_video_only)
+
+                    StabilizationMode.OPTICAL ->
+                        stringResource(R.string.stabilization_icon_description_optical)
+
+                    else -> null
+                }
+            )
         }
     }
 }
@@ -1049,12 +1076,16 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
-    CompositionLocalProvider(LocalContentColor provides Color.White) {
-        if (videoQuality != VideoQuality.UNSPECIFIED) {
+    val activeQuality = videoQuality.takeIf { it != VideoQuality.UNSPECIFIED }
+    val displayedQuality = rememberLastNonNull(activeQuality)
+    IndicatorPillIcon(
+        visible = activeQuality != null,
+        modifier = modifier
+    ) {
+        if (displayedQuality != null) {
             Icon(
-                modifier = modifier.size(IconButtonDefaults.smallIconSize),
-
-                painter = when (videoQuality) {
+                modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+                painter = when (displayedQuality) {
                     VideoQuality.SD ->
                         painterResource(R.drawable.video_resolution_sd_icon)
 
@@ -1070,7 +1101,7 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                     VideoQuality.UNSPECIFIED ->
                         throw IllegalStateException("Illegal video quality state")
                 },
-                contentDescription = when (videoQuality) {
+                contentDescription = when (displayedQuality) {
                     VideoQuality.SD ->
                         stringResource(R.string.video_quality_description_sd)
 
@@ -1088,6 +1119,91 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
             )
         }
     }
+}
+
+private object IndicatorPillTokens {
+    val ContainerHeight = 40.dp
+    val ContainerHorizontalPadding = 6.dp
+    val IconHorizontalPadding = 6.dp
+    val IconVerticalPadding = 8.dp
+}
+
+/**
+ * A cutout-aware pill container that groups active top-bar status indicators into connected
+ * rounded pills, splitting into separate pills on either side of any intersecting display cutout.
+ */
+@SuppressLint("AvoidNullableCollections", "NullableCollection")
+@Composable
+fun IndicatorPill(
+    modifier: Modifier = Modifier,
+    cutoutRectsOverride: List<IntRect>? = null,
+    onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
+    content: @Composable RowScope.() -> Unit
+) {
+    CompositionLocalProvider(LocalContentColor provides Color.White) {
+        CutoutAwareRow(
+            modifier = modifier,
+            horizontalSpacing = 0.dp,
+            pillHorizontalPadding = IndicatorPillTokens.ContainerHorizontalPadding,
+            pillMinHeight = IndicatorPillTokens.ContainerHeight,
+            pillBackgroundColor = CameraControlBackgroundStyle.BLACK_60.containerColor,
+            verticalAlignment = Alignment.CenterVertically,
+            cutoutRectsOverride = cutoutRectsOverride,
+            onPillSegmentsPlaced = onPillSegmentsPlaced,
+            content = content
+        )
+    }
+}
+
+/**
+ * Wraps an individual top-bar status indicator icon with horizontal expand/shrink and fade
+ * animations and standard indicator pill item padding.
+ */
+@Composable
+internal fun IndicatorPillIcon(
+    visible: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val disableAnimations = LocalDisableAnimations.current
+    AnimatedVisibility(
+        visible = visible,
+        enter = if (disableAnimations) {
+            EnterTransition.None
+        } else {
+            expandHorizontally() + fadeIn()
+        },
+        exit = if (disableAnimations) {
+            ExitTransition.None
+        } else {
+            shrinkHorizontally() + fadeOut()
+        }
+    ) {
+        CompositionLocalProvider(LocalContentColor provides Color.White) {
+            Box(
+                modifier = modifier.padding(
+                    horizontal = IndicatorPillTokens.IconHorizontalPadding,
+                    vertical = IndicatorPillTokens.IconVerticalPadding
+                ),
+                contentAlignment = Alignment.Center
+            ) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+internal fun <T : Any> rememberLastNonNull(value: T?): T? {
+    val holder = remember {
+        object {
+            var last: T? = value
+        }
+    }
+    if (value != null) {
+        holder.last = value
+    }
+    return holder.last
 }
 
 /**
@@ -1534,4 +1650,73 @@ private fun FlipCameraButtonPreview() {
             }
         }
     }
+}
+
+/**
+ * Shows a [CaptureModeToggleButton] over a gray gradient, using the
+ * [LocalCameraControlBackgroundStyle] provided by the caller.
+ *
+ * @param selectedCaptureMode the selected mode; must be [CaptureMode.IMAGE_ONLY] or
+ * [CaptureMode.VIDEO_ONLY].
+ * @param enabled whether video capture is selectable. When `false`, the toggle is shown disabled.
+ */
+@Composable
+internal fun PreviewCaptureModeToggleButton(
+    selectedCaptureMode: CaptureMode,
+    enabled: Boolean = true
+) {
+    val disabledRationale = object : DisableRationale {
+        override val reasonTextResId: Int =
+            R.string.capture_mode_video_recording_content_description_disabled
+    }
+    val uiState = CaptureModeToggleUiState.Available(
+        selectedCaptureMode = selectedCaptureMode,
+        imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+        videoOnlyUiState = if (enabled) {
+            SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+        } else {
+            SingleSelectableUiState.Disabled(CaptureMode.VIDEO_ONLY, disabledRationale)
+        }
+    )
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(
+            modifier = Modifier
+                .background(Brush.verticalGradient(colors = listOf(Color.Gray, Color.DarkGray)))
+                .padding(8.dp)
+        ) {
+            CaptureModeToggleButton(
+                uiState = uiState,
+                onChangeCaptureMode = {},
+                onToggleWhenDisabled = {}
+            )
+        }
+    }
+}
+
+/**
+ * Preview of the [CaptureModeToggleButton] with image capture selected.
+ */
+@Preview
+@Composable
+internal fun CaptureModeToggleImageSelectedPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY)
+}
+
+/**
+ * Preview of the [CaptureModeToggleButton] with video capture selected.
+ */
+@Preview
+@Composable
+internal fun CaptureModeToggleVideoSelectedPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.VIDEO_ONLY)
+}
+
+/**
+ * Preview of the [CaptureModeToggleButton] when video capture is unavailable. The track keeps its
+ * container color while the thumb and icons are dimmed.
+ */
+@Preview
+@Composable
+internal fun CaptureModeToggleDisabledPreview() {
+    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY, enabled = false)
 }
