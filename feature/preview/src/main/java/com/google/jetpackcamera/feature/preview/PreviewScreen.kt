@@ -39,7 +39,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
@@ -80,6 +79,7 @@ import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.VideoCaptureEvent
+import com.google.jetpackcamera.ui.components.JcaTooltipDefaults
 import com.google.jetpackcamera.ui.components.TooltipIconButton
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
@@ -958,7 +958,7 @@ private fun LayoutWrapper(
                         icon = {
                             Box(
                                 modifier = Modifier
-                                    .size(24.dp)
+                                    .size(JcaTooltipDefaults.IconSize)
                                     .background(Color.White, shape = CircleShape)
                             )
                         },

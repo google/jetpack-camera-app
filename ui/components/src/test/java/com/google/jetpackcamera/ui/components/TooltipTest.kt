@@ -38,7 +38,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -201,7 +200,8 @@ class TooltipTest {
         // Must still exist because timer was reset
         composeTestRule.onNode(isPopup()).assertExists()
 
-        // Advance past reset expiration (remaining 1001ms) -> Trigger dismiss and allow exit transition
+        // Advance past reset expiration (remaining 1001ms) ->
+        // Trigger dismiss and allow exit transition
         composeTestRule.mainClock.advanceTimeBy(1001)
         composeTestRule.mainClock.autoAdvance = true
         composeTestRule.waitForIdle()
@@ -285,7 +285,7 @@ class TooltipTest {
             popupContentSize = popupContentSize
         )
 
-        // The popup is clamped to screen margin (16px) because ideal X (32 - 200 = -168) is offscreen
+        // The popup is clamped to screen margin (16px) because ideal X is offscreen
         assertThat(position.x).isEqualTo(16)
         // Positioned below anchor: bottom (52) + spacing (4) = 56
         assertThat(position.y).isEqualTo(56)
@@ -295,7 +295,8 @@ class TooltipTest {
         assertThat(calculatedIsCaretOnTop).isTrue()
 
         // Global caret X points exactly to anchor center X
-        assertThat(position.x + calculatedLocalCaretX.toInt()).isEqualTo((anchorBounds.left + anchorBounds.right) / 2)
+        val expectedAnchorCenter = (anchorBounds.left + anchorBounds.right) / 2
+        assertThat(position.x + calculatedLocalCaretX.toInt()).isEqualTo(expectedAnchorCenter)
     }
 
     @Test
@@ -344,7 +345,12 @@ class TooltipTest {
             density = Density(1f),
             onCaretCalculated = { x, _ -> caretX = x }
         )
-        bubbleCenterProvider.calculatePosition(anchorBounds, windowSize, LayoutDirection.Ltr, popupContentSize)
+        bubbleCenterProvider.calculatePosition(
+            anchorBounds,
+            windowSize,
+            LayoutDirection.Ltr,
+            popupContentSize
+        )
         assertThat(caretX).isEqualTo(200f)
 
         // Start (LTR)
@@ -354,7 +360,12 @@ class TooltipTest {
             density = Density(1f),
             onCaretCalculated = { x, _ -> caretX = x }
         )
-        startProvider.calculatePosition(anchorBounds, windowSize, LayoutDirection.Ltr, popupContentSize)
+        startProvider.calculatePosition(
+            anchorBounds,
+            windowSize,
+            LayoutDirection.Ltr,
+            popupContentSize
+        )
         // cornerRadius (16) + caretWidth / 2 (8) = 24
         assertThat(caretX).isEqualTo(24f)
 
@@ -365,7 +376,12 @@ class TooltipTest {
             density = Density(1f),
             onCaretCalculated = { x, _ -> caretX = x }
         )
-        endProvider.calculatePosition(anchorBounds, windowSize, LayoutDirection.Ltr, popupContentSize)
+        endProvider.calculatePosition(
+            anchorBounds,
+            windowSize,
+            LayoutDirection.Ltr,
+            popupContentSize
+        )
         // popupWidth (400) - cornerRadius (16) - caretWidth / 2 (8) = 376
         assertThat(caretX).isEqualTo(376f)
 
@@ -376,7 +392,12 @@ class TooltipTest {
             density = Density(1f),
             onCaretCalculated = { x, _ -> caretX = x }
         )
-        customProvider.calculatePosition(anchorBounds, windowSize, LayoutDirection.Ltr, popupContentSize)
+        customProvider.calculatePosition(
+            anchorBounds,
+            windowSize,
+            LayoutDirection.Ltr,
+            popupContentSize
+        )
         assertThat(caretX).isEqualTo(75f)
     }
 
@@ -385,15 +406,26 @@ class TooltipTest {
         composeTestRule.setContent {
             MaterialTheme {
                 TooltipIconButton(
-                    icon = { Box(modifier = Modifier.size(24.dp)) },
+                    icon = { Box(modifier = Modifier.size(JcaTooltipDefaults.IconSize)) },
                     tooltipText = "Touch target test"
                 )
             }
         }
 
         composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG)
-            .assertWidthIsAtLeast(48.dp)
-            .assertHeightIsAtLeast(48.dp)
+            .assertWidthIsAtLeast(JcaTooltipDefaults.TouchTargetSize)
+            .assertHeightIsAtLeast(JcaTooltipDefaults.TouchTargetSize)
+    }
+
+    @Test
+    fun tooltipDefaults_mapsToMaterial3Tokens() {
+        assertThat(JcaTooltipDefaults.CaretSize.width).isEqualTo(16.dp)
+        assertThat(JcaTooltipDefaults.CaretSize.height).isEqualTo(8.dp)
+        assertThat(JcaTooltipDefaults.TouchTargetSize).isEqualTo(48.dp)
+        assertThat(JcaTooltipDefaults.ContainerSize).isEqualTo(32.dp)
+        assertThat(JcaTooltipDefaults.IconSize).isEqualTo(24.dp)
+        assertThat(JcaTooltipDefaults.CornerRadius).isEqualTo(16.dp)
+        assertThat(JcaTooltipDefaults.DefaultElevation).isEqualTo(2.dp)
     }
 
     @Test
@@ -410,7 +442,12 @@ class TooltipTest {
 
         composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
-            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Custom info action")))
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.ContentDescription,
+                    listOf("Custom info action")
+                )
+            )
     }
 
     @Test

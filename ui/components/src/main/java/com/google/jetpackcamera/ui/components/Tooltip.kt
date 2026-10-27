@@ -40,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TooltipState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.ripple
@@ -81,6 +82,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
@@ -102,27 +104,31 @@ const val TOOLTIP_ANCHOR_BUTTON_TAG = "tooltip_anchor_button"
 const val TOOLTIP_CONTENT_TAG = "tooltip_content"
 
 /**
- * Custom Tooltip Implementation Workaround Rationale:
+ * Rationale and benefits of the custom [JcaTooltipBox] implementation:
  *
- * Upstream Material 3's [androidx.compose.material3.RichTooltip] and [androidx.compose.material3.TooltipBox]
- * suffer from three primary limitations that prevent accurate placement in custom camera layouts:
+ * Upstream Material 3's [androidx.compose.material3.RichTooltip] and
+ * [androidx.compose.material3.TooltipBox] present limitations in camera overlay layouts:
  *
- * 1. Misaligned Caret Coordinates: Material 3 computes caret offsets using an internal `Modifier.layoutCaret`
- *    and private `caretX(...)` function. When clamping the popup against window margins, M3's formula incorrectly
- *    assumes the tooltip popup is flush with the anchor edge or hardcoded margins. When the calling button is small
- *    or positioned near the screen edge (such as in an indicator or status bar), this causes the caret to drift
- *    tens of pixels away from the anchor center.
- * 2. Visual Hitch / Asynchronous Delay: M3 calculates caret transformations inside an asynchronous
- *    `onLayoutRectChanged` / `onGloballyPositioned` callback. This causes an unavoidable 1-frame visual jump where
- *    the tooltip first renders with default/stale caret coordinates before snapping to the recalculated position,
- *    triggering a full subtree recreation keyed on `tooltipSide`.
- * 3. Caret Shape Continuity: M3 draws the caret as a detached child rotated via a transformation matrix,
- *    preventing unified background fills, continuous corner-radius clipping, and single-pass elevation shadows.
+ * 1. Caret Misalignment: M3's caret positioning does not adjust when the popup window clamps
+ *    against screen boundaries, causing the caret to drift away from edge-positioned anchors.
+ * 2. Visual Hitch: M3 calculates caret offsets asynchronously across layout passes, causing
+ *    a 1-frame visual jump when the tooltip first appears.
+ * 3. Disjoint Geometry: M3 renders the caret as a separate rotated element, preventing seamless
+ *    backgrounds, smooth corner clipping, and unified elevation shadows.
  *
- * To resolve this, [JcaTooltipBox] uses standard Compose [androidx.compose.ui.window.Popup] paired with
- * [JcaTooltipPositionProvider] and [JcaTooltipBubbleShape]. This synchronously computes both popup window placement
- * and the exact pixel-level local caret coordinates on Frame 0 before draw, guarantees safe screen margins (16dp),
- * protects against corner-radius bleed, and supports flexible [CaretAlignment] configurations.
+ * Key advantages and customizations in [JcaTooltipBox]:
+ *
+ * - Flexible Caret Alignment: Supports [CaretAlignment.AnchorCenter],
+ *   [CaretAlignment.BubbleCenter], start/end, and custom offsets, dynamically tracking anchors
+ *   without corner bleed.
+ * - Reactive & Timed Triggers: Built-in support for [autoDismissDuration] and external
+ *   [TooltipTriggerEvent] flows to drive onboarding or guidance tooltips from ViewModels.
+ * - Frame-0 Synchronous Layout: Derives popup position and caret coordinates simultaneously
+ *   before drawing, eliminating multi-frame visual hops.
+ * - Continuous Vector Shape: [JcaTooltipBubbleShape] unifies the bubble and caret into a single
+ *   path for seamless fills, borders, and shadows.
+ * - Viewfinder-Aware & Accessible: High-contrast camera theming, responsive vertical scrolling
+ *   under large font scaling, and TalkBack live region announcements.
  */
 
 /**
@@ -156,18 +162,49 @@ data class JcaTooltipColors(
 )
 
 /**
- * Default dimensions, styling tokens, and color values for JCA tooltips.
+ * Default dimensions, styling tokens, and color values for JCA tooltips,
+ * referencing standard Material 3 design tokens and component defaults.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 object JcaTooltipDefaults {
-    val MinWidth: Dp = 140.dp
-    val MaxWidth: Dp = 296.dp
-    val CornerRadius: Dp = 16.dp
-    val CaretWidth: Dp = 16.dp
-    val CaretHeight: Dp = 8.dp
-    val ScreenMargin: Dp = 16.dp
+    /** Default caret dimensions matching Material 3 [TooltipDefaults.caretSize] (16dp x 8dp). */
+    val CaretSize: DpSize = TooltipDefaults.caretSize
+    val CaretWidth: Dp get() = CaretSize.width
+    val CaretHeight: Dp get() = CaretSize.height
+
+    /** Default spacing between the tooltip bubble and calling anchor. */
     val SpacingBetweenTooltipAndAnchor: Dp = 4.dp
+
+    /** Safe screen edge margins for clamping popup placement against window boundaries. */
+    val ScreenMargin: Dp = 16.dp
+
+    /** Large corner radius token (16dp) based on Material 3 ShapeDefaults.Large. */
+    val CornerRadius: Dp = 16.dp
+
+    /** Standard Material minimum interactive touch target size (48dp). */
+    val TouchTargetSize: Dp = 48.dp
+
+    /** Visual container size (32dp) matching [IconButtonDefaults.extraSmallContainerSize]. */
+    val ContainerSize: Dp = IconButtonDefaults.extraSmallContainerSize().width // 32.dp
+
+    /** Medium icon size (24dp) matching [IconButtonDefaults.mediumIconSize]. */
+    val IconSize: Dp = IconButtonDefaults.mediumIconSize // 24.dp
+
+    /** Width constraints for the tooltip bubble. */
+    val MinWidth: Dp = 140.dp
+
+    /**
+     * Maximum width aligned with design mock (296dp),
+     * capped within [TooltipDefaults.richTooltipMaxWidth] (320dp).
+     */
+    val MaxWidth: Dp = 296.dp
+
+    /** Container elevation Level 2 (2dp) matching Material 3 RichTooltipTokens. */
     val DefaultElevation: Dp = 2.dp
 
+    /**
+     * Default high-contrast colors suited for camera viewfinder overlays.
+     */
     @Composable
     fun tooltipColors(
         containerColor: Color = MaterialTheme.colorScheme.secondaryFixed,
@@ -178,6 +215,19 @@ object JcaTooltipDefaults {
         contentColor = contentColor,
         titleContentColor = titleContentColor
     )
+
+    /**
+     * Standard Material 3 rich tooltip colors based on [TooltipDefaults.richTooltipColors].
+     */
+    @Composable
+    fun standardM3Colors(): JcaTooltipColors {
+        val m3Defaults = TooltipDefaults.richTooltipColors()
+        return JcaTooltipColors(
+            containerColor = m3Defaults.containerColor,
+            contentColor = m3Defaults.contentColor,
+            titleContentColor = m3Defaults.titleContentColor
+        )
+    }
 }
 
 /**
@@ -675,8 +725,10 @@ private fun Modifier.tooltipGestures(
  * @param isOutlined Whether the icon button should be outlined.
  * @param containerColor The background container color for the button.
  * @param contentColor The content/tint color for the icon.
- * @param size The size of the inner visual container, defaulting to [IconButtonDefaults.extraSmallContainerSize] (32.dp).
- * @param minTouchTargetSize The minimum interactive touch target size for accessibility, defaulting to 48.dp.
+ * @param size The size of the inner visual container, defaulting to
+ *   [IconButtonDefaults.extraSmallContainerSize] (32.dp).
+ * @param minTouchTargetSize The minimum interactive touch target size for accessibility,
+ *   defaulting to 48.dp.
  * @param onClick Optional callback when the button is clicked.
  * @param onDismissRequest Optional callback invoked when the tooltip is dismissed.
  */
@@ -696,8 +748,8 @@ fun TooltipIconButton(
     isOutlined: Boolean = false,
     containerColor: Color = Color.Transparent,
     contentColor: Color = Color.White,
-    size: Dp = IconButtonDefaults.extraSmallContainerSize().width,
-    minTouchTargetSize: Dp = 48.dp,
+    size: Dp = JcaTooltipDefaults.ContainerSize,
+    minTouchTargetSize: Dp = JcaTooltipDefaults.TouchTargetSize,
     onClick: () -> Unit = {},
     onDismissRequest: (() -> Unit)? = null
 ) {
