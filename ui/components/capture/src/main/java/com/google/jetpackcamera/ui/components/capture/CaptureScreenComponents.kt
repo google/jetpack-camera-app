@@ -857,8 +857,7 @@ fun PreviewDisplay(
                 .height(height)
                 .transformable(state = transformableState)
                 .alpha(imageAlpha)
-                .clip(RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.Center
+                .clip(RoundedCornerShape(16.dp))
         ) {
             if (surfaceRequest != null) {
                 val implementationMode = when {
@@ -909,7 +908,7 @@ fun PreviewDisplay(
                 )
             } else {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(LOADING_SPINNER_SIZE),
+                    modifier = Modifier.align(Alignment.Center).size(LOADING_SPINNER_SIZE),
                     color = Color.White
                 )
             }
