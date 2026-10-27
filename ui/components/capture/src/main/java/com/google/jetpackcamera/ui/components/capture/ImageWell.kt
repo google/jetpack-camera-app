@@ -51,7 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 
 /**

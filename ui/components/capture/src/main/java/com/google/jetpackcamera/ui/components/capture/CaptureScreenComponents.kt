@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
+import android.icu.text.MessageFormat
 import android.os.Build
 import android.util.Log
 import androidx.annotation.VisibleForTesting
@@ -67,6 +68,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
@@ -125,6 +127,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
@@ -154,6 +157,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "CaptureScreenComponents"
+private val LOADING_SPINNER_SIZE = 40.dp
 
 private val SnackbarMinHeight = 48.dp
 private val SnackbarHorizontalMargin = 16.dp
@@ -168,7 +172,7 @@ private val SnackbarTextToActionSpacing = 8.dp
 private val SnackbarElevation = 6.dp
 
 /**
- * A custom [SnackbarHost] that displays snackbars with a pill shape and a leading status icon.
+ * A custom [SnackbarHost] that displays snackbars with a rounded shape and a leading status icon.
  *
  * @param snackbarHostState the [SnackbarHostState] for the host.
  * @param modifier the modifier for this component.
@@ -408,12 +412,22 @@ fun ElapsedTimeText(
         val formattedTime = remember(elapsedSeconds, format) {
             format.format(minutes, seconds)
         }
+        val minutesInt = minutes.toInt()
+        val secondsInt = seconds.toInt()
+        val minutesText = MessageFormat.format(
+            stringResource(R.string.elapsed_time_accessibility_minutes),
+            mapOf("count" to minutesInt)
+        )
+        val secondsText = MessageFormat.format(
+            stringResource(R.string.elapsed_time_accessibility_seconds),
+            mapOf("count" to secondsInt)
+        )
         val accessibilityRes = if (state.isPaused) {
             R.string.elapsed_time_accessibility_paused
         } else {
             R.string.elapsed_time_accessibility_recording
         }
-        val accessibilityText = stringResource(accessibilityRes, minutes, seconds)
+        val accessibilityText = stringResource(accessibilityRes, minutesText, secondsText)
         Box(
             modifier = modifier
                 .testTag(ELAPSED_TIME_TAG)
@@ -783,10 +797,10 @@ fun PreviewDisplay(
     focusMeteringUiState: FocusMeteringUiState,
     modifier: Modifier = Modifier
 ) {
-    val aspectRatioUiState = previewDisplayUiState.aspectRatioUiState
-    if (aspectRatioUiState !is AspectRatioUiState.Available) {
-        return
-    }
+    val aspectRatio =
+        (previewDisplayUiState.aspectRatioUiState as? AspectRatioUiState.Available)
+            ?.selectedAspectRatio ?: AspectRatio.THREE_FOUR
+
     @Suppress("DEPRECATION")
     val transformableState = rememberTransformableState(
         onTransformation = { pinchZoomChange, _, _ ->
@@ -794,60 +808,59 @@ fun PreviewDisplay(
         }
     )
 
-    surfaceRequest?.let {
-        BoxWithConstraints(
-            modifier
-                .fillMaxSize()
-                .background(Color.Black),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            val aspectRatio =
-                aspectRatioUiState.selectedAspectRatio
-            val maxAspectRatio: Float = maxWidth / maxHeight
-            val aspectRatioFloat: Float = aspectRatio.toFloat()
-            val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-            val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-            val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
-            var imageVisible by remember { mutableStateOf(true) }
-            val targetBoundsState = LocalOverlapTargetBounds.current
+    BoxWithConstraints(
+        modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        val maxAspectRatio: Float = maxWidth / maxHeight
+        val aspectRatioFloat: Float = aspectRatio.toFloat()
+        val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
+        val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
+        val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+        var imageVisible by remember { mutableStateOf(true) }
+        val targetBoundsState = LocalOverlapTargetBounds.current
 
-            val disableAnimations = LocalDisableAnimations.current
-            val imageAlpha: Float by animateFloatAsState(
-                targetValue = if (imageVisible) 1f else 0f,
-                animationSpec = if (disableAnimations) {
-                    snap()
-                } else {
-                    tween(
-                        durationMillis = (BLINK_TIME / 2).toInt(),
-                        easing = LinearEasing
-                    )
-                },
-                label = ""
-            )
+        val disableAnimations = LocalDisableAnimations.current
+        val imageAlpha: Float by animateFloatAsState(
+            targetValue = if (imageVisible) 1f else 0f,
+            animationSpec = if (disableAnimations) {
+                snap()
+            } else {
+                tween(
+                    durationMillis = (BLINK_TIME / 2).toInt(),
+                    easing = LinearEasing
+                )
+            },
+            label = ""
+        )
 
-            LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
-                if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
-                    imageVisible = false
-                    delay(BLINK_TIME)
-                    imageVisible = true
-                }
+        LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
+            if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
+                imageVisible = false
+                delay(BLINK_TIME)
+                imageVisible = true
             }
+        }
 
-            Box(
-                modifier = Modifier
-                    .testTag(PREVIEW_DISPLAY)
-                    .onGloballyPositioned { coordinates ->
-                        val bounds = coordinates.boundsInWindow()
-                        if (targetBoundsState.value != bounds) {
-                            targetBoundsState.value = bounds
-                        }
+        Box(
+            modifier = Modifier
+                .testTag(PREVIEW_DISPLAY)
+                .onGloballyPositioned { coordinates ->
+                    val bounds = coordinates.boundsInWindow()
+                    if (targetBoundsState.value != bounds) {
+                        targetBoundsState.value = bounds
                     }
-                    .width(width)
-                    .height(height)
-                    .transformable(state = transformableState)
-                    .alpha(imageAlpha)
-                    .clip(RoundedCornerShape(16.dp))
-            ) {
+                }
+                .width(width)
+                .height(height)
+                .transformable(state = transformableState)
+                .alpha(imageAlpha)
+                .clip(RoundedCornerShape(16.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (surfaceRequest != null) {
                 val implementationMode = when {
                     Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
                     else -> ImplementationMode.EMBEDDED
@@ -886,13 +899,18 @@ fun PreviewDisplay(
                                 }
                             )
                         },
-                    surfaceRequest = it,
+                    surfaceRequest = surfaceRequest,
                     implementationMode = implementationMode,
                     coordinateTransformer = coordinateTransformer
                 )
                 FocusMeteringIndicator(
                     focusMeteringUiState = focusMeteringUiState,
                     coordinateTransformer = coordinateTransformer
+                )
+            } else {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(LOADING_SPINNER_SIZE),
+                    color = Color.White
                 )
             }
         }

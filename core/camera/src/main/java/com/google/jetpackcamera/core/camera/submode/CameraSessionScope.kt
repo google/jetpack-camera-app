@@ -13,19 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.controller
-
-import com.google.jetpackcamera.data.media.MediaDescriptor
+package com.google.jetpackcamera.core.camera.submode
 
 /**
- * Interface for controlling the image well.
+ * Opaque scope handle passed to [CameraSessionBinding.Custom.runSession] by `:core:camera`.
  */
-interface ImageWellController {
-    /**
-     * Sets the specified media as the current item in the media repository, typically before
-     * navigating to the post-capture screen.
-     *
-     * @param mediaDescriptor The media descriptor to be set.
-     */
-    fun imageWellToRepository(mediaDescriptor: MediaDescriptor)
-}
+interface CameraSessionScope
