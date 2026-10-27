@@ -19,6 +19,7 @@ import android.util.Log
 import android.util.Range
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -117,6 +118,8 @@ import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
 
@@ -218,8 +221,9 @@ fun PreviewScreen(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@VisibleForTesting
 @Composable
-private fun ContentScreen(
+internal fun ContentScreen(
     captureUiStateProvider: () -> CaptureUiState.Ready,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
@@ -270,12 +274,18 @@ private fun ContentScreen(
         )
     }
 
-    LaunchedEffect((flipLensState.value as? FlipLensUiState.Available)?.selectedLensFacing) {
+    val selectedLensFacing = (flipLensState.value as? FlipLensUiState.Available)?.selectedLensFacing
+    LaunchedEffect(selectedLensFacing) {
+        // Before the camera is ready, zoom is unavailable; initialize once this lens reports its
+        // range.
+        val zoomRange =
+            snapshotFlow { (zoomUiState.value as? ZoomUiState.Enabled)?.primaryZoomRange }
+                .filterNotNull()
+                .first()
         zoomStateManager.onChangeLens(
             newInitialZoomLevel =
             (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
-            newZoomRange = (zoomUiState.value as? ZoomUiState.Enabled)
-                ?.primaryZoomRange ?: Range(1f, 1f)
+            newZoomRange = zoomRange
         )
     }
 
@@ -1008,7 +1018,8 @@ private fun ContentScreen_Locked_Recording() {
     }
 }
 
-private val LOADING_CAPTURE_UI_STATE_SKELETON = CaptureUiState.Ready(
+@VisibleForTesting
+internal val LOADING_CAPTURE_UI_STATE_SKELETON = CaptureUiState.Ready(
     videoRecordingState = VideoRecordingState.Inactive(),
     externalCaptureMode = ExternalCaptureMode.Standard,
     captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
