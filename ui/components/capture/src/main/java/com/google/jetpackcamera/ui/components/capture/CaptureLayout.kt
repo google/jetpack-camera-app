@@ -177,7 +177,9 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * @param debugOverlay the debug overlay composable
  * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug
  * settings
- * @param screenFlashOverlay the screen flash overlay composable
+ * @param screenFlashOverlay the screen flash overlay composable, drawn above all other content
+ *   (including the quick settings sheet) and across the entire window, including the system bar
+ *   and display cutout areas
  * @param snackBar the snack bar composable for showing messages
  * @param topStartContent optional composable content placed at the top-start of the capture
  * screen, at a fixed position directly below the top status/indicator bar
@@ -227,152 +229,157 @@ fun PreviewLayout(
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
+    val dismissQuickSettingsLabel =
+        stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
 
     CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
-        BottomSheetScaffold(
-            modifier = modifier.fillMaxSize(),
-            scaffoldState = scaffoldState,
-            sheetPeekHeight = 0.dp,
-            sheetDragHandle = {
-                BottomSheetDefaults.DragHandle(
-                    modifier = Modifier
-                        .testTag(QUICK_SETTINGS_DRAG_HANDLE)
-                        .clickable(
-                            role = Role.Button,
-                            onClickLabel = stringResource(
-                                R.string.quick_settings_btn_close_expanded_settings_description
-                            ),
-                            onClick = onDismissQuickSettings
-                        )
-                )
-            },
-            sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            sheetContent = {
-                quickSettingsOverlay(Modifier)
-            },
-            snackbarHost = {}
-        ) {
-            BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-                // The adaptive portrait solver targets portrait handhelds (16:9 and taller, where
-                // a full-width 9:16 frame fits inside the window). Squarer windows (landscape,
-                // foldable inner displays, or short split-screen panes like 360x500) fall back to
-                // VerticalMaterialControls, which compresses below SHORT_SCREEN_THRESHOLD.
-                val isHandheldPortrait =
-                    (maxHeight.value / maxWidth.value) >= PORTRAIT_ASPECT_RATIO_THRESHOLD
-                if (isHandheldPortrait) {
-                    AdaptivePortraitCaptureLayout(
-                        windowWidth = maxWidth,
-                        windowHeight = maxHeight,
-                        viewfinder = viewfinder,
-                        topStartContent = topStartContent,
-                        viewfinderTopEndContent = viewfinderTopEndContent,
-                        onRequiresImmersiveChange = onRequiresImmersiveChange,
-                        indicatorRow = indicatorRow,
-                        elapsedTimeDisplay = elapsedTimeDisplay,
-                        zoomControls = zoomLevelDisplay,
-                        imageWell = imageWell,
-                        captureButton = captureButton,
-                        flipCameraButton = flipCameraButton,
-                        captureModeCarousel = captureModeCarousel,
-                        quickSettingsToggleButton = quickSettingsButton,
-                        captureModeToggleSwitch = captureModeToggle,
-                        debugVisibilityWrapper = debugVisibilityWrapper,
-                        snackbarHost = { modifier ->
-                            PillSnackbarHost(
-                                snackbarHostState = scaffoldState.snackbarHostState,
-                                modifier = modifier
-                            )
-                        }
-                    )
-                    Box(
+        Box(modifier = modifier.fillMaxSize()) {
+            BottomSheetScaffold(
+                modifier = Modifier.fillMaxSize(),
+                scaffoldState = scaffoldState,
+                sheetPeekHeight = 0.dp,
+                sheetDragHandle = {
+                    BottomSheetDefaults.DragHandle(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .windowInsetsPadding(
-                                WindowInsets.systemBarsIgnoringVisibility
-                                    .union(WindowInsets.displayCutout)
-                            )
-                    ) {
-                        snackBar(Modifier, scaffoldState.snackbarHostState)
-                        screenFlashOverlay(Modifier)
-                    }
-                } else {
-                    Column {
-                        val cutoutTopInset =
-                            WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
-                        val minTouchTarget =
-                            LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
-                        val topBarHeight = max(cutoutTopInset, minTouchTarget)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(topBarHeight)
-                                .windowInsetsPadding(
-                                    WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
-                                )
-                                .padding(horizontal = LOWER_SECTION_HORIZONTAL_PADDING),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            indicatorRow(Modifier)
-                        }
-                        Box {
-                            viewfinder(Modifier)
-                            topStartContent(Modifier.align(Alignment.TopStart))
-                            viewfinderTopEndContent(Modifier.align(Alignment.TopEnd))
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .windowInsetsPadding(
-                                WindowInsets.systemBarsIgnoringVisibility
-                                    .union(WindowInsets.displayCutout)
-                            )
-                    ) {
-                        debugVisibilityWrapper {
-                            VerticalMaterialControls(
-                                captureButton = captureButton,
-                                imageWell = imageWell,
-                                flipCameraButton = flipCameraButton,
-                                quickSettingsToggleButton = quickSettingsButton,
-                                captureModeToggleSwitch = captureModeToggle,
-                                captureModeCarousel = captureModeCarousel,
-                                zoomControls = zoomLevelDisplay,
-                                elapsedTimeDisplay = elapsedTimeDisplay,
-                                snackbarHost = { modifier ->
-                                    PillSnackbarHost(
-                                        snackbarHostState = scaffoldState.snackbarHostState,
-                                        modifier = modifier
-                                    )
-                                }
-                            )
-                        }
-                        snackBar(Modifier, scaffoldState.snackbarHostState)
-                        screenFlashOverlay(Modifier)
-                    }
-                }
-                debugOverlay(Modifier)
-
-                val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
-                    scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
-                if (isSheetVisible) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag(QUICK_SETTINGS_SCRIM)
+                            .testTag(QUICK_SETTINGS_DRAG_HANDLE)
                             .clickable(
-                                onClickLabel = stringResource(
-                                    R.string.quick_settings_btn_close_expanded_settings_description
-                                ),
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
+                                role = Role.Button,
+                                onClickLabel = dismissQuickSettingsLabel,
                                 onClick = onDismissQuickSettings
                             )
                     )
+                },
+                sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                sheetContent = {
+                    quickSettingsOverlay(Modifier)
+                },
+                snackbarHost = {}
+            ) {
+                BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                    // The adaptive portrait solver targets portrait handhelds (16:9 and taller,
+                    // where a full-width 9:16 frame fits inside the window). Squarer windows
+                    // (landscape, foldable inner displays, or short split-screen panes like
+                    // 360x500) fall back to VerticalMaterialControls, which compresses below
+                    // SHORT_SCREEN_THRESHOLD.
+                    val isHandheldPortrait =
+                        (maxHeight.value / maxWidth.value) >= PORTRAIT_ASPECT_RATIO_THRESHOLD
+                    if (isHandheldPortrait) {
+                        AdaptivePortraitCaptureLayout(
+                            windowWidth = maxWidth,
+                            windowHeight = maxHeight,
+                            viewfinder = viewfinder,
+                            topStartContent = topStartContent,
+                            viewfinderTopEndContent = viewfinderTopEndContent,
+                            onRequiresImmersiveChange = onRequiresImmersiveChange,
+                            indicatorRow = indicatorRow,
+                            elapsedTimeDisplay = elapsedTimeDisplay,
+                            zoomControls = zoomLevelDisplay,
+                            imageWell = imageWell,
+                            captureButton = captureButton,
+                            flipCameraButton = flipCameraButton,
+                            captureModeCarousel = captureModeCarousel,
+                            quickSettingsToggleButton = quickSettingsButton,
+                            captureModeToggleSwitch = captureModeToggle,
+                            debugVisibilityWrapper = debugVisibilityWrapper,
+                            snackbarHost = { modifier ->
+                                PillSnackbarHost(
+                                    snackbarHostState = scaffoldState.snackbarHostState,
+                                    modifier = modifier
+                                )
+                            }
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .windowInsetsPadding(
+                                    WindowInsets.systemBarsIgnoringVisibility
+                                        .union(WindowInsets.displayCutout)
+                                )
+                        ) {
+                            snackBar(Modifier, scaffoldState.snackbarHostState)
+                        }
+                    } else {
+                        Column {
+                            val cutoutTopInset =
+                                WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+                            val minTouchTarget =
+                                LocalMinimumInteractiveComponentSize.current.takeOrElse { 48.dp }
+                            val topBarHeight = max(cutoutTopInset, minTouchTarget)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(topBarHeight)
+                                    .windowInsetsPadding(
+                                        WindowInsets.displayCutout.only(
+                                            WindowInsetsSides.Horizontal
+                                        )
+                                    )
+                                    .padding(horizontal = LOWER_SECTION_HORIZONTAL_PADDING),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                indicatorRow(Modifier)
+                            }
+                            Box {
+                                viewfinder(Modifier)
+                                topStartContent(Modifier.align(Alignment.TopStart))
+                                viewfinderTopEndContent(Modifier.align(Alignment.TopEnd))
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .windowInsetsPadding(
+                                    WindowInsets.systemBarsIgnoringVisibility
+                                        .union(WindowInsets.displayCutout)
+                                )
+                        ) {
+                            debugVisibilityWrapper {
+                                VerticalMaterialControls(
+                                    captureButton = captureButton,
+                                    imageWell = imageWell,
+                                    flipCameraButton = flipCameraButton,
+                                    quickSettingsToggleButton = quickSettingsButton,
+                                    captureModeToggleSwitch = captureModeToggle,
+                                    captureModeCarousel = captureModeCarousel,
+                                    zoomControls = zoomLevelDisplay,
+                                    elapsedTimeDisplay = elapsedTimeDisplay,
+                                    snackbarHost = { modifier ->
+                                        PillSnackbarHost(
+                                            snackbarHostState = scaffoldState.snackbarHostState,
+                                            modifier = modifier
+                                        )
+                                    }
+                                )
+                            }
+                            snackBar(Modifier, scaffoldState.snackbarHostState)
+                        }
+                    }
+                    debugOverlay(Modifier)
+
+                    val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
+                        scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+                    if (isSheetVisible) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .testTag(QUICK_SETTINGS_SCRIM)
+                                .clickable(
+                                    onClickLabel = dismissQuickSettingsLabel,
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = onDismissQuickSettings
+                                )
+                        )
+                    }
+                    errorDialog(Modifier)
                 }
-                errorDialog(Modifier)
             }
+            // Drawn last and outside of both the inset-padded controls and the bottom sheet
+            // so that the flash covers the entire window, including the system bar and display
+            // cutout areas.
+            screenFlashOverlay(Modifier)
         }
     }
 }
@@ -561,7 +568,9 @@ private fun AdaptivePortraitCaptureLayout(
                             modifier = Modifier.weight(1f),
                             contentAlignment = Alignment.CenterStart
                         ) {
-                            quickSettingsToggleButton(Modifier)
+                            OverlapAwareStyleProvider {
+                                quickSettingsToggleButton(Modifier)
+                            }
                         }
 
                         Box(
@@ -835,7 +844,9 @@ private fun VerticalMaterialControls(
                         modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.CenterStart
                     ) {
-                        quickSettingsToggleButton(Modifier)
+                        OverlapAwareStyleProvider {
+                            quickSettingsToggleButton(Modifier)
+                        }
                     }
 
                     // capture mode toggle switch center

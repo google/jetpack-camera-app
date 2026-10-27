@@ -78,6 +78,7 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.LocalCameraControlBackgroundStyle
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
@@ -88,6 +89,7 @@ import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
+import com.google.jetpackcamera.ui.components.capture.containerColor
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraAspectRatio
@@ -110,12 +112,18 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
  * Button to toggle open quick settings.
  *
  * @param isOpen Whether the quick settings panel is currently open.
- * @param modifier The modifier for this component.
  * @param onClick The behavior for when this button is clicked.
+ * @param modifier The modifier for this component.
+ * @param enabled Whether this button is enabled.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ToggleQuickSettingsButton(isOpen: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ToggleQuickSettingsButton(
+    isOpen: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
     val layoutSolution = LocalCameraLayoutSolution.current
     val toolbarScale = layoutSolution?.toolbarHeight?.let { toolbarHeight ->
         (toolbarHeight / CameraLayoutDefaults.BottomToolbarHeight).coerceIn(0f, 1f)
@@ -129,6 +137,7 @@ fun ToggleQuickSettingsButton(isOpen: Boolean, onClick: () -> Unit, modifier: Mo
     )
     val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
     val closedDescription = stringResource(R.string.quick_settings_toggle_closed_description)
+    val containerColor = LocalCameraControlBackgroundStyle.current.containerColor
     IconButton(
         modifier = modifier
             .size(buttonSize)
@@ -142,11 +151,14 @@ fun ToggleQuickSettingsButton(isOpen: Boolean, onClick: () -> Unit, modifier: Mo
                 }
             },
         onClick = onClick,
+        enabled = enabled,
         colors = IconButtonDefaults.iconButtonColors(
             // Set the background color of the button
-            containerColor = Color.White.copy(alpha = 0.08f),
+            containerColor = containerColor,
             // Set the color of the icon inside the button
-            contentColor = Color.White
+            contentColor = Color.White,
+            disabledContainerColor = containerColor,
+            disabledContentColor = Color.White.copy(alpha = 0.38f)
         )
     ) {
         Icon(
