@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -44,7 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
@@ -95,10 +93,8 @@ data class ZoomBarColors(
 object ZoomBarDefaults {
     val SlotSize = 48.dp
     val IndicatorHeight = ButtonDefaults.MinHeight // 40.dp
-    val IndicatorWidth = 48.dp
     val Inset = (SlotSize - IndicatorHeight) / 2 // 4.dp
     val TrackShape = CircleShape
-    val IndicatorShape = RoundedCornerShape(12.dp)
     const val MAX_LABEL_FONT_SCALE = 1.3f
 
     /**
@@ -157,6 +153,51 @@ object ZoomBarDefaults {
 internal fun toTenths(value: Float): Int = floor(value * 10f + 0.5f).toInt()
 
 /**
+ * Determines the index of the selected zoom stop for a given [zoomRatio].
+ *
+ * Stops are matched against the half-up rounded tenth of [zoomRatio]. If adjacent stops round
+ * to the same tenth (e.g. 0.96x and 1.0x both round to 1.0x), the stop closest in absolute
+ * difference to [zoomRatio] is selected.
+ */
+internal fun selectedZoomStopIndex(zoomLevels: List<Float>, zoomRatio: Float): Int {
+    if (zoomLevels.isEmpty()) return 0
+    val checkTenths = toTenths(zoomRatio)
+    val index = zoomLevels.indexOfLast { zoomLevelOption ->
+        toTenths(zoomLevelOption) <= checkTenths
+    }
+    return if (index >= 0) {
+        if (index > 0 &&
+            toTenths(zoomLevels[index]) == toTenths(zoomLevels[index - 1])
+        ) {
+            val distCurrent = abs(zoomLevels[index] - zoomRatio)
+            val distPrev = abs(zoomLevels[index - 1] - zoomRatio)
+            if (distPrev < distCurrent) index - 1 else index
+        } else {
+            index
+        }
+    } else {
+        0
+    }
+}
+
+/**
+ * Formats a zoom value for speech / accessibility announcements (e.g. "0.5", "1", "2").
+ *
+ * Keeps the leading zero for speech clarity and respects the given [locale]'s decimal separator.
+ */
+internal fun formatAccessibleZoomLabel(value: Float, locale: Locale = Locale.getDefault()): String {
+    val tenths = toTenths(value)
+    val whole = tenths / 10
+    val fraction = tenths % 10
+    val decimalSeparator = DecimalFormatSymbols.getInstance(locale).decimalSeparator
+    return if (fraction == 0) {
+        whole.toString()
+    } else {
+        "$whole$decimalSeparator$fraction"
+    }
+}
+
+/**
  * Formats zoom ratios for camera controls:
  * - Unselected stops: ".5", "1", "2", "5" (no leading zero, no multiplication symbol).
  * - Selected stop: ".5×", "1×", "2×", "5×" (with Unicode multiplication symbol \u00D7).
@@ -201,8 +242,6 @@ private fun ZoomControlUiState.Enabled.displayZoomRatio(): Float =
  * @param modifier Modifier for the component.
  * @param orientation Layout orientation ([Orientation.Horizontal] or [Orientation.Vertical]),
  *   allowing flexible placement across portrait phones, landscape mode, and open foldables/tablets.
- * @param contentRotation Rotation angle in degrees to accommodate current device orientation
- *   by rotating the text content in-place without altering track layout geometry.
  * @param colors Styling configuration for track and indicator colors.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -212,7 +251,6 @@ fun ZoomBar(
     onChangeZoom: (Float) -> Unit,
     modifier: Modifier = Modifier,
     orientation: Orientation = Orientation.Horizontal,
-    contentRotation: Float = 0f,
     colors: ZoomBarColors = ZoomBarDefaults.colors()
 ) {
     if (zoomControlUiState is ZoomControlUiState.Enabled) {
@@ -221,24 +259,7 @@ fun ZoomBar(
             derivedStateOf {
                 val checkValue = currentZoomState.animatingToValue
                     ?: currentZoomState.displayZoomRatio()
-                val checkTenths = toTenths(checkValue)
-                val index = currentZoomState.zoomLevels.indexOfLast { zoomLevelOption ->
-                    toTenths(zoomLevelOption) <= checkTenths
-                }
-                if (index >= 0) {
-                    if (index > 0 &&
-                        toTenths(currentZoomState.zoomLevels[index]) ==
-                        toTenths(currentZoomState.zoomLevels[index - 1])
-                    ) {
-                        val distCurrent = abs(currentZoomState.zoomLevels[index] - checkValue)
-                        val distPrev = abs(currentZoomState.zoomLevels[index - 1] - checkValue)
-                        if (distPrev < distCurrent) index - 1 else index
-                    } else {
-                        index
-                    }
-                } else {
-                    0
-                }
+                selectedZoomStopIndex(currentZoomState.zoomLevels, checkValue)
             }
         }
 
@@ -253,11 +274,7 @@ fun ZoomBar(
         )
 
         val currentRatioProvider = remember {
-            {
-                currentZoomState.primaryZoomRatio
-                    ?: currentZoomState.initialZoomRatio
-                    ?: 1f
-            }
+            { currentZoomState.animatingToValue ?: currentZoomState.displayZoomRatio() }
         }
 
         val totalAlongTrack = ZoomBarDefaults.SlotSize * zoomLevels.size + ZoomBarDefaults.Inset * 2
@@ -288,7 +305,7 @@ fun ZoomBar(
                                 y = ZoomBarDefaults.Inset.roundToPx()
                             )
                         }
-                        .size(ZoomBarDefaults.IndicatorWidth, ZoomBarDefaults.IndicatorHeight)
+                        .size(ZoomBarDefaults.SlotSize, ZoomBarDefaults.IndicatorHeight)
                         .background(colors.selectedIndicatorColor, MaterialTheme.shapes.medium)
                 )
 
@@ -307,7 +324,6 @@ fun ZoomBar(
                             indicatorPositionProvider = { indicatorPosition },
                             itemIndex = index,
                             colors = colors,
-                            contentRotation = contentRotation,
                             onClick = { onChangeZoom(value) }
                         )
                     }
@@ -344,7 +360,6 @@ fun ZoomBar(
                             indicatorPositionProvider = { indicatorPosition },
                             itemIndex = index,
                             colors = colors,
-                            contentRotation = contentRotation,
                             onClick = { onChangeZoom(value) }
                         )
                     }
@@ -362,7 +377,6 @@ private fun ZoomBarItem(
     indicatorPositionProvider: () -> Float,
     itemIndex: Int,
     colors: ZoomBarColors,
-    contentRotation: Float = 0f,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -389,21 +403,11 @@ private fun ZoomBarItem(
         }
     }
 
-    val accessibleZoomLabel = if (value % 1.0f == 0f) {
-        "${value.toInt()}x"
-    } else {
-        "${value}x"
-    }
+    val accessibleZoomLabel = formatAccessibleZoomLabel(value)
 
     val density = LocalDensity.current
 
     val onClickLabel = stringResource(R.string.zoom_stop_click_label, accessibleZoomLabel)
-
-    val animatedRotation by animateFloatAsState(
-        targetValue = contentRotation,
-        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
-        label = "zoomTextRotation"
-    )
 
     Box(
         modifier = modifier
@@ -444,7 +448,6 @@ private fun ZoomBarItem(
                 },
                 modifier = Modifier
                     .wrapContentSize(unbounded = true)
-                    .rotate(animatedRotation)
                     .padding(horizontal = 2.dp),
                 softWrap = false
             )
@@ -465,7 +468,6 @@ private fun ZoomBarItem(
             "onChangeZoom = onChangeZoom, " +
             "modifier = modifier, " +
             "orientation = orientation, " +
-            "contentRotation = contentRotation, " +
             "colors = colors" +
             ")",
         "com.google.jetpackcamera.ui.components.capture.ZoomBar"
@@ -479,7 +481,6 @@ fun ZoomButtonRow(
     buttonSize: Dp = ButtonDefaults.ExtraSmallContainerHeight,
     spacing: Dp = 16.dp,
     orientation: Orientation = Orientation.Horizontal,
-    contentRotation: Float = 0f,
     colors: ZoomBarColors = ZoomBarDefaults.colors()
 ) {
     ZoomBar(
@@ -487,7 +488,6 @@ fun ZoomButtonRow(
         onChangeZoom = onChangeZoom,
         modifier = modifier,
         orientation = orientation,
-        contentRotation = contentRotation,
         colors = colors
     )
 }

@@ -179,4 +179,34 @@ class ZoomBarComponentsTest {
             )
         ).isEqualTo(",5")
     }
+
+    @Test
+    fun selectedZoomStopIndex_roundsToTenthsAndResolvesTieBreak() {
+        val stops = listOf(0.5f, 1.0f, 2.0f, 5.0f)
+
+        // 0.95 rounds half-up to 1.0 tenth -> selects index 1 (1.0x stop)
+        assertThat(selectedZoomStopIndex(stops, 0.95f)).isEqualTo(1)
+
+        // 4.94 rounds to 4.9 tenths -> stays on index 2 (2.0x stop)
+        assertThat(selectedZoomStopIndex(stops, 4.94f)).isEqualTo(2)
+
+        // 5.0f selects index 3 (5.0x stop)
+        assertThat(selectedZoomStopIndex(stops, 5.0f)).isEqualTo(3)
+
+        // Adjacent stops rounding to same tenth: picks the closer stop
+        val adjacentStops = listOf(0.5f, 0.96f, 1.0f, 2.0f)
+        assertThat(selectedZoomStopIndex(adjacentStops, 0.97f)).isEqualTo(1)
+        assertThat(selectedZoomStopIndex(adjacentStops, 0.99f)).isEqualTo(2)
+    }
+
+    @Test
+    fun formatAccessibleZoomLabel_roundsAndKeepsLeadingZero() {
+        // Pixel minimum zoom ~0.507 rounds to 0.5 with leading zero for speech
+        assertThat(formatAccessibleZoomLabel(0.50783783f, Locale.US)).isEqualTo("0.5")
+        assertThat(formatAccessibleZoomLabel(1.0f, Locale.US)).isEqualTo("1")
+        assertThat(formatAccessibleZoomLabel(2.0f, Locale.US)).isEqualTo("2")
+        assertThat(formatAccessibleZoomLabel(5.0f, Locale.US)).isEqualTo("5")
+        // Respects locale decimal separator
+        assertThat(formatAccessibleZoomLabel(0.50783783f, Locale.GERMANY)).isEqualTo("0,5")
+    }
 }
