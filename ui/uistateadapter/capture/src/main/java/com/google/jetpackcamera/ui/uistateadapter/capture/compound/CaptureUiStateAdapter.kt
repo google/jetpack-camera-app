@@ -17,7 +17,9 @@ package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -160,7 +162,11 @@ fun captureUiState(
                 roundedCameraState
             ),
             flashModeUiState = flashModeUiState,
-            videoQuality = roundedCameraState.videoQualityInfo.quality,
+            videoQuality = if (cameraAppSettings.captureMode != CaptureMode.IMAGE_ONLY) {
+                roundedCameraState.videoQualityInfo.quality
+            } else {
+                VideoQuality.UNSPECIFIED
+            },
             audioUiState = AudioUiState.from(
                 cameraAppSettings,
                 roundedCameraState

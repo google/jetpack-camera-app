@@ -26,6 +26,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LookaheadScope
@@ -51,6 +56,11 @@ import kotlin.math.roundToInt
  * the indicator row to occupy the status bar region (`y = 0`) while shifting individual items
  * horizontally past any cutout bounding rectangles that overlap the row's vertical bounds.
  *
+ * When [pillHorizontalPadding] is positive, contiguous active items that do not cross a cutout are
+ * grouped into a shared pill segment with [pillHorizontalPadding] at the start and end of each
+ * segment; if a cutout falls between active items, the pill is split into separate segments on
+ * each side of the cutout. When no items are visible, no pill segments are drawn.
+ *
  * This layout wraps its measurement in a [LookaheadScope] and provides a [RowScope] receiver so
  * that [androidx.compose.animation.AnimatedVisibility] children use horizontal expand/shrink
  * transitions without jumping across a cutout mid-animation:
@@ -61,12 +71,20 @@ import kotlin.math.roundToInt
  *   while their animated width grows from or shrinks to `0`.
  *
  * @param modifier the [Modifier] to be applied to this row.
- * @param horizontalSpacing horizontal gap between adjacent visible items.
+ * @param horizontalSpacing horizontal gap between adjacent visible items (or between split pills).
  * @param cutoutClearance additional horizontal padding kept clear on both sides of a display cutout.
+ * @param pillHorizontalPadding horizontal padding applied at the start and end of each connected
+ *   pill segment.
+ * @param pillMinHeight minimum height of each connected pill segment when at least one child is
+ *   visible.
+ * @param pillBackgroundColor background color drawn for each connected pill segment, or
+ *   [Color.Unspecified] to disable pill background drawing.
  * @param verticalAlignment vertical alignment of children within the row.
  * @param cutoutRectsOverride optional list of cutout bounding rectangles in the row's local
  *   coordinate space, used for deterministic testing. When `null`, cutout rects are queried from
  *   the host window's [android.view.DisplayCutout] and mapped into the row's local coordinates.
+ * @param onPillSegmentsPlaced optional callback invoked with the physical local [IntRect] bounds of
+ *   each active pill segment after layout, used for testing.
  * @param content the row children, scoped to [RowScope].
  */
 @SuppressLint("AvoidNullableCollections", "NullableCollection")
@@ -75,30 +93,57 @@ fun CutoutAwareRow(
     modifier: Modifier = Modifier,
     horizontalSpacing: Dp = 8.dp,
     cutoutClearance: Dp = 8.dp,
+    pillHorizontalPadding: Dp = 0.dp,
+    pillMinHeight: Dp = 0.dp,
+    pillBackgroundColor: Color = Color.Unspecified,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     cutoutRectsOverride: List<IntRect>? = null,
+    onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
     content: @Composable RowScope.() -> Unit
 ) {
     val view = LocalView.current
     val cutoutInsets = WindowInsets.displayCutout
     var rowBoundsInWindow by remember { mutableStateOf<IntRect?>(null) }
     val lockedMinX = remember { mutableMapOf<Int, Int>() }
+    var pillSegments by remember { mutableStateOf<List<IntRect>>(emptyList()) }
 
     LookaheadScope {
         Layout(
             content = { CutoutRowScope.content() },
-            modifier = modifier.onGloballyPositioned { coordinates ->
-                val bounds = coordinates.boundsInWindow()
-                val intRect = IntRect(
-                    left = bounds.left.roundToInt(),
-                    top = bounds.top.roundToInt(),
-                    right = bounds.right.roundToInt(),
-                    bottom = bounds.bottom.roundToInt()
-                )
-                if (rowBoundsInWindow != intRect) {
-                    rowBoundsInWindow = intRect
+            modifier = modifier
+                .onGloballyPositioned { coordinates ->
+                    val bounds = coordinates.boundsInWindow()
+                    val intRect = IntRect(
+                        left = bounds.left.roundToInt(),
+                        top = bounds.top.roundToInt(),
+                        right = bounds.right.roundToInt(),
+                        bottom = bounds.bottom.roundToInt()
+                    )
+                    if (rowBoundsInWindow != intRect) {
+                        rowBoundsInWindow = intRect
+                    }
                 }
-            }
+                .drawBehind {
+                    if (pillBackgroundColor != Color.Unspecified) {
+                        for (segment in pillSegments) {
+                            if (segment.width > 0 && segment.height > 0) {
+                                val radius = segment.height / 2f
+                                drawRoundRect(
+                                    color = pillBackgroundColor,
+                                    topLeft = Offset(
+                                        segment.left.toFloat(),
+                                        segment.top.toFloat()
+                                    ),
+                                    size = Size(
+                                        segment.width.toFloat(),
+                                        segment.height.toFloat()
+                                    ),
+                                    cornerRadius = CornerRadius(radius, radius)
+                                )
+                            }
+                        }
+                    }
+                }
         ) { measurables, constraints ->
             // Read WindowInsets.displayCutout inside measure to subscribe to inset updates.
             cutoutInsets.getTop(this).ignoreResult()
@@ -107,6 +152,8 @@ fun CutoutAwareRow(
 
             val spacingPx = horizontalSpacing.roundToPx()
             val clearancePx = cutoutClearance.roundToPx()
+            val pillPadPx = pillHorizontalPadding.roundToPx()
+            val pillMinHeightPx = pillMinHeight.roundToPx()
 
             val childConstraints = Constraints(
                 minWidth = 0,
@@ -117,7 +164,13 @@ fun CutoutAwareRow(
             val placeables = measurables.map { it.measure(childConstraints) }
 
             val maxChildHeight = placeables.maxOfOrNull { it.height } ?: 0
-            val rowHeight = max(maxChildHeight, constraints.minHeight)
+            val hasAnyVisibleChild = placeables.any { it.width > 0 }
+            val effectiveMinHeight = if (hasAnyVisibleChild) {
+                max(constraints.minHeight, pillMinHeightPx)
+            } else {
+                constraints.minHeight
+            }
+            val rowHeight = max(maxChildHeight, effectiveMinHeight)
                 .coerceAtMost(constraints.maxHeight)
 
             // Resolve cutout rects in the row's start-relative coordinate space so that
@@ -152,8 +205,39 @@ fun CutoutAwareRow(
 
             val xPositions = IntArray(placeables.size)
             val isActive = BooleanArray(placeables.size)
-            var cursor = 0
+            val startRelativePills = mutableListOf<IntRect>()
+
+            var collisionCursor = 0
+            var placeCursor = 0
+            var inOpenGroup = false
+            var currentGroupStartPx = 0
+            var currentGroupVisibleRightPx = -1
+            var currentGroupMaxHeightPx = 0
             var maxRight = 0
+
+            fun closeCurrentGroup() {
+                if (inOpenGroup) {
+                    if (currentGroupVisibleRightPx >= 0 && pillPadPx > 0) {
+                        val groupEndPx = currentGroupVisibleRightPx + pillPadPx
+                        val pillHeight = max(currentGroupMaxHeightPx, pillMinHeightPx)
+                            .coerceAtMost(rowHeight)
+                        val pillTop = verticalAlignment.align(pillHeight, rowHeight)
+                        startRelativePills.add(
+                            IntRect(
+                                left = currentGroupStartPx,
+                                top = pillTop,
+                                right = groupEndPx,
+                                bottom = pillTop + pillHeight
+                            )
+                        )
+                        maxRight = max(maxRight, groupEndPx)
+                    }
+                    collisionCursor += pillPadPx
+                    inOpenGroup = false
+                    currentGroupVisibleRightPx = -1
+                    currentGroupMaxHeightPx = 0
+                }
+            }
 
             for (i in placeables.indices) {
                 val placeable = placeables[i]
@@ -167,7 +251,7 @@ fun CutoutAwareRow(
                     measurables[i].maxIntrinsicWidth(constraints.maxHeight)
                 )
                 if (collisionWidth <= 0) {
-                    xPositions[i] = cursor
+                    xPositions[i] = placeCursor
                     if (!isLookingAhead) {
                         lockedMinX.remove(i)
                     }
@@ -175,32 +259,59 @@ fun CutoutAwareRow(
                 }
                 isActive[i] = true
 
-                if (!isLookingAhead) {
-                    val minX = lockedMinX[i] ?: 0
-                    if (cursor < minX) {
-                        cursor = minX
+                val minX = if (!isLookingAhead) (lockedMinX[i] ?: 0) else 0
+
+                if (inOpenGroup) {
+                    val candidateCollisionX = collisionCursor + spacingPx
+                    val collidesWithCutout = horizontalCutouts.any { cut ->
+                        candidateCollisionX + collisionWidth + pillPadPx > cut.first &&
+                            collisionCursor < cut.last
+                    }
+                    if (candidateCollisionX < minX || collidesWithCutout) {
+                        closeCurrentGroup()
                     }
                 }
 
-                for (cut in horizontalCutouts) {
-                    if (cursor + collisionWidth > cut.first && cursor < cut.last) {
-                        cursor = max(cursor, cut.last)
+                if (!inOpenGroup) {
+                    var groupStart = if (collisionCursor > 0) collisionCursor + spacingPx else 0
+                    if (!isLookingAhead && minX > 0) {
+                        groupStart = max(groupStart, minX - pillPadPx)
                     }
+                    val neededGroupWidth = collisionWidth + 2 * pillPadPx
+                    for (cut in horizontalCutouts) {
+                        if (groupStart + neededGroupWidth > cut.first && groupStart < cut.last) {
+                            groupStart = max(groupStart, cut.last)
+                        }
+                    }
+                    inOpenGroup = true
+                    currentGroupStartPx = groupStart
+                    currentGroupVisibleRightPx = -1
+                    currentGroupMaxHeightPx = 0
+                    collisionCursor = groupStart + pillPadPx
+                    placeCursor = groupStart + pillPadPx
+                } else {
+                    collisionCursor += spacingPx
                 }
 
                 if (isLookingAhead) {
+                    val groupStartForCutout = currentGroupStartPx
                     val requiredMinX = horizontalCutouts
-                        .filter { cursor >= it.last }
-                        .maxOfOrNull { it.last } ?: 0
+                        .filter { groupStartForCutout >= it.last }
+                        .maxOfOrNull { it.last + pillPadPx } ?: 0
                     lockedMinX[i] = requiredMinX
                 }
 
-                xPositions[i] = cursor
-                maxRight = max(maxRight, cursor + placeable.width)
+                collisionCursor += collisionWidth
+                xPositions[i] = placeCursor
                 if (placeable.width > 0) {
-                    cursor += placeable.width + spacingPx
+                    val itemRight = placeCursor + placeable.width
+                    currentGroupVisibleRightPx = itemRight
+                    currentGroupMaxHeightPx = max(currentGroupMaxHeightPx, placeable.height)
+                    maxRight = max(maxRight, itemRight)
+                    placeCursor = itemRight + spacingPx
                 }
             }
+            closeCurrentGroup()
 
             val rowWidth = if (isRtl && constraints.hasBoundedWidth) {
                 max(maxRight, constraints.maxWidth)
@@ -208,7 +319,26 @@ fun CutoutAwareRow(
                 max(maxRight, constraints.minWidth).coerceAtMost(constraints.maxWidth)
             }
 
+            val resolvedPillSegments = if (isRtl) {
+                startRelativePills.map { rect ->
+                    IntRect(
+                        left = rowWidth - rect.right,
+                        top = rect.top,
+                        right = rowWidth - rect.left,
+                        bottom = rect.bottom
+                    )
+                }
+            } else {
+                startRelativePills
+            }
+
             layout(rowWidth, rowHeight) {
+                if (!isLookingAhead) {
+                    if (pillSegments != resolvedPillSegments) {
+                        pillSegments = resolvedPillSegments
+                    }
+                    onPillSegmentsPlaced?.invoke(resolvedPillSegments)
+                }
                 for (i in placeables.indices) {
                     if (!isActive[i]) continue
                     val placeable = placeables[i]

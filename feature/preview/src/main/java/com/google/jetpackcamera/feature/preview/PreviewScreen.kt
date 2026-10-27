@@ -19,6 +19,7 @@ import android.util.Log
 import android.util.Range
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -54,7 +55,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
@@ -74,12 +74,12 @@ import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CameraErrorDialog
 import com.google.jetpackcamera.ui.components.capture.CaptureButton
 import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
-import com.google.jetpackcamera.ui.components.capture.CutoutAwareRow
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.components.capture.ElapsedTimeText
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.FlipCameraButton
 import com.google.jetpackcamera.ui.components.capture.ImageWell
+import com.google.jetpackcamera.ui.components.capture.IndicatorPill
 import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
@@ -118,6 +118,8 @@ import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
 
@@ -219,8 +221,9 @@ fun PreviewScreen(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@VisibleForTesting
 @Composable
-private fun ContentScreen(
+internal fun ContentScreen(
     captureUiStateProvider: () -> CaptureUiState.Ready,
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
@@ -271,12 +274,18 @@ private fun ContentScreen(
         )
     }
 
-    LaunchedEffect((flipLensState.value as? FlipLensUiState.Available)?.selectedLensFacing) {
+    val selectedLensFacing = (flipLensState.value as? FlipLensUiState.Available)?.selectedLensFacing
+    LaunchedEffect(selectedLensFacing) {
+        // Before the camera is ready, zoom is unavailable; initialize once this lens reports its
+        // range.
+        val zoomRange =
+            snapshotFlow { (zoomUiState.value as? ZoomUiState.Enabled)?.primaryZoomRange }
+                .filterNotNull()
+                .first()
         zoomStateManager.onChangeLens(
             newInitialZoomLevel =
             (zoomControlState.value as? ZoomControlUiState.Enabled)?.initialZoomRatio ?: 1f,
-            newZoomRange = (zoomUiState.value as? ZoomUiState.Enabled)
-                ?.primaryZoomRange ?: Range(1f, 1f)
+            newZoomRange = zoomRange
         )
     }
 
@@ -931,11 +940,9 @@ private fun LayoutWrapper(
         quickSettingsOverlay = quickSettingsOverlay,
         indicatorRow = { modifier ->
             if (!isErrorDialogShowing) {
-                CutoutAwareRow(
+                IndicatorPill(
                     modifier = modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalSpacing = 8.dp
+                        .fillMaxWidth()
                 ) {
                     flashModeIndicator(Modifier)
                     hdrIndicator(Modifier)
@@ -1034,7 +1041,8 @@ private fun ContentScreen_Locked_Recording() {
     }
 }
 
-private val LOADING_CAPTURE_UI_STATE_SKELETON = CaptureUiState.Ready(
+@VisibleForTesting
+internal val LOADING_CAPTURE_UI_STATE_SKELETON = CaptureUiState.Ready(
     videoRecordingState = VideoRecordingState.Inactive(),
     externalCaptureMode = ExternalCaptureMode.Standard,
     captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
