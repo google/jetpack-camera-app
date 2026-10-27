@@ -25,6 +25,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -103,6 +104,9 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         )
         super.onCreate(savedInstanceState)
+        window.attributes = window.attributes.apply {
+            rotationAnimation = WindowManager.LayoutParams.ROTATION_ANIMATION_SEAMLESS
+        }
         cameraLaunchConfigProvider.setIntent(intent)
         var uiState: MainActivityUiState by mutableStateOf(Loading)
 
