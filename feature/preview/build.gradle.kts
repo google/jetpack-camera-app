@@ -152,6 +152,7 @@ dependencies {
     testImplementation(project(":data:settings:testing"))
     testImplementation(project(":data:media:testing"))
     testImplementation(project(":core:common:testing"))
+    testImplementation(project(":ui:controller:testing"))
     implementation(project(":ui:components:capture"))
     implementation(project(":ui:components"))
     implementation(project(":ui:controller"))
