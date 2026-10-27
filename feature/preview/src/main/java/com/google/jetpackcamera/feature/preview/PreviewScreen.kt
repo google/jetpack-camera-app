@@ -958,10 +958,11 @@ private fun LayoutWrapper(
                         icon = {
                             Box(
                                 modifier = Modifier
-                                    .size(IconButtonDefaults.extraSmallIconSize)
+                                    .size(24.dp)
                                     .background(Color.White, shape = CircleShape)
                             )
                         },
+                        contentDescription = "Show camera information",
                         tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
                             " text wraps and aligns.",
                         positioning = TooltipAnchorPosition.Below,

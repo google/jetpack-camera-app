@@ -24,7 +24,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isPopup
@@ -349,8 +355,8 @@ class TooltipTest {
             onCaretCalculated = { x, _ -> caretX = x }
         )
         startProvider.calculatePosition(anchorBounds, windowSize, LayoutDirection.Ltr, popupContentSize)
-        // cornerRadius (12) + caretWidth / 2 (8) = 20
-        assertThat(caretX).isEqualTo(20f)
+        // cornerRadius (16) + caretWidth / 2 (8) = 24
+        assertThat(caretX).isEqualTo(24f)
 
         // End (LTR)
         val endProvider = JcaTooltipPositionProvider(
@@ -360,8 +366,8 @@ class TooltipTest {
             onCaretCalculated = { x, _ -> caretX = x }
         )
         endProvider.calculatePosition(anchorBounds, windowSize, LayoutDirection.Ltr, popupContentSize)
-        // popupWidth (400) - cornerRadius (12) - caretWidth / 2 (8) = 380
-        assertThat(caretX).isEqualTo(380f)
+        // popupWidth (400) - cornerRadius (16) - caretWidth / 2 (8) = 376
+        assertThat(caretX).isEqualTo(376f)
 
         // Custom offset
         val customProvider = JcaTooltipPositionProvider(
@@ -372,6 +378,39 @@ class TooltipTest {
         )
         customProvider.calculatePosition(anchorBounds, windowSize, LayoutDirection.Ltr, popupContentSize)
         assertThat(caretX).isEqualTo(75f)
+    }
+
+    @Test
+    fun tooltip_touchTarget_meetsMinimumAccessibilitySize() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                TooltipIconButton(
+                    icon = { Box(modifier = Modifier.size(24.dp)) },
+                    tooltipText = "Touch target test"
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG)
+            .assertWidthIsAtLeast(48.dp)
+            .assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
+    fun tooltip_accessibility_hasButtonRoleAndContentDescription() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                TooltipIconButton(
+                    icon = { Box(modifier = Modifier.size(24.dp)) },
+                    contentDescription = "Custom info action",
+                    tooltipText = "Accessibility description test"
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Custom info action")))
     }
 
     @Test

@@ -16,26 +16,35 @@
 package com.google.jetpackcamera.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipState
 import androidx.compose.material3.rememberTooltipState
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,9 +71,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -148,12 +161,12 @@ data class JcaTooltipColors(
 object JcaTooltipDefaults {
     val MinWidth: Dp = 140.dp
     val MaxWidth: Dp = 296.dp
-    val CornerRadius: Dp = 12.dp
+    val CornerRadius: Dp = 16.dp
     val CaretWidth: Dp = 16.dp
     val CaretHeight: Dp = 8.dp
     val ScreenMargin: Dp = 16.dp
     val SpacingBetweenTooltipAndAnchor: Dp = 4.dp
-    val DefaultElevation: Dp = 4.dp
+    val DefaultElevation: Dp = 2.dp
 
     @Composable
     fun tooltipColors(
@@ -357,11 +370,14 @@ class JcaTooltipPositionProvider(
             else -> spaceBelow >= popupContentSize.height
         }
 
-        val popupY = if (placeBelow) {
+        val idealPopupY = if (placeBelow) {
             anchorBounds.bottom + spacingPx
         } else {
             anchorBounds.top - spacingPx - popupContentSize.height
         }
+        val minY = marginPx
+        val maxY = (windowSize.height - marginPx - popupContentSize.height).coerceAtLeast(minY)
+        val popupY = idealPopupY.coerceIn(minY, maxY)
 
         // Horizontal placement: Center over anchor by default, clamped to safe screen margins
         val anchorCenterX = (anchorBounds.left + anchorBounds.right) / 2f
@@ -445,14 +461,14 @@ fun JcaTooltipBubble(
     }
 
     val topPadding = if (isCaretOnTop) {
-        JcaTooltipDefaults.CaretHeight + 10.dp
+        JcaTooltipDefaults.CaretHeight + 16.dp
     } else {
-        10.dp
+        16.dp
     }
     val bottomPadding = if (!isCaretOnTop) {
-        JcaTooltipDefaults.CaretHeight + 10.dp
+        JcaTooltipDefaults.CaretHeight + 16.dp
     } else {
-        10.dp
+        16.dp
     }
 
     Surface(
@@ -468,12 +484,14 @@ fun JcaTooltipBubble(
             }
     ) {
         Column(
-            modifier = Modifier.padding(
-                top = topPadding,
-                bottom = bottomPadding,
-                start = 12.dp,
-                end = 12.dp
-            ),
+            modifier = Modifier
+                .padding(
+                    top = topPadding,
+                    bottom = bottomPadding,
+                    start = 16.dp,
+                    end = 16.dp
+                )
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (tooltipTitle != null) {
@@ -489,7 +507,9 @@ fun JcaTooltipBubble(
             }
             Text(
                 text = tooltipText,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Medium
+                ),
                 color = colors.contentColor,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -645,6 +665,7 @@ private fun Modifier.tooltipGestures(
  * @param icon The icon to display inside the button.
  * @param tooltipText The text to display inside the tooltip.
  * @param modifier Modifier for the button container.
+ * @param contentDescription Optional accessibility content description for TalkBack.
  * @param tooltipTitle The optional title to display inside the tooltip.
  * @param state State controlling tooltip visibility.
  * @param positioning Anchor position for the tooltip (e.g. Above, Below). Defaults to Below.
@@ -654,7 +675,8 @@ private fun Modifier.tooltipGestures(
  * @param isOutlined Whether the icon button should be outlined.
  * @param containerColor The background container color for the button.
  * @param contentColor The content/tint color for the icon.
- * @param size The size of the button container, defaulting to [IconButtonDefaults.extraSmallContainerSize] (32.dp).
+ * @param size The size of the inner visual container, defaulting to [IconButtonDefaults.extraSmallContainerSize] (32.dp).
+ * @param minTouchTargetSize The minimum interactive touch target size for accessibility, defaulting to 48.dp.
  * @param onClick Optional callback when the button is clicked.
  * @param onDismissRequest Optional callback invoked when the tooltip is dismissed.
  */
@@ -664,6 +686,7 @@ fun TooltipIconButton(
     icon: @Composable () -> Unit,
     tooltipText: String,
     modifier: Modifier = Modifier,
+    contentDescription: String? = null,
     tooltipTitle: String? = null,
     state: TooltipState = rememberTooltipState(isPersistent = true),
     positioning: TooltipAnchorPosition = TooltipAnchorPosition.Below,
@@ -674,6 +697,7 @@ fun TooltipIconButton(
     containerColor: Color = Color.Transparent,
     contentColor: Color = Color.White,
     size: Dp = IconButtonDefaults.extraSmallContainerSize().width,
+    minTouchTargetSize: Dp = 48.dp,
     onClick: () -> Unit = {},
     onDismissRequest: (() -> Unit)? = null
 ) {
@@ -707,32 +731,46 @@ fun TooltipIconButton(
         enableUserInput = false,
         onDismissRequest = onDismissRequest
     ) {
-        val buttonModifier = Modifier
-            .size(size)
-            .testTag(TOOLTIP_ANCHOR_BUTTON_TAG)
+        val defaultContentDescription = tooltipTitle ?: tooltipText
+        val effectiveContentDescription = contentDescription ?: defaultContentDescription
 
-        if (isOutlined) {
-            OutlinedIconButton(
-                onClick = toggleTooltip,
-                modifier = buttonModifier,
-                colors = IconButtonDefaults.outlinedIconButtonColors(
-                    containerColor = containerColor,
-                    contentColor = contentColor
-                ),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
-            ) {
-                icon()
-            }
-        } else {
-            IconButton(
-                onClick = toggleTooltip,
-                modifier = buttonModifier,
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = containerColor,
-                    contentColor = contentColor
+        Box(
+            modifier = Modifier
+                .sizeIn(minWidth = minTouchTargetSize, minHeight = minTouchTargetSize)
+                .testTag(TOOLTIP_ANCHOR_BUTTON_TAG)
+                .clickable(
+                    onClick = toggleTooltip,
+                    role = Role.Button,
+                    onClickLabel = effectiveContentDescription,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(bounded = false, radius = minTouchTargetSize / 2)
                 )
+                .semantics {
+                    this.contentDescription = effectiveContentDescription
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            val containerModifier = Modifier
+                .size(size)
+                .then(
+                    if (isOutlined) {
+                        Modifier.border(
+                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                            shape = CircleShape
+                        )
+                    } else {
+                        Modifier
+                    }
+                )
+                .background(color = containerColor, shape = CircleShape)
+
+            Box(
+                modifier = containerModifier,
+                contentAlignment = Alignment.Center
             ) {
-                icon()
+                CompositionLocalProvider(LocalContentColor provides contentColor) {
+                    icon()
+                }
             }
         }
     }
