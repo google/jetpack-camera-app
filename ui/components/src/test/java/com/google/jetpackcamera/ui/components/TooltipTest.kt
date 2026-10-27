@@ -21,7 +21,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
@@ -29,7 +31,13 @@ import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.google.common.truth.Truth.assertThat
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.flow.MutableSharedFlow
 import org.junit.Rule
@@ -240,5 +248,155 @@ class TooltipTest {
         }
 
         composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).assertExists()
+    }
+
+    @Test
+    fun positionProvider_anchoredToFarLeft_clampsToScreenMarginAndCalculatesCaret() {
+        var calculatedLocalCaretX = 0f
+        var calculatedIsCaretOnTop = false
+
+        val provider = JcaTooltipPositionProvider(
+            positioning = TooltipAnchorPosition.Below,
+            caretAlignment = CaretAlignment.AnchorCenter,
+            spacing = 4.dp,
+            screenMargin = 16.dp,
+            density = Density(1f),
+            onCaretCalculated = { localCaretX, isCaretOnTop ->
+                calculatedLocalCaretX = localCaretX
+                calculatedIsCaretOnTop = isCaretOnTop
+            }
+        )
+
+        // Anchor placed near the left edge of the screen (e.g. status bar button)
+        val anchorBounds = IntRect(left = 16, top = 20, right = 48, bottom = 52)
+        val windowSize = IntSize(width = 1080, height = 2400)
+        val popupContentSize = IntSize(width = 400, height = 150)
+
+        val position = provider.calculatePosition(
+            anchorBounds = anchorBounds,
+            windowSize = windowSize,
+            layoutDirection = LayoutDirection.Ltr,
+            popupContentSize = popupContentSize
+        )
+
+        // The popup is clamped to screen margin (16px) because ideal X (32 - 200 = -168) is offscreen
+        assertThat(position.x).isEqualTo(16)
+        // Positioned below anchor: bottom (52) + spacing (4) = 56
+        assertThat(position.y).isEqualTo(56)
+
+        // Local caret X is anchor center X (32) - popup X (16) = 16
+        assertThat(calculatedLocalCaretX).isEqualTo(16f)
+        assertThat(calculatedIsCaretOnTop).isTrue()
+
+        // Global caret X points exactly to anchor center X
+        assertThat(position.x + calculatedLocalCaretX.toInt()).isEqualTo((anchorBounds.left + anchorBounds.right) / 2)
+    }
+
+    @Test
+    fun positionProvider_spaceConstrainedBelow_flipsAbove() {
+        var calculatedIsCaretOnTop = true
+
+        val provider = JcaTooltipPositionProvider(
+            positioning = TooltipAnchorPosition.Below,
+            spacing = 4.dp,
+            screenMargin = 16.dp,
+            density = Density(1f),
+            onCaretCalculated = { _, isCaretOnTop ->
+                calculatedIsCaretOnTop = isCaretOnTop
+            }
+        )
+
+        // Anchor near bottom of window: spaceBelow is 48px, but tooltip height is 150px
+        val anchorBounds = IntRect(left = 200, top = 2300, right = 248, bottom = 2348)
+        val windowSize = IntSize(width = 1080, height = 2400)
+        val popupContentSize = IntSize(width = 400, height = 150)
+
+        val position = provider.calculatePosition(
+            anchorBounds = anchorBounds,
+            windowSize = windowSize,
+            layoutDirection = LayoutDirection.Ltr,
+            popupContentSize = popupContentSize
+        )
+
+        // Flips above anchor: top (2300) - spacing (4) - popupHeight (150) = 2146
+        assertThat(position.y).isEqualTo(2146)
+        // isCaretOnTop is false, meaning caret is drawn on bottom edge pointing DOWN to anchor
+        assertThat(calculatedIsCaretOnTop).isFalse()
+    }
+
+    @Test
+    fun positionProvider_supportsCaretAlignmentOptions() {
+        val anchorBounds = IntRect(left = 200, top = 100, right = 300, bottom = 200)
+        val windowSize = IntSize(width = 1080, height = 2400)
+        val popupContentSize = IntSize(width = 400, height = 150)
+
+        // BubbleCenter
+        var caretX = 0f
+        val bubbleCenterProvider = JcaTooltipPositionProvider(
+            positioning = TooltipAnchorPosition.Below,
+            caretAlignment = CaretAlignment.BubbleCenter,
+            density = Density(1f),
+            onCaretCalculated = { x, _ -> caretX = x }
+        )
+        bubbleCenterProvider.calculatePosition(anchorBounds, windowSize, LayoutDirection.Ltr, popupContentSize)
+        assertThat(caretX).isEqualTo(200f)
+
+        // Start (LTR)
+        val startProvider = JcaTooltipPositionProvider(
+            positioning = TooltipAnchorPosition.Below,
+            caretAlignment = CaretAlignment.Start,
+            density = Density(1f),
+            onCaretCalculated = { x, _ -> caretX = x }
+        )
+        startProvider.calculatePosition(anchorBounds, windowSize, LayoutDirection.Ltr, popupContentSize)
+        // cornerRadius (12) + caretWidth / 2 (8) = 20
+        assertThat(caretX).isEqualTo(20f)
+
+        // End (LTR)
+        val endProvider = JcaTooltipPositionProvider(
+            positioning = TooltipAnchorPosition.Below,
+            caretAlignment = CaretAlignment.End,
+            density = Density(1f),
+            onCaretCalculated = { x, _ -> caretX = x }
+        )
+        endProvider.calculatePosition(anchorBounds, windowSize, LayoutDirection.Ltr, popupContentSize)
+        // popupWidth (400) - cornerRadius (12) - caretWidth / 2 (8) = 380
+        assertThat(caretX).isEqualTo(380f)
+
+        // Custom offset
+        val customProvider = JcaTooltipPositionProvider(
+            positioning = TooltipAnchorPosition.Below,
+            caretAlignment = CaretAlignment.Custom(75.dp),
+            density = Density(1f),
+            onCaretCalculated = { x, _ -> caretX = x }
+        )
+        customProvider.calculatePosition(anchorBounds, windowSize, LayoutDirection.Ltr, popupContentSize)
+        assertThat(caretX).isEqualTo(75f)
+    }
+
+    @Test
+    fun bubbleShape_caretXClamped_doesNotBleedIntoCornerRadius() {
+        val density = Density(1f)
+        val size = Size(400f, 150f)
+
+        // Shape with extreme negative caret X
+        val shapeNegative = JcaTooltipBubbleShape(
+            localCaretX = -100f,
+            isCaretOnTop = true
+        )
+        val outlineNegative = shapeNegative.createOutline(size, LayoutDirection.Ltr, density)
+        assertThat(outlineNegative).isInstanceOf(Outline.Generic::class.java)
+        assertThat(outlineNegative.bounds.width).isEqualTo(400f)
+        assertThat(outlineNegative.bounds.height).isEqualTo(150f)
+
+        // Shape with extreme positive caret X
+        val shapeOverflow = JcaTooltipBubbleShape(
+            localCaretX = 1000f,
+            isCaretOnTop = false
+        )
+        val outlineOverflow = shapeOverflow.createOutline(size, LayoutDirection.Ltr, density)
+        assertThat(outlineOverflow).isInstanceOf(Outline.Generic::class.java)
+        assertThat(outlineOverflow.bounds.width).isEqualTo(400f)
+        assertThat(outlineOverflow.bounds.height).isEqualTo(150f)
     }
 }

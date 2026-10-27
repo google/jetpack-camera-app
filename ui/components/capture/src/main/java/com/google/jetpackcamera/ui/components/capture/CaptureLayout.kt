@@ -15,8 +15,6 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.snap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -90,7 +88,6 @@ import androidx.compose.ui.unit.takeOrElse
  * @param screenFlashOverlay the screen flash overlay composable
  * @param snackBar the snack bar composable for showing messages
  * @param topStartContent optional composable content aligned to the top-start of the viewfinder
- * @param topEndContent optional composable content aligned to the end of the top bar / status bar, receiving layout modifier and overlap-aware containerColor
  * @param errorDialog the camera error alert dialog composable
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -120,7 +117,6 @@ fun PreviewLayout(
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
-    topEndContent: @Composable (Modifier, containerColor: Color) -> Unit = { _, _ -> },
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
@@ -172,35 +168,6 @@ fun PreviewLayout(
                         contentAlignment = Alignment.CenterStart
                     ) {
                         indicatorRow(Modifier)
-                        OverlapAwareStyleProvider(
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .padding(end = 24.dp),
-                            initialStyle = CameraControlBackgroundStyle.WHITE_20
-                        ) {
-                            val backgroundStyle = LocalCameraControlBackgroundStyle.current
-                            val isOverlapping =
-                                backgroundStyle == CameraControlBackgroundStyle.BLACK_60
-                            val targetContainerColor = if (isOverlapping) {
-                                Color.Black.copy(alpha = 0.6f)
-                            } else {
-                                Color.Transparent
-                            }
-                            val disableAnimations = LocalDisableAnimations.current
-                            val containerColor by animateColorAsState(
-                                targetValue = targetContainerColor,
-                                animationSpec = if (disableAnimations) {
-                                    snap()
-                                } else {
-                                    CaptureTokens.FastEffectsSpec
-                                },
-                                label = "topEndButtonContainerColor"
-                            )
-                            topEndContent(
-                                Modifier,
-                                containerColor
-                            )
-                        }
                     }
                     Box {
                         viewfinder(Modifier)

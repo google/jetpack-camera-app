@@ -807,29 +807,6 @@ private fun ContentScreen(
         }
     }
 
-    val topEndContentLambda = remember(isErrorDialogShowing) {
-        @Composable { modifier: Modifier, containerColor: Color ->
-            if (!isErrorDialogShowing) {
-                // TODO: Finalize UX design and positioning with design team.
-                TooltipIconButton(
-                    modifier = modifier,
-                    icon = {
-                        Box(
-                            modifier = Modifier
-                                .size(IconButtonDefaults.extraSmallIconSize)
-                                .background(Color.White, shape = CircleShape)
-                        )
-                    },
-                    tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
-                        " text wraps and aligns.",
-                    positioning = TooltipAnchorPosition.Below,
-                    isOutlined = true,
-                    containerColor = containerColor
-                )
-            }
-        }
-    }
-
     LayoutWrapper(
         modifier = modifier,
         scaffoldState = scaffoldState,
@@ -855,7 +832,6 @@ private fun ContentScreen(
         snackBar = snackBarLambda,
         pauseToggleButton = pauseToggleButtonLambda,
         imageWell = imageWellLambda,
-        topEndContent = topEndContentLambda,
         errorDialog = errorDialogLambda
     )
 }
@@ -954,7 +930,6 @@ private fun LayoutWrapper(
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (modifier: Modifier) -> Unit = {},
-    topEndContent: @Composable (modifier: Modifier, containerColor: Color) -> Unit = { _, _ -> },
     errorDialog: @Composable (modifier: Modifier) -> Unit = {}
 ) {
     PreviewLayout(
@@ -978,6 +953,20 @@ private fun LayoutWrapper(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalSpacing = 8.dp
                 ) {
+                    TooltipIconButton(
+                        modifier = Modifier,
+                        icon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(IconButtonDefaults.extraSmallIconSize)
+                                    .background(Color.White, shape = CircleShape)
+                            )
+                        },
+                        tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
+                            " text wraps and aligns.",
+                        positioning = TooltipAnchorPosition.Below,
+                        isOutlined = true
+                    )
                     flashModeIndicator(Modifier)
                     hdrIndicator(Modifier)
                     videoQualityIndicator(Modifier)
@@ -986,7 +975,6 @@ private fun LayoutWrapper(
             }
         },
         topStartContent = topStartContent,
-        topEndContent = topEndContent,
         debugOverlay = { modifier ->
             debugOverlay(
                 modifier,
