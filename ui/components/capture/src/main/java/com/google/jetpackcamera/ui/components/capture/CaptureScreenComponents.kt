@@ -158,6 +158,7 @@ import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "CaptureScreenComponents"
 private val LOADING_SPINNER_SIZE = 40.dp
+private val ViewfinderCornerRadius = 16.dp
 
 private val SnackbarMinHeight = 48.dp
 private val SnackbarHorizontalMargin = 16.dp
@@ -857,8 +858,7 @@ fun PreviewDisplay(
                 .height(height)
                 .transformable(state = transformableState)
                 .alpha(imageAlpha)
-                .clip(RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.Center
+                .clip(RoundedCornerShape(ViewfinderCornerRadius))
         ) {
             if (surfaceRequest != null) {
                 val implementationMode = when {
@@ -909,7 +909,7 @@ fun PreviewDisplay(
                 )
             } else {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(LOADING_SPINNER_SIZE),
+                    modifier = Modifier.align(Alignment.Center).size(LOADING_SPINNER_SIZE),
                     color = Color.White
                 )
             }
