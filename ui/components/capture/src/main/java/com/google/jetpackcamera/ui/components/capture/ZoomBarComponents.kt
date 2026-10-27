@@ -434,7 +434,8 @@ private fun ZoomBarItem(
                 fontScale = density.fontScale.coerceAtMost(ZoomBarDefaults.MAX_LABEL_FONT_SCALE)
             )
         ) {
-            // TODO(#619): Apply Modifier.animateToUpright() to keep labels upright on rotation.
+            // TODO(#619): Apply Modifier.animateToUpright() to keep labels upright on rotation
+            //  (https://github.com/google/jetpack-camera-app/pull/619).
             BasicText(
                 text = labelText,
                 style = MaterialTheme.typography.labelLarge.copy(
