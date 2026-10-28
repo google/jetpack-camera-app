@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -44,7 +45,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -101,30 +103,65 @@ class TooltipTest {
     }
 
     @Test
-    fun tooltip_externalFlowTrigger_showsAndDismisses() {
-        val triggerFlow = MutableSharedFlow<TooltipTriggerEvent>(extraBufferCapacity = 1)
+    fun tooltip_programmaticTrigger_showsAndDismisses() {
+        lateinit var tooltipState: JcaTooltipState
+        lateinit var coroutineScope: CoroutineScope
 
         composeTestRule.setContent {
+            val state = rememberJcaTooltipState()
+            tooltipState = state
+            coroutineScope = rememberCoroutineScope()
             MaterialTheme {
                 TooltipIconButton(
                     icon = { Box(modifier = Modifier.size(24.dp)) },
-                    tooltipText = "External trigger text",
-                    triggerFlow = triggerFlow
+                    tooltipText = "Programmatic trigger text",
+                    state = state
                 )
             }
         }
 
         composeTestRule.onNode(isPopup()).assertDoesNotExist()
 
-        // Emit Show
-        triggerFlow.tryEmit(TooltipTriggerEvent.Show)
+        // Programmatically show
+        coroutineScope.launch { tooltipState.show() }
         composeTestRule.waitForIdle()
         composeTestRule.onNode(isPopup()).assertExists()
-        composeTestRule.onNode(hasText("External trigger text") and hasAnyAncestor(isPopup()))
+        composeTestRule.onNode(hasText("Programmatic trigger text") and hasAnyAncestor(isPopup()))
             .assertIsDisplayed()
 
-        // Emit Dismiss
-        triggerFlow.tryEmit(TooltipTriggerEvent.Dismiss)
+        // Programmatically dismiss
+        tooltipState.dismiss()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNode(isPopup()).assertDoesNotExist()
+    }
+
+    @Test
+    fun tooltipState_toggle_switchesVisibility() {
+        lateinit var tooltipState: JcaTooltipState
+        lateinit var coroutineScope: CoroutineScope
+
+        composeTestRule.setContent {
+            val state = rememberJcaTooltipState()
+            tooltipState = state
+            coroutineScope = rememberCoroutineScope()
+            MaterialTheme {
+                TooltipIconButton(
+                    icon = { Box(modifier = Modifier.size(24.dp)) },
+                    tooltipText = "Toggle text",
+                    state = state
+                )
+            }
+        }
+
+        composeTestRule.onNode(isPopup()).assertDoesNotExist()
+
+        // Toggle on
+        coroutineScope.launch { tooltipState.toggle() }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNode(isPopup()).assertExists()
+
+        // Toggle off
+        coroutineScope.launch { tooltipState.toggle() }
         composeTestRule.waitForIdle()
         composeTestRule.onNode(isPopup()).assertDoesNotExist()
     }
@@ -138,7 +175,7 @@ class TooltipTest {
                 TooltipIconButton(
                     icon = { Box(modifier = Modifier.size(24.dp)) },
                     tooltipText = "Auto dismissing text",
-                    autoDismissDuration = 3000.milliseconds
+                    state = rememberJcaTooltipState(autoDismissDuration = 3000.milliseconds)
                 )
             }
         }
@@ -165,21 +202,24 @@ class TooltipTest {
     @Test
     fun tooltip_autoDismiss_reTriggerResetsTimer() {
         composeTestRule.mainClock.autoAdvance = false
-        val triggerFlow = MutableSharedFlow<TooltipTriggerEvent>(extraBufferCapacity = 1)
+        lateinit var tooltipState: JcaTooltipState
+        lateinit var coroutineScope: CoroutineScope
 
         composeTestRule.setContent {
+            val state = rememberJcaTooltipState(autoDismissDuration = 3000.milliseconds)
+            tooltipState = state
+            coroutineScope = rememberCoroutineScope()
             MaterialTheme {
                 TooltipIconButton(
                     icon = { Box(modifier = Modifier.size(24.dp)) },
                     tooltipText = "Resetting timer text",
-                    autoDismissDuration = 3000.milliseconds,
-                    triggerFlow = triggerFlow
+                    state = state
                 )
             }
         }
 
-        // Trigger show via flow
-        triggerFlow.tryEmit(TooltipTriggerEvent.Show)
+        // Trigger show via state
+        coroutineScope.launch { tooltipState.show() }
         composeTestRule.mainClock.advanceTimeByFrame()
         composeTestRule.waitForIdle()
         composeTestRule.onNode(isPopup()).assertExists()
@@ -190,7 +230,7 @@ class TooltipTest {
         composeTestRule.onNode(isPopup()).assertExists()
 
         // Re-trigger Show -> Timer resets
-        triggerFlow.tryEmit(TooltipTriggerEvent.Show)
+        coroutineScope.launch { tooltipState.show() }
         composeTestRule.mainClock.advanceTimeByFrame()
         composeTestRule.waitForIdle()
 

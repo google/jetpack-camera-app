@@ -15,7 +15,10 @@
  */
 package com.google.jetpackcamera.ui.components
 
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.MutatePriority
+import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,17 +45,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TooltipState
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -93,12 +93,12 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import kotlin.math.roundToInt
 import kotlin.time.Duration
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 
 const val TOOLTIP_ANCHOR_BUTTON_TAG = "tooltip_anchor_button"
 const val TOOLTIP_CONTENT_TAG = "tooltip_content"
@@ -121,8 +121,8 @@ const val TOOLTIP_CONTENT_TAG = "tooltip_content"
  * - Flexible Caret Alignment: Supports [CaretAlignment.AnchorCenter],
  *   [CaretAlignment.BubbleCenter], start/end, and custom offsets, dynamically tracking anchors
  *   without corner bleed.
- * - Reactive & Timed Triggers: Built-in support for [autoDismissDuration] and external
- *   [TooltipTriggerEvent] flows to drive onboarding or guidance tooltips from ViewModels.
+ * - Reactive & Timed State: Decoupled [JcaTooltipState] managing visibility, [autoDismissDuration],
+ *   and coroutine-driven mutual exclusion via [MutatorMutex].
  * - Frame-0 Synchronous Layout: Derives popup position and caret coordinates simultaneously
  *   before drawing, eliminating multi-frame visual hops.
  * - Continuous Vector Shape: [JcaTooltipBubbleShape] unifies the bubble and caret into a single
@@ -479,12 +479,126 @@ class JcaTooltipPositionProvider(
     }
 }
 
+private const val DEFAULT_TOOLTIP_DURATION_MILLIS = 1500L
+
 /**
- * Events used to trigger programmatic display or dismissal of tooltips.
+ * An extended [TooltipState] for JCA tooltips that supports auto-dismiss durations,
+ * coroutine-driven mutual exclusion via [MutatorMutex], and programmatic toggling.
  */
-sealed interface TooltipTriggerEvent {
-    data object Show : TooltipTriggerEvent
-    data object Dismiss : TooltipTriggerEvent
+@OptIn(ExperimentalMaterial3Api::class)
+@Stable
+interface JcaTooltipState : TooltipState {
+    /**
+     * Optional duration after which the tooltip automatically dismisses.
+     */
+    val autoDismissDuration: Duration?
+
+    /**
+     * Toggles the visibility of the tooltip.
+     *
+     * If the tooltip is currently visible or transitioning to visible, it will be dismissed.
+     * Otherwise, it will be shown.
+     */
+    suspend fun toggle(mutatePriority: MutatePriority = MutatePriority.Default)
+}
+
+/**
+ * Creates and remembers an instance of [JcaTooltipState].
+ *
+ * @param autoDismissDuration Optional duration after which the tooltip automatically dismisses.
+ *   When non-null, every call to [TooltipState.show] will keep the tooltip displayed for this
+ *   duration before dismissing, resetting the timer if re-triggered while already visible.
+ * @param initialIsVisible Whether the tooltip should be initially visible.
+ * @param isPersistent Whether the tooltip should remain visible until explicitly dismissed
+ *   when [autoDismissDuration] is null. If false and [autoDismissDuration] is null, defaults
+ *   to standard transient duration (1500ms).
+ * @param mutatorMutex Mutex coordinating tooltip display. Defaults to a fresh [MutatorMutex]
+ *   instance per tooltip state.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun rememberJcaTooltipState(
+    autoDismissDuration: Duration? = null,
+    initialIsVisible: Boolean = false,
+    isPersistent: Boolean = true,
+    mutatorMutex: MutatorMutex = remember { MutatorMutex() }
+): JcaTooltipState = remember(autoDismissDuration, initialIsVisible, isPersistent, mutatorMutex) {
+    JcaTooltipStateImpl(
+        autoDismissDuration = autoDismissDuration,
+        initialIsVisible = initialIsVisible,
+        isPersistent = isPersistent,
+        mutatorMutex = mutatorMutex
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Stable
+private class JcaTooltipStateImpl(
+    override val autoDismissDuration: Duration?,
+    initialIsVisible: Boolean = false,
+    override val isPersistent: Boolean = true,
+    private val mutatorMutex: MutatorMutex = MutatorMutex()
+) : JcaTooltipState {
+
+    override val transition: MutableTransitionState<Boolean> =
+        MutableTransitionState(initialIsVisible)
+
+    override val isVisible: Boolean
+        get() = transition.currentState || transition.targetState
+
+    private var job: CancellableContinuation<Unit>? = null
+
+    override suspend fun show(mutatePriority: MutatePriority) {
+        val cancellableShow: suspend () -> Unit = {
+            try {
+                suspendCancellableCoroutine { continuation ->
+                    transition.targetState = true
+                    job = continuation
+                }
+            } finally {
+                job = null
+                transition.targetState = false
+            }
+        }
+
+        mutatorMutex.mutate(mutatePriority) {
+            try {
+                if (autoDismissDuration != null) {
+                    withTimeoutOrNull(autoDismissDuration.inWholeMilliseconds) {
+                        cancellableShow()
+                    }
+                } else if (isPersistent) {
+                    cancellableShow()
+                } else {
+                    withTimeoutOrNull(DEFAULT_TOOLTIP_DURATION_MILLIS) {
+                        cancellableShow()
+                    }
+                }
+            } finally {
+                job = null
+                transition.targetState = false
+            }
+        }
+    }
+
+    override fun dismiss() {
+        transition.targetState = false
+        if (job?.isActive == true) {
+            job?.cancel()
+        }
+    }
+
+    override suspend fun toggle(mutatePriority: MutatePriority) {
+        if (transition.targetState) {
+            dismiss()
+        } else {
+            show(mutatePriority)
+        }
+    }
+
+    override fun onDispose() {
+        dismiss()
+    }
 }
 
 /**
@@ -574,11 +688,9 @@ fun JcaTooltipBubble(
  * @param tooltipText The text to display inside the tooltip.
  * @param modifier Modifier for the container.
  * @param tooltipTitle Optional title displayed above the tooltip text.
- * @param state State controlling tooltip visibility.
+ * @param state State controlling tooltip visibility. Defaults to [rememberJcaTooltipState].
  * @param positioning Anchor position for the tooltip (e.g. Above, Below).
  * @param caretAlignment Alignment configuration for the caret.
- * @param autoDismissDuration Optional duration after which the tooltip automatically dismisses.
- * @param triggerFlow Optional flow of [TooltipTriggerEvent] to trigger showing or dismissing.
  * @param enableUserInput Whether long-press gestures on the anchor trigger the tooltip.
  * @param colors Colors applied to the tooltip bubble and text.
  * @param onDismissRequest Optional callback invoked when the tooltip is dismissed.
@@ -590,11 +702,9 @@ fun JcaTooltipBox(
     tooltipText: String,
     modifier: Modifier = Modifier,
     tooltipTitle: String? = null,
-    state: TooltipState = rememberTooltipState(isPersistent = true),
+    state: TooltipState = rememberJcaTooltipState(),
     positioning: TooltipAnchorPosition = TooltipAnchorPosition.Above,
     caretAlignment: CaretAlignment = CaretAlignment.AnchorCenter,
-    autoDismissDuration: Duration? = null,
-    triggerFlow: Flow<TooltipTriggerEvent>? = null,
     enableUserInput: Boolean = true,
     colors: JcaTooltipColors = JcaTooltipDefaults.tooltipColors(),
     onDismissRequest: (() -> Unit)? = null,
@@ -602,33 +712,6 @@ fun JcaTooltipBox(
 ) {
     val scope = rememberCoroutineScope()
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
-    var triggerRevision by remember { mutableIntStateOf(0) }
-
-    // External flow triggers using collectLatest to prevent deadlock from show() suspension
-    if (triggerFlow != null) {
-        LaunchedEffect(triggerFlow, state) {
-            triggerFlow.collectLatest { event ->
-                when (event) {
-                    TooltipTriggerEvent.Show -> {
-                        triggerRevision++
-                        state.show()
-                    }
-                    TooltipTriggerEvent.Dismiss -> state.dismiss()
-                }
-            }
-        }
-    }
-
-    // Auto-dismiss timer keyed on targetState and triggerRevision
-    if (autoDismissDuration != null) {
-        LaunchedEffect(state.transition.targetState, triggerRevision, autoDismissDuration) {
-            if (state.transition.targetState) {
-                delay(autoDismissDuration)
-                state.dismiss()
-                currentOnDismissRequest?.invoke()
-            }
-        }
-    }
 
     val density = LocalDensity.current
     val caretPositionState = remember {
@@ -717,11 +800,9 @@ private fun Modifier.tooltipGestures(
  * @param modifier Modifier for the button container.
  * @param contentDescription Optional accessibility content description for TalkBack.
  * @param tooltipTitle The optional title to display inside the tooltip.
- * @param state State controlling tooltip visibility.
+ * @param state State controlling tooltip visibility. Defaults to [rememberJcaTooltipState].
  * @param positioning Anchor position for the tooltip (e.g. Above, Below). Defaults to Below.
  * @param caretAlignment Alignment configuration for the caret. Defaults to AnchorCenter.
- * @param autoDismissDuration Optional duration after which the tooltip automatically dismisses.
- * @param triggerFlow Optional flow of [TooltipTriggerEvent] to trigger showing or dismissing.
  * @param isOutlined Whether the icon button should be outlined.
  * @param containerColor The background container color for the button.
  * @param contentColor The content/tint color for the icon.
@@ -740,11 +821,9 @@ fun TooltipIconButton(
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
     tooltipTitle: String? = null,
-    state: TooltipState = rememberTooltipState(isPersistent = true),
+    state: JcaTooltipState = rememberJcaTooltipState(),
     positioning: TooltipAnchorPosition = TooltipAnchorPosition.Below,
     caretAlignment: CaretAlignment = CaretAlignment.AnchorCenter,
-    autoDismissDuration: Duration? = null,
-    triggerFlow: Flow<TooltipTriggerEvent>? = null,
     isOutlined: Boolean = false,
     containerColor: Color = Color.Transparent,
     contentColor: Color = Color.White,
@@ -760,11 +839,10 @@ fun TooltipIconButton(
     val toggleTooltip = remember(state, scope) {
         {
             scope.launch {
-                if (state.transition.targetState) {
-                    state.dismiss()
+                val wasVisible = state.transition.targetState
+                state.toggle()
+                if (wasVisible) {
                     currentOnDismissRequest?.invoke()
-                } else {
-                    state.show()
                 }
             }
             currentOnClick()
@@ -778,8 +856,6 @@ fun TooltipIconButton(
         state = state,
         positioning = positioning,
         caretAlignment = caretAlignment,
-        autoDismissDuration = autoDismissDuration,
-        triggerFlow = triggerFlow,
         enableUserInput = false,
         onDismissRequest = onDismissRequest
     ) {
