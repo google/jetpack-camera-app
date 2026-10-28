@@ -15,10 +15,11 @@
  */
 package com.google.jetpackcamera.ui
 
+import android.os.Looper
 import android.view.View
 import androidx.activity.ComponentActivity
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.ComposeView
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute
@@ -27,10 +28,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
- * Tests for [systemBarsPolicyFor] and [applySystemBars].
+ * Tests for [systemBarsPolicyFor] and [SystemBarsPolicyEffect].
  *
  * The important cases here are the destinations that declare navigation arguments: their
  * `NavDestination.route` is the route *pattern*, so it still contains unresolved `{placeholder}`
@@ -79,105 +81,48 @@ class SystemBarsPolicyTest {
     }
 
     @Test
-    fun applySystemBars_hideStatusBar_setsTransientBehaviorAndLightIcons() {
-        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
-        val window = activity.window
-        val view = window.decorView
-        val controller = WindowCompat.getInsetsController(window, view)
-
-        applySystemBars(window = window, view = view, hideStatusBar = true, isDarkTheme = false)
-
-        @Suppress("DEPRECATION")
-        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
-            .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
-        assertThat(controller.systemBarsBehavior)
-            .isEqualTo(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
-        assertThat(controller.isAppearanceLightStatusBars).isFalse()
-        assertThat(controller.isAppearanceLightNavigationBars).isFalse()
-    }
-
-    @Test
-    fun applySystemBars_showAllInLightTheme_setsDefaultBehaviorAndDarkIcons() {
-        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
-        val window = activity.window
-        val view = window.decorView
-        val controller = WindowCompat.getInsetsController(window, view)
-
-        applySystemBars(window = window, view = view, hideStatusBar = true, isDarkTheme = false)
-        applySystemBars(window = window, view = view, hideStatusBar = false, isDarkTheme = false)
-
-        @Suppress("DEPRECATION")
-        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
-            .isEqualTo(0)
-        assertThat(controller.systemBarsBehavior)
-            .isEqualTo(WindowInsetsControllerCompat.BEHAVIOR_DEFAULT)
-        assertThat(controller.isAppearanceLightStatusBars).isTrue()
-        assertThat(controller.isAppearanceLightNavigationBars).isTrue()
-    }
-
-    @Test
-    fun applySystemBars_showAllInDarkTheme_setsDefaultBehaviorAndLightIcons() {
-        val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
-        val window = activity.window
-        val view = window.decorView
-        val controller = WindowCompat.getInsetsController(window, view)
-
-        // First set dark icons so we also exercise the true -> false transition.
-        applySystemBars(window = window, view = view, hideStatusBar = false, isDarkTheme = false)
-        applySystemBars(window = window, view = view, hideStatusBar = false, isDarkTheme = true)
-
-        assertThat(controller.systemBarsBehavior)
-            .isEqualTo(WindowInsetsControllerCompat.BEHAVIOR_DEFAULT)
-        assertThat(controller.isAppearanceLightStatusBars).isFalse()
-        assertThat(controller.isAppearanceLightNavigationBars).isFalse()
-    }
-
-    @Test
-    fun systemBarsPolicyEffect_appliesPolicy_clampsInMultiWindow_andRestoresOnDispose() {
+    fun systemBarsPolicyEffect_mapsPolicyToCameraSystemBarsEffect() {
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
         val view = activity.window.decorView
-        val composed = androidx.compose.runtime.mutableStateOf(true)
+        val policy = mutableStateOf(SystemBarsPolicy.HideStatusBar)
 
         activity.setContentView(
-            androidx.compose.ui.platform.ComposeView(activity).apply {
+            ComposeView(activity).apply {
                 setContent {
-                    if (composed.value) {
-                        SystemBarsPolicyEffect(
-                            policy = SystemBarsPolicy.HideStatusBar,
-                            isDarkTheme = false
-                        )
-                    }
+                    SystemBarsPolicyEffect(
+                        policy = policy.value,
+                        isDarkTheme = false
+                    )
                 }
             }
         )
-        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+        shadowOf(Looper.getMainLooper()).idle()
 
         @Suppress("DEPRECATION")
         assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
             .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+            .isEqualTo(0)
 
-        // Entering multi-window mode clamps policy to ShowAll.
-        activity.onMultiWindowModeChanged(true, android.content.res.Configuration())
-        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+        policy.value = SystemBarsPolicy.HideStatusAndNavigationBars
+        shadowOf(Looper.getMainLooper()).idle()
+
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+            .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
+        @Suppress("DEPRECATION")
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+            .isEqualTo(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+
+        policy.value = SystemBarsPolicy.ShowAll
+        shadowOf(Looper.getMainLooper()).idle()
 
         @Suppress("DEPRECATION")
         assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
             .isEqualTo(0)
-
-        // Exiting multi-window mode re-hides the status bar.
-        activity.onMultiWindowModeChanged(false, android.content.res.Configuration())
-        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
-
         @Suppress("DEPRECATION")
-        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
-            .isEqualTo(View.SYSTEM_UI_FLAG_FULLSCREEN)
-
-        // Disposing the effect when not finishing/changing configurations restores the status bar.
-        composed.value = false
-        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
-
-        @Suppress("DEPRECATION")
-        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN)
+        assertThat(view.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
             .isEqualTo(0)
     }
 }
