@@ -37,9 +37,9 @@ class AspectRatioUiStateAdapterTest {
         assertThat(available.selectedAspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
         val aspectRatios = available.availableAspectRatios.map { it.value }
         assertThat(aspectRatios).containsExactly(
-            AspectRatio.NINE_SIXTEEN,
             AspectRatio.THREE_FOUR,
-            AspectRatio.ONE_ONE
+            AspectRatio.ONE_ONE,
+            AspectRatio.NINE_SIXTEEN
         ).inOrder()
     }
 
