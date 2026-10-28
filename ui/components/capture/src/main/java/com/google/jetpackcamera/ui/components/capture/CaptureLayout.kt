@@ -118,6 +118,7 @@ fun PreviewLayout(
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
+    topBarTrailingContent: @Composable (Modifier) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
@@ -171,6 +172,7 @@ fun PreviewLayout(
                             contentAlignment = Alignment.CenterStart
                         ) {
                             indicatorRow(Modifier)
+                            topBarTrailingContent(Modifier.align(Alignment.CenterEnd))
                         }
                         Box {
                             viewfinder(Modifier)
@@ -319,7 +321,9 @@ private fun VerticalMaterialControls(
                         modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.CenterStart
                     ) {
-                        quickSettingsToggleButton(Modifier)
+                        OverlapAwareStyleProvider {
+                            quickSettingsToggleButton(Modifier)
+                        }
                     }
 
                     // capture mode toggle switch center

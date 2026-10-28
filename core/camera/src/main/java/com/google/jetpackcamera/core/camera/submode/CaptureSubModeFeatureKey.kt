@@ -13,19 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.core.settings.datastoreprefs.testing
+package com.google.jetpackcamera.core.camera.submode
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.core.Preferences
-import java.io.File
-import kotlinx.coroutines.CoroutineScope
+import com.google.jetpackcamera.model.CaptureSubModeId
 
-object FakeDataStoreModule {
-
-    fun providePreferenceDataStore(scope: CoroutineScope, file: File): DataStore<Preferences> =
-        PreferenceDataStoreFactory.create(
-            scope = scope,
-            produceFile = { file }
-        )
+/**
+ * Key identifying an injectable [CaptureSubModeProvider] in the sub-mode provider map.
+ */
+interface CaptureSubModeFeatureKey {
+    val id: CaptureSubModeId
 }
