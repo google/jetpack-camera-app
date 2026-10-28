@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.BottomSheetScaffoldState
@@ -42,7 +41,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -60,10 +58,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
@@ -925,34 +925,34 @@ private fun LayoutWrapper(
         captureModeToggle = captureModeToggle,
         quickSettingsOverlay = quickSettingsOverlay,
         indicatorRow = { modifier ->
-            Row {
-                TooltipIconButton(
-                    modifier = Modifier,
-                    icon = {
-                        Box(
-                            modifier = Modifier
-                                .size(JcaTooltipDefaults.IconSize)
-                                .background(Color.White, shape = CircleShape)
-                        )
-                    },
-                    contentDescription = "Show camera information",
-                tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
-                        " text wraps and aligns.",
-                positioning = TooltipAnchorPosition.Below,
-                isOutlined = true
-            )
             if (!isErrorDialogShowing) {
-
-                IndicatorPill(
-                    modifier = modifier
-                        .fillMaxWidth()
+                Row(
+                    modifier = modifier,
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    flashModeIndicator(Modifier)
-                    hdrIndicator(Modifier)
-                    videoQualityIndicator(Modifier)
-                    stabilizationIndicator(Modifier)
+                    TooltipIconButton(
+                        modifier = Modifier,
+                        icon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(JcaTooltipDefaults.IconSize)
+                                    .background(Color.White, shape = CircleShape)
+                            )
+                        },
+                        contentDescription = "Show camera information",
+                        tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
+                            " text wraps and aligns.",
+                        positioning = TooltipAnchorPosition.Below,
+                        isOutlined = true
+                    )
+                    IndicatorPill {
+                        flashModeIndicator(Modifier)
+                        hdrIndicator(Modifier)
+                        videoQualityIndicator(Modifier)
+                        stabilizationIndicator(Modifier)
+                    }
                 }
-            }
             }
         },
         topStartContent = topStartContent,
