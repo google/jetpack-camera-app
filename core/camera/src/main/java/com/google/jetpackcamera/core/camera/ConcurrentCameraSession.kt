@@ -61,6 +61,18 @@ internal suspend fun runConcurrentCameraSession(
         .filterNotNull()
         .first()
 
+    // Below API 33, CameraX ignores Preview.setMirrorMode, so the preview would still mirror the
+    // whole composited frame when the primary lens is front-facing, and the mirrored lens would
+    // appear unmirrored. Concurrent camera keeps the MirrorMode.OFF behavior on those API levels.
+    // TODO: When concurrent camera moves to a capture sub-mode with its own custom session, move
+    //  this mirroring into that session, pass it the mirror mode, and replace this check with a
+    //  mirror mode restriction in the sub-mode's CameraFeaturePolicy below API 33.
+    val mirrorMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        sessionSettings.mirrorMode
+    } else {
+        MirrorMode.OFF
+    }
+
     try {
         val videoCapture = if (sessionSettings.captureMode != CaptureMode.IMAGE_ONLY) {
             createVideoUseCase(
@@ -89,7 +101,7 @@ internal suspend fun runConcurrentCameraSession(
             imageFormat = ImageOutputFormat.JPEG,
             captureMode = sessionSettings.captureMode,
             videoCaptureUseCase = videoCapture,
-            previewMirrorMode = sessionSettings.mirrorMode.toCXConcurrentPreviewMirrorMode()
+            previewMirrorMode = mirrorMode.toCXConcurrentPreviewMirrorMode()
         ).apply { attachPreviewSurfaceProvider(surfaceRequests) }
 
         val cameraConfigs = listOf(
@@ -99,7 +111,7 @@ internal suspend fun runConcurrentCameraSession(
                     .setAlpha(1.0f)
                     .setOffset(0.0f, 0.0f)
                     .setScale(
-                        sessionSettings.mirrorMode.concurrentCompositionScaleX(
+                        mirrorMode.concurrentCompositionScaleX(
                             scale = 1.0f,
                             lensFacing = primaryLensFacing
                         ),
@@ -113,7 +125,7 @@ internal suspend fun runConcurrentCameraSession(
                     .setAlpha(1.0f)
                     .setOffset(2 / 3f - 0.1f, -2 / 3f + 0.1f)
                     .setScale(
-                        sessionSettings.mirrorMode.concurrentCompositionScaleX(
+                        mirrorMode.concurrentCompositionScaleX(
                             scale = 1 / 3f,
                             lensFacing = secondaryLensFacing
                         ),

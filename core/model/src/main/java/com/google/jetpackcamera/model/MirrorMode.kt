@@ -23,6 +23,10 @@ package com.google.jetpackcamera.model
  * flipped relative to the preview the user just saw. [ON_FRONT_ONLY] keeps captures consistent
  * with the preview.
  *
+ * In concurrent camera mode, mirroring is applied on API 33 and above only. On lower API levels,
+ * CameraX does not support the preview configuration it requires, and concurrent camera captures
+ * behave as [OFF].
+ *
  * The values correspond to the CameraX `MirrorMode` constants.
  */
 enum class MirrorMode {
