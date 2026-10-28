@@ -17,8 +17,6 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,7 +35,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,8 +44,6 @@ import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -77,6 +72,7 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.IndicatorPillIcon
 import com.google.jetpackcamera.ui.components.capture.LocalCameraControlBackgroundStyle
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
@@ -94,6 +90,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptur
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEnum
+import com.google.jetpackcamera.ui.components.capture.rememberLastNonNull
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -528,23 +525,23 @@ private fun QuickSettingToggleSelectorButton(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
-    val enum =
-        if (hdrUiState is HdrUiState.Available &&
+    val isHdrActive =
+        hdrUiState is HdrUiState.Available &&
             hdrUiState.isSupported &&
             (
                 hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
                     hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
                 )
-        ) {
-            CameraDynamicRange.HDR
-        } else {
-            CameraDynamicRange.SDR
-        }
-    Icon(
-        modifier = modifier.size(IconButtonDefaults.smallIconSize),
-        painter = enum.getPainter(),
-        contentDescription = stringResource(enum.getDescriptionResId())
-    )
+    IndicatorPillIcon(
+        visible = isHdrActive,
+        modifier = modifier
+    ) {
+        Icon(
+            modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+            painter = CameraDynamicRange.HDR.getPainter(),
+            contentDescription = stringResource(CameraDynamicRange.HDR.getDescriptionResId())
+        )
+    }
 }
 
 /**
@@ -555,21 +552,24 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
  */
 @Composable
 fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = Modifier) {
-    when (flashModeUiState) {
-        is FlashModeUiState.Unavailable ->
-            TopBarQuickSettingIcon(
-                modifier = modifier,
-                enum = CameraFlashMode.OFF,
-                enabled = false
-            )
-
-        is FlashModeUiState.Available ->
-            TopBarQuickSettingIcon(
-                modifier = modifier,
-                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
-                    flashModeUiState.isLowLightBoostActive
-                )
-            )
+    val activeFlashMode = if (
+        flashModeUiState is FlashModeUiState.Available &&
+        flashModeUiState.selectedFlashMode != FlashMode.OFF
+    ) {
+        flashModeUiState.selectedFlashMode.toCameraFlashMode(
+            flashModeUiState.isLowLightBoostActive
+        )
+    } else {
+        null
+    }
+    val displayedFlashMode = rememberLastNonNull(activeFlashMode)
+    IndicatorPillIcon(
+        visible = activeFlashMode != null,
+        modifier = modifier
+    ) {
+        if (displayedFlashMode != null) {
+            TopBarQuickSettingIcon(enum = displayedFlashMode)
+        }
     }
 }
 
@@ -578,29 +578,12 @@ fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = 
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun TopBarQuickSettingIcon(
-    enum: QuickSettingsEnum,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    onClick: () -> Unit = {}
-) {
-    val contentColor = Color.White.let {
-        if (!enabled) it.copy(alpha = 0.38f) else it
-    }
-    CompositionLocalProvider(LocalContentColor provides contentColor) {
-        Icon(
-            painter = enum.getPainter(),
-            contentDescription = stringResource(id = enum.getDescriptionResId()),
-            modifier = modifier
-                .size(IconButtonDefaults.smallIconSize)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onClick,
-                    enabled = enabled
-                )
-        )
-    }
+private fun TopBarQuickSettingIcon(enum: QuickSettingsEnum, modifier: Modifier = Modifier) {
+    Icon(
+        painter = enum.getPainter(),
+        contentDescription = stringResource(id = enum.getDescriptionResId()),
+        modifier = modifier.size(IconButtonDefaults.smallIconSize)
+    )
 }
 
 private fun FlashMode.toCameraFlashMode(isActive: Boolean) = when (this) {
