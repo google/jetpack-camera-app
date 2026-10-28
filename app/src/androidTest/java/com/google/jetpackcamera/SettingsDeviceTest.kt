@@ -182,16 +182,16 @@ class SettingsDeviceTest(private val lensFacing: LensFacing) {
     fun openSettings_setAspectRatio() = runMainActivityScenarioTest {
         openSettings_clickSettingComponent_applyAction(
             componentTestTag = BTN_OPEN_DIALOG_SETTING_ASPECT_RATIO_TAG,
-            dialogTestTag = BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG,
+            dialogTestTag = BTN_DIALOG_ASPECT_RATIO_OPTION_3_4_TAG,
             componentDisabledMessage = "Aspect ratio component is disabled"
         ) {
             assumeHalStableOnSelectAspectRatio()
 
             selectFirstNonSelected(
                 listOf(
-                    BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG,
                     BTN_DIALOG_ASPECT_RATIO_OPTION_3_4_TAG,
-                    BTN_DIALOG_ASPECT_RATIO_OPTION_1_1_TAG
+                    BTN_DIALOG_ASPECT_RATIO_OPTION_1_1_TAG,
+                    BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG
                 )
             )
         }

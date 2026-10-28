@@ -293,6 +293,16 @@ fun FlashModeSetting(
     )
 }
 
+/**
+ * A setting item that opens a single-choice dialog for selecting the camera [AspectRatio].
+ *
+ * The row displays the currently selected ratio as its description, and the dialog presents
+ * the available aspect ratios (3:4, 1:1, 9:16) as radio button options.
+ *
+ * @param aspectRatioUiState The current [AspectRatioUiState] containing the selected aspect ratio.
+ * @param setAspectRatio Callback invoked when the user selects a new [AspectRatio].
+ * @param modifier [Modifier] to be applied to the setting row.
+ */
 @Composable
 fun AspectRatioSetting(
     aspectRatioUiState: AspectRatioUiState,
@@ -306,16 +316,16 @@ fun AspectRatioSetting(
         description =
         if (aspectRatioUiState is AspectRatioUiState.Enabled) {
             when (aspectRatioUiState.currentAspectRatio) {
-                AspectRatio.NINE_SIXTEEN -> stringResource(
-                    id = R.string.aspect_ratio_description_9_16
-                )
-
                 AspectRatio.THREE_FOUR -> stringResource(
                     id = R.string.aspect_ratio_description_3_4
                 )
 
                 AspectRatio.ONE_ONE -> stringResource(
                     id = R.string.aspect_ratio_description_1_1
+                )
+
+                AspectRatio.NINE_SIXTEEN -> stringResource(
+                    id = R.string.aspect_ratio_description_9_16
                 )
             }
         } else {

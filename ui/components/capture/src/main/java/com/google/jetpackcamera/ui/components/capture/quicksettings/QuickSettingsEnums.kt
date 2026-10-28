@@ -61,6 +61,10 @@ enum class CameraFlashMode : QuickSettingsEnum {
     }
 }
 
+/**
+ * Quick settings UI representations for each [com.google.jetpackcamera.model.AspectRatio] option,
+ * mapping each ratio to its icon drawable and accessibility description.
+ */
 enum class CameraAspectRatio : QuickSettingsEnum {
     THREE_FOUR {
 

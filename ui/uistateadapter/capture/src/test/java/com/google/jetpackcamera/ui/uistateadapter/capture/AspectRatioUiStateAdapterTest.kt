@@ -94,4 +94,24 @@ class AspectRatioUiStateAdapterTest {
         val available = state as AspectRatioUiState.Available
         assertThat(available.selectedAspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
     }
+
+    @Test
+    fun from_onlySubsetExcludingThreeFour_fallsBackToOneOneBeforeNineSixteen() {
+        // Current settings is 3:4, but policy only allows 9:16 and 1:1.
+        // Because UI order is 3:4, 1:1, 9:16, fallback should pick 1:1 first.
+        val settings = DEFAULT_CAMERA_APP_SETTINGS.copy(aspectRatio = AspectRatio.THREE_FOUR)
+        val state = AspectRatioUiState.from(
+            settings,
+            OptionVisibility.Only(setOf(AspectRatio.NINE_SIXTEEN, AspectRatio.ONE_ONE))
+        )
+
+        assertThat(state).isInstanceOf(AspectRatioUiState.Available::class.java)
+        val available = state as AspectRatioUiState.Available
+        assertThat(available.selectedAspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+        val aspectRatios = available.availableAspectRatios.map { it.value }
+        assertThat(aspectRatios).containsExactly(
+            AspectRatio.ONE_ONE,
+            AspectRatio.NINE_SIXTEEN
+        ).inOrder()
+    }
 }
