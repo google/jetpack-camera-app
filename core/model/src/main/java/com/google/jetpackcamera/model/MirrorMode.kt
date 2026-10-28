@@ -29,12 +29,6 @@ enum class MirrorMode {
     /** Captures are never mirrored. */
     OFF,
 
-    /**
-     * Captures are always mirrored, regardless of the lens facing. The preview is also mirrored for
-     * every lens so that it matches the captures.
-     */
-    ON,
-
     /** Captures are mirrored only when the lens is front-facing, matching the preview. */
     ON_FRONT_ONLY;
 
@@ -49,7 +43,6 @@ enum class MirrorMode {
      */
     fun appliesTo(lensFacing: LensFacing): Boolean = when (this) {
         OFF -> false
-        ON -> true
         ON_FRONT_ONLY -> lensFacing == LensFacing.FRONT
     }
 }

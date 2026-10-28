@@ -135,18 +135,8 @@ class CameraExtTest {
     @Test
     fun toCXMirrorMode_mapsToCameraXMirrorModes() {
         assertThat(MirrorMode.OFF.toCXMirrorMode()).isEqualTo(CXMirrorMode.MIRROR_MODE_OFF)
-        assertThat(MirrorMode.ON.toCXMirrorMode()).isEqualTo(CXMirrorMode.MIRROR_MODE_ON)
         assertThat(MirrorMode.ON_FRONT_ONLY.toCXMirrorMode())
             .isEqualTo(CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
-    }
-
-    @Test
-    fun toCXPreviewMirrorMode_mirrorsFrontPreviewUnlessAllLensesAreMirrored() {
-        assertThat(MirrorMode.OFF.toCXPreviewMirrorMode())
-            .isEqualTo(CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
-        assertThat(MirrorMode.ON_FRONT_ONLY.toCXPreviewMirrorMode())
-            .isEqualTo(CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
-        assertThat(MirrorMode.ON.toCXPreviewMirrorMode()).isEqualTo(CXMirrorMode.MIRROR_MODE_ON)
     }
 
     @Test
@@ -154,8 +144,6 @@ class CameraExtTest {
         assertThat(MirrorMode.OFF.toCXConcurrentPreviewMirrorMode())
             .isEqualTo(CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
         assertThat(MirrorMode.ON_FRONT_ONLY.toCXConcurrentPreviewMirrorMode())
-            .isEqualTo(CXMirrorMode.MIRROR_MODE_OFF)
-        assertThat(MirrorMode.ON.toCXConcurrentPreviewMirrorMode())
             .isEqualTo(CXMirrorMode.MIRROR_MODE_OFF)
     }
 
@@ -167,8 +155,8 @@ class CameraExtTest {
             .isEqualTo(0.5f)
         assertThat(MirrorMode.OFF.concurrentCompositionScaleX(1.0f, LensFacing.FRONT))
             .isEqualTo(1.0f)
-        assertThat(MirrorMode.ON.concurrentCompositionScaleX(1.0f, LensFacing.BACK))
-            .isEqualTo(-1.0f)
+        assertThat(MirrorMode.OFF.concurrentCompositionScaleX(1.0f, LensFacing.BACK))
+            .isEqualTo(1.0f)
     }
 
     private fun createCharacteristics(capabilities: IntArray): CameraCharacteristics {

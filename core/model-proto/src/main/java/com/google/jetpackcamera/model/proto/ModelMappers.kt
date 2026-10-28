@@ -143,7 +143,6 @@ fun FlashMode.toProto(): FlashModeProto {
  */
 fun MirrorModeProto.toModel(): MirrorMode {
     return when (this) {
-        MirrorModeProto.MIRROR_MODE_ON -> MirrorMode.ON
         MirrorModeProto.MIRROR_MODE_ON_FRONT_ONLY -> MirrorMode.ON_FRONT_ONLY
         MirrorModeProto.MIRROR_MODE_OFF,
         MirrorModeProto.MIRROR_MODE_UNSPECIFIED,
@@ -157,7 +156,6 @@ fun MirrorModeProto.toModel(): MirrorMode {
 fun MirrorMode.toProto(): MirrorModeProto {
     return when (this) {
         MirrorMode.OFF -> MirrorModeProto.MIRROR_MODE_OFF
-        MirrorMode.ON -> MirrorModeProto.MIRROR_MODE_ON
         MirrorMode.ON_FRONT_ONLY -> MirrorModeProto.MIRROR_MODE_ON_FRONT_ONLY
     }
 }

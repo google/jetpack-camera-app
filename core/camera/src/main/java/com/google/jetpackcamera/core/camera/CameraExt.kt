@@ -79,21 +79,17 @@ fun DynamicRange.toCXDynamicRange(): CXDynamicRange {
 
 internal fun MirrorMode.toCXMirrorMode(): Int = when (this) {
     MirrorMode.OFF -> CXMirrorMode.MIRROR_MODE_OFF
-    MirrorMode.ON -> CXMirrorMode.MIRROR_MODE_ON
     MirrorMode.ON_FRONT_ONLY -> CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY
 }
 
 /**
- * Maps [MirrorMode] to the CameraX mirror mode for the preview.
+ * The CameraX mirror mode for the preview of a single camera session.
  *
- * The preview is always mirrored for front-facing lenses so that it behaves like a mirror, so only
- * [MirrorMode.ON] changes it, to also mirror the preview for other lenses.
+ * The preview mirrors front-facing lenses so that it behaves like a mirror, for every [MirrorMode].
+ * This is the CameraX default, which also applies on API 32 and below, where `Preview` ignores
+ * mirror mode changes.
  */
-internal fun MirrorMode.toCXPreviewMirrorMode(): Int = when (this) {
-    MirrorMode.ON -> CXMirrorMode.MIRROR_MODE_ON
-    MirrorMode.OFF,
-    MirrorMode.ON_FRONT_ONLY -> CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY
-}
+internal const val CX_SINGLE_CAMERA_PREVIEW_MIRROR_MODE = CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY
 
 /**
  * Maps [MirrorMode] to the CameraX mirror mode for the preview of a concurrent camera session.
@@ -104,7 +100,6 @@ internal fun MirrorMode.toCXPreviewMirrorMode(): Int = when (this) {
  */
 internal fun MirrorMode.toCXConcurrentPreviewMirrorMode(): Int = when (this) {
     MirrorMode.OFF -> CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY
-    MirrorMode.ON,
     MirrorMode.ON_FRONT_ONLY -> CXMirrorMode.MIRROR_MODE_OFF
 }
 

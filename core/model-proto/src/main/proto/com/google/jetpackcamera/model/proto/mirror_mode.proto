@@ -24,6 +24,5 @@ option java_multiple_files = true;
 enum MirrorMode {
   MIRROR_MODE_UNSPECIFIED = 0;
   MIRROR_MODE_OFF = 1;
-  MIRROR_MODE_ON = 2;
-  MIRROR_MODE_ON_FRONT_ONLY = 3;
+  MIRROR_MODE_ON_FRONT_ONLY = 2;
 }

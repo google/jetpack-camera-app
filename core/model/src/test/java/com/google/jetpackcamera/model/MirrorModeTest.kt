@@ -30,12 +30,6 @@ class MirrorModeTest {
     }
 
     @Test
-    fun on_appliesToAllLenses() {
-        assertThat(MirrorMode.ON.appliesTo(LensFacing.BACK)).isTrue()
-        assertThat(MirrorMode.ON.appliesTo(LensFacing.FRONT)).isTrue()
-    }
-
-    @Test
     fun onFrontOnly_appliesToFrontLensOnly() {
         assertThat(MirrorMode.ON_FRONT_ONLY.appliesTo(LensFacing.BACK)).isFalse()
         assertThat(MirrorMode.ON_FRONT_ONLY.appliesTo(LensFacing.FRONT)).isTrue()

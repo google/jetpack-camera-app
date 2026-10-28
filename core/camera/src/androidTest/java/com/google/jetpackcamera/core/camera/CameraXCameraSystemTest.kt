@@ -82,7 +82,6 @@ import com.google.jetpackcamera.settings.model.forCurrentLens
 import java.io.File
 import java.lang.reflect.Proxy
 import java.util.AbstractMap
-import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Provider
@@ -223,56 +222,6 @@ class CameraXCameraSystemTest {
             ExifInterface(inputStream).isFlipped
         }
         assertThat(isFlipped).isEqualTo(expectedFlipped)
-    }
-
-    @Test
-    fun preview_imageOnlyBackCameraWithMirrorModeOn_isMirroring(): Unit = runBlocking {
-        assertPreviewMirroring(
-            lensFacing = LensFacing.BACK,
-            mirrorMode = MirrorMode.ON,
-            expectedMirroring = true
-        )
-    }
-
-    @Test
-    fun preview_imageOnlyBackCameraWithMirrorModeOff_isNotMirroring(): Unit = runBlocking {
-        assertPreviewMirroring(
-            lensFacing = LensFacing.BACK,
-            mirrorMode = MirrorMode.OFF,
-            expectedMirroring = false
-        )
-    }
-
-    private suspend fun assertPreviewMirroring(
-        lensFacing: LensFacing,
-        mirrorMode: MirrorMode,
-        expectedMirroring: Boolean
-    ) {
-        // Arrange. Bind image capture only so that preview is not stream shared with video
-        // capture. With stream sharing, CameraX mirrors the preview buffers itself and the
-        // surface request reports no mirroring.
-        val cameraSystem = createAndInitCameraXCameraSystem(
-            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
-                cameraLensFacing = lensFacing,
-                mirrorMode = mirrorMode,
-                captureMode = CaptureMode.IMAGE_ONLY
-            )
-        )
-        val availableLenses = cameraSystem.getSystemConstraints().value?.availableLenses
-        assume().withMessage("No $lensFacing camera, skip the test.")
-            .that(availableLenses?.contains(lensFacing)).isTrue()
-        cameraSystem.startCameraAndWaitUntilRunning()
-
-        // Act.
-        val surfaceRequest = cameraSystem.getSurfaceRequest().filterNotNull().first()
-        val isMirroring = CompletableDeferred<Boolean>()
-        surfaceRequest.setTransformationInfoListener(Executor(Runnable::run)) { info ->
-            isMirroring.complete(info.isMirroring)
-        }
-
-        // Assert.
-        assertThat(withTimeout(GENERAL_TIMEOUT_MS) { isMirroring.await() })
-            .isEqualTo(expectedMirroring)
     }
 
     @Test

@@ -296,8 +296,7 @@ internal suspend fun runSingleCameraSession(
                             imageFormat = sessionSettings.imageFormat,
                             captureMode = sessionSettings.captureMode,
                             effect = effect,
-                            captureResults = captureResults,
-                            previewMirrorMode = sessionSettings.mirrorMode.toCXPreviewMirrorMode()
+                            captureResults = captureResults
                         )
                     }.apply {
                         attachPreviewSurfaceProvider(surfaceRequests)
@@ -733,7 +732,7 @@ internal fun createUseCaseGroup(
     captureMode: CaptureMode,
     effect: CameraEffect? = null,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null,
-    previewMirrorMode: Int = MirrorMode.OFF.toCXPreviewMirrorMode()
+    previewMirrorMode: Int = CX_SINGLE_CAMERA_PREVIEW_MIRROR_MODE
 ): UseCaseGroup {
     val previewUseCase =
         createPreviewUseCase(
