@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -486,6 +487,18 @@ class TooltipTest {
                 SemanticsMatcher.expectValue(
                     SemanticsProperties.ContentDescription,
                     listOf("Custom info action")
+                )
+            )
+
+        // Show tooltip and verify LiveRegionMode.Polite semantics on bubble content
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(TOOLTIP_CONTENT_TAG)
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.LiveRegion,
+                    LiveRegionMode.Polite
                 )
             )
     }

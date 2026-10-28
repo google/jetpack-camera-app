@@ -643,7 +643,7 @@ fun JcaTooltipBubble(
             .widthIn(min = JcaTooltipDefaults.MinWidth, max = JcaTooltipDefaults.MaxWidth)
             .testTag(TOOLTIP_CONTENT_TAG)
             .semantics {
-                liveRegion = LiveRegionMode.Assertive
+                liveRegion = LiveRegionMode.Polite
                 paneTitle = tooltipTitle ?: tooltipText
             }
     ) {
