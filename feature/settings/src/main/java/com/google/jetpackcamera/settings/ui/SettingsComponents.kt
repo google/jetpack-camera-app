@@ -325,13 +325,6 @@ fun AspectRatioSetting(
         popupContents = {
             Column(Modifier.selectableGroup()) {
                 SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG),
-                    text = stringResource(id = R.string.aspect_ratio_selector_9_16),
-                    selected = aspectRatioUiState.currentAspectRatio == AspectRatio.NINE_SIXTEEN,
-                    enabled = true,
-                    onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
-                )
-                SingleChoiceSelector(
                     modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_3_4_TAG),
                     text = stringResource(id = R.string.aspect_ratio_selector_3_4),
                     selected = aspectRatioUiState.currentAspectRatio == AspectRatio.THREE_FOUR,
@@ -344,6 +337,13 @@ fun AspectRatioSetting(
                     selected = aspectRatioUiState.currentAspectRatio == AspectRatio.ONE_ONE,
                     enabled = true,
                     onClick = { setAspectRatio(AspectRatio.ONE_ONE) }
+                )
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG),
+                    text = stringResource(id = R.string.aspect_ratio_selector_9_16),
+                    selected = aspectRatioUiState.currentAspectRatio == AspectRatio.NINE_SIXTEEN,
+                    enabled = true,
+                    onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
                 )
             }
         }
