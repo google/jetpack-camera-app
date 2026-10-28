@@ -64,17 +64,17 @@ enum class CameraFlashMode : QuickSettingsEnum {
 enum class CameraAspectRatio : QuickSettingsEnum {
     THREE_FOUR {
 
-        override fun getDrawableResId() = R.drawable.ic_aspect_ratio
+        override fun getDrawableResId() = R.drawable.ic_crop_portrait
         override fun getDescriptionResId() = R.string.quick_settings_aspect_ratio_3_4_description
     },
     NINE_SIXTEEN {
 
-        override fun getDrawableResId() = R.drawable.ic_aspect_ratio
+        override fun getDrawableResId() = R.drawable.ic_crop_9_16
         override fun getDescriptionResId() = R.string.quick_settings_aspect_ratio_9_16_description
     },
     ONE_ONE {
 
-        override fun getDrawableResId() = R.drawable.ic_aspect_ratio
+        override fun getDrawableResId() = R.drawable.ic_crop_square
         override fun getDescriptionResId() = R.string.quick_settings_aspect_ratio_1_1_description
     }
 }
