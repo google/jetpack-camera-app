@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -267,9 +268,14 @@ fun ZoomBar(
         if (zoomLevels.isEmpty()) return
 
         val validIndex = selectedOptionIndex.coerceIn(0, zoomLevels.size - 1)
+        val disableAnimations = LocalDisableAnimations.current
         val indicatorPosition by animateFloatAsState(
             targetValue = validIndex.toFloat(),
-            animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+            animationSpec = if (disableAnimations) {
+                snap()
+            } else {
+                MaterialTheme.motionScheme.defaultSpatialSpec()
+            },
             label = "zoomIndicatorPosition"
         )
 
