@@ -1251,6 +1251,7 @@ internal class CameraAppSettingsViewModelTest {
         val viewModel = SettingsViewModel(
             settingsRepository,
             constraintsRepository,
+            FakeActiveCaptureSubModeRepository(),
             Optional.of(FakeLocationProvider())
         )
         composeTestRule.setContent {
