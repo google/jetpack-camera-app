@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(InternalCameraApi::class)
+
 package com.google.jetpackcamera.core.camera
 
 import android.hardware.camera2.CameraCharacteristics
