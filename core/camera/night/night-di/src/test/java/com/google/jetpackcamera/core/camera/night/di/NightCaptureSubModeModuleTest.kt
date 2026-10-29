@@ -72,14 +72,14 @@ class NightCaptureSubModeModuleTest {
     /** Contributes an effect the way an app would, as documented on the qualifier. */
     @Module
     @InstallIn(SingletonComponent::class)
-    object ContributedEffectsModule {
+    internal object ContributedEffectsModule {
         @Provides
         @ElementsIntoSet
         @NightModeCompatibleCameraEffects
         fun provideNightModeEffects(): Set<CameraEffectId> = setOf(TEST_EFFECT_ID)
     }
 
-    interface TestComponent {
+    internal interface TestComponent {
         fun captureSubModeEntries():
             Set<Map.Entry<CaptureSubModeFeatureKey, Provider<CaptureSubModeProvider>>>
     }
@@ -87,7 +87,7 @@ class NightCaptureSubModeModuleTest {
     @Component(
         modules = [NightCaptureSubModeModule::class, NightModeCompatibleCameraEffectsModule::class]
     )
-    interface DefaultComponent : TestComponent {
+    internal interface DefaultComponent : TestComponent {
         @Component.Factory
         interface Factory {
             fun create(@BindsInstance @ApplicationContext context: Context): DefaultComponent
@@ -101,7 +101,7 @@ class NightCaptureSubModeModuleTest {
             ContributedEffectsModule::class
         ]
     )
-    interface ContributedEffectsComponent : TestComponent {
+    internal interface ContributedEffectsComponent : TestComponent {
         @Component.Factory
         interface Factory {
             fun create(
