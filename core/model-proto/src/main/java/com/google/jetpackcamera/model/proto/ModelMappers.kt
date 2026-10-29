@@ -22,6 +22,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
@@ -31,6 +32,7 @@ import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 import com.google.jetpackcamera.model.proto.LensFacing as LensFacingProto
 import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoostPriorityProto
+import com.google.jetpackcamera.model.proto.MirrorMode as MirrorModeProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 
@@ -127,6 +129,32 @@ fun FlashMode.toProto(): FlashModeProto {
         FlashMode.AUTO -> FlashModeProto.FLASH_MODE_AUTO
         FlashMode.LOW_LIGHT_BOOST -> FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST
         FlashMode.OFF -> FlashModeProto.FLASH_MODE_OFF
+    }
+}
+
+/**
+ * Maps a Proto model to a Domain model.
+ *
+ * [MirrorModeProto.MIRROR_MODE_UNSPECIFIED] and unrecognized values map to [MirrorMode.OFF].
+ * Callers that need a policy-defined default for an unset value should check for
+ * [MirrorModeProto.MIRROR_MODE_UNSPECIFIED] before mapping.
+ */
+fun MirrorModeProto.toModel(): MirrorMode {
+    return when (this) {
+        MirrorModeProto.MIRROR_MODE_ON_FRONT_ONLY -> MirrorMode.ON_FRONT_ONLY
+        MirrorModeProto.MIRROR_MODE_OFF,
+        MirrorModeProto.MIRROR_MODE_UNSPECIFIED,
+        MirrorModeProto.UNRECOGNIZED -> MirrorMode.OFF
+    }
+}
+
+/**
+ * Maps a Domain model to a Proto model.
+ */
+fun MirrorMode.toProto(): MirrorModeProto {
+    return when (this) {
+        MirrorMode.OFF -> MirrorModeProto.MIRROR_MODE_OFF
+        MirrorMode.ON_FRONT_ONLY -> MirrorModeProto.MIRROR_MODE_ON_FRONT_ONLY
     }
 }
 

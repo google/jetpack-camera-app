@@ -19,11 +19,15 @@ import android.Manifest
 import androidx.compose.ui.test.assertAll
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.isNotEnabled
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
@@ -37,6 +41,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_30
@@ -55,6 +60,7 @@ import com.google.jetpackcamera.settings.testing.FakeSettingsDataSource
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
+import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_MIRROR_FRONT_CAMERA_TAG
 import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.SingleChoiceSelector
 import java.util.Optional
@@ -361,6 +367,23 @@ internal class CameraAppSettingsViewModelTest {
         assertIsEnabled(settingsViewModel.settingsUiState.value).also {
             assertThat(it.lensFlipUiState.currentLensFacing).isEqualTo(nextCameraLensFacing)
         }
+    }
+
+    @Test
+    fun setMirrorMode() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+        assertThat(assertIsEnabled(initialState).mirrorModeUiState)
+            .isEqualTo(MirrorModeUiState.Enabled(MirrorMode.OFF))
+
+        settingsViewModel.setMirrorMode(MirrorMode.ON_FRONT_ONLY)
+
+        advanceUntilIdle()
+
+        assertThat(assertIsEnabled(settingsViewModel.settingsUiState.value).mirrorModeUiState)
+            .isEqualTo(MirrorModeUiState.Enabled(MirrorMode.ON_FRONT_ONLY))
     }
 
     @Test
@@ -936,6 +959,36 @@ internal class CameraAppSettingsViewModelTest {
             )
         }
         composeTestRule.onNodeWithTag(BTN_OPEN_DIALOG_SETTING_FLASH_TAG).assertIsDisplayed()
+    }
+
+    @Test
+    fun settingsScreen_mirrorFrontCameraSwitch_togglesMirrorMode() {
+        Dispatchers.resetMain()
+        // Create the view model after resetting the main dispatcher so that its coroutines run on
+        // the main looper that the compose test rule drives.
+        val viewModel = SettingsViewModel(
+            settingsRepository,
+            constraintsRepository,
+            Optional.of(FakeLocationProvider())
+        )
+        composeTestRule.setContent {
+            SettingsScreen(
+                versionInfo = VersionInfoHolder(versionName = "1.0.0", buildType = "debug"),
+                onNavigateBack = {},
+                viewModel = viewModel
+            )
+        }
+        val mirrorSwitch =
+            composeTestRule.onNodeWithTag(BTN_SWITCH_SETTING_MIRROR_FRONT_CAMERA_TAG)
+        mirrorSwitch.performScrollTo().assertIsOff()
+
+        mirrorSwitch.performClick()
+
+        composeTestRule.waitUntil(5_000) {
+            (viewModel.settingsUiState.value as? SettingsUiState.Enabled)
+                ?.mirrorModeUiState == MirrorModeUiState.Enabled(MirrorMode.ON_FRONT_ONLY)
+        }
+        mirrorSwitch.assertIsOn()
     }
 }
 

@@ -751,7 +751,7 @@ fun ComposeTestRule.searchForQuickSetting(settingTestTag: String) {
  * @param enabled `true` to select the concurrent camera sub-mode, `false` to select the default
  * sub-mode.
  */
-fun ComposeTestRule.selectConcurrentCameraSubMode(enabled: Boolean) = selectCaptureSubMode(
+internal fun ComposeTestRule.selectConcurrentCameraSubMode(enabled: Boolean) = selectCaptureSubMode(
     subModeId = CONCURRENT_SUB_MODE_ID,
     parentCaptureMode = CaptureMode.VIDEO_ONLY,
     subModeName = "Concurrent camera",
@@ -769,7 +769,7 @@ fun ComposeTestRule.selectConcurrentCameraSubMode(enabled: Boolean) = selectCapt
  * @param subModeName The sub-mode name used in skip messages.
  * @param enabled `true` to select the sub-mode, `false` to select the default sub-mode.
  */
-fun ComposeTestRule.selectCaptureSubMode(
+internal fun ComposeTestRule.selectCaptureSubMode(
     subModeId: CaptureSubModeId,
     parentCaptureMode: CaptureMode,
     subModeName: String,
@@ -818,7 +818,7 @@ fun ComposeTestRule.selectCaptureSubMode(
  * Selects the single-stream camera effect in the Settings screen, skipping the test if the
  * effect is not offered.
  */
-fun ComposeTestRule.selectSingleStreamEffect(): Unit = visitSettingsScreen {
+internal fun ComposeTestRule.selectSingleStreamEffect(): Unit = visitSettingsScreen {
     visitSettingDialog(
         settingTestTag = BTN_OPEN_DIALOG_SETTING_STREAM_CONFIG_TAG,
         dialogTestTag = BTN_DIALOG_STREAM_CONFIG_OPTION_MULTI_STREAM_CAPTURE_TAG,
@@ -837,7 +837,7 @@ fun ComposeTestRule.selectSingleStreamEffect(): Unit = visitSettingsScreen {
 /**
  * Waits until the Settings screen shows [text], for example as the description of a setting.
  */
-fun ComposeTestRule.waitForSettingsText(text: String): Unit = visitSettingsScreen {
+internal fun ComposeTestRule.waitForSettingsText(text: String): Unit = visitSettingsScreen {
     waitUntil(DEFAULT_TIMEOUT_MILLIS) {
         onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
     }

@@ -23,6 +23,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -56,6 +57,8 @@ interface SettingsRepository {
     suspend fun updateTargetFrameRate(targetFrameRate: Int)
 
     suspend fun updateImageFormat(imageFormat: ImageOutputFormat)
+
+    suspend fun updateMirrorMode(mirrorMode: MirrorMode)
 
     suspend fun updateMaxVideoDuration(durationMillis: Long)
 
