@@ -28,6 +28,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.toProto
@@ -144,6 +145,12 @@ class ProtoDataStoreSettingsDataSource(
     override suspend fun updateImageFormat(imageFormat: ImageOutputFormat) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.copy { this.imageFormat = imageFormat.toProto() }
+        }
+    }
+
+    override suspend fun updateMirrorMode(mirrorMode: MirrorMode) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.copy { this.mirrorMode = mirrorMode.toProto() }
         }
     }
 

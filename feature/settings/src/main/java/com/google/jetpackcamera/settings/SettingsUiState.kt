@@ -22,6 +22,7 @@ import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
@@ -55,6 +56,7 @@ sealed interface SettingsUiState {
         val flashUiState: FlashUiState,
         val fpsUiState: FpsUiState,
         val lensFlipUiState: FlipLensUiState,
+        val mirrorModeUiState: MirrorModeUiState,
         val stabilizationUiState: StabilizationUiState,
         val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
         val videoQualityUiState: VideoQualityUiState,
@@ -340,6 +342,14 @@ sealed interface DarkModeUiState {
         DarkModeUiState
 }
 
+/**
+ * State for the setting that mirrors captured photos and videos from the front camera.
+ */
+sealed interface MirrorModeUiState {
+    /** @property currentMirrorMode The current [MirrorMode]. */
+    data class Enabled(val currentMirrorMode: MirrorMode) : MirrorModeUiState
+}
+
 sealed interface MaxVideoDurationUiState {
     data class Enabled(val currentMaxDurationMillis: Long, val additionalContext: String = "") :
         MaxVideoDurationUiState
@@ -407,6 +417,7 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
         )
     ),
     lensFlipUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing),
+    mirrorModeUiState = MirrorModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.mirrorMode),
     maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(UNLIMITED_VIDEO_DURATION),
     stabilizationUiState =
     StabilizationUiState.Disabled(

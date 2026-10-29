@@ -26,6 +26,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_30
@@ -46,6 +47,7 @@ class PolicyOverridesTest {
         flashMode = FlashMode.ON,
         imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
         dynamicRange = DynamicRange.HLG10,
+        mirrorMode = MirrorMode.ON_FRONT_ONLY,
         stabilizationMode = StabilizationMode.ON,
         targetFrameRate = TARGET_FPS_60
     )
@@ -55,6 +57,7 @@ class PolicyOverridesTest {
         flashMode = SettingConfig(FlashMode.OFF, OptionVisibility.Hidden),
         imageFormat = SettingConfig(ImageOutputFormat.JPEG, OptionVisibility.Hidden),
         dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden),
+        mirrorMode = SettingConfig(MirrorMode.OFF, OptionVisibility.Hidden),
         stabilizationMode = SettingConfig(StabilizationMode.OFF, OptionVisibility.Hidden),
         targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden)
     )
@@ -74,6 +77,7 @@ class PolicyOverridesTest {
         assertThat(enforced.flashMode).isEqualTo(FlashMode.OFF)
         assertThat(enforced.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(enforced.dynamicRange).isEqualTo(DynamicRange.SDR)
+        assertThat(enforced.mirrorMode).isEqualTo(MirrorMode.OFF)
         assertThat(enforced.stabilizationMode).isEqualTo(StabilizationMode.OFF)
         assertThat(enforced.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
 
@@ -199,6 +203,7 @@ class PolicyOverridesTest {
             flashMode = FlashMode.AUTO,
             imageFormat = ImageOutputFormat.JPEG,
             dynamicRange = DynamicRange.SDR,
+            mirrorMode = MirrorMode.OFF,
             stabilizationMode = StabilizationMode.HIGH_QUALITY,
             targetFrameRate = TARGET_FPS_30,
             selectedCameraEffect = CameraEffectId("single_stream"),
@@ -211,6 +216,7 @@ class PolicyOverridesTest {
                 flashMode = requested.flashMode,
                 imageFormat = requested.imageFormat,
                 dynamicRange = requested.dynamicRange,
+                mirrorMode = requested.mirrorMode,
                 stabilizationMode = requested.stabilizationMode,
                 targetFrameRate = requested.targetFrameRate,
                 selectedCameraEffect = requested.selectedCameraEffect,

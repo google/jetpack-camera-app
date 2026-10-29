@@ -20,6 +20,7 @@ import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 
@@ -31,8 +32,9 @@ import com.google.jetpackcamera.model.VideoQuality
  *
  * The restored values are [CameraAppSettings.aspectRatio], [CameraAppSettings.flashMode],
  * [CameraAppSettings.imageFormat], [CameraAppSettings.dynamicRange],
- * [CameraAppSettings.stabilizationMode], [CameraAppSettings.targetFrameRate],
- * [CameraAppSettings.selectedCameraEffect], and [CameraAppSettings.videoQuality].
+ * [CameraAppSettings.mirrorMode], [CameraAppSettings.stabilizationMode],
+ * [CameraAppSettings.targetFrameRate], [CameraAppSettings.selectedCameraEffect], and
+ * [CameraAppSettings.videoQuality].
  * [CameraAppSettings.captureMode] is not restored. A capture mode change ends a sub-mode rather
  * than being a value that the sub-mode overrides.
  *
@@ -44,6 +46,7 @@ data class PolicyOverrides private constructor(
     private val flashMode: OverriddenValue<FlashMode>,
     private val imageFormat: OverriddenValue<ImageOutputFormat>,
     private val dynamicRange: OverriddenValue<DynamicRange>,
+    private val mirrorMode: OverriddenValue<MirrorMode>,
     private val stabilizationMode: OverriddenValue<StabilizationMode>,
     private val targetFrameRate: OverriddenValue<Int>,
     private val selectedCameraEffect: OverriddenValue<CameraEffectId>,
@@ -61,6 +64,7 @@ data class PolicyOverrides private constructor(
             beforeEnforcement.dynamicRange,
             afterEnforcement.dynamicRange
         ),
+        mirrorMode = OverriddenValue(beforeEnforcement.mirrorMode, afterEnforcement.mirrorMode),
         stabilizationMode = OverriddenValue(
             beforeEnforcement.stabilizationMode,
             afterEnforcement.stabilizationMode
@@ -94,6 +98,7 @@ data class PolicyOverrides private constructor(
         flashMode = flashMode.restore(settings.flashMode),
         imageFormat = imageFormat.restore(settings.imageFormat),
         dynamicRange = dynamicRange.restore(settings.dynamicRange),
+        mirrorMode = mirrorMode.restore(settings.mirrorMode),
         stabilizationMode = stabilizationMode.restore(settings.stabilizationMode),
         targetFrameRate = targetFrameRate.restore(settings.targetFrameRate),
         selectedCameraEffect = selectedCameraEffect.restore(settings.selectedCameraEffect),
@@ -115,6 +120,7 @@ data class PolicyOverrides private constructor(
                 flashMode = flashMode.before,
                 imageFormat = imageFormat.before,
                 dynamicRange = dynamicRange.before,
+                mirrorMode = mirrorMode.before,
                 stabilizationMode = stabilizationMode.before,
                 targetFrameRate = targetFrameRate.before,
                 selectedCameraEffect = selectedCameraEffect.before,
@@ -126,6 +132,7 @@ data class PolicyOverrides private constructor(
             flashMode = flashMode.withRequest(requested.flashMode),
             imageFormat = imageFormat.withRequest(requested.imageFormat),
             dynamicRange = dynamicRange.withRequest(requested.dynamicRange),
+            mirrorMode = mirrorMode.withRequest(requested.mirrorMode),
             stabilizationMode = stabilizationMode.withRequest(requested.stabilizationMode),
             targetFrameRate = targetFrameRate.withRequest(requested.targetFrameRate),
             selectedCameraEffect = selectedCameraEffect.withRequest(
