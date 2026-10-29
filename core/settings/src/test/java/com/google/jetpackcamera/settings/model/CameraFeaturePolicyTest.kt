@@ -22,6 +22,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_15
@@ -99,6 +100,7 @@ class CameraFeaturePolicyTest {
         assertThat(config.captureMode).isNull()
         assertThat(config.imageFormat).isNull()
         assertThat(config.dynamicRange).isNull()
+        assertThat(config.mirrorMode).isNull()
         assertThat(config.stabilizationMode).isNull()
         assertThat(config.targetFrameRate).isNull()
         assertThat(config.cameraEffect).isNull()
@@ -210,6 +212,7 @@ class CameraFeaturePolicyTest {
             captureMode = SettingConfig(CaptureMode.VIDEO_ONLY),
             imageFormat = SettingConfig(ImageOutputFormat.JPEG_ULTRA_HDR),
             dynamicRange = SettingConfig(DynamicRange.HLG10),
+            mirrorMode = SettingConfig(MirrorMode.ON_FRONT_ONLY),
             stabilizationMode = SettingConfig(StabilizationMode.OFF),
             targetFrameRate = SettingConfig(TARGET_FPS_30)
         )
@@ -221,8 +224,41 @@ class CameraFeaturePolicyTest {
         assertThat(appSettings.captureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
         assertThat(appSettings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
         assertThat(appSettings.dynamicRange).isEqualTo(DynamicRange.HLG10)
+        assertThat(appSettings.mirrorMode).isEqualTo(MirrorMode.ON_FRONT_ONLY)
         assertThat(appSettings.stabilizationMode).isEqualTo(StabilizationMode.OFF)
         assertThat(appSettings.targetFrameRate).isEqualTo(TARGET_FPS_30)
+    }
+
+    @Test
+    fun enforceRestrictions_whenMirrorModeHidden_clampsToDefaultValue() {
+        val policy = CameraFeaturePolicy(
+            mirrorMode = SettingConfig(
+                defaultValue = MirrorMode.ON_FRONT_ONLY,
+                visibility = OptionVisibility.Hidden
+            )
+        )
+        val settings = DEFAULT_CAMERA_APP_SETTINGS.copy(mirrorMode = MirrorMode.OFF)
+
+        val enforced = policy.enforceRestrictions(settings)
+
+        assertThat(enforced.mirrorMode).isEqualTo(MirrorMode.ON_FRONT_ONLY)
+        assertThat(CameraFeaturePolicy().enforceRestrictions(settings).mirrorMode)
+            .isEqualTo(MirrorMode.OFF)
+    }
+
+    @Test
+    fun isCompatibleWith_whenMirrorModeLockedToDifferentValues_returnsFalse() {
+        val hostPolicy = CameraFeaturePolicy(
+            mirrorMode = SettingConfig(MirrorMode.ON_FRONT_ONLY, OptionVisibility.Hidden)
+        )
+        val subModePolicy = CameraFeaturePolicy(
+            mirrorMode = SettingConfig(MirrorMode.OFF, OptionVisibility.Hidden)
+        )
+
+        assertThat(hostPolicy.isCompatibleWith(subModePolicy)).isFalse()
+        assertThat(hostPolicy.isCompatibleWith(CameraFeaturePolicy())).isTrue()
+        assertThat(hostPolicy.intersect(CameraFeaturePolicy()).mirrorMode)
+            .isEqualTo(hostPolicy.mirrorMode)
     }
 
     @Test

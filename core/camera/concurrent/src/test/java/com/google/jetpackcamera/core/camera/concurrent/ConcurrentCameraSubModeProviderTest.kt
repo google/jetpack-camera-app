@@ -15,12 +15,14 @@
  */
 package com.google.jetpackcamera.core.camera.concurrent
 
+import android.os.Build
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_30
@@ -147,6 +149,41 @@ class ConcurrentCameraSubModeProviderTest {
         assertThat(isCompatible(settings)).isTrue()
         assertThat(provider.featurePolicy.enforceRestrictions(settings).videoQuality)
             .isEqualTo(VideoQuality.UNSPECIFIED)
+    }
+
+    @Test
+    fun featurePolicy_belowApi33_locksMirrorModeToOff() {
+        val api32Provider = ConcurrentCameraSubModeProvider(
+            availableConcurrentCameraInfos = { emptyList() },
+            sdkInt = Build.VERSION_CODES.S_V2
+        )
+        val settings = CameraAppSettings(
+            captureMode = CaptureMode.VIDEO_ONLY,
+            mirrorMode = MirrorMode.ON_FRONT_ONLY
+        )
+
+        assertThat(api32Provider.featurePolicy.mirrorMode?.defaultValue)
+            .isEqualTo(MirrorMode.OFF)
+        assertThat(api32Provider.featurePolicy.mirrorMode?.visibility)
+            .isEqualTo(OptionVisibility.Hidden)
+        assertThat(api32Provider.featurePolicy.enforceRestrictions(settings).mirrorMode)
+            .isEqualTo(MirrorMode.OFF)
+    }
+
+    @Test
+    fun featurePolicy_api33AndAbove_leavesMirrorModeUnrestricted() {
+        val api33Provider = ConcurrentCameraSubModeProvider(
+            availableConcurrentCameraInfos = { emptyList() },
+            sdkInt = Build.VERSION_CODES.TIRAMISU
+        )
+        val settings = CameraAppSettings(
+            captureMode = CaptureMode.VIDEO_ONLY,
+            mirrorMode = MirrorMode.ON_FRONT_ONLY
+        )
+
+        assertThat(api33Provider.featurePolicy.mirrorMode).isNull()
+        assertThat(api33Provider.featurePolicy.enforceRestrictions(settings).mirrorMode)
+            .isEqualTo(MirrorMode.ON_FRONT_ONLY)
     }
 
     private fun isCompatible(

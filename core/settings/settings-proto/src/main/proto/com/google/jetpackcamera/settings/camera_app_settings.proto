@@ -24,6 +24,7 @@ import "com/google/jetpackcamera/model/proto/dynamic_range.proto";
 import "com/google/jetpackcamera/model/proto/flash_mode.proto";
 import "com/google/jetpackcamera/model/proto/image_output_format.proto";
 import "com/google/jetpackcamera/model/proto/lens_facing.proto";
+import "com/google/jetpackcamera/model/proto/mirror_mode.proto";
 import "com/google/jetpackcamera/model/proto/stabilization_mode.proto";
 import "com/google/jetpackcamera/model/proto/video_quality.proto";
 import "com/google/jetpackcamera/model/proto/low_light_boost_priority.proto";
@@ -45,6 +46,7 @@ message CameraAppSettings {
   com.google.jetpackcamera.model.proto.VideoQuality video_quality = 12;
   bool audio_enabled = 13;
   com.google.jetpackcamera.model.proto.LowLightBoostPriority low_light_boost_priority = 14;
+  com.google.jetpackcamera.model.proto.MirrorMode mirror_mode = 18;
 
   // Non-camera app settings
   com.google.jetpackcamera.model.proto.DarkMode dark_mode = 9;

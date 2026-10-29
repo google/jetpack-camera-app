@@ -18,6 +18,7 @@
 package com.google.jetpackcamera.core.camera.concurrent
 
 import android.content.Context
+import android.os.Build
 import androidx.camera.core.CameraInfo
 import androidx.camera.lifecycle.ProcessCameraProvider
 import com.google.jetpackcamera.core.camera.CameraSessionContext
@@ -32,6 +33,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
@@ -48,7 +50,8 @@ import com.google.jetpackcamera.settings.model.SettingConfig
  * [featurePolicy] locks the settings that session doesn't support, including camera effects.
  */
 class ConcurrentCameraSubModeProvider internal constructor(
-    private val availableConcurrentCameraInfos: (ProcessCameraProvider) -> List<List<CameraInfo>>
+    private val availableConcurrentCameraInfos: (ProcessCameraProvider) -> List<List<CameraInfo>>,
+    sdkInt: Int = Build.VERSION.SDK_INT
 ) : CaptureSubModeProvider {
 
     constructor() : this(
@@ -76,6 +79,16 @@ class ConcurrentCameraSubModeProvider internal constructor(
                 FlashMode.AUTO
             )
         ),
+        mirrorMode = if (sdkInt < Build.VERSION_CODES.TIRAMISU) {
+            // CameraX ignores Preview.setMirrorMode below API 33, so the composited
+            // preview cannot avoid mirroring the frame a second time.
+            SettingConfig(
+                defaultValue = MirrorMode.OFF,
+                visibility = OptionVisibility.Hidden
+            )
+        } else {
+            null
+        },
         stabilizationMode = SettingConfig(
             defaultValue = StabilizationMode.OFF,
             visibility = OptionVisibility.Hidden

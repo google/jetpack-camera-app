@@ -65,6 +65,7 @@ import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
@@ -83,6 +84,7 @@ import com.google.jetpackcamera.settings.FpsUiState
 import com.google.jetpackcamera.settings.LocationUiState
 import com.google.jetpackcamera.settings.LowLightBoostPriorityUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
+import com.google.jetpackcamera.settings.MirrorModeUiState
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
@@ -772,6 +774,43 @@ fun VideoQualitySetting(
                     }
             }
         }
+    )
+}
+
+/**
+ * A settings item that renders a toggle switch for mirroring front camera photos and videos.
+ *
+ * The switch is on for any [MirrorMode] other than [MirrorMode.OFF]. Turning it on selects
+ * [MirrorMode.ON_FRONT_ONLY].
+ *
+ * @param modifier Modifier to be applied to the setting layout.
+ * @param mirrorModeUiState The current [MirrorModeUiState].
+ * @param setMirrorMode Callback invoked with the selected [MirrorMode] when the user toggles the
+ *   switch.
+ */
+@Composable
+fun MirrorFrontCameraSetting(
+    modifier: Modifier = Modifier,
+    mirrorModeUiState: MirrorModeUiState,
+    setMirrorMode: (MirrorMode) -> Unit
+) {
+    val isMirrored = when (mirrorModeUiState) {
+        is MirrorModeUiState.Enabled -> mirrorModeUiState.currentMirrorMode != MirrorMode.OFF
+    }
+    SwitchSettingUI(
+        modifier = modifier.testTag(BTN_SWITCH_SETTING_MIRROR_FRONT_CAMERA_TAG),
+        title = stringResource(id = R.string.mirror_front_camera_title),
+        description = if (isMirrored) {
+            stringResource(R.string.mirror_front_camera_description_on)
+        } else {
+            stringResource(R.string.mirror_front_camera_description_off)
+        },
+        leadingIcon = null,
+        onSwitchChanged = { on ->
+            setMirrorMode(if (on) MirrorMode.ON_FRONT_ONLY else MirrorMode.OFF)
+        },
+        settingValue = isMirrored,
+        enabled = true
     )
 }
 

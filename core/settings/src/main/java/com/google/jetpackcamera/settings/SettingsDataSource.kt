@@ -23,6 +23,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -92,6 +93,11 @@ interface SettingsDataSource {
      * Updates the default image capture output format.
      */
     suspend fun updateImageFormat(imageFormat: ImageOutputFormat)
+
+    /**
+     * Updates whether captured photos and videos are mirrored.
+     */
+    suspend fun updateMirrorMode(mirrorMode: MirrorMode)
 
     /**
      * Updates the maximum video duration limit in milliseconds.

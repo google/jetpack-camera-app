@@ -72,6 +72,7 @@ import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.LowLightBoostAvailability
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.LowLightBoostState
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_15
@@ -136,7 +137,9 @@ class CameraXCameraSystem(
 ) : CameraSystem {
     private lateinit var cameraProvider: ProcessCameraProvider
 
-    private var imageCaptureUseCase: ImageCapture? = null
+    private data class BoundImageCapture(val useCase: ImageCapture, val isMirrored: Boolean)
+
+    private var boundImageCapture: BoundImageCapture? = null
 
     private lateinit var systemConstraints: CameraSystemConstraints
 
@@ -616,7 +619,8 @@ class CameraXCameraSystem(
                     PerpetualSessionSettings.CustomSession(
                         subModeKey = activeSubMode.key,
                         aspectRatio = currentCameraSettings.aspectRatio,
-                        captureMode = currentCameraSettings.captureMode
+                        captureMode = currentCameraSettings.captureMode,
+                        mirrorMode = currentCameraSettings.mirrorMode
                     )
                 } else {
                     val cameraConstraints =
@@ -654,6 +658,7 @@ class CameraXCameraSystem(
                         stabilizationMode = resolvedStabilizationMode,
                         dynamicRange = currentCameraSettings.dynamicRange,
                         videoQuality = currentCameraSettings.videoQuality,
+                        mirrorMode = currentCameraSettings.mirrorMode,
                         imageFormat = currentCameraSettings.imageFormat,
                         lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority,
                         activeCaptureSubMode = activeSubMode?.key
@@ -687,8 +692,12 @@ class CameraXCameraSystem(
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
                                     sessionSettings,
-                                    onImageCaptureCreated = { imageCapture ->
-                                        imageCaptureUseCase = imageCapture
+                                    onImageCaptureCreated = { imageCapture, lensFacing ->
+                                        boundImageCapture = BoundImageCapture(
+                                            useCase = imageCapture,
+                                            isMirrored = sessionSettings.mirrorMode
+                                                .appliesTo(lensFacing)
+                                        )
                                     }
                                 )
 
@@ -744,11 +753,10 @@ class CameraXCameraSystem(
     }
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
-        if (imageCaptureUseCase == null) {
-            throw RuntimeException("Attempted take picture with null imageCapture use case")
-        }
+        val imageCaptureUseCase = boundImageCapture?.useCase
+            ?: throw RuntimeException("Attempted take picture with null imageCapture use case")
         try {
-            val imageProxy = imageCaptureUseCase!!.takePicture(onCaptureStarted)
+            val imageProxy = imageCaptureUseCase.takePicture(onCaptureStarted)
             Log.d(TAG, "onCaptureSuccess")
             imageProxy.close()
         } catch (exception: Exception) {
@@ -763,9 +771,11 @@ class CameraXCameraSystem(
         saveLocation: SaveLocation,
         location: Location?,
         onCaptureStarted: (() -> Unit)
-    ): ImageCapture.OutputFileResults = imageCaptureUseCase?.let { imageCaptureUseCase ->
+    ): ImageCapture.OutputFileResults = boundImageCapture?.let { bound ->
+        val imageCaptureUseCase = bound.useCase
         val metadata = ImageCapture.Metadata().apply {
             this.location = location?.takeIfInBounds()
+            isReversedHorizontal = bound.isMirrored
         }
         val (outputFileOptions, closeable) = when (saveLocation) {
             is SaveLocation.Default -> {
@@ -1282,8 +1292,8 @@ class CameraXCameraSystem(
     }
 
     override fun isScreenFlashEnabled() =
-        imageCaptureUseCase?.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            imageCaptureUseCase?.screenFlash != null
+        boundImageCapture?.useCase?.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
+            boundImageCapture?.useCase?.screenFlash != null
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
@@ -1296,6 +1306,13 @@ class CameraXCameraSystem(
         currentSettings.update { old ->
             old?.withUserChange { copy(videoQuality = videoQuality) }
                 ?.tryApplyVideoQualityConstraints()
+                ?.tryApplyCaptureSubModeConstraints()
+        }
+    }
+
+    override suspend fun setMirrorMode(mirrorMode: MirrorMode) {
+        currentSettings.update { old ->
+            old?.copy(mirrorMode = mirrorMode)
                 ?.tryApplyCaptureSubModeConstraints()
         }
     }

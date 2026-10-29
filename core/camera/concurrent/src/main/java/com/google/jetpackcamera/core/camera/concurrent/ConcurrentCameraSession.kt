@@ -35,6 +35,7 @@ import com.google.jetpackcamera.core.camera.PerpetualSessionSettings
 import com.google.jetpackcamera.core.camera.appLensFacing
 import com.google.jetpackcamera.core.camera.applyDeviceRotation
 import com.google.jetpackcamera.core.camera.attachPreviewSurfaceProvider
+import com.google.jetpackcamera.core.camera.concurrentCompositionScaleX
 import com.google.jetpackcamera.core.camera.createUseCaseGroup
 import com.google.jetpackcamera.core.camera.createVideoUseCase
 import com.google.jetpackcamera.core.camera.getVideoCapture
@@ -43,10 +44,12 @@ import com.google.jetpackcamera.core.camera.processFocusMeteringEvents
 import com.google.jetpackcamera.core.camera.processTransientSettingEvents
 import com.google.jetpackcamera.core.camera.processVideoControlEvents
 import com.google.jetpackcamera.core.camera.runWithConcurrent
+import com.google.jetpackcamera.core.camera.toCXConcurrentPreviewMirrorMode
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.model.VideoQuality
@@ -125,6 +128,9 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                             StabilizationMode.OFF,
                             DynamicRange.SDR,
                             VideoQuality.UNSPECIFIED,
+                            // Use case mirror modes apply to the whole composited frame, so each
+                            // camera is mirrored through its CompositionSettings below instead.
+                            MirrorMode.OFF,
                             backgroundDispatcher
                         )
                     } else {
@@ -138,7 +144,9 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                         aspectRatio = sessionSettings.aspectRatio,
                         imageFormat = ImageOutputFormat.JPEG,
                         captureMode = sessionSettings.captureMode,
-                        videoCaptureUseCase = videoCapture
+                        videoCaptureUseCase = videoCapture,
+                        previewMirrorMode = sessionSettings.mirrorMode
+                            .toCXConcurrentPreviewMirrorMode()
                     )
                 }.apply { attachPreviewSurfaceProvider(useCaseGroup = this) }
 
@@ -148,7 +156,13 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                         CompositionSettings.Builder()
                             .setAlpha(1.0f)
                             .setOffset(0.0f, 0.0f)
-                            .setScale(1.0f, 1.0f)
+                            .setScale(
+                                sessionSettings.mirrorMode.concurrentCompositionScaleX(
+                                    scale = 1.0f,
+                                    lensFacing = primaryLensFacing
+                                ),
+                                1.0f
+                            )
                             .build()
                     ),
                     Pair(
@@ -156,7 +170,13 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                         CompositionSettings.Builder()
                             .setAlpha(1.0f)
                             .setOffset(SECONDARY_CAMERA_OFFSET_X, SECONDARY_CAMERA_OFFSET_Y)
-                            .setScale(SECONDARY_CAMERA_SCALE, SECONDARY_CAMERA_SCALE)
+                            .setScale(
+                                sessionSettings.mirrorMode.concurrentCompositionScaleX(
+                                    scale = SECONDARY_CAMERA_SCALE,
+                                    lensFacing = secondaryLensFacing
+                                ),
+                                SECONDARY_CAMERA_SCALE
+                            )
                             .build()
                     )
                 )

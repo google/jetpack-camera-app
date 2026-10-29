@@ -21,6 +21,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 
@@ -38,6 +39,11 @@ import com.google.jetpackcamera.model.VideoQuality
  * - **HDR Image Format & Video Dynamic Range:** When [OptionVisibility.Hidden] is used, developers may
  *   default or lock capture to Ultra HDR ([ImageOutputFormat.JPEG_ULTRA_HDR]) or HDR video ([DynamicRange.HLG10]).
  *   Hardware fallbacks to SDR will be handled at runtime if the active camera does not support HDR.
+ *
+ * ### Java Interop:
+ * The constructor is annotated with `@JvmOverloads` so Java callers can omit trailing parameters.
+ * **New fields must be appended at the end** of the parameter list; inserting one earlier changes
+ * the positional signature of the generated overloads and breaks existing Java callers.
  *
  * ### Example:
  * ```kotlin
@@ -59,6 +65,8 @@ import com.google.jetpackcamera.model.VideoQuality
  *   if [OptionVisibility.Hidden].
  * @param imageFormat Configuration for captured photo format (e.g. JPEG, Ultra HDR).
  * @param dynamicRange Configuration for captured video dynamic range (e.g. SDR, HLG10).
+ * @param mirrorMode Configuration for whether captured photos and video are mirrored (e.g. only
+ *   for the front camera, to match the preview).
  * @param stabilizationMode Configuration for preview and video stabilization mode.
  * @param targetFrameRate Configuration for target video frame rate (FPS).
  * @param cameraEffect Configuration for the selected camera effect (e.g. single-stream).
@@ -72,6 +80,7 @@ data class CameraFeaturePolicy @JvmOverloads constructor(
     val flashMode: SettingConfig<FlashMode>? = null,
     val imageFormat: SettingConfig<ImageOutputFormat>? = null,
     val dynamicRange: SettingConfig<DynamicRange>? = null,
+    val mirrorMode: SettingConfig<MirrorMode>? = null,
     val stabilizationMode: SettingConfig<StabilizationMode>? = null,
     val targetFrameRate: SettingConfig<Int>? = null,
     val cameraEffect: SettingConfig<CameraEffectId>? = null,
@@ -116,6 +125,7 @@ data class CameraFeaturePolicy @JvmOverloads constructor(
             captureMode = this.captureMode?.defaultValue ?: defaultSettings.captureMode,
             imageFormat = this.imageFormat?.defaultValue ?: defaultSettings.imageFormat,
             dynamicRange = this.dynamicRange?.defaultValue ?: defaultSettings.dynamicRange,
+            mirrorMode = this.mirrorMode?.defaultValue ?: defaultSettings.mirrorMode,
             stabilizationMode = this.stabilizationMode?.defaultValue
                 ?: defaultSettings.stabilizationMode,
             targetFrameRate = this.targetFrameRate?.defaultValue
@@ -135,6 +145,7 @@ data class CameraFeaturePolicy @JvmOverloads constructor(
         imageFormat = enforceSetting(settings.imageFormat, imageFormat),
         dynamicRange = enforceSetting(settings.dynamicRange, dynamicRange),
         captureMode = enforceSetting(settings.captureMode, captureMode),
+        mirrorMode = enforceSetting(settings.mirrorMode, mirrorMode),
         stabilizationMode = enforceSetting(settings.stabilizationMode, stabilizationMode),
         targetFrameRate = enforceSetting(settings.targetFrameRate, targetFrameRate),
         selectedCameraEffect = enforceSetting(settings.selectedCameraEffect, cameraEffect),
@@ -152,6 +163,7 @@ data class CameraFeaturePolicy @JvmOverloads constructor(
             isSettingCompatible(flashMode, other.flashMode) &&
             isSettingCompatible(imageFormat, other.imageFormat) &&
             isSettingCompatible(dynamicRange, other.dynamicRange) &&
+            isSettingCompatible(mirrorMode, other.mirrorMode) &&
             isSettingCompatible(stabilizationMode, other.stabilizationMode) &&
             isSettingCompatible(targetFrameRate, other.targetFrameRate) &&
             isSettingCompatible(cameraEffect, other.cameraEffect) &&
@@ -172,6 +184,7 @@ data class CameraFeaturePolicy @JvmOverloads constructor(
         flashMode = intersectSetting(flashMode, other.flashMode),
         imageFormat = intersectSetting(imageFormat, other.imageFormat),
         dynamicRange = intersectSetting(dynamicRange, other.dynamicRange),
+        mirrorMode = intersectSetting(mirrorMode, other.mirrorMode),
         stabilizationMode = intersectSetting(stabilizationMode, other.stabilizationMode),
         targetFrameRate = intersectSetting(targetFrameRate, other.targetFrameRate),
         cameraEffect = intersectSetting(cameraEffect, other.cameraEffect),
