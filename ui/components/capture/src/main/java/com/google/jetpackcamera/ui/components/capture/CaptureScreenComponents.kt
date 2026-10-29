@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.icu.text.MessageFormat
@@ -43,10 +44,12 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -57,6 +60,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -124,6 +128,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
@@ -160,6 +165,7 @@ import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "CaptureScreenComponents"
 private val LOADING_SPINNER_SIZE = 40.dp
+private val ViewfinderCornerRadius = 16.dp
 
 private val SnackbarMinHeight = 48.dp
 private val SnackbarHorizontalMargin = 16.dp
@@ -884,8 +890,7 @@ fun PreviewDisplay(
                 .height(height)
                 .transformable(state = transformableState)
                 .alpha(imageAlpha)
-                .clip(RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.Center
+                .clip(RoundedCornerShape(ViewfinderCornerRadius))
         ) {
             if (surfaceRequest != null) {
                 val implementationMode = when {
@@ -936,7 +941,7 @@ fun PreviewDisplay(
                 )
             } else {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(LOADING_SPINNER_SIZE),
+                    modifier = Modifier.align(Alignment.Center).size(LOADING_SPINNER_SIZE),
                     color = Color.White
                 )
             }
@@ -1003,9 +1008,7 @@ fun CaptureButton(
 /**
  * A composable that displays an icon indicating the current video stabilization mode.
  *
- * The icon is only visible when a stabilization mode other than 'OFF' is active. It is rendered in
- * full white when stabilization is actively being applied, and is greyed out (with reduced alpha)
- * if the stabilization mode is enabled but not currently active.
+ * The icon is only visible when a stabilization mode other than 'OFF' is actively being applied.
  *
  * @param stabilizationUiState the [StabilizationUiState] for this component.
  * @param modifier the modifier for this component.
@@ -1013,76 +1016,77 @@ fun CaptureButton(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modifier = Modifier) {
-    if (stabilizationUiState is StabilizationUiState.Enabled) {
-        val contentColor = Color.White.let {
-            if (!stabilizationUiState.active) it.copy(alpha = 0.38f) else it
-        }
-        CompositionLocalProvider(LocalContentColor provides contentColor) {
-            if (stabilizationUiState.stabilizationMode != StabilizationMode.OFF) {
-                Icon(
-                    modifier = modifier.size(IconButtonDefaults.smallIconSize),
+    val activeState = (stabilizationUiState as? StabilizationUiState.Enabled)?.takeIf {
+        it.active && it.stabilizationMode != StabilizationMode.OFF
+    }
+    val displayedState = rememberLastNonNull(activeState)
+    IndicatorPillIcon(
+        visible = activeState != null,
+        modifier = modifier
+    ) {
+        if (displayedState != null) {
+            Icon(
+                modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+                painter = when (displayedState) {
+                    is StabilizationUiState.Specific ->
+                        when (displayedState.stabilizationMode) {
+                            StabilizationMode.AUTO ->
+                                throw IllegalStateException(
+                                    "AUTO is not a specific StabilizationUiState."
+                                )
 
-                    painter = when (stabilizationUiState) {
-                        is StabilizationUiState.Specific ->
-                            when (stabilizationUiState.stabilizationMode) {
-                                StabilizationMode.AUTO ->
-                                    throw IllegalStateException(
-                                        "AUTO is not a specific StabilizationUiState."
-                                    )
+                            StabilizationMode.HIGH_QUALITY ->
+                                painterResource(R.drawable.video_stable_hq_filled_icon)
 
-                                StabilizationMode.HIGH_QUALITY ->
-                                    painterResource(R.drawable.video_stable_hq_filled_icon)
+                            StabilizationMode.OPTICAL ->
+                                painterResource(R.drawable.video_stable_ois_filled_icon)
 
-                                StabilizationMode.OPTICAL ->
-                                    painterResource(R.drawable.video_stable_ois_filled_icon)
+                            StabilizationMode.ON ->
+                                painterResource(R.drawable.ic_video_stable)
 
-                                StabilizationMode.ON ->
-                                    painterResource(R.drawable.ic_video_stable)
-
-                                else ->
-                                    TODO(
-                                        "Cannot retrieve icon for unimplemented " +
-                                            "stabilization mode:" +
-                                            "${stabilizationUiState.stabilizationMode}"
-                                    )
-                            }
-
-                        is StabilizationUiState.Auto -> {
-                            when (stabilizationUiState.stabilizationMode) {
-                                StabilizationMode.ON ->
-                                    painterResource(R.drawable.video_stable_auto_filled_icon)
-
-                                StabilizationMode.OPTICAL ->
-                                    painterResource(R.drawable.video_stable_ois_auto_filled_icon)
-
-                                else ->
-                                    TODO(
-                                        "Auto stabilization not yet implemented for " +
-                                            "${stabilizationUiState.stabilizationMode}, " +
-                                            "unable to retrieve icon."
-                                    )
-                            }
+                            else ->
+                                TODO(
+                                    "Cannot retrieve icon for unimplemented " +
+                                        "stabilization mode:" +
+                                        "${displayedState.stabilizationMode}"
+                                )
                         }
-                    },
-                    contentDescription = when (stabilizationUiState.stabilizationMode) {
-                        StabilizationMode.AUTO ->
-                            stringResource(R.string.stabilization_icon_description_auto)
 
-                        StabilizationMode.ON ->
-                            stringResource(
-                                R.string.stabilization_icon_description_preview_and_video
-                            )
+                    is StabilizationUiState.Auto -> {
+                        when (displayedState.stabilizationMode) {
+                            StabilizationMode.ON ->
+                                painterResource(R.drawable.video_stable_auto_filled_icon)
 
-                        StabilizationMode.HIGH_QUALITY ->
-                            stringResource(R.string.stabilization_icon_description_video_only)
+                            StabilizationMode.OPTICAL ->
+                                painterResource(R.drawable.video_stable_ois_auto_filled_icon)
 
-                        StabilizationMode.OPTICAL ->
-                            stringResource(R.string.stabilization_icon_description_optical)
-
-                        else -> null
+                            else ->
+                                TODO(
+                                    "Auto stabilization not yet implemented for " +
+                                        "${displayedState.stabilizationMode}, " +
+                                        "unable to retrieve icon."
+                                )
+                        }
                     }
-                )
-            }
+                },
+                contentDescription = when (displayedState.stabilizationMode) {
+                    StabilizationMode.AUTO ->
+                        stringResource(R.string.stabilization_icon_description_auto)
+
+                    StabilizationMode.ON ->
+                        stringResource(
+                            R.string.stabilization_icon_description_preview_and_video
+                        )
+
+                    StabilizationMode.HIGH_QUALITY ->
+                        stringResource(R.string.stabilization_icon_description_video_only)
+
+                    StabilizationMode.OPTICAL ->
+                        stringResource(R.string.stabilization_icon_description_optical)
+
+                    else -> null
+                }
+            )
         }
     }
 }
@@ -1099,12 +1103,16 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) {
-    CompositionLocalProvider(LocalContentColor provides Color.White) {
-        if (videoQuality != VideoQuality.UNSPECIFIED) {
+    val activeQuality = videoQuality.takeIf { it != VideoQuality.UNSPECIFIED }
+    val displayedQuality = rememberLastNonNull(activeQuality)
+    IndicatorPillIcon(
+        visible = activeQuality != null,
+        modifier = modifier
+    ) {
+        if (displayedQuality != null) {
             Icon(
-                modifier = modifier.size(IconButtonDefaults.smallIconSize),
-
-                painter = when (videoQuality) {
+                modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+                painter = when (displayedQuality) {
                     VideoQuality.SD ->
                         painterResource(R.drawable.video_resolution_sd_icon)
 
@@ -1120,7 +1128,7 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
                     VideoQuality.UNSPECIFIED ->
                         throw IllegalStateException("Illegal video quality state")
                 },
-                contentDescription = when (videoQuality) {
+                contentDescription = when (displayedQuality) {
                     VideoQuality.SD ->
                         stringResource(R.string.video_quality_description_sd)
 
@@ -1138,6 +1146,91 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
             )
         }
     }
+}
+
+private object IndicatorPillTokens {
+    val ContainerHeight = 40.dp
+    val ContainerHorizontalPadding = 6.dp
+    val IconHorizontalPadding = 6.dp
+    val IconVerticalPadding = 8.dp
+}
+
+/**
+ * A cutout-aware pill container that groups active top-bar status indicators into connected
+ * rounded pills, splitting into separate pills on either side of any intersecting display cutout.
+ */
+@SuppressLint("AvoidNullableCollections", "NullableCollection")
+@Composable
+fun IndicatorPill(
+    modifier: Modifier = Modifier,
+    cutoutRectsOverride: List<IntRect>? = null,
+    onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
+    content: @Composable RowScope.() -> Unit
+) {
+    CompositionLocalProvider(LocalContentColor provides Color.White) {
+        CutoutAwareRow(
+            modifier = modifier,
+            horizontalSpacing = 0.dp,
+            pillHorizontalPadding = IndicatorPillTokens.ContainerHorizontalPadding,
+            pillMinHeight = IndicatorPillTokens.ContainerHeight,
+            pillBackgroundColor = CameraControlBackgroundStyle.BLACK_60.containerColor,
+            verticalAlignment = Alignment.CenterVertically,
+            cutoutRectsOverride = cutoutRectsOverride,
+            onPillSegmentsPlaced = onPillSegmentsPlaced,
+            content = content
+        )
+    }
+}
+
+/**
+ * Wraps an individual top-bar status indicator icon with horizontal expand/shrink and fade
+ * animations and standard indicator pill item padding.
+ */
+@Composable
+internal fun IndicatorPillIcon(
+    visible: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val disableAnimations = LocalDisableAnimations.current
+    AnimatedVisibility(
+        visible = visible,
+        enter = if (disableAnimations) {
+            EnterTransition.None
+        } else {
+            expandHorizontally() + fadeIn()
+        },
+        exit = if (disableAnimations) {
+            ExitTransition.None
+        } else {
+            shrinkHorizontally() + fadeOut()
+        }
+    ) {
+        CompositionLocalProvider(LocalContentColor provides Color.White) {
+            Box(
+                modifier = modifier.padding(
+                    horizontal = IndicatorPillTokens.IconHorizontalPadding,
+                    vertical = IndicatorPillTokens.IconVerticalPadding
+                ),
+                contentAlignment = Alignment.Center
+            ) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+internal fun <T : Any> rememberLastNonNull(value: T?): T? {
+    val holder = remember {
+        object {
+            var last: T? = value
+        }
+    }
+    if (value != null) {
+        holder.last = value
+    }
+    return holder.last
 }
 
 /**

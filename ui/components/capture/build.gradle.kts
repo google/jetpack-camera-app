@@ -80,6 +80,7 @@ dependencies {
     // AndroidX Core KTX
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Accompanist - Permissions
     implementation(libs.accompanist.permissions)

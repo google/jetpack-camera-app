@@ -188,12 +188,14 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * origin directly below the top bar, so both top slots stay aligned. When the viewfinder shifts
  * below [topStartContent], this content moves down with the top edge of the viewfinder while
  * [topStartContent] stays in place.
+ * @param topBarTrailingContent optional composable content aligned to the end of the top
+ * status/indicator bar
  * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
  * tallest viewfinder to clear a persistent navigation bar, and with `false` when it no longer is
  * or when the adaptive portrait layout leaves the composition. The owner of the system bars should
  * hide the navigation bar while this is `true`, for example by passing
- * `keepNavigationBar = false` to [CameraSystemBarsEffect]. This layout does not change the system
- * bars itself.
+ * [CameraSystemBarsPolicy.HideStatusAndNavigationBars] to [CameraSystemBarsEffect]. This layout
+ * does not change the system bars itself.
  * @param errorDialog the camera error alert dialog composable
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -225,6 +227,7 @@ fun PreviewLayout(
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
     viewfinderTopEndContent: @Composable (Modifier) -> Unit = {},
+    topBarTrailingContent: @Composable (Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
@@ -273,6 +276,7 @@ fun PreviewLayout(
                             viewfinderTopEndContent = viewfinderTopEndContent,
                             onRequiresImmersiveChange = onRequiresImmersiveChange,
                             indicatorRow = indicatorRow,
+                            topBarTrailingContent = topBarTrailingContent,
                             elapsedTimeDisplay = elapsedTimeDisplay,
                             zoomControls = zoomLevelDisplay,
                             imageWell = imageWell,
@@ -319,6 +323,7 @@ fun PreviewLayout(
                                 contentAlignment = Alignment.CenterStart
                             ) {
                                 indicatorRow(Modifier)
+                                topBarTrailingContent(Modifier.align(Alignment.CenterEnd))
                             }
                             Box {
                                 viewfinder(Modifier)
@@ -406,6 +411,7 @@ private fun AdaptivePortraitCaptureLayout(
     viewfinderTopEndContent: @Composable (Modifier) -> Unit,
     onRequiresImmersiveChange: (Boolean) -> Unit,
     indicatorRow: @Composable (Modifier) -> Unit,
+    topBarTrailingContent: @Composable (Modifier) -> Unit,
     elapsedTimeDisplay: @Composable (Modifier) -> Unit,
     zoomControls: @Composable (Modifier) -> Unit,
     imageWell: @Composable (Modifier) -> Unit,
@@ -491,6 +497,7 @@ private fun AdaptivePortraitCaptureLayout(
                     contentAlignment = Alignment.CenterStart
                 ) {
                     indicatorRow(Modifier)
+                    topBarTrailingContent(Modifier.align(Alignment.CenterEnd))
                 }
 
                 debugVisibilityWrapper {

@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute
 import com.google.jetpackcamera.ui.Routes.POST_CAPTURE_ROUTE
 import com.google.jetpackcamera.ui.components.capture.CameraSystemBarsEffect
+import com.google.jetpackcamera.ui.components.capture.CameraSystemBarsPolicy
 
 /**
  * Describes how the system bars should be configured for a given destination.
@@ -27,7 +28,7 @@ import com.google.jetpackcamera.ui.components.capture.CameraSystemBarsEffect
  * that the window is too short for the tallest viewfinder to clear a persistent navigation bar.
  */
 internal enum class SystemBarsPolicy {
-    /** Hide the status bar, keep the navigation bar. Used by the capture surfaces. */
+    /** Hide the status bar, keep the navigation bar. Used by standard capture surfaces. */
     HideStatusBar,
 
     /**
@@ -66,13 +67,27 @@ internal fun systemBarsPolicyFor(
 }
 
 /**
- * Connects the app navigation route policy to [CameraSystemBarsEffect].
+ * The single owner of system bar visibility for the app.
+ *
+ * This deliberately lives above the `NavHost` rather than inside each screen. Navigation keeps both
+ * the outgoing and the incoming destination composed for the duration of a transition, so a
+ * per-screen effect would have the *outgoing* screen's cleanup run last and overwrite the policy
+ * the incoming screen just applied.
+ *
+ * The policy is re-asserted on every resume and window focus gain because the system can reset bar
+ * visibility underneath the app (a transient reveal timing out, keyguard dismissal, entering
+ * multi-window, returning from another task).
  */
 @Composable
 internal fun SystemBarsPolicyEffect(policy: SystemBarsPolicy, isDarkTheme: Boolean = true) {
+    val cameraPolicy = when (policy) {
+        SystemBarsPolicy.HideStatusBar -> CameraSystemBarsPolicy.HideStatusBar
+        SystemBarsPolicy.HideStatusAndNavigationBars ->
+            CameraSystemBarsPolicy.HideStatusAndNavigationBars
+        SystemBarsPolicy.ShowAll -> CameraSystemBarsPolicy.ShowAll
+    }
     CameraSystemBarsEffect(
-        enabled = policy != SystemBarsPolicy.ShowAll,
-        isDarkTheme = isDarkTheme,
-        keepNavigationBar = policy != SystemBarsPolicy.HideStatusAndNavigationBars
+        policy = cameraPolicy,
+        isDarkTheme = isDarkTheme
     )
 }
