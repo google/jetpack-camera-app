@@ -103,6 +103,8 @@
 
     <!-- Toast (brief pop-up message at the bottom of the capture screen) shown when the Low Light Boost flash mode fails while the camera is running. "Low Light Boost" is a feature name; translate it consistently with flash_mode_selector_llb. [CHAR LIMIT=68] -->
     <string name="low_light_boost_error_toast_message">An error occurred when running Low Light Boost.</string>
+    <!-- Toast (brief pop-up message at the bottom of the capture screen) shown when a capture mode selected in the mode carousel, such as Night, fails to start and the camera returns to the default mode. "Capture mode" is a noun. [CHAR LIMIT=80] -->
+    <string name="capture_sub_mode_error_toast_message">An error occurred when activating the capture mode.</string>
     <!-- Subtitle under the "Capture Mode" row title in the Quick Settings bottom sheet on the capture screen, showing the current selection when hybrid mode is active (the options themselves are icon-only buttons). In hybrid mode a tap on the capture button takes a photo and a long press records a video. "Hybrid" means combined photo-and-video; "Capture" is a noun. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_text_capture_mode_standard">Hybrid Capture</string>
     <!-- Subtitle under the "Capture Mode" row title in the Quick Settings bottom sheet on the capture screen, showing the current selection when the camera can only record videos (no photos). "Only" restricts "Video"; "Video" is a noun. [CHAR LIMIT=NONE] -->

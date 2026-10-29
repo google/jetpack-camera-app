@@ -41,13 +41,17 @@ sealed interface QuickSettingsUiState {
      * @param flashModeUiState The UI state for the flash mode setting.
      * @param flipLensUiState The UI state for the flip lens (front/back camera) button.
      * @param hdrUiState The UI state for the HDR (High Dynamic Range) setting.
+     * @param titleResId Optional string resource ID overriding the sheet title, typically
+     * provided by the active capture sub-mode (e.g. "Night settings"). When `null`, the title is
+     * derived from the selected capture mode.
      */
     data class Available(
         val aspectRatioUiState: AspectRatioUiState,
         val captureModeUiState: CaptureModeUiState,
         val flashModeUiState: FlashModeUiState,
         val flipLensUiState: FlipLensUiState,
-        val hdrUiState: HdrUiState
+        val hdrUiState: HdrUiState,
+        val titleResId: Int? = null
     ) : QuickSettingsUiState
 
     companion object
