@@ -30,6 +30,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
@@ -162,6 +163,17 @@ class ProtoDataStoreSettingsDataSourceTest {
 
         assertThat(initialImageFormat).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(newImageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
+
+    @Test
+    fun can_update_mirror_mode() = runTest {
+        val initialMirrorMode = repository.getCurrentDefaultCameraAppSettings().mirrorMode
+        repository.updateMirrorMode(mirrorMode = MirrorMode.ON_FRONT_ONLY)
+        advanceUntilIdle()
+        val newMirrorMode = repository.getCurrentDefaultCameraAppSettings().mirrorMode
+
+        assertThat(initialMirrorMode).isEqualTo(MirrorMode.OFF)
+        assertThat(newMirrorMode).isEqualTo(MirrorMode.ON_FRONT_ONLY)
     }
 
     @Test
@@ -371,6 +383,26 @@ class ProtoDataStoreSettingsDataSourceTest {
         assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
         // Policy default is used for the setting the user has not configured
         assertThat(settings.flashMode).isEqualTo(FlashMode.ON)
+    }
+
+    @Test
+    fun mirrorMode_usesPolicyDefaultUntilUserSelectsValue() = runTest {
+        val policy = CameraFeaturePolicy(
+            mirrorMode = SettingConfig(defaultValue = MirrorMode.ON_FRONT_ONLY)
+        )
+        val policyRepository = ProtoDataStoreSettingsDataSource(
+            jcaSettings = testDataStore,
+            defaultCaptureModeOverride = CaptureMode.STANDARD,
+            cameraFeaturePolicy = policy
+        )
+        assertThat(policyRepository.getCurrentDefaultCameraAppSettings().mirrorMode)
+            .isEqualTo(MirrorMode.ON_FRONT_ONLY)
+
+        policyRepository.updateMirrorMode(MirrorMode.OFF)
+        advanceUntilIdle()
+
+        assertThat(policyRepository.getCurrentDefaultCameraAppSettings().mirrorMode)
+            .isEqualTo(MirrorMode.OFF)
     }
 
     @Test

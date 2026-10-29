@@ -22,6 +22,7 @@ import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
+import com.google.jetpackcamera.model.proto.MirrorMode as MirrorModeProto
 import com.google.jetpackcamera.model.proto.toModel
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
@@ -32,8 +33,8 @@ import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSet
  *
  * Fields that can be configured through
  * [com.google.jetpackcamera.settings.model.CameraFeaturePolicy] (flash mode, aspect ratio, dynamic
- * range, and image format) are resolved from [baselineSettings] when the stored value is
- * unspecified, so that stored user preferences take precedence over baseline defaults.
+ * range, image format, and mirror mode) are resolved from [baselineSettings] when the stored value
+ * is unspecified, so that stored user preferences take precedence over baseline defaults.
  *
  * @param defaultCaptureModeOverride The [CaptureMode] reported by the returned settings.
  * @param baselineSettings The settings used for policy-configurable fields that have no stored
@@ -76,6 +77,11 @@ fun CameraAppSettingsProto.toModel(
         },
         maxVideoDurationMillis = this.maxVideoDurationMillis,
         videoQuality = this.videoQuality.toModel(),
+        mirrorMode = when (this.mirrorMode) {
+            MirrorModeProto.MIRROR_MODE_UNSPECIFIED,
+            MirrorModeProto.UNRECOGNIZED -> baselineSettings.mirrorMode
+            else -> this.mirrorMode.toModel()
+        },
         audioEnabled = this.audioEnabled,
         lowLightBoostPriority = this.lowLightBoostPriority.toModel(),
         darkMode = this.darkMode.toModel(),
