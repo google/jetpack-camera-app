@@ -24,6 +24,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.SettingsDataSource
@@ -90,6 +91,11 @@ class FakeSettingsDataSource(
     override suspend fun updateImageFormat(imageFormat: ImageOutputFormat) {
         _defaultCameraAppSettings.value =
             _defaultCameraAppSettings.value.copy(imageFormat = imageFormat)
+    }
+
+    override suspend fun updateMirrorMode(mirrorMode: MirrorMode) {
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(mirrorMode = mirrorMode)
     }
 
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {

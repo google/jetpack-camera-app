@@ -64,6 +64,7 @@ import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
@@ -77,6 +78,7 @@ import com.google.jetpackcamera.settings.ui.FlashModeSetting
 import com.google.jetpackcamera.settings.ui.LocationSetting
 import com.google.jetpackcamera.settings.ui.LowLightBoostPrioritySetting
 import com.google.jetpackcamera.settings.ui.MaxVideoDurationSetting
+import com.google.jetpackcamera.settings.ui.MirrorFrontCameraSetting
 import com.google.jetpackcamera.settings.ui.RecordingAudioSetting
 import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
 import com.google.jetpackcamera.settings.ui.SectionHeader
@@ -191,6 +193,7 @@ fun DefaultCameraSettings(
         customEffectSlot = customEffectSlot,
         enabledState = enabledState,
         setDefaultLensFacing = viewModel::setDefaultLensFacing,
+        setMirrorMode = viewModel::setMirrorMode,
         setFlashMode = viewModel::setFlashMode,
         setTargetFrameRate = viewModel::setTargetFrameRate,
         setAspectRatio = viewModel::setAspectRatio,
@@ -204,6 +207,7 @@ fun DefaultCameraSettings(
  * @param customEffectSlot A slot for injecting custom camera effects.
  * @param enabledState The current [SettingsUiState.Enabled] state.
  * @param setDefaultLensFacing Callback to set default lens facing.
+ * @param setMirrorMode Callback to set the mirror mode.
  * @param setFlashMode Callback to set flash mode.
  * @param setTargetFrameRate Callback to set target frame rate.
  * @param setAspectRatio Callback to set aspect ratio.
@@ -214,6 +218,7 @@ fun DefaultCameraSettings(
     customEffectSlot: @Composable () -> Unit,
     enabledState: SettingsUiState.Enabled,
     setDefaultLensFacing: (LensFacing) -> Unit,
+    setMirrorMode: (MirrorMode) -> Unit,
     setFlashMode: (FlashMode) -> Unit,
     setTargetFrameRate: (Int) -> Unit,
     setAspectRatio: (AspectRatio) -> Unit,
@@ -224,6 +229,11 @@ fun DefaultCameraSettings(
     DefaultCameraFacing(
         lensUiState = enabledState.lensFlipUiState,
         setDefaultLensFacing = setDefaultLensFacing
+    )
+
+    MirrorFrontCameraSetting(
+        mirrorModeUiState = enabledState.mirrorModeUiState,
+        setMirrorMode = setMirrorMode
     )
 
     FlashModeSetting(
