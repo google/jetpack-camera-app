@@ -32,6 +32,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
@@ -107,6 +108,7 @@ class SettingsViewModel @Inject constructor(
                 },
                 fpsUiState = getFpsUiState(constraints, updatedSettings),
                 lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
+                mirrorModeUiState = MirrorModeUiState.Enabled(updatedSettings.mirrorMode),
                 stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
                 videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings),
                 lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
@@ -755,6 +757,18 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.updateSelectedCameraEffect(cameraEffect)
             Log.d(TAG, "set camera effect: ${cameraEffect.value}")
+        }
+    }
+
+    /**
+     * Updates whether captured photos and videos are mirrored.
+     *
+     * @param mirrorMode The [MirrorMode] to store as the default.
+     */
+    fun setMirrorMode(mirrorMode: MirrorMode) {
+        viewModelScope.launch {
+            settingsRepository.updateMirrorMode(mirrorMode)
+            Log.d(TAG, "set mirror mode: $mirrorMode")
         }
     }
 

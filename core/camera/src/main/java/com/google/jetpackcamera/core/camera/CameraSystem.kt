@@ -32,6 +32,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TestPattern
@@ -181,6 +182,13 @@ interface CameraSystem {
      * @param videoQuality The [VideoQuality] to set.
      */
     suspend fun setVideoQuality(videoQuality: VideoQuality)
+
+    /**
+     * Sets whether captured photos and videos are mirrored.
+     *
+     * @param mirrorMode The [MirrorMode] to set.
+     */
+    suspend fun setMirrorMode(mirrorMode: MirrorMode)
 
     /**
      * Sets the low light boost priority.
@@ -333,6 +341,7 @@ interface CameraSystem {
                 cameraSystem::setMaxVideoDuration
             )
             applyDiff(new, CameraAppSettings::videoQuality, cameraSystem::setVideoQuality)
+            applyDiff(new, CameraAppSettings::mirrorMode, cameraSystem::setMirrorMode)
             applyDiff(new, CameraAppSettings::audioEnabled, cameraSystem::setAudioEnabled)
             applyDiff(
                 new,
