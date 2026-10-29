@@ -158,7 +158,10 @@ object CameraLayoutSolver {
         val weight: Float
     )
 
+    // The gaps are a primitive IntArray on purpose: a candidate is built for every evaluated
+    // spacing, and a List<Int> would box each gap and add allocations to the search loop.
     /** A fully evaluated candidate: one bottom padding plus one set of inter-row gaps. */
+    @Suppress("KotlinArray")
     private class Candidate(
         val bottomPadding: Int,
         val gaps: IntArray,
@@ -305,7 +308,7 @@ object CameraLayoutSolver {
         if (firstPass != null && firstPass.collisions.isEmpty() && !primaryFlush(firstPass)) {
             val search = RepairSearch(context, preferredPadding, preferredGaps)
             search.sweepPadding(minBottomPadding, incidentalLiftCeiling, allowTightDaylight = false)
-            if (tallFitsBelowTopBar && (search.best == null || !primaryFlush(search.best!!))) {
+            if (tallFitsBelowTopBar && search.best.let { it == null || !primaryFlush(it) }) {
                 search.sweepZeroDrop(minBottomPadding, incidentalLiftCeiling)
             }
             evaluations += search.evaluations
@@ -430,6 +433,10 @@ object CameraLayoutSolver {
      */
     private class TopStartKeepOut(val bottom: Float, val behindLimit: Float)
 
+    // Primitive arrays are intentional: the row edges and minimax candidates are scratch buffers
+    // reused by every evaluation, and IntArray/FloatArray avoid the boxing and per-evaluation
+    // allocation a List would add.
+    @Suppress("KotlinArray")
     private class SolveContext(
         val spec: CameraLayoutSpec,
         val window: CameraWindow,
@@ -971,6 +978,9 @@ object CameraLayoutSolver {
     // Repair search
     // -----------------------------------------------------------------------------------------
 
+    // Primitive arrays are intentional: the gap grids, frame bounds, and placed-row edges are
+    // buffers reused across the sweeps, and IntArray/FloatArray avoid the boxing and
+    // per-iteration allocation a List would add.
     /**
      * Searches padding and gap combinations for a collision-free layout.
      *
@@ -984,6 +994,7 @@ object CameraLayoutSolver {
      * stack rises. That only chooses among candidates already visited, so it never changes what the
      * search evaluates.
      */
+    @Suppress("KotlinArray")
     private class RepairSearch(
         private val context: SolveContext,
         private val preferredPadding: Int,
@@ -1368,7 +1379,7 @@ object CameraLayoutSolver {
         fun sweepPaddingAndGaps(from: Int, to: Int, allowTightDaylight: Boolean) {
             if (rows.size != 4) {
                 val grids =
-                    Array(preferredGaps.size) { index -> gapGrid(index, preferredGaps[index]) }
+                    List(preferredGaps.size) { index -> gapGrid(index, preferredGaps[index]) }
                 val working = IntArray(preferredGaps.size)
                 for (padding in from..to) {
                     placedAny = false
@@ -1494,7 +1505,7 @@ object CameraLayoutSolver {
         }
 
         private fun permute(
-            grids: Array<IntArray>,
+            grids: List<IntArray>,
             working: IntArray,
             index: Int,
             padding: Int,
