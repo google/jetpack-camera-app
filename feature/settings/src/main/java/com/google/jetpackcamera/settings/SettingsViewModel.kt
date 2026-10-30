@@ -34,6 +34,7 @@ import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
 import com.google.jetpackcamera.model.MirrorMode
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
@@ -419,7 +420,11 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /** Disables the setting if the policy hides it or permits none of the supported effects. */
+    /**
+     * Disables the setting if the policy hides it or leaves at most one selectable option. The
+     * options are the supported effects plus [NONE_EFFECT_ID], which is always shown but isn't in
+     * [CameraEffectUiState.Enabled.supportedEffects].
+     */
     private fun CameraEffectUiState.restrictedBy(
         activeSubMode: ActiveCaptureSubMode?
     ): CameraEffectUiState {
@@ -434,7 +439,9 @@ class SettingsViewModel @Inject constructor(
                 val permittedEffects = supportedEffects.filterTo(mutableSetOf()) {
                     config.permits(it)
                 }
-                if (permittedEffects.isEmpty() && supportedEffects.isNotEmpty()) {
+                val permittedOptionCount =
+                    permittedEffects.size + if (config.permits(NONE_EFFECT_ID)) 1 else 0
+                if (permittedOptionCount <= 1 && supportedEffects.isNotEmpty()) {
                     CameraEffectUiState.Disabled(rationale)
                 } else {
                     copy(supportedEffects = permittedEffects)
