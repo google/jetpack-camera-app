@@ -113,6 +113,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.capture.PauseResumeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
@@ -582,22 +583,36 @@ internal fun ContentScreen(
     }
     val captureModeToggleLambda = remember(
         captureModeToggleState,
+        isVideoRecordingActive,
         quickSettingsController,
         snackBarController
     ) {
         @Composable { modifier: Modifier ->
             val captureModeToggleUiState = captureModeToggleState.value
-            if (captureModeToggleUiState is CaptureModeToggleUiState.Available) {
-                CaptureModeToggleButton(
-                    uiState = captureModeToggleUiState,
-                    onChangeCaptureMode = { newCaptureMode ->
-                        quickSettingsController?.setCaptureMode(newCaptureMode)
-                    },
-                    onToggleWhenDisabled = { disableRationale ->
-                        snackBarController?.enqueueDisabledHdrToggleSnackBar(disableRationale)
-                    },
-                    modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
-                )
+            val isVisible = !isVideoRecordingActive.value &&
+                captureModeToggleUiState is CaptureModeToggleUiState.Available
+            val disableAnimations = LocalDisableAnimations.current
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = if (disableAnimations) EnterTransition.None else fadeIn(),
+                exit = if (disableAnimations) {
+                    ExitTransition.None
+                } else {
+                    fadeOut(animationSpec = tween(delayMillis = 1_500))
+                }
+            ) {
+                if (captureModeToggleUiState is CaptureModeToggleUiState.Available) {
+                    CaptureModeToggleButton(
+                        uiState = captureModeToggleUiState,
+                        onChangeCaptureMode = { newCaptureMode ->
+                            quickSettingsController?.setCaptureMode(newCaptureMode)
+                        },
+                        onToggleWhenDisabled = { disableRationale ->
+                            snackBarController?.enqueueDisabledHdrToggleSnackBar(disableRationale)
+                        },
+                        modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                    )
+                }
             }
         }
     }
@@ -734,12 +749,20 @@ internal fun ContentScreen(
         }
     }
 
-    val pauseToggleButtonLambda = remember(videoRecordingState, captureController) {
+    val pauseResumeState = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().pauseResumeUiState
+        }
+    }
+    val pauseToggleButtonLambda = remember(
+        pauseResumeState,
+        captureController
+    ) {
         @Composable { modifier: Modifier ->
             PauseResumeToggleButton(
-                modifier = modifier,
+                pauseResumeUiState = pauseResumeState.value,
                 onSetPause = captureController?.let { it::setPaused } ?: { _ -> },
-                currentRecordingStateProvider = { videoRecordingState.value }
+                modifier = modifier
             )
         }
     }
@@ -753,11 +776,14 @@ internal fun ContentScreen(
         remember { derivedStateOf { currentCaptureUiStateProvider().imageWellUiState } }
     val imageWellLambda = remember(
         externalCaptureModeState,
+        isVideoRecordingActive,
         imageWellState,
         onNavigatePostCapture
     ) {
         @Composable { modifier: Modifier ->
-            if (externalCaptureModeState.value == ExternalCaptureMode.Standard) {
+            if (!isVideoRecordingActive.value &&
+                externalCaptureModeState.value == ExternalCaptureMode.Standard
+            ) {
                 (imageWellState.value as? ImageWellUiState.Content)?.let { contentState ->
                     ImageWell(
                         modifier = modifier,
@@ -929,14 +955,14 @@ private fun LayoutWrapper(
             debugOverlay(
                 modifier,
                 arrayOf(
-                    { audioToggleButton(Modifier) },
-                    { pauseToggleButton(Modifier) }
+                    { audioToggleButton(Modifier) }
                 )
             )
         },
         debugVisibilityWrapper = debugVisibilityWrapper,
         screenFlashOverlay = screenFlashOverlay,
         snackBar = snackBar,
+        pauseToggleButton = pauseToggleButton,
         errorDialog = errorDialog
     )
 }
@@ -1045,5 +1071,6 @@ private val FAKE_PREVIEW_UI_STATE_PRESSED_RECORDING = FAKE_PREVIEW_UI_STATE_READ
 private val FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING = FAKE_PREVIEW_UI_STATE_READY.copy(
     videoRecordingState = VideoRecordingState.Active.Recording(0, AudioStreamState.Active(0.0), 0),
     captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording,
-    audioUiState = AudioUiState.Enabled.On(1.0, true)
+    audioUiState = AudioUiState.Enabled.On(1.0, true),
+    pauseResumeUiState = PauseResumeUiState.Visible(isPaused = false)
 )

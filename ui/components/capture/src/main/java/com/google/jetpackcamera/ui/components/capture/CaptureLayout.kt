@@ -117,6 +117,7 @@ fun PreviewLayout(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    pauseToggleButton: @Composable (Modifier) -> Unit = {},
     topStartContent: @Composable (Modifier) -> Unit = {},
     topBarTrailingContent: @Composable (Modifier) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
@@ -198,6 +199,7 @@ fun PreviewLayout(
                                 captureModeToggleSwitch = captureModeToggle,
                                 zoomControls = zoomLevelDisplay,
                                 elapsedTimeDisplay = elapsedTimeDisplay,
+                                pauseToggleButton = pauseToggleButton,
                                 snackbarHost = { modifier ->
                                     PillSnackbarHost(
                                         snackbarHostState = scaffoldState.snackbarHostState,
@@ -247,14 +249,13 @@ private fun VerticalMaterialControls(
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
     elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    pauseToggleButton: @Composable (Modifier) -> Unit = {},
     snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
                 snackbarHost(Modifier)
-
-                elapsedTimeDisplay(Modifier)
 
                 // zoom controls row
                 zoomControls(Modifier)
@@ -277,6 +278,7 @@ private fun VerticalMaterialControls(
                             ) {
                                 OverlapAwareStyleProvider {
                                     imageWell(Modifier)
+                                    pauseToggleButton(Modifier)
                                 }
                             }
                         }
@@ -326,7 +328,7 @@ private fun VerticalMaterialControls(
                         }
                     }
 
-                    // capture mode toggle switch center
+                    // capture mode toggle switch / elapsed time display center
                     Box(
                         modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.Center
@@ -334,6 +336,7 @@ private fun VerticalMaterialControls(
                         OverlapAwareStyleProvider {
                             captureModeToggleSwitch(Modifier)
                         }
+                        elapsedTimeDisplay(Modifier)
                     }
 
                     // right toggle switch item to the right

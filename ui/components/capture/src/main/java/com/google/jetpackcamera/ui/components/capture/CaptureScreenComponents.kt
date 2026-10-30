@@ -131,7 +131,6 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
-import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.LensFacing
@@ -151,6 +150,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unav
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
+import com.google.jetpackcamera.ui.uistate.capture.PauseResumeUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import kotlin.time.Duration.Companion.nanoseconds
@@ -463,41 +463,44 @@ fun ElapsedTimeText(
  * A toggle button that allows the user to pause and resume video recording.
  *
  * The button's icon changes to reflect the current recording state: a pause icon is shown when
- * recording is active, and a play icon is shown when the recording is paused. This component is only
- * visible when a video recording is in progress.
+ * recording is active, and a red circle icon is shown when the recording is paused. This component
+ * is only visible when [pauseResumeUiState] is [PauseResumeUiState.Visible].
  *
- * @param modifier the modifier for this component.
+ * @param pauseResumeUiState the [PauseResumeUiState] that determines visibility and paused state.
  * @param onSetPause the callback invoked when the button is tapped.
+ * @param modifier the modifier for this component.
  * @param size the size of the button.
- * @param currentRecordingStateProvider the provider for the current recording state.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PauseResumeToggleButton(
-    modifier: Modifier = Modifier,
+    pauseResumeUiState: PauseResumeUiState,
     onSetPause: (Boolean) -> Unit,
-    size: Dp = ButtonDefaults.MediumContainerHeight,
-    currentRecordingStateProvider: () -> VideoRecordingState
+    modifier: Modifier = Modifier,
+    size: Dp = 56.dp
 ) {
-    val currentRecordingState = currentRecordingStateProvider()
-    if (currentRecordingState is VideoRecordingState.Active) {
+    if (pauseResumeUiState is PauseResumeUiState.Visible) {
+        val backgroundStyle = LocalCameraControlBackgroundStyle.current
         FilledIconToggleButton(
-            checked = currentRecordingState is VideoRecordingState.Active.Recording,
-            onCheckedChange = {
-                onSetPause(
-                    currentRecordingState !is VideoRecordingState.Active.Paused
-                )
+            checked = !pauseResumeUiState.isPaused,
+            onCheckedChange = { isChecked ->
+                onSetPause(!isChecked)
             },
+            shape = RoundedCornerShape(12.dp),
+            colors = IconButtonDefaults.filledIconToggleButtonColors(
+                containerColor = backgroundStyle.containerColor,
+                contentColor = CaptureTokens.RecordingRed,
+                checkedContainerColor = backgroundStyle.containerColor,
+                checkedContentColor = Color.White
+            ),
             modifier = modifier.size(size)
         ) {
             Icon(
-                modifier = Modifier
-                    .size(ButtonDefaults.MediumIconSize),
-                painter = when (currentRecordingState) {
-                    is VideoRecordingState.Active.Recording -> painterResource(R.drawable.ic_pause)
-                    is VideoRecordingState.Active.Paused -> painterResource(
-                        R.drawable.ic_play_arrow
-                    )
+                modifier = Modifier.size(ButtonDefaults.MediumIconSize),
+                painter = if (pauseResumeUiState.isPaused) {
+                    painterResource(R.drawable.ic_circle_filled)
+                } else {
+                    painterResource(R.drawable.ic_pause)
                 },
                 contentDescription = stringResource(id = R.string.pause_resume_button_description)
             )
@@ -1649,6 +1652,81 @@ private fun FlipCameraButtonPreview() {
                 )
             }
         }
+    }
+}
+
+@Preview(name = "Pause Resume Toggle Button Previews")
+@Composable
+private fun PauseResumeToggleButtonPreview() {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Recording (Pause Icon) - Black Background (WHITE_20)
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            PauseResumeToggleButton(
+                pauseResumeUiState = PauseResumeUiState.Visible(isPaused = false),
+                onSetPause = {}
+            )
+        }
+
+        // Recording (Pause Icon) - Light Gray Background (BLACK_60)
+        Box(
+            modifier = Modifier
+                .background(Color.LightGray)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CompositionLocalProvider(
+                LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
+            ) {
+                PauseResumeToggleButton(
+                    pauseResumeUiState = PauseResumeUiState.Visible(isPaused = false),
+                    onSetPause = {}
+                )
+            }
+        }
+
+        // Paused (Resume Red Circle Icon) - Black Background (WHITE_20)
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            PauseResumeToggleButton(
+                pauseResumeUiState = PauseResumeUiState.Visible(isPaused = true),
+                onSetPause = {}
+            )
+        }
+
+        // Paused (Resume Red Circle Icon) - Light Gray Background (BLACK_60)
+        Box(
+            modifier = Modifier
+                .background(Color.LightGray)
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CompositionLocalProvider(
+                LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
+            ) {
+                PauseResumeToggleButton(
+                    pauseResumeUiState = PauseResumeUiState.Visible(isPaused = true),
+                    onSetPause = {}
+                )
+            }
+        }
+
+        // Hidden state (renders nothing)
+        PauseResumeToggleButton(
+            pauseResumeUiState = PauseResumeUiState.Hidden,
+            onSetPause = {}
+        )
     }
 }
 
