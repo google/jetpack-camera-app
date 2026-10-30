@@ -17,14 +17,22 @@ package com.google.jetpackcamera.settings.model
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.CaptureSubModeId
+import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.MirrorMode
+import com.google.jetpackcamera.model.NONE_EFFECT_ID
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_60
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
+import com.google.jetpackcamera.model.VideoQuality
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,7 +47,9 @@ class PolicyOverridesTest {
         flashMode = FlashMode.ON,
         imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
         dynamicRange = DynamicRange.HLG10,
-        mirrorMode = MirrorMode.ON_FRONT_ONLY
+        mirrorMode = MirrorMode.ON_FRONT_ONLY,
+        stabilizationMode = StabilizationMode.ON,
+        targetFrameRate = TARGET_FPS_60
     )
 
     private val restrictivePolicy = CameraFeaturePolicy(
@@ -47,7 +57,9 @@ class PolicyOverridesTest {
         flashMode = SettingConfig(FlashMode.OFF, OptionVisibility.Hidden),
         imageFormat = SettingConfig(ImageOutputFormat.JPEG, OptionVisibility.Hidden),
         dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden),
-        mirrorMode = SettingConfig(MirrorMode.OFF, OptionVisibility.Hidden)
+        mirrorMode = SettingConfig(MirrorMode.OFF, OptionVisibility.Hidden),
+        stabilizationMode = SettingConfig(StabilizationMode.OFF, OptionVisibility.Hidden),
+        targetFrameRate = SettingConfig(TARGET_FPS_AUTO, OptionVisibility.Hidden)
     )
 
     private fun enforce(
@@ -66,6 +78,8 @@ class PolicyOverridesTest {
         assertThat(enforced.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(enforced.dynamicRange).isEqualTo(DynamicRange.SDR)
         assertThat(enforced.mirrorMode).isEqualTo(MirrorMode.OFF)
+        assertThat(enforced.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(enforced.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
 
         val restored = overrides.restore(enforced)
 
@@ -79,15 +93,33 @@ class PolicyOverridesTest {
                 defaultValue = FlashMode.OFF,
                 visibility = OptionVisibility.from(FlashMode.OFF, FlashMode.AUTO)
             ),
-            dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden)
+            dynamicRange = SettingConfig(DynamicRange.SDR, OptionVisibility.Hidden),
+            stabilizationMode = SettingConfig(
+                defaultValue = StabilizationMode.OFF,
+                visibility = OptionVisibility.from(StabilizationMode.OFF, StabilizationMode.AUTO)
+            ),
+            targetFrameRate = SettingConfig(
+                defaultValue = TARGET_FPS_AUTO,
+                visibility = OptionVisibility.from(TARGET_FPS_AUTO, TARGET_FPS_30)
+            )
         )
         val (enforced, overrides) = enforce(policy, userSettings)
         assertThat(enforced.flashMode).isEqualTo(FlashMode.OFF)
+        assertThat(enforced.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(enforced.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
 
         // The user picks another permitted value while the policy applies.
-        val restored = overrides.restore(enforced.copy(flashMode = FlashMode.AUTO))
+        val restored = overrides.restore(
+            enforced.copy(
+                flashMode = FlashMode.AUTO,
+                stabilizationMode = StabilizationMode.AUTO,
+                targetFrameRate = TARGET_FPS_30
+            )
+        )
 
         assertThat(restored.flashMode).isEqualTo(FlashMode.AUTO)
+        assertThat(restored.stabilizationMode).isEqualTo(StabilizationMode.AUTO)
+        assertThat(restored.targetFrameRate).isEqualTo(TARGET_FPS_30)
         assertThat(restored.dynamicRange).isEqualTo(DynamicRange.HLG10)
     }
 
@@ -103,6 +135,126 @@ class PolicyOverridesTest {
         assertThat(restored.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
         assertThat(restored.flashMode).isEqualTo(FlashMode.ON)
         assertThat(restored.dynamicRange).isEqualTo(DynamicRange.HLG10)
+    }
+
+    @Test
+    fun restore_returnsCameraEffectAndVideoQualityToTheirPreviousValues() {
+        val effect = CameraEffectId("single_stream")
+        val policy = CameraFeaturePolicy(
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden),
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+        )
+        val settings =
+            userSettings.copy(selectedCameraEffect = effect, videoQuality = VideoQuality.UHD)
+        val (enforced, overrides) = enforce(policy, settings)
+        assertThat(enforced.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+        assertThat(enforced.videoQuality).isEqualTo(VideoQuality.UNSPECIFIED)
+
+        val restored = overrides.restore(enforced)
+
+        assertThat(restored.selectedCameraEffect).isEqualTo(effect)
+        assertThat(restored.videoQuality).isEqualTo(VideoQuality.UHD)
+    }
+
+    @Test
+    fun withRequestedChange_whenUserPicksTheEnforcedValue_restoresTheUserChoice() {
+        val (enforced, overrides) = enforce(restrictivePolicy, userSettings)
+        assertThat(enforced.flashMode).isEqualTo(FlashMode.OFF)
+
+        // The user picks the value the policy already set, so the setting doesn't change.
+        val updated = overrides.withRequestedChange { it.copy(flashMode = FlashMode.OFF) }
+
+        assertThat(updated.restore(enforced).flashMode).isEqualTo(FlashMode.OFF)
+        assertThat(overrides.restore(enforced).flashMode).isEqualTo(FlashMode.ON)
+    }
+
+    @Test
+    fun withRequestedChange_whenPolicyBlocksTheChoice_restoresTheUserChoice() {
+        val policy = restrictivePolicy.copy(
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+        )
+        val settings = userSettings.copy(videoQuality = VideoQuality.UHD)
+        val (enforced, overrides) = enforce(policy, settings)
+
+        // The policy keeps the frame rate at auto and the quality unspecified, but the user's
+        // choices return afterwards.
+        val updated = overrides.withRequestedChange {
+            it.copy(targetFrameRate = TARGET_FPS_30, videoQuality = VideoQuality.HD)
+        }
+
+        val restored = updated.restore(enforced)
+        assertThat(restored.targetFrameRate).isEqualTo(TARGET_FPS_30)
+        assertThat(restored.videoQuality).isEqualTo(VideoQuality.HD)
+        assertThat(restored.aspectRatio).isEqualTo(userSettings.aspectRatio)
+        assertThat(restored.selectedCameraEffect).isEqualTo(userSettings.selectedCameraEffect)
+    }
+
+    @Test
+    fun withRequestedChange_appliesToEveryRestoredSetting() {
+        val policy = restrictivePolicy.copy(
+            cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden),
+            videoQuality = SettingConfig(VideoQuality.UNSPECIFIED, OptionVisibility.Hidden)
+        )
+        val (enforced, overrides) = enforce(policy, userSettings)
+        // Each value differs from the value before enforcement, so a setting the change doesn't
+        // reach would be restored to its previous value instead.
+        val requested = userSettings.copy(
+            aspectRatio = AspectRatio.NINE_SIXTEEN,
+            flashMode = FlashMode.AUTO,
+            imageFormat = ImageOutputFormat.JPEG,
+            dynamicRange = DynamicRange.SDR,
+            mirrorMode = MirrorMode.OFF,
+            stabilizationMode = StabilizationMode.HIGH_QUALITY,
+            targetFrameRate = TARGET_FPS_30,
+            selectedCameraEffect = CameraEffectId("single_stream"),
+            videoQuality = VideoQuality.HD
+        )
+
+        val updated = overrides.withRequestedChange {
+            it.copy(
+                aspectRatio = requested.aspectRatio,
+                flashMode = requested.flashMode,
+                imageFormat = requested.imageFormat,
+                dynamicRange = requested.dynamicRange,
+                mirrorMode = requested.mirrorMode,
+                stabilizationMode = requested.stabilizationMode,
+                targetFrameRate = requested.targetFrameRate,
+                selectedCameraEffect = requested.selectedCameraEffect,
+                videoQuality = requested.videoQuality
+            )
+        }
+
+        assertThat(updated.restore(enforced)).isEqualTo(requested)
+    }
+
+    @Test
+    fun withRequestedChange_whenOnlyUnrestoredSettingsChange_returnsAnEqualRecord() {
+        val (_, overrides) = enforce(restrictivePolicy, userSettings)
+
+        assertThat(overrides.withRequestedChange { it.copy(darkMode = DarkMode.LIGHT) })
+            .isEqualTo(overrides)
+    }
+
+    @Test
+    fun withRequestedChange_whenPolicyReplacesThePermittedEntryValue_restoresTheUserChoice() {
+        // The policy permits the entry value (1:1), so it is kept on entry.
+        val policy = CameraFeaturePolicy(
+            aspectRatio = SettingConfig(
+                defaultValue = AspectRatio.NINE_SIXTEEN,
+                visibility = OptionVisibility.from(AspectRatio.NINE_SIXTEEN, AspectRatio.ONE_ONE)
+            )
+        )
+        val (enforced, overrides) = enforce(policy, userSettings)
+        assertThat(enforced.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+
+        // The user requests a blocked value, so the policy replaces it with its default.
+        val requested = enforced.copy(aspectRatio = AspectRatio.THREE_FOUR)
+        val reEnforced = policy.enforceRestrictions(requested)
+        assertThat(reEnforced.aspectRatio).isEqualTo(AspectRatio.NINE_SIXTEEN)
+        val updated =
+            overrides.withRequestedChange { it.copy(aspectRatio = AspectRatio.THREE_FOUR) }
+
+        assertThat(updated.restore(reEnforced).aspectRatio).isEqualTo(AspectRatio.THREE_FOUR)
     }
 
     @Test
