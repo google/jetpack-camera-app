@@ -1,0 +1,905 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.google.jetpackcamera.ui.components
+
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.MutatePriority
+import androidx.compose.foundation.MutatorMutex
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TooltipState
+import androidx.compose.material3.ripple
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
+import kotlin.math.roundToInt
+import kotlin.time.Duration
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+
+const val TOOLTIP_ANCHOR_BUTTON_TAG = "tooltip_anchor_button"
+const val TOOLTIP_CONTENT_TAG = "tooltip_content"
+
+/**
+ * Rationale and benefits of the custom [JcaTooltipBox] implementation:
+ *
+ * Upstream Material 3's [androidx.compose.material3.RichTooltip] and
+ * [androidx.compose.material3.TooltipBox] present limitations in camera overlay layouts:
+ *
+ * 1. Caret Misalignment: M3's caret positioning does not adjust when the popup window clamps
+ *    against screen boundaries, causing the caret to drift away from edge-positioned anchors.
+ * 2. Visual Hitch: M3 calculates caret offsets asynchronously across layout passes, causing
+ *    a 1-frame visual jump when the tooltip first appears.
+ * 3. Disjoint Geometry: M3 renders the caret as a separate rotated element, preventing seamless
+ *    backgrounds, smooth corner clipping, and unified elevation shadows.
+ *
+ * Key advantages and customizations in [JcaTooltipBox]:
+ *
+ * - Flexible Caret Alignment: Supports [CaretAlignment.AnchorCenter],
+ *   [CaretAlignment.BubbleCenter], start/end, and custom offsets, dynamically tracking anchors
+ *   without corner bleed.
+ * - Reactive & Timed State: Decoupled [JcaTooltipState] managing visibility, [autoDismissDuration],
+ *   and coroutine-driven mutual exclusion via [MutatorMutex].
+ * - Frame-0 Synchronous Layout: Derives popup position and caret coordinates simultaneously
+ *   before drawing, eliminating multi-frame visual hops.
+ * - Continuous Vector Shape: [JcaTooltipBubbleShape] unifies the bubble and caret into a single
+ *   path for seamless fills, borders, and shadows.
+ * - Viewfinder-Aware & Accessible: High-contrast camera theming, responsive vertical scrolling
+ *   under large font scaling, and TalkBack live region announcements.
+ */
+
+/**
+ * Alignment options for the tooltip caret along the horizontal edge of the tooltip bubble.
+ */
+sealed interface CaretAlignment {
+    /** Positions the caret to point directly to the horizontal center of the anchor component. */
+    data object AnchorCenter : CaretAlignment
+
+    /** Positions the caret at the horizontal center of the tooltip bubble. */
+    data object BubbleCenter : CaretAlignment
+
+    /** Positions the caret near the start edge (respecting layout direction). */
+    data object Start : CaretAlignment
+
+    /** Positions the caret near the end edge (respecting layout direction). */
+    data object End : CaretAlignment
+
+    /** Positions the caret at a custom horizontal offset from the start edge. */
+    data class Custom(val offset: Dp) : CaretAlignment
+}
+
+/**
+ * Color configuration for the tooltip bubble.
+ */
+@Immutable
+data class JcaTooltipColors(
+    val containerColor: Color,
+    val contentColor: Color,
+    val titleContentColor: Color
+)
+
+/**
+ * Default dimensions, styling tokens, and color values for JCA tooltips,
+ * referencing standard Material 3 design tokens and component defaults.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+object JcaTooltipDefaults {
+    /** Default caret dimensions matching Material 3 [TooltipDefaults.caretSize] (16dp x 8dp). */
+    val CaretSize: DpSize = TooltipDefaults.caretSize
+    val CaretWidth: Dp get() = CaretSize.width
+    val CaretHeight: Dp get() = CaretSize.height
+
+    /** Default spacing between the tooltip bubble and calling anchor. */
+    val SpacingBetweenTooltipAndAnchor: Dp = 4.dp
+
+    /** Safe screen edge margins for clamping popup placement against window boundaries. */
+    val ScreenMargin: Dp = 16.dp
+
+    /** Large corner radius token (16dp) based on Material 3 ShapeDefaults.Large. */
+    val CornerRadius: Dp = 16.dp
+
+    /** Standard Material minimum interactive touch target size (48dp). */
+    val TouchTargetSize: Dp = 48.dp
+
+    /** Visual container size (32dp) matching [IconButtonDefaults.extraSmallContainerSize]. */
+    val ContainerSize: Dp = IconButtonDefaults.extraSmallContainerSize().width // 32.dp
+
+    /** Medium icon size (24dp) matching [IconButtonDefaults.mediumIconSize]. */
+    val IconSize: Dp = IconButtonDefaults.mediumIconSize // 24.dp
+
+    /** Width constraints for the tooltip bubble. */
+    val MinWidth: Dp = 140.dp
+
+    /**
+     * Maximum width aligned with design mock (296dp),
+     * capped within [TooltipDefaults.richTooltipMaxWidth] (320dp).
+     */
+    val MaxWidth: Dp = 296.dp
+
+    /** Container elevation Level 2 (2dp) matching Material 3 RichTooltipTokens. */
+    val DefaultElevation: Dp = 2.dp
+
+    /**
+     * Default high-contrast colors suited for camera viewfinder overlays.
+     */
+    @Composable
+    fun tooltipColors(
+        containerColor: Color = MaterialTheme.colorScheme.secondaryFixed,
+        contentColor: Color = MaterialTheme.colorScheme.onSecondaryFixed,
+        titleContentColor: Color = MaterialTheme.colorScheme.onSecondaryFixed
+    ): JcaTooltipColors = JcaTooltipColors(
+        containerColor = containerColor,
+        contentColor = contentColor,
+        titleContentColor = titleContentColor
+    )
+
+    /**
+     * Standard Material 3 rich tooltip colors based on [TooltipDefaults.richTooltipColors].
+     */
+    @Composable
+    fun standardM3Colors(): JcaTooltipColors {
+        val m3Defaults = TooltipDefaults.richTooltipColors()
+        return JcaTooltipColors(
+            containerColor = m3Defaults.containerColor,
+            contentColor = m3Defaults.contentColor,
+            titleContentColor = m3Defaults.titleContentColor
+        )
+    }
+}
+
+/**
+ * State holder for dynamic caret positioning.
+ */
+@Stable
+class CaretPositionState(
+    initialCaretX: Float = 0f,
+    initialIsCaretOnTop: Boolean = true
+) {
+    var localCaretX: Float by mutableFloatStateOf(initialCaretX)
+    var isCaretOnTop: Boolean by mutableStateOf(initialIsCaretOnTop)
+}
+
+/**
+ * Vector shape that draws a continuous outline combining a rounded rectangle bubble
+ * and a triangular caret pointing toward the anchor.
+ */
+class JcaTooltipBubbleShape(
+    val localCaretX: Float,
+    val isCaretOnTop: Boolean,
+    val cornerRadius: Dp = JcaTooltipDefaults.CornerRadius,
+    val caretWidth: Dp = JcaTooltipDefaults.CaretWidth,
+    val caretHeight: Dp = JcaTooltipDefaults.CaretHeight
+) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        val w = size.width
+        val h = size.height
+        if (w <= 0f || h <= 0f) {
+            return Outline.Rectangle(Rect.Zero)
+        }
+
+        val r = with(density) { cornerRadius.toPx() }
+        val cw = with(density) { caretWidth.toPx() }
+        val ch = with(density) { caretHeight.toPx() }
+
+        val bodyHeight = (h - ch).coerceAtLeast(0f)
+        val actualRadius = minOf(r, bodyHeight / 2f, w / 2f).coerceAtLeast(0f)
+
+        // Clamp caret base to ensure the triangle never bleeds into the corner radius arcs
+        val minCaretX = actualRadius + cw / 2f
+        val maxCaretX = (w - actualRadius - cw / 2f).coerceAtLeast(minCaretX)
+        val clampedCaretX = localCaretX.coerceIn(minCaretX, maxCaretX)
+
+        val path = Path()
+        if (isCaretOnTop) {
+            val bodyTop = ch
+            val bodyBottom = h
+
+            path.moveTo(actualRadius, bodyTop)
+            path.lineTo(clampedCaretX - cw / 2f, bodyTop)
+            path.lineTo(clampedCaretX, 0f)
+            path.lineTo(clampedCaretX + cw / 2f, bodyTop)
+            path.lineTo(w - actualRadius, bodyTop)
+            path.arcTo(
+                rect = Rect(w - 2f * actualRadius, bodyTop, w, bodyTop + 2f * actualRadius),
+                startAngleDegrees = 270f,
+                sweepAngleDegrees = 90f,
+                forceMoveTo = false
+            )
+            path.lineTo(w, bodyBottom - actualRadius)
+            path.arcTo(
+                rect = Rect(w - 2f * actualRadius, bodyBottom - 2f * actualRadius, w, bodyBottom),
+                startAngleDegrees = 0f,
+                sweepAngleDegrees = 90f,
+                forceMoveTo = false
+            )
+            path.lineTo(actualRadius, bodyBottom)
+            path.arcTo(
+                rect = Rect(0f, bodyBottom - 2f * actualRadius, 2f * actualRadius, bodyBottom),
+                startAngleDegrees = 90f,
+                sweepAngleDegrees = 90f,
+                forceMoveTo = false
+            )
+            path.lineTo(0f, bodyTop + actualRadius)
+            path.arcTo(
+                rect = Rect(0f, bodyTop, 2f * actualRadius, bodyTop + 2f * actualRadius),
+                startAngleDegrees = 180f,
+                sweepAngleDegrees = 90f,
+                forceMoveTo = false
+            )
+            path.close()
+        } else {
+            val bodyTop = 0f
+            val bodyBottom = h - ch
+
+            path.moveTo(actualRadius, bodyTop)
+            path.lineTo(w - actualRadius, bodyTop)
+            path.arcTo(
+                rect = Rect(w - 2f * actualRadius, bodyTop, w, bodyTop + 2f * actualRadius),
+                startAngleDegrees = 270f,
+                sweepAngleDegrees = 90f,
+                forceMoveTo = false
+            )
+            path.lineTo(w, bodyBottom - actualRadius)
+            path.arcTo(
+                rect = Rect(w - 2f * actualRadius, bodyBottom - 2f * actualRadius, w, bodyBottom),
+                startAngleDegrees = 0f,
+                sweepAngleDegrees = 90f,
+                forceMoveTo = false
+            )
+            path.lineTo(clampedCaretX + cw / 2f, bodyBottom)
+            path.lineTo(clampedCaretX, h)
+            path.lineTo(clampedCaretX - cw / 2f, bodyBottom)
+            path.lineTo(actualRadius, bodyBottom)
+            path.arcTo(
+                rect = Rect(0f, bodyBottom - 2f * actualRadius, 2f * actualRadius, bodyBottom),
+                startAngleDegrees = 90f,
+                sweepAngleDegrees = 90f,
+                forceMoveTo = false
+            )
+            path.lineTo(0f, bodyTop + actualRadius)
+            path.arcTo(
+                rect = Rect(0f, bodyTop, 2f * actualRadius, bodyTop + 2f * actualRadius),
+                startAngleDegrees = 180f,
+                sweepAngleDegrees = 90f,
+                forceMoveTo = false
+            )
+            path.close()
+        }
+
+        return Outline.Generic(path)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is JcaTooltipBubbleShape) return false
+        return localCaretX == other.localCaretX &&
+            isCaretOnTop == other.isCaretOnTop &&
+            cornerRadius == other.cornerRadius &&
+            caretWidth == other.caretWidth &&
+            caretHeight == other.caretHeight
+    }
+
+    override fun hashCode(): Int {
+        var result = localCaretX.hashCode()
+        result = 31 * result + isCaretOnTop.hashCode()
+        result = 31 * result + cornerRadius.hashCode()
+        result = 31 * result + caretWidth.hashCode()
+        result = 31 * result + caretHeight.hashCode()
+        return result
+    }
+}
+
+/**
+ * Position provider for the tooltip popup that calculates screen-clamped coordinates and
+ * derives the local caret offset relative to the popup's top-left corner on Frame 0 before draw.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+class JcaTooltipPositionProvider(
+    val positioning: TooltipAnchorPosition,
+    val caretAlignment: CaretAlignment = CaretAlignment.AnchorCenter,
+    val spacing: Dp = JcaTooltipDefaults.SpacingBetweenTooltipAndAnchor,
+    val screenMargin: Dp = JcaTooltipDefaults.ScreenMargin,
+    val density: Density,
+    val onCaretCalculated: (localCaretX: Float, isCaretOnTop: Boolean) -> Unit = { _, _ -> }
+) : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize
+    ): IntOffset {
+        val spacingPx = with(density) { spacing.roundToPx() }
+        val marginPx = with(density) { screenMargin.roundToPx() }
+
+        // Vertical placement: Above vs Below with automatic flipping when constrained
+        val spaceAbove = anchorBounds.top - spacingPx
+        val spaceBelow = windowSize.height - anchorBounds.bottom - spacingPx
+
+        val placeBelow = when (positioning) {
+            TooltipAnchorPosition.Below -> {
+                if (spaceBelow >= popupContentSize.height || spaceBelow >= spaceAbove) {
+                    true
+                } else {
+                    false
+                }
+            }
+            TooltipAnchorPosition.Above -> {
+                if (spaceAbove >= popupContentSize.height || spaceAbove >= spaceBelow) {
+                    false
+                } else {
+                    true
+                }
+            }
+            else -> spaceBelow >= popupContentSize.height
+        }
+
+        val idealPopupY = if (placeBelow) {
+            anchorBounds.bottom + spacingPx
+        } else {
+            anchorBounds.top - spacingPx - popupContentSize.height
+        }
+        val minY = marginPx
+        val maxY = (windowSize.height - marginPx - popupContentSize.height).coerceAtLeast(minY)
+        val popupY = idealPopupY.coerceIn(minY, maxY)
+
+        // Horizontal placement: Center over anchor by default, clamped to safe screen margins
+        val anchorCenterX = (anchorBounds.left + anchorBounds.right) / 2f
+        val idealPopupX = (anchorCenterX - popupContentSize.width / 2f).roundToInt()
+
+        val minX = marginPx
+        val maxX = (windowSize.width - marginPx - popupContentSize.width).coerceAtLeast(minX)
+        val popupX = idealPopupX.coerceIn(minX, maxX)
+
+        // Local caret X coordinate relative to the popup's top-left corner
+        val localCaretX = when (caretAlignment) {
+            is CaretAlignment.AnchorCenter -> {
+                anchorCenterX - popupX
+            }
+            is CaretAlignment.BubbleCenter -> {
+                popupContentSize.width / 2f
+            }
+            is CaretAlignment.Start -> {
+                val cornerRadiusPx = with(density) { JcaTooltipDefaults.CornerRadius.toPx() }
+                val caretWidthPx = with(density) { JcaTooltipDefaults.CaretWidth.toPx() }
+                if (layoutDirection == LayoutDirection.Rtl) {
+                    popupContentSize.width - cornerRadiusPx - caretWidthPx / 2f
+                } else {
+                    cornerRadiusPx + caretWidthPx / 2f
+                }
+            }
+            is CaretAlignment.End -> {
+                val cornerRadiusPx = with(density) { JcaTooltipDefaults.CornerRadius.toPx() }
+                val caretWidthPx = with(density) { JcaTooltipDefaults.CaretWidth.toPx() }
+                if (layoutDirection == LayoutDirection.Rtl) {
+                    cornerRadiusPx + caretWidthPx / 2f
+                } else {
+                    popupContentSize.width - cornerRadiusPx - caretWidthPx / 2f
+                }
+            }
+            is CaretAlignment.Custom -> {
+                val offsetPx = with(density) { caretAlignment.offset.toPx() }
+                if (layoutDirection == LayoutDirection.Rtl) {
+                    popupContentSize.width - offsetPx
+                } else {
+                    offsetPx
+                }
+            }
+        }
+
+        onCaretCalculated(localCaretX, placeBelow)
+
+        return IntOffset(popupX, popupY)
+    }
+}
+
+private const val DEFAULT_TOOLTIP_DURATION_MILLIS = 1500L
+
+/**
+ * An extended [TooltipState] for JCA tooltips that supports auto-dismiss durations,
+ * coroutine-driven mutual exclusion via [MutatorMutex], and programmatic toggling.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Stable
+interface JcaTooltipState : TooltipState {
+    /**
+     * Optional duration after which the tooltip automatically dismisses.
+     */
+    val autoDismissDuration: Duration?
+
+    /**
+     * Toggles the visibility of the tooltip.
+     *
+     * If the tooltip is currently visible or transitioning to visible, it will be dismissed.
+     * Otherwise, it will be shown.
+     */
+    suspend fun toggle(mutatePriority: MutatePriority = MutatePriority.Default)
+}
+
+/**
+ * Creates and remembers an instance of [JcaTooltipState].
+ *
+ * @param autoDismissDuration Optional duration after which the tooltip automatically dismisses.
+ *   When non-null, every call to [TooltipState.show] will keep the tooltip displayed for this
+ *   duration before dismissing, resetting the timer if re-triggered while already visible.
+ * @param initialIsVisible Whether the tooltip should be initially visible.
+ * @param isPersistent Whether the tooltip should remain visible until explicitly dismissed
+ *   when [autoDismissDuration] is null. If false and [autoDismissDuration] is null, defaults
+ *   to standard transient duration (1500ms).
+ * @param mutatorMutex Mutex coordinating tooltip display. Defaults to a fresh [MutatorMutex]
+ *   instance per tooltip state.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun rememberJcaTooltipState(
+    autoDismissDuration: Duration? = null,
+    initialIsVisible: Boolean = false,
+    isPersistent: Boolean = true,
+    mutatorMutex: MutatorMutex = remember { MutatorMutex() }
+): JcaTooltipState = remember(autoDismissDuration, initialIsVisible, isPersistent, mutatorMutex) {
+    JcaTooltipStateImpl(
+        autoDismissDuration = autoDismissDuration,
+        initialIsVisible = initialIsVisible,
+        isPersistent = isPersistent,
+        mutatorMutex = mutatorMutex
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Stable
+private class JcaTooltipStateImpl(
+    override val autoDismissDuration: Duration?,
+    initialIsVisible: Boolean = false,
+    override val isPersistent: Boolean = true,
+    private val mutatorMutex: MutatorMutex = MutatorMutex()
+) : JcaTooltipState {
+
+    override val transition: MutableTransitionState<Boolean> =
+        MutableTransitionState(initialIsVisible)
+
+    override val isVisible: Boolean
+        get() = transition.currentState || transition.targetState
+
+    private var job: CancellableContinuation<Unit>? = null
+
+    override suspend fun show(mutatePriority: MutatePriority) {
+        val cancellableShow: suspend () -> Unit = {
+            try {
+                suspendCancellableCoroutine { continuation ->
+                    transition.targetState = true
+                    job = continuation
+                }
+            } finally {
+                job = null
+                transition.targetState = false
+            }
+        }
+
+        mutatorMutex.mutate(mutatePriority) {
+            try {
+                if (autoDismissDuration != null) {
+                    withTimeoutOrNull(autoDismissDuration.inWholeMilliseconds) {
+                        cancellableShow()
+                    }
+                } else if (isPersistent) {
+                    cancellableShow()
+                } else {
+                    withTimeoutOrNull(DEFAULT_TOOLTIP_DURATION_MILLIS) {
+                        cancellableShow()
+                    }
+                }
+            } finally {
+                job = null
+                transition.targetState = false
+            }
+        }
+    }
+
+    override fun dismiss() {
+        transition.targetState = false
+        if (job?.isActive == true) {
+            job?.cancel()
+        }
+    }
+
+    override suspend fun toggle(mutatePriority: MutatePriority) {
+        if (transition.targetState) {
+            dismiss()
+        } else {
+            show(mutatePriority)
+        }
+    }
+
+    override fun onDispose() {
+        dismiss()
+    }
+}
+
+/**
+ * Custom tooltip bubble composable rendering styled text and an optional title within
+ * a unified [JcaTooltipBubbleShape].
+ */
+@Composable
+fun JcaTooltipBubble(
+    tooltipText: String,
+    modifier: Modifier = Modifier,
+    tooltipTitle: String? = null,
+    caretPositionState: CaretPositionState = remember { CaretPositionState() },
+    colors: JcaTooltipColors = JcaTooltipDefaults.tooltipColors(),
+    elevation: Dp = JcaTooltipDefaults.DefaultElevation
+) {
+    val isCaretOnTop = caretPositionState.isCaretOnTop
+    val localCaretX = caretPositionState.localCaretX
+
+    val bubbleShape = remember(localCaretX, isCaretOnTop) {
+        JcaTooltipBubbleShape(
+            localCaretX = localCaretX,
+            isCaretOnTop = isCaretOnTop
+        )
+    }
+
+    val topPadding = if (isCaretOnTop) {
+        JcaTooltipDefaults.CaretHeight + 16.dp
+    } else {
+        16.dp
+    }
+    val bottomPadding = if (!isCaretOnTop) {
+        JcaTooltipDefaults.CaretHeight + 16.dp
+    } else {
+        16.dp
+    }
+
+    Surface(
+        shape = bubbleShape,
+        color = colors.containerColor,
+        shadowElevation = elevation,
+        modifier = modifier
+            .widthIn(min = JcaTooltipDefaults.MinWidth, max = JcaTooltipDefaults.MaxWidth)
+            .testTag(TOOLTIP_CONTENT_TAG)
+            .semantics {
+                liveRegion = LiveRegionMode.Polite
+                paneTitle = tooltipTitle ?: tooltipText
+            }
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(
+                    top = topPadding,
+                    bottom = bottomPadding,
+                    start = 16.dp,
+                    end = 16.dp
+                )
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (tooltipTitle != null) {
+                Text(
+                    text = tooltipTitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = colors.titleContentColor,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp)
+                )
+            }
+            Text(
+                text = tooltipText,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Medium
+                ),
+                color = colors.contentColor,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+/**
+ * A generic container that wraps content with a styled tooltip using a bespoke Compose [Popup].
+ *
+ * @param tooltipText The text to display inside the tooltip.
+ * @param modifier Modifier for the container.
+ * @param tooltipTitle Optional title displayed above the tooltip text.
+ * @param state State controlling tooltip visibility. Defaults to [rememberJcaTooltipState].
+ * @param positioning Anchor position for the tooltip (e.g. Above, Below).
+ * @param caretAlignment Alignment configuration for the caret.
+ * @param enableUserInput Whether long-press gestures on the anchor trigger the tooltip.
+ * @param colors Colors applied to the tooltip bubble and text.
+ * @param onDismissRequest Optional callback invoked when the tooltip is dismissed.
+ * @param content The anchor composable wrapped by the tooltip.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun JcaTooltipBox(
+    tooltipText: String,
+    modifier: Modifier = Modifier,
+    tooltipTitle: String? = null,
+    state: TooltipState = rememberJcaTooltipState(),
+    positioning: TooltipAnchorPosition = TooltipAnchorPosition.Above,
+    caretAlignment: CaretAlignment = CaretAlignment.AnchorCenter,
+    enableUserInput: Boolean = true,
+    colors: JcaTooltipColors = JcaTooltipDefaults.tooltipColors(),
+    onDismissRequest: (() -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
+
+    val density = LocalDensity.current
+    val caretPositionState = remember {
+        CaretPositionState(
+            initialIsCaretOnTop = positioning == TooltipAnchorPosition.Below
+        )
+    }
+
+    val positionProvider = remember(positioning, caretAlignment, density) {
+        JcaTooltipPositionProvider(
+            positioning = positioning,
+            caretAlignment = caretAlignment,
+            density = density,
+            onCaretCalculated = { localCaretX, isCaretOnTop ->
+                caretPositionState.localCaretX = localCaretX
+                caretPositionState.isCaretOnTop = isCaretOnTop
+            }
+        )
+    }
+
+    Box(
+        modifier = modifier.tooltipGestures(
+            enabled = enableUserInput,
+            state = state,
+            scope = scope
+        )
+    ) {
+        content()
+
+        if (state.isVisible) {
+            Popup(
+                popupPositionProvider = positionProvider,
+                onDismissRequest = {
+                    scope.launch { state.dismiss() }
+                    currentOnDismissRequest?.invoke()
+                },
+                properties = PopupProperties(
+                    focusable = false,
+                    clippingEnabled = false
+                )
+            ) {
+                JcaTooltipBubble(
+                    tooltipText = tooltipText,
+                    tooltipTitle = tooltipTitle,
+                    caretPositionState = caretPositionState,
+                    colors = colors
+                )
+            }
+        }
+    }
+
+    DisposableEffect(state) {
+        onDispose {
+            state.onDispose()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+private fun Modifier.tooltipGestures(
+    enabled: Boolean,
+    state: TooltipState,
+    scope: CoroutineScope
+): Modifier = if (enabled) {
+    this.pointerInput(state) {
+        awaitEachGesture {
+            awaitFirstDown(pass = PointerEventPass.Initial)
+            try {
+                withTimeout(viewConfiguration.longPressTimeoutMillis) {
+                    waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                }
+            } catch (e: PointerEventTimeoutCancellationException) {
+                scope.launch { state.show() }
+            }
+        }
+    }
+} else {
+    this
+}
+
+/**
+ * An icon button that shows a styled tooltip when clicked.
+ *
+ * @param icon The icon to display inside the button.
+ * @param tooltipText The text to display inside the tooltip.
+ * @param modifier Modifier for the button container.
+ * @param contentDescription Optional accessibility content description for TalkBack.
+ * @param tooltipTitle The optional title to display inside the tooltip.
+ * @param state State controlling tooltip visibility. Defaults to [rememberJcaTooltipState].
+ * @param positioning Anchor position for the tooltip (e.g. Above, Below). Defaults to Below.
+ * @param caretAlignment Alignment configuration for the caret. Defaults to AnchorCenter.
+ * @param isOutlined Whether the icon button should be outlined.
+ * @param containerColor The background container color for the button.
+ * @param contentColor The content/tint color for the icon.
+ * @param size The size of the inner visual container, defaulting to
+ *   [IconButtonDefaults.extraSmallContainerSize] (32.dp).
+ * @param minTouchTargetSize The minimum interactive touch target size for accessibility,
+ *   defaulting to 48.dp.
+ * @param onClick Optional callback when the button is clicked.
+ * @param onDismissRequest Optional callback invoked when the tooltip is dismissed.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TooltipIconButton(
+    icon: @Composable () -> Unit,
+    tooltipText: String,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = null,
+    tooltipTitle: String? = null,
+    state: JcaTooltipState = rememberJcaTooltipState(),
+    positioning: TooltipAnchorPosition = TooltipAnchorPosition.Below,
+    caretAlignment: CaretAlignment = CaretAlignment.AnchorCenter,
+    isOutlined: Boolean = false,
+    containerColor: Color = Color.Transparent,
+    contentColor: Color = Color.White,
+    size: Dp = JcaTooltipDefaults.ContainerSize,
+    minTouchTargetSize: Dp = JcaTooltipDefaults.TouchTargetSize,
+    onClick: () -> Unit = {},
+    onDismissRequest: (() -> Unit)? = null
+) {
+    val scope = rememberCoroutineScope()
+    val currentOnClick by rememberUpdatedState(onClick)
+    val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
+
+    val toggleTooltip = remember(state, scope) {
+        {
+            scope.launch {
+                val wasVisible = state.transition.targetState
+                state.toggle()
+                if (wasVisible) {
+                    currentOnDismissRequest?.invoke()
+                }
+            }
+            currentOnClick()
+        }
+    }
+
+    JcaTooltipBox(
+        tooltipText = tooltipText,
+        modifier = modifier,
+        tooltipTitle = tooltipTitle,
+        state = state,
+        positioning = positioning,
+        caretAlignment = caretAlignment,
+        enableUserInput = false,
+        onDismissRequest = onDismissRequest
+    ) {
+        val defaultContentDescription = tooltipTitle ?: tooltipText
+        val effectiveContentDescription = contentDescription ?: defaultContentDescription
+
+        Box(
+            modifier = Modifier
+                .sizeIn(minWidth = minTouchTargetSize, minHeight = minTouchTargetSize)
+                .testTag(TOOLTIP_ANCHOR_BUTTON_TAG)
+                .clickable(
+                    onClick = toggleTooltip,
+                    role = Role.Button,
+                    onClickLabel = effectiveContentDescription,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(bounded = false, radius = minTouchTargetSize / 2)
+                )
+                .semantics {
+                    this.contentDescription = effectiveContentDescription
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            val containerModifier = Modifier
+                .size(size)
+                .then(
+                    if (isOutlined) {
+                        Modifier.border(
+                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                            shape = CircleShape
+                        )
+                    } else {
+                        Modifier
+                    }
+                )
+                .background(color = containerColor, shape = CircleShape)
+
+            Box(
+                modifier = containerModifier,
+                contentAlignment = Alignment.Center
+            ) {
+                CompositionLocalProvider(LocalContentColor provides contentColor) {
+                    icon()
+                }
+            }
+        }
+    }
+}

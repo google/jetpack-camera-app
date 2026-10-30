@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.google.jetpackcamera.feature.preview
 
 import android.util.Log
@@ -27,14 +29,19 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -51,10 +58,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
@@ -69,6 +78,8 @@ import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.VideoCaptureEvent
+import com.google.jetpackcamera.ui.components.JcaTooltipDefaults
+import com.google.jetpackcamera.ui.components.TooltipIconButton
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CameraErrorDialog
@@ -897,6 +908,7 @@ private fun LayoutWrapper(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
+    topStartContent: @Composable (modifier: Modifier) -> Unit = {},
     errorDialog: @Composable (modifier: Modifier) -> Unit = {}
 ) {
     PreviewLayout(
@@ -914,17 +926,36 @@ private fun LayoutWrapper(
         quickSettingsOverlay = quickSettingsOverlay,
         indicatorRow = { modifier ->
             if (!isErrorDialogShowing) {
-                IndicatorPill(
-                    modifier = modifier
-                        .fillMaxWidth()
+                Row(
+                    modifier = modifier,
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    flashModeIndicator(Modifier)
-                    hdrIndicator(Modifier)
-                    videoQualityIndicator(Modifier)
-                    stabilizationIndicator(Modifier)
+                    TooltipIconButton(
+                        modifier = Modifier,
+                        icon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(JcaTooltipDefaults.IconSize)
+                                    .background(Color.White, shape = CircleShape)
+                            )
+                        },
+                        contentDescription = "Show camera information",
+                        tooltipText = "This is a placeholder tooltip message. It demonstrates how" +
+                            " text wraps and aligns.",
+                        positioning = TooltipAnchorPosition.Below,
+                        isOutlined = true
+                    )
+                    IndicatorPill {
+                        flashModeIndicator(Modifier)
+                        hdrIndicator(Modifier)
+                        videoQualityIndicator(Modifier)
+                        stabilizationIndicator(Modifier)
+                    }
                 }
             }
         },
+        topStartContent = topStartContent,
         debugOverlay = { modifier ->
             debugOverlay(
                 modifier,
