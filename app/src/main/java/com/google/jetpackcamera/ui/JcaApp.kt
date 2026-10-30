@@ -26,7 +26,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -106,9 +109,13 @@ private fun JetpackCameraNavHost(
     // of the back stack. This must live above the NavHost: during a transition both the outgoing
     // and the incoming destination are composed, so a per-screen effect would let the outgoing
     // screen's cleanup run last and undo the incoming screen's request.
+    // The preview screen's layout reports when the window is too short for the navigation bar to
+    // stay visible. The report is only applied while the preview destination is on top, so it
+    // stays owned by this policy rather than by the screen.
     val backStackEntry by navController.currentBackStackEntryAsState()
+    var previewRequiresImmersive by remember { mutableStateOf(false) }
     SystemBarsPolicyEffect(
-        systemBarsPolicyFor(backStackEntry?.destination?.route),
+        systemBarsPolicyFor(backStackEntry?.destination?.route, previewRequiresImmersive),
         isDarkTheme = isDarkTheme
     )
 
@@ -151,7 +158,8 @@ private fun JetpackCameraNavHost(
             onNavigateToSettings = { navController.navigate(SETTINGS_ROUTE) },
             onNavigateToPostCapture = { navController.navigate(POST_CAPTURE_ROUTE) },
             onCaptureEvent = onCaptureEvent,
-            onCloseCamera = onCloseCamera
+            onCloseCamera = onCloseCamera,
+            onRequiresImmersiveChange = { previewRequiresImmersive = it }
         )
 
         composable(

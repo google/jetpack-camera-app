@@ -55,6 +55,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -85,6 +86,8 @@ import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.containerColor
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
@@ -118,8 +121,16 @@ fun ToggleQuickSettingsButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    val buttonSize = IconButtonDefaults.mediumContainerSize(
+    val layoutSolution = LocalCameraLayoutSolution.current
+    val toolbarScale = layoutSolution?.toolbarHeight?.let { toolbarHeight ->
+        (toolbarHeight / CameraLayoutDefaults.BottomToolbarHeight).coerceIn(0f, 1f)
+    } ?: 1f
+    val baseButtonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
+    )
+    val buttonSize = DpSize(
+        width = baseButtonSize.width * toolbarScale,
+        height = baseButtonSize.height * toolbarScale
     )
     val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
     val closedDescription = stringResource(R.string.quick_settings_toggle_closed_description)
@@ -148,6 +159,7 @@ fun ToggleQuickSettingsButton(
         )
     ) {
         Icon(
+            modifier = Modifier.size(IconButtonDefaults.mediumIconSize * toolbarScale),
             painter = painterResource(R.drawable.settings_photo_camera_icon),
             contentDescription = null
         )
@@ -178,7 +190,8 @@ internal fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifi
  *
  * @param modifier The [Modifier] to be applied to this row.
  * @param onSetCaptureMode Callback invoked when a new capture mode is selected.
- * @param captureModeUiState The current [CaptureModeUiState] representing available and selected modes.
+ * @param captureModeUiState The current [CaptureModeUiState] representing available and selected
+ * modes.
  */
 @Composable
 internal fun CaptureModeRow(
@@ -219,10 +232,12 @@ internal fun CaptureModeRow(
 }
 
 /**
- * A row component in the quick settings menu that allows the user to toggle HDR (High Dynamic Range) settings.
+ * A row component in the quick settings menu that allows the user to toggle HDR (High Dynamic
+ * Range) settings.
  *
  * @param modifier The [Modifier] to be applied to this row.
- * @param onClick Callback invoked when HDR is toggled, providing the selected [DynamicRange] and [ImageOutputFormat].
+ * @param onClick Callback invoked when HDR is toggled, providing the selected [DynamicRange] and
+ * [ImageOutputFormat].
  * @param hdrUiState The current [HdrUiState] representing HDR availability and selection.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -274,7 +289,8 @@ internal fun HdrRow(
  *
  * @param modifier The [Modifier] to be applied to this row.
  * @param onSetAspectRatio Callback invoked when a new aspect ratio is selected.
- * @param aspectRatioUiState The current [AspectRatioUiState] representing available and selected aspect ratios.
+ * @param aspectRatioUiState The current [AspectRatioUiState] representing available and selected
+ * aspect ratios.
  */
 @Composable
 internal fun AspectRatioRow(
@@ -315,7 +331,8 @@ internal fun AspectRatioRow(
  *
  * @param modifier The [Modifier] to be applied to this row.
  * @param onSetFlashMode Callback invoked when a new flash mode is selected.
- * @param flashModeUiState The current [FlashModeUiState] representing available and selected flash modes.
+ * @param flashModeUiState The current [FlashModeUiState] representing available and selected flash
+ * modes.
  */
 @Composable
 internal fun FlashRow(
@@ -479,7 +496,8 @@ private fun QuickSettingToggleSelectorButton(
  * @param accessibilityText The content description for accessibility purposes.
  * @param painter The [Painter] for the icon displayed inside the button.
  * @param modifier The [Modifier] to be applied to this composable.
- * @param isSelected A boolean indicating whether the button is currently in a highlighted (selected) state.
+ * @param isSelected A boolean indicating whether the button is currently in a highlighted
+ * (selected) state.
  * @param enabled A boolean indicating whether the button is interactive.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
