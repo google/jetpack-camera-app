@@ -1151,8 +1151,10 @@ class CameraXCameraSystem(
             this
         } else {
             // The sub-mode that replaced these values has ended. Restore them before evaluating the
-            // next provider, then check that the restored values are supported by the current lens.
-            restoreCaptureSubModeOverrides()
+            // next provider. They are checked against the current lens below, after the next
+            // provider's policy (if any) applies, so that a value the next provider replaces again
+            // can't reset settings that depend on it.
+            withRestoredCaptureSubModeOverrides()
         }
 
         val explicitProvider = if (baseSettings.captureSubModeId != CaptureSubModeId.DEFAULT) {
@@ -1176,29 +1178,26 @@ class CameraXCameraSystem(
         val resolvedSubModeId = resolvedProvider?.descriptor?.id ?: CaptureSubModeId.DEFAULT
 
         if (resolvedProvider == null) {
-            return settings.copy(
+            val defaultSettings = settings.copy(
                 captureSubModeId = CaptureSubModeId.DEFAULT,
                 activeCaptureSubModeId = CaptureSubModeId.DEFAULT
-            ).tryApplyImageFormatConstraints()
+            )
+            return if (captureSubModeOverrides != null) {
+                defaultSettings.tryApplyCaptureSubModeChangeConstraints(previous = this)
+            } else {
+                defaultSettings.tryApplyImageFormatConstraints()
+            }
         }
 
         // Enforce the sub-mode's policy within the host application's policy.
         val policy = cameraFeaturePolicy.intersect(resolvedProvider.featurePolicy)
         val enforced = policy.enforceRestrictions(settings)
             .copy(activeCaptureSubModeId = resolvedSubModeId)
-            .tryApplyDynamicRangeConstraints()
-            .tryApplyImageFormatConstraints()
-            .tryApplyFlashModeConstraints()
-            .tryApplyVideoQualityConstraints()
-            // Only re-check frame rate and stabilization if the policy restricts them.
-            .let { if (policy.targetFrameRate != null) it.tryApplyFrameRateConstraints() else it }
-            .let {
-                if (policy.targetFrameRate != null || policy.stabilizationMode != null) {
-                    it.tryApplyStabilizationConstraints()
-                } else {
-                    it
-                }
-            }
+            .tryApplyCaptureSubModeChangeConstraints(
+                previous = this,
+                checkFrameRate = policy.targetFrameRate != null,
+                checkStabilization = policy.stabilizationMode != null
+            )
 
         return enforced.copy(
             // Keep the record from when a continuing sub-mode became active.
@@ -1208,27 +1207,59 @@ class CameraXCameraSystem(
     }
 
     /**
-     * Restores the values recorded in [CameraAppSettings.captureSubModeOverrides] and clears the
-     * record. Returns these settings unchanged if there is no record.
+     * Restores the values recorded in [CameraAppSettings.captureSubModeOverrides], clears the
+     * record, and checks the restored values against the current lens. Returns these settings
+     * unchanged if there is no record.
      */
-    private fun CameraAppSettings.restoreCaptureSubModeOverrides(): CameraAppSettings {
+    private fun CameraAppSettings.restoreCaptureSubModeOverrides(): CameraAppSettings =
+        if (captureSubModeOverrides == null) {
+            this
+        } else {
+            withRestoredCaptureSubModeOverrides()
+                .tryApplyCaptureSubModeChangeConstraints(previous = this)
+        }
+
+    /**
+     * Restores the values recorded in [CameraAppSettings.captureSubModeOverrides] and clears the
+     * record, without checking the restored values against the current lens. Returns these settings
+     * unchanged if there is no record.
+     */
+    private fun CameraAppSettings.withRestoredCaptureSubModeOverrides(): CameraAppSettings {
         val overrides = captureSubModeOverrides ?: return this
-        val restored = overrides.restore(
+        return overrides.restore(
             copy(
                 activeCaptureSubModeId = CaptureSubModeId.DEFAULT,
                 captureSubModeOverrides = null
             )
         )
+    }
+
+    /**
+     * Checks the settings that a capture sub-mode's policy or the restoration of the values it
+     * replaced may have changed against the current lens.
+     *
+     * The flash mode is checked first because the dynamic range and image format constraints
+     * depend on it. The frame rate and stabilization mode are only checked if [checkFrameRate] or
+     * [checkStabilization] is set, or if they differ from [previous].
+     */
+    private fun CameraAppSettings.tryApplyCaptureSubModeChangeConstraints(
+        previous: CameraAppSettings,
+        checkFrameRate: Boolean = false,
+        checkStabilization: Boolean = false
+    ): CameraAppSettings {
+        val checked = tryApplyFlashModeConstraints()
             .tryApplyDynamicRangeConstraints()
             .tryApplyImageFormatConstraints()
-            .tryApplyFlashModeConstraints()
             .tryApplyVideoQualityConstraints()
-        // Only re-check frame rate and stabilization if they were restored.
-        val frameRateRestored = restored.targetFrameRate != targetFrameRate
-        return restored
-            .let { if (frameRateRestored) it.tryApplyFrameRateConstraints() else it }
+        val frameRateChanged =
+            checkFrameRate || checked.targetFrameRate != previous.targetFrameRate
+        return checked
+            .let { if (frameRateChanged) it.tryApplyFrameRateConstraints() else it }
             .let {
-                if (frameRateRestored || it.stabilizationMode != stabilizationMode) {
+                if (frameRateChanged ||
+                    checkStabilization ||
+                    it.stabilizationMode != previous.stabilizationMode
+                ) {
                     it.tryApplyStabilizationConstraints()
                 } else {
                     it
@@ -1239,12 +1270,28 @@ class CameraXCameraSystem(
     /**
      * Applies [change] to these settings and, if a capture sub-mode is active, to the values
      * restored when it ends.
+     *
+     * While a capture sub-mode is active, a change that its policy doesn't permit is only applied
+     * to the restored values, so that it can't change dependent settings (for example, a blocked
+     * [FlashMode.LOW_LIGHT_BOOST] resetting the dynamic range to [DynamicRange.SDR]).
      */
     private fun CameraAppSettings.withUserChange(
         change: CameraAppSettings.() -> CameraAppSettings
-    ): CameraAppSettings = change().copy(
-        captureSubModeOverrides = captureSubModeOverrides?.withRequestedChange { it.change() }
-    )
+    ): CameraAppSettings {
+        val requested = change()
+        val permitted = activeCaptureSubModePolicy()?.enforceRestrictions(requested) ?: requested
+        return permitted.copy(
+            captureSubModeOverrides = captureSubModeOverrides?.withRequestedChange { it.change() }
+        )
+    }
+
+    /**
+     * Returns the active capture sub-mode's policy within the host application's policy, or null
+     * if no capture sub-mode is active.
+     */
+    private fun CameraAppSettings.activeCaptureSubModePolicy(): CameraFeaturePolicy? =
+        registeredSubModes[activeCaptureSubModeId]?.provider?.featurePolicy
+            ?.let(cameraFeaturePolicy::intersect)
 
     private fun CameraAppSettings.defaultCaptureSubModeIdForLens(): CaptureSubModeId =
         systemConstraints.forCurrentLens(this)
