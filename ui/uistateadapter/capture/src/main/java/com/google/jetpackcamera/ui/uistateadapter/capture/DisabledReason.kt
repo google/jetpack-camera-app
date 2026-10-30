@@ -40,9 +40,6 @@ enum class DisabledReason(
     IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED(
         R.string.toast_image_capture_external_unsupported
     ),
-    IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA(
-        R.string.toast_image_capture_unsupported_concurrent_camera
-    ),
     HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED(
         R.string.toast_hdr_simultaneous_image_video_unsupported
     ),

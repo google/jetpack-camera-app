@@ -98,7 +98,8 @@ internal const val CX_SINGLE_CAMERA_PREVIEW_MIRROR_MODE = CXMirrorMode.MIRROR_MO
  * each camera is mirrored in the composition instead (see [concurrentCompositionScaleX]) and the
  * preview use case must not mirror the frame again. [MirrorMode.OFF] keeps the CameraX default.
  */
-internal fun MirrorMode.toCXConcurrentPreviewMirrorMode(): Int = when (this) {
+@InternalCameraApi
+fun MirrorMode.toCXConcurrentPreviewMirrorMode(): Int = when (this) {
     MirrorMode.OFF -> CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY
     MirrorMode.ON_FRONT_ONLY -> CXMirrorMode.MIRROR_MODE_OFF
 }
@@ -109,7 +110,8 @@ internal fun MirrorMode.toCXConcurrentPreviewMirrorMode(): Int = when (this) {
  * A negative scale mirrors that camera's frame within the composited output, which applies to
  * both the preview and the recording.
  */
-internal fun MirrorMode.concurrentCompositionScaleX(scale: Float, lensFacing: LensFacing): Float =
+@InternalCameraApi
+fun MirrorMode.concurrentCompositionScaleX(scale: Float, lensFacing: LensFacing): Float =
     if (appliesTo(lensFacing)) -scale else scale
 
 fun LensFacing.toCameraSelector(): CameraSelector = when (this) {

@@ -67,8 +67,7 @@ class CameraXCameraSystemRepositoryTest {
             )
             delegate.setSystemConstraints(
                 CameraSystemConstraints(
-                    availableLenses = listOf(),
-                    concurrentCamerasSupported = false
+                    availableLenses = listOf()
                 )
             )
             initializedSettings = cameraAppSettings

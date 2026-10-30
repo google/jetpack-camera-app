@@ -17,7 +17,6 @@ package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -114,11 +113,6 @@ interface SettingsDataSource {
      * Updates whether audio recording is enabled by default during video capture.
      */
     suspend fun updateAudioEnabled(isAudioEnabled: Boolean)
-
-    /**
-     * Updates the default concurrent camera mode.
-     */
-    suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
 
     /**
      * Updates whether location tagging is enabled for captured photos and videos.

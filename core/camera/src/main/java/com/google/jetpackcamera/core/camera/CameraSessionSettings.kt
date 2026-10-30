@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.core.camera
 
-import androidx.camera.core.CameraInfo
 import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
 import com.google.jetpackcamera.model.AspectRatio
@@ -37,7 +36,8 @@ import com.google.jetpackcamera.model.VideoQuality
  * Any change in these settings will require calling [ProcessCameraProvider.runWith] with
  * updates [CameraSelector] and/or [UseCaseGroup]
  */
-internal sealed interface PerpetualSessionSettings {
+@InternalCameraApi
+sealed interface PerpetualSessionSettings {
     val aspectRatio: AspectRatio
     val captureMode: CaptureMode
 
@@ -57,27 +57,13 @@ internal sealed interface PerpetualSessionSettings {
 
     /**
      * A session whose use cases are created by a capture sub-mode provider.
-     *
-     * The mirror mode is not applied to custom sessions, since JCA does not create their use cases.
      */
     data class CustomSession(
         val subModeKey: CaptureSubModeFeatureKey,
         override val aspectRatio: AspectRatio,
-        override val captureMode: CaptureMode
+        override val captureMode: CaptureMode,
+        val mirrorMode: MirrorMode = MirrorMode.OFF
     ) : PerpetualSessionSettings
-
-    /**
-     * @property captureMode is always [com.google.jetpackcamera.model.CaptureMode.VIDEO_ONLY] in Concurrent Camera mode.
-     * Concurrent Camera currently only supports video capture
-     */
-    data class ConcurrentCamera(
-        val primaryCameraInfo: CameraInfo,
-        val secondaryCameraInfo: CameraInfo,
-        override val aspectRatio: AspectRatio,
-        val mirrorMode: MirrorMode
-    ) : PerpetualSessionSettings {
-        override val captureMode: CaptureMode = CaptureMode.VIDEO_ONLY
-    }
 }
 
 /**
@@ -87,7 +73,8 @@ internal sealed interface PerpetualSessionSettings {
  * setter methods or to [androidx.camera.core.CameraControl].
  * The use cases typically will not need to be re-bound.
  */
-internal data class TransientSessionSettings(
+@InternalCameraApi
+data class TransientSessionSettings(
     val isAudioEnabled: Boolean,
     val deviceRotation: DeviceRotation,
     val flashMode: FlashMode,
