@@ -125,9 +125,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraSession"
+
+// Ranges are matched against the short edge of the video resolution (orientation-invariant).
+// FHD intentionally extends up to 2159 so intermediate resolutions like 1440p (QHD) map to FHD
+// rather than falling into a gap and resolving to UNSPECIFIED.
 private val QUALITY_RANGE_MAP = mapOf(
     UHD to Range.create(2160, 4319),
-    FHD to Range.create(1080, 1439),
+    FHD to Range.create(1080, 2159),
     HD to Range.create(720, 1079),
     SD to Range.create(241, 719)
 )
@@ -326,27 +330,36 @@ internal suspend fun runSingleCameraSession(
                             }
                         }
 
+                        applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
+
                         if (videoCaptureUseCase != null) {
+                            val resolutionInfo = videoCaptureUseCase.resolutionInfo
                             val videoQuality = getVideoQualityFromResolution(
-                                videoCaptureUseCase.resolutionInfo?.resolution
+                                resolutionInfo?.resolution
                             )
-                            if (videoQuality != sessionSettings.videoQuality) {
-                                Log.e(
+                            if (resolutionInfo != null &&
+                                sessionSettings.videoQuality != VideoQuality.UNSPECIFIED &&
+                                videoQuality != sessionSettings.videoQuality
+                            ) {
+                                Log.w(
                                     TAG,
-                                    "Failed to select video quality: " +
-                                        "$sessionSettings.videoQuality. Fallback: $videoQuality"
+                                    "Requested video quality ${sessionSettings.videoQuality} " +
+                                        "unavailable. Fallback: $videoQuality"
                                 )
                             }
+                            val rotationDegrees = resolutionInfo?.rotationDegrees ?: 0
                             launch {
                                 currentCameraState.update { old ->
                                     old.copy(
                                         videoQualityInfo = VideoQualityInfo(
                                             videoQuality,
                                             getWidthFromCropRect(
-                                                videoCaptureUseCase.resolutionInfo?.cropRect
+                                                resolutionInfo?.cropRect,
+                                                rotationDegrees
                                             ),
                                             getHeightFromCropRect(
-                                                videoCaptureUseCase.resolutionInfo?.cropRect
+                                                resolutionInfo?.cropRect,
+                                                rotationDegrees
                                             )
                                         )
                                     )
@@ -451,7 +464,6 @@ internal suspend fun runSingleCameraSession(
                                 }
                         }
 
-                        applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
                         processTransientSettingEvents(
                             camera,
                             cameraConstraints,
@@ -578,6 +590,21 @@ internal suspend fun processTransientSettingEvents(
                     "${newTransientSettings.deviceRotation}"
             )
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
+            if (sessionSettings != null) {
+                useCaseGroup.getVideoCapture()?.let { videoCapture ->
+                    val resolutionInfo = videoCapture.resolutionInfo
+                    val rotationDegrees = resolutionInfo?.rotationDegrees ?: 0
+                    currentCameraState.update { old ->
+                        old.copy(
+                            videoQualityInfo = VideoQualityInfo(
+                                getVideoQualityFromResolution(resolutionInfo?.resolution),
+                                getWidthFromCropRect(resolutionInfo?.cropRect, rotationDegrees),
+                                getHeightFromCropRect(resolutionInfo?.cropRect, rotationDegrees)
+                            )
+                        )
+                    }
+                }
+            }
         }
 
         // setzoomratio when the primary zoom value changes.
@@ -780,25 +807,46 @@ internal fun createUseCaseGroup(
     }.build()
 }
 
-private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
+/**
+ * Maps a given resolution [Size] to its corresponding [VideoQuality] based on the short edge.
+ *
+ * This classification is orientation-invariant, returning the same quality for both landscape and
+ * portrait orientations of the same resolution.
+ */
+internal fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
     resolution?.let { res ->
+        val shortEdge = minOf(res.width, res.height)
         QUALITY_RANGE_MAP.firstNotNullOfOrNull {
-            if (it.value.contains(res.height)) it.key else null
+            if (it.value.contains(shortEdge)) it.key else null
         }
     } ?: VideoQuality.UNSPECIFIED
 
-private fun getWidthFromCropRect(cropRect: Rect?): Int {
+/**
+ * Returns the upright width of [cropRect] after applying [rotationDegrees].
+ */
+internal fun getWidthFromCropRect(cropRect: Rect?, rotationDegrees: Int): Int {
     if (cropRect == null) {
         return 0
     }
-    return abs(cropRect.top - cropRect.bottom)
+    return if (rotationDegrees % 180 != 0) {
+        abs(cropRect.height())
+    } else {
+        abs(cropRect.width())
+    }
 }
 
-private fun getHeightFromCropRect(cropRect: Rect?): Int {
+/**
+ * Returns the upright height of [cropRect] after applying [rotationDegrees].
+ */
+internal fun getHeightFromCropRect(cropRect: Rect?, rotationDegrees: Int): Int {
     if (cropRect == null) {
         return 0
     }
-    return abs(cropRect.left - cropRect.right)
+    return if (rotationDegrees % 180 != 0) {
+        abs(cropRect.width())
+    } else {
+        abs(cropRect.height())
+    }
 }
 
 private fun createImageUseCase(
@@ -836,7 +884,8 @@ internal fun createVideoUseCase(
         .setExecutor(backgroundDispatcher.asExecutor())
         .apply {
             videoQuality.toQuality()?.let { quality ->
-                // No fallback strategy is used. The app will crash if the quality is unsupported
+                // Allow falling back to a lower or higher supported quality rather than crashing
+                // if the requested quality cannot be satisfied by the active stream combination.
                 setQualitySelector(
                     QualitySelector.from(
                         quality,
