@@ -728,6 +728,38 @@ internal class CameraAppSettingsViewModelTest {
         }
 
     /**
+     * Verifies that the effect setting is disabled if the sub-mode permits a single supported
+     * effect but not [NONE_EFFECT_ID], since that leaves only one option to choose.
+     */
+    @Test
+    fun cameraEffect_whenCaptureSubModePermitsOneEffectButNotNone_isDisabled() =
+        runTest(StandardTestDispatcher()) {
+            val customViewModel = createViewModelWithSubModePolicy(
+                policy = CameraFeaturePolicy(
+                    cameraEffect = SettingConfig(
+                        defaultValue = TEST_EFFECT_ID,
+                        visibility = OptionVisibility.Only(
+                            TEST_EFFECT_ID,
+                            CameraEffectId("unsupported_effect")
+                        )
+                    )
+                ),
+                effects = setOf(TEST_EFFECT_ID)
+            )
+            advanceUntilIdle()
+
+            assertThat(
+                assertIsEnabled(
+                    customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+                ).cameraEffectUiState
+            ).isEqualTo(
+                CameraEffectUiState.Disabled(
+                    subModeRationale(R.string.stream_config_rationale_prefix)
+                )
+            )
+        }
+
+    /**
      * Verifies that a setting the active sub-mode hides shows the sub-mode as the reason, even if
      * the setting is also disabled for another reason, since the sub-mode is what the user can
      * change.

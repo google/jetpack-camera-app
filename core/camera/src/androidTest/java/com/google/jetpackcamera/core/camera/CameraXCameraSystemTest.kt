@@ -1191,6 +1191,151 @@ class CameraXCameraSystemTest {
         }
 
     @Test
+    fun setCameraEffect_blockedByCaptureSubMode_keepsUltraHdr(): Unit = runBlocking {
+        // Arrange. An effect applied to image capture, which can't be combined with Ultra HDR,
+        // and a sub-mode that turns the effect off.
+        val effectKey = object : CameraEffectFeatureKey {
+            override val id = CameraEffectId("image_capture_effect")
+        }
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(captureMode = CaptureMode.IMAGE_ONLY),
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+                )
+            ),
+            cameraEffectProviders = mapOf(
+                effectKey to Provider<CameraEffectProvider> { FakeImageCaptureEffectProvider }
+            )
+        )
+        cameraSystem.assumeUltraHdrSupportedOnCurrentLens()
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+        cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+        // Act. The user picks the effect, which the policy doesn't allow.
+        cameraSystem.setCameraEffect(effectKey.id)
+
+        // Assert. The blocked effect doesn't turn off Ultra HDR.
+        var settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+        // Act. The user turns the effect back off and leaves the sub-mode.
+        cameraSystem.setCameraEffect(NONE_EFFECT_ID)
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. Ultra HDR is still on.
+        settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
+
+    @Test
+    fun setCaptureSubMode_directlyToAnotherSubMode_keepsValuesBothSubModesPermit(): Unit =
+        runBlocking {
+            // Arrange. An effect applied to image capture, which can't be combined with Ultra HDR,
+            // and two sub-modes that both turn the effect off.
+            val effectKey = object : CameraEffectFeatureKey {
+                override val id = CameraEffectId("image_capture_effect")
+            }
+            val secondaryKey = object : CaptureSubModeFeatureKey {
+                override val id = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+            }
+            val noEffectPolicy = CameraFeaturePolicy(
+                cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+            )
+            val cameraSystem = createAndInitCameraXCameraSystem(
+                appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    captureMode = CaptureMode.IMAGE_ONLY
+                ),
+                extraCaptureSubModeProviders = mapOf(
+                    FakeCaptureSubModeFeatureKey to Provider {
+                        FakeCaptureSubModeProvider(noEffectPolicy)
+                    },
+                    secondaryKey to Provider {
+                        FakeCaptureSubModeProvider(
+                            featurePolicy = noEffectPolicy,
+                            subModeId = SECOND_FAKE_CAPTURE_SUB_MODE_ID
+                        )
+                    }
+                ),
+                cameraEffectProviders = mapOf(
+                    effectKey to Provider<CameraEffectProvider> { FakeImageCaptureEffectProvider }
+                )
+            )
+            cameraSystem.assumeUltraHdrSupportedOnCurrentLens()
+            cameraSystem.setCameraEffect(effectKey.id)
+            cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+            cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+            // Act. Switch directly to the other sub-mode, which also turns the effect off.
+            cameraSystem.setCaptureSubMode(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+
+            // Assert. Restoring the effect between the sub-modes doesn't turn off Ultra HDR.
+            var settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.activeCaptureSubModeId).isEqualTo(SECOND_FAKE_CAPTURE_SUB_MODE_ID)
+            assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+            assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+            // Act. Leave the sub-mode.
+            cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+            // Assert. The effect is restored, so Ultra HDR is turned off.
+            settings = cameraSystem.getCurrentSettings().value!!
+            assertThat(settings.selectedCameraEffect).isEqualTo(effectKey.id)
+            assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
+        }
+
+    @Test
+    fun setCaptureSubMode_policyFlashModeUnsupported_keepsUltraHdr(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy defaults the flash mode to Low Light Boost, which the
+        // lens doesn't support.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(captureMode = CaptureMode.IMAGE_ONLY),
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    flashMode = SettingConfig(
+                        FlashMode.LOW_LIGHT_BOOST,
+                        OptionVisibility.Only(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST)
+                    )
+                )
+            )
+        )
+        val lensFacing = cameraSystem.getCurrentSettings().value!!.cameraLensFacing
+        val supportedFlashModes = cameraSystem.getSystemConstraints().value!!
+            .perLensConstraints[lensFacing]!!.supportedFlashModes
+        assume().withMessage("Flash mode ON not supported on $lensFacing, skip the test.")
+            .that(supportedFlashModes).contains(FlashMode.ON)
+        assume().withMessage("Low Light Boost supported on $lensFacing, skip the test.")
+            .that(supportedFlashModes).doesNotContain(FlashMode.LOW_LIGHT_BOOST)
+        cameraSystem.assumeUltraHdrSupportedOnCurrentLens()
+        cameraSystem.setFlashMode(FlashMode.ON)
+        cameraSystem.setImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
+
+        // Act. Enter the sub-mode -> the policy replaces the flash mode with Low Light Boost.
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Assert. The unsupported flash mode is turned off before it can turn off Ultra HDR.
+        val settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.flashMode).isEqualTo(FlashMode.OFF)
+        assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+    }
+
+    /** Skips the test if the current lens doesn't support Ultra HDR without an image effect. */
+    private fun CameraXCameraSystem.assumeUltraHdrSupportedOnCurrentLens() {
+        val lensFacing = getCurrentSettings().value!!.cameraLensFacing
+        val lensConstraints = getSystemConstraints().value!!.perLensConstraints[lensFacing]!!
+        assume()
+            .withMessage("Ultra HDR not supported on $lensFacing, skip the test.")
+            .that(
+                lensConstraints.supportedImageFormatsMap[false]
+                    ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) == true
+            )
+            .isTrue()
+    }
+
+    @Test
     fun setTargetFrameRate_inCaptureSubMode_keepsPolicyValueAndRestoresChoiceOnExit(): Unit =
         runBlocking {
             // Arrange. The sub-mode's policy locks the target frame rate.
