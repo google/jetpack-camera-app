@@ -513,7 +513,9 @@ private fun AdaptivePortraitCaptureLayout(
                         modifier = Modifier.layoutId(CaptureSlotId.ZoomBar),
                         contentAlignment = Alignment.Center
                     ) {
-                        zoomControls(Modifier)
+                        OverlapAwareStyleProvider {
+                            zoomControls(Modifier)
+                        }
                     }
 
                     Row(
@@ -777,7 +779,9 @@ private fun VerticalMaterialControls(
                 elapsedTimeDisplay(Modifier)
 
                 // zoom controls row
-                zoomControls(Modifier)
+                OverlapAwareStyleProvider {
+                    zoomControls(Modifier)
+                }
 
                 Spacer(modifier = Modifier.height(zoomGap))
 
