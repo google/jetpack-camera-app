@@ -27,6 +27,10 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_9_16_BUTTON
+import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
@@ -56,9 +60,9 @@ class QuickSettingsScreenTest {
         aspectRatioUiState = AspectRatioUiState.Available(
             selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
             availableAspectRatios = listOf(
-                SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
                 SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
-                SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
+                SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE),
+                SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN)
             )
         ),
         captureModeUiState = CaptureModeUiState.Available(
@@ -174,5 +178,52 @@ class QuickSettingsScreenTest {
         }
 
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON).assertDoesNotExist()
+    }
+
+    @Test
+    fun quickSettingsScaffoldContent_aspectRatioSelection_callsController() {
+        val selectedRatios = mutableListOf<AspectRatio>()
+        fakeQuickSettingsController.setAspectRatioAction = { selectedRatios.add(it) }
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsScaffoldContent(
+                    quickSettingsUiState = sampleAvailableUiState,
+                    onNavigateToSettings = {},
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_3_4_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_9_16_BUTTON).performClick()
+
+        assertThat(selectedRatios).containsExactly(
+            AspectRatio.THREE_FOUR,
+            AspectRatio.ONE_ONE,
+            AspectRatio.NINE_SIXTEEN
+        ).inOrder()
+    }
+
+    @Test
+    fun cameraAspectRatio_returnsDistinctDrawableAndDescriptionForEachRatio() {
+        assertThat(CameraAspectRatio.THREE_FOUR.getDrawableResId())
+            .isEqualTo(R.drawable.ic_crop_portrait)
+        assertThat(CameraAspectRatio.THREE_FOUR.getDescriptionResId())
+            .isEqualTo(R.string.quick_settings_aspect_ratio_3_4_description)
+
+        assertThat(CameraAspectRatio.ONE_ONE.getDrawableResId())
+            .isEqualTo(R.drawable.ic_crop_square)
+        assertThat(CameraAspectRatio.ONE_ONE.getDescriptionResId())
+            .isEqualTo(R.string.quick_settings_aspect_ratio_1_1_description)
+
+        assertThat(CameraAspectRatio.NINE_SIXTEEN.getDrawableResId())
+            .isEqualTo(R.drawable.ic_crop_9_16)
+        assertThat(CameraAspectRatio.NINE_SIXTEEN.getDescriptionResId())
+            .isEqualTo(R.string.quick_settings_aspect_ratio_9_16_description)
+
+        val drawables = CameraAspectRatio.entries.map { it.getDrawableResId() }
+        assertThat(drawables).containsNoDuplicates()
     }
 }
