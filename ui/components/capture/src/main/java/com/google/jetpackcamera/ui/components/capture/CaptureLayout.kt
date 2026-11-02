@@ -182,12 +182,15 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  *   and display cutout areas
  * @param snackBar the snack bar composable for showing messages
  * @param topStartContent optional composable content placed at the top-start of the capture
- * screen, at a fixed position directly below the top status/indicator bar
+ * screen, at a fixed position directly below the top status/indicator bar. Because the viewfinder
+ * can move below this content, the content receives a [PreviewOverlaySlotScope] that reports
+ * whether it is currently over the viewfinder.
  * @param viewfinderTopEndContent optional composable content anchored to the top-end corner of the
  * viewfinder. While [topStartContent] is inside the viewfinder, this content shares its vertical
  * origin directly below the top bar, so both top slots stay aligned. When the viewfinder shifts
  * below [topStartContent], this content moves down with the top edge of the viewfinder while
- * [topStartContent] stays in place.
+ * [topStartContent] stays in place. Like [topStartContent], this content receives a
+ * [PreviewOverlaySlotScope].
  * @param topBarTrailingContent optional composable content aligned to the end of the top
  * status/indicator bar
  * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
@@ -225,8 +228,8 @@ fun PreviewLayout(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
-    topStartContent: @Composable (Modifier) -> Unit = {},
-    viewfinderTopEndContent: @Composable (Modifier) -> Unit = {},
+    topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     topBarTrailingContent: @Composable (Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
@@ -327,8 +330,12 @@ fun PreviewLayout(
                             }
                             Box {
                                 viewfinder(Modifier)
-                                topStartContent(Modifier.align(Alignment.TopStart))
-                                viewfinderTopEndContent(Modifier.align(Alignment.TopEnd))
+                                OverlapAwareStyleProvider(Modifier.align(Alignment.TopStart)) {
+                                    topStartContent(Modifier)
+                                }
+                                OverlapAwareStyleProvider(Modifier.align(Alignment.TopEnd)) {
+                                    viewfinderTopEndContent(Modifier)
+                                }
                             }
                         }
 
@@ -407,8 +414,8 @@ private fun AdaptivePortraitCaptureLayout(
     windowWidth: Dp,
     windowHeight: Dp,
     viewfinder: @Composable (Modifier) -> Unit,
-    topStartContent: @Composable (Modifier) -> Unit,
-    viewfinderTopEndContent: @Composable (Modifier) -> Unit,
+    topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     onRequiresImmersiveChange: (Boolean) -> Unit,
     indicatorRow: @Composable (Modifier) -> Unit,
     topBarTrailingContent: @Composable (Modifier) -> Unit,
@@ -478,11 +485,15 @@ private fun AdaptivePortraitCaptureLayout(
                 }
 
                 Box(modifier = Modifier.layoutId(CaptureSlotId.TopStartContent)) {
-                    topStartContent(Modifier)
+                    OverlapAwareStyleProvider {
+                        topStartContent(Modifier)
+                    }
                 }
 
                 Box(modifier = Modifier.layoutId(CaptureSlotId.ViewfinderTopEndContent)) {
-                    viewfinderTopEndContent(Modifier)
+                    OverlapAwareStyleProvider {
+                        viewfinderTopEndContent(Modifier)
+                    }
                 }
 
                 Box(

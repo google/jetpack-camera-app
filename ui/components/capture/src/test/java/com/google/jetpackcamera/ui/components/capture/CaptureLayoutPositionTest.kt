@@ -29,7 +29,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -385,6 +387,79 @@ class CaptureLayoutPositionTest {
         assertThat(topOf(VIEWFINDER_TOP_END_TAG)).isWithin(TOLERANCE).of(vfTop11)
         assertThat(topOf(TOP_START_TAG)).isWithin(TOLERANCE).of(TOP_BAR_HEIGHT)
         assertThat(boundsOf(VIEWFINDER_TOP_END_TAG).right.value).isWithin(TOLERANCE).of(412f)
+    }
+
+    /**
+     * Both top slots report through [PreviewOverlaySlotScope] whether they are over the viewfinder.
+     * A 3:4 viewfinder that is flush with the top bar is under both slots. A 1:1 viewfinder shifts
+     * below `topStartContent`, which then reports that it is no longer over the viewfinder, while
+     * `viewfinderTopEndContent` moves down with the viewfinder and stays over it.
+     */
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Config(qualifiers = "w412dp-h915dp")
+    @Test
+    fun topSlots_reportWhetherTheyAreOverViewfinder() {
+        var aspectRatio by mutableStateOf(3f / 4f)
+        var topStartOverViewfinder: Boolean? = null
+        var topEndOverViewfinder: Boolean? = null
+
+        composeTestRule.setContent {
+            PreviewLayout(
+                viewfinder = { vfModifier ->
+                    // Reports the viewfinder bounds as the overlap target, as PreviewDisplay does.
+                    val overlapTargetBounds = LocalOverlapTargetBounds.current
+                    Box(
+                        vfModifier
+                            .testTag(VIEWFINDER_TAG)
+                            .fillMaxWidth()
+                            .height(412.dp / aspectRatio)
+                            .onGloballyPositioned { coordinates ->
+                                overlapTargetBounds.value = coordinates.boundsInRoot()
+                            }
+                    )
+                },
+                topStartContent = { topStartModifier ->
+                    topStartOverViewfinder = isOverViewfinder
+                    Box(
+                        topStartModifier
+                            .testTag(TOP_START_TAG)
+                            .size(48.dp)
+                    )
+                },
+                viewfinderTopEndContent = { topEndModifier ->
+                    topEndOverViewfinder = isOverViewfinder
+                    Box(
+                        topEndModifier
+                            .testTag(VIEWFINDER_TOP_END_TAG)
+                            .size(width = 120.dp, height = 56.dp)
+                    )
+                },
+                captureButton = {},
+                imageWell = {},
+                flipCameraButton = {},
+                zoomLevelDisplay = {},
+                elapsedTimeDisplay = {},
+                quickSettingsButton = {},
+                indicatorRow = {},
+                captureModeToggle = {},
+                quickSettingsOverlay = {},
+                debugOverlay = {},
+                debugVisibilityWrapper = { it() },
+                screenFlashOverlay = {},
+                snackBar = { _, _ -> }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(topStartOverViewfinder).isTrue()
+        assertThat(topEndOverViewfinder).isTrue()
+
+        aspectRatio = 1f
+        composeTestRule.waitForIdle()
+
+        assertThat(topOf(VIEWFINDER_TAG)).isGreaterThan(TOP_BAR_HEIGHT + TOP_START_HEIGHT)
+        assertThat(topStartOverViewfinder).isFalse()
+        assertThat(topEndOverViewfinder).isTrue()
     }
 
     /**
