@@ -16,8 +16,10 @@
 package com.google.jetpackcamera.core.camera
 
 import android.graphics.Rect
+import android.util.Rational
 import android.util.Size
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.VideoQuality
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -25,6 +27,122 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class CameraSessionTest {
+
+    @Test
+    fun getViewPortAspectRatio_landscapeSensorRotated90Or270_returnsPortraitAspectRatio() {
+        val landscapeSensorRect = Rect(0, 0, 4000, 3000)
+
+        for (rotationDegrees in listOf(90, 270)) {
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.THREE_FOUR
+                )
+            ).isEqualTo(Rational(3, 4))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.NINE_SIXTEEN
+                )
+            ).isEqualTo(Rational(9, 16))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.ONE_ONE
+                )
+            ).isEqualTo(Rational(1, 1))
+        }
+    }
+
+    @Test
+    fun getViewPortAspectRatio_landscapeSensorRotated0Or180_returnsLandscapeAspectRatio() {
+        val landscapeSensorRect = Rect(0, 0, 4000, 3000)
+
+        for (rotationDegrees in listOf(0, 180)) {
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.THREE_FOUR
+                )
+            ).isEqualTo(Rational(4, 3))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.NINE_SIXTEEN
+                )
+            ).isEqualTo(Rational(16, 9))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.ONE_ONE
+                )
+            ).isEqualTo(Rational(1, 1))
+        }
+    }
+
+    @Test
+    fun getViewPortAspectRatio_portraitSensorRotated0Or180_returnsPortraitAspectRatio() {
+        val portraitSensorRect = Rect(0, 0, 3000, 4000)
+
+        for (rotationDegrees in listOf(0, 180)) {
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.THREE_FOUR
+                )
+            ).isEqualTo(Rational(3, 4))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.NINE_SIXTEEN
+                )
+            ).isEqualTo(Rational(9, 16))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.ONE_ONE
+                )
+            ).isEqualTo(Rational(1, 1))
+        }
+    }
+
+    @Test
+    fun getViewPortAspectRatio_portraitSensorRotated90Or270_returnsLandscapeAspectRatio() {
+        val portraitSensorRect = Rect(0, 0, 3000, 4000)
+
+        for (rotationDegrees in listOf(90, 270)) {
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.THREE_FOUR
+                )
+            ).isEqualTo(Rational(4, 3))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.NINE_SIXTEEN
+                )
+            ).isEqualTo(Rational(16, 9))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.ONE_ONE
+                )
+            ).isEqualTo(Rational(1, 1))
+        }
+    }
 
     @Test
     fun getVideoQualityFromResolution_landscapeResolutions_returnsExpectedQuality() {
