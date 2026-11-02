@@ -103,7 +103,7 @@ class CaptureScreenComponentsTest {
             )
         }
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
-            .assertContentDescriptionEquals("Recording time: 1 minutes and 5 seconds")
+            .assertContentDescriptionEquals("Recording time: 1 minute and 5 seconds")
     }
 
     @Test
@@ -133,7 +133,7 @@ class CaptureScreenComponentsTest {
             )
         }
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
-            .assertContentDescriptionEquals("Recording paused: 1 minutes and 5 seconds")
+            .assertContentDescriptionEquals("Recording paused: 1 minute and 5 seconds")
     }
 
     @Test

@@ -17,6 +17,7 @@ package com.google.jetpackcamera.core.camera
 
 import android.net.Uri
 import com.google.jetpackcamera.model.CameraError
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
 import com.google.jetpackcamera.model.StabilizationMode
@@ -35,6 +36,7 @@ import com.google.jetpackcamera.model.VideoQuality
  * @param stabilizationMode The current video stabilization mode. This value is updated from the
  * camera's [android.hardware.camera2.TotalCaptureResult].
  * @param lowLightBoostState The current state of the low light boost feature.
+ * @param captureSubModeState The current runtime state of the active capture sub-mode.
  * @param debugInfo Information for debugging purposes.
  * @param videoQualityInfo Information about the current video quality.
  * @param focusState The current focus state of the camera.
@@ -49,11 +51,31 @@ data class CameraState(
     val isCameraRunning: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val lowLightBoostState: LowLightBoostState = LowLightBoostState.Inactive,
+    val captureSubModeState: CaptureSubModeState = CaptureSubModeState.Idle,
     val debugInfo: DebugInfo = DebugInfo(null, null),
     val videoQualityInfo: VideoQualityInfo = VideoQualityInfo(VideoQuality.UNSPECIFIED, 0, 0),
     val focusState: FocusState = FocusState.Unspecified,
     val cameraError: CameraError? = null
 )
+
+/**
+ * Represents the runtime state of a capture sub-mode during a camera session.
+ */
+sealed interface CaptureSubModeState {
+    /**
+     * No capture sub-mode is active, or the active sub-mode is running without errors.
+     */
+    data object Idle : CaptureSubModeState
+
+    /**
+     * An error occurred while resolving or binding [subModeId], causing the session to fall back
+     * to the base camera.
+     *
+     * @param subModeId The [CaptureSubModeId] that failed.
+     * @param error The [Throwable] that caused the failure.
+     */
+    data class Error(val subModeId: CaptureSubModeId, val error: Throwable?) : CaptureSubModeState
+}
 
 /**
  * Contains debugging information about the camera.

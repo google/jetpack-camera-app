@@ -20,6 +20,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.MirrorMode
 
 /**
  * Configuration for the Jetpack Camera App that allows developers and host applications
@@ -35,6 +36,11 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  * - **HDR Image Format & Video Dynamic Range:** When [OptionVisibility.Hidden] is used, developers may
  *   default or lock capture to Ultra HDR ([ImageOutputFormat.JPEG_ULTRA_HDR]) or HDR video ([DynamicRange.HLG10]).
  *   Hardware fallbacks to SDR will be handled at runtime if the active camera does not support HDR.
+ *
+ * ### Java Interop:
+ * The constructor is annotated with `@JvmOverloads` so Java callers can omit trailing parameters.
+ * **New fields must be appended at the end** of the parameter list; inserting one earlier changes
+ * the positional signature of the generated overloads and breaks existing Java callers.
  *
  * ### Example:
  * ```kotlin
@@ -56,15 +62,18 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  *   if [OptionVisibility.Hidden].
  * @param imageFormat Configuration for captured photo format (e.g. JPEG, Ultra HDR).
  * @param dynamicRange Configuration for captured video dynamic range (e.g. SDR, HLG10).
+ * @param mirrorMode Configuration for whether captured photos and video are mirrored (e.g. only
+ *   for the front camera, to match the preview).
  *
  * TODO (kc): Defer audioEnabled configuration to a follow-up PR, pending design for visual UX.
  */
-data class CameraFeaturePolicy(
+data class CameraFeaturePolicy @JvmOverloads constructor(
     val captureMode: SettingConfig<CaptureMode>? = null,
     val aspectRatio: SettingConfig<AspectRatio>? = null,
     val flashMode: SettingConfig<FlashMode>? = null,
     val imageFormat: SettingConfig<ImageOutputFormat>? = null,
-    val dynamicRange: SettingConfig<DynamicRange>? = null
+    val dynamicRange: SettingConfig<DynamicRange>? = null,
+    val mirrorMode: SettingConfig<MirrorMode>? = null
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
@@ -104,8 +113,129 @@ data class CameraFeaturePolicy(
             flashMode = this.flashMode?.defaultValue ?: defaultSettings.flashMode,
             captureMode = this.captureMode?.defaultValue ?: defaultSettings.captureMode,
             imageFormat = this.imageFormat?.defaultValue ?: defaultSettings.imageFormat,
-            dynamicRange = this.dynamicRange?.defaultValue ?: defaultSettings.dynamicRange
+            dynamicRange = this.dynamicRange?.defaultValue ?: defaultSettings.dynamicRange,
+            mirrorMode = this.mirrorMode?.defaultValue ?: defaultSettings.mirrorMode
         )
+    }
+
+    /**
+     * Clamps [settings] to satisfy all [SettingConfig] restrictions in this policy.
+     */
+    fun enforceRestrictions(settings: CameraAppSettings): CameraAppSettings = settings.copy(
+        aspectRatio = enforceSetting(settings.aspectRatio, aspectRatio),
+        flashMode = enforceSetting(settings.flashMode, flashMode),
+        imageFormat = enforceSetting(settings.imageFormat, imageFormat),
+        dynamicRange = enforceSetting(settings.dynamicRange, dynamicRange),
+        captureMode = enforceSetting(settings.captureMode, captureMode),
+        mirrorMode = enforceSetting(settings.mirrorMode, mirrorMode)
+    )
+
+    /**
+     * Returns true if every setting restriction in [other] has at least one mutually permitted
+     * value with this policy. Used to hide sub-modes whose required [CameraFeaturePolicy]
+     * conflicts with a host application's locked [CameraFeaturePolicy].
+     */
+    fun isCompatibleWith(other: CameraFeaturePolicy): Boolean =
+        isSettingCompatible(captureMode, other.captureMode) &&
+            isSettingCompatible(aspectRatio, other.aspectRatio) &&
+            isSettingCompatible(flashMode, other.flashMode) &&
+            isSettingCompatible(imageFormat, other.imageFormat) &&
+            isSettingCompatible(dynamicRange, other.dynamicRange) &&
+            isSettingCompatible(mirrorMode, other.mirrorMode)
+
+    /**
+     * Returns the intersection of this policy (typically the host application's policy) and
+     * [other] (typically the active sub-mode's policy), narrowing visibility and selecting a
+     * mutually permitted default value for each setting.
+     *
+     * Callers should check [isCompatibleWith] first. For any setting where the two policies have
+     * no mutually permitted value, this policy's [SettingConfig] is returned unchanged and the
+     * restriction from [other] is dropped.
+     */
+    fun intersect(other: CameraFeaturePolicy): CameraFeaturePolicy = CameraFeaturePolicy(
+        captureMode = intersectSetting(captureMode, other.captureMode),
+        aspectRatio = intersectSetting(aspectRatio, other.aspectRatio),
+        flashMode = intersectSetting(flashMode, other.flashMode),
+        imageFormat = intersectSetting(imageFormat, other.imageFormat),
+        dynamicRange = intersectSetting(dynamicRange, other.dynamicRange),
+        mirrorMode = intersectSetting(mirrorMode, other.mirrorMode)
+    )
+}
+
+private fun <T : Any> enforceSetting(currentValue: T, config: SettingConfig<T>?): T =
+    when (val visibility = config?.visibility) {
+        null, is OptionVisibility.Visible -> currentValue
+        is OptionVisibility.Hidden -> config.defaultValue
+        is OptionVisibility.Only ->
+            if (currentValue in visibility.enabledOptions) currentValue else config.defaultValue
+    }
+
+/**
+ * Returns `true` if [value] is permitted by this [SettingConfig]'s [visibility] restriction.
+ */
+fun <T : Any> SettingConfig<T>.permits(value: T): Boolean = when (visibility) {
+    is OptionVisibility.Visible -> true
+    is OptionVisibility.Hidden -> value == defaultValue
+    is OptionVisibility.Only -> value in visibility.enabledOptions
+}
+
+private fun <T : Any> isSettingCompatible(
+    base: SettingConfig<T>?,
+    overlay: SettingConfig<T>?
+): Boolean {
+    if (base == null || overlay == null) return true
+    return when (val baseVis = base.visibility) {
+        is OptionVisibility.Visible -> true
+        is OptionVisibility.Hidden -> overlay.permits(base.defaultValue)
+        is OptionVisibility.Only -> when (val overlayVis = overlay.visibility) {
+            is OptionVisibility.Visible -> true
+            is OptionVisibility.Hidden -> overlay.defaultValue in baseVis.enabledOptions
+            is OptionVisibility.Only ->
+                (baseVis.enabledOptions intersect overlayVis.enabledOptions).isNotEmpty()
+        }
+    }
+}
+
+private fun <T : Any> intersectSetting(
+    base: SettingConfig<T>?,
+    overlay: SettingConfig<T>?
+): SettingConfig<T>? {
+    if (base == null) return overlay
+    if (overlay == null) return base
+    if (!isSettingCompatible(base, overlay)) return base
+    return when (val overlayVis = overlay.visibility) {
+        is OptionVisibility.Hidden -> SettingConfig(
+            defaultValue = overlay.defaultValue,
+            visibility = OptionVisibility.Hidden
+        )
+        is OptionVisibility.Visible -> when (base.visibility) {
+            is OptionVisibility.Hidden -> base
+            is OptionVisibility.Only -> if (base.permits(overlay.defaultValue)) {
+                base.copy(defaultValue = overlay.defaultValue)
+            } else {
+                base
+            }
+            is OptionVisibility.Visible -> SettingConfig(
+                defaultValue = overlay.defaultValue,
+                visibility = OptionVisibility.Visible
+            )
+        }
+        is OptionVisibility.Only -> when (val baseVis = base.visibility) {
+            is OptionVisibility.Hidden -> base
+            is OptionVisibility.Visible -> overlay
+            is OptionVisibility.Only -> {
+                val common = baseVis.enabledOptions intersect overlayVis.enabledOptions
+                val resolvedDefault = when {
+                    overlay.defaultValue in common -> overlay.defaultValue
+                    base.defaultValue in common -> base.defaultValue
+                    else -> common.first()
+                }
+                SettingConfig(
+                    defaultValue = resolvedDefault,
+                    visibility = OptionVisibility.from(common)
+                )
+            }
+        }
     }
 }
 

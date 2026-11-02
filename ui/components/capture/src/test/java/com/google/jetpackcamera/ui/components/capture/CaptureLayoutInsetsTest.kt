@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
@@ -141,6 +142,25 @@ class CaptureLayoutInsetsTest {
         assertThat(bounds.bottom).isEqualTo(44.dp)
     }
 
+    /** The screen flash must light the whole window, not just the area inside the system bars. */
+    @Test
+    fun screenFlashOverlay_coversSystemBarAreas() {
+        lateinit var view: View
+        composeTestRule.setContent {
+            view = LocalView.current
+            TestPreviewLayout(
+                screenFlashOverlay = {
+                    Box(it.fillMaxSize().testTag(SCREEN_FLASH_OVERLAY_TAG))
+                }
+            )
+        }
+
+        val overlayBounds = boundsOf(SCREEN_FLASH_OVERLAY_TAG, view, statusBarVisible = false)
+        val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+
+        assertThat(overlayBounds).isEqualTo(rootBounds)
+    }
+
     private fun boundsOf(
         tag: String,
         view: View,
@@ -188,10 +208,15 @@ class CaptureLayoutInsetsTest {
 }
 
 private const val INDICATOR_ROW_TAG = "TestIndicatorRow"
+private const val SCREEN_FLASH_OVERLAY_TAG = "TestScreenFlashOverlay"
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @androidx.compose.runtime.Composable
-private fun TestPreviewLayout() {
+private fun TestPreviewLayout(
+    screenFlashOverlay: @androidx.compose.runtime.Composable (Modifier) -> Unit = {
+        Box(it.size(0.dp))
+    }
+) {
     PreviewLayout(
         viewfinder = { Box(it.fillMaxSize()) },
         captureButton = { Box(it.size(80.dp).testTag(CAPTURE_BUTTON)) },
@@ -205,7 +230,7 @@ private fun TestPreviewLayout() {
         quickSettingsOverlay = { Box(it.size(40.dp)) },
         debugOverlay = { Box(it.size(0.dp)) },
         debugVisibilityWrapper = { content -> content() },
-        screenFlashOverlay = { Box(it.size(0.dp)) },
+        screenFlashOverlay = screenFlashOverlay,
         snackBar = { _, _ -> }
     )
 }

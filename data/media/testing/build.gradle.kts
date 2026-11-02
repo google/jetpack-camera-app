@@ -52,6 +52,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:model"))
     implementation(project(":data:media"))
     
     implementation(libs.kotlinx.coroutines.core)

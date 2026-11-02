@@ -43,24 +43,6 @@ enum class DisabledReason(
     IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA(
         R.string.toast_image_capture_unsupported_concurrent_camera
     ),
-    HDR_VIDEO_UNSUPPORTED_ON_DEVICE(
-        R.string.toast_hdr_video_unsupported_on_device
-    ),
-    HDR_VIDEO_UNSUPPORTED_ON_LENS(
-        R.string.toast_hdr_video_unsupported_on_lens
-    ),
-    HDR_IMAGE_UNSUPPORTED_ON_DEVICE(
-        R.string.toast_hdr_photo_unsupported_on_device
-    ),
-    HDR_IMAGE_UNSUPPORTED_ON_LENS(
-        R.string.toast_hdr_photo_unsupported_on_lens
-    ),
-    HDR_IMAGE_UNSUPPORTED_ON_SINGLE_STREAM(
-        R.string.toast_hdr_photo_unsupported_on_lens_single_stream
-    ),
-    HDR_IMAGE_UNSUPPORTED_ON_MULTI_STREAM(
-        R.string.toast_hdr_photo_unsupported_on_lens_multi_stream
-    ),
     HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED(
         R.string.toast_hdr_simultaneous_image_video_unsupported
     ),

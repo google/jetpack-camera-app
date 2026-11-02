@@ -80,6 +80,7 @@ dependencies {
     // AndroidX Core KTX
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Accompanist - Permissions
     implementation(libs.accompanist.permissions)
@@ -122,11 +123,9 @@ dependencies {
     implementation(project(":ui:controller"))
     implementation(project(":core:camera"))
     implementation(project(":core:common"))
-    implementation(project(":data:media"))
     implementation(project(":core:model"))
     testImplementation(project(":core:common"))
     testImplementation(project(":core:camera:testing"))
-    testImplementation(project(":data:settings"))
     testImplementation(project(":core:settings"))
     testImplementation(project(":ui:controller:testing"))
     androidTestImplementation(project(":ui:controller:testing"))

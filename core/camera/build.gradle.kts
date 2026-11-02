@@ -112,6 +112,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.rules)
+    androidTestImplementation(libs.androidx.exifinterface)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.truth)
     androidTestImplementation(project(":core:common:testing"))
@@ -136,7 +137,6 @@ dependencies {
 
     implementation("javax.inject:javax.inject:1")
     implementation(libs.androidx.core.ktx)
-    implementation(project(":data:settings"))
     implementation(project(":core:settings"))
     implementation(project(":core:model"))
     implementation(project(":core:common"))

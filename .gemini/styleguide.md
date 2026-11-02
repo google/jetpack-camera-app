@@ -37,6 +37,13 @@ When reviewing a pull request, focus on the following key areas:
         2.  **Shield static sub-components:** Use `derivedStateOf` to extract and debounce low-frequency static state, then wrap the component in a remembered lambda (e.g., `val myLambda = remember(debouncedState) { @Composable { Component(debouncedState.value) } }`).
         3.  **Defer high-frequency reads:** Pass the lambda provider directly into the high-frequency component so the `.value` read is deferred into the deepest possible node.
         4.  **Isolate conditional logic:** For conditional visibility or logic involving high-frequency state, extract the condition into a `derivedStateOf` boolean to keep the lambda body perfectly stable.
+    * **Shared Mutable State in Coroutines:** Give shared state a single owner and access it through coroutine primitives. In order of preference:
+        1.  **Confinement:** Mutate state from one coroutine or a single-threaded context (`Dispatchers.Main`, `limitedParallelism(1)`). `Dispatchers.Default` and `Dispatchers.IO` are multi-threaded and do not provide confinement.
+        2.  **Observable state:** Hold shared state in `StateFlow`/`MutableStateFlow`. Use `update { }` for updates derived from the current value; do not write `state.value = state.value.copy(...)`.
+        3.  **Callback APIs:** Bridge listener-based APIs with `callbackFlow` or `suspendCancellableCoroutine`, scoping the listener to the collecting coroutine, rather than storing callback state in class fields.
+        4.  **Suspending critical sections:** Use `Mutex.withLock`, or `MutatorMutex` for UI-driven mutations.
+        5.  **Atomics:** Use `kotlinx.atomicfu` atomics only for non-suspending compare-and-set logic that the options above do not cover.
+    * **Avoid `@Volatile` Fields and Thread-Blocking Primitives:** Do not use `@Volatile` fields, `synchronized`, `@Synchronized`, `ReentrantLock`, `runBlocking`, `Thread.sleep`, or `CountDownLatch` in production code. `@Volatile` provides visibility but not atomicity and usually indicates state without a clear owner. If one is unavoidable, document which threads read and write it.
 
 4.  **Jetpack Compose & CameraX Usage**
     * Verify that Compose and CameraX APIs are used correctly and effectively.
@@ -70,6 +77,11 @@ When reviewing a pull request, focus on the following key areas:
 
 8.  **Resource Management**
     * **No Hardcoded Strings:** Forbid hardcoded user-facing strings in composables. All text should be extracted into `strings.xml` to support localization and make updates easier.
+    * **Translator Notes in XML Comments:** Every translatable `<string>`, `<plurals>`, and `<string-array>` must have an XML comment directly above it that tells translators where the text appears, what it means, and any terms that must stay consistent or untranslated. End the comment with a character limit: `[CHAR LIMIT=N]` when space is constrained (toasts, snackbars, buttons, short labels), or `[CHAR LIMIT=NONE]` otherwise. Do not use the `description=` attribute for translator notes. Wrap each format argument in `<xliff:g>` with an `id` and an `example`, and mark strings that must not be translated with `translatable="false"`.
+        ```xml
+        <!-- Subtitle under a disabled setting row on the settings screen, explaining that the setting cannot be used while Ultra HDR photo capture is on. %1$s is the name of the disabled setting. "Ultra HDR" is the name of an Android photo format and should not be translated. [CHAR LIMIT=NONE] -->
+        <string name="ultra_hdr_enabled"><xliff:g id="setting_name" example="Stream configuration">%1$s</xliff:g> is unsupported when Ultra HDR is enabled</string>
+        ```
     * **Prefer Vector Drawables:** For icons and simple graphics, vector drawables (SVGs) should be preferred over raster images (PNGs) to reduce APK size and ensure sharp rendering on all screen densities.
     * **Delete Unused Resources:** When refactoring or removing components, ensure that any associated resources (such as strings in `strings.xml` or icons/drawables in the `res/drawable` directory) that are no longer used anywhere in the project are deleted to reduce the final file size and maintain codebase cleanliness.
 

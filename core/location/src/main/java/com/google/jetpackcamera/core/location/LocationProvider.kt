@@ -22,6 +22,9 @@ import android.location.Location
  *
  * Implementations manage underlying platform location services, coordinate provider registration,
  * and maintain cached location fixes according to freshness and accuracy policies.
+ *
+ * Location is optional capture metadata. Implementations should handle platform failures
+ * internally rather than throw. Callers treat an exception as "no location" and continue.
  */
 interface LocationProvider {
 

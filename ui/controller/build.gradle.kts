@@ -63,7 +63,6 @@ android {
 dependencies {
     implementation(libs.camera.compose)
 
-    implementation(project(":data:media"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
     implementation(project(":core:model"))

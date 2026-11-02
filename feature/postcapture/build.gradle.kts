@@ -133,6 +133,7 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core:common"))
+    implementation(project(":core:model"))
     implementation(project(":data:media"))
     implementation(project(":ui:controller"))
     implementation(project(":ui:controller:impl"))

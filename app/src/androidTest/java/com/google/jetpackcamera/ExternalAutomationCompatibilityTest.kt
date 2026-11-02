@@ -32,6 +32,7 @@ import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.debugExtra
+import com.google.jetpackcamera.utils.hasFrontAndBackCameras
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import org.junit.After
 import org.junit.Before
@@ -72,11 +73,13 @@ class ExternalAutomationCompatibilityTest {
                 .that(captureButton)
                 .isNotNull()
 
-            // Verify flip camera button is visible via Resource ID
-            val flipButton = device.findObject(By.res(FLIP_CAMERA_BUTTON))
-            assertWithMessage("Flip camera button not found by UI Automator via Resource ID")
-                .that(flipButton)
-                .isNotNull()
+            if (hasFrontAndBackCameras()) {
+                // Verify flip camera button is visible via Resource ID
+                val flipButton = device.findObject(By.res(FLIP_CAMERA_BUTTON))
+                assertWithMessage("Flip camera button not found by UI Automator via Resource ID")
+                    .that(flipButton)
+                    .isNotNull()
+            }
         }
     }
 

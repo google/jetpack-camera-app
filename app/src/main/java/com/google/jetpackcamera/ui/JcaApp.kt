@@ -65,8 +65,8 @@ fun JcaApp(
     openAppSettings: () -> Unit,
     onStoragePermissionGranted: () -> Unit,
     onCaptureEvent: (CaptureEvent) -> Unit,
-    isDarkTheme: Boolean = true,
     modifier: Modifier = Modifier,
+    isDarkTheme: Boolean = true,
     onCloseCamera: () -> Unit = {}
 ) {
     JetpackCameraNavHost(
@@ -124,6 +124,8 @@ private fun JetpackCameraNavHost(
             add(android.Manifest.permission.CAMERA)
             if (externalCaptureMode == ExternalCaptureMode.Standard) {
                 add(android.Manifest.permission.RECORD_AUDIO)
+                add(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                add(android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                     add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
@@ -175,6 +177,7 @@ private fun JetpackCameraNavHost(
                     buildType = BuildConfig.BUILD_TYPE
                 ),
                 onNavigateBack = { navController.popBackStack() },
+                onOpenAppSettings = onOpenAppSettings,
                 cameraSettingsSlot = {
                     DefaultCameraSettings(
                         customEffectSlot = {

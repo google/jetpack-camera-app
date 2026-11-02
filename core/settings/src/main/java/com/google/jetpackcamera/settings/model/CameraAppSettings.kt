@@ -18,6 +18,7 @@ package com.google.jetpackcamera.settings.model
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DebugSettings
@@ -29,6 +30,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
@@ -36,10 +38,35 @@ import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 
 /**
- * Data layer representation for settings.
+ * Data layer representation for camera session settings.
+ *
+ * Seeded once from persisted user preferences at camera system initialization and subsequently
+ * updated in-memory via `copy(...)` by the camera system for the duration of the session, so
+ * session-scoped fields ([captureSubModeId], [activeCaptureSubModeId], and
+ * [captureSubModeOverrides]) are preserved across setting changes without being overwritten by
+ * DataStore emissions.
  */
 data class CameraAppSettings(
     val captureMode: CaptureMode = CaptureMode.STANDARD,
+    /**
+     * The requested capture sub-mode ([CaptureSubModeId.DEFAULT] for the parent [captureMode]'s
+     * default behavior, or an explicit sub-mode ID when a specific sub-mode is requested).
+     */
+    val captureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
+    /**
+     * The effective sub-mode currently active in the camera session after resolving any per-lens
+     * default override ([CameraConstraints.defaultCaptureSubModes]) and verifying lens support
+     * and policy compatibility. When a default override is configured for [captureMode],
+     * [captureSubModeId] remains [CaptureSubModeId.DEFAULT] while [activeCaptureSubModeId] holds
+     * the resolved override's ID (or falls back to [CaptureSubModeId.DEFAULT] if unsupported or
+     * incompatible).
+     */
+    val activeCaptureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
+    /**
+     * The values replaced by the policy of [activeCaptureSubModeId], restored when that sub-mode
+     * ends. Managed in-memory by the camera system while a sub-mode is active.
+     */
+    val captureSubModeOverrides: PolicyOverrides? = null,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
     val darkMode: DarkMode = DarkMode.DARK,
     val flashMode: FlashMode = FlashMode.OFF,
@@ -48,6 +75,7 @@ data class CameraAppSettings(
     val stabilizationMode: StabilizationMode = StabilizationMode.AUTO,
     val dynamicRange: DynamicRange = DynamicRange.SDR,
     val videoQuality: VideoQuality = VideoQuality.UNSPECIFIED,
+    val mirrorMode: MirrorMode = MirrorMode.OFF,
     val defaultZoomRatios: Map<LensFacing, Float> = mapOf(),
     val targetFrameRate: Int = TARGET_FPS_AUTO,
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,

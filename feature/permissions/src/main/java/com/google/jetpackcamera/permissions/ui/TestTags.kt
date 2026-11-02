@@ -20,3 +20,4 @@ const val CAMERA_PERMISSION_BUTTON = "CameraPermissionButton"
 const val RECORD_AUDIO_PERMISSION_BUTTON = "RecordAudioPermissionButton"
 
 const val WRITE_EXTERNAL_STORAGE_PERMISSION_BUTTON = "WriteExternalStoragePermissionButton"
+const val LOCATION_PERMISSION_BUTTON = "LocationPermissionButton"

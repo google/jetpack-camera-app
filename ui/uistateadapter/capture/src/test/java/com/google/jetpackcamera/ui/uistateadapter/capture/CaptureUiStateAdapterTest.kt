@@ -17,6 +17,8 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.AudioStreamState
+import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.core.camera.VideoQualityInfo
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.AspectRatio
@@ -27,6 +29,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
@@ -305,6 +308,32 @@ internal class CaptureUiStateAdapterTest {
                 )
             )
         )
+    }
+
+    @Test
+    fun captureUiState_imageOnlyCaptureMode_hidesVideoQuality() = runTest {
+        cameraSystem.setCurrentCameraState(
+            CameraState(videoQualityInfo = VideoQualityInfo(VideoQuality.FHD, 1920, 1080))
+        )
+        val uiStateFlow = createCaptureUiStateFlow()
+        val states = mutableListOf<CaptureUiState>()
+        backgroundScope.launch {
+            uiStateFlow.collect { states.add(it) }
+        }
+
+        runCurrent()
+        val initialState = assertIsReady(states.last())
+        assertThat(initialState.videoQuality).isEqualTo(VideoQuality.FHD)
+
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        runCurrent()
+        val imageOnlyState = assertIsReady(states.last())
+        assertThat(imageOnlyState.videoQuality).isEqualTo(VideoQuality.UNSPECIFIED)
+
+        cameraSystem.setCaptureMode(CaptureMode.VIDEO_ONLY)
+        runCurrent()
+        val videoOnlyState = assertIsReady(states.last())
+        assertThat(videoOnlyState.videoQuality).isEqualTo(VideoQuality.FHD)
     }
 
     private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready = when (uiState) {

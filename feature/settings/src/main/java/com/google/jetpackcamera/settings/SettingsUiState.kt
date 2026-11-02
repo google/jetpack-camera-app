@@ -22,6 +22,7 @@ import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
@@ -32,6 +33,7 @@ import com.google.jetpackcamera.settings.ui.CONCURRENT_CAMERA_ENABLED_TAG
 import com.google.jetpackcamera.settings.ui.DEVICE_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.FPS_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.LENS_UNSUPPORTED_TAG
+import com.google.jetpackcamera.settings.ui.PERMISSION_LOCATION_NOT_GRANTED_TAG
 import com.google.jetpackcamera.settings.ui.PERMISSION_RECORD_AUDIO_NOT_GRANTED_TAG
 import com.google.jetpackcamera.settings.ui.STABILIZATION_UNSUPPORTED_TAG
 import com.google.jetpackcamera.settings.ui.ULTRA_HDR_ENABLED_TAG
@@ -53,10 +55,12 @@ sealed interface SettingsUiState {
         val flashUiState: FlashUiState,
         val fpsUiState: FpsUiState,
         val lensFlipUiState: FlipLensUiState,
+        val mirrorModeUiState: MirrorModeUiState,
         val stabilizationUiState: StabilizationUiState,
         val maxVideoDurationUiState: MaxVideoDurationUiState.Enabled,
         val videoQualityUiState: VideoQualityUiState,
         val audioUiState: AudioUiState,
+        val locationUiState: LocationUiState,
         val lowLightBoostPriorityUiState: LowLightBoostPriorityUiState,
         val concurrentCameraUiState: ConcurrentCameraUiState
     ) : SettingsUiState
@@ -83,6 +87,17 @@ sealed interface DisabledRationale {
     }
 
     /**
+     * Rationale indicating that location geotagging is unavailable because location
+     * permissions have not been granted.
+     */
+    data class PermissionLocationNotGrantedRationale(
+        override val affectedSettingNameResId: Int
+    ) : DisabledRationale {
+        override val reasonTextResId: Int = R.string.permission_location_unsupported
+        override val testTag = PERMISSION_LOCATION_NOT_GRANTED_TAG
+    }
+
+    /**
      * Text will be [affectedSettingNameResId] is [R.string.device_unsupported]
      */
     data class DeviceUnsupportedRationale(override val affectedSettingNameResId: Int) :
@@ -106,8 +121,7 @@ sealed interface DisabledRationale {
     }
 
     data class VideoQualityUnsupportedRationale(
-        override val affectedSettingNameResId: Int,
-        val currentDynamicRange: Int = R.string.video_quality_rationale_suffix_default
+        override val affectedSettingNameResId: Int
     ) : DisabledRationale {
         override val reasonTextResId = R.string.video_quality_unsupported
         override val testTag = VIDEO_QUALITY_UNSUPPORTED_TAG
@@ -219,6 +233,26 @@ sealed interface AudioUiState {
     data class Disabled(val disabledRationale: DisabledRationale) : AudioUiState
 }
 
+/**
+ * Represents the UI state of the location geotagging setting.
+ */
+sealed interface LocationUiState {
+    /** The location setting is not displayed. */
+    data object Hidden : LocationUiState
+
+    /** The location setting is enabled and interactive. */
+    sealed interface Enabled : LocationUiState {
+        /** Location geotagging is enabled. */
+        data object On : Enabled
+
+        /** Location geotagging is disabled. */
+        data object Off : Enabled
+    }
+
+    /** The location setting is disabled due to missing permissions. */
+    data class Disabled(val disabledRationale: DisabledRationale) : LocationUiState
+}
+
 sealed interface FlashUiState {
     data class Enabled(
         val currentFlashMode: FlashMode,
@@ -289,6 +323,14 @@ sealed interface DarkModeUiState {
         DarkModeUiState
 }
 
+/**
+ * State for the setting that mirrors captured photos and videos from the front camera.
+ */
+sealed interface MirrorModeUiState {
+    /** @property currentMirrorMode The current [MirrorMode]. */
+    data class Enabled(val currentMirrorMode: MirrorMode) : MirrorModeUiState
+}
+
 sealed interface MaxVideoDurationUiState {
     data class Enabled(val currentMaxDurationMillis: Long, val additionalContext: String = "") :
         MaxVideoDurationUiState
@@ -332,6 +374,11 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
     } else {
         AudioUiState.Enabled.Mute()
     },
+    locationUiState = LocationUiState.Disabled(
+        DisabledRationale.PermissionLocationNotGrantedRationale(
+            R.string.save_location_rationale_prefix
+        )
+    ),
     flashUiState =
     FlashUiState.Enabled(
         currentFlashMode = DEFAULT_CAMERA_APP_SETTINGS.flashMode,
@@ -351,6 +398,7 @@ val TYPICAL_SETTINGS_UISTATE = SettingsUiState.Enabled(
         )
     ),
     lensFlipUiState = FlipLensUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.cameraLensFacing),
+    mirrorModeUiState = MirrorModeUiState.Enabled(DEFAULT_CAMERA_APP_SETTINGS.mirrorMode),
     maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(UNLIMITED_VIDEO_DURATION),
     stabilizationUiState =
     StabilizationUiState.Disabled(

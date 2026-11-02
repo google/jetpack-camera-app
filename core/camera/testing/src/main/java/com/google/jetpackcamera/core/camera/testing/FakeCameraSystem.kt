@@ -17,6 +17,7 @@ package com.google.jetpackcamera.core.camera.testing
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
+import android.location.Location
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
@@ -26,13 +27,16 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TestPattern
@@ -62,16 +66,28 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     var isLensFacingFront = false
 
+    /** The most recent [Location] passed to [takePicture], or `null` if none was provided. */
+    var lastPictureTakenLocation: Location? = null
+        private set
+
+    /** The most recent [Location] passed to [startVideoRecording], or `null` if none was provided. */
+    var lastVideoRecordingLocation: Location? = null
+        private set
+
     private var isScreenFlash = true
     private var screenFlashEvents = Channel<CameraSystem.ScreenFlashEvent>(capacity = UNLIMITED)
     private val zoomChanges = MutableStateFlow<CameraZoomRatio?>(null)
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
+    var externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
+        private set
 
     override suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
+        externalCaptureMode: ExternalCaptureMode,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     ) {
         currentSettings.value = cameraAppSettings
+        this.externalCaptureMode = externalCaptureMode
         initialized = true
     }
 
@@ -120,8 +136,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override suspend fun takePicture(
         contentResolver: ContentResolver,
         saveLocation: SaveLocation,
+        location: Location?,
         onCaptureStarted: () -> Unit
     ): ImageCapture.OutputFileResults {
+        lastPictureTakenLocation = location
         takePicture(onCaptureStarted)
         return ImageCapture.OutputFileResults(null)
     }
@@ -134,11 +152,13 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     override suspend fun startVideoRecording(
         saveLocation: SaveLocation,
+        location: Location?,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     ) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
+        lastVideoRecordingLocation = location
         numVideoRecordingStarts++
         recordingInProgress = true
     }
@@ -204,7 +224,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
 
     override fun isScreenFlashEnabled() = isScreenFlash
 
-    fun isPreviewStarted() = previewStarted
+    fun isPreviewStarted(): Boolean = previewStarted
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
@@ -215,6 +235,12 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override suspend fun setVideoQuality(videoQuality: VideoQuality) {
         currentSettings.update { old ->
             old.copy(videoQuality = videoQuality)
+        }
+    }
+
+    override suspend fun setMirrorMode(mirrorMode: MirrorMode) {
+        currentSettings.update { old ->
+            old.copy(mirrorMode = mirrorMode)
         }
     }
 
@@ -291,6 +317,15 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override suspend fun setCaptureMode(captureMode: CaptureMode) {
         currentSettings.update { old ->
             old.copy(captureMode = captureMode)
+        }
+    }
+
+    override suspend fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {
+        currentSettings.update { old ->
+            old.copy(
+                captureSubModeId = captureSubModeId,
+                activeCaptureSubModeId = captureSubModeId
+            )
         }
     }
 

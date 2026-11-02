@@ -16,19 +16,23 @@
 package com.google.jetpackcamera.core.camera
 
 import android.content.ContentResolver
+import android.location.Location
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TestPattern
@@ -49,6 +53,7 @@ interface CameraSystem {
      */
     suspend fun initialize(
         cameraAppSettings: CameraAppSettings,
+        externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard,
         cameraPropertiesJSONCallback: (result: String) -> Unit
     )
 
@@ -74,12 +79,14 @@ interface CameraSystem {
      *
      * @param contentResolver The [ContentResolver] to use for saving the image.
      * @param saveLocation The location to save the captured image.
+     * @param location The geographic [Location] to attach to image EXIF metadata, or `null` to omit.
      * @param onCaptureStarted A callback that is invoked when the capture starts.
      * @return An [ImageCapture.OutputFileResults] object containing the result of the capture.
      */
     suspend fun takePicture(
         contentResolver: ContentResolver,
         saveLocation: SaveLocation,
+        location: Location? = null,
         onCaptureStarted: (() -> Unit) = {}
     ): ImageCapture.OutputFileResults
 
@@ -87,10 +94,12 @@ interface CameraSystem {
      * Starts video recording.
      *
      * @param saveLocation The location to save the recorded video.
+     * @param location The geographic [Location] to attach to video ISO-6709 metadata, or `null` to omit.
      * @param onVideoRecord A callback to handle video recording events.
      */
     suspend fun startVideoRecording(
         saveLocation: SaveLocation,
+        location: Location? = null,
         onVideoRecord: (OnVideoRecordEvent) -> Unit
     )
 
@@ -173,6 +182,13 @@ interface CameraSystem {
      * @param videoQuality The [VideoQuality] to set.
      */
     suspend fun setVideoQuality(videoQuality: VideoQuality)
+
+    /**
+     * Sets whether captured photos and videos are mirrored.
+     *
+     * @param mirrorMode The [MirrorMode] to set.
+     */
+    suspend fun setMirrorMode(mirrorMode: MirrorMode)
 
     /**
      * Sets the low light boost priority.
@@ -267,6 +283,13 @@ interface CameraSystem {
     suspend fun setCaptureMode(captureMode: CaptureMode)
 
     /**
+     * Sets the active capture sub-mode for the camera.
+     *
+     * @param captureSubModeId The [CaptureSubModeId] to set.
+     */
+    suspend fun setCaptureSubMode(captureSubModeId: CaptureSubModeId)
+
+    /**
      * Clears any currently active camera error from [CameraState].
      */
     fun clearCameraError()
@@ -318,6 +341,7 @@ interface CameraSystem {
                 cameraSystem::setMaxVideoDuration
             )
             applyDiff(new, CameraAppSettings::videoQuality, cameraSystem::setVideoQuality)
+            applyDiff(new, CameraAppSettings::mirrorMode, cameraSystem::setMirrorMode)
             applyDiff(new, CameraAppSettings::audioEnabled, cameraSystem::setAudioEnabled)
             applyDiff(
                 new,
@@ -328,6 +352,11 @@ interface CameraSystem {
                 new,
                 CameraAppSettings::concurrentCameraMode,
                 cameraSystem::setConcurrentCameraMode
+            )
+            applyDiff(
+                new,
+                CameraAppSettings::captureSubModeId,
+                cameraSystem::setCaptureSubMode
             )
         }
     }

@@ -202,9 +202,9 @@ private fun ExpandedQuickSettingsUiPreview() {
                 aspectRatioUiState = AspectRatioUiState.Available(
                     selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
                     availableAspectRatios = listOf(
-                        SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
                         SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
-                        SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
+                        SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN)
                     )
                 ),
                 captureModeUiState = CaptureModeUiState.Available(

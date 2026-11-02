@@ -25,12 +25,16 @@ import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostEffectProvider
 import com.google.jetpackcamera.core.camera.lowlight.LowLightBoostFeatureKey
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessor
 import com.google.jetpackcamera.core.camera.postprocess.ImagePostProcessorFeatureKey
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
 import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.data.camera.CameraLaunchConfigProvider
 import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.camera.CameraXCameraSystemRepository
+import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
+import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -94,7 +98,16 @@ internal object CameraModule {
         cameraEffectProviders: Map<
             CameraEffectFeatureKey,
             @JvmSuppressWildcards Provider<CameraEffectProvider>
-            >
+            >,
+        captureSubModeProviders: Map<
+            CaptureSubModeFeatureKey,
+            @JvmSuppressWildcards Provider<CaptureSubModeProvider>
+            >,
+        defaultCaptureSubModes: Map<
+            CaptureMode,
+            @JvmSuppressWildcards CaptureSubModeFeatureKey
+            >,
+        cameraFeaturePolicy: CameraFeaturePolicy
     ): CameraXCameraSystem {
         return CameraXCameraSystem(
             context as Application,
@@ -104,7 +117,10 @@ internal object CameraModule {
             availabilityCheckers,
             effectProviders,
             imagePostProcessors,
-            cameraEffectProviders
+            cameraEffectProviders,
+            captureSubModeProviders,
+            defaultCaptureSubModes,
+            cameraFeaturePolicy
         )
     }
 }

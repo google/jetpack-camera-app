@@ -70,13 +70,13 @@ dependencies {
 
     implementation(libs.kotlinx.atomicfu)
 
-    implementation(project(":data:media"))
     implementation(project(":ui:controller"))
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
     implementation(project(":core:model"))
     implementation(project(":core:common"))
     implementation(project(":core:camera"))
+    implementation(project(":core:location"))
 
     // Testing
     testImplementation(libs.junit)
@@ -86,7 +86,7 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(project(":core:common"))
     testImplementation(project(":core:camera:testing"))
-    testImplementation(project(":data:settings"))
+    testImplementation(project(":core:location:testing"))
     testImplementation(project(":core:settings"))
 }
 

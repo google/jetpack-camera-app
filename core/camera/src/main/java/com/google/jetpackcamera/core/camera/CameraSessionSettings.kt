@@ -17,6 +17,7 @@ package com.google.jetpackcamera.core.camera
 
 import androidx.camera.core.CameraInfo
 import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DeviceRotation
@@ -25,6 +26,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
@@ -47,8 +49,21 @@ internal sealed interface PerpetualSessionSettings {
         val stabilizationMode: StabilizationMode,
         val dynamicRange: DynamicRange,
         val videoQuality: VideoQuality,
+        val mirrorMode: MirrorMode,
         val imageFormat: ImageOutputFormat,
-        val lowLightBoostPriority: LowLightBoostPriority
+        val lowLightBoostPriority: LowLightBoostPriority,
+        val activeCaptureSubMode: CaptureSubModeFeatureKey? = null
+    ) : PerpetualSessionSettings
+
+    /**
+     * A session whose use cases are created by a capture sub-mode provider.
+     *
+     * The mirror mode is not applied to custom sessions, since JCA does not create their use cases.
+     */
+    data class CustomSession(
+        val subModeKey: CaptureSubModeFeatureKey,
+        override val aspectRatio: AspectRatio,
+        override val captureMode: CaptureMode
     ) : PerpetualSessionSettings
 
     /**
@@ -58,7 +73,8 @@ internal sealed interface PerpetualSessionSettings {
     data class ConcurrentCamera(
         val primaryCameraInfo: CameraInfo,
         val secondaryCameraInfo: CameraInfo,
-        override val aspectRatio: AspectRatio
+        override val aspectRatio: AspectRatio,
+        val mirrorMode: MirrorMode
     ) : PerpetualSessionSettings {
         override val captureMode: CaptureMode = CaptureMode.VIDEO_ONLY
     }

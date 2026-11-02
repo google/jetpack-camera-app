@@ -22,9 +22,9 @@ import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistateadapter.Utils
 
 private val ORDERED_UI_SUPPORTED_ASPECT_RATIOS = listOf(
-    AspectRatio.NINE_SIXTEEN,
     AspectRatio.THREE_FOUR,
-    AspectRatio.ONE_ONE
+    AspectRatio.ONE_ONE,
+    AspectRatio.NINE_SIXTEEN
 )
 
 /**

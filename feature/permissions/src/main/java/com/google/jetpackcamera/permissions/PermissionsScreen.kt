@@ -20,7 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -51,7 +51,7 @@ fun PermissionsScreen(
         }
     }
 
-    LaunchedEffect(permissionStates) {
+    LaunchedEffect(permissionStates.permissions.map { it.status }) {
         viewModel.updatePermissionStates(permissionStates)
     }
 
@@ -59,12 +59,15 @@ fun PermissionsScreen(
         val permissionEnum =
             (permissionsUiState as PermissionsUiState.PermissionsNeeded).currentPermission
 
-        val currentPermissionStates by rememberUpdatedState(permissionStates)
-        PermissionTemplate(
-            modifier = modifier,
-            permissionEnum = permissionEnum,
-            onDismissPermission = { viewModel.updatePermissionStates(currentPermissionStates) },
-            onOpenAppSettings = onOpenAppSettings
-        )
+        key(permissionEnum) {
+            PermissionTemplate(
+                modifier = modifier,
+                permissionEnum = permissionEnum,
+                onDismissPermission = {
+                    viewModel.dismissPermission(permissionEnum)
+                },
+                onOpenAppSettings = onOpenAppSettings
+            )
+        }
     }
 }

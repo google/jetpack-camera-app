@@ -39,7 +39,8 @@ private val ORDERED_UI_SUPPORTED_LENS_FACINGS = listOf(
  * @param systemConstraints The hardware capabilities of the camera system, used to get the list
  * of all available lenses on the device.
  * @return A [FlipLensUiState.Available] object containing the currently selected lens and a list
- * of all available lenses for the UI to display.
+ * of all available lenses for the UI to display, or [FlipLensUiState.Unavailable] if there are
+ * not enough lenses available to support flipping.
  */
 fun FlipLensUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
@@ -51,6 +52,10 @@ fun FlipLensUiState.Companion.from(
             supportedLensFacings,
             ORDERED_UI_SUPPORTED_LENS_FACINGS
         )
+
+    if (availableLensFacings.size <= 1) {
+        return FlipLensUiState.Unavailable
+    }
 
     return FlipLensUiState.Available(
         selectedLensFacing = cameraAppSettings.cameraLensFacing,

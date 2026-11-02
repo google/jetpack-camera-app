@@ -64,6 +64,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.androidx.media3.exoplayer)
    implementation(project(":ui:uistate:postcapture"))
-    implementation(project(":data:media"))
+    implementation(project(":core:model"))
 
 }

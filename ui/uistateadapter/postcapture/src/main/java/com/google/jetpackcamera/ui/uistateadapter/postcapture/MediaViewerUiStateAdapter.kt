@@ -16,8 +16,8 @@
 package com.google.jetpackcamera.ui.uistateadapter.postcapture
 
 import androidx.media3.common.Player
-import com.google.jetpackcamera.data.media.Media
-import com.google.jetpackcamera.data.media.MediaDescriptor
+import com.google.jetpackcamera.model.Media
+import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.ui.uistate.postcapture.MediaViewerUiState
 
 /**

@@ -106,10 +106,8 @@ dependencies {
     testImplementation(libs.androidx.rules)
     testImplementation(libs.truth)
     testImplementation(libs.robolectric)
-    testImplementation(project(":core:settings:datastore-prefs"))
-    testImplementation(project(":core:settings:datastore-prefs:testing"))
     testImplementation(project(":data:settings:testing"))
-    testImplementation(libs.androidx.datastore.preferences)
+    testImplementation(project(":core:location:testing"))
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.truth)
@@ -128,12 +126,11 @@ dependencies {
 
     implementation(project(":data:settings"))
     implementation(project(":core:settings"))
-    androidTestImplementation(project(":core:settings:datastore-prefs"))
-    androidTestImplementation(project(":core:settings:datastore-prefs:testing"))
-    androidTestImplementation(libs.androidx.datastore.preferences)
     implementation(project(":core:model"))
     implementation(project(":core:camera"))
     implementation(project(":core:camera:effects:single-stream"))
+    implementation(project(":core:location"))
+    implementation(project(":core:location:location-di"))
 }
 
 // Allow references to generated code

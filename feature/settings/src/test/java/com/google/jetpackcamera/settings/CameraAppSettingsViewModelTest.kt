@@ -17,35 +17,35 @@ package com.google.jetpackcamera.settings
 
 import android.Manifest
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.core.settings.datastoreprefs.PrefsDataStoreSettingsDataSource
-import com.google.jetpackcamera.core.settings.datastoreprefs.testing.FakeDataStoreModule
+import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
+import com.google.jetpackcamera.settings.testing.FakeSettingsDataSource
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_FLASH_TAG
-import java.io.File
-import kotlinx.coroutines.CoroutineScope
+import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_MIRROR_FRONT_CAMERA_TAG
+import java.util.Optional
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -53,11 +53,9 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 
 private val STABILIZATION_SUPPORTED_CONSTRAINTS = TYPICAL_SYSTEM_CONSTRAINTS.copy(
@@ -97,46 +95,40 @@ private val LLB_SUPPORTED_CONSTRAINTS = TYPICAL_SYSTEM_CONSTRAINTS.copy(
 @RunWith(AndroidJUnit4::class)
 internal class CameraAppSettingsViewModelTest {
     @get:Rule
-    val tempFolder = TemporaryFolder()
-
-    @get:Rule
     val composeTestRule = createComposeRule()
 
-    private lateinit var testFile: File
-    private lateinit var testDataStore: DataStore<Preferences>
-    private lateinit var datastoreScope: CoroutineScope
+    private lateinit var settingsDataSource: FakeSettingsDataSource
     private lateinit var settingsViewModel: SettingsViewModel
+    private lateinit var settingsRepository: SettingsRepository
+    private lateinit var constraintsRepository: FakeConstraintsRepository
 
     @Before
     fun setup() = runTest(StandardTestDispatcher()) {
         Dispatchers.setMain(StandardTestDispatcher())
-        testFile = tempFolder.newFile("test_settings.preferences_pb")
-        datastoreScope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
-
-        testDataStore = FakeDataStoreModule.providePreferenceDataStore(
-            scope = datastoreScope,
-            file = testFile
-        )
-
-        val settingsDataSource = PrefsDataStoreSettingsDataSource(
-            dataStore = testDataStore,
-            defaultCaptureModeOverride = CaptureMode.STANDARD
-        )
-        val settingsRepository = LocalSettingsRepository(
+        settingsDataSource = FakeSettingsDataSource()
+        settingsRepository = LocalSettingsRepository(
             settingsDataSource = settingsDataSource
         )
-        val constraintsRepository = FakeConstraintsRepository(TYPICAL_SYSTEM_CONSTRAINTS)
+        constraintsRepository = FakeConstraintsRepository(TYPICAL_SYSTEM_CONSTRAINTS)
         settingsViewModel = SettingsViewModel(
             settingsRepository,
-            constraintsRepository
+            constraintsRepository,
+            Optional.of(FakeLocationProvider())
         )
         advanceUntilIdle()
     }
 
-    @After
-    fun tearDown() {
-        datastoreScope.cancel()
-    }
+    @Test
+    fun locationSetting_whenLocationProviderNotPresent_isHidden() =
+        runTest(StandardTestDispatcher()) {
+            val vm = SettingsViewModel(
+                settingsRepository,
+                constraintsRepository,
+                Optional.empty()
+            )
+            val uiState = vm.settingsUiState.first { it is SettingsUiState.Enabled }
+            assertThat(assertIsEnabled(uiState).locationUiState).isEqualTo(LocationUiState.Hidden)
+        }
 
     @Test
     fun getSettingsUiState() = runTest(StandardTestDispatcher()) {
@@ -219,6 +211,101 @@ internal class CameraAppSettingsViewModelTest {
     }
 
     @Test
+    fun setLocation_permission_granted() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        settingsViewModel.setGrantedPermissions(
+            mutableSetOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        )
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialLocationState = assertIsEnabled(initialState).locationUiState
+        // assert that locationUiState is Enabled.Off
+        assertThat(initialLocationState).isInstanceOf(LocationUiState.Enabled.Off::class.java)
+
+        val nextLocationUiState = LocationUiState.Enabled.On
+        settingsViewModel.setLocationEnabled(true)
+
+        advanceUntilIdle()
+
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.locationUiState).isEqualTo(nextLocationUiState)
+        }
+    }
+
+    @Test
+    fun setLocation_permission_not_granted() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialLocationState = assertIsEnabled(initialState).locationUiState
+        // assert that locationUiState is disabled
+        assertThat(initialLocationState).isNotInstanceOf(LocationUiState.Enabled::class.java)
+
+        settingsViewModel.setLocationEnabled(true)
+
+        advanceUntilIdle()
+
+        // ensure still disabled
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.locationUiState).isNotInstanceOf(LocationUiState.Enabled::class.java)
+        }
+    }
+
+    @Test
+    fun setLocation_coarsePermissionOnly_granted() = runTest(StandardTestDispatcher()) {
+        settingsViewModel.setGrantedPermissions(
+            mutableSetOf(Manifest.permission.ACCESS_COARSE_LOCATION)
+        )
+        advanceUntilIdle()
+
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+
+        val initialLocationState = assertIsEnabled(initialState).locationUiState
+        assertThat(initialLocationState).isInstanceOf(LocationUiState.Enabled.Off::class.java)
+
+        settingsViewModel.setLocationEnabled(true)
+        advanceUntilIdle()
+
+        assertIsEnabled(settingsViewModel.settingsUiState.value).also {
+            assertThat(it.locationUiState).isEqualTo(LocationUiState.Enabled.On)
+        }
+    }
+
+    @Test
+    fun locationUiState_permissionRevoked_disablesLocationUiState() =
+        runTest(StandardTestDispatcher()) {
+            // Start with permission granted and location enabled
+            settingsViewModel.setGrantedPermissions(
+                mutableSetOf(Manifest.permission.ACCESS_FINE_LOCATION)
+            )
+            settingsViewModel.setLocationEnabled(true)
+            advanceUntilIdle()
+
+            val stateWithPerm = assertIsEnabled(
+                settingsViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            )
+            assertThat(stateWithPerm.locationUiState).isEqualTo(LocationUiState.Enabled.On)
+
+            // Revoke location permission
+            settingsViewModel.setGrantedPermissions(mutableSetOf())
+            advanceUntilIdle()
+
+            val stateWithoutPerm = assertIsEnabled(settingsViewModel.settingsUiState.value)
+            assertThat(stateWithoutPerm.locationUiState)
+                .isInstanceOf(LocationUiState.Disabled::class.java)
+            val disabledRationale =
+                (stateWithoutPerm.locationUiState as LocationUiState.Disabled).disabledRationale
+            assertThat(disabledRationale)
+                .isInstanceOf(DisabledRationale.PermissionLocationNotGrantedRationale::class.java)
+        }
+
+    @Test
     fun setDefaultToFrontCamera() = runTest(StandardTestDispatcher()) {
         // Wait for first Enabled state
         val initialState = settingsViewModel.settingsUiState.first {
@@ -239,6 +326,23 @@ internal class CameraAppSettingsViewModelTest {
         assertIsEnabled(settingsViewModel.settingsUiState.value).also {
             assertThat(it.lensFlipUiState.currentLensFacing).isEqualTo(nextCameraLensFacing)
         }
+    }
+
+    @Test
+    fun setMirrorMode() = runTest(StandardTestDispatcher()) {
+        // Wait for first Enabled state
+        val initialState = settingsViewModel.settingsUiState.first {
+            it is SettingsUiState.Enabled
+        }
+        assertThat(assertIsEnabled(initialState).mirrorModeUiState)
+            .isEqualTo(MirrorModeUiState.Enabled(MirrorMode.OFF))
+
+        settingsViewModel.setMirrorMode(MirrorMode.ON_FRONT_ONLY)
+
+        advanceUntilIdle()
+
+        assertThat(assertIsEnabled(settingsViewModel.settingsUiState.value).mirrorModeUiState)
+            .isEqualTo(MirrorModeUiState.Enabled(MirrorMode.ON_FRONT_ONLY))
     }
 
     @Test
@@ -269,11 +373,11 @@ internal class CameraAppSettingsViewModelTest {
 
     private fun createViewModelWithConstraints(
         systemConstraints: CameraSystemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-        defaultCaptureMode: CaptureMode = CaptureMode.VIDEO_ONLY
+        defaultCaptureMode: CaptureMode = CaptureMode.VIDEO_ONLY,
+        initialSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
     ): SettingsViewModel {
-        val settingsDataSource = PrefsDataStoreSettingsDataSource(
-            dataStore = testDataStore,
-            defaultCaptureModeOverride = defaultCaptureMode
+        val settingsDataSource = FakeSettingsDataSource(
+            initialSettings.copy(captureMode = defaultCaptureMode)
         )
         val settingsRepository = LocalSettingsRepository(
             settingsDataSource = settingsDataSource
@@ -315,11 +419,6 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun concurrentCamera_whenCameraEffectIsActive_isDisabled() = runTest(StandardTestDispatcher()) {
         val testEffectId = com.google.jetpackcamera.model.CameraEffectId("fake_effect")
-        // Set selected_camera_effect to a non-empty value first
-        testDataStore.edit { prefs ->
-            prefs[stringPreferencesKey("selected_camera_effect")] = testEffectId.value
-        }
-
         val customViewModel = createViewModelWithConstraints(
             systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
                 concurrentCamerasSupported = true,
@@ -327,7 +426,8 @@ internal class CameraAppSettingsViewModelTest {
                 TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.mapValues { (_, constraints) ->
                     constraints.copy(supportedEffects = setOf(testEffectId))
                 }
-            )
+            ),
+            initialSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(selectedCameraEffect = testEffectId)
         )
         advanceUntilIdle()
 
@@ -353,13 +453,11 @@ internal class CameraAppSettingsViewModelTest {
      */
     @Test
     fun concurrentCamera_whenFlashLlbIsActive_isDisabled() = runTest(StandardTestDispatcher()) {
-        // Set FlashMode to LOW_LIGHT_BOOST first
-        testDataStore.edit { prefs ->
-            prefs[stringPreferencesKey("flash_mode")] = FlashMode.LOW_LIGHT_BOOST.name
-        }
-
         val customViewModel = createViewModelWithConstraints(
-            systemConstraints = LLB_SUPPORTED_CONSTRAINTS
+            systemConstraints = LLB_SUPPORTED_CONSTRAINTS,
+            initialSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                flashMode = FlashMode.LOW_LIGHT_BOOST
+            )
         )
         advanceUntilIdle()
 
@@ -384,13 +482,11 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun concurrentCamera_whenStabilizationIsActive_isDisabled() =
         runTest(StandardTestDispatcher()) {
-            // Set StabilizationMode to ON first
-            testDataStore.edit { prefs ->
-                prefs[stringPreferencesKey("stabilization_mode")] = StabilizationMode.ON.name
-            }
-
             val customViewModel = createViewModelWithConstraints(
-                systemConstraints = STABILIZATION_SUPPORTED_CONSTRAINTS
+                systemConstraints = STABILIZATION_SUPPORTED_CONSTRAINTS,
+                initialSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    stabilizationMode = StabilizationMode.ON
+                )
             )
             advanceUntilIdle()
 
@@ -417,13 +513,9 @@ internal class CameraAppSettingsViewModelTest {
      */
     @Test
     fun concurrentCamera_whenFixedFpsIsActive_isDisabled() = runTest(StandardTestDispatcher()) {
-        // Set targetFrameRate to fixed 30 FPS first
-        testDataStore.edit { prefs ->
-            prefs[intPreferencesKey("target_frame_rate")] = 30
-        }
-
         val customViewModel = createViewModelWithConstraints(
-            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true),
+            initialSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(targetFrameRate = 30)
         )
         advanceUntilIdle()
 
@@ -448,18 +540,12 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun cameraEffect_whenConcurrentCameraIsEnabled_isDisabled() =
         runTest(StandardTestDispatcher()) {
-            // Set ConcurrentCameraMode to DUAL first
-            testDataStore.edit { prefs ->
-                prefs[
-                    stringPreferencesKey(
-                        "concurrent_camera_mode"
-                    )
-                ] = ConcurrentCameraMode.DUAL.name
-            }
-
             val customViewModel = createViewModelWithConstraints(
                 systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
                     concurrentCamerasSupported = true
+                ),
+                initialSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    concurrentCameraMode = ConcurrentCameraMode.DUAL
                 )
             )
             advanceUntilIdle()
@@ -482,13 +568,11 @@ internal class CameraAppSettingsViewModelTest {
      */
     @Test
     fun flashLlb_whenConcurrentCameraIsEnabled_isDisabled() = runTest(StandardTestDispatcher()) {
-        // Set ConcurrentCameraMode to DUAL first
-        testDataStore.edit { prefs ->
-            prefs[stringPreferencesKey("concurrent_camera_mode")] = ConcurrentCameraMode.DUAL.name
-        }
-
         val customViewModel = createViewModelWithConstraints(
-            systemConstraints = LLB_SUPPORTED_CONSTRAINTS
+            systemConstraints = LLB_SUPPORTED_CONSTRAINTS,
+            initialSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                concurrentCameraMode = ConcurrentCameraMode.DUAL
+            )
         )
         advanceUntilIdle()
 
@@ -511,17 +595,11 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun stabilization_whenConcurrentCameraIsEnabled_isDisabled() =
         runTest(StandardTestDispatcher()) {
-            // Set ConcurrentCameraMode to DUAL first
-            testDataStore.edit { prefs ->
-                prefs[
-                    stringPreferencesKey(
-                        "concurrent_camera_mode"
-                    )
-                ] = ConcurrentCameraMode.DUAL.name
-            }
-
             val customViewModel = createViewModelWithConstraints(
-                systemConstraints = STABILIZATION_SUPPORTED_CONSTRAINTS
+                systemConstraints = STABILIZATION_SUPPORTED_CONSTRAINTS,
+                initialSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    concurrentCameraMode = ConcurrentCameraMode.DUAL
+                )
             )
             advanceUntilIdle()
 
@@ -541,13 +619,11 @@ internal class CameraAppSettingsViewModelTest {
      */
     @Test
     fun fps_whenConcurrentCameraIsEnabled_isDisabled() = runTest(StandardTestDispatcher()) {
-        // Set ConcurrentCameraMode to DUAL first
-        testDataStore.edit { prefs ->
-            prefs[stringPreferencesKey("concurrent_camera_mode")] = ConcurrentCameraMode.DUAL.name
-        }
-
         val customViewModel = createViewModelWithConstraints(
-            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true)
+            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(concurrentCamerasSupported = true),
+            initialSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                concurrentCameraMode = ConcurrentCameraMode.DUAL
+            )
         )
         advanceUntilIdle()
 
@@ -562,10 +638,7 @@ internal class CameraAppSettingsViewModelTest {
 
     @Test
     fun cameraEffectDisabled_whenUltraHdrEnabled() = runTest(StandardTestDispatcher()) {
-        // Set image format to Ultra HDR in datastore
-        testDataStore.edit { prefs ->
-            prefs[stringPreferencesKey("image_format")] = ImageOutputFormat.JPEG_ULTRA_HDR.name
-        }
+        settingsDataSource.updateImageFormat(ImageOutputFormat.JPEG_ULTRA_HDR)
         advanceUntilIdle()
 
         val uiState = settingsViewModel.settingsUiState.first {
@@ -591,6 +664,36 @@ internal class CameraAppSettingsViewModelTest {
             )
         }
         composeTestRule.onNodeWithTag(BTN_OPEN_DIALOG_SETTING_FLASH_TAG).assertIsDisplayed()
+    }
+
+    @Test
+    fun settingsScreen_mirrorFrontCameraSwitch_togglesMirrorMode() {
+        Dispatchers.resetMain()
+        // Create the view model after resetting the main dispatcher so that its coroutines run on
+        // the main looper that the compose test rule drives.
+        val viewModel = SettingsViewModel(
+            settingsRepository,
+            constraintsRepository,
+            Optional.of(FakeLocationProvider())
+        )
+        composeTestRule.setContent {
+            SettingsScreen(
+                versionInfo = VersionInfoHolder(versionName = "1.0.0", buildType = "debug"),
+                onNavigateBack = {},
+                viewModel = viewModel
+            )
+        }
+        val mirrorSwitch =
+            composeTestRule.onNodeWithTag(BTN_SWITCH_SETTING_MIRROR_FRONT_CAMERA_TAG)
+        mirrorSwitch.performScrollTo().assertIsOff()
+
+        mirrorSwitch.performClick()
+
+        composeTestRule.waitUntil(5_000) {
+            (viewModel.settingsUiState.value as? SettingsUiState.Enabled)
+                ?.mirrorModeUiState == MirrorModeUiState.Enabled(MirrorMode.ON_FRONT_ONLY)
+        }
+        mirrorSwitch.assertIsOn()
     }
 }
 

@@ -24,12 +24,11 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
-import com.google.jetpackcamera.settings.model.OptionVisibility
-import com.google.jetpackcamera.settings.model.SettingConfig
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -45,7 +44,7 @@ class LocalSettingsRepository @Inject constructor(
 
     override val defaultCameraAppSettings: Flow<CameraAppSettings> =
         settingsDataSource.defaultCameraAppSettings.map { storedSettings ->
-            applyFeaturePolicy(storedSettings, cameraFeaturePolicy)
+            cameraFeaturePolicy.enforceRestrictions(storedSettings)
         }
 
     override suspend fun getCurrentDefaultCameraAppSettings(): CameraAppSettings =
@@ -91,6 +90,10 @@ class LocalSettingsRepository @Inject constructor(
         settingsDataSource.updateImageFormat(imageFormat)
     }
 
+    override suspend fun updateMirrorMode(mirrorMode: MirrorMode) {
+        settingsDataSource.updateMirrorMode(mirrorMode)
+    }
+
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {
         settingsDataSource.updateMaxVideoDuration(durationMillis)
     }
@@ -109,29 +112,5 @@ class LocalSettingsRepository @Inject constructor(
 
     override suspend fun updateLocationEnabled(locationEnabled: Boolean) {
         settingsDataSource.updateLocationEnabled(locationEnabled)
-    }
-
-    private fun applyFeaturePolicy(
-        storedSettings: CameraAppSettings,
-        policy: CameraFeaturePolicy
-    ): CameraAppSettings {
-        return storedSettings.copy(
-            aspectRatio = enforceRestrictions(storedSettings.aspectRatio, policy.aspectRatio),
-            flashMode = enforceRestrictions(storedSettings.flashMode, policy.flashMode),
-            imageFormat = enforceRestrictions(storedSettings.imageFormat, policy.imageFormat),
-            dynamicRange = enforceRestrictions(storedSettings.dynamicRange, policy.dynamicRange),
-            captureMode = enforceRestrictions(storedSettings.captureMode, policy.captureMode)
-        )
-    }
-
-    private fun <T : Any> enforceRestrictions(currentValue: T, config: SettingConfig<T>?): T {
-        if (config == null) return currentValue
-        return when (val visibility = config.visibility) {
-            is OptionVisibility.Hidden -> config.defaultValue
-            is OptionVisibility.Only -> {
-                if (currentValue in visibility.enabledOptions) currentValue else config.defaultValue
-            }
-            is OptionVisibility.Visible -> currentValue
-        }
     }
 }

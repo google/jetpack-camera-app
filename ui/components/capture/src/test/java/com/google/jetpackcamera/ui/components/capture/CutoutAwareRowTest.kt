@@ -41,6 +41,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
+import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
+import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -304,5 +315,138 @@ class CutoutAwareRowTest {
                 rtlReferenceWidth = 360
             )
         ).containsExactly(IntRect(left = 310, top = 0, right = 350, bottom = 40))
+    }
+
+    @Test
+    fun indicatorPill_noActiveIndicators_drawsNoPillSegments() {
+        var pillSegments: List<IntRect> = listOf(IntRect(0, 0, 10, 10))
+        composeTestRule.setContent {
+            IndicatorPill(
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                cutoutRectsOverride = emptyList(),
+                onPillSegmentsPlaced = { pillSegments = it }
+            ) {
+                FlashModeIndicator(
+                    flashModeUiState = FlashModeUiState.Available(
+                        selectedFlashMode = FlashMode.OFF,
+                        availableFlashModes = listOf(
+                            SingleSelectableUiState.SelectableUi(FlashMode.OFF)
+                        ),
+                        isLowLightBoostActive = false
+                    ),
+                    modifier = Modifier.testTag("flash")
+                )
+                HdrIndicator(
+                    hdrUiState = HdrUiState.Unavailable,
+                    modifier = Modifier.testTag("hdr")
+                )
+                VideoQualityIcon(
+                    videoQuality = VideoQuality.UNSPECIFIED,
+                    modifier = Modifier.testTag("vq")
+                )
+                StabilizationIcon(
+                    stabilizationUiState = StabilizationUiState.Specific(
+                        stabilizationMode = StabilizationMode.ON,
+                        active = false
+                    ),
+                    modifier = Modifier.testTag("stab")
+                )
+            }
+        }
+
+        assertThat(pillSegments).isEmpty()
+        composeTestRule.onNodeWithTag("flash").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("hdr").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("vq").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("stab").assertDoesNotExist()
+    }
+
+    @Test
+    fun indicatorPill_twoActiveIndicators_sharesSingle84dpPill() {
+        var pillSegments: List<IntRect> = emptyList()
+        composeTestRule.setContent {
+            IndicatorPill(
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                cutoutRectsOverride = emptyList(),
+                onPillSegmentsPlaced = { pillSegments = it }
+            ) {
+                FlashModeIndicator(
+                    flashModeUiState = FlashModeUiState.Available(
+                        selectedFlashMode = FlashMode.ON,
+                        availableFlashModes = listOf(
+                            SingleSelectableUiState.SelectableUi(FlashMode.ON)
+                        ),
+                        isLowLightBoostActive = false
+                    ),
+                    modifier = Modifier.testTag("flash")
+                )
+                HdrIndicator(
+                    hdrUiState = HdrUiState.Available(
+                        selectedDynamicRange = DEFAULT_HDR_DYNAMIC_RANGE,
+                        selectedImageFormat = DEFAULT_HDR_IMAGE_OUTPUT,
+                        isSupported = true
+                    ),
+                    modifier = Modifier.testTag("hdr")
+                )
+            }
+        }
+
+        assertThat(
+            pillSegments
+        ).containsExactly(IntRect(left = 0, top = 4, right = 84, bottom = 44))
+        val flashBounds = composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot()
+        val hdrBounds = composeTestRule.onNodeWithTag("hdr").getUnclippedBoundsInRoot()
+        assertThat(flashBounds.left).isEqualTo(6.dp)
+        assertThat(flashBounds.right).isEqualTo(42.dp)
+        assertThat(hdrBounds.left).isEqualTo(42.dp)
+        assertThat(hdrBounds.right).isEqualTo(78.dp)
+    }
+
+    @Test
+    fun indicatorPill_cutoutBetweenIndicators_splitsIntoTwoSeparatePills() {
+        // Cutout occupies [60, 100] with 8dp clearance -> keep-out range [52, 108].
+        // First indicator pill [0, 48] fits on the left of the cutout.
+        // Second and third indicators split into a second pill [108, 192] on the right.
+        var pillSegments: List<IntRect> = emptyList()
+        composeTestRule.setContent {
+            IndicatorPill(
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                cutoutRectsOverride = listOf(IntRect(60, 0, 100, 48)),
+                onPillSegmentsPlaced = { pillSegments = it }
+            ) {
+                FlashModeIndicator(
+                    flashModeUiState = FlashModeUiState.Available(
+                        selectedFlashMode = FlashMode.ON,
+                        availableFlashModes = listOf(
+                            SingleSelectableUiState.SelectableUi(FlashMode.ON)
+                        ),
+                        isLowLightBoostActive = false
+                    ),
+                    modifier = Modifier.testTag("flash")
+                )
+                VideoQualityIcon(
+                    videoQuality = VideoQuality.FHD,
+                    modifier = Modifier.testTag("vq")
+                )
+                StabilizationIcon(
+                    stabilizationUiState = StabilizationUiState.Specific(
+                        stabilizationMode = StabilizationMode.ON,
+                        active = true
+                    ),
+                    modifier = Modifier.testTag("stab")
+                )
+            }
+        }
+
+        assertThat(pillSegments).containsExactly(
+            IntRect(left = 0, top = 4, right = 48, bottom = 44),
+            IntRect(left = 108, top = 4, right = 192, bottom = 44)
+        ).inOrder()
+        assertThat(composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot().left)
+            .isEqualTo(6.dp)
+        assertThat(composeTestRule.onNodeWithTag("vq").getUnclippedBoundsInRoot().left)
+            .isEqualTo(114.dp)
+        assertThat(composeTestRule.onNodeWithTag("stab").getUnclippedBoundsInRoot().left)
+            .isEqualTo(150.dp)
     }
 }

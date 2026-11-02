@@ -139,6 +139,8 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core:camera"))
+    implementation(project(":core:location"))
+    implementation(project(":core:location:location-di"))
     implementation(project(":data:camera"))
     implementation(project(":core:common"))
     implementation(project(":data:media"))
@@ -146,9 +148,11 @@ dependencies {
     implementation(project(":core:settings"))
     implementation(project(":core:model"))
     testImplementation(project(":core:camera:testing"))
+    testImplementation(project(":core:location:testing"))
     testImplementation(project(":data:settings:testing"))
     testImplementation(project(":data:media:testing"))
     testImplementation(project(":core:common:testing"))
+    testImplementation(project(":ui:controller:testing"))
     implementation(project(":ui:components:capture"))
     implementation(project(":ui:controller"))
     implementation(project(":ui:controller:impl"))
