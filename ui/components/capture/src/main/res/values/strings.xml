@@ -184,6 +184,14 @@
     <!-- Accessibility label for the close button (X icon) that dismisses a notification banner (snackbar) on the capture screen. "Dismiss" is an imperative verb meaning to close or hide the message. [CHAR LIMIT=NONE] -->
     <string name="snackbar_dismiss_content_description">Dismiss</string>
 
-    <!-- Accessibility action label for clicking a zoom stop button (read aloud by screen readers, e.g. "Double-tap to Zoom to 2×"). %1$s is the formatted zoom level number (e.g. "0.5", "1", "2"). [CHAR LIMIT=NONE] -->
-    <string name="zoom_stop_click_label">Zoom to <xliff:g id="zoom_level" example="2">%1$s</xliff:g>×</string>
+    <!-- Accessibility label naming a camera zoom preset button on the capture screen (e.g. "0.5 times zoom", "2 times zoom"). %1$s is the localized zoom multiplier number (e.g. "0.5", "1", "2"). [CHAR LIMIT=NONE] -->
+    <string name="zoom_stop_content_description"><xliff:g id="zoom_level" example="2">%1$s</xliff:g> times zoom</string>
+    <!-- Accessibility state description for the active zoom preset button on the capture screen when the camera has been pinched or adjusted to an in-between zoom ratio (e.g. "Current zoom 1.4 times"). %1$s is the localized current zoom ratio (e.g. "1.4"). [CHAR LIMIT=NONE] -->
+    <string name="zoom_stop_current_ratio_state_description">Current zoom <xliff:g id="current_zoom" example="1.4">%1$s</xliff:g> times</string>
+    <!-- Accessibility action label for clicking a zoom preset button on the capture screen (read aloud by screen readers, e.g. "Double-tap to Zoom to 2 times"). %1$s is the localized zoom level number (e.g. "0.5", "1", "2"). [CHAR LIMIT=NONE] -->
+    <string name="zoom_stop_click_label">Zoom to <xliff:g id="zoom_level" example="2">%1$s</xliff:g> times</string>
+    <!-- Accessibility custom action label on the active zoom control to increase the camera zoom level by one fine step (0.1 times). "Zoom" is an imperative verb. [CHAR LIMIT=40] -->
+    <string name="zoom_action_step_in">Zoom in</string>
+    <!-- Accessibility custom action label on the active zoom control to decrease the camera zoom level by one fine step (0.1 times). "Zoom" is an imperative verb. [CHAR LIMIT=40] -->
+    <string name="zoom_action_step_out">Zoom out</string>
 </resources>
