@@ -15,11 +15,17 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -174,5 +180,31 @@ class QuickSettingsScreenTest {
         }
 
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON).assertDoesNotExist()
+    }
+
+    @Test
+    fun quickSettingsContent_decouplesBottomSheetPaddingFromInnerColumn() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                Box(modifier = Modifier.testTag("box_scaffold_wrapper")) {
+                    QuickSettingsScaffoldContent(
+                        quickSettingsUiState = sampleAvailableUiState,
+                        onNavigateToSettings = {},
+                        quickSettingsController = fakeQuickSettingsController
+                    )
+                }
+            }
+        }
+
+        val wrapperHeight = composeTestRule
+            .onNodeWithTag("box_scaffold_wrapper")
+            .getUnclippedBoundsInRoot()
+            .height
+        val contentHeight = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+            .getUnclippedBoundsInRoot()
+            .height
+
+        assertThat(wrapperHeight - contentHeight).isAtLeast(24.dp)
     }
 }

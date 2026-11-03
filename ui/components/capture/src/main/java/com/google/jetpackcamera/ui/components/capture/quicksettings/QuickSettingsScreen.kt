@@ -76,7 +76,6 @@ fun QuickSettingsScaffoldContent(
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
                 .padding(bottom = 24.dp)
-                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
         ) {
             QuickSettingsContent(
                 quickSettingsUiState = quickSettingsUiState,
@@ -115,7 +114,11 @@ internal fun QuickSettingsContent(
         CaptureMode.STANDARD -> R.string.quick_settings_title_photo_and_video_settings
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+    ) {
         Text(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
             text = stringResource(id = titleRes),

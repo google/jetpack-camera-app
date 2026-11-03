@@ -24,7 +24,7 @@ import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -34,7 +34,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -60,10 +60,7 @@ class CaptureLayoutTest {
     private fun TestPreviewLayout(
         modifier: Modifier = Modifier,
         scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
-            bottomSheetState = rememberStandardBottomSheetState(
-                initialValue = SheetValue.Hidden,
-                skipHiddenState = false
-            )
+            bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
         ),
         onDismissQuickSettings: () -> Unit = {},
         captureButton: @Composable (Modifier) -> Unit = {},
@@ -96,10 +93,7 @@ class CaptureLayoutTest {
     fun previewLayout_dragHandle_hasButtonRoleAndAccessibilityLabel() {
         composeTestRule.setContent {
             val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberStandardBottomSheetState(
-                    initialValue = SheetValue.Expanded,
-                    skipHiddenState = false
-                )
+                bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded)
             )
             TestPreviewLayout(scaffoldState = scaffoldState)
         }
@@ -129,10 +123,7 @@ class CaptureLayoutTest {
 
         composeTestRule.setContent {
             val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberStandardBottomSheetState(
-                    initialValue = SheetValue.Expanded,
-                    skipHiddenState = false
-                )
+                bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded)
             )
             TestPreviewLayout(
                 scaffoldState = scaffoldState,
@@ -151,10 +142,7 @@ class CaptureLayoutTest {
 
         composeTestRule.setContent {
             val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberStandardBottomSheetState(
-                    initialValue = SheetValue.Expanded,
-                    skipHiddenState = false
-                )
+                bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded)
             )
             TestPreviewLayout(
                 scaffoldState = scaffoldState,
@@ -178,10 +166,7 @@ class CaptureLayoutTest {
 
         composeTestRule.setContent {
             val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberStandardBottomSheetState(
-                    initialValue = SheetValue.Expanded,
-                    skipHiddenState = false
-                )
+                bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded)
             )
             TestPreviewLayout(
                 scaffoldState = scaffoldState,
@@ -207,10 +192,7 @@ class CaptureLayoutTest {
     fun previewLayout_scrim_doesNotExistWhenHidden() {
         composeTestRule.setContent {
             val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberStandardBottomSheetState(
-                    initialValue = SheetValue.Hidden,
-                    skipHiddenState = false
-                )
+                bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
             )
             TestPreviewLayout(scaffoldState = scaffoldState)
         }
