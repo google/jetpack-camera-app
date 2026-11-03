@@ -48,6 +48,7 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -61,6 +62,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
@@ -131,20 +134,25 @@ fun PreviewLayout(
                 modifier = Modifier.fillMaxSize(),
                 scaffoldState = scaffoldState,
                 sheetPeekHeight = 0.dp,
-                sheetDragHandle = {
+                sheetDragHandle = null,
+                sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                sheetContent = {
+                    // Rendered inside sheetContent rather than sheetDragHandle because
+                    // StandardBottomSheet wraps non-null sheetDragHandle in its own clickable
+                    // DragHandleWithTooltip, creating duplicate clickable bounds and overriding
+                    // onDismissQuickSettings.
                     BottomSheetDefaults.DragHandle(
                         modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
                             .testTag(QUICK_SETTINGS_DRAG_HANDLE)
                             .clickable(
                                 role = Role.Button,
                                 onClickLabel = dismissQuickSettingsLabel,
                                 onClick = onDismissQuickSettings
                             )
+                            .minimumInteractiveComponentSize()
                     )
-                },
-                sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                sheetContent = {
                     quickSettingsOverlay(Modifier)
                 },
                 snackbarHost = {}
@@ -218,6 +226,9 @@ fun PreviewLayout(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .testTag(QUICK_SETTINGS_SCRIM)
+                                .semantics {
+                                    contentDescription = dismissQuickSettingsLabel
+                                }
                                 .clickable(
                                     onClickLabel = dismissQuickSettingsLabel,
                                     interactionSource = remember { MutableInteractionSource() },

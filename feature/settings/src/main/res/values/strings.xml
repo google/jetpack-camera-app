@@ -300,4 +300,6 @@
 
     <!-- Label for the app version row in the Software Information section of settings. [CHAR LIMIT=NONE] -->
     <string name="version_info_title">Version</string>
+    <!-- Button at the bottom of a settings dialog that closes the dialog. [CHAR LIMIT=20] -->
+    <string name="dialog_close">Close</string>
 </resources>

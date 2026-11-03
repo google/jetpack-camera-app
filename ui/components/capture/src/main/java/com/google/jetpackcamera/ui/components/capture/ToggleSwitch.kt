@@ -26,14 +26,19 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -48,6 +53,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
@@ -150,94 +158,108 @@ fun ToggleSwitch(
         dragOffset = newOffset.coerceIn(dragMin, dragMax)
     }
 
-    val gestureModifier = (
-        if (enabled) {
-            Modifier
-                .pointerInput(checked) { // Re-key gesture input when 'checked' changes
-                    detectTapGestures(
-                        onTap = {
-                            onCheckedChange(!checked)
+    val interactionSource = remember { MutableInteractionSource() }
+    val gestureModifier = Modifier
+        .semantics { stateDescription = if (checked) rightIconDescription else leftIconDescription }
+        .then(
+            if (enabled) {
+                Modifier
+                    .toggleable(
+                        value = checked,
+                        interactionSource = interactionSource,
+                        indication = null,
+                        role = Role.Switch,
+                        onValueChange = { newValue ->
+                            onCheckedChange(newValue)
                             dragOffset = 0f
                         }
                     )
-                }
-                .draggable(
-                    state = draggableState,
-                    orientation = Orientation.Horizontal,
-                    onDragStopped = {
-                        // Determine new state based on final drag position
-                        val finalThumbPos = initialThumbX - dims.startX
-                        val newCheckedState = finalThumbPos > (dims.dragRange / 2)
-                        if (newCheckedState != checked) {
-                            onCheckedChange(newCheckedState)
+                    .draggable(
+                        state = draggableState,
+                        orientation = Orientation.Horizontal,
+                        onDragStopped = {
+                            // Determine new state based on final drag position
+                            val finalThumbPos = initialThumbX - dims.startX
+                            val newCheckedState = finalThumbPos > (dims.dragRange / 2)
+                            if (newCheckedState != checked) {
+                                onCheckedChange(newCheckedState)
+                            }
+                            // Reset drag offset after drag stops
+                            dragOffset = 0f
                         }
-                        // Reset drag offset after drag stops
-                        dragOffset = 0f
+                    )
+            } else {
+                Modifier
+                    .pointerInput(Unit) { // Re-key gesture input when 'checked' changes
+                        detectTapGestures(
+                            onTap = {
+                                onToggleWhenDisabled()
+                            }
+                        )
                     }
-                )
-        } else {
-            Modifier.pointerInput(Unit) { // Re-key gesture input when 'checked' changes
-                detectTapGestures(
-                    onTap = {
-                        onToggleWhenDisabled()
+                    .semantics {
+                        role = Role.Switch
+                        disabled()
+                    }
+            }
+        )
+
+    // --- 6. Canvas Drawing ---
+    Box(
+        modifier = modifier
+            .then(gestureModifier)
+            .minimumInteractiveComponentSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier.size(dims.switchWidthDp, dims.switchHeightDp)
+        ) {
+            // 1. Draw the Track
+            drawSwitchTrack(
+                color = trackAnimatedColor,
+                cornerRadius = trackCornerRadius
+            )
+
+            // 2. Calculate Thumb Rect and Icon Padding
+            val thumbRect = Rect(
+                left = initialThumbX - dims.thumbRadiusPx,
+                top = thumbY - dims.thumbRadiusPx,
+                right = initialThumbX + dims.thumbRadiusPx,
+                bottom = thumbY + dims.thumbRadiusPx
+            )
+            val iconPadding = (dims.switchHeightPx - dims.iconSizePx) / 2
+
+            // 4. Draw the Thumb (under Icons)
+            drawSwitchThumb(
+                center = Offset(initialThumbX, thumbY),
+                radius = dims.thumbRadiusPx,
+                color = thumbAnimatedColor
+            )
+
+            // 3. Draw the Clipped Icons
+            if (offIconPainter != null || onIconPainter != null) {
+                drawClippedSwitchIcons(
+                    thumbRect = thumbRect,
+                    iconSizePx = dims.iconSizePx,
+                    iconPadding = iconPadding,
+                    leftIconPainter = offIconPainter,
+                    rightIconPainter = onIconPainter,
+                    offIconColor = if (enabled) {
+                        unselectedIconColor
+                    } else {
+                        disableColor.copy(
+                            alpha = DISABLED_ICON_ALPHA
+                        )
+                    },
+                    onIconColor = if (enabled) {
+                        selectedIconColor
+                    } else {
+                        disableColor.copy(
+                            alpha = DISABLED_ICON_ALPHA
+                        )
                     }
                 )
             }
-        }
-        )
-        .semantics { stateDescription = if (checked) rightIconDescription else leftIconDescription }
-
-    // --- 6. Canvas Drawing ---
-    Canvas(
-        modifier = modifier
-            .size(dims.switchWidthDp, dims.switchHeightDp)
-            .then(gestureModifier)
-    ) {
-        // 1. Draw the Track
-        drawSwitchTrack(
-            color = trackAnimatedColor,
-            cornerRadius = trackCornerRadius
-        )
-
-        // 2. Calculate Thumb Rect and Icon Padding
-        val thumbRect = Rect(
-            left = initialThumbX - dims.thumbRadiusPx,
-            top = thumbY - dims.thumbRadiusPx,
-            right = initialThumbX + dims.thumbRadiusPx,
-            bottom = thumbY + dims.thumbRadiusPx
-        )
-        val iconPadding = (dims.switchHeightPx - dims.iconSizePx) / 2
-
-        // 4. Draw the Thumb (under Icons)
-        drawSwitchThumb(
-            center = Offset(initialThumbX, thumbY),
-            radius = dims.thumbRadiusPx,
-            color = thumbAnimatedColor
-        )
-
-        // 3. Draw the Clipped Icons
-        if (offIconPainter != null || onIconPainter != null) {
-            drawClippedSwitchIcons(
-                thumbRect = thumbRect,
-                iconSizePx = dims.iconSizePx,
-                iconPadding = iconPadding,
-                leftIconPainter = offIconPainter,
-                rightIconPainter = onIconPainter,
-                offIconColor = if (enabled) {
-                    unselectedIconColor
-                } else {
-                    disableColor.copy(
-                        alpha = DISABLED_ICON_ALPHA
-                    )
-                },
-                onIconColor = if (enabled) {
-                    selectedIconColor
-                } else {
-                    disableColor.copy(
-                        alpha = DISABLED_ICON_ALPHA
-                    )
-                }
-            )
         }
     }
 }
