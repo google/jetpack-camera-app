@@ -16,9 +16,11 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Matrix
 import android.graphics.Rect as AndroidRect
 import android.util.Size
+import android.view.KeyEvent as AndroidKeyEvent
 import android.view.Surface
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.impl.CameraInternal
@@ -26,18 +28,36 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertRangeInfoEquals
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.isFocusable
+import androidx.compose.ui.test.isNotFocusable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performKeyPress
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pinch
 import androidx.compose.ui.unit.DpSize
@@ -45,6 +65,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
@@ -452,17 +473,253 @@ class PreviewDisplayTest {
         assertThat(zoomFactors.any { it > 1f }).isTrue()
     }
 
-    private fun createUiState(aspectRatio: AspectRatio): PreviewDisplayUiState =
-        PreviewDisplayUiState(
-            aspectRatioUiState = AspectRatioUiState.Available(
-                selectedAspectRatio = aspectRatio,
-                availableAspectRatios = listOf(
-                    SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
-                    SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
-                    SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
-                )
+    @Test
+    fun previewDisplay_loadingState_withAnimationsDisabled_settlesAndExposesLoadingSemantics() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val loadingDescription = context.getString(R.string.camera_not_ready)
+        assertThat(loadingDescription).isEqualTo("Camera Loading…")
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                Box(modifier = Modifier.size(width = 300.dp, height = 400.dp)) {
+                    PreviewDisplay(
+                        previewDisplayUiState = createUiState(AspectRatio.THREE_FOUR),
+                        onTapToFocus = { _, _ -> },
+                        onFlipCamera = {},
+                        onScaleZoom = {},
+                        onRequestWindowColorMode = {},
+                        surfaceRequest = null,
+                        focusMeteringUiState = FocusMeteringUiState.Unspecified
+                    )
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription(loadingDescription)
+            .assertIsDisplayed()
+            .assertContentDescriptionEquals("Camera Loading…")
+            .assertRangeInfoEquals(ProgressBarRangeInfo.Indeterminate)
+    }
+
+    @SuppressLint("RestrictedApi")
+    @Test
+    fun previewDisplay_viewfinder_exposesCenterFocusSemanticsAndKeyboardActivation() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val viewfinderDescription =
+            context.getString(R.string.preview_viewfinder_content_description)
+        val focusActionLabel = context.getString(R.string.preview_tap_to_focus_action_label)
+        assertThat(viewfinderDescription).isEqualTo("Camera viewfinder")
+        assertThat(focusActionLabel).isEqualTo("Focus center")
+
+        val surfaceRequest = createFakeSurfaceRequest(width = 300, height = 400)
+        val recordedTaps = mutableListOf<Offset>()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                Box(modifier = Modifier.size(width = 300.dp, height = 400.dp)) {
+                    PreviewDisplay(
+                        previewDisplayUiState = createUiState(AspectRatio.THREE_FOUR),
+                        onTapToFocus = { x, y -> recordedTaps.add(Offset(x, y)) },
+                        onFlipCamera = {},
+                        onScaleZoom = {},
+                        onRequestWindowColorMode = {},
+                        surfaceRequest = surfaceRequest,
+                        focusMeteringUiState = FocusMeteringUiState.Unspecified
+                    )
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        val viewfinderNode = composeTestRule.onNodeWithContentDescription("Camera viewfinder")
+        viewfinderNode
+            .assertIsDisplayed()
+            .assertContentDescriptionEquals("Camera viewfinder")
+            .assert(isFocusable())
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
+
+        val onClickAction =
+            viewfinderNode.fetchSemanticsNode().config.getOrNull(SemanticsActions.OnClick)
+        assertThat(onClickAction).isNotNull()
+        assertThat(onClickAction?.label).isEqualTo("Focus center")
+
+        viewfinderNode.performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.waitForIdle()
+        assertThat(recordedTaps).hasSize(1)
+        assertThat(recordedTaps.single().x).isWithin(0.5f).of(150f)
+        assertThat(recordedTaps.single().y).isWithin(0.5f).of(200f)
+
+        viewfinderNode.performSemanticsAction(SemanticsActions.RequestFocus)
+        viewfinderNode.assertIsFocused()
+
+        val activationKeyCodes = listOf(
+            AndroidKeyEvent.KEYCODE_ENTER,
+            AndroidKeyEvent.KEYCODE_NUMPAD_ENTER,
+            AndroidKeyEvent.KEYCODE_DPAD_CENTER,
+            AndroidKeyEvent.KEYCODE_SPACE
+        )
+        activationKeyCodes.forEach { keyCode ->
+            recordedTaps.clear()
+            val downConsumed = viewfinderNode.performKeyPress(
+                KeyEvent(AndroidKeyEvent(AndroidKeyEvent.ACTION_DOWN, keyCode))
+            )
+            assertThat(downConsumed).isTrue()
+            assertThat(recordedTaps).isEmpty()
+
+            val upConsumed = viewfinderNode.performKeyPress(
+                KeyEvent(AndroidKeyEvent(AndroidKeyEvent.ACTION_UP, keyCode))
+            )
+            assertThat(upConsumed).isTrue()
+            assertThat(recordedTaps).hasSize(1)
+            assertThat(recordedTaps.single().x).isWithin(0.5f).of(150f)
+            assertThat(recordedTaps.single().y).isWithin(0.5f).of(200f)
+        }
+
+        recordedTaps.clear()
+        val nonActivationConsumed = viewfinderNode.performKeyPress(
+            KeyEvent(AndroidKeyEvent(AndroidKeyEvent.ACTION_UP, AndroidKeyEvent.KEYCODE_A))
+        )
+        assertThat(nonActivationConsumed).isFalse()
+        assertThat(recordedTaps).isEmpty()
+    }
+
+    @SuppressLint("RestrictedApi")
+    @Test
+    fun previewDisplay_viewfinderBelowMinimumTouchTarget_disablesFocusAndClickSemantics() {
+        val surfaceRequest = createFakeSurfaceRequest(width = 32, height = 32)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                Box(modifier = Modifier.size(width = 32.dp, height = 32.dp)) {
+                    PreviewDisplay(
+                        previewDisplayUiState = createUiState(AspectRatio.ONE_ONE),
+                        onTapToFocus = { _, _ -> },
+                        onFlipCamera = {},
+                        onScaleZoom = {},
+                        onRequestWindowColorMode = {},
+                        surfaceRequest = surfaceRequest,
+                        focusMeteringUiState = FocusMeteringUiState.Unspecified
+                    )
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription("Camera viewfinder")
+            .assertIsDisplayed()
+            .assert(isNotFocusable())
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
+    }
+
+    @SuppressLint("RestrictedApi")
+    @Test
+    fun previewDisplay_captureBlink_skipsZeroAlphaStrobeWhenAnimationsDisabled() {
+        val surfaceRequest = createFakeSurfaceRequest(width = 300, height = 400)
+        var lastBlinkTimeStamp by mutableLongStateOf(0L)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                Box(modifier = Modifier.size(width = 300.dp, height = 400.dp)) {
+                    PreviewDisplay(
+                        previewDisplayUiState = createUiState(
+                            aspectRatio = AspectRatio.THREE_FOUR,
+                            lastBlinkTimeStamp = lastBlinkTimeStamp
+                        ),
+                        onTapToFocus = { _, _ -> },
+                        onFlipCamera = {},
+                        onScaleZoom = {},
+                        onRequestWindowColorMode = {},
+                        surfaceRequest = surfaceRequest,
+                        focusMeteringUiState = FocusMeteringUiState.Unspecified
+                    )
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        val alphaProvider = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY)
+            .fetchSemanticsNode()
+            .config[PreviewBlinkAlphaProviderKey]
+        assertThat(alphaProvider()).isEqualTo(1f)
+
+        composeTestRule.mainClock.autoAdvance = false
+        try {
+            lastBlinkTimeStamp = 1_000L
+            val observedAlphas = mutableListOf<Float>()
+            repeat(15) {
+                composeTestRule.mainClock.advanceTimeBy(16L)
+                observedAlphas.add(alphaProvider())
+            }
+            assertThat(observedAlphas).isNotEmpty()
+            assertThat(observedAlphas.all { it == 1f }).isTrue()
+        } finally {
+            composeTestRule.mainClock.autoAdvance = true
+        }
+    }
+
+    @SuppressLint("RestrictedApi")
+    @Test
+    fun previewDisplay_captureBlink_animatesToZeroAndRecoversWhenAnimationsEnabled() {
+        val surfaceRequest = createFakeSurfaceRequest(width = 300, height = 400)
+        var lastBlinkTimeStamp by mutableLongStateOf(0L)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides false) {
+                Box(modifier = Modifier.size(width = 300.dp, height = 400.dp)) {
+                    PreviewDisplay(
+                        previewDisplayUiState = createUiState(
+                            aspectRatio = AspectRatio.THREE_FOUR,
+                            lastBlinkTimeStamp = lastBlinkTimeStamp
+                        ),
+                        onTapToFocus = { _, _ -> },
+                        onFlipCamera = {},
+                        onScaleZoom = {},
+                        onRequestWindowColorMode = {},
+                        surfaceRequest = surfaceRequest,
+                        focusMeteringUiState = FocusMeteringUiState.Unspecified
+                    )
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        val alphaProvider = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY)
+            .fetchSemanticsNode()
+            .config[PreviewBlinkAlphaProviderKey]
+        assertThat(alphaProvider()).isEqualTo(1f)
+
+        composeTestRule.mainClock.autoAdvance = false
+        try {
+            lastBlinkTimeStamp = 1_000L
+            val observedAlphas = mutableListOf<Float>()
+            repeat(20) {
+                Snapshot.sendApplyNotifications()
+                composeTestRule.mainClock.advanceTimeBy(16L)
+                observedAlphas.add(alphaProvider())
+            }
+            assertThat(observedAlphas).contains(0f)
+            assertThat(observedAlphas.last()).isEqualTo(1f)
+        } finally {
+            composeTestRule.mainClock.autoAdvance = true
+        }
+    }
+
+    private fun createUiState(
+        aspectRatio: AspectRatio,
+        lastBlinkTimeStamp: Long = 0L
+    ): PreviewDisplayUiState = PreviewDisplayUiState(
+        lastBlinkTimeStamp = lastBlinkTimeStamp,
+        aspectRatioUiState = AspectRatioUiState.Available(
+            selectedAspectRatio = aspectRatio,
+            availableAspectRatios = listOf(
+                SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
+                SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
+                SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
             )
         )
+    )
 
     @SuppressLint("RestrictedApi")
     private fun createFakeSurfaceRequest(width: Int, height: Int): SurfaceRequest {
@@ -477,7 +734,14 @@ class PreviewDisplayTest {
                 "getHasTransform" -> true
                 "isFrontFacing" -> false
                 "isRemoved" -> false
-                else -> null
+                else -> when (method.returnType) {
+                    Boolean::class.javaPrimitiveType -> false
+                    Int::class.javaPrimitiveType -> 0
+                    Long::class.javaPrimitiveType -> 0L
+                    Float::class.javaPrimitiveType -> 0f
+                    Double::class.javaPrimitiveType -> 0.0
+                    else -> null
+                }
             }
         } as CameraInternal
 

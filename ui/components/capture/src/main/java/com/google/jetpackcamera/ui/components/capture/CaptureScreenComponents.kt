@@ -52,6 +52,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -102,21 +103,34 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -127,6 +141,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
@@ -163,7 +178,13 @@ import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "CaptureScreenComponents"
 private val LOADING_SPINNER_SIZE = 40.dp
+private const val LOADING_SPINNER_STATIC_PROGRESS = 0.75f
 private val ViewfinderCornerRadius = 16.dp
+private val ViewfinderMinTouchTargetSize = 48.dp
+
+@VisibleForTesting
+internal val PreviewBlinkAlphaProviderKey =
+    SemanticsPropertyKey<() -> Float>("PreviewBlinkAlphaProvider")
 
 private val SnackbarMinHeight = 48.dp
 private val SnackbarHorizontalMargin = 16.dp
@@ -821,6 +842,9 @@ internal fun calculateViewfinderSize(
  * - **Double Tap:** Flips the camera between front and back lenses.
  * - **Pinch Gesture:** Scales the camera's zoom level.
  *
+ * Assistive technologies and hardware keyboards can also focus the center of the viewfinder via
+ * its click semantics action or activation keys (`Enter`, `Space`, `DirectionCenter`).
+ *
  * @param previewDisplayUiState the [PreviewDisplayUiState] for this component.
  * @param onTapToFocus the callback for tapping to focus.
  * @param onFlipCamera the callback for flipping the camera.
@@ -864,8 +888,9 @@ fun PreviewDisplay(
     val targetBoundsState = LocalOverlapTargetBounds.current
 
     val disableAnimations = LocalDisableAnimations.current
+    val currentDisableAnimations by rememberUpdatedState(disableAnimations)
     val imageAlphaState = animateFloatAsState(
-        targetValue = if (imageVisible) 1f else 0f,
+        targetValue = if (imageVisible || disableAnimations) 1f else 0f,
         animationSpec = if (disableAnimations) {
             snap()
         } else {
@@ -876,13 +901,23 @@ fun PreviewDisplay(
         },
         label = "PreviewBlinkAlpha"
     )
+    val blinkAlphaProvider = remember { { imageAlphaState.value } }
     val viewfinderShape = remember { RoundedCornerShape(ViewfinderCornerRadius) }
 
-    LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
-        if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
-            imageVisible = false
-            delay(BLINK_TIME)
+    LaunchedEffect(disableAnimations) {
+        if (disableAnimations) {
             imageVisible = true
+        }
+    }
+
+    LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
+        if (previewDisplayUiState.lastBlinkTimeStamp != 0L && !currentDisableAnimations) {
+            imageVisible = false
+            try {
+                delay(BLINK_TIME)
+            } finally {
+                imageVisible = true
+            }
         }
     }
 
@@ -896,6 +931,9 @@ fun PreviewDisplay(
             Box(
                 modifier = Modifier
                     .testTag(PREVIEW_DISPLAY)
+                    .semantics {
+                        this[PreviewBlinkAlphaProviderKey] = blinkAlphaProvider
+                    }
                     .onGloballyPositioned { coordinates ->
                         val bounds = coordinates.boundsInWindow()
                         if (targetBoundsState.value != bounds) {
@@ -936,12 +974,65 @@ fun PreviewDisplay(
                     )
 
                     val coordinateTransformer = remember { MutableCoordinateTransformer() }
+                    var viewfinderSize by remember { mutableStateOf(IntSize.Zero) }
+                    val minTouchTargetPx = with(LocalDensity.current) {
+                        ViewfinderMinTouchTargetSize.roundToPx()
+                    }
+                    val hasInteractiveBounds = viewfinderSize.width >= minTouchTargetPx &&
+                        viewfinderSize.height >= minTouchTargetPx
                     val viewfinderDescription =
-                        stringResource(R.string.camera_viewfinder_content_description)
+                        stringResource(R.string.preview_viewfinder_content_description)
+                    val focusActionLabel =
+                        stringResource(R.string.preview_tap_to_focus_action_label)
+                    val focusAtViewfinderOffset: (Offset) -> Unit = { offset ->
+                        with(coordinateTransformer) {
+                            val surfaceCoords = offset.transform()
+                            Log.d(
+                                TAG,
+                                "onTapToFocus: input{$offset} -> surface{$surfaceCoords}"
+                            )
+                            currentOnTapToFocus(surfaceCoords.x, surfaceCoords.y)
+                        }
+                    }
+                    val triggerCenterFocus: () -> Boolean = {
+                        if (viewfinderSize.width > 0 && viewfinderSize.height > 0) {
+                            focusAtViewfinderOffset(
+                                Offset(
+                                    viewfinderSize.width / 2f,
+                                    viewfinderSize.height / 2f
+                                )
+                            )
+                            true
+                        } else {
+                            false
+                        }
+                    }
                     CameraXViewfinder(
                         modifier = Modifier
                             .fillMaxSize()
-                            .semantics { contentDescription = viewfinderDescription }
+                            .onSizeChanged { viewfinderSize = it }
+                            .semantics {
+                                contentDescription = viewfinderDescription
+                                if (hasInteractiveBounds) {
+                                    onClick(label = focusActionLabel) { triggerCenterFocus() }
+                                }
+                            }
+                            .onKeyEvent { event ->
+                                val isActivationKey = event.key == Key.Enter ||
+                                    event.key == Key.NumPadEnter ||
+                                    event.key == Key.DirectionCenter ||
+                                    event.key == Key.Spacebar
+                                if (hasInteractiveBounds && isActivationKey) {
+                                    when (event.type) {
+                                        KeyEventType.KeyUp -> triggerCenterFocus()
+                                        KeyEventType.KeyDown -> true
+                                        else -> false
+                                    }
+                                } else {
+                                    false
+                                }
+                            }
+                            .focusable(enabled = hasInteractiveBounds)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onDoubleTap = { offset ->
@@ -949,16 +1040,8 @@ fun PreviewDisplay(
                                         Log.d(TAG, "onDoubleTap $offset")
                                         currentOnFlipCamera()
                                     },
-                                    onTap = {
-                                        with(coordinateTransformer) {
-                                            val surfaceCoords = it.transform()
-                                            Log.d(
-                                                TAG,
-                                                "onTapToFocus: " +
-                                                    "input{$it} -> surface{$surfaceCoords}"
-                                            )
-                                            currentOnTapToFocus(surfaceCoords.x, surfaceCoords.y)
-                                        }
+                                    onTap = { offset ->
+                                        focusAtViewfinderOffset(offset)
                                     }
                                 )
                             },
@@ -971,10 +1054,27 @@ fun PreviewDisplay(
                         coordinateTransformer = coordinateTransformer
                     )
                 } else {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center).size(LOADING_SPINNER_SIZE),
-                        color = Color.White
-                    )
+                    val loadingDescription = stringResource(R.string.camera_not_ready)
+                    val indicatorModifier = Modifier
+                        .align(Alignment.Center)
+                        .size(LOADING_SPINNER_SIZE)
+                        .clearAndSetSemantics {
+                            contentDescription = loadingDescription
+                            progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate
+                        }
+                    if (disableAnimations) {
+                        CircularProgressIndicator(
+                            progress = { LOADING_SPINNER_STATIC_PROGRESS },
+                            modifier = indicatorModifier,
+                            color = Color.White,
+                            trackColor = Color.Transparent
+                        )
+                    } else {
+                        CircularProgressIndicator(
+                            modifier = indicatorModifier,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }
