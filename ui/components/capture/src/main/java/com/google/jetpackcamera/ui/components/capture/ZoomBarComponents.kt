@@ -45,8 +45,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
@@ -57,6 +60,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -69,6 +73,9 @@ import java.text.DecimalFormatSymbols
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.floor
+
+/** Test tag for the active zoom stop indicator pill inside [ZoomBar]. */
+internal const val ZOOM_BAR_INDICATOR_TAG = "box_zoom_bar_indicator"
 
 /**
  * Styling configuration for [ZoomBar].
@@ -237,6 +244,14 @@ private fun ZoomControlUiState.Enabled.displayZoomRatio(): Float =
  * A composable that displays zoom controls formatted as a unified capsule track
  * with a sliding indicator pill that smoothly tracks the active zoom stop.
  *
+ * In [Orientation.Horizontal], stops follow the active layout direction (left-to-right in LTR and
+ * mirrored right-to-left in RTL). In [Orientation.Vertical], stops remain ordered top-to-bottom
+ * regardless of layout direction.
+ *
+ * TODO(UX): Confirm final [Orientation.Vertical] stop ordering (currently `0.5x` at top to `5x` at
+ * bottom on `main`, non-inverted in RTL, vs. placing telephoto `5x` at the top so moving/dragging
+ * up zooms in).
+ *
  * @param zoomControlUiState The [ZoomControlUiState] providing available zoom levels and
  *   current ratio.
  * @param onChangeZoom Callback when a zoom level is tapped.
@@ -244,6 +259,8 @@ private fun ZoomControlUiState.Enabled.displayZoomRatio(): Float =
  * @param orientation Layout orientation ([Orientation.Horizontal] or [Orientation.Vertical]),
  *   allowing flexible placement across portrait phones, landscape mode, and open foldables/tablets.
  * @param colors Styling configuration for track and indicator colors.
+ * @param labelRotationDegrees Rotation in degrees applied to each stop's label in the draw phase to
+ *   keep labels upright across device orientations without recomposing items or reordering stops.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -252,10 +269,13 @@ fun ZoomBar(
     onChangeZoom: (Float) -> Unit,
     modifier: Modifier = Modifier,
     orientation: Orientation = Orientation.Horizontal,
-    colors: ZoomBarColors = ZoomBarDefaults.colors()
+    colors: ZoomBarColors = ZoomBarDefaults.colors(),
+    labelRotationDegrees: Float = 0f
 ) {
     if (zoomControlUiState is ZoomControlUiState.Enabled) {
         val currentZoomState by rememberUpdatedState(zoomControlUiState)
+        val currentLabelRotation by rememberUpdatedState(labelRotationDegrees)
+        val labelRotationProvider = remember { { currentLabelRotation } }
         val selectedOptionIndex: Int by remember(zoomControlUiState.primaryLensFacing) {
             derivedStateOf {
                 val checkValue = currentZoomState.animatingToValue
@@ -313,6 +333,7 @@ fun ZoomBar(
                         }
                         .size(ZoomBarDefaults.SlotSize, ZoomBarDefaults.IndicatorHeight)
                         .background(colors.selectedIndicatorColor, MaterialTheme.shapes.medium)
+                        .testTag(ZOOM_BAR_INDICATOR_TAG)
                 )
 
                 Row(
@@ -330,6 +351,7 @@ fun ZoomBar(
                             indicatorPositionProvider = { indicatorPosition },
                             itemIndex = index,
                             colors = colors,
+                            labelRotationProvider = labelRotationProvider,
                             onClick = { onChangeZoom(value) }
                         )
                     }
@@ -349,6 +371,7 @@ fun ZoomBar(
                         }
                         .size(ZoomBarDefaults.SlotSize, ZoomBarDefaults.IndicatorHeight)
                         .background(colors.selectedIndicatorColor, MaterialTheme.shapes.medium)
+                        .testTag(ZOOM_BAR_INDICATOR_TAG)
                 )
 
                 Column(
@@ -366,6 +389,7 @@ fun ZoomBar(
                             indicatorPositionProvider = { indicatorPosition },
                             itemIndex = index,
                             colors = colors,
+                            labelRotationProvider = labelRotationProvider,
                             onClick = { onChangeZoom(value) }
                         )
                     }
@@ -384,16 +408,22 @@ private fun ZoomBarItem(
     itemIndex: Int,
     colors: ZoomBarColors,
     modifier: Modifier = Modifier,
+    labelRotationProvider: () -> Float = { 0f },
     onClick: () -> Unit
 ) {
-    val displayText by remember(value, isSelected) {
+    val displayTenths by remember(value, isSelected) {
         derivedStateOf {
-            formatZoomLabel(
-                targetZoom = value,
-                currentRatio = if (isSelected) currentRatioProvider() else value,
-                isSelected = isSelected
-            )
+            toTenths(if (isSelected) currentRatioProvider() else value)
         }
+    }
+    val locale = LocalResources.current.configuration.locales.get(0) ?: Locale.getDefault()
+    val displayText = remember(value, isSelected, displayTenths, locale) {
+        formatZoomLabel(
+            targetZoom = value,
+            currentRatio = displayTenths / 10f,
+            isSelected = isSelected,
+            locale = locale
+        )
     }
 
     val labelText = remember(displayText) {
@@ -409,9 +439,25 @@ private fun ZoomBarItem(
         }
     }
 
-    val accessibleZoomLabel = formatAccessibleZoomLabel(value)
+    val accessibleZoomLabel = remember(value, locale) {
+        formatAccessibleZoomLabel(value, locale)
+    }
 
     val density = LocalDensity.current
+    val clampedDensity = remember(density) {
+        Density(
+            density = density.density,
+            fontScale = density.fontScale.coerceAtMost(ZoomBarDefaults.MAX_LABEL_FONT_SCALE)
+        )
+    }
+
+    val baseLabelStyle = MaterialTheme.typography.labelLarge
+    val labelStyle = remember(baseLabelStyle) {
+        baseLabelStyle.copy(
+            textAlign = TextAlign.Center,
+            textDirection = TextDirection.Ltr
+        )
+    }
 
     val onClickLabel = stringResource(R.string.zoom_stop_click_label, accessibleZoomLabel)
 
@@ -434,19 +480,10 @@ private fun ZoomBarItem(
             },
         contentAlignment = Alignment.Center
     ) {
-        CompositionLocalProvider(
-            LocalDensity provides Density(
-                density = density.density,
-                fontScale = density.fontScale.coerceAtMost(ZoomBarDefaults.MAX_LABEL_FONT_SCALE)
-            )
-        ) {
-            // TODO(#619): Apply Modifier.animateToUpright() to keep labels upright on rotation
-            //  (https://github.com/google/jetpack-camera-app/pull/619).
+        CompositionLocalProvider(LocalDensity provides clampedDensity) {
             BasicText(
                 text = labelText,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    textAlign = TextAlign.Center
-                ),
+                style = labelStyle,
                 color = {
                     lerp(
                         colors.unselectedContentColor,
@@ -456,6 +493,9 @@ private fun ZoomBarItem(
                 },
                 modifier = Modifier
                     .wrapContentSize(unbounded = true)
+                    .graphicsLayer {
+                        rotationZ = labelRotationProvider()
+                    }
                     .padding(horizontal = 2.dp),
                 softWrap = false
             )
@@ -644,6 +684,95 @@ private fun ZoomBarExtendedRangePreview() {
             ),
             onChangeZoom = {},
             orientation = Orientation.Horizontal
+        )
+    }
+}
+
+@Preview(name = "Horizontal RTL - 1x Selected", locale = "ar", showBackground = true)
+@Composable
+private fun ZoomBarHorizontalRtlPreview() {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFF2B2B2B))
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        ZoomBar(
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 1.0f
+            ),
+            onChangeZoom = {},
+            orientation = Orientation.Horizontal,
+            colors = ZoomBarDefaults.black60Colors()
+        )
+    }
+}
+
+@Preview(name = "Horizontal RTL - Fraction (.5x Selected)", locale = "ar", showBackground = true)
+@Composable
+private fun ZoomBarHorizontalRtlFractionPreview() {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFF2B2B2B))
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        ZoomBar(
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 0.5f
+            ),
+            onChangeZoom = {},
+            orientation = Orientation.Horizontal,
+            colors = ZoomBarDefaults.black60Colors()
+        )
+    }
+}
+
+@Preview(name = "Vertical RTL - Flush Sides", locale = "ar", showBackground = true)
+@Composable
+private fun ZoomBarVerticalRtlPreview() {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFF2B2B2B))
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        ZoomBar(
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 1.0f
+            ),
+            onChangeZoom = {},
+            orientation = Orientation.Vertical,
+            colors = ZoomBarDefaults.black60Colors()
+        )
+    }
+}
+
+@Preview(name = "Horizontal - Rotated Labels (90 deg)", showBackground = true)
+@Composable
+private fun ZoomBarHorizontalRotatedLabelsPreview() {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFF2B2B2B))
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        ZoomBar(
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 1.0f
+            ),
+            onChangeZoom = {},
+            orientation = Orientation.Horizontal,
+            colors = ZoomBarDefaults.black60Colors(),
+            labelRotationDegrees = 90f
         )
     }
 }
