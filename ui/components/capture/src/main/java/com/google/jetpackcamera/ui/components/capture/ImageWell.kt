@@ -47,6 +47,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -101,6 +104,7 @@ fun ImageWell(
         // The container keeps its color when disabled so the control does not fade out over the
         // viewfinder.
         val containerColor = LocalCameraControlBackgroundStyle.current.containerColor
+        val contentDescription = stringResource(id = R.string.image_well_content_description)
 
         Box(
             modifier = modifier
@@ -108,7 +112,10 @@ fun ImageWell(
                 .size(IconButtonDefaults.mediumContainerSize())
                 .clip(shape)
                 .background(containerColor)
-                .clickable(onClick = onClick, enabled = enabled)
+                .semantics {
+                    this.contentDescription = contentDescription
+                }
+                .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
                 .padding(ImageWellTokens.ThumbnailInset)
                 .clip(ImageWellTokens.ThumbnailShape)
         ) {
@@ -136,9 +143,7 @@ fun ImageWell(
                     Image(
                         bitmap = imageBitmap,
                         modifier = Modifier.fillMaxSize(),
-                        contentDescription = stringResource(
-                            id = R.string.image_well_content_description
-                        ),
+                        contentDescription = null,
                         contentScale = ContentScale.Crop
                     )
                 }

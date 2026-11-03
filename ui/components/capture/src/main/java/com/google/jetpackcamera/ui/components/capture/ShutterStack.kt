@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -43,6 +44,9 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.constrainHeight
@@ -117,7 +121,8 @@ private val HorizontalSlotOrder = listOf(
  * @param orientation Axis along which active controls are arranged.
  * @param compact When `true` in [Orientation.Vertical], reduces default vertical spacing from
  *   `48.dp` to `20.dp` for height-constrained viewports.
- * @param spacing Main-axis gap placed between adjacent non-empty controls.
+ * @param spacing Main-axis gap placed between adjacent non-empty controls, compressed
+ *   proportionally when main-axis constraints are tighter than the desired total span.
  * @param flipCameraButton Optional slot for flipping between camera lenses (`56.dp` nominal size).
  * @param imageWell Optional slot for the recent media thumbnail well (`56.dp` nominal size).
  * @param pauseResumeButton Optional slot for pausing and resuming active video recording
@@ -138,33 +143,41 @@ fun ShutterStack(
     imageWell: (@Composable (Modifier) -> Unit)? = null,
     pauseResumeButton: (@Composable (Modifier) -> Unit)? = null
 ) {
+    val slotOrder = if (orientation == Orientation.Vertical) {
+        VerticalSlotOrder
+    } else {
+        HorizontalSlotOrder
+    }
     val measurePolicy = remember(orientation, spacing) {
         MeasurePolicy { measurables, constraints ->
-            val spacingPx = spacing.roundToPx()
+            val requestedSpacingPx = spacing.roundToPx().coerceAtLeast(0)
             val childConstraints = constraints.copy(minWidth = 0, minHeight = 0)
             val measuredBySlot = measurables.associate { measurable ->
                 (measurable.layoutId as? ShutterSlotId) to measurable.measure(childConstraints)
             }
-            val slotOrder = if (orientation == Orientation.Vertical) {
+            val order = if (orientation == Orientation.Vertical) {
                 VerticalSlotOrder
             } else {
                 HorizontalSlotOrder
             }
-            val activePlaceables = slotOrder.mapNotNull { slotId ->
+            val activePlaceables = order.mapNotNull { slotId ->
                 measuredBySlot[slotId]?.takeIf { placeable ->
                     placeable.width > 0 && placeable.height > 0
                 }
             }
+            val gapCount = (activePlaceables.size - 1).coerceAtLeast(0)
 
             if (orientation == Orientation.Vertical) {
                 val contentWidth = activePlaceables.maxOfOrNull { it.width } ?: 0
-                val contentHeight = if (activePlaceables.isEmpty()) {
-                    0
-                } else {
-                    activePlaceables.sumOf { it.height } + spacingPx * (activePlaceables.size - 1)
-                }
+                val itemsHeight = activePlaceables.sumOf { it.height }
+                val desiredHeight = itemsHeight + requestedSpacingPx * gapCount
                 val width = constraints.constrainWidth(contentWidth)
-                val height = constraints.constrainHeight(contentHeight)
+                val height = constraints.constrainHeight(desiredHeight)
+                val effectiveSpacingPx = if (gapCount > 0 && desiredHeight > height) {
+                    ((height - itemsHeight) / gapCount).coerceAtLeast(0)
+                } else {
+                    requestedSpacingPx
+                }
 
                 layout(width, height) {
                     var currentY = 0
@@ -173,18 +186,20 @@ fun ShutterStack(
                             x = (width - p.width) / 2,
                             y = currentY
                         )
-                        currentY += p.height + spacingPx
+                        currentY += p.height + effectiveSpacingPx
                     }
                 }
             } else {
-                val contentWidth = if (activePlaceables.isEmpty()) {
-                    0
-                } else {
-                    activePlaceables.sumOf { it.width } + spacingPx * (activePlaceables.size - 1)
-                }
+                val itemsWidth = activePlaceables.sumOf { it.width }
+                val desiredWidth = itemsWidth + requestedSpacingPx * gapCount
                 val contentHeight = activePlaceables.maxOfOrNull { it.height } ?: 0
-                val width = constraints.constrainWidth(contentWidth)
+                val width = constraints.constrainWidth(desiredWidth)
                 val height = constraints.constrainHeight(contentHeight)
+                val effectiveSpacingPx = if (gapCount > 0 && desiredWidth > width) {
+                    ((width - itemsWidth) / gapCount).coerceAtLeast(0)
+                } else {
+                    requestedSpacingPx
+                }
 
                 layout(width, height) {
                     var currentX = 0
@@ -193,41 +208,80 @@ fun ShutterStack(
                             x = currentX,
                             y = (height - p.height) / 2
                         )
-                        currentX += p.width + spacingPx
+                        currentX += p.width + effectiveSpacingPx
                     }
                 }
             }
         }
     }
 
-    Layout(
-        content = {
-            flipCameraButton?.let {
+    CompositionLocalProvider(LocalContentColor provides Color.White) {
+        Layout(
+            content = {
+                flipCameraButton?.let {
+                    OverlapAwareStyleProvider(
+                        modifier = Modifier.layoutId(ShutterSlotId.FLIP_CAMERA)
+                    ) {
+                        it(
+                            Modifier.shutterSlotSemantics(
+                                slotId = ShutterSlotId.FLIP_CAMERA,
+                                slotOrder = slotOrder
+                            )
+                        )
+                    }
+                }
                 OverlapAwareStyleProvider(
-                    modifier = Modifier.layoutId(ShutterSlotId.FLIP_CAMERA)
+                    modifier = Modifier.layoutId(ShutterSlotId.CAPTURE)
                 ) {
-                    it(Modifier)
+                    captureButton(
+                        Modifier.shutterSlotSemantics(
+                            slotId = ShutterSlotId.CAPTURE,
+                            slotOrder = slotOrder
+                        )
+                    )
                 }
-            }
-            OverlapAwareStyleProvider(modifier = Modifier.layoutId(ShutterSlotId.CAPTURE)) {
-                captureButton(Modifier)
-            }
-            imageWell?.let {
-                OverlapAwareStyleProvider(modifier = Modifier.layoutId(ShutterSlotId.IMAGE_WELL)) {
-                    it(Modifier)
+                imageWell?.let {
+                    OverlapAwareStyleProvider(
+                        modifier = Modifier.layoutId(ShutterSlotId.IMAGE_WELL)
+                    ) {
+                        it(
+                            Modifier.shutterSlotSemantics(
+                                slotId = ShutterSlotId.IMAGE_WELL,
+                                slotOrder = slotOrder
+                            )
+                        )
+                    }
                 }
-            }
-            pauseResumeButton?.let {
-                OverlapAwareStyleProvider(
-                    modifier = Modifier.layoutId(ShutterSlotId.PAUSE_RESUME)
-                ) {
-                    it(Modifier)
+                pauseResumeButton?.let {
+                    OverlapAwareStyleProvider(
+                        modifier = Modifier.layoutId(ShutterSlotId.PAUSE_RESUME)
+                    ) {
+                        it(
+                            Modifier.shutterSlotSemantics(
+                                slotId = ShutterSlotId.PAUSE_RESUME,
+                                slotOrder = slotOrder
+                            )
+                        )
+                    }
                 }
-            }
-        },
-        modifier = modifier,
-        measurePolicy = measurePolicy
-    )
+            },
+            modifier = modifier
+                .semantics { isTraversalGroup = true }
+                .focusGroup(),
+            measurePolicy = measurePolicy
+        )
+    }
+}
+
+private fun Modifier.shutterSlotSemantics(
+    slotId: ShutterSlotId,
+    slotOrder: List<ShutterSlotId>
+): Modifier {
+    val index = slotOrder.indexOf(slotId).toFloat()
+    return this.semantics {
+        isTraversalGroup = true
+        traversalIndex = index
+    }
 }
 
 @Composable
@@ -305,7 +359,6 @@ private fun PreviewShutterStack(
 
     MaterialTheme(colorScheme = colorScheme) {
         CompositionLocalProvider(
-            LocalContentColor provides Color.White,
             LocalOverlapTargetBounds provides overlapBounds
         ) {
             Box(

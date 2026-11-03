@@ -15,9 +15,15 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.content.Context
+import android.net.Uri
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -25,10 +31,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -37,7 +58,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
+import androidx.core.graphics.createBitmap
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.MediaDescriptor
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -517,11 +543,375 @@ class ShutterStackTest {
             .isEqualTo(222.dp)
     }
 
+    @Test
+    fun traversalSemantics_postureSwitch_exposesGroupAndUpdatesPerSlotTraversalIndex() {
+        var orientation by mutableStateOf(Orientation.Vertical)
+
+        composeTestRule.setContent {
+            ShutterStack(
+                modifier = Modifier.testTag(STACK_TAG),
+                orientation = orientation,
+                captureButton = { modifier ->
+                    Box(modifier.size(86.dp).testTag(CAPTURE_TAG))
+                },
+                flipCameraButton = { modifier ->
+                    Box(modifier.size(56.dp).testTag(FLIP_TAG))
+                },
+                imageWell = { modifier ->
+                    Box(modifier.size(56.dp).testTag(WELL_TAG))
+                },
+                pauseResumeButton = { modifier ->
+                    Box(modifier.size(56.dp).testTag(PAUSE_TAG))
+                }
+            )
+        }
+
+        composeTestRule.onNodeWithTag(STACK_TAG).assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true)
+        )
+        assertThat(slotTraversalIndex(FLIP_TAG)).isEqualTo(0f)
+        assertThat(slotTraversalIndex(CAPTURE_TAG)).isEqualTo(1f)
+        assertThat(slotTraversalIndex(WELL_TAG)).isEqualTo(2f)
+        assertThat(slotTraversalIndex(PAUSE_TAG)).isEqualTo(3f)
+
+        orientation = Orientation.Horizontal
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(STACK_TAG).assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true)
+        )
+        assertThat(slotTraversalIndex(WELL_TAG)).isEqualTo(0f)
+        assertThat(slotTraversalIndex(CAPTURE_TAG)).isEqualTo(1f)
+        assertThat(slotTraversalIndex(FLIP_TAG)).isEqualTo(2f)
+        assertThat(slotTraversalIndex(PAUSE_TAG)).isEqualTo(3f)
+    }
+
+    @Test
+    fun focusOrder_moveFocusNext_traversesSlotsInVerticalAndHorizontalLtrAndRtl() {
+        var orientation by mutableStateOf(Orientation.Vertical)
+        var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
+        val entryFocusRequester = FocusRequester()
+        lateinit var focusManager: FocusManager
+
+        composeTestRule.setContent {
+            focusManager = LocalFocusManager.current
+            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                Box {
+                    Box(
+                        Modifier
+                            .size(48.dp)
+                            .focusRequester(entryFocusRequester)
+                            .testTag(ENTRY_FOCUS_TAG)
+                            .focusable()
+                    )
+                    ShutterStack(
+                        modifier = Modifier.testTag(STACK_TAG),
+                        orientation = orientation,
+                        captureButton = { modifier ->
+                            Box(modifier.size(86.dp).testTag(CAPTURE_TAG).focusable())
+                        },
+                        flipCameraButton = { modifier ->
+                            Box(modifier.size(56.dp).testTag(FLIP_TAG).focusable())
+                        },
+                        imageWell = { modifier ->
+                            Box(modifier.size(56.dp).testTag(WELL_TAG).focusable())
+                        },
+                        pauseResumeButton = { modifier ->
+                            Box(modifier.size(56.dp).testTag(PAUSE_TAG).focusable())
+                        }
+                    )
+                    Box(
+                        Modifier
+                            .size(48.dp)
+                            .testTag(EXIT_FOCUS_TAG)
+                            .focusable()
+                    )
+                }
+            }
+        }
+
+        assertNextFocusSequence(
+            entryFocusRequester = entryFocusRequester,
+            focusManager = focusManager,
+            expectedTags = listOf(FLIP_TAG, CAPTURE_TAG, WELL_TAG, PAUSE_TAG)
+        )
+
+        orientation = Orientation.Horizontal
+        layoutDirection = LayoutDirection.Ltr
+        composeTestRule.waitForIdle()
+        assertNextFocusSequence(
+            entryFocusRequester = entryFocusRequester,
+            focusManager = focusManager,
+            expectedTags = listOf(WELL_TAG, CAPTURE_TAG, FLIP_TAG, PAUSE_TAG)
+        )
+
+        layoutDirection = LayoutDirection.Rtl
+        composeTestRule.waitForIdle()
+        assertNextFocusSequence(
+            entryFocusRequester = entryFocusRequester,
+            focusManager = focusManager,
+            expectedTags = listOf(WELL_TAG, CAPTURE_TAG, FLIP_TAG, PAUSE_TAG)
+        )
+    }
+
+    @Test
+    fun lightTheme_providesWhiteLocalContentColorInsideShutterStack() {
+        var captureContentColor: Color? = null
+        var flipContentColor: Color? = null
+        var wellContentColor: Color? = null
+        var pauseContentColor: Color? = null
+
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = lightColorScheme()) {
+                ShutterStack(
+                    captureButton = { modifier ->
+                        captureContentColor = LocalContentColor.current
+                        Box(modifier.size(86.dp).testTag(CAPTURE_TAG))
+                    },
+                    flipCameraButton = { modifier ->
+                        flipContentColor = LocalContentColor.current
+                        Box(modifier.size(56.dp).testTag(FLIP_TAG))
+                    },
+                    imageWell = { modifier ->
+                        wellContentColor = LocalContentColor.current
+                        Box(modifier.size(56.dp).testTag(WELL_TAG))
+                    },
+                    pauseResumeButton = { modifier ->
+                        pauseContentColor = LocalContentColor.current
+                        Box(modifier.size(56.dp).testTag(PAUSE_TAG))
+                    }
+                )
+            }
+        }
+
+        assertThat(captureContentColor).isEqualTo(Color.White)
+        assertThat(flipContentColor).isEqualTo(Color.White)
+        assertThat(wellContentColor).isEqualTo(Color.White)
+        assertThat(pauseContentColor).isEqualTo(Color.White)
+    }
+
+    @Test
+    fun collapsedOptionalSlots_emitZeroChildSemanticsNodes() {
+        composeTestRule.setContent {
+            ShutterStack(
+                modifier = Modifier.testTag(STACK_TAG),
+                orientation = Orientation.Vertical,
+                captureButton = { modifier ->
+                    Box(modifier.size(86.dp).testTag(CAPTURE_TAG))
+                },
+                flipCameraButton = { modifier ->
+                    FlipCameraButton(
+                        flipLensUiState = FlipLensUiState.Unavailable,
+                        onClick = {},
+                        modifier = modifier.testTag(FLIP_TAG)
+                    )
+                },
+                imageWell = { modifier ->
+                    ImageWell(
+                        imageWellUiState = ImageWellUiState.Unavailable,
+                        onClick = {},
+                        modifier = modifier.testTag(WELL_TAG)
+                    )
+                },
+                pauseResumeButton = {
+                    // Emits nothing when recording is inactive
+                }
+            )
+        }
+
+        val stackChildren = composeTestRule.onNodeWithTag(STACK_TAG, useUnmergedTree = true)
+            .fetchSemanticsNode().children
+        assertThat(stackChildren).hasSize(1)
+        composeTestRule.onNodeWithTag(FLIP_TAG, useUnmergedTree = true).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(WELL_TAG, useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun horizontalConstrained328dp_fourSlots_compressesSpacingWithoutClippingInLtrAndRtl() {
+        var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                Box(modifier = Modifier.size(width = 328.dp, height = 86.dp)) {
+                    ShutterStack(
+                        modifier = Modifier.testTag(STACK_TAG),
+                        orientation = Orientation.Horizontal,
+                        captureButton = { modifier ->
+                            Box(
+                                modifier
+                                    .size(width = 118.25.dp, height = 86.dp)
+                                    .testTag(CAPTURE_TAG)
+                            )
+                        },
+                        flipCameraButton = { modifier ->
+                            Box(modifier.size(56.dp).testTag(FLIP_TAG))
+                        },
+                        imageWell = { modifier ->
+                            Box(modifier.size(56.dp).testTag(WELL_TAG))
+                        },
+                        pauseResumeButton = { modifier ->
+                            Box(modifier.size(56.dp).testTag(PAUSE_TAG))
+                        }
+                    )
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        assertConstrainedHorizontalBoundsWithin(maxWidth = 328.dp)
+
+        val wellLtr = composeTestRule.onNodeWithTag(WELL_TAG).getUnclippedBoundsInRoot()
+        val captureLtr = composeTestRule.onNodeWithTag(CAPTURE_TAG).getUnclippedBoundsInRoot()
+        val flipLtr = composeTestRule.onNodeWithTag(FLIP_TAG).getUnclippedBoundsInRoot()
+        val pauseLtr = composeTestRule.onNodeWithTag(PAUSE_TAG).getUnclippedBoundsInRoot()
+        assertThat(wellLtr.right).isAtMost(captureLtr.left)
+        assertThat(captureLtr.right).isAtMost(flipLtr.left)
+        assertThat(flipLtr.right).isAtMost(pauseLtr.left)
+
+        layoutDirection = LayoutDirection.Rtl
+        composeTestRule.waitForIdle()
+        assertConstrainedHorizontalBoundsWithin(maxWidth = 328.dp)
+
+        val pauseRtl = composeTestRule.onNodeWithTag(PAUSE_TAG).getUnclippedBoundsInRoot()
+        val flipRtl = composeTestRule.onNodeWithTag(FLIP_TAG).getUnclippedBoundsInRoot()
+        val captureRtl = composeTestRule.onNodeWithTag(CAPTURE_TAG).getUnclippedBoundsInRoot()
+        val wellRtl = composeTestRule.onNodeWithTag(WELL_TAG).getUnclippedBoundsInRoot()
+        assertThat(pauseRtl.right).isAtMost(flipRtl.left)
+        assertThat(flipRtl.right).isAtMost(captureRtl.left)
+        assertThat(captureRtl.right).isAtMost(wellRtl.left)
+    }
+
+    @Test
+    fun verticalConstrained360dp_fourSlots_compressesSpacingWithoutClipping() {
+        composeTestRule.setContent {
+            Box(modifier = Modifier.size(width = 86.dp, height = 360.dp)) {
+                ShutterStack(
+                    modifier = Modifier.testTag(STACK_TAG),
+                    orientation = Orientation.Vertical,
+                    captureButton = { modifier ->
+                        Box(modifier.size(86.dp).testTag(CAPTURE_TAG))
+                    },
+                    flipCameraButton = { modifier ->
+                        Box(modifier.size(56.dp).testTag(FLIP_TAG))
+                    },
+                    imageWell = { modifier ->
+                        Box(modifier.size(56.dp).testTag(WELL_TAG))
+                    },
+                    pauseResumeButton = { modifier ->
+                        Box(modifier.size(56.dp).testTag(PAUSE_TAG))
+                    }
+                )
+            }
+        }
+
+        for (tag in listOf(FLIP_TAG, WELL_TAG, PAUSE_TAG)) {
+            val unclipped = composeTestRule.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+            val clipped = composeTestRule.onNodeWithTag(tag).getBoundsInRoot()
+            assertThat(unclipped.height).isEqualTo(56.dp)
+            assertThat(clipped.height).isEqualTo(56.dp)
+            assertThat(unclipped.top).isAtLeast(0.dp)
+            assertThat(unclipped.bottom).isAtMost(360.dp)
+        }
+    }
+
+    @Test
+    fun imageWell_exposesButtonRoleAndContentDescriptionWithAndWithoutThumbnail() {
+        val expectedDescription = ApplicationProvider.getApplicationContext<Context>()
+            .getString(R.string.image_well_content_description)
+        val bitmap = createBitmap(32, 32)
+        var uiState by mutableStateOf<ImageWellUiState>(
+            ImageWellUiState.Content(
+                mediaDescriptor = MediaDescriptor.Content.Image(
+                    uri = Uri.fromParts("content", "capture1", null),
+                    thumbnail = bitmap
+                )
+            )
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                ImageWell(
+                    imageWellUiState = uiState,
+                    onClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG)
+            .assertContentDescriptionEquals(expectedDescription)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+        composeTestRule.onAllNodes(
+            SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
+            useUnmergedTree = true
+        ).assertCountEquals(1)
+
+        uiState = ImageWellUiState.Content(
+            mediaDescriptor = MediaDescriptor.Content.Image(
+                uri = Uri.fromParts("content", "capture2", null),
+                thumbnail = null
+            )
+        )
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG)
+            .assertContentDescriptionEquals(expectedDescription)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+    }
+
+    private fun slotTraversalIndex(tag: String): Float {
+        val slotNode = composeTestRule.onNodeWithTag(tag, useUnmergedTree = true)
+            .fetchSemanticsNode()
+        assertThat(slotNode.config.getOrNull(SemanticsProperties.IsTraversalGroup)).isTrue()
+        return checkNotNull(slotNode.config.getOrNull(SemanticsProperties.TraversalIndex))
+    }
+
+    private fun assertNextFocusSequence(
+        entryFocusRequester: FocusRequester,
+        focusManager: FocusManager,
+        expectedTags: List<String>
+    ) {
+        composeTestRule.runOnIdle {
+            entryFocusRequester.requestFocus()
+        }
+        composeTestRule.onNodeWithTag(ENTRY_FOCUS_TAG).assertIsFocused()
+        for (tag in expectedTags) {
+            composeTestRule.runOnIdle {
+                assertThat(focusManager.moveFocus(FocusDirection.Next)).isTrue()
+            }
+            composeTestRule.onNodeWithTag(tag).assertIsFocused()
+        }
+        composeTestRule.runOnIdle {
+            assertThat(focusManager.moveFocus(FocusDirection.Next)).isTrue()
+        }
+        composeTestRule.onNodeWithTag(EXIT_FOCUS_TAG).assertIsFocused()
+    }
+
+    private fun assertConstrainedHorizontalBoundsWithin(maxWidth: Dp) {
+        val stackBounds = composeTestRule.onNodeWithTag(STACK_TAG).getUnclippedBoundsInRoot()
+        assertThat(stackBounds.left).isAtLeast(0.dp)
+        assertThat(stackBounds.right).isAtMost(maxWidth)
+
+        val captureBounds = composeTestRule.onNodeWithTag(CAPTURE_TAG).getUnclippedBoundsInRoot()
+        assertThat(captureBounds.left).isAtLeast(0.dp)
+        assertThat(captureBounds.right).isAtMost(maxWidth)
+
+        for (tag in listOf(WELL_TAG, FLIP_TAG, PAUSE_TAG)) {
+            val unclipped = composeTestRule.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+            val clipped = composeTestRule.onNodeWithTag(tag).getBoundsInRoot()
+            assertThat(unclipped.width).isEqualTo(56.dp)
+            assertThat(clipped.width).isEqualTo(56.dp)
+            assertThat(unclipped.left).isAtLeast(0.dp)
+            assertThat(unclipped.right).isAtMost(maxWidth)
+        }
+    }
+
     private companion object {
         const val STACK_TAG = "stack_shutter"
         const val CAPTURE_TAG = "btn_shutter_capture"
         const val FLIP_TAG = "btn_shutter_flip"
         const val WELL_TAG = "btn_shutter_well"
         const val PAUSE_TAG = "btn_shutter_pause"
+        const val ENTRY_FOCUS_TAG = "focus_entry_sentinel"
+        const val EXIT_FOCUS_TAG = "focus_exit_sentinel"
     }
 }
