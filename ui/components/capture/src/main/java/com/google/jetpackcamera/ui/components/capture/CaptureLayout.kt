@@ -573,7 +573,9 @@ private fun AdaptivePortraitCaptureLayout(
                             .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        captureModeCarousel(Modifier)
+                        OverlapAwareStyleProvider {
+                            captureModeCarousel(Modifier)
+                        }
                     }
 
                     Row(
@@ -759,7 +761,7 @@ private fun VerticalMaterialControls(
     flipCameraButton: @Composable (Modifier) -> Unit,
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
-    captureModeCarousel: @Composable (Modifier) -> Unit,
+    captureModeCarousel: @Composable (Modifier) -> Unit = {},
     elapsedTimeDisplay: @Composable (Modifier) -> Unit,
     snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
@@ -848,7 +850,9 @@ private fun VerticalMaterialControls(
                         .height(MIDDLE_SLOT_HEIGHT + stackGap * 2),
                     contentAlignment = Alignment.Center
                 ) {
-                    captureModeCarousel(Modifier)
+                    OverlapAwareStyleProvider {
+                        captureModeCarousel(Modifier)
+                    }
                 }
 
                 // bottom controls row
