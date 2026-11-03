@@ -34,11 +34,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -48,10 +54,13 @@ import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
@@ -66,6 +75,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
@@ -252,7 +262,7 @@ class QuickSettingsOverlayCardTest {
     fun quickSettingsOverlayCard_scrimTap_dismissesAndInterceptsUnderlyingClicks() {
         var dismissCount = 0
         var underlyingClicked = false
-        val expectedClickLabel = ApplicationProvider.getApplicationContext<Context>()
+        val expectedDismissDescription = ApplicationProvider.getApplicationContext<Context>()
             .getString(R.string.quick_settings_btn_close_expanded_settings_description)
 
         composeTestRule.setContent {
@@ -274,9 +284,12 @@ class QuickSettingsOverlayCardTest {
         }
 
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
+            .assertContentDescriptionEquals(expectedDismissDescription)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.TraversalIndex, 1f))
             .assert(
-                SemanticsMatcher("onClickLabel equals $expectedClickLabel") { node ->
-                    node.config.getOrNull(SemanticsActions.OnClick)?.label == expectedClickLabel
+                SemanticsMatcher("onClickLabel is null to avoid duplicate speech") { node ->
+                    node.config.getOrNull(SemanticsActions.OnClick)?.label == null
                 }
             )
             .performTouchInput {
@@ -629,5 +642,166 @@ class QuickSettingsOverlayCardTest {
         assertThat(cardBounds.right).isEqualTo(rootBounds.right - 16.dp)
         assertThat(cardBounds.top).isEqualTo(16.dp)
         assertThat(cardBounds.bottom).isLessThan(rootBounds.height / 2)
+    }
+
+    @Test
+    fun quickSettingsOverlayCard_semantics_exposesPaneTitleHeadingAndCardFirstTraversal() {
+        var captureMode by mutableStateOf(CaptureMode.STANDARD)
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val standardTitle = context.getString(
+            R.string.quick_settings_title_photo_and_video_settings
+        )
+        val photoTitle = context.getString(R.string.quick_settings_title_photo_settings)
+        val videoTitle = context.getString(R.string.quick_settings_title_video_settings)
+
+        composeTestRule.setContent {
+            val uiState = sampleAvailableUiState.copy(
+                captureModeUiState = CaptureModeUiState.Available(
+                    selectedCaptureMode = captureMode,
+                    availableCaptureModes = listOf(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
+                    )
+                )
+            )
+            MaterialTheme {
+                QuickSettingsOverlayCard(
+                    isOpen = true,
+                    onDismissRequest = {},
+                    quickSettingsUiState = uiState,
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+            .onParent()
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true))
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, standardTitle))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.TraversalIndex, 0f))
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.TraversalIndex, 1f))
+
+        composeTestRule.onNodeWithText(standardTitle)
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+
+        composeTestRule.runOnIdle { captureMode = CaptureMode.IMAGE_ONLY }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, photoTitle))
+        composeTestRule.onNodeWithText(photoTitle)
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+
+        composeTestRule.runOnIdle { captureMode = CaptureMode.VIDEO_ONLY }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, videoTitle))
+        composeTestRule.onNodeWithText(videoTitle)
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun quickSettingsOverlayCard_escapeKey_dismissesOnKeyUp() {
+        var dismissCount = 0
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsOverlayCard(
+                    isOpen = true,
+                    onDismissRequest = { dismissCount++ },
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+            .performKeyInput { keyDown(Key.Escape) }
+        assertThat(dismissCount).isEqualTo(0)
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+            .performKeyInput { keyUp(Key.Escape) }
+        assertThat(dismissCount).isEqualTo(1)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun quickSettingsOverlayCard_emptyRows_requestsFocusCleanlyAndEscapeDismisses() {
+        var isOpen by mutableStateOf(true)
+        val emptyRowsState = QuickSettingsUiState.Available(
+            aspectRatioUiState = AspectRatioUiState.Unavailable,
+            captureModeUiState = CaptureModeUiState.Unavailable,
+            flashModeUiState = FlashModeUiState.Unavailable,
+            flipLensUiState = FlipLensUiState.Unavailable,
+            hdrUiState = HdrUiState.Unavailable
+        )
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsOverlayCard(
+                    isOpen = isOpen,
+                    onDismissRequest = { isOpen = false },
+                    quickSettingsUiState = emptyRowsState,
+                    quickSettingsController = fakeQuickSettingsController,
+                    showMoreSettingsButton = false
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+            .assertIsDisplayed()
+            .performKeyInput { pressKey(Key.Escape) }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG).assertDoesNotExist()
+        assertThat(isOpen).isFalse()
+    }
+
+    @Test
+    @Config(qualifiers = "w1024dp-h768dp", fontScale = 2.0f)
+    fun quickSettingsOverlayCard_fontScale2x_scrollsToBottomControlsWithoutOverlap() {
+        var activeFontScale = 0f
+        var navigatedToSettings = false
+        val captureModeSubtitle = ApplicationProvider.getApplicationContext<Context>()
+            .getString(R.string.quick_settings_text_capture_mode_standard)
+
+        composeTestRule.setContent {
+            activeFontScale = LocalDensity.current.fontScale
+            MaterialTheme {
+                QuickSettingsOverlayCard(
+                    isOpen = true,
+                    onDismissRequest = {},
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController,
+                    onNavigateToSettings = { navigatedToSettings = true },
+                    showMoreSettingsButton = true
+                )
+            }
+        }
+
+        assertThat(activeFontScale).isEqualTo(2.0f)
+
+        val subtitleBounds = composeTestRule
+            .onNodeWithText(captureModeSubtitle, useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        val leadingButtonBounds = composeTestRule
+            .onNodeWithTag(BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD)
+            .getUnclippedBoundsInRoot()
+        assertThat(subtitleBounds.right).isLessThan(leadingButtonBounds.left)
+
+        composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_HDR)
+            .performScrollTo()
+            .assertIsDisplayed()
+
+        composeTestRule.onNodeWithTag(SETTINGS_BUTTON)
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
+
+        assertThat(navigatedToSettings).isTrue()
     }
 }

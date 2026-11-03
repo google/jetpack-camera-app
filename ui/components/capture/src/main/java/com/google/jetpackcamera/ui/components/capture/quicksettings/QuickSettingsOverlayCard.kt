@@ -19,6 +19,7 @@ import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -32,12 +33,33 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
@@ -69,13 +91,13 @@ private object QuickSettingsOverlayCardTokens {
  * In-hierarchy floating card overlay for Quick Settings on adaptive medium and expanded layouts.
  *
  * Renders nothing when [isOpen] is `false` or [quickSettingsUiState] is not
- * [QuickSettingsUiState.Available]. While open, intercepts system back presses, renders a
- * full-screen scrim that dismisses on tap while blocking touch pass-through to underlying camera
- * controls, and displays [QuickSettingsContent] inside a vertically scrollable Material 3
- * [Surface].
+ * [QuickSettingsUiState.Available]. While open, intercepts system back and hardware [Key.Escape]
+ * presses, renders a full-screen scrim that dismisses on tap while blocking touch pass-through to
+ * underlying camera controls, and displays [QuickSettingsContent] inside a vertically scrollable
+ * Material 3 [Surface] with accessibility pane semantics and card-first traversal ordering.
  *
  * @param isOpen Whether the Quick Settings overlay card is currently open.
- * @param onDismissRequest Callback invoked when the user taps the scrim or presses system back.
+ * @param onDismissRequest Callback invoked when the user taps the scrim or presses back/escape.
  * @param quickSettingsUiState The current [QuickSettingsUiState].
  * @param quickSettingsController The [QuickSettingsController] to handle setting changes.
  * @param modifier The [Modifier] applied to the full-size overlay container.
@@ -104,9 +126,41 @@ fun QuickSettingsOverlayCard(
 
     val dismissDescription =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
+    val overlayPaneTitle = stringResource(quickSettingsTitleRes(quickSettingsUiState))
+    val inputModeManager = LocalInputModeManager.current
+    val overlayFocusRequester = remember { FocusRequester() }
+    val cardFocusRequester = remember { FocusRequester() }
+    val scrimFocusRequester = remember { FocusRequester() }
+    var hasCardFocus by remember { mutableStateOf(false) }
+    var hasScrimFocus by remember { mutableStateOf(false) }
+
+    LaunchedEffect(inputModeManager.inputMode) {
+        cardFocusRequester.requestFocus()
+        if (!hasCardFocus) {
+            scrimFocusRequester.requestFocus()
+        }
+        if (!hasCardFocus && !hasScrimFocus) {
+            overlayFocusRequester.requestFocus()
+        }
+    }
 
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .onPreviewKeyEvent { event ->
+                if (event.key == Key.Escape) {
+                    if (event.type == KeyEventType.KeyUp) {
+                        onDismissRequest()
+                    }
+                    event.type == KeyEventType.KeyDown || event.type == KeyEventType.KeyUp
+                } else {
+                    false
+                }
+            }
+            .focusRequester(overlayFocusRequester)
+            .focusProperties { canFocus = !hasCardFocus && !hasScrimFocus }
+            .focusTarget()
+            .semantics { isTraversalGroup = true },
         contentAlignment = contentAlignment
     ) {
         Box(
@@ -118,8 +172,14 @@ fun QuickSettingsOverlayCard(
                     )
                 )
                 .testTag(QUICK_SETTINGS_SCRIM)
+                .semantics {
+                    contentDescription = dismissDescription
+                    traversalIndex = 1f
+                }
+                .onFocusChanged { hasScrimFocus = it.hasFocus }
+                .focusRequester(scrimFocusRequester)
                 .clickable(
-                    onClickLabel = dismissDescription,
+                    role = Role.Button,
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onDismissRequest
@@ -130,6 +190,13 @@ fun QuickSettingsOverlayCard(
             modifier = Modifier
                 .padding(QuickSettingsOverlayCardTokens.OuterPadding)
                 .widthIn(max = QuickSettingsOverlayCardTokens.MaxCardWidth)
+                .onFocusChanged { hasCardFocus = it.hasFocus }
+                .focusRequester(cardFocusRequester)
+                .focusGroup()
+                .semantics {
+                    paneTitle = overlayPaneTitle
+                    traversalIndex = 0f
+                }
                 .testTag(QUICK_SETTINGS_OVERLAY_CARD_TAG),
             shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.surfaceContainerLow

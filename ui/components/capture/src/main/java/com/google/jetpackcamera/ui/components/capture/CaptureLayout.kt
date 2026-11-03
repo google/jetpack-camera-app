@@ -48,23 +48,40 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.takeOrElse
+
+private fun Modifier.suppressBackgroundForModal(isModalOpen: Boolean): Modifier = if (isModalOpen) {
+    this
+        .focusProperties { canFocus = false }
+        .clearAndSetSemantics {}
+} else {
+    this
+}
 
 /**
  * The base layout for the camera capture screen.
@@ -83,13 +100,18 @@ import androidx.compose.ui.unit.takeOrElse
  * @param captureModeToggle the capture mode toggle composable
  * @param quickSettingsOverlay the quick settings overlay composable
  * @param debugOverlay the debug overlay composable
- * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug settings
+ * @param debugVisibilityWrapper A wrapper that conditionally hides its contents based on debug
+ *   settings
  * @param screenFlashOverlay the screen flash overlay composable, drawn above all other content
  *   (including the quick settings sheet) and across the entire window, including the system bar
  *   and display cutout areas
  * @param snackBar the snack bar composable for showing messages
  * @param topStartContent optional composable content aligned to the top-start of the viewfinder
+ * @param topBarTrailingContent optional composable content aligned to the trailing end of the top
+ *   bar
  * @param errorDialog the camera error alert dialog composable
+ * @param isErrorDialogShowing whether the camera error dialog is currently open so background
+ *   camera chrome can be synchronously hidden from focus and accessibility on frame 1
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Suppress("DEPRECATION")
@@ -119,7 +141,8 @@ fun PreviewLayout(
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
     topBarTrailingContent: @Composable (Modifier) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
+    errorDialog: @Composable (Modifier) -> Unit = {},
+    isErrorDialogShowing: Boolean = false
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val dismissQuickSettingsLabel =
@@ -135,6 +158,7 @@ fun PreviewLayout(
                     BottomSheetDefaults.DragHandle(
                         modifier = Modifier
                             .testTag(QUICK_SETTINGS_DRAG_HANDLE)
+                            .minimumInteractiveComponentSize()
                             .clickable(
                                 role = Role.Button,
                                 onClickLabel = dismissQuickSettingsLabel,
@@ -150,7 +174,13 @@ fun PreviewLayout(
                 snackbarHost = {}
             ) {
                 Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-                    Column {
+                    val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
+                        scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+                    var isErrorDialogPlaced by remember { mutableStateOf(false) }
+                    val isErrorModalActive = isErrorDialogShowing || isErrorDialogPlaced
+                    val isModalOpen = isSheetVisible || isErrorModalActive
+
+                    Column(modifier = Modifier.suppressBackgroundForModal(isModalOpen)) {
                         // The indicator row occupies the top bar real estate in the hidden status
                         // bar region. We size the top bar to accommodate any top display cutout or
                         // the minimum interactive touch target (defaulting to 48dp), while
@@ -187,7 +217,7 @@ fun PreviewLayout(
                                 WindowInsets.systemBarsIgnoringVisibility
                                     .union(WindowInsets.displayCutout)
                             )
-
+                            .suppressBackgroundForModal(isModalOpen)
                     ) {
                         debugVisibilityWrapper {
                             VerticalMaterialControls(
@@ -209,24 +239,32 @@ fun PreviewLayout(
                         // controls overlay
                         snackBar(Modifier, scaffoldState.snackbarHostState)
                     }
-                    debugOverlay(Modifier)
+                    debugOverlay(Modifier.suppressBackgroundForModal(isModalOpen))
 
-                    val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
-                        scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
-                    if (isSheetVisible) {
+                    if (isSheetVisible && !isErrorModalActive) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .testTag(QUICK_SETTINGS_SCRIM)
+                                .semantics {
+                                    contentDescription = dismissQuickSettingsLabel
+                                    traversalIndex = 1f
+                                }
                                 .clickable(
-                                    onClickLabel = dismissQuickSettingsLabel,
+                                    role = Role.Button,
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
                                     onClick = onDismissQuickSettings
                                 )
                         )
                     }
-                    errorDialog(Modifier)
+                    Box(
+                        modifier = Modifier.onSizeChanged { size ->
+                            isErrorDialogPlaced = size.width > 0 && size.height > 0
+                        }
+                    ) {
+                        errorDialog(Modifier)
+                    }
                 }
             }
             // Drawn last and outside of both the inset-padded controls and the bottom sheet

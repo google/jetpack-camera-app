@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
@@ -28,6 +29,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
@@ -51,6 +54,25 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+
+/**
+ * Resolves the title string resource ID for the Quick Settings panel based on the active
+ * [CaptureMode] in [quickSettingsUiState].
+ *
+ * @param quickSettingsUiState The current [QuickSettingsUiState.Available].
+ * @return The string resource ID used for the panel header and accessibility pane title.
+ */
+@StringRes
+internal fun quickSettingsTitleRes(quickSettingsUiState: QuickSettingsUiState.Available): Int {
+    val captureMode = (quickSettingsUiState.captureModeUiState as? CaptureModeUiState.Available)
+        ?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
+
+    return when (captureMode) {
+        CaptureMode.VIDEO_ONLY -> R.string.quick_settings_title_video_settings
+        CaptureMode.IMAGE_ONLY -> R.string.quick_settings_title_photo_settings
+        CaptureMode.STANDARD -> R.string.quick_settings_title_photo_and_video_settings
+    }
+}
 
 /**
  * Agnostic content for the Quick Settings panel wrapped for a BottomSheetScaffold sheet.
@@ -108,11 +130,7 @@ internal fun QuickSettingsContent(
     val captureMode = (quickSettingsUiState.captureModeUiState as? CaptureModeUiState.Available)
         ?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
 
-    val titleRes = when (captureMode) {
-        CaptureMode.VIDEO_ONLY -> R.string.quick_settings_title_video_settings
-        CaptureMode.IMAGE_ONLY -> R.string.quick_settings_title_photo_settings
-        CaptureMode.STANDARD -> R.string.quick_settings_title_photo_and_video_settings
-    }
+    val titleRes = quickSettingsTitleRes(quickSettingsUiState)
 
     Column(
         modifier = modifier
@@ -120,9 +138,12 @@ internal fun QuickSettingsContent(
             .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
     ) {
         Text(
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            modifier = Modifier
+                .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                .semantics { heading() },
             text = stringResource(id = titleRes),
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         // Flash Mode settings

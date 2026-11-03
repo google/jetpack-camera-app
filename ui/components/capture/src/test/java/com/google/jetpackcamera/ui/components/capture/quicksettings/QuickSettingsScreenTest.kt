@@ -15,27 +15,56 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
+import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasParent
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
+import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_9_16_BUTTON
+import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
+import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
@@ -206,5 +235,212 @@ class QuickSettingsScreenTest {
             .height
 
         assertThat(wrapperHeight - contentHeight).isAtLeast(24.dp)
+    }
+
+    @Test
+    fun quickSettingsTitleRes_returnsExpectedStringResForCaptureMode() {
+        assertThat(quickSettingsTitleRes(sampleAvailableUiState))
+            .isEqualTo(R.string.quick_settings_title_photo_and_video_settings)
+
+        val imageOnlyState = sampleAvailableUiState.copy(
+            captureModeUiState = CaptureModeUiState.Available(
+                selectedCaptureMode = CaptureMode.IMAGE_ONLY,
+                availableCaptureModes = listOf(
+                    SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
+                )
+            )
+        )
+        assertThat(quickSettingsTitleRes(imageOnlyState))
+            .isEqualTo(R.string.quick_settings_title_photo_settings)
+
+        val videoOnlyState = sampleAvailableUiState.copy(
+            captureModeUiState = CaptureModeUiState.Available(
+                selectedCaptureMode = CaptureMode.VIDEO_ONLY,
+                availableCaptureModes = listOf(
+                    SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+                )
+            )
+        )
+        assertThat(quickSettingsTitleRes(videoOnlyState))
+            .isEqualTo(R.string.quick_settings_title_video_settings)
+
+        val unavailableCaptureModeState = sampleAvailableUiState.copy(
+            captureModeUiState = CaptureModeUiState.Unavailable
+        )
+        assertThat(quickSettingsTitleRes(unavailableCaptureModeState))
+            .isEqualTo(R.string.quick_settings_title_photo_settings)
+    }
+
+    @Test
+    fun quickSettingsScaffoldContent_header_hasHeadingSemanticsAcrossCaptureModes() {
+        var captureMode by mutableStateOf(CaptureMode.STANDARD)
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val standardTitle = context.getString(
+            R.string.quick_settings_title_photo_and_video_settings
+        )
+        val photoTitle = context.getString(R.string.quick_settings_title_photo_settings)
+        val videoTitle = context.getString(R.string.quick_settings_title_video_settings)
+
+        composeTestRule.setContent {
+            val uiState = sampleAvailableUiState.copy(
+                captureModeUiState = CaptureModeUiState.Available(
+                    selectedCaptureMode = captureMode,
+                    availableCaptureModes = listOf(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
+                    )
+                )
+            )
+            MaterialTheme {
+                QuickSettingsScaffoldContent(
+                    quickSettingsUiState = uiState,
+                    onNavigateToSettings = {},
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(standardTitle)
+            .assertIsDisplayed()
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+
+        composeTestRule.runOnIdle { captureMode = CaptureMode.IMAGE_ONLY }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(photoTitle)
+            .assertIsDisplayed()
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+
+        composeTestRule.runOnIdle { captureMode = CaptureMode.VIDEO_ONLY }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(videoTitle)
+            .assertIsDisplayed()
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+    }
+
+    @Test
+    fun quickSettingsScaffoldContent_singleSelectRows_exposeRadioButtonAndSelectableGroup() {
+        val allRowsState = sampleAvailableUiState.copy(
+            hdrUiState = HdrUiState.Available(
+                selectedImageFormat = ImageOutputFormat.JPEG,
+                selectedDynamicRange = DynamicRange.SDR,
+                isSupported = true
+            )
+        )
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsScaffoldContent(
+                    quickSettingsUiState = allRowsState,
+                    onNavigateToSettings = {},
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        val rowTags = listOf(
+            ROW_QUICK_SETTINGS_FLASH,
+            ROW_QUICK_SETTINGS_CAPTURE_MODE,
+            ROW_QUICK_SETTINGS_ASPECT_RATIO,
+            ROW_QUICK_SETTINGS_HDR
+        )
+        rowTags.forEach { rowTag ->
+            composeTestRule.onNodeWithTag(rowTag)
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true))
+            composeTestRule.onNode(
+                hasParent(hasTestTag(rowTag)) and
+                    SemanticsMatcher.keyIsDefined(SemanticsProperties.SelectableGroup)
+            ).assertIsDisplayed()
+        }
+
+        val radioMatcher = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
+
+        composeTestRule.onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF)
+            .assert(radioMatcher)
+            .assertIsOn()
+        composeTestRule.onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON)
+            .assert(radioMatcher)
+            .assertIsOff()
+        composeTestRule.onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO)
+            .assert(radioMatcher)
+            .assertIsOff()
+
+        composeTestRule.onNodeWithTag(BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD)
+            .assert(radioMatcher)
+            .assertIsOn()
+        composeTestRule.onNodeWithTag(BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY)
+            .assert(radioMatcher)
+            .assertIsOff()
+        composeTestRule.onNodeWithTag(BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY)
+            .assert(radioMatcher)
+            .assertIsOff()
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_9_16_BUTTON)
+            .assert(radioMatcher)
+            .assertIsOn()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_3_4_BUTTON)
+            .assert(radioMatcher)
+            .assertIsOff()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_RATIO_1_1_BUTTON)
+            .assert(radioMatcher)
+            .assertIsOff()
+
+        composeTestRule.onNodeWithTag(BTN_QUICK_SETTINGS_HDR_OPTION_OFF)
+            .assert(radioMatcher)
+            .assertIsOn()
+        composeTestRule.onNodeWithTag(BTN_QUICK_SETTINGS_HDR_OPTION_ON)
+            .assert(radioMatcher)
+            .assertIsOff()
+    }
+
+    @Test
+    fun quickSettingsScaffoldContent_aspectRatioSubtitle_exposesSpokenContentDescription() {
+        var aspectRatio by mutableStateOf(AspectRatio.NINE_SIXTEEN)
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        composeTestRule.setContent {
+            val uiState = sampleAvailableUiState.copy(
+                aspectRatioUiState = AspectRatioUiState.Available(
+                    selectedAspectRatio = aspectRatio,
+                    availableAspectRatios = listOf(
+                        SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
+                    )
+                )
+            )
+            MaterialTheme {
+                QuickSettingsScaffoldContent(
+                    quickSettingsUiState = uiState,
+                    onNavigateToSettings = {},
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(
+            context.getString(R.string.quick_settings_aspect_ratio_subtitle_nine_sixteen),
+            useUnmergedTree = true
+        ).assertContentDescriptionEquals(
+            context.getString(R.string.quick_settings_aspect_ratio_9_16_description)
+        )
+
+        composeTestRule.runOnIdle { aspectRatio = AspectRatio.THREE_FOUR }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(
+            context.getString(R.string.quick_settings_aspect_ratio_subtitle_three_four),
+            useUnmergedTree = true
+        ).assertContentDescriptionEquals(
+            context.getString(R.string.quick_settings_aspect_ratio_3_4_description)
+        )
+
+        composeTestRule.runOnIdle { aspectRatio = AspectRatio.ONE_ONE }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(
+            context.getString(R.string.quick_settings_aspect_ratio_subtitle_one_one),
+            useUnmergedTree = true
+        ).assertContentDescriptionEquals(
+            context.getString(R.string.quick_settings_aspect_ratio_1_1_description)
+        )
     }
 }
