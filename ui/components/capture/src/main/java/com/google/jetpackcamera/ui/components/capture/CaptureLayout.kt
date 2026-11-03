@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
@@ -109,6 +108,7 @@ private fun Modifier.suppressBackgroundForModal(isModalOpen: Boolean): Modifier 
  * @param topStartContent optional composable content aligned to the top-start of the viewfinder
  * @param topBarTrailingContent optional composable content aligned to the trailing end of the top
  *   bar
+ * @param captureModeCarousel optional composable content for the capture sub-mode carousel
  * @param errorDialog the camera error alert dialog composable
  * @param isErrorDialogShowing whether the camera error dialog is currently open so background
  *   camera chrome can be synchronously hidden from focus and accessibility on frame 1
@@ -141,6 +141,7 @@ fun PreviewLayout(
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
     topBarTrailingContent: @Composable (Modifier) -> Unit = {},
+    captureModeCarousel: @Composable (Modifier) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {},
     isErrorDialogShowing: Boolean = false
 ) {
@@ -228,6 +229,7 @@ fun PreviewLayout(
                                 captureModeToggleSwitch = captureModeToggle,
                                 zoomControls = zoomLevelDisplay,
                                 elapsedTimeDisplay = elapsedTimeDisplay,
+                                captureModeCarousel = captureModeCarousel,
                                 snackbarHost = { modifier ->
                                     PillSnackbarHost(
                                         snackbarHostState = scaffoldState.snackbarHostState,
@@ -285,6 +287,7 @@ private fun VerticalMaterialControls(
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
     elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    captureModeCarousel: @Composable (Modifier) -> Unit = {},
     snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
@@ -339,12 +342,16 @@ private fun VerticalMaterialControls(
                     }
                 }
 
-                Spacer(
+                // Reports whether the carousel is drawn over the viewfinder, so that its labels
+                // can add a shadow for legibility.
+                OverlapAwareStyleProvider(
                     modifier = Modifier
                         .fillMaxWidth()
-                        // todo(kc): tune padding
-                        .padding(bottom = 50.dp)
-                )
+                        .height(CaptureModeCarouselHeight),
+                    overlapThreshold = 0.5f
+                ) {
+                    captureModeCarousel(Modifier)
+                }
 
                 // bottom controls row
                 Row(

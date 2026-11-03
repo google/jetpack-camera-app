@@ -35,6 +35,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -56,14 +57,17 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
 /**
- * Resolves the title string resource ID for the Quick Settings panel based on the active
- * [CaptureMode] in [quickSettingsUiState].
+ * Resolves the title string resource ID for the Quick Settings panel based on
+ * [QuickSettingsUiState.Available.titleResId] or the active [CaptureMode] in
+ * [quickSettingsUiState].
  *
  * @param quickSettingsUiState The current [QuickSettingsUiState.Available].
  * @return The string resource ID used for the panel header and accessibility pane title.
  */
 @StringRes
 internal fun quickSettingsTitleRes(quickSettingsUiState: QuickSettingsUiState.Available): Int {
+    quickSettingsUiState.titleResId?.let { return it }
+
     val captureMode = (quickSettingsUiState.captureModeUiState as? CaptureModeUiState.Available)
         ?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
 
@@ -215,6 +219,8 @@ internal class NoOpQuickSettingsController : QuickSettingsController {
     override fun setImageFormat(imageOutputFormat: ImageOutputFormat) {}
 
     override fun setCaptureMode(captureMode: CaptureMode) {}
+
+    override fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {}
 }
 
 @Preview
@@ -226,9 +232,9 @@ private fun ExpandedQuickSettingsUiPreview() {
                 aspectRatioUiState = AspectRatioUiState.Available(
                     selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
                     availableAspectRatios = listOf(
-                        SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
                         SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
-                        SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
+                        SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN)
                     )
                 ),
                 captureModeUiState = CaptureModeUiState.Available(
