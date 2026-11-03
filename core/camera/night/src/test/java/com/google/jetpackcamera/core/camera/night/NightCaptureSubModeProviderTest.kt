@@ -91,8 +91,9 @@ class NightCaptureSubModeProviderTest {
     }
 
     @Test
-    fun featurePolicy_enforcesSdrStabilizationOffPreservesImageFormatAndExcludesLowLightBoost() {
+    fun featurePolicy_enforcesStabilizationAndFlashOffAndPreservesImageFormatAndDynamicRange() {
         assertThat(provider.featurePolicy.captureMode).isNull()
+        assertThat(provider.featurePolicy.dynamicRange).isNull()
         assertThat(provider.featurePolicy.imageFormat).isNull()
         assertThat(provider.featurePolicy.stabilizationMode).isEqualTo(
             SettingConfig(
@@ -100,43 +101,35 @@ class NightCaptureSubModeProviderTest {
                 visibility = OptionVisibility.Hidden
             )
         )
-
-        val restrictedFromLlb = provider.featurePolicy.enforceRestrictions(
-            CameraAppSettings(
-                captureMode = CaptureMode.IMAGE_ONLY,
-                dynamicRange = DynamicRange.HLG10,
-                imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
-                stabilizationMode = StabilizationMode.ON,
-                flashMode = FlashMode.LOW_LIGHT_BOOST
+        assertThat(provider.featurePolicy.flashMode).isEqualTo(
+            SettingConfig(
+                defaultValue = FlashMode.OFF,
+                visibility = OptionVisibility.Hidden
             )
         )
-        assertThat(restrictedFromLlb.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
-        assertThat(restrictedFromLlb.dynamicRange).isEqualTo(DynamicRange.SDR)
-        assertThat(restrictedFromLlb.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
-        assertThat(restrictedFromLlb.stabilizationMode).isEqualTo(StabilizationMode.OFF)
-        assertThat(restrictedFromLlb.flashMode).isEqualTo(FlashMode.OFF)
+
+        for (flashMode in listOf(FlashMode.ON, FlashMode.AUTO, FlashMode.LOW_LIGHT_BOOST)) {
+            val restricted = provider.featurePolicy.enforceRestrictions(
+                CameraAppSettings(
+                    captureMode = CaptureMode.IMAGE_ONLY,
+                    dynamicRange = DynamicRange.HLG10,
+                    imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR,
+                    stabilizationMode = StabilizationMode.ON,
+                    flashMode = flashMode
+                )
+            )
+            assertThat(restricted.captureMode).isEqualTo(CaptureMode.IMAGE_ONLY)
+            assertThat(restricted.dynamicRange).isEqualTo(DynamicRange.HLG10)
+            assertThat(restricted.imageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+            assertThat(restricted.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+            assertThat(restricted.flashMode).isEqualTo(FlashMode.OFF)
+        }
 
         assertThat(
             CameraFeaturePolicy(
                 imageFormat = SettingConfig(defaultValue = ImageOutputFormat.JPEG_ULTRA_HDR)
             ).isCompatibleWith(provider.featurePolicy)
         ).isTrue()
-
-        val restrictedWithFlashOn = provider.featurePolicy.enforceRestrictions(
-            CameraAppSettings(
-                captureMode = CaptureMode.IMAGE_ONLY,
-                flashMode = FlashMode.ON
-            )
-        )
-        assertThat(restrictedWithFlashOn.flashMode).isEqualTo(FlashMode.ON)
-
-        val restrictedWithFlashAuto = provider.featurePolicy.enforceRestrictions(
-            CameraAppSettings(
-                captureMode = CaptureMode.IMAGE_ONLY,
-                flashMode = FlashMode.AUTO
-            )
-        )
-        assertThat(restrictedWithFlashAuto.flashMode).isEqualTo(FlashMode.AUTO)
     }
 
     @Test
