@@ -57,18 +57,15 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
@@ -103,8 +100,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
@@ -113,8 +108,10 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -126,8 +123,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
@@ -775,6 +775,44 @@ private fun DetectWindowColorModeChanges(
 }
 
 /**
+ * Calculates the fitted viewfinder dimensions inside the available container bounds while
+ * preserving the target [aspectRatio] without cropping.
+ *
+ * When [useLandscapeAspectRatio] is `true` and [maxWidth] strictly exceeds [maxHeight], the
+ * landscape orientation of [aspectRatio] (e.g., 4:3 instead of 3:4) is used so wide containers
+ * frame horizontal camera output naturally. Otherwise, the portrait [AspectRatio.toFloat] ratio is
+ * preserved.
+ *
+ * @param maxWidth the maximum available container width.
+ * @param maxHeight the maximum available container height.
+ * @param aspectRatio the target [AspectRatio] for the preview.
+ * @param useLandscapeAspectRatio whether to orient [aspectRatio] horizontally when [maxWidth]
+ * exceeds [maxHeight].
+ * @return the fitted [DpSize], or [DpSize.Zero] if either bound is non-positive.
+ */
+@VisibleForTesting
+internal fun calculateViewfinderSize(
+    maxWidth: Dp,
+    maxHeight: Dp,
+    aspectRatio: AspectRatio,
+    useLandscapeAspectRatio: Boolean
+): DpSize {
+    if (maxWidth <= 0.dp || maxHeight <= 0.dp) {
+        return DpSize.Zero
+    }
+    val maxAspectRatio: Float = maxWidth / maxHeight
+    val aspectRatioFloat: Float = if (useLandscapeAspectRatio && maxWidth > maxHeight) {
+        aspectRatio.toLandscapeFloat()
+    } else {
+        aspectRatio.toFloat()
+    }
+    val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
+    val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
+    val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+    return DpSize(width, height)
+}
+
+/**
  * A composable that displays the camera preview and handles user input gestures.
  *
  * This component is the core of the camera's UI, showing the live feed from the camera.
@@ -791,6 +829,9 @@ private fun DetectWindowColorModeChanges(
  * @param surfaceRequest the [SurfaceRequest] for the preview.
  * @param focusMeteringUiState the [FocusMeteringUiState] for this component.
  * @param modifier the modifier for this component.
+ * @param contentAlignment the alignment of the fitted viewfinder within the available bounds.
+ * @param useLandscapeAspectRatio whether to orient the target [AspectRatio] horizontally
+ * (e.g., 4:3 instead of 3:4) when the available container width exceeds its height.
  */
 @Composable
 fun PreviewDisplay(
@@ -801,125 +842,201 @@ fun PreviewDisplay(
     onRequestWindowColorMode: (Int) -> Unit,
     surfaceRequest: SurfaceRequest?,
     focusMeteringUiState: FocusMeteringUiState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentAlignment: Alignment = Alignment.TopCenter,
+    useLandscapeAspectRatio: Boolean = false
 ) {
     val aspectRatio =
         (previewDisplayUiState.aspectRatioUiState as? AspectRatioUiState.Available)
             ?.selectedAspectRatio ?: AspectRatio.THREE_FOUR
 
-    @Suppress("DEPRECATION")
+    val currentOnTapToFocus by rememberUpdatedState(onTapToFocus)
+    val currentOnFlipCamera by rememberUpdatedState(onFlipCamera)
+    val currentOnScaleZoom by rememberUpdatedState(onScaleZoom)
+
     val transformableState = rememberTransformableState(
-        onTransformation = { pinchZoomChange, _, _ ->
-            onScaleZoom(pinchZoomChange)
+        onTransformation = { _, pinchZoomChange, _, _ ->
+            currentOnScaleZoom(pinchZoomChange)
         }
     )
 
-    BoxWithConstraints(
-        modifier
+    var imageVisible by remember { mutableStateOf(true) }
+    val targetBoundsState = LocalOverlapTargetBounds.current
+
+    val disableAnimations = LocalDisableAnimations.current
+    val imageAlphaState = animateFloatAsState(
+        targetValue = if (imageVisible) 1f else 0f,
+        animationSpec = if (disableAnimations) {
+            snap()
+        } else {
+            tween(
+                durationMillis = (BLINK_TIME / 2).toInt(),
+                easing = LinearEasing
+            )
+        },
+        label = "PreviewBlinkAlpha"
+    )
+    val viewfinderShape = remember { RoundedCornerShape(ViewfinderCornerRadius) }
+
+    LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
+        if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
+            imageVisible = false
+            delay(BLINK_TIME)
+            imageVisible = true
+        }
+    }
+
+    Box(
+        modifier = modifier
             .fillMaxSize()
             .background(Color.Black),
-        contentAlignment = Alignment.TopCenter
+        contentAlignment = contentAlignment
     ) {
-        val maxAspectRatio: Float = maxWidth / maxHeight
-        val aspectRatioFloat: Float = aspectRatio.toFloat()
-        val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-        val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-        val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
-        var imageVisible by remember { mutableStateOf(true) }
-        val targetBoundsState = LocalOverlapTargetBounds.current
-
-        val disableAnimations = LocalDisableAnimations.current
-        val imageAlpha: Float by animateFloatAsState(
-            targetValue = if (imageVisible) 1f else 0f,
-            animationSpec = if (disableAnimations) {
-                snap()
-            } else {
-                tween(
-                    durationMillis = (BLINK_TIME / 2).toInt(),
-                    easing = LinearEasing
-                )
-            },
-            label = ""
-        )
-
-        LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
-            if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
-                imageVisible = false
-                delay(BLINK_TIME)
-                imageVisible = true
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .testTag(PREVIEW_DISPLAY)
-                .onGloballyPositioned { coordinates ->
-                    val bounds = coordinates.boundsInWindow()
-                    if (targetBoundsState.value != bounds) {
-                        targetBoundsState.value = bounds
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(
+                modifier = Modifier
+                    .testTag(PREVIEW_DISPLAY)
+                    .onGloballyPositioned { coordinates ->
+                        val bounds = coordinates.boundsInWindow()
+                        if (targetBoundsState.value != bounds) {
+                            targetBoundsState.value = bounds
+                        }
                     }
-                }
-                .width(width)
-                .height(height)
-                .transformable(state = transformableState)
-                .alpha(imageAlpha)
-                .clip(RoundedCornerShape(ViewfinderCornerRadius))
-        ) {
-            if (surfaceRequest != null) {
-                val implementationMode = when {
-                    Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
-                    else -> ImplementationMode.EMBEDDED
-                }
+                    .layout { measurable, constraints ->
+                        val size = calculateViewfinderSize(
+                            maxWidth = constraints.maxWidth.toDp(),
+                            maxHeight = constraints.maxHeight.toDp(),
+                            aspectRatio = aspectRatio,
+                            useLandscapeAspectRatio = useLandscapeAspectRatio
+                        )
+                        val widthPx = size.width.roundToPx().coerceIn(0, constraints.maxWidth)
+                        val heightPx = size.height.roundToPx().coerceIn(0, constraints.maxHeight)
+                        val placeable = measurable.measure(Constraints.fixed(widthPx, heightPx))
+                        layout(widthPx, heightPx) {
+                            placeable.place(0, 0)
+                        }
+                    }
+                    .transformable(state = transformableState)
+                    .graphicsLayer {
+                        alpha = imageAlphaState.value
+                        shape = viewfinderShape
+                        clip = true
+                    }
+            ) {
+                if (surfaceRequest != null) {
+                    val implementationMode = when {
+                        Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
+                        else -> ImplementationMode.EMBEDDED
+                    }
 
-                DetectWindowColorModeChanges(
-                    surfaceRequest = surfaceRequest,
-                    implementationMode = implementationMode,
-                    onRequestWindowColorMode = onRequestWindowColorMode
-                )
+                    DetectWindowColorModeChanges(
+                        surfaceRequest = surfaceRequest,
+                        implementationMode = implementationMode,
+                        onRequestWindowColorMode = onRequestWindowColorMode
+                    )
 
-                val coordinateTransformer = remember { MutableCoordinateTransformer() }
-                val viewfinderDescription =
-                    stringResource(R.string.camera_viewfinder_content_description)
-                CameraXViewfinder(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .semantics { contentDescription = viewfinderDescription }
-                        .pointerInput(onFlipCamera) {
-                            detectTapGestures(
-                                onDoubleTap = { offset ->
-                                    // double tap to flip camera
-                                    Log.d(TAG, "onDoubleTap $offset")
-                                    onFlipCamera()
-                                },
-                                onTap = {
-                                    with(coordinateTransformer) {
-                                        val surfaceCoords = it.transform()
-                                        Log.d(
-                                            "TAG",
-                                            "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
-                                        )
-                                        onTapToFocus(surfaceCoords.x, surfaceCoords.y)
+                    val coordinateTransformer = remember { MutableCoordinateTransformer() }
+                    val viewfinderDescription =
+                        stringResource(R.string.camera_viewfinder_content_description)
+                    CameraXViewfinder(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .semantics { contentDescription = viewfinderDescription }
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onDoubleTap = { offset ->
+                                        // double tap to flip camera
+                                        Log.d(TAG, "onDoubleTap $offset")
+                                        currentOnFlipCamera()
+                                    },
+                                    onTap = {
+                                        with(coordinateTransformer) {
+                                            val surfaceCoords = it.transform()
+                                            Log.d(
+                                                TAG,
+                                                "onTapToFocus: " +
+                                                    "input{$it} -> surface{$surfaceCoords}"
+                                            )
+                                            currentOnTapToFocus(surfaceCoords.x, surfaceCoords.y)
+                                        }
                                     }
-                                }
-                            )
-                        },
-                    surfaceRequest = surfaceRequest,
-                    implementationMode = implementationMode,
-                    coordinateTransformer = coordinateTransformer
-                )
-                FocusMeteringIndicator(
-                    focusMeteringUiState = focusMeteringUiState,
-                    coordinateTransformer = coordinateTransformer
-                )
-            } else {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center).size(LOADING_SPINNER_SIZE),
-                    color = Color.White
-                )
+                                )
+                            },
+                        surfaceRequest = surfaceRequest,
+                        implementationMode = implementationMode,
+                        coordinateTransformer = coordinateTransformer
+                    )
+                    FocusMeteringIndicator(
+                        focusMeteringUiState = focusMeteringUiState,
+                        coordinateTransformer = coordinateTransformer
+                    )
+                } else {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center).size(LOADING_SPINNER_SIZE),
+                        color = Color.White
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+private fun PreviewDisplaySample(
+    aspectRatio: AspectRatio = AspectRatio.THREE_FOUR,
+    contentAlignment: Alignment = Alignment.TopCenter,
+    useLandscapeAspectRatio: Boolean = false
+) {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        PreviewDisplay(
+            previewDisplayUiState = PreviewDisplayUiState(
+                aspectRatioUiState = AspectRatioUiState.Available(
+                    selectedAspectRatio = aspectRatio,
+                    availableAspectRatios = listOf(
+                        SingleSelectableUiState.SelectableUi(aspectRatio)
+                    )
+                )
+            ),
+            onTapToFocus = { _, _ -> },
+            onFlipCamera = {},
+            onScaleZoom = {},
+            onRequestWindowColorMode = {},
+            surfaceRequest = null,
+            focusMeteringUiState = FocusMeteringUiState.Unspecified,
+            contentAlignment = contentAlignment,
+            useLandscapeAspectRatio = useLandscapeAspectRatio
+        )
+    }
+}
+
+@Preview(name = "Tablet 1280x800 Centered 4:3 Pillarbox", widthDp = 1280, heightDp = 800)
+@Composable
+private fun PreviewDisplayTabletPillarboxPreview() {
+    PreviewDisplaySample(
+        aspectRatio = AspectRatio.THREE_FOUR,
+        contentAlignment = Alignment.Center,
+        useLandscapeAspectRatio = true
+    )
+}
+
+@Preview(name = "Phone 412x915 Top-Aligned 3:4", widthDp = 412, heightDp = 915)
+@Composable
+private fun PreviewDisplayPhoneTopAlignedPreview() {
+    PreviewDisplaySample(
+        aspectRatio = AspectRatio.THREE_FOUR,
+        contentAlignment = Alignment.TopCenter,
+        useLandscapeAspectRatio = false
+    )
+}
+
+@Preview(name = "PreviewDisplay RTL", locale = "ar", widthDp = 412, heightDp = 915)
+@Composable
+private fun PreviewDisplayRtlPreview() {
+    PreviewDisplaySample(
+        aspectRatio = AspectRatio.THREE_FOUR,
+        contentAlignment = Alignment.TopCenter,
+        useLandscapeAspectRatio = false
+    )
 }
 
 /**
