@@ -28,7 +28,6 @@ import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
-import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.NONE_EFFECT_ID
@@ -95,21 +94,13 @@ class NightCaptureSubModeProvider internal constructor(
     )
 
     override val featurePolicy = CameraFeaturePolicy(
-        dynamicRange = SettingConfig(
-            defaultValue = DynamicRange.SDR,
-            visibility = OptionVisibility.Hidden
-        ),
         stabilizationMode = SettingConfig(
             defaultValue = StabilizationMode.OFF,
             visibility = OptionVisibility.Hidden
         ),
         flashMode = SettingConfig(
             defaultValue = FlashMode.OFF,
-            visibility = OptionVisibility.from(
-                FlashMode.OFF,
-                FlashMode.ON,
-                FlashMode.AUTO
-            )
+            visibility = OptionVisibility.Hidden
         ),
         cameraEffect = SettingConfig(
             defaultValue = NONE_EFFECT_ID,
