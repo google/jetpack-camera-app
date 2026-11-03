@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.controller.quicksettings
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -67,4 +68,11 @@ interface QuickSettingsController {
      * @param captureMode The capture mode to set.
      */
     fun setCaptureMode(captureMode: CaptureMode)
+
+    /**
+     * Sets the active capture sub-mode within the current parent [CaptureMode].
+     *
+     * @param captureSubModeId The capture sub-mode identifier to activate.
+     */
+    fun setCaptureSubMode(captureSubModeId: CaptureSubModeId)
 }
