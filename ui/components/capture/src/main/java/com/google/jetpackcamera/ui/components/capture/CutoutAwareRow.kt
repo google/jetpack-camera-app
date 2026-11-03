@@ -38,6 +38,8 @@ import androidx.compose.ui.layout.Measured
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
@@ -54,7 +56,9 @@ import kotlin.math.roundToInt
  *
  * Unlike applying a uniform top inset for the full status bar or cutout height, this layout allows
  * the indicator row to occupy the status bar region (`y = 0`) while shifting individual items
- * horizontally past any cutout bounding rectangles that overlap the row's vertical bounds.
+ * horizontally past any cutout bounding rectangles that overlap the row's vertical bounds. Marks
+ * itself as a semantics traversal group (`isTraversalGroup = true`) so screen readers traverse all
+ * items in the row together even when split across a display cutout.
  *
  * When [pillHorizontalPadding] is positive, contiguous active items that do not cross a cutout are
  * grouped into a shared pill segment with [pillHorizontalPadding] at the start and end of each
@@ -111,6 +115,7 @@ fun CutoutAwareRow(
         Layout(
             content = { CutoutRowScope.content() },
             modifier = modifier
+                .semantics { isTraversalGroup = true }
                 .onGloballyPositioned { coordinates ->
                     val bounds = coordinates.boundsInWindow()
                     val intRect = IntRect(

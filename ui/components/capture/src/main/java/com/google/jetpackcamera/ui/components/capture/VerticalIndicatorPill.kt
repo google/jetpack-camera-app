@@ -81,9 +81,13 @@ internal val LocalIndicatorPillOrientation = staticCompositionLocalOf { Orientat
  * cutout.
  *
  * Enforces a minimum horizontal slot width of [VerticalIndicatorPillTokens.MinSlotWidth] (`48.dp`)
- * while centering a `40.dp`-wide pill background within the slot. Provides
- * [LocalIndicatorPillOrientation] set to [Orientation.Vertical] so child [IndicatorPillIcon]s
- * animate vertically with `8x6.dp` item padding.
+ * while centering a `40.dp`-wide pill background ([VerticalIndicatorPillTokens.ContainerWidth])
+ * with `6.dp` top and bottom segment padding within the slot. Provides
+ * [LocalIndicatorPillOrientation] set to [Orientation.Vertical] and `Color.White` content color so
+ * child [IndicatorPillIcon]s animate vertically with `8x6.dp` item padding, and inherits
+ * `isTraversalGroup = true` from [CutoutAwareColumn] so screen readers traverse all active
+ * indicators in the rail together. Draws no pill segments and collapses to `0.dp` height when no
+ * indicators are active.
  *
  * TODO(UX): `Top -> Bottom` status icon stacking (`Flash -> HDR -> VideoQuality -> Stabilization`,
  * non-inverted in RTL) is pending final UX confirmation.

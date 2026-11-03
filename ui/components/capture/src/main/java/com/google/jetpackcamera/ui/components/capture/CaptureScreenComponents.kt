@@ -122,7 +122,9 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -1132,8 +1134,23 @@ private object IndicatorPillTokens {
 }
 
 /**
- * A cutout-aware pill container that groups active top-bar status indicators into connected
- * rounded pills, splitting into separate pills on either side of any intersecting display cutout.
+ * A cutout-aware horizontal pill container that groups active top-bar status indicators into
+ * connected rounded pills, splitting into separate pills on either side of any intersecting
+ * display cutout.
+ *
+ * Renders `40.dp`-tall pill segments (`6.dp` horizontal segment end-cap padding) with
+ * `CameraControlBackgroundStyle.BLACK_60` background and `Color.White` content color. Provides
+ * [LocalIndicatorPillOrientation] set to [Orientation.Horizontal] so child [IndicatorPillIcon]s
+ * animate horizontally with `6x8.dp` item padding, and marks the container as a semantics
+ * traversal group (`isTraversalGroup = true`). Draws no pill segments when no indicators are
+ * active.
+ *
+ * @param modifier the [Modifier] to be applied to this horizontal pill container.
+ * @param cutoutRectsOverride optional list of cutout bounding rectangles in the row's local
+ *   coordinate space, used for deterministic testing.
+ * @param onPillSegmentsPlaced optional callback invoked with the physical local [IntRect] bounds
+ *   of each active pill segment after layout, used for testing.
+ * @param content the status indicator children, scoped to [RowScope].
  */
 @SuppressLint("AvoidNullableCollections", "NullableCollection")
 @Composable
@@ -1148,7 +1165,7 @@ fun IndicatorPill(
         LocalIndicatorPillOrientation provides Orientation.Horizontal
     ) {
         CutoutAwareRow(
-            modifier = modifier,
+            modifier = modifier.semantics { isTraversalGroup = true },
             horizontalSpacing = 0.dp,
             pillHorizontalPadding = IndicatorPillTokens.ContainerHorizontalPadding,
             pillMinHeight = IndicatorPillTokens.ContainerHeight,
@@ -1166,8 +1183,15 @@ fun IndicatorPill(
  * animations and standard indicator pill item padding.
  *
  * Reads [LocalIndicatorPillOrientation] to animate horizontally with `6x8.dp` padding inside
- * [IndicatorPill] and vertically with `8x6.dp` padding inside [VerticalIndicatorPill]. Snaps
- * immediately without animation when [LocalDisableAnimations] is enabled.
+ * [IndicatorPill] (`36x40.dp` around a `24.dp` icon) and vertically with `8x6.dp` padding inside
+ * [VerticalIndicatorPill] (`40x36.dp` around a `24.dp` icon). Snaps immediately without animation
+ * when [LocalDisableAnimations] is enabled, and clears descendant semantics immediately when
+ * [visible] becomes `false` so exiting icons do not expose stale descriptions or low-opacity
+ * contrast frames during shrink/fade-out transitions.
+ *
+ * @param visible whether the status indicator is currently active and visible.
+ * @param modifier the [Modifier] applied to the indicator wrapper.
+ * @param content the indicator icon composable to display.
  */
 @Composable
 internal fun IndicatorPillIcon(
@@ -1187,6 +1211,7 @@ internal fun IndicatorPillIcon(
     } else {
         IndicatorPillTokens.IconVerticalPadding
     }
+    val currentVisible by rememberUpdatedState(visible)
     AnimatedVisibility(
         visible = visible,
         enter = when {
@@ -1208,7 +1233,16 @@ internal fun IndicatorPillIcon(
                 ),
                 contentAlignment = Alignment.Center
             ) {
-                content()
+                Box(
+                    modifier = if (!currentVisible) {
+                        Modifier.clearAndSetSemantics {}
+                    } else {
+                        Modifier
+                    },
+                    contentAlignment = Alignment.Center
+                ) {
+                    content()
+                }
             }
         }
     }

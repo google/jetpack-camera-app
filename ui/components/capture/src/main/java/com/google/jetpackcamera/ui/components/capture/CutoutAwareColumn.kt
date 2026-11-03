@@ -39,6 +39,8 @@ import androidx.compose.ui.layout.VerticalAlignmentLine
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
@@ -54,9 +56,13 @@ import kotlin.math.roundToInt
  * any intersecting display cutout (such as a corner or side-edge camera hole-punch).
  *
  * Items stack strictly top-to-bottom (`y` is never inverted in RTL), shifting individual items
- * downward past any cutout bounding rectangles that overlap the column's horizontal bounds. The
- * column resolves its width identically in LTR and RTL without stretching to `constraints.maxWidth`
- * in RTL, while horizontal coordinates mirror across the column width in RTL.
+ * downward past any cutout bounding rectangles that overlap the column's horizontal bounds. Marks
+ * itself as a semantics traversal group (`isTraversalGroup = true`) so screen readers traverse
+ * all items in the rail together even when split across a side cutout. The column resolves its
+ * width identically in LTR and RTL without stretching to `constraints.maxWidth` in RTL, while
+ * direction-relative [horizontalAlignment] values (`Start`/`End`) mirror across the column width
+ * in RTL and [androidx.compose.ui.AbsoluteAlignment] values (`Left`/`Right`) remain pinned to
+ * physical edges.
  *
  * TODO(UX): `Top -> Bottom` status icon stacking (`Flash -> HDR -> VideoQuality -> Stabilization`,
  * non-inverted in RTL) is pending final UX confirmation.
@@ -84,7 +90,9 @@ import kotlin.math.roundToInt
  *   visible.
  * @param pillBackgroundColor background color drawn for each connected pill segment, or
  *   [Color.Unspecified] to disable pill background drawing.
- * @param horizontalAlignment horizontal alignment of children and pill segments within the column.
+ * @param horizontalAlignment horizontal alignment of children and pill segments within the column
+ *   (direction-relative `Start`/`End` mirror in RTL; use [androidx.compose.ui.AbsoluteAlignment]
+ *   to pin to physical left/right edges).
  * @param cutoutRectsOverride optional list of cutout bounding rectangles in the column's local
  *   coordinate space, used for deterministic testing. When `null`, cutout rects are queried from
  *   the host window's [android.view.DisplayCutout] and mapped into the column's local coordinates.
@@ -116,6 +124,7 @@ fun CutoutAwareColumn(
         Layout(
             content = { CutoutColumnScope.content() },
             modifier = modifier
+                .semantics { isTraversalGroup = true }
                 .onGloballyPositioned { coordinates ->
                     val bounds = coordinates.boundsInWindow()
                     val left = bounds.left.roundToInt()
@@ -214,7 +223,7 @@ fun CutoutAwareColumn(
 
             val yPositions = IntArray(placeables.size)
             val isActive = BooleanArray(placeables.size)
-            val startRelativePills = mutableListOf<IntRect>()
+            val resolvedPillSegments = mutableListOf<IntRect>()
 
             var collisionCursor = 0
             var placeCursor = 0
@@ -230,16 +239,16 @@ fun CutoutAwareColumn(
                         val groupEndPx = currentGroupVisibleBottomPx + pillPadPx
                         val pillWidth = max(currentGroupMaxWidthPx, pillMinWidthPx)
                             .coerceAtMost(columnWidth)
-                        val pillStart = horizontalAlignment.align(
+                        val pillLeft = horizontalAlignment.align(
                             pillWidth,
                             columnWidth,
-                            LayoutDirection.Ltr
+                            layoutDirection
                         )
-                        startRelativePills.add(
+                        resolvedPillSegments.add(
                             IntRect(
-                                left = pillStart,
+                                left = pillLeft,
                                 top = currentGroupStartPx,
-                                right = pillStart + pillWidth,
+                                right = pillLeft + pillWidth,
                                 bottom = groupEndPx
                             )
                         )
@@ -329,19 +338,6 @@ fun CutoutAwareColumn(
             val columnHeight = max(maxBottom, constraints.minHeight)
                 .coerceAtMost(constraints.maxHeight)
 
-            val resolvedPillSegments = if (isRtl) {
-                startRelativePills.map { rect ->
-                    IntRect(
-                        left = columnWidth - rect.right,
-                        top = rect.top,
-                        right = columnWidth - rect.left,
-                        bottom = rect.bottom
-                    )
-                }
-            } else {
-                startRelativePills
-            }
-
             layout(columnWidth, columnHeight) {
                 if (!isLookingAhead) {
                     if (pillSegments != resolvedPillSegments) {
@@ -352,12 +348,12 @@ fun CutoutAwareColumn(
                 for (i in placeables.indices) {
                     if (!isActive[i]) continue
                     val placeable = placeables[i]
-                    val startX = horizontalAlignment.align(
+                    val x = horizontalAlignment.align(
                         placeable.width,
                         columnWidth,
-                        LayoutDirection.Ltr
+                        layoutDirection
                     )
-                    placeable.placeRelative(startX, yPositions[i])
+                    placeable.place(x, yPositions[i])
                 }
             }
         }

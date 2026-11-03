@@ -15,7 +15,9 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.content.Context
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,15 +27,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.LayoutDirection
@@ -43,6 +53,7 @@ import androidx.compose.ui.unit.width
 import androidx.core.view.DisplayCutoutCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
@@ -64,8 +75,8 @@ import org.robolectric.annotation.Config
 
 /**
  * Tests for [CutoutAwareColumn] and [VerticalIndicatorPill] verifying vertical cutout avoidance,
- * LTR/RTL width and coordinate symmetry, pill segment grouping/splitting, and vertical animation
- * stability.
+ * LTR/RTL width and coordinate symmetry, pill segment grouping/splitting, vertical animation
+ * stability, traversal-group semantics, and immediate semantics pruning on exiting indicators.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "w360dp-h800dp")
@@ -660,6 +671,202 @@ class CutoutAwareColumnTest {
         }
         composeTestRule.onNodeWithTag("hdr").assertDoesNotExist()
     }
+
+    @Test
+    fun absoluteAlignedColumn_ltrAndRtl_pinsPillAndItemsToPhysicalEdges() {
+        var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
+        var alignment by mutableStateOf<Alignment.Horizontal>(AbsoluteAlignment.Left)
+        var pillSegments: List<IntRect> = emptyList()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                CutoutAwareColumn(
+                    modifier = Modifier.width(60.dp),
+                    verticalSpacing = 0.dp,
+                    pillVerticalPadding = 6.dp,
+                    pillMinWidth = 40.dp,
+                    horizontalAlignment = alignment,
+                    cutoutRectsOverride = emptyList(),
+                    onPillSegmentsPlaced = { pillSegments = it }
+                ) {
+                    Box(Modifier.size(width = 40.dp, height = 24.dp).testTag("item0"))
+                }
+            }
+        }
+
+        for (direction in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
+            alignment = AbsoluteAlignment.Left
+            layoutDirection = direction
+            composeTestRule.waitForIdle()
+
+            assertWithMessage("AbsoluteAlignment.Left pill in $direction")
+                .that(pillSegments)
+                .containsExactly(IntRect(left = 0, top = 0, right = 40, bottom = 36))
+            assertThat(composeTestRule.onNodeWithTag("item0").getUnclippedBoundsInRoot().left)
+                .isEqualTo(0.dp)
+
+            alignment = AbsoluteAlignment.Right
+            composeTestRule.waitForIdle()
+
+            assertWithMessage("AbsoluteAlignment.Right pill in $direction")
+                .that(pillSegments)
+                .containsExactly(IntRect(left = 20, top = 0, right = 60, bottom = 36))
+            assertThat(composeTestRule.onNodeWithTag("item0").getUnclippedBoundsInRoot().left)
+                .isEqualTo(20.dp)
+        }
+    }
+
+    @Test
+    fun statusContainers_exposeIsTraversalGroupSemantics() {
+        composeTestRule.setContent {
+            Column {
+                CutoutAwareColumn(
+                    modifier = Modifier.testTag("cutout_column"),
+                    cutoutRectsOverride = emptyList()
+                ) {
+                    Box(Modifier.size(24.dp))
+                }
+                VerticalIndicatorPill(
+                    modifier = Modifier.testTag("vertical_pill"),
+                    cutoutRectsOverride = emptyList()
+                ) {
+                    FlashModeIndicator(flashModeUiState = activeFlashUiState())
+                }
+                IndicatorPill(
+                    modifier = Modifier.testTag("horizontal_pill"),
+                    cutoutRectsOverride = emptyList()
+                ) {
+                    FlashModeIndicator(flashModeUiState = activeFlashUiState())
+                }
+            }
+        }
+
+        val isTraversalGroupMatcher =
+            SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true)
+        composeTestRule.onNodeWithTag("cutout_column").assert(isTraversalGroupMatcher)
+        composeTestRule.onNodeWithTag("vertical_pill").assert(isTraversalGroupMatcher)
+        composeTestRule.onNodeWithTag("horizontal_pill").assert(isTraversalGroupMatcher)
+    }
+
+    @Test
+    fun verticalIndicatorPill_allIndicatorsInactive_emitsZeroChildAndImageSemanticsNodes() {
+        composeTestRule.setContent {
+            VerticalIndicatorPill(
+                modifier = Modifier.testTag("vertical_pill"),
+                cutoutRectsOverride = emptyList()
+            ) {
+                FlashModeIndicator(flashModeUiState = inactiveFlashUiState())
+                HdrIndicator(hdrUiState = HdrUiState.Unavailable)
+                VideoQualityIcon(videoQuality = VideoQuality.UNSPECIFIED)
+                StabilizationIcon(
+                    stabilizationUiState = StabilizationUiState.Specific(
+                        stabilizationMode = StabilizationMode.ON,
+                        active = false
+                    )
+                )
+            }
+        }
+
+        assertThat(composeTestRule.onNodeWithTag("vertical_pill").fetchSemanticsNode().children)
+            .isEmpty()
+        composeTestRule.onAllNodes(
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Image),
+            useUnmergedTree = true
+        ).assertCountEquals(0)
+        composeTestRule.onAllNodes(
+            SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
+            useUnmergedTree = true
+        ).assertCountEquals(0)
+    }
+
+    @Test
+    fun indicatorPillIcon_exitingWithAnimationsEnabled_immediatelyClearsSemanticsMidShrink() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val flashOnDescription = context.getString(R.string.quick_settings_flash_on_description)
+        val hdrDescription =
+            context.getString(R.string.quick_settings_dynamic_range_hdr_description)
+        var isActive by mutableStateOf(true)
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides false) {
+                Column {
+                    VerticalIndicatorPill(cutoutRectsOverride = emptyList()) {
+                        FlashModeIndicator(
+                            flashModeUiState = if (isActive) {
+                                activeFlashUiState()
+                            } else {
+                                inactiveFlashUiState()
+                            },
+                            modifier = Modifier.testTag("flash")
+                        )
+                    }
+                    IndicatorPill(cutoutRectsOverride = emptyList()) {
+                        HdrIndicator(
+                            hdrUiState = if (isActive) {
+                                activeHdrUiState()
+                            } else {
+                                HdrUiState.Unavailable
+                            },
+                            modifier = Modifier.testTag("hdr")
+                        )
+                    }
+                }
+            }
+        }
+
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.onNodeWithContentDescription(flashOnDescription).assertExists()
+        composeTestRule.onNodeWithContentDescription(hdrDescription).assertExists()
+
+        // Transition both indicators to inactive while shrink + fadeOut animations are enabled.
+        isActive = false
+        Snapshot.sendApplyNotifications()
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        // Semantics must be pruned immediately while the exiting wrappers are still composed.
+        composeTestRule.onNodeWithTag("flash").assertExists()
+        composeTestRule.onNodeWithTag("hdr").assertExists()
+        composeTestRule.onNodeWithContentDescription(flashOnDescription).assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription(hdrDescription).assertDoesNotExist()
+        composeTestRule.onAllNodes(
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Image)
+        ).assertCountEquals(0)
+
+        // Verify the icons are still mid-shrink visually while remaining absent from semantics.
+        var observedMidVerticalShrink = false
+        var observedMidHorizontalShrink = false
+        for (step in 1..20) {
+            val flashNodes = composeTestRule.onAllNodes(hasTestTag("flash")).fetchSemanticsNodes()
+            if (flashNodes.isNotEmpty()) {
+                val flashHeight = composeTestRule.onNodeWithTag("flash").getBoundsInRoot().height
+                if (flashHeight > 0.dp && flashHeight < 36.dp) {
+                    observedMidVerticalShrink = true
+                }
+            }
+            val hdrNodes = composeTestRule.onAllNodes(hasTestTag("hdr")).fetchSemanticsNodes()
+            if (hdrNodes.isNotEmpty()) {
+                val hdrWidth = composeTestRule.onNodeWithTag("hdr").getBoundsInRoot().width
+                if (hdrWidth > 0.dp && hdrWidth < 36.dp) {
+                    observedMidHorizontalShrink = true
+                }
+            }
+            composeTestRule.onNodeWithContentDescription(flashOnDescription).assertDoesNotExist()
+            composeTestRule.onNodeWithContentDescription(hdrDescription).assertDoesNotExist()
+            composeTestRule.onAllNodes(
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Image)
+            ).assertCountEquals(0)
+            composeTestRule.mainClock.advanceTimeBy(16)
+        }
+        assertThat(observedMidVerticalShrink).isTrue()
+        assertThat(observedMidHorizontalShrink).isTrue()
+    }
+
+    private fun inactiveFlashUiState() = FlashModeUiState.Available(
+        selectedFlashMode = FlashMode.OFF,
+        availableFlashModes = listOf(SingleSelectableUiState.SelectableUi(FlashMode.OFF)),
+        isLowLightBoostActive = false
+    )
 
     private fun activeFlashUiState() = FlashModeUiState.Available(
         selectedFlashMode = FlashMode.ON,
