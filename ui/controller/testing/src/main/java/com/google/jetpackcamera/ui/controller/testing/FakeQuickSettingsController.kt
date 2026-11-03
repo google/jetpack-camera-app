@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.controller.testing
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -32,6 +33,7 @@ import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsControl
  * @param setDynamicRangeAction The action to perform when [setDynamicRange] is called.
  * @param setImageFormatAction The action to perform when [setImageFormat] is called.
  * @param setCaptureModeAction The action to perform when [setCaptureMode] is called.
+ * @param setCaptureSubModeAction The action to perform when [setCaptureSubMode] is called.
  */
 class FakeQuickSettingsController(
     var setLensFacingAction: (LensFacing) -> Unit = {},
@@ -39,7 +41,8 @@ class FakeQuickSettingsController(
     var setAspectRatioAction: (AspectRatio) -> Unit = {},
     var setDynamicRangeAction: (DynamicRange) -> Unit = {},
     var setImageFormatAction: (ImageOutputFormat) -> Unit = {},
-    var setCaptureModeAction: (CaptureMode) -> Unit = {}
+    var setCaptureModeAction: (CaptureMode) -> Unit = {},
+    var setCaptureSubModeAction: (CaptureSubModeId) -> Unit = {}
 ) : QuickSettingsController {
 
     override fun setLensFacing(lensFace: LensFacing) {
@@ -64,5 +67,9 @@ class FakeQuickSettingsController(
 
     override fun setCaptureMode(captureMode: CaptureMode) {
         setCaptureModeAction(captureMode)
+    }
+
+    override fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {
+        setCaptureSubModeAction(captureSubModeId)
     }
 }

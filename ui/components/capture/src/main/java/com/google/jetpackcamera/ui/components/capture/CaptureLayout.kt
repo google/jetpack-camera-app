@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
@@ -122,6 +121,7 @@ fun PreviewLayout(
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
     topBarTrailingContent: @Composable (Modifier) -> Unit = {},
+    captureModeCarousel: @Composable (Modifier) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
@@ -206,6 +206,7 @@ fun PreviewLayout(
                                 captureModeToggleSwitch = captureModeToggle,
                                 zoomControls = zoomLevelDisplay,
                                 elapsedTimeDisplay = elapsedTimeDisplay,
+                                captureModeCarousel = captureModeCarousel,
                                 snackbarHost = { modifier ->
                                     PillSnackbarHost(
                                         snackbarHostState = scaffoldState.snackbarHostState,
@@ -258,6 +259,7 @@ private fun VerticalMaterialControls(
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
     elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    captureModeCarousel: @Composable (Modifier) -> Unit = {},
     snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
@@ -312,12 +314,16 @@ private fun VerticalMaterialControls(
                     }
                 }
 
-                Spacer(
+                // Reports whether the carousel is drawn over the viewfinder, so that its labels
+                // can add a shadow for legibility.
+                OverlapAwareStyleProvider(
                     modifier = Modifier
                         .fillMaxWidth()
-                        // todo(kc): tune padding
-                        .padding(bottom = 50.dp)
-                )
+                        .height(CaptureModeCarouselHeight),
+                    overlapThreshold = 0.5f
+                ) {
+                    captureModeCarousel(Modifier)
+                }
 
                 // bottom controls row
                 Row(
