@@ -76,9 +76,13 @@ internal fun HdrUiState.Companion.from(
                 return HdrUiState.Unavailable
             }
 
-            val supportsHdrImage = cameraConstraints
-                ?.supportedImageFormatsMap?.get(affectsImageCapture)
-                ?.contains(ImageOutputFormat.JPEG_ULTRA_HDR) ?: false
+            val supportedImageFormats =
+                cameraConstraints?.supportedImageFormatsFor(
+                    cameraAppSettings.activeCaptureSubModeId,
+                    affectsImageCapture
+                ) ?: emptySet()
+            val supportsHdrImage =
+                ImageOutputFormat.JPEG_ULTRA_HDR in supportedImageFormats
             if (supportsHdrImage) {
                 val isFlashHdrConflict = cameraAppSettings.flashMode == FlashMode.LOW_LIGHT_BOOST
                 HdrUiState.Available(
