@@ -21,6 +21,7 @@ const val PHYSICAL_CAMERA_ID_TAG = "PhysicalCameraIdTag"
 const val DEBUG_OVERLAY_BUTTON = "DebugOverlayButton"
 
 const val BTN_DEBUG_HIDE_COMPONENTS_TAG = "btn_debug_hide_components"
+const val DEBUG_LAYOUT_READOUT_TAG = "text_debug_layout_readout"
 const val DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON = "DebugOverlayShowCameraPropertiesButton"
 const val DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON = "DebugOverlaySetZoomRatioButton"
 const val DEBUG_OVERLAY_CAMERA_PROPERTIES_TAG = "DebugOverlayCameraPropertiesTag"

@@ -23,4 +23,9 @@
     <string name="debug_hide_components_desc" translatable="false">Hiding components</string>
     <string name="debug_show_components_desc" translatable="false">Displaying components</string>
     <string name="debug_zoom_ratio_text" translatable="false">%1$.2fx</string>
+    <string name="debug_text_layout_prefix" translatable="false">"Layout: "</string>
+    <string name="debug_text_layout_value" translatable="false">%1$dx%2$ddp | %3$d° | %4$s | %5$s</string>
+    <string name="debug_text_rotation_locked" translatable="false">LOCKED</string>
+    <string name="debug_text_rotation_unlocked" translatable="false">UNLOCKED</string>
+    <string name="debug_text_default_layout_mode" translatable="false">CompactPortrait</string>
 </resources>

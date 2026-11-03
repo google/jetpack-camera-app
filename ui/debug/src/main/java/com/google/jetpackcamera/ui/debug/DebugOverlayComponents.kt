@@ -42,10 +42,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +57,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -61,10 +66,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.TestPattern
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 private const val TAG = "DebugOverlayComponents"
 
@@ -105,12 +112,83 @@ private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float
     )
 }
 
+/**
+ * Snapshot of window geometry, display rotation, rotation-lock state, and adaptive layout mode
+ * displayed by the debug console's layout readout row.
+ *
+ * When passed to [DebugOverlay], these explicit values override the live window-container fallback
+ * used when adaptive layout posture state is omitted.
+ *
+ * @property widthDp Current window container width in density-independent pixels.
+ * @property heightDp Current window container height in density-independent pixels.
+ * @property rotationDegrees Display rotation in clockwise degrees (typically 0, 90, 180, or 270).
+ * @property isRotationLocked Whether system auto-rotate is locked (`LOCKED`) or enabled
+ *   (`UNLOCKED`).
+ * @property layoutModeName Active adaptive layout mode label, or `null` to display the default
+ *   compact portrait mode label.
+ */
+@Immutable
+data class DebugLayoutReadoutState(
+    val widthDp: Int,
+    val heightDp: Int,
+    val rotationDegrees: Int = 0,
+    val isRotationLocked: Boolean = false,
+    val layoutModeName: String? = null
+)
+
+/**
+ * Displays a compact single-line debug readout showing window container size in dp, display
+ * rotation degrees, rotation-lock state, and the active adaptive layout mode.
+ *
+ * When [state] is `null`, window dimensions are derived live from [LocalWindowInfo] and
+ * [LocalDensity] with `0°`, `UNLOCKED`, and the default `CompactPortrait` mode label.
+ *
+ * @param state Explicit layout readout values to display, or `null` to use live window dimensions.
+ * @param modifier Modifier applied to the outer readout row.
+ */
+@Composable
+internal fun DebugLayoutReadout(
+    state: DebugLayoutReadoutState? = null,
+    modifier: Modifier = Modifier
+) {
+    val resolvedState = state ?: with(LocalDensity.current) {
+        val containerSize = LocalWindowInfo.current.containerSize
+        DebugLayoutReadoutState(
+            widthDp = containerSize.width.toDp().value.roundToInt(),
+            heightDp = containerSize.height.toDp().value.roundToInt()
+        )
+    }
+    val lockText = stringResource(
+        if (resolvedState.isRotationLocked) {
+            R.string.debug_text_rotation_locked
+        } else {
+            R.string.debug_text_rotation_unlocked
+        }
+    )
+    val modeText = resolvedState.layoutModeName
+        ?: stringResource(R.string.debug_text_default_layout_mode)
+    val formattedValue = stringResource(
+        R.string.debug_text_layout_value,
+        resolvedState.widthDp,
+        resolvedState.heightDp,
+        resolvedState.rotationDegrees,
+        lockText,
+        modeText
+    )
+    DebugTextBar(
+        modifier = modifier,
+        title = stringResource(R.string.debug_text_layout_prefix),
+        value = formattedValue,
+        tag = DEBUG_LAYOUT_READOUT_TAG
+    )
+}
+
 @Composable
 private fun DebugTextBar(modifier: Modifier = Modifier, title: String, value: String, tag: String) {
     Row(modifier = modifier) {
-        Text(modifier = modifier.background(Color.Black.copy(alpha = .7f)), text = title)
+        Text(modifier = Modifier.background(Color.Black.copy(alpha = .7f)), text = title)
         Text(
-            modifier = modifier
+            modifier = Modifier
                 .background(Color.Black.copy(alpha = .4f))
                 .testTag(tag),
             text = value
@@ -150,13 +228,31 @@ private fun ToggleVisibilityButton(
     }
 }
 
+/**
+ * Renders the top-level debug console and, when open, the modal debug inspection dialogs over the
+ * camera preview.
+ *
+ * When [DebugUiState.Enabled.debugHidingComponents] is `true`, only the visibility toggle button is
+ * shown so the camera feed can be inspected unobstructed.
+ *
+ * @param modifier Modifier applied to the root overlay container.
+ * @param onChangeZoomRatio Callback invoked when the user sets an explicit zoom ratio in the debug
+ *   dialog.
+ * @param debugUiState Current enabled debug UI state.
+ * @param extraControls Additional debug action composables rendered alongside the debug menu
+ *   button.
+ * @param debugController Controller handling visibility, dialog, and test-pattern interactions.
+ * @param layoutReadoutState Explicit adaptive layout posture readout state, or `null` to derive
+ *   window dimensions from the current window container.
+ */
 @Composable
 fun DebugOverlay(
     modifier: Modifier = Modifier,
     onChangeZoomRatio: (Float) -> Unit,
     debugUiState: DebugUiState.Enabled,
     vararg extraControls: @Composable () -> Unit,
-    debugController: DebugController
+    debugController: DebugController,
+    layoutReadoutState: DebugLayoutReadoutState? = null
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(top = 100.dp)) {
@@ -168,7 +264,8 @@ fun DebugOverlay(
                 DebugConsole(
                     debugUiState = debugUiState,
                     onToggleDebugOverlay = debugController::toggleDebugOverlay,
-                    extraControls = extraControls
+                    extraControls = extraControls,
+                    layoutReadoutState = layoutReadoutState
                 )
             }
         }
@@ -195,13 +292,17 @@ fun DebugOverlay(
  * @param onToggleDebugOverlay a callback to open and hide the [DebugDialogContainer]
  * @param extraControls additional composable functions to be displayed in the debug top row.
  * These should NOT include components intended to be exclusive to the debug screen.
+ * @param modifier modifier applied to the root console column.
+ * @param layoutReadoutState explicit layout posture values for [DebugLayoutReadout], or `null` to
+ *   derive window dimensions from the current window container.
  */
 @Composable
 private fun DebugConsole(
     debugUiState: DebugUiState.Enabled,
     onToggleDebugOverlay: () -> Unit,
     vararg extraControls: @Composable () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    layoutReadoutState: DebugLayoutReadoutState? = null
 ) {
     Column(modifier = modifier) {
         FlowRow(
@@ -218,6 +319,7 @@ private fun DebugConsole(
             modifier = Modifier,
             primaryZoomRatio = debugUiState.currentPrimaryZoomRatio
         )
+        DebugLayoutReadout(state = layoutReadoutState)
     }
 }
 
@@ -469,4 +571,33 @@ private enum class SelectedDialog {
     CameraJSON,
     SetZoom,
     SetTestPattern
+}
+
+@Preview(name = "Unlocked CompactPortrait", showBackground = true)
+@Composable
+private fun DebugLayoutReadoutUnlockedPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        DebugLayoutReadout(
+            state = DebugLayoutReadoutState(
+                widthDp = 412,
+                heightDp = 915
+            )
+        )
+    }
+}
+
+@Preview(name = "Locked TwoSideRail", showBackground = true)
+@Composable
+private fun DebugLayoutReadoutLockedTwoSideRailPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        DebugLayoutReadout(
+            state = DebugLayoutReadoutState(
+                widthDp = 840,
+                heightDp = 360,
+                rotationDegrees = 90,
+                isRotationLocked = true,
+                layoutModeName = "TwoSideRail"
+            )
+        )
+    }
 }
