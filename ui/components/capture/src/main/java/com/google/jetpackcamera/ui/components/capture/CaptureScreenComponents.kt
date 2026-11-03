@@ -45,13 +45,16 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -1140,7 +1143,10 @@ fun IndicatorPill(
     onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
     content: @Composable RowScope.() -> Unit
 ) {
-    CompositionLocalProvider(LocalContentColor provides Color.White) {
+    CompositionLocalProvider(
+        LocalContentColor provides Color.White,
+        LocalIndicatorPillOrientation provides Orientation.Horizontal
+    ) {
         CutoutAwareRow(
             modifier = modifier,
             horizontalSpacing = 0.dp,
@@ -1156,8 +1162,12 @@ fun IndicatorPill(
 }
 
 /**
- * Wraps an individual top-bar status indicator icon with horizontal expand/shrink and fade
+ * Wraps an individual status indicator icon with orientation-aware expand/shrink and fade
  * animations and standard indicator pill item padding.
+ *
+ * Reads [LocalIndicatorPillOrientation] to animate horizontally with `6x8.dp` padding inside
+ * [IndicatorPill] and vertically with `8x6.dp` padding inside [VerticalIndicatorPill]. Snaps
+ * immediately without animation when [LocalDisableAnimations] is enabled.
  */
 @Composable
 internal fun IndicatorPillIcon(
@@ -1166,24 +1176,35 @@ internal fun IndicatorPillIcon(
     content: @Composable () -> Unit
 ) {
     val disableAnimations = LocalDisableAnimations.current
+    val isVertical = LocalIndicatorPillOrientation.current == Orientation.Vertical
+    val horizontalPadding = if (isVertical) {
+        VerticalIndicatorPillTokens.IconHorizontalPadding
+    } else {
+        IndicatorPillTokens.IconHorizontalPadding
+    }
+    val verticalPadding = if (isVertical) {
+        VerticalIndicatorPillTokens.IconVerticalPadding
+    } else {
+        IndicatorPillTokens.IconVerticalPadding
+    }
     AnimatedVisibility(
         visible = visible,
-        enter = if (disableAnimations) {
-            EnterTransition.None
-        } else {
-            expandHorizontally() + fadeIn()
+        enter = when {
+            disableAnimations -> EnterTransition.None
+            isVertical -> expandVertically() + fadeIn()
+            else -> expandHorizontally() + fadeIn()
         },
-        exit = if (disableAnimations) {
-            ExitTransition.None
-        } else {
-            shrinkHorizontally() + fadeOut()
+        exit = when {
+            disableAnimations -> ExitTransition.None
+            isVertical -> shrinkVertically() + fadeOut()
+            else -> shrinkHorizontally() + fadeOut()
         }
     ) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
             Box(
                 modifier = modifier.padding(
-                    horizontal = IndicatorPillTokens.IconHorizontalPadding,
-                    vertical = IndicatorPillTokens.IconVerticalPadding
+                    horizontal = horizontalPadding,
+                    vertical = verticalPadding
                 ),
                 contentAlignment = Alignment.Center
             ) {
