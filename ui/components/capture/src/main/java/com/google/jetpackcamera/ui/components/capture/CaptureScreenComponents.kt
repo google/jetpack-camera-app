@@ -604,7 +604,9 @@ fun AmplitudeToggleButton(
  *
  * @param uiState the [CaptureModeToggleUiState.Available] for this component.
  * @param onChangeCaptureMode the callback for changing the capture mode.
- * @param onToggleWhenDisabled the callback for when the toggle is disabled.
+ * @param onToggleWhenDisabled optional callback invoked with the [DisableRationale] when the user
+ *   activates the toggle while disabled; when `null` or when no rationale exists, the disabled
+ *   toggle is inert and non-focusable.
  * @param modifier the modifier for this component.
  * @param orientation the primary axis of the toggle track and drag gesture.
  * @param compact whether to render the compact track dimensions (`92x48.dp` or `48x92.dp`).
@@ -614,7 +616,7 @@ fun AmplitudeToggleButton(
 fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
     onChangeCaptureMode: (CaptureMode) -> Unit,
-    onToggleWhenDisabled: (DisableRationale) -> Unit,
+    onToggleWhenDisabled: ((DisableRationale) -> Unit)? = null,
     modifier: Modifier = Modifier,
     orientation: Orientation = Orientation.Horizontal,
     compact: Boolean = false,
@@ -634,6 +636,31 @@ fun CaptureModeToggleButton(
                 CaptureMode.IMAGE_ONLY
             ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
+    val currentOnToggleWhenDisabled by rememberUpdatedState(onToggleWhenDisabled)
+    val disabledReason: DisableRationale? = if (!enabled) {
+        (
+            uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                SingleSelectableUiState.Disabled<CaptureMode>
+            )?.disabledReason
+            ?: (
+                uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY) as?
+                    SingleSelectableUiState.Disabled<CaptureMode>
+                )?.disabledReason
+    } else {
+        null
+    }
+    val hasDisabledRationaleAction =
+        !enabled && disabledReason != null && onToggleWhenDisabled != null
+    val onClickLabel = when {
+        enabled && !toggleState ->
+            stringResource(id = R.string.capture_mode_action_switch_to_video)
+        enabled && toggleState ->
+            stringResource(id = R.string.capture_mode_action_switch_to_photo)
+        hasDisabledRationaleAction ->
+            stringResource(id = R.string.capture_mode_action_explain_unavailable)
+        else -> null
+    }
+
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
         // The track keeps its color when disabled; ToggleSwitch dims the thumb and icons instead.
@@ -643,18 +670,10 @@ fun CaptureModeToggleButton(
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
             onChangeCaptureMode(newCaptureMode)
         },
-        onToggleWhenDisabled = {
-            val disabledReason: DisableRationale? =
-                (
-                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                        SingleSelectableUiState.Disabled<CaptureMode>
-                    )?.disabledReason
-                    ?: (
-                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                            as? SingleSelectableUiState.Disabled<CaptureMode>
-                        )
-                        ?.disabledReason
-            disabledReason?.let(onToggleWhenDisabled)
+        onToggleWhenDisabled = if (hasDisabledRationaleAction && disabledReason != null) {
+            { currentOnToggleWhenDisabled?.invoke(disabledReason) }
+        } else {
+            null
         },
         enabled = enabled,
         orientation = orientation,
@@ -674,6 +693,8 @@ fun CaptureModeToggleButton(
         } else {
             R.drawable.ic_videocam_outline
         },
+        contentDescription = stringResource(id = R.string.capture_mode_toggle_content_description),
+        onClickLabel = onClickLabel,
         startIconDescription = if (enabled) {
             stringResource(id = R.string.capture_mode_image_capture_content_description)
         } else {

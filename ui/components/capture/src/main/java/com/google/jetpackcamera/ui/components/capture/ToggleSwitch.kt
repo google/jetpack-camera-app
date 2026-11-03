@@ -23,29 +23,38 @@ import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.withFrameNanos
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -56,11 +65,18 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -72,9 +88,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private object ToggleSwitchTokens {
@@ -96,16 +110,17 @@ private object ToggleSwitchTokens {
 private class SwitchDragState {
     var isDragging: Boolean = false
     var progress: Float = 0f
-    var revertCheckJob: Job? = null
 }
 
 /**
  * A custom Switch component built with Canvas, supporting horizontal and vertical orientations,
- * standard and compact track sizes, RTL mirroring, drag gestures, and custom icons for unchecked
- * and checked states.
+ * standard and compact track sizes, RTL mirroring, drag gestures, keyboard activation, and custom
+ * icons for unchecked and checked states.
  *
- * When disabled, the thumb and icons are dimmed while tapping or invoking accessibility click
- * triggers [onToggleWhenDisabled] so callers can explain why toggling is unavailable.
+ * When disabled, the thumb and icons are dimmed. If [onToggleWhenDisabled] is non-null, the switch
+ * remains focusable and tapping, pressing Space/Enter, or invoking accessibility click triggers
+ * [onToggleWhenDisabled] so callers can explain why toggling is unavailable; when `null`, the
+ * switch exposes disabled semantics and is non-focusable.
  *
  * TODO(UX): Confirm final [Orientation.Vertical] ordering (currently [startIcon]/Photo at top to
  *   [endIcon]/Video at bottom with downward drag, non-inverted in RTL).
@@ -113,9 +128,9 @@ private class SwitchDragState {
  * @param checked Whether the switch is currently checked (`true` selects [endIcon]).
  * @param onCheckedChange Callback invoked when the user toggles the switch while [enabled].
  * @param modifier [Modifier] applied to the switch canvas.
- * @param onToggleWhenDisabled Callback invoked when the user taps or activates the switch while
- *   disabled.
- * @param enabled Whether the switch is interactive.
+ * @param onToggleWhenDisabled Optional callback invoked when the user taps or activates the switch
+ *   while disabled; when `null`, a disabled switch is inert and non-focusable.
+ * @param enabled Whether the switch can change its checked state.
  * @param orientation Primary axis of the track and drag gesture ([Orientation.Horizontal] or
  *   [Orientation.Vertical]).
  * @param compact Whether to use compact track dimensions (`92x48.dp` horizontal, `48x92.dp`
@@ -126,6 +141,9 @@ private class SwitchDragState {
  * @param disableColor Base color used to derive dimmed thumb and icon colors when disabled.
  * @param startIcon Optional drawable resource ID for the unchecked (`false`) position.
  * @param endIcon Optional drawable resource ID for the checked (`true`) position.
+ * @param contentDescription Optional accessibility label identifying the switch control.
+ * @param onClickLabel Optional accessibility action label describing what activating the switch
+ *   does.
  * @param startIconDescription Optional accessibility state description when unchecked (`false`).
  * @param endIconDescription Optional accessibility state description when checked (`true`).
  * @param unselectedIconColor Tint color for icon regions outside the thumb bounds when [enabled].
@@ -140,16 +158,18 @@ fun ToggleSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    onToggleWhenDisabled: () -> Unit = {},
+    onToggleWhenDisabled: (() -> Unit)? = null,
     enabled: Boolean = true,
     orientation: Orientation = Orientation.Horizontal,
     compact: Boolean = false,
     iconRotationDegrees: Float = 0f,
     trackColor: Color = Color.White.copy(alpha = ToggleSwitchTokens.DefaultTrackAlpha),
     thumbColor: Color = MaterialTheme.colorScheme.primaryFixedDim,
-    disableColor: Color = MaterialTheme.colorScheme.onSurface,
+    disableColor: Color = Color.White,
     @DrawableRes startIcon: Int? = null,
     @DrawableRes endIcon: Int? = null,
+    contentDescription: String? = null,
+    onClickLabel: String? = null,
     startIconDescription: String? = null,
     endIconDescription: String? = null,
     unselectedIconColor: Color = MaterialTheme.colorScheme.secondaryFixed,
@@ -189,6 +209,8 @@ fun ToggleSwitch(
         orientation == Orientation.Horizontal &&
             LocalLayoutDirection.current == LayoutDirection.Rtl
     val disableAnimations = LocalDisableAnimations.current
+    val isInteractive = enabled || onToggleWhenDisabled != null
+    val interactionSource = remember { MutableInteractionSource() }
 
     // --- 2. Up-to-date Callback & State References ---
     val currentEnabled by rememberUpdatedState(enabled)
@@ -203,22 +225,17 @@ fun ToggleSwitch(
     val coroutineScope = rememberCoroutineScope()
     val dragState = remember { SwitchDragState() }
     val dragInteractionSource = remember { MutableInteractionSource() }
+    var dragSettleCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(enabled, orientation, isHorizontalRtl) {
         val target = if (currentChecked) 1f else 0f
         if (!enabled || dragState.isDragging) {
             dragState.isDragging = false
-            dragState.revertCheckJob?.cancel()
-            dragState.revertCheckJob = null
             thumbProgress.syncToTarget(
                 target = target,
                 disableAnimations = currentDisableAnimations
             )
-        } else if (
-            dragState.revertCheckJob == null &&
-            !thumbProgress.isRunning &&
-            thumbProgress.value != target
-        ) {
+        } else if (!thumbProgress.isRunning && thumbProgress.value != target) {
             thumbProgress.syncToTarget(
                 target = target,
                 disableAnimations = currentDisableAnimations
@@ -236,8 +253,6 @@ fun ToggleSwitch(
                     activeDrags.remove(interaction.start)
                     if (activeDrags.isEmpty() && dragState.isDragging) {
                         dragState.isDragging = false
-                        dragState.revertCheckJob?.cancel()
-                        dragState.revertCheckJob = null
                         coroutineScope.launch {
                             thumbProgress.syncToTarget(
                                 target = if (currentChecked) 1f else 0f,
@@ -250,10 +265,8 @@ fun ToggleSwitch(
         }
     }
 
-    LaunchedEffect(checked, disableAnimations) {
+    LaunchedEffect(checked, disableAnimations, dragSettleCount) {
         if (!dragState.isDragging) {
-            dragState.revertCheckJob?.cancel()
-            dragState.revertCheckJob = null
             thumbProgress.syncToTarget(
                 target = if (checked) 1f else 0f,
                 disableAnimations = disableAnimations
@@ -310,8 +323,6 @@ fun ToggleSwitch(
         val dimsSnapshot = currentDims
         if (currentEnabled && dimsSnapshot.dragRange > 0f) {
             if (!dragState.isDragging) {
-                dragState.revertCheckJob?.cancel()
-                dragState.revertCheckJob = null
                 dragState.isDragging = true
                 dragState.progress = thumbProgress.value
             }
@@ -324,88 +335,100 @@ fun ToggleSwitch(
         }
     }
 
-    val activeDescription = if (checked) endIconDescription else startIconDescription
-    val gestureModifier = Modifier
-        .focusable(enabled = enabled)
-        .pointerInput(enabled) {
-            detectTapGestures(
-                onTap = {
-                    if (currentEnabled) {
-                        currentOnCheckedChange(!currentChecked)
-                    } else {
-                        currentOnToggleWhenDisabled()
-                    }
-                }
-            )
-        }
-        .draggable(
-            state = draggableState,
-            enabled = enabled,
-            orientation = orientation,
-            reverseDirection = isHorizontalRtl,
-            interactionSource = dragInteractionSource,
-            onDragStarted = {
-                if (currentEnabled) {
-                    dragState.revertCheckJob?.cancel()
-                    dragState.revertCheckJob = null
-                    dragState.isDragging = true
-                    dragState.progress = thumbProgress.value
-                }
-            },
-            onDragStopped = {
-                val finalProgress =
-                    if (dragState.isDragging) dragState.progress else thumbProgress.value
-                dragState.isDragging = false
-                dragState.revertCheckJob?.cancel()
-                dragState.revertCheckJob = null
-                val requestedChecked =
-                    if (currentEnabled) finalProgress > 0.5f else currentChecked
-                val didRequestChange = currentEnabled && requestedChecked != currentChecked
-                if (didRequestChange) {
-                    currentOnCheckedChange(requestedChecked)
-                }
-                val settleTarget = if (requestedChecked) 1f else 0f
-                coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                    thumbProgress.syncToTarget(
-                        target = settleTarget,
-                        disableAnimations = currentDisableAnimations
-                    )
-                }
-                if (didRequestChange) {
-                    dragState.revertCheckJob = coroutineScope.launch {
-                        withFrameNanos {}
-                        withFrameNanos {}
-                        yield()
-                        dragState.revertCheckJob = null
-                        if (!dragState.isDragging && currentChecked != requestedChecked) {
-                            thumbProgress.syncToTarget(
-                                target = if (currentChecked) 1f else 0f,
-                                disableAnimations = currentDisableAnimations
-                            )
-                        }
-                    }
-                }
-            }
-        )
-        .semantics {
-            role = Role.Switch
-            toggleableState = ToggleableState(checked)
-            activeDescription?.let { stateDescription = it }
-            onClick {
-                if (currentEnabled) {
-                    currentOnCheckedChange(!currentChecked)
-                } else {
-                    currentOnToggleWhenDisabled()
-                }
-                true
-            }
-        }
+    val resolvedStateDescription = if (checked) endIconDescription else startIconDescription
 
     // --- 6. Canvas Drawing ---
     Canvas(
         modifier = modifier
-            .size(dims.switchWidthDp, dims.switchHeightDp)
-            .then(gestureModifier)
+            .minimumInteractiveComponentSize()
+            .size(width = dims.switchWidthDp, height = dims.switchHeightDp)
+            .clip(CircleShape)
+            .indication(interactionSource, LocalIndication.current)
+            .semantics {
+                role = Role.Switch
+                if (contentDescription != null) {
+                    this.contentDescription = contentDescription
+                }
+                if (!isInteractive) {
+                    disabled()
+                }
+                onClick(label = onClickLabel) {
+                    if (currentEnabled) {
+                        currentOnCheckedChange(!currentChecked)
+                        true
+                    } else {
+                        val disabledCallback = currentOnToggleWhenDisabled
+                        if (disabledCallback != null) {
+                            disabledCallback()
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                }
+                toggleableState = ToggleableState(checked)
+                if (resolvedStateDescription != null) {
+                    stateDescription = resolvedStateDescription
+                }
+            }
+            .onKeyEvent { event ->
+                val isActivationKey = event.key == Key.Spacebar ||
+                    event.key == Key.Enter ||
+                    event.key == Key.NumPadEnter ||
+                    event.key == Key.DirectionCenter
+                val interactive = currentEnabled || currentOnToggleWhenDisabled != null
+                if (!isActivationKey || !interactive) {
+                    false
+                } else if (event.type == KeyEventType.KeyUp) {
+                    if (currentEnabled) {
+                        currentOnCheckedChange(!currentChecked)
+                    } else {
+                        currentOnToggleWhenDisabled?.invoke()
+                    }
+                    true
+                } else {
+                    event.type == KeyEventType.KeyDown
+                }
+            }
+            .focusable(enabled = isInteractive, interactionSource = interactionSource)
+            .pointerInput(isInteractive) {
+                if (!isInteractive) return@pointerInput
+                detectTapGestures(
+                    onTap = {
+                        if (currentEnabled) {
+                            currentOnCheckedChange(!currentChecked)
+                        } else {
+                            currentOnToggleWhenDisabled?.invoke()
+                        }
+                    }
+                )
+            }
+            .draggable(
+                state = draggableState,
+                enabled = enabled,
+                orientation = orientation,
+                reverseDirection = isHorizontalRtl,
+                interactionSource = dragInteractionSource,
+                onDragStarted = {
+                    if (currentEnabled) {
+                        dragState.isDragging = true
+                        dragState.progress = thumbProgress.value
+                    }
+                },
+                onDragStopped = {
+                    val wasDragging = dragState.isDragging
+                    val finalProgress =
+                        if (wasDragging) dragState.progress else thumbProgress.value
+                    dragState.isDragging = false
+                    if (wasDragging && currentEnabled) {
+                        val newCheckedState = finalProgress > 0.5f
+                        if (newCheckedState != currentChecked) {
+                            currentOnCheckedChange(newCheckedState)
+                        }
+                    }
+                    dragSettleCount++
+                }
+            )
     ) {
         val progress = thumbProgress.value
         val trackCornerRadius = CornerRadius(dims.crossAxisSizePx / 2f, dims.crossAxisSizePx / 2f)
@@ -716,14 +739,39 @@ private fun ToggleSwitchOnEnabledPreview() {
 @Composable
 private fun ToggleSwitchLightEnabledPreview() {
     MaterialTheme(colorScheme = lightColorScheme()) {
-        ToggleSwitch(
-            startIcon = R.drawable.ic_camera_alt_outline,
-            endIcon = R.drawable.ic_videocam_filled,
-            checked = true,
-            onCheckedChange = {},
-            enabled = true,
-            trackColor = Color.Black.copy(alpha = ToggleSwitchTokens.DefaultTrackAlpha)
-        )
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(8.dp)
+        ) {
+            ToggleSwitch(
+                startIcon = R.drawable.ic_camera_alt_outline,
+                endIcon = R.drawable.ic_videocam_filled,
+                checked = true,
+                onCheckedChange = {},
+                enabled = true
+            )
+        }
+    }
+}
+
+@Preview(name = "Disabled Off (Light)", uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+private fun ToggleSwitchLightDisabledPreview() {
+    MaterialTheme(colorScheme = lightColorScheme()) {
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(8.dp)
+        ) {
+            ToggleSwitch(
+                startIcon = R.drawable.ic_camera_alt_filled,
+                endIcon = R.drawable.ic_videocam_outline,
+                checked = false,
+                onCheckedChange = {},
+                enabled = false
+            )
+        }
     }
 }
 

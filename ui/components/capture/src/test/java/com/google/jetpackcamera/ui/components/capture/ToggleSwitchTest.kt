@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.view.KeyEvent as NativeKeyEvent
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -24,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -31,12 +33,19 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyPress
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
@@ -47,6 +56,7 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import kotlinx.coroutines.launch
@@ -149,13 +159,18 @@ class ToggleSwitchTest {
     fun semantics_exposesSwitchRoleToggleableStateFocusAndOnClick() {
         var checked by mutableStateOf(false)
         var enabled by mutableStateOf(true)
+        var provideRationaleCallback by mutableStateOf(true)
         var disabledClicks = 0
 
         composeTestRule.setContent {
             ToggleSwitch(
                 checked = checked,
                 onCheckedChange = { checked = it },
-                onToggleWhenDisabled = { disabledClicks++ },
+                onToggleWhenDisabled = if (provideRationaleCallback) {
+                    { disabledClicks++ }
+                } else {
+                    null
+                },
                 enabled = enabled,
                 modifier = Modifier.testTag(SWITCH_TAG)
             )
@@ -166,6 +181,7 @@ class ToggleSwitchTest {
         assertThat(initialConfig.getOrNull(SemanticsProperties.ToggleableState))
             .isEqualTo(ToggleableState.Off)
         assertThat(initialConfig.getOrNull(SemanticsProperties.Focused)).isNotNull()
+        assertThat(initialConfig.getOrNull(SemanticsProperties.Disabled)).isNull()
         assertThat(initialConfig.getOrNull(SemanticsActions.OnClick)).isNotNull()
 
         composeTestRule.onNodeWithTag(SWITCH_TAG).performSemanticsAction(SemanticsActions.OnClick)
@@ -179,13 +195,21 @@ class ToggleSwitchTest {
         enabled = false
         composeTestRule.waitForIdle()
 
-        val disabledConfig = composeTestRule.onNodeWithTag(SWITCH_TAG).fetchSemanticsNode().config
-        assertThat(disabledConfig.getOrNull(SemanticsProperties.Focused)).isNull()
+        val rationaleConfig = composeTestRule.onNodeWithTag(SWITCH_TAG).fetchSemanticsNode().config
+        assertThat(rationaleConfig.getOrNull(SemanticsProperties.Focused)).isNotNull()
+        assertThat(rationaleConfig.getOrNull(SemanticsProperties.Disabled)).isNull()
 
         composeTestRule.onNodeWithTag(SWITCH_TAG).performSemanticsAction(SemanticsActions.OnClick)
         composeTestRule.waitForIdle()
         assertThat(checked).isTrue()
         assertThat(disabledClicks).isEqualTo(1)
+
+        provideRationaleCallback = false
+        composeTestRule.waitForIdle()
+
+        val inertConfig = composeTestRule.onNodeWithTag(SWITCH_TAG).fetchSemanticsNode().config
+        assertThat(inertConfig.getOrNull(SemanticsProperties.Focused)).isNull()
+        assertThat(inertConfig.getOrNull(SemanticsProperties.Disabled)).isNotNull()
     }
 
     @Test
@@ -673,4 +697,290 @@ class ToggleSwitchTest {
         composeTestRule.waitForIdle()
         assertThat(selectedMode).isEqualTo(CaptureMode.VIDEO_ONLY)
     }
+
+    @Test
+    fun semantics_contentDescriptionAndOnClickLabel_exposedWhenProvidedAndOmittedWhenNull() {
+        var contentDesc by mutableStateOf<String?>(null)
+        var clickLabel by mutableStateOf<String?>(null)
+
+        composeTestRule.setContent {
+            ToggleSwitch(
+                checked = false,
+                onCheckedChange = {},
+                contentDescription = contentDesc,
+                onClickLabel = clickLabel,
+                modifier = Modifier.testTag(SWITCH_TAG)
+            )
+        }
+
+        val initialConfig = composeTestRule.onNodeWithTag(SWITCH_TAG).fetchSemanticsNode().config
+        assertThat(initialConfig.getOrNull(SemanticsProperties.ContentDescription)).isNull()
+        assertThat(initialConfig.getOrNull(SemanticsActions.OnClick)?.label).isNull()
+
+        contentDesc = "Capture mode"
+        clickLabel = "Switch to video mode"
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(SWITCH_TAG).assertContentDescriptionEquals("Capture mode")
+        val updatedConfig = composeTestRule.onNodeWithTag(SWITCH_TAG).fetchSemanticsNode().config
+        assertThat(updatedConfig.getOrNull(SemanticsActions.OnClick)?.label)
+            .isEqualTo("Switch to video mode")
+    }
+
+    @Test
+    fun disabledWithoutRationale_marksDisabledSemanticsAndIsNotFocusable() {
+        var checked by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            ToggleSwitch(
+                checked = checked,
+                onCheckedChange = { checked = it },
+                onToggleWhenDisabled = null,
+                enabled = false,
+                contentDescription = "Capture mode",
+                modifier = Modifier.testTag(SWITCH_TAG)
+            )
+        }
+
+        val node = composeTestRule.onNodeWithTag(SWITCH_TAG)
+        node.assertIsNotEnabled()
+        val config = node.fetchSemanticsNode().config
+        assertThat(config.getOrNull(SemanticsProperties.Focused)).isNull()
+        assertThat(config.getOrNull(SemanticsActions.OnClick)?.action?.invoke()).isFalse()
+        assertThat(checked).isFalse()
+    }
+
+    @Test
+    fun disabledWithRationale_remainsFocusableAndInvokesRationaleViaSemanticsAndKeyboard() {
+        var checked by mutableStateOf(false)
+        var rationaleCount = 0
+
+        composeTestRule.setContent {
+            ToggleSwitch(
+                checked = checked,
+                onCheckedChange = { checked = it },
+                onToggleWhenDisabled = { rationaleCount++ },
+                enabled = false,
+                contentDescription = "Capture mode",
+                onClickLabel = "Show why other mode is unavailable",
+                modifier = Modifier.testTag(SWITCH_TAG)
+            )
+        }
+
+        val node = composeTestRule.onNodeWithTag(SWITCH_TAG)
+        node.assertIsEnabled()
+        val config = node.fetchSemanticsNode().config
+        assertThat(config.getOrNull(SemanticsProperties.Focused)).isEqualTo(false)
+        assertThat(config.getOrNull(SemanticsActions.OnClick)?.label)
+            .isEqualTo("Show why other mode is unavailable")
+
+        node.performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.waitForIdle()
+        assertThat(rationaleCount).isEqualTo(1)
+        assertThat(checked).isFalse()
+
+        node.requestFocus()
+        node.assertIsFocused()
+
+        node.pressHardwareKey(NativeKeyEvent.KEYCODE_SPACE)
+        composeTestRule.waitForIdle()
+        assertThat(rationaleCount).isEqualTo(2)
+        assertThat(checked).isFalse()
+
+        node.pressHardwareKey(NativeKeyEvent.KEYCODE_ENTER)
+        composeTestRule.waitForIdle()
+        assertThat(rationaleCount).isEqualTo(3)
+        assertThat(checked).isFalse()
+    }
+
+    @Test
+    fun keyboardActivation_whenEnabled_togglesWithSpacebarEnterNumPadEnterAndDirectionCenter() {
+        var checked by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            ToggleSwitch(
+                checked = checked,
+                onCheckedChange = { checked = it },
+                contentDescription = "Capture mode",
+                modifier = Modifier.testTag(SWITCH_TAG)
+            )
+        }
+
+        val node = composeTestRule.onNodeWithTag(SWITCH_TAG)
+        node.requestFocus()
+        node.assertIsFocused()
+
+        node.pressHardwareKey(NativeKeyEvent.KEYCODE_SPACE)
+        composeTestRule.waitForIdle()
+        assertThat(checked).isTrue()
+
+        node.pressHardwareKey(NativeKeyEvent.KEYCODE_ENTER)
+        composeTestRule.waitForIdle()
+        assertThat(checked).isFalse()
+
+        node.pressHardwareKey(NativeKeyEvent.KEYCODE_NUMPAD_ENTER)
+        composeTestRule.waitForIdle()
+        assertThat(checked).isTrue()
+
+        node.pressHardwareKey(NativeKeyEvent.KEYCODE_DPAD_CENTER)
+        composeTestRule.waitForIdle()
+        assertThat(checked).isFalse()
+    }
+
+    @Test
+    fun minimumInteractiveComponentSize_expandsUndersizedCustomSwitchTo48Dp() {
+        composeTestRule.setContent {
+            ToggleSwitch(
+                checked = false,
+                onCheckedChange = {},
+                switchWidth = 32.dp,
+                switchHeight = 32.dp,
+                thumbDiameter = 24.dp,
+                iconSize = 16.dp,
+                modifier = Modifier.testTag(SWITCH_TAG)
+            )
+        }
+
+        val bounds = composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
+        assertThat(bounds.width).isEqualTo(48.dp)
+        assertThat(bounds.height).isEqualTo(48.dp)
+    }
+
+    @Test
+    fun controlledDragVeto_withNoOpOnCheckedChange_keepsToggleableStateOffAndSnapsThumbBack() {
+        var checked by mutableStateOf(false)
+        var allowToggle by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                ToggleSwitch(
+                    checked = checked,
+                    onCheckedChange = { requested ->
+                        if (allowToggle) {
+                            checked = requested
+                        }
+                    },
+                    modifier = Modifier.testTag(SWITCH_TAG)
+                )
+            }
+        }
+
+        val node = composeTestRule.onNodeWithTag(SWITCH_TAG)
+        node.performTouchInput { swipeRight() }
+        composeTestRule.waitForIdle()
+
+        val configAfterVeto = node.fetchSemanticsNode().config
+        assertThat(configAfterVeto.getOrNull(SemanticsProperties.ToggleableState))
+            .isEqualTo(ToggleableState.Off)
+        assertThat(checked).isFalse()
+
+        // Allow toggling and perform a sub-midpoint (+24px) drag: because thumbProgress reconciled
+        // back to 0f on veto, +24px stays below 0.5f and does not flip checked to true.
+        allowToggle = true
+        composeTestRule.waitForIdle()
+
+        node.performTouchInput {
+            down(center)
+            moveBy(Offset(24f, 0f))
+            up()
+        }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isFalse()
+    }
+
+    @Test
+    fun captureModeToggleButton_exposesContentDescriptionStateDescriptionAndContextualLabels() {
+        val rationale = object : DisableRationale {
+            override val reasonTextResId: Int =
+                R.string.capture_mode_video_recording_content_description_disabled
+        }
+        var selectedMode by mutableStateOf(CaptureMode.IMAGE_ONLY)
+        var isVideoSelectable by mutableStateOf(true)
+        var provideRationaleHandler by mutableStateOf(true)
+        val recordedRationales = mutableListOf<DisableRationale>()
+
+        composeTestRule.setContent {
+            CaptureModeToggleButton(
+                uiState = CaptureModeToggleUiState.Available(
+                    selectedCaptureMode = selectedMode,
+                    imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                    videoOnlyUiState = if (isVideoSelectable) {
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+                    } else {
+                        SingleSelectableUiState.Disabled(CaptureMode.VIDEO_ONLY, rationale)
+                    }
+                ),
+                onChangeCaptureMode = { selectedMode = it },
+                onToggleWhenDisabled = if (provideRationaleHandler) {
+                    { recordedRationales.add(it) }
+                } else {
+                    null
+                }
+            )
+        }
+
+        val node = composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
+        node.assertContentDescriptionEquals("Capture mode")
+
+        val photoConfig = node.fetchSemanticsNode().config
+        assertThat(photoConfig.getOrNull(SemanticsProperties.Role)).isEqualTo(Role.Switch)
+        assertThat(photoConfig.getOrNull(SemanticsProperties.ToggleableState))
+            .isEqualTo(ToggleableState.Off)
+        assertThat(photoConfig.getOrNull(SemanticsProperties.StateDescription))
+            .isEqualTo("Photo mode")
+        assertThat(photoConfig.getOrNull(SemanticsActions.OnClick)?.label)
+            .isEqualTo("Switch to video mode")
+
+        node.performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.waitForIdle()
+        assertThat(selectedMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+
+        val videoConfig = node.fetchSemanticsNode().config
+        assertThat(videoConfig.getOrNull(SemanticsProperties.ToggleableState))
+            .isEqualTo(ToggleableState.On)
+        assertThat(videoConfig.getOrNull(SemanticsProperties.StateDescription))
+            .isEqualTo("Video mode")
+        assertThat(videoConfig.getOrNull(SemanticsActions.OnClick)?.label)
+            .isEqualTo("Switch to photo mode")
+
+        selectedMode = CaptureMode.IMAGE_ONLY
+        isVideoSelectable = false
+        composeTestRule.waitForIdle()
+
+        node.assertIsEnabled()
+        val lockedWithRationaleConfig = node.fetchSemanticsNode().config
+        assertThat(lockedWithRationaleConfig.getOrNull(SemanticsProperties.StateDescription))
+            .isEqualTo("Photo mode only")
+        assertThat(lockedWithRationaleConfig.getOrNull(SemanticsActions.OnClick)?.label)
+            .isEqualTo("Show why other mode is unavailable")
+
+        node.performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.waitForIdle()
+        assertThat(recordedRationales).containsExactly(rationale)
+
+        node.requestFocus()
+        node.assertIsFocused()
+        node.pressHardwareKey(NativeKeyEvent.KEYCODE_SPACE)
+        composeTestRule.waitForIdle()
+        assertThat(recordedRationales).hasSize(2)
+
+        provideRationaleHandler = false
+        composeTestRule.waitForIdle()
+
+        node.assertIsNotEnabled()
+        val inertLockedConfig = node.fetchSemanticsNode().config
+        assertThat(inertLockedConfig.getOrNull(SemanticsProperties.Focused)).isNull()
+        assertThat(inertLockedConfig.getOrNull(SemanticsActions.OnClick)?.label).isNull()
+        assertThat(inertLockedConfig.getOrNull(SemanticsProperties.StateDescription))
+            .isEqualTo("Photo mode only")
+    }
+}
+
+private fun SemanticsNodeInteraction.pressHardwareKey(keyCode: Int) {
+    assertThat(
+        performKeyPress(KeyEvent(NativeKeyEvent(NativeKeyEvent.ACTION_DOWN, keyCode)))
+    ).isTrue()
+    assertThat(
+        performKeyPress(KeyEvent(NativeKeyEvent(NativeKeyEvent.ACTION_UP, keyCode)))
+    ).isTrue()
 }
