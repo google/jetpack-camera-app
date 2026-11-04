@@ -23,48 +23,48 @@ import com.android.tools.screenshot.PreviewTest
 @PreviewTest
 @Preview
 @Composable
-fun ZoomBarHorizontalFirstStopScreenshotPreview() {
+private fun ZoomBarHorizontalFirstStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 0.5f)
 }
 
 @PreviewTest
 @Preview
 @Composable
-fun ZoomBarHorizontalMiddleStopScreenshotPreview() {
+private fun ZoomBarHorizontalMiddleStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 1.0f)
 }
 
 @PreviewTest
 @Preview
 @Composable
-fun ZoomBarHorizontalLastStopScreenshotPreview() {
+private fun ZoomBarHorizontalLastStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 5.0f)
 }
 
 @PreviewTest
 @Preview
 @Composable
-fun ZoomBarVerticalFirstStopScreenshotPreview() {
+private fun ZoomBarVerticalFirstStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 0.5f, orientation = Orientation.Vertical)
 }
 
 @PreviewTest
 @Preview
 @Composable
-fun ZoomBarVerticalMiddleStopScreenshotPreview() {
+private fun ZoomBarVerticalMiddleStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 1.0f, orientation = Orientation.Vertical)
 }
 
 @PreviewTest
 @Preview
 @Composable
-fun ZoomBarVerticalLastStopScreenshotPreview() {
+private fun ZoomBarVerticalLastStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 5.0f, orientation = Orientation.Vertical)
 }
 
 @PreviewTest
 @Preview
 @Composable
-fun ZoomBarSingleStopScreenshotPreview() {
+private fun ZoomBarSingleStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 1.0f, zoomLevels = listOf(1.0f), colors = ZoomBarDefaults.colors())
 }
