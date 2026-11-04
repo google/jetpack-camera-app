@@ -43,7 +43,7 @@ class DebugLayoutReadoutTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun debugLayoutReadout_whenLockedTwoSideRail_displaysFormattedState() {
+    fun debugLayoutReadout_whenLocked_displaysEachTaggedBlock() {
         composeTestRule.setContent {
             MaterialTheme {
                 DebugLayoutReadout(
@@ -51,8 +51,7 @@ class DebugLayoutReadoutTest {
                         widthDp = 840,
                         heightDp = 360,
                         rotationDegrees = 90,
-                        isRotationLocked = true,
-                        layoutModeName = "TwoSideRail"
+                        isRotationLocked = true
                     )
                 )
             }
@@ -60,12 +59,16 @@ class DebugLayoutReadoutTest {
 
         composeTestRule.onNodeWithText("Layout: ").assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
-        assertThat(readNodeText(DEBUG_LAYOUT_READOUT_TAG))
-            .isEqualTo("840x360dp | 90° | LOCKED | TwoSideRail")
+        composeTestRule.onNodeWithTag(DEBUG_WINDOW_SIZE_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DEBUG_ROTATION_DEG_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DEBUG_ROTATION_LOCK_TAG).assertIsDisplayed()
+        assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("840x360dp")
+        assertThat(readNodeText(DEBUG_ROTATION_DEG_TAG)).isEqualTo("90°")
+        assertThat(readNodeText(DEBUG_ROTATION_LOCK_TAG)).isEqualTo("LOCKED")
     }
 
     @Test
-    fun debugLayoutReadout_whenDefaultsUsed_displaysUnlockedCompactPortrait() {
+    fun debugLayoutReadout_whenDefaultsUsed_displaysUnlockedDefaults() {
         composeTestRule.setContent {
             MaterialTheme {
                 DebugLayoutReadout(
@@ -79,8 +82,9 @@ class DebugLayoutReadoutTest {
 
         composeTestRule.onNodeWithText("Layout: ").assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
-        assertThat(readNodeText(DEBUG_LAYOUT_READOUT_TAG))
-            .isEqualTo("412x915dp | 0° | UNLOCKED | CompactPortrait")
+        assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("412x915dp")
+        assertThat(readNodeText(DEBUG_ROTATION_DEG_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_ROTATION_LOCK_TAG)).isEqualTo("UNLOCKED")
     }
 
     @Test
@@ -89,17 +93,17 @@ class DebugLayoutReadoutTest {
             MaterialTheme {
                 DebugLayoutReadout(
                     state = DebugLayoutReadoutState(widthDp = 412, heightDp = 915),
-                    modifier = Modifier.testTag("row_debug_layout")
+                    modifier = Modifier.testTag("custom_row_tag")
                 )
             }
         }
 
         assertThat(
-            composeTestRule.onAllNodesWithTag("row_debug_layout").fetchSemanticsNodes().size
+            composeTestRule.onAllNodesWithTag("custom_row_tag").fetchSemanticsNodes().size
         ).isEqualTo(1)
         assertThat(
             composeTestRule
-                .onAllNodesWithTag("row_debug_layout", useUnmergedTree = true)
+                .onAllNodesWithTag("custom_row_tag", useUnmergedTree = true)
                 .fetchSemanticsNodes()
                 .size
         ).isEqualTo(1)
@@ -124,8 +128,9 @@ class DebugLayoutReadoutTest {
         }
 
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
-        assertThat(readNodeText(DEBUG_LAYOUT_READOUT_TAG))
-            .isEqualTo("360x800dp | 0° | UNLOCKED | CompactPortrait")
+        assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("360x800dp")
+        assertThat(readNodeText(DEBUG_ROTATION_DEG_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_ROTATION_LOCK_TAG)).isEqualTo("UNLOCKED")
     }
 
     @Test
@@ -145,16 +150,16 @@ class DebugLayoutReadoutTest {
                         widthDp = 840,
                         heightDp = 360,
                         rotationDegrees = 270,
-                        isRotationLocked = true,
-                        layoutModeName = "TwoSideRail"
+                        isRotationLocked = true
                     )
                 )
             }
         }
 
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
-        assertThat(readNodeText(DEBUG_LAYOUT_READOUT_TAG))
-            .isEqualTo("840x360dp | 270° | LOCKED | TwoSideRail")
+        assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("840x360dp")
+        assertThat(readNodeText(DEBUG_ROTATION_DEG_TAG)).isEqualTo("270°")
+        assertThat(readNodeText(DEBUG_ROTATION_LOCK_TAG)).isEqualTo("LOCKED")
     }
 
     @Test
@@ -177,9 +182,9 @@ class DebugLayoutReadoutTest {
 
         composeTestRule.onNodeWithTag(BTN_DEBUG_HIDE_COMPONENTS_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertDoesNotExist()
-        assertThat(
-            composeTestRule.onAllNodesWithTag(DEBUG_LAYOUT_READOUT_TAG).fetchSemanticsNodes()
-        ).isEmpty()
+        composeTestRule.onNodeWithTag(DEBUG_WINDOW_SIZE_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DEBUG_ROTATION_DEG_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DEBUG_ROTATION_LOCK_TAG).assertDoesNotExist()
     }
 
     private fun readNodeText(tag: String): String = composeTestRule

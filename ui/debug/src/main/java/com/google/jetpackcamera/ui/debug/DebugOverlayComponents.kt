@@ -112,35 +112,32 @@ private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float
 }
 
 /**
- * Snapshot of window geometry, display rotation, rotation-lock state, and adaptive layout mode
- * displayed by the debug console's layout readout row.
+ * Snapshot of window geometry, display rotation, and rotation-lock state displayed by the debug
+ * console's layout readout row.
  *
  * When passed to [DebugOverlay], these explicit values override the live window-container fallback
- * used when adaptive layout posture state is omitted.
+ * used when layout readout state is omitted.
  *
  * @property widthDp Current window container width in density-independent pixels.
  * @property heightDp Current window container height in density-independent pixels.
  * @property rotationDegrees Display rotation in clockwise degrees (typically 0, 90, 180, or 270).
- * @property isRotationLocked Whether system auto-rotate is locked (`LOCKED`) or enabled
+ * @property isRotationLocked Whether orientation rotation is locked (`LOCKED`) or unlocked
  *   (`UNLOCKED`).
- * @property layoutModeName Active adaptive layout mode label, or `null` to display the default
- *   compact portrait mode label.
  */
 @Immutable
 data class DebugLayoutReadoutState(
     val widthDp: Int,
     val heightDp: Int,
     val rotationDegrees: Int = 0,
-    val isRotationLocked: Boolean = false,
-    val layoutModeName: String? = null
+    val isRotationLocked: Boolean = false
 )
 
 /**
  * Displays a compact single-line debug readout showing window container size in dp, display
- * rotation degrees, rotation-lock state, and the active adaptive layout mode.
+ * rotation degrees, and rotation-lock state as individually tagged text blocks.
  *
  * When [state] is `null`, window dimensions are derived live from [LocalWindowInfo] and
- * [LocalDensity] with `0°`, `UNLOCKED`, and the default `CompactPortrait` mode label.
+ * [LocalDensity] with `0°` and `UNLOCKED`.
  *
  * @param state Explicit layout readout values to display, or `null` to use live window dimensions.
  * @param modifier Modifier applied to the outer readout row.
@@ -157,6 +154,7 @@ internal fun DebugLayoutReadout(
             heightDp = containerSize.height.toDp().value.roundToInt()
         )
     }
+    val separator = stringResource(R.string.debug_text_layout_separator)
     val lockText = stringResource(
         if (resolvedState.isRotationLocked) {
             R.string.debug_text_rotation_locked
@@ -164,22 +162,34 @@ internal fun DebugLayoutReadout(
             R.string.debug_text_rotation_unlocked
         }
     )
-    val modeText = resolvedState.layoutModeName
-        ?: stringResource(R.string.debug_text_default_layout_mode)
-    val formattedValue = stringResource(
-        R.string.debug_text_layout_value,
-        resolvedState.widthDp,
-        resolvedState.heightDp,
-        resolvedState.rotationDegrees,
-        lockText,
-        modeText
-    )
-    DebugTextBar(
-        modifier = modifier,
-        title = stringResource(R.string.debug_text_layout_prefix),
-        value = formattedValue,
-        tag = DEBUG_LAYOUT_READOUT_TAG
-    )
+    val valueBackgroundModifier = Modifier.background(Color.Black.copy(alpha = .4f))
+    Row(modifier = modifier.testTag(DEBUG_LAYOUT_READOUT_TAG)) {
+        Text(
+            modifier = Modifier.background(Color.Black.copy(alpha = .7f)),
+            text = stringResource(R.string.debug_text_layout_prefix)
+        )
+        Text(
+            modifier = valueBackgroundModifier.testTag(DEBUG_WINDOW_SIZE_TAG),
+            text = stringResource(
+                R.string.debug_text_window_size,
+                resolvedState.widthDp,
+                resolvedState.heightDp
+            )
+        )
+        Text(modifier = valueBackgroundModifier, text = separator)
+        Text(
+            modifier = valueBackgroundModifier.testTag(DEBUG_ROTATION_DEG_TAG),
+            text = stringResource(
+                R.string.debug_text_rotation_degrees,
+                resolvedState.rotationDegrees
+            )
+        )
+        Text(modifier = valueBackgroundModifier, text = separator)
+        Text(
+            modifier = valueBackgroundModifier.testTag(DEBUG_ROTATION_LOCK_TAG),
+            text = lockText
+        )
+    }
 }
 
 @Composable
@@ -572,7 +582,7 @@ private enum class SelectedDialog {
     SetTestPattern
 }
 
-@Preview(name = "Unlocked CompactPortrait", showBackground = true)
+@Preview(name = "Unlocked", showBackground = true)
 @Composable
 private fun DebugLayoutReadoutUnlockedPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
@@ -585,17 +595,16 @@ private fun DebugLayoutReadoutUnlockedPreview() {
     }
 }
 
-@Preview(name = "Locked TwoSideRail", showBackground = true)
+@Preview(name = "Locked", showBackground = true)
 @Composable
-private fun DebugLayoutReadoutLockedTwoSideRailPreview() {
+private fun DebugLayoutReadoutLockedPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         DebugLayoutReadout(
             state = DebugLayoutReadoutState(
                 widthDp = 840,
                 heightDp = 360,
                 rotationDegrees = 90,
-                isRotationLocked = true,
-                layoutModeName = "TwoSideRail"
+                isRotationLocked = true
             )
         )
     }
