@@ -880,9 +880,6 @@ fun CaptureScaffold(
         }
     }
     val viewfinderLambda = remember(
-        blocksPreview,
-        previewDisplayState,
-        focusMeteringState,
         onFlipCamera,
         onTapToFocusLambda,
         onScaleZoomLambda,
@@ -910,7 +907,7 @@ fun CaptureScaffold(
             currentCaptureUiStateProvider().screenFlashUiState
         }
     }
-    val screenFlashOverlayLambda = remember(screenFlashState, screenFlashController) {
+    val screenFlashOverlayLambda = remember(screenFlashController) {
         @Composable { _: Modifier ->
             ScreenFlashScreen(
                 screenFlashUiState = screenFlashState.value,
