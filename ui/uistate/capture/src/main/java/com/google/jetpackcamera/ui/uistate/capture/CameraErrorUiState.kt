@@ -28,8 +28,12 @@ sealed interface CameraErrorUiState {
      * A camera error is active.
      *
      * @property error The active [CameraError].
+     * @property blocksPreview Whether the active error blocks the camera preview and controls.
      */
-    data class Showing(val error: CameraError) : CameraErrorUiState
+    data class Showing(
+        val error: CameraError,
+        val blocksPreview: Boolean = error != CameraError.CameraSensorPrivacyDisabled
+    ) : CameraErrorUiState
 
     companion object
 }
