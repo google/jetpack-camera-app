@@ -23,7 +23,7 @@ import javax.inject.Qualifier
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class DefaultFilePathGenerator
+annotation class AppFilePathGenerator
 
 /**
  * Identifies the fallback capture mode override when initializing repository settings.
