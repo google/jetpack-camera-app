@@ -23,12 +23,18 @@ import com.google.jetpackcamera.ui.components.capture.CameraSystemBarsPolicy
 
 /**
  * Describes how the system bars should be configured for a given destination.
+ *
+ * The navigation bar is kept visible except on the preview screen when the capture layout reports
+ * that the window is too short for the tallest viewfinder to clear a persistent navigation bar.
  */
 internal enum class SystemBarsPolicy {
     /** Hide the status bar, keep the navigation bar. Used by standard capture surfaces. */
     HideStatusBar,
 
-    /** Hide both the status bar and the navigation bar. Used on compact/short capture surfaces. */
+    /**
+     * Hide the status bar and the navigation bar. Used by the preview screen while its layout
+     * requires immersive mode.
+     */
     HideStatusAndNavigationBars,
 
     /** Show every system bar. Used by everything else, and by multi-window. */
@@ -43,12 +49,22 @@ internal enum class SystemBarsPolicy {
  * `"preview?externalCaptureMode={externalCaptureMode}&..."`). Only the part before the first `?`
  * identifies the destination, so the route is normalized before matching. An unknown or `null`
  * route falls back to [SystemBarsPolicy.ShowAll].
+ *
+ * @param previewRequiresImmersive the latest value reported by the preview screen's layout. It only
+ *   applies to the preview route, so a stale value never affects another destination.
  */
-internal fun systemBarsPolicyFor(route: String?): SystemBarsPolicy =
-    when (route?.substringBefore('?')) {
-        PreviewRoute.toString(), POST_CAPTURE_ROUTE -> SystemBarsPolicy.HideStatusBar
-        else -> SystemBarsPolicy.ShowAll
+internal fun systemBarsPolicyFor(
+    route: String?,
+    previewRequiresImmersive: Boolean = false
+): SystemBarsPolicy = when (route?.substringBefore('?')) {
+    PreviewRoute.toString() -> if (previewRequiresImmersive) {
+        SystemBarsPolicy.HideStatusAndNavigationBars
+    } else {
+        SystemBarsPolicy.HideStatusBar
     }
+    POST_CAPTURE_ROUTE -> SystemBarsPolicy.HideStatusBar
+    else -> SystemBarsPolicy.ShowAll
+}
 
 /**
  * The single owner of system bar visibility for the app.
