@@ -18,7 +18,6 @@ package com.google.jetpackcamera
 import androidx.annotation.VisibleForTesting
 import com.google.jetpackcamera.core.common.DefaultFilePathGenerator
 import com.google.jetpackcamera.core.common.FilePathGenerator
-import com.google.jetpackcamera.di.AppFilePathGenerator
 import com.google.jetpackcamera.di.DefaultCaptureModeOverride
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.SaveMode
@@ -57,6 +56,5 @@ object AppModule {
     fun providesSaveMode(): SaveMode = SaveMode.Immediate
 
     @Provides
-    @AppFilePathGenerator
     fun providesFilePathGenerator(): FilePathGenerator = DefaultFilePathGenerator()
 }

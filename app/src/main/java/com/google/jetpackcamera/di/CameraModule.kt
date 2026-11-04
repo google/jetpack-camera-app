@@ -82,7 +82,7 @@ internal object CameraModule {
         @ApplicationContext context: Context,
         @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
         @IODispatcher ioDispatcher: CoroutineDispatcher,
-        @AppFilePathGenerator filePathGenerator: FilePathGenerator,
+        filePathGenerator: FilePathGenerator,
         availabilityCheckers: Map<
             LowLightBoostFeatureKey,
             @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>
