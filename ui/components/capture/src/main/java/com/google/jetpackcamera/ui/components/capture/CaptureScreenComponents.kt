@@ -116,6 +116,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -129,6 +130,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
@@ -1779,7 +1781,9 @@ private fun CaptureModeToggleLightPreview() {
 @Preview(name = "Horizontal RTL - Image Selected", locale = "ar")
 @Composable
 private fun CaptureModeToggleRtlPreview() {
-    PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY)
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY)
+    }
 }
 
 @Preview(name = "Vertical Standard (64x116)")

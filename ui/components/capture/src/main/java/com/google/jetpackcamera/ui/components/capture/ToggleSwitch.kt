@@ -45,6 +45,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -707,9 +708,12 @@ private fun DrawScope.drawSwitchThumb(center: Offset, radius: Float, color: Colo
     )
 }
 
-@Preview(name = "Horizontal LTR - Off (Dark)", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(
+    name = "Horizontal LTR - Image Capture Mode (Dark)",
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
 @Composable
-private fun ToggleSwitchOffEnabledPreview() {
+private fun ToggleSwitchImageCaptureEnabledPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ToggleSwitch(
             startIcon = R.drawable.ic_camera_alt_filled,
@@ -721,9 +725,12 @@ private fun ToggleSwitchOffEnabledPreview() {
     }
 }
 
-@Preview(name = "Horizontal LTR - On (Dark)", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(
+    name = "Horizontal LTR - Video Capture Mode (Dark)",
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
 @Composable
-private fun ToggleSwitchOnEnabledPreview() {
+private fun ToggleSwitchVideoCaptureEnabledPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ToggleSwitch(
             startIcon = R.drawable.ic_camera_alt_outline,
@@ -735,9 +742,12 @@ private fun ToggleSwitchOnEnabledPreview() {
     }
 }
 
-@Preview(name = "Horizontal LTR - On (Light)", uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(
+    name = "Horizontal LTR - Video Capture Mode (Light)",
+    uiMode = Configuration.UI_MODE_NIGHT_NO
+)
 @Composable
-private fun ToggleSwitchLightEnabledPreview() {
+private fun ToggleSwitchLightVideoCaptureEnabledPreview() {
     MaterialTheme(colorScheme = lightColorScheme()) {
         Box(
             modifier = Modifier
@@ -755,9 +765,12 @@ private fun ToggleSwitchLightEnabledPreview() {
     }
 }
 
-@Preview(name = "Disabled Off (Light)", uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(
+    name = "Disabled - Image Capture Mode (Light)",
+    uiMode = Configuration.UI_MODE_NIGHT_NO
+)
 @Composable
-private fun ToggleSwitchLightDisabledPreview() {
+private fun ToggleSwitchLightImageCaptureDisabledPreview() {
     MaterialTheme(colorScheme = lightColorScheme()) {
         Box(
             modifier = Modifier
@@ -776,24 +789,29 @@ private fun ToggleSwitchLightDisabledPreview() {
 }
 
 @Preview(
-    name = "Horizontal RTL - Off",
+    name = "Horizontal RTL - Image Capture Mode",
     locale = "ar",
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
-private fun ToggleSwitchRtlOffPreview() {
-    MaterialTheme(colorScheme = darkColorScheme()) {
-        ToggleSwitch(
-            startIcon = R.drawable.ic_camera_alt_filled,
-            endIcon = R.drawable.ic_videocam_outline,
-            checked = false,
-            onCheckedChange = {},
-            enabled = true
-        )
+private fun ToggleSwitchRtlImageCapturePreview() {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        MaterialTheme(colorScheme = darkColorScheme()) {
+            ToggleSwitch(
+                startIcon = R.drawable.ic_camera_alt_filled,
+                endIcon = R.drawable.ic_videocam_outline,
+                checked = false,
+                onCheckedChange = {},
+                enabled = true
+            )
+        }
     }
 }
 
-@Preview(name = "Horizontal Compact - Off", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(
+    name = "Horizontal Compact - Image Capture Mode",
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
 @Composable
 private fun ToggleSwitchHorizontalCompactPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
@@ -850,9 +868,9 @@ private fun ToggleSwitchIconRotation90Preview() {
     }
 }
 
-@Preview(name = "Disabled On", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Disabled - Video Capture Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun ToggleSwitchOnDisabledPreview() {
+private fun ToggleSwitchVideoCaptureDisabledPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ToggleSwitch(
             startIcon = R.drawable.ic_camera_alt_outline,
@@ -864,9 +882,9 @@ private fun ToggleSwitchOnDisabledPreview() {
     }
 }
 
-@Preview(name = "Disabled Off", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Disabled - Image Capture Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun ToggleSwitchOffDisabledPreview() {
+private fun ToggleSwitchImageCaptureDisabledPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ToggleSwitch(
             startIcon = R.drawable.ic_camera_alt_filled,
