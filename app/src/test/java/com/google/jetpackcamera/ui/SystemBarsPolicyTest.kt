@@ -75,6 +75,24 @@ class SystemBarsPolicyTest {
     }
 
     @Test
+    fun systemBarsPolicyFor_previewRequiresImmersive_onlyAffectsThePreviewRoute() {
+        val cases = listOf(
+            previewRouteWithArgs to SystemBarsPolicy.HideStatusAndNavigationBars,
+            "$PreviewRoute" to SystemBarsPolicy.HideStatusAndNavigationBars,
+            Routes.POST_CAPTURE_ROUTE to SystemBarsPolicy.HideStatusBar,
+            Routes.SETTINGS_ROUTE to SystemBarsPolicy.ShowAll,
+            "$PermissionsRoute" to SystemBarsPolicy.ShowAll,
+            null to SystemBarsPolicy.ShowAll
+        )
+
+        for ((route, expected) in cases) {
+            assertWithMessage("Unexpected immersive policy for route: %s", route)
+                .that(systemBarsPolicyFor(route, previewRequiresImmersive = true))
+                .isEqualTo(expected)
+        }
+    }
+
+    @Test
     fun systemBarsPolicyFor_doesNotMatchRoutesThatMerelyStartWithACaptureRoute() {
         assertThat(systemBarsPolicyFor("${PreviewRoute}Something"))
             .isEqualTo(SystemBarsPolicy.ShowAll)
