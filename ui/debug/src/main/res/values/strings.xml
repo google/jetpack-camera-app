@@ -27,6 +27,7 @@
     <string name="debug_text_form_factor_prefix" translatable="false">"Form Factor: "</string>
     <string name="debug_text_device_rotation_prefix" translatable="false">"Device Rotation: "</string>
     <string name="debug_text_window_rotation_prefix" translatable="false">"Window Rotation: "</string>
+    <string name="debug_text_expected_layout_rotation_prefix" translatable="false">"Expected Layout Rotation: "</string>
     <string name="debug_text_icon_rotation_prefix" translatable="false">"Icon Rotation: "</string>
     <string name="debug_text_window_size" translatable="false">%1$dx%2$ddp</string>
     <string name="debug_text_rotation_degrees" translatable="false">%1$d°</string>

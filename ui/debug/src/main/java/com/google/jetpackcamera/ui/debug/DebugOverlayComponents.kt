@@ -183,16 +183,53 @@ data class DebugLayoutReadoutState(
 ) {
     /**
      * Clockwise rotation in degrees needed inside the current window so that icons and overlays
-     * point upright against gravity.
+     * point upright against gravity (clamping `180°` to `0°`).
      */
     val iconRotationDegrees: Int
         get() = deviceRotation.toGravityRotationDegrees(windowRotation)
+
+    /**
+     * Clockwise rotation in degrees that the capture layout is expected to apply to align its
+     * primary axis with the window's dimensions:
+     * - [DebugFormFactor.FOLDABLE], [DebugFormFactor.TABLET], and [DebugFormFactor.UNKNOWN] always
+     *   remain upright (`0°`) in the window while their side rails adapt structurally.
+     * - [DebugFormFactor.COMPACT], [DebugFormFactor.COMPACT_SLIM], and
+     *   [DebugFormFactor.COMPACT_SQUARE] preserve the `9:16` portrait layout at `0°` when
+     *   `heightDp >= widthDp`, and rotate `90°` or `270°` when `widthDp > heightDp` so the `9:16`
+     *   layout aligns with the window's horizontal length instead of shrinking to a square.
+     */
+    val expectedLayoutRotationDegrees: Int
+        get() = when (formFactor) {
+            DebugFormFactor.FOLDABLE,
+            DebugFormFactor.TABLET,
+            DebugFormFactor.UNKNOWN -> 0
+            DebugFormFactor.COMPACT,
+            DebugFormFactor.COMPACT_SLIM,
+            DebugFormFactor.COMPACT_SQUARE ->
+                if (heightDp >= widthDp) {
+                    0
+                } else {
+                    val gravity = iconRotationDegrees
+                    val counter =
+                        ((windowRotation.toWindowCounterRotationDegrees().toInt() % 360) + 360) %
+                            360
+                    when {
+                        gravity == 90 || gravity == 270 -> gravity
+                        counter == 90 || counter == 270 -> counter
+                        else -> DEFAULT_WIDE_COMPACT_LAYOUT_ROTATION_DEGREES
+                    }
+                }
+        }
+
+    companion object {
+        private const val DEFAULT_WIDE_COMPACT_LAYOUT_ROTATION_DEGREES = 270
+    }
 }
 
 /**
  * Displays the debug layout and rotation readout as individually tagged rows for window container
- * size, [DebugFormFactor], physical device rotation, OS window rotation, and derived in-window icon
- * rotation.
+ * size, [DebugFormFactor], physical device rotation, OS window rotation, expected layout rotation,
+ * and derived in-window icon rotation.
  *
  * When [state] is `null`, window dimensions, form factor, and window rotation are derived live from
  * [LocalWindowInfo], [LocalDensity], and [LocalView].
@@ -260,6 +297,14 @@ internal fun DebugLayoutReadout(
                 resolvedState.windowRotation.toClockwiseRotationDegrees()
             ),
             tag = DEBUG_WINDOW_ROTATION_TAG
+        )
+        DebugTextBar(
+            title = stringResource(R.string.debug_text_expected_layout_rotation_prefix),
+            value = stringResource(
+                R.string.debug_text_rotation_degrees,
+                resolvedState.expectedLayoutRotationDegrees
+            ),
+            tag = DEBUG_EXPECTED_LAYOUT_ROTATION_TAG
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             DebugTextBar(

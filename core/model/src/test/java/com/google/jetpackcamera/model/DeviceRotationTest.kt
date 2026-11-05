@@ -76,5 +76,17 @@ class DeviceRotationTest {
                 windowRotation = DeviceRotation.Natural
             )
         ).isEqualTo(90)
+
+        // Upside-down delta (180°) clamps to 0° so UI never flips upside-down
+        assertThat(
+            DeviceRotation.Rotated180.toGravityRotationDegrees(
+                windowRotation = DeviceRotation.Natural
+            )
+        ).isEqualTo(0)
+        assertThat(
+            DeviceRotation.Rotated90.toGravityRotationDegrees(
+                windowRotation = DeviceRotation.Rotated270
+            )
+        ).isEqualTo(0)
     }
 }

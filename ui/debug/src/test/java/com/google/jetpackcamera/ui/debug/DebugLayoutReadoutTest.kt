@@ -63,18 +63,21 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithText("Form Factor: ").assertIsDisplayed()
         composeTestRule.onNodeWithText("Device Rotation: ").assertIsDisplayed()
         composeTestRule.onNodeWithText("Window Rotation: ").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Expected Layout Rotation: ").assertIsDisplayed()
         composeTestRule.onNodeWithText("Icon Rotation: ").assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_WINDOW_SIZE_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_FORM_FACTOR_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_DEVICE_ROTATION_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_WINDOW_ROTATION_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_INDICATOR_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("673x841dp")
         assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("FOLDABLE")
         assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("270°")
         assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_ICON_ROTATION_TAG)).isEqualTo("90°")
         assertThat(readNodeStateDescription(DEBUG_ICON_ROTATION_INDICATOR_TAG)).isEqualTo("90°")
     }
@@ -98,6 +101,7 @@ class DebugLayoutReadoutTest {
         assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT")
         assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_ICON_ROTATION_TAG)).isEqualTo("0°")
     }
 
@@ -146,6 +150,7 @@ class DebugLayoutReadoutTest {
         assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT")
         assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_ICON_ROTATION_TAG)).isEqualTo("0°")
     }
 
@@ -177,6 +182,7 @@ class DebugLayoutReadoutTest {
         assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("TABLET")
         assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("90°")
         assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_ICON_ROTATION_TAG)).isEqualTo("270°")
         assertThat(readNodeStateDescription(DEBUG_ICON_ROTATION_INDICATOR_TAG)).isEqualTo("270°")
     }
@@ -205,8 +211,90 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithTag(DEBUG_FORM_FACTOR_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(DEBUG_DEVICE_ROTATION_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(DEBUG_WINDOW_ROTATION_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_INDICATOR_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun debugLayoutReadoutState_expectedLayoutRotationDegrees_handlesFormFactorsAndAspectRatios() {
+        // Tall compact phone (heightDp >= widthDp) -> 0°
+        assertThat(
+            DebugLayoutReadoutState(
+                widthDp = 412,
+                heightDp = 915,
+                deviceRotation = DeviceRotation.Rotated270,
+                windowRotation = DeviceRotation.Natural
+            ).expectedLayoutRotationDegrees
+        ).isEqualTo(0)
+
+        // Upside-down compact phone -> 0° (both icon and layout clamp 180° to 0°)
+        val upsideDownPhone = DebugLayoutReadoutState(
+            widthDp = 412,
+            heightDp = 915,
+            deviceRotation = DeviceRotation.Rotated180,
+            windowRotation = DeviceRotation.Natural
+        )
+        assertThat(upsideDownPhone.iconRotationDegrees).isEqualTo(0)
+        assertThat(upsideDownPhone.expectedLayoutRotationDegrees).isEqualTo(0)
+
+        // Wide compact window with OS-rotated landscape window (Win 270°, Dev 270°) -> 270°
+        assertThat(
+            DebugLayoutReadoutState(
+                widthDp = 915,
+                heightDp = 412,
+                deviceRotation = DeviceRotation.Rotated270,
+                windowRotation = DeviceRotation.Rotated270
+            ).expectedLayoutRotationDegrees
+        ).isEqualTo(270)
+
+        // Wide compact split-screen (50/50 top/bottom on landscape tablet: Win 0°, Dev 0°) -> 270°
+        assertThat(
+            DebugLayoutReadoutState(
+                widthDp = 1280,
+                heightDp = 390,
+                deviceRotation = DeviceRotation.Natural,
+                windowRotation = DeviceRotation.Natural
+            ).expectedLayoutRotationDegrees
+        ).isEqualTo(270)
+
+        // Wide compact_square quadrant (433x346, Win 0°, Dev 0°) -> 270°
+        assertThat(
+            DebugLayoutReadoutState(
+                widthDp = 433,
+                heightDp = 346,
+                deviceRotation = DeviceRotation.Natural,
+                windowRotation = DeviceRotation.Natural
+            ).expectedLayoutRotationDegrees
+        ).isEqualTo(270)
+
+        // Wide compact window held at 90° CW with Win 0° -> follows gravity (270°) or 270° CCW (90°)
+        assertThat(
+            DebugLayoutReadoutState(
+                widthDp = 840,
+                heightDp = 360,
+                deviceRotation = DeviceRotation.Rotated270,
+                windowRotation = DeviceRotation.Natural
+            ).expectedLayoutRotationDegrees
+        ).isEqualTo(90)
+
+        // Foldable and Tablet always remain upright (0°) regardless of widthDp vs heightDp
+        assertThat(
+            DebugLayoutReadoutState(
+                widthDp = 841,
+                heightDp = 673,
+                deviceRotation = DeviceRotation.Rotated270,
+                windowRotation = DeviceRotation.Rotated270
+            ).expectedLayoutRotationDegrees
+        ).isEqualTo(0)
+        assertThat(
+            DebugLayoutReadoutState(
+                widthDp = 1280,
+                heightDp = 800,
+                deviceRotation = DeviceRotation.Rotated270,
+                windowRotation = DeviceRotation.Natural
+            ).expectedLayoutRotationDegrees
+        ).isEqualTo(0)
     }
 
     @Test
