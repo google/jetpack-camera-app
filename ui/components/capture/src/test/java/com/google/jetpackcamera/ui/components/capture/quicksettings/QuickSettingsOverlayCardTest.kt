@@ -555,7 +555,7 @@ class QuickSettingsOverlayCardTest {
     }
 
     @Test
-    fun quickSettingsOverlayCard_rtlLayoutDirection_mirrorsCardAlignmentAndRows() {
+    fun quickSettingsOverlayCard_rtlLayoutDirection_keepsCardPlacementStaticAndMirrorsRows() {
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
         val flashTitleText = ApplicationProvider.getApplicationContext<Context>()
             .getString(R.string.quick_settings_title_flash_mode)
@@ -612,8 +612,8 @@ class QuickSettingsOverlayCardTest {
             .onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO)
             .getUnclippedBoundsInRoot()
 
-        assertThat(cardBoundsRtl.left).isGreaterThan(rootBounds.width / 2)
-        assertThat(cardBoundsRtl.right).isEqualTo(rootBounds.right - 16.dp)
+        assertThat(cardBoundsRtl.left).isEqualTo(16.dp)
+        assertThat(cardBoundsRtl.right).isLessThan(rootBounds.width / 2)
         assertThat(cardBoundsRtl.bottom).isEqualTo(rootBounds.bottom - 16.dp)
         assertThat(flashTitleBoundsRtl.left).isGreaterThan(flashOffBoundsRtl.left)
         assertThat(flashOffBoundsRtl.left).isGreaterThan(flashAutoBoundsRtl.left)

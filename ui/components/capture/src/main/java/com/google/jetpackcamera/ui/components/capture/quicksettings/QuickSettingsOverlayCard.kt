@@ -21,7 +21,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -31,13 +30,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -45,7 +44,6 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -105,7 +103,8 @@ private object QuickSettingsOverlayCardTokens {
  * @param showMoreSettingsButton Whether to display the "More settings" navigation button inside
  *   the card. Defaults to `false` for adaptive layouts that surface settings in persistent chrome.
  * @param contentAlignment Alignment of the floating card within the overlay container.
- *   Defaults to [Alignment.BottomStart].
+ *   Defaults to [AbsoluteAlignment.BottomLeft] so the card's container placement remains static
+ *   across LTR and RTL layouts while interior controls mirror for RTL.
  */
 @Composable
 fun QuickSettingsOverlayCard(
@@ -113,10 +112,10 @@ fun QuickSettingsOverlayCard(
     onDismissRequest: () -> Unit,
     quickSettingsUiState: QuickSettingsUiState,
     quickSettingsController: QuickSettingsController,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.fillMaxSize(),
     onNavigateToSettings: () -> Unit = {},
     showMoreSettingsButton: Boolean = false,
-    contentAlignment: Alignment = Alignment.BottomStart
+    contentAlignment: Alignment = AbsoluteAlignment.BottomLeft
 ) {
     if (!isOpen || quickSettingsUiState !is QuickSettingsUiState.Available) {
         return
@@ -146,7 +145,6 @@ fun QuickSettingsOverlayCard(
 
     Box(
         modifier = modifier
-            .fillMaxSize()
             .onPreviewKeyEvent { event ->
                 if (event.key == Key.Escape) {
                     if (event.type == KeyEventType.KeyUp) {
@@ -165,7 +163,7 @@ fun QuickSettingsOverlayCard(
     ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .matchParentSize()
                 .background(
                     MaterialTheme.colorScheme.scrim.copy(
                         alpha = QuickSettingsOverlayCardTokens.ScrimAlpha
@@ -217,80 +215,69 @@ fun QuickSettingsOverlayCard(
 @Composable
 private fun QuickSettingsOverlayCardPreviewContent(showMoreSettingsButton: Boolean = false) {
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
+        colorScheme = darkColorScheme()
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.DarkGray)
-        ) {
-            QuickSettingsOverlayCard(
-                isOpen = true,
-                onDismissRequest = {},
-                quickSettingsUiState = QuickSettingsUiState.Available(
-                    aspectRatioUiState = AspectRatioUiState.Available(
-                        selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
-                        availableAspectRatios = listOf(
-                            SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
-                            SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
-                            SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
-                        )
-                    ),
-                    captureModeUiState = CaptureModeUiState.Available(
-                        selectedCaptureMode = CaptureMode.STANDARD,
-                        availableCaptureModes = listOf(
-                            SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
-                            SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
-                            SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
-                        )
-                    ),
-                    flashModeUiState = FlashModeUiState.Available(
-                        selectedFlashMode = FlashMode.OFF,
-                        availableFlashModes = listOf(
-                            SingleSelectableUiState.SelectableUi(FlashMode.OFF),
-                            SingleSelectableUiState.SelectableUi(FlashMode.ON),
-                            SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
-                        ),
-                        isLowLightBoostActive = false
-                    ),
-                    flipLensUiState = FlipLensUiState.Available(
-                        selectedLensFacing = LensFacing.BACK,
-                        availableLensFacings = listOf(
-                            SingleSelectableUiState.SelectableUi(LensFacing.BACK),
-                            SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
-                        )
-                    ),
-                    hdrUiState = HdrUiState.Available(
-                        selectedImageFormat = ImageOutputFormat.JPEG,
-                        selectedDynamicRange = DynamicRange.SDR,
-                        isSupported = true
+        QuickSettingsOverlayCard(
+            isOpen = true,
+            onDismissRequest = {},
+            quickSettingsUiState = QuickSettingsUiState.Available(
+                aspectRatioUiState = AspectRatioUiState.Available(
+                    selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
+                    availableAspectRatios = listOf(
+                        SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
+                        SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
                     )
                 ),
-                quickSettingsController = NoOpQuickSettingsController(),
-                onNavigateToSettings = {},
-                showMoreSettingsButton = showMoreSettingsButton
-            )
-        }
+                captureModeUiState = CaptureModeUiState.Available(
+                    selectedCaptureMode = CaptureMode.STANDARD,
+                    availableCaptureModes = listOf(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
+                    )
+                ),
+                flashModeUiState = FlashModeUiState.Available(
+                    selectedFlashMode = FlashMode.OFF,
+                    availableFlashModes = listOf(
+                        SingleSelectableUiState.SelectableUi(FlashMode.OFF),
+                        SingleSelectableUiState.SelectableUi(FlashMode.ON),
+                        SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
+                    ),
+                    isLowLightBoostActive = false
+                ),
+                flipLensUiState = FlipLensUiState.Available(
+                    selectedLensFacing = LensFacing.BACK,
+                    availableLensFacings = listOf(
+                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                    )
+                ),
+                hdrUiState = HdrUiState.Available(
+                    selectedImageFormat = ImageOutputFormat.JPEG,
+                    selectedDynamicRange = DynamicRange.SDR,
+                    isSupported = true
+                )
+            ),
+            quickSettingsController = NoOpQuickSettingsController(),
+            modifier = Modifier,
+            onNavigateToSettings = {},
+            showMoreSettingsButton = showMoreSettingsButton
+        )
     }
 }
 
-@Preview(name = "Tablet LTR - Light", widthDp = 1280, heightDp = 800)
 @Preview(
-    name = "Tablet LTR - Dark",
-    widthDp = 1280,
-    heightDp = 800,
+    name = "LTR - Dark",
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Preview(
-    name = "Tablet RTL - Dark",
-    widthDp = 1280,
-    heightDp = 800,
+    name = "RTL - Dark",
     locale = "ar",
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Preview(
-    name = "WideShort (840x360)",
-    widthDp = 840,
+    name = "WideShort (360dp height)",
     heightDp = 360,
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
@@ -299,11 +286,13 @@ private fun QuickSettingsOverlayCardPreview() {
     QuickSettingsOverlayCardPreviewContent(showMoreSettingsButton = false)
 }
 
-@Preview(name = "With More Settings - Light", widthDp = 1280, heightDp = 800)
 @Preview(
-    name = "With More Settings - Dark",
-    widthDp = 1280,
-    heightDp = 800,
+    name = "With More Settings - LTR - Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Preview(
+    name = "With More Settings - RTL - Dark",
+    locale = "ar",
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
