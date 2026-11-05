@@ -74,7 +74,6 @@ private val fpsOptions = setOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60)
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     constraintsRepository: ConstraintsRepository,
-    activeCaptureSubModeRepository: ActiveCaptureSubModeRepository,
     private val locationProvider: Optional<LocationProvider> = Optional.empty()
 ) : ViewModel() {
     private var grantedPermissions = MutableStateFlow<Set<String>>(emptySet())
@@ -84,7 +83,7 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.defaultCameraAppSettings,
             constraintsRepository.systemConstraints.filterNotNull(),
             grantedPermissions,
-            activeCaptureSubModeRepository.activeCaptureSubModeId
+            constraintsRepository.activeCaptureSubModeId
         ) { updatedSettings, constraints, grantedPerms, activeCaptureSubModeId ->
             updatedSettings.videoQuality
             val activeSubMode = constraints.activeCaptureSubMode(activeCaptureSubModeId)

@@ -54,7 +54,6 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
-import com.google.jetpackcamera.settings.testing.FakeActiveCaptureSubModeRepository
 import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
 import com.google.jetpackcamera.settings.testing.FakeSettingsDataSource
 import com.google.jetpackcamera.settings.testing.FakeSettingsRepository
@@ -148,7 +147,6 @@ internal class CameraAppSettingsViewModelTest {
         settingsViewModel = SettingsViewModel(
             settingsRepository,
             constraintsRepository,
-            FakeActiveCaptureSubModeRepository(),
             Optional.of(FakeLocationProvider())
         )
         advanceUntilIdle()
@@ -160,7 +158,6 @@ internal class CameraAppSettingsViewModelTest {
             val vm = SettingsViewModel(
                 settingsRepository,
                 constraintsRepository,
-                FakeActiveCaptureSubModeRepository(),
                 Optional.empty()
             )
             val uiState = vm.settingsUiState.first { it is SettingsUiState.Enabled }
@@ -190,8 +187,7 @@ internal class CameraAppSettingsViewModelTest {
         val constraintsRepository = FakeConstraintsRepository()
         val customViewModel = SettingsViewModel(
             FakeSettingsRepository(),
-            constraintsRepository,
-            FakeActiveCaptureSubModeRepository()
+            constraintsRepository
         )
         backgroundScope.launch { customViewModel.settingsUiState.collect {} }
         advanceUntilIdle()
@@ -415,8 +411,9 @@ internal class CameraAppSettingsViewModelTest {
     private fun createViewModelWithConstraints(
         systemConstraints: CameraSystemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
         defaultCaptureMode: CaptureMode = CaptureMode.VIDEO_ONLY,
-        activeCaptureSubModeRepository: FakeActiveCaptureSubModeRepository =
-            FakeActiveCaptureSubModeRepository(),
+        activeCaptureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
+        constraintsRepository: FakeConstraintsRepository =
+            FakeConstraintsRepository(systemConstraints, activeCaptureSubModeId),
         initialSettings: CameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS
     ): SettingsViewModel {
         val settingsDataSource = FakeSettingsDataSource(
@@ -427,8 +424,7 @@ internal class CameraAppSettingsViewModelTest {
         )
         return SettingsViewModel(
             settingsRepository,
-            FakeConstraintsRepository(systemConstraints),
-            activeCaptureSubModeRepository
+            constraintsRepository
         ).apply {
             setGrantedPermissions(mutableSetOf(Manifest.permission.RECORD_AUDIO))
         }
@@ -444,9 +440,7 @@ internal class CameraAppSettingsViewModelTest {
         runTest(StandardTestDispatcher()) {
             val customViewModel = createViewModelWithConstraints(
                 systemConstraints = constraintsWithSubModePolicy(HIDING_SUB_MODE_POLICY),
-                activeCaptureSubModeRepository = FakeActiveCaptureSubModeRepository(
-                    TEST_SUB_MODE_ID
-                )
+                activeCaptureSubModeId = TEST_SUB_MODE_ID
             )
             advanceUntilIdle()
 
@@ -513,11 +507,12 @@ internal class CameraAppSettingsViewModelTest {
     @Test
     fun settings_whenActiveCaptureSubModeEnds_restrictionsAreRemoved() =
         runTest(StandardTestDispatcher()) {
-            val activeCaptureSubModeRepository =
-                FakeActiveCaptureSubModeRepository(TEST_SUB_MODE_ID)
+            val constraintsRepository = FakeConstraintsRepository(
+                constraintsWithSubModePolicy(HIDING_SUB_MODE_POLICY),
+                TEST_SUB_MODE_ID
+            )
             val customViewModel = createViewModelWithConstraints(
-                systemConstraints = constraintsWithSubModePolicy(HIDING_SUB_MODE_POLICY),
-                activeCaptureSubModeRepository = activeCaptureSubModeRepository
+                constraintsRepository = constraintsRepository
             )
             advanceUntilIdle()
             assertThat(
@@ -526,7 +521,7 @@ internal class CameraAppSettingsViewModelTest {
                 ).fpsUiState
             ).isInstanceOf(FpsUiState.Disabled::class.java)
 
-            activeCaptureSubModeRepository.setActiveCaptureSubModeId(CaptureSubModeId.DEFAULT)
+            constraintsRepository.setActiveCaptureSubModeId(CaptureSubModeId.DEFAULT)
             advanceUntilIdle()
 
             val enabledState = assertIsEnabled(
@@ -568,7 +563,7 @@ internal class CameraAppSettingsViewModelTest {
                     )
                 }
             ),
-            activeCaptureSubModeRepository = FakeActiveCaptureSubModeRepository(TEST_SUB_MODE_ID)
+            activeCaptureSubModeId = TEST_SUB_MODE_ID
         )
     }
 
@@ -777,9 +772,7 @@ internal class CameraAppSettingsViewModelTest {
                         .captureSubModeDescriptors,
                     captureSubModePolicies = mapOf(TEST_SUB_MODE_ID to policy)
                 ),
-                activeCaptureSubModeRepository = FakeActiveCaptureSubModeRepository(
-                    TEST_SUB_MODE_ID
-                )
+                activeCaptureSubModeId = TEST_SUB_MODE_ID
             )
             advanceUntilIdle()
 
@@ -1001,7 +994,6 @@ internal class CameraAppSettingsViewModelTest {
         val viewModel = SettingsViewModel(
             settingsRepository,
             constraintsRepository,
-            FakeActiveCaptureSubModeRepository(),
             Optional.of(FakeLocationProvider())
         )
         composeTestRule.setContent {
