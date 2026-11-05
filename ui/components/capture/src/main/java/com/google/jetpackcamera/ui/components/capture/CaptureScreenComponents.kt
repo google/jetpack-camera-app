@@ -152,6 +152,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.DisableRationale
@@ -884,6 +885,7 @@ fun PreviewDisplay(
         }
     )
 
+    val layoutSolution = LocalCameraLayoutSolution.current
     var imageVisible by remember { mutableStateOf(true) }
     val targetBoundsState = LocalOverlapTargetBounds.current
 
@@ -930,6 +932,42 @@ fun PreviewDisplay(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Box(
                 modifier = Modifier
+                    // Reports the top edge of the visible frame to PreviewLayout, which anchors
+                    // viewfinder-relative content to it.
+                    .layout { measurable, constraints ->
+                        val maxWidth = constraints.maxWidth.toDp()
+                        val maxHeight = constraints.maxHeight.toDp()
+                        val solvedBand = if (maxHeight > maxWidth) {
+                            layoutSolution?.viewfinderBandFor(aspectRatio.toFloat())
+                        } else {
+                            null
+                        }
+                        val topOffsetPx = (solvedBand?.top ?: 0.dp).roundToPx()
+                            .coerceIn(0, constraints.maxHeight)
+                        val size = if (solvedBand != null) {
+                            DpSize(maxWidth, solvedBand.height)
+                        } else {
+                            calculateViewfinderSize(
+                                maxWidth = maxWidth,
+                                maxHeight = maxHeight,
+                                aspectRatio = aspectRatio,
+                                useLandscapeAspectRatio = useLandscapeAspectRatio
+                            )
+                        }
+                        val widthPx = size.width.roundToPx().coerceIn(0, constraints.maxWidth)
+                        val heightPx = size.height.roundToPx()
+                            .coerceIn(0, (constraints.maxHeight - topOffsetPx).coerceAtLeast(0))
+                        val placeable = measurable.measure(Constraints.fixed(widthPx, heightPx))
+                        val totalHeight =
+                            (topOffsetPx + placeable.height).coerceAtMost(constraints.maxHeight)
+                        layout(
+                            width = placeable.width,
+                            height = totalHeight,
+                            alignmentLines = mapOf(ViewfinderTopLine to topOffsetPx)
+                        ) {
+                            placeable.place(0, topOffsetPx)
+                        }
+                    }
                     .testTag(PREVIEW_DISPLAY)
                     .semantics {
                         this[PreviewBlinkAlphaProviderKey] = blinkAlphaProvider
@@ -938,20 +976,6 @@ fun PreviewDisplay(
                         val bounds = coordinates.boundsInWindow()
                         if (targetBoundsState.value != bounds) {
                             targetBoundsState.value = bounds
-                        }
-                    }
-                    .layout { measurable, constraints ->
-                        val size = calculateViewfinderSize(
-                            maxWidth = constraints.maxWidth.toDp(),
-                            maxHeight = constraints.maxHeight.toDp(),
-                            aspectRatio = aspectRatio,
-                            useLandscapeAspectRatio = useLandscapeAspectRatio
-                        )
-                        val widthPx = size.width.roundToPx().coerceIn(0, constraints.maxWidth)
-                        val heightPx = size.height.roundToPx().coerceIn(0, constraints.maxHeight)
-                        val placeable = measurable.measure(Constraints.fixed(widthPx, heightPx))
-                        layout(widthPx, heightPx) {
-                            placeable.place(0, 0)
                         }
                     }
                     .transformable(state = transformableState)
