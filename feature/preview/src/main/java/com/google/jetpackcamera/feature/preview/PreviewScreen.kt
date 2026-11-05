@@ -85,6 +85,7 @@ import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.PreviewLayout
+import com.google.jetpackcamera.ui.components.capture.PreviewPortraitDevices
 import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
 import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
@@ -127,6 +128,9 @@ private const val TAG = "PreviewScreen"
 
 /**
  * Screen used for the Preview feature.
+ *
+ * @param onRequiresImmersiveChange invoked when the capture layout starts or stops requiring the
+ * navigation bar to be hidden. See [PreviewLayout].
  */
 @Composable
 fun PreviewScreen(
@@ -137,6 +141,7 @@ fun PreviewScreen(
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     onCloseCamera: () -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PreviewScreen")
@@ -208,6 +213,7 @@ fun PreviewScreen(
         onRequestWindowColorMode = onRequestWindowColorMode,
         onNavigatePostCapture = onNavigateToPostCapture,
         onCloseCamera = onCloseCamera,
+        onRequiresImmersiveChange = onRequiresImmersiveChange,
         debugUiState = debugUiState,
         snackBarUiState = snackBarUiState,
         debugController = viewModel.debugController,
@@ -231,6 +237,7 @@ internal fun ContentScreen(
     onRequestWindowColorMode: (Int) -> Unit = {},
     onNavigatePostCapture: () -> Unit = {},
     onCloseCamera: () -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
     debugUiState: DebugUiState = DebugUiState.Disabled,
     snackBarUiState: SnackBarUiState = SnackBarUiState.Disabled,
     debugController: DebugController? = null,
@@ -834,7 +841,8 @@ internal fun ContentScreen(
         snackBar = snackBarLambda,
         pauseToggleButton = pauseToggleButtonLambda,
         imageWell = imageWellLambda,
-        errorDialog = errorDialogLambda
+        errorDialog = errorDialogLambda,
+        onRequiresImmersiveChange = onRequiresImmersiveChange
     )
 }
 
@@ -918,7 +926,8 @@ private fun LayoutWrapper(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
-    errorDialog: @Composable (modifier: Modifier) -> Unit = {}
+    errorDialog: @Composable (modifier: Modifier) -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {}
 ) {
     PreviewLayout(
         modifier = modifier,
@@ -959,10 +968,12 @@ private fun LayoutWrapper(
         debugVisibilityWrapper = debugVisibilityWrapper,
         screenFlashOverlay = screenFlashOverlay,
         snackBar = snackBar,
-        errorDialog = errorDialog
+        errorDialog = errorDialog,
+        onRequiresImmersiveChange = onRequiresImmersiveChange
     )
 }
 
+@PreviewPortraitDevices
 @Preview
 @Composable
 private fun ContentScreenPreview() {
