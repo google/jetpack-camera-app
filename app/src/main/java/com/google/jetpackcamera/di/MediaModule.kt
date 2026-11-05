@@ -39,7 +39,7 @@ internal object MediaModule {
     fun provideMediaRepository(
         @ApplicationContext context: Context,
         @IODispatcher ioDispatcher: CoroutineDispatcher,
-        filePathGenerator: FilePathGenerator
+        @DefaultFilePathGenerator filePathGenerator: FilePathGenerator
     ): MediaRepository {
         return LocalMediaRepository(context, ioDispatcher, filePathGenerator)
     }
