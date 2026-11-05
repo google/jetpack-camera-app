@@ -18,6 +18,14 @@ package com.google.jetpackcamera.di
 import javax.inject.Qualifier
 
 /**
+ * Identifies the default file path generator instance used for naming and locating media output files.
+ */
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultFilePathGenerator
+
+/**
  * Identifies the fallback capture mode override when initializing repository settings.
  */
 @Qualifier
