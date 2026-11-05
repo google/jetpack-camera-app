@@ -112,7 +112,45 @@ private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float
 }
 
 /**
- * Snapshot of window geometry, display rotation, and rotation-lock state displayed by the debug
+ * Window form-factor bucket derived from available window container dimensions in `dp`.
+ */
+enum class DebugFormFactor {
+    COMPACT_SQUARE,
+    COMPACT_SLIM,
+    COMPACT,
+    FOLDABLE,
+    TABLET,
+    UNKNOWN;
+
+    companion object {
+        private const val COMPACT_MIN_WIDTH_DP = 360
+        private const val MEDIUM_MIN_DIM_DP = 600
+        private const val TABLET_MAX_DIM_DP = 960
+        private const val COMPACT_SQUARE_MAX_RATIO = 1.5f
+        private const val FOLDABLE_MAX_RATIO = 1.45f
+
+        /**
+         * Classifies a window container of [widthDp] by [heightDp] into a [DebugFormFactor]
+         * bucket regardless of portrait or landscape orientation.
+         */
+        fun fromWindowDp(widthDp: Int, heightDp: Int): DebugFormFactor {
+            if (widthDp <= 0 || heightDp <= 0) return UNKNOWN
+            val minDim = minOf(widthDp, heightDp)
+            val maxDim = maxOf(widthDp, heightDp)
+            val ratio = maxDim.toFloat() / minDim.toFloat()
+            return when {
+                maxDim < MEDIUM_MIN_DIM_DP && ratio < COMPACT_SQUARE_MAX_RATIO -> COMPACT_SQUARE
+                minDim < COMPACT_MIN_WIDTH_DP -> COMPACT_SLIM
+                minDim < MEDIUM_MIN_DIM_DP -> COMPACT
+                maxDim < TABLET_MAX_DIM_DP && ratio < FOLDABLE_MAX_RATIO -> FOLDABLE
+                else -> TABLET
+            }
+        }
+    }
+}
+
+/**
+ * Snapshot of window container dimensions and derived form factor displayed by the debug
  * console's layout readout row.
  *
  * When passed to [DebugOverlay], these explicit values override the live window-container fallback
@@ -120,24 +158,21 @@ private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float
  *
  * @property widthDp Current window container width in density-independent pixels.
  * @property heightDp Current window container height in density-independent pixels.
- * @property rotationDegrees Display rotation in clockwise degrees (typically 0, 90, 180, or 270).
- * @property isRotationLocked Whether orientation rotation is locked (`LOCKED`) or unlocked
- *   (`UNLOCKED`).
+ * @property formFactor Calculated [DebugFormFactor] for the window container dimensions.
  */
 @Immutable
 data class DebugLayoutReadoutState(
     val widthDp: Int,
     val heightDp: Int,
-    val rotationDegrees: Int = 0,
-    val isRotationLocked: Boolean = false
+    val formFactor: DebugFormFactor = DebugFormFactor.fromWindowDp(widthDp, heightDp)
 )
 
 /**
- * Displays a compact single-line debug readout showing window container size in dp, display
- * rotation degrees, and rotation-lock state as individually tagged text blocks.
+ * Displays a compact single-line debug readout showing window container size in dp and the
+ * calculated [DebugFormFactor] as individually tagged text blocks.
  *
- * When [state] is `null`, window dimensions are derived live from [LocalWindowInfo] and
- * [LocalDensity] with `0°` and `UNLOCKED`.
+ * When [state] is `null`, window dimensions and form factor are derived live from
+ * [LocalWindowInfo] and [LocalDensity].
  *
  * @param state Explicit layout readout values to display, or `null` to use live window dimensions.
  * @param modifier Modifier applied to the outer readout row.
@@ -155,11 +190,14 @@ internal fun DebugLayoutReadout(
         )
     }
     val separator = stringResource(R.string.debug_text_layout_separator)
-    val lockText = stringResource(
-        if (resolvedState.isRotationLocked) {
-            R.string.debug_text_rotation_locked
-        } else {
-            R.string.debug_text_rotation_unlocked
+    val formFactorText = stringResource(
+        when (resolvedState.formFactor) {
+            DebugFormFactor.COMPACT_SQUARE -> R.string.debug_text_form_factor_compact_square
+            DebugFormFactor.COMPACT_SLIM -> R.string.debug_text_form_factor_compact_slim
+            DebugFormFactor.COMPACT -> R.string.debug_text_form_factor_compact
+            DebugFormFactor.FOLDABLE -> R.string.debug_text_form_factor_foldable
+            DebugFormFactor.TABLET -> R.string.debug_text_form_factor_tablet
+            DebugFormFactor.UNKNOWN -> R.string.debug_text_form_factor_unknown
         }
     )
     val valueBackgroundModifier = Modifier.background(Color.Black.copy(alpha = .4f))
@@ -178,16 +216,8 @@ internal fun DebugLayoutReadout(
         )
         Text(modifier = valueBackgroundModifier, text = separator)
         Text(
-            modifier = valueBackgroundModifier.testTag(DEBUG_ROTATION_DEG_TAG),
-            text = stringResource(
-                R.string.debug_text_rotation_degrees,
-                resolvedState.rotationDegrees
-            )
-        )
-        Text(modifier = valueBackgroundModifier, text = separator)
-        Text(
-            modifier = valueBackgroundModifier.testTag(DEBUG_ROTATION_LOCK_TAG),
-            text = lockText
+            modifier = valueBackgroundModifier.testTag(DEBUG_FORM_FACTOR_TAG),
+            text = formFactorText
         )
     }
 }
@@ -582,9 +612,9 @@ private enum class SelectedDialog {
     SetTestPattern
 }
 
-@Preview(name = "Unlocked", showBackground = true)
+@Preview(name = "Compact", showBackground = true)
 @Composable
-private fun DebugLayoutReadoutUnlockedPreview() {
+private fun DebugLayoutReadoutCompactPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         DebugLayoutReadout(
             state = DebugLayoutReadoutState(
@@ -595,16 +625,14 @@ private fun DebugLayoutReadoutUnlockedPreview() {
     }
 }
 
-@Preview(name = "Locked", showBackground = true)
+@Preview(name = "Foldable", showBackground = true)
 @Composable
-private fun DebugLayoutReadoutLockedPreview() {
+private fun DebugLayoutReadoutFoldablePreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         DebugLayoutReadout(
             state = DebugLayoutReadoutState(
-                widthDp = 840,
-                heightDp = 360,
-                rotationDegrees = 90,
-                isRotationLocked = true
+                widthDp = 673,
+                heightDp = 841
             )
         )
     }

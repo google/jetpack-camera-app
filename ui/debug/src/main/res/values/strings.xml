@@ -26,7 +26,12 @@
     <string name="debug_text_layout_prefix" translatable="false">"Layout: "</string>
     <string name="debug_text_layout_separator" translatable="false">" | "</string>
     <string name="debug_text_window_size" translatable="false">%1$dx%2$ddp</string>
-    <string name="debug_text_rotation_degrees" translatable="false">%1$d°</string>
-    <string name="debug_text_rotation_locked" translatable="false">LOCKED</string>
-    <string name="debug_text_rotation_unlocked" translatable="false">UNLOCKED</string>
+    <string
+        name="debug_text_form_factor_compact_square"
+        translatable="false">COMPACT_SQUARE</string>
+    <string name="debug_text_form_factor_compact_slim" translatable="false">COMPACT_SLIM</string>
+    <string name="debug_text_form_factor_compact" translatable="false">COMPACT</string>
+    <string name="debug_text_form_factor_foldable" translatable="false">FOLDABLE</string>
+    <string name="debug_text_form_factor_tablet" translatable="false">TABLET</string>
+    <string name="debug_text_form_factor_unknown" translatable="false">UNKNOWN</string>
 </resources>

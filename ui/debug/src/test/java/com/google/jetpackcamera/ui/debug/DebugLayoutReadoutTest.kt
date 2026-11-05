@@ -33,8 +33,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Robolectric Compose unit tests for [DebugLayoutReadout], [DebugTextBar] modifier scoping, and
- * [DebugOverlay] integration.
+ * Robolectric Compose unit tests for [DebugLayoutReadout], [DebugFormFactor], [DebugTextBar]
+ * modifier scoping, and [DebugOverlay] integration.
  */
 @RunWith(RobolectricTestRunner::class)
 class DebugLayoutReadoutTest {
@@ -43,15 +43,14 @@ class DebugLayoutReadoutTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun debugLayoutReadout_whenLocked_displaysEachTaggedBlock() {
+    fun debugLayoutReadout_whenExplicitFormFactorProvided_displaysEachTaggedBlock() {
         composeTestRule.setContent {
             MaterialTheme {
                 DebugLayoutReadout(
                     state = DebugLayoutReadoutState(
-                        widthDp = 840,
-                        heightDp = 360,
-                        rotationDegrees = 90,
-                        isRotationLocked = true
+                        widthDp = 673,
+                        heightDp = 841,
+                        formFactor = DebugFormFactor.FOLDABLE
                     )
                 )
             }
@@ -60,15 +59,13 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithText("Layout: ").assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_WINDOW_SIZE_TAG).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(DEBUG_ROTATION_DEG_TAG).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(DEBUG_ROTATION_LOCK_TAG).assertIsDisplayed()
-        assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("840x360dp")
-        assertThat(readNodeText(DEBUG_ROTATION_DEG_TAG)).isEqualTo("90°")
-        assertThat(readNodeText(DEBUG_ROTATION_LOCK_TAG)).isEqualTo("LOCKED")
+        composeTestRule.onNodeWithTag(DEBUG_FORM_FACTOR_TAG).assertIsDisplayed()
+        assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("673x841dp")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("FOLDABLE")
     }
 
     @Test
-    fun debugLayoutReadout_whenDefaultsUsed_displaysUnlockedDefaults() {
+    fun debugLayoutReadout_whenDefaultFormFactorUsed_derivesFormFactorFromDimensions() {
         composeTestRule.setContent {
             MaterialTheme {
                 DebugLayoutReadout(
@@ -83,8 +80,7 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithText("Layout: ").assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("412x915dp")
-        assertThat(readNodeText(DEBUG_ROTATION_DEG_TAG)).isEqualTo("0°")
-        assertThat(readNodeText(DEBUG_ROTATION_LOCK_TAG)).isEqualTo("UNLOCKED")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT")
     }
 
     @Test
@@ -111,7 +107,7 @@ class DebugLayoutReadoutTest {
 
     @Test
     @Config(qualifiers = "w360dp-h800dp")
-    fun debugOverlay_whenLayoutReadoutStateIsNull_derivesLiveWindowDimensions() {
+    fun debugOverlay_whenLayoutReadoutStateIsNull_derivesLiveWindowDimensionsAndFormFactor() {
         composeTestRule.setContent {
             MaterialTheme {
                 DebugOverlay(
@@ -129,8 +125,7 @@ class DebugLayoutReadoutTest {
 
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("360x800dp")
-        assertThat(readNodeText(DEBUG_ROTATION_DEG_TAG)).isEqualTo("0°")
-        assertThat(readNodeText(DEBUG_ROTATION_LOCK_TAG)).isEqualTo("UNLOCKED")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT")
     }
 
     @Test
@@ -147,19 +142,16 @@ class DebugLayoutReadoutTest {
                     ),
                     debugController = FakeDebugController(),
                     layoutReadoutState = DebugLayoutReadoutState(
-                        widthDp = 840,
-                        heightDp = 360,
-                        rotationDegrees = 270,
-                        isRotationLocked = true
+                        widthDp = 800,
+                        heightDp = 1280
                     )
                 )
             }
         }
 
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
-        assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("840x360dp")
-        assertThat(readNodeText(DEBUG_ROTATION_DEG_TAG)).isEqualTo("270°")
-        assertThat(readNodeText(DEBUG_ROTATION_LOCK_TAG)).isEqualTo("LOCKED")
+        assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("800x1280dp")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("TABLET")
     }
 
     @Test
@@ -183,8 +175,60 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithTag(BTN_DEBUG_HIDE_COMPONENTS_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(DEBUG_WINDOW_SIZE_TAG).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(DEBUG_ROTATION_DEG_TAG).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(DEBUG_ROTATION_LOCK_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DEBUG_FORM_FACTOR_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun debugFormFactor_fromWindowDp_classifiesAllFormFactorBuckets() {
+        assertThat(DebugFormFactor.fromWindowDp(412, 412))
+            .isEqualTo(DebugFormFactor.COMPACT_SQUARE)
+        assertThat(DebugFormFactor.fromWindowDp(500, 360))
+            .isEqualTo(DebugFormFactor.COMPACT_SQUARE)
+        assertThat(DebugFormFactor.fromWindowDp(433, 346))
+            .isEqualTo(DebugFormFactor.COMPACT_SQUARE)
+        assertThat(DebugFormFactor.fromWindowDp(346, 433))
+            .isEqualTo(DebugFormFactor.COMPACT_SQUARE)
+
+        assertThat(DebugFormFactor.fromWindowDp(276, 883))
+            .isEqualTo(DebugFormFactor.COMPACT_SLIM)
+        assertThat(DebugFormFactor.fromWindowDp(883, 276))
+            .isEqualTo(DebugFormFactor.COMPACT_SLIM)
+        assertThat(DebugFormFactor.fromWindowDp(250, 602))
+            .isEqualTo(DebugFormFactor.COMPACT_SLIM)
+
+        assertThat(DebugFormFactor.fromWindowDp(412, 915))
+            .isEqualTo(DebugFormFactor.COMPACT)
+        assertThat(DebugFormFactor.fromWindowDp(840, 360))
+            .isEqualTo(DebugFormFactor.COMPACT)
+        assertThat(DebugFormFactor.fromWindowDp(512, 650))
+            .isEqualTo(DebugFormFactor.COMPACT)
+        assertThat(DebugFormFactor.fromWindowDp(566, 833))
+            .isEqualTo(DebugFormFactor.COMPACT)
+        assertThat(DebugFormFactor.fromWindowDp(494, 602))
+            .isEqualTo(DebugFormFactor.COMPACT)
+        assertThat(DebugFormFactor.fromWindowDp(383, 602))
+            .isEqualTo(DebugFormFactor.COMPACT)
+        assertThat(DebugFormFactor.fromWindowDp(585, 602))
+            .isEqualTo(DebugFormFactor.COMPACT)
+        assertThat(DebugFormFactor.fromWindowDp(480, 760))
+            .isEqualTo(DebugFormFactor.COMPACT)
+
+        assertThat(DebugFormFactor.fromWindowDp(673, 841))
+            .isEqualTo(DebugFormFactor.FOLDABLE)
+        assertThat(DebugFormFactor.fromWindowDp(841, 673))
+            .isEqualTo(DebugFormFactor.FOLDABLE)
+        assertThat(DebugFormFactor.fromWindowDp(850, 900))
+            .isEqualTo(DebugFormFactor.FOLDABLE)
+
+        assertThat(DebugFormFactor.fromWindowDp(800, 1280))
+            .isEqualTo(DebugFormFactor.TABLET)
+        assertThat(DebugFormFactor.fromWindowDp(1280, 800))
+            .isEqualTo(DebugFormFactor.TABLET)
+
+        assertThat(DebugFormFactor.fromWindowDp(0, 800))
+            .isEqualTo(DebugFormFactor.UNKNOWN)
+        assertThat(DebugFormFactor.fromWindowDp(412, -1))
+            .isEqualTo(DebugFormFactor.UNKNOWN)
     }
 
     private fun readNodeText(tag: String): String = composeTestRule
