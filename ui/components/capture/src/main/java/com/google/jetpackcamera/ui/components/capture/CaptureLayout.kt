@@ -64,6 +64,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.takeOrElse
+import com.google.jetpackcamera.model.DeviceRotation
 
 /**
  * The base layout for the camera capture screen.
@@ -119,13 +120,24 @@ fun PreviewLayout(
     topStartContent: @Composable (Modifier) -> Unit = {},
     topBarTrailingContent: @Composable (Modifier) -> Unit = {},
     captureModeCarousel: @Composable (Modifier) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
+    errorDialog: @Composable (Modifier) -> Unit = {},
+    deviceRotation: DeviceRotation = DeviceRotation.Natural,
+    windowRotation: DeviceRotation = rememberWindowRotation()
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
+    val gravityRotationState = rememberGravityRotationState(
+        deviceRotation = deviceRotation,
+        windowRotation = windowRotation
+    )
     val dismissQuickSettingsLabel =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
 
-    CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
+    CompositionLocalProvider(
+        LocalOverlapTargetBounds provides overlapTargetBounds,
+        LocalDeviceRotation provides deviceRotation,
+        LocalWindowRotation provides windowRotation,
+        LocalGravityRotationState provides gravityRotationState
+    ) {
         Box(modifier = modifier.fillMaxSize()) {
             BottomSheetScaffold(
                 modifier = Modifier.fillMaxSize(),

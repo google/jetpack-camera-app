@@ -16,11 +16,15 @@
 package com.google.jetpackcamera.ui.debug
 
 import android.util.Log
+import android.view.Surface
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -33,6 +37,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -42,6 +47,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -50,6 +56,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,7 +64,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -69,6 +79,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.TestPattern
 import kotlin.math.roundToInt
 
@@ -150,8 +161,8 @@ enum class DebugFormFactor {
 }
 
 /**
- * Snapshot of window container dimensions and derived form factor displayed by the debug
- * console's layout readout row.
+ * Snapshot of window container dimensions, derived form factor, and rotation signals displayed by
+ * the debug console's layout readout.
  *
  * When passed to [DebugOverlay], these explicit values override the live window-container fallback
  * used when layout readout state is omitted.
@@ -159,37 +170,56 @@ enum class DebugFormFactor {
  * @property widthDp Current window container width in density-independent pixels.
  * @property heightDp Current window container height in density-independent pixels.
  * @property formFactor Calculated [DebugFormFactor] for the window container dimensions.
+ * @property deviceRotation Physical hardware orientation relative to gravity.
+ * @property windowRotation OS window/display orientation relative to natural posture.
  */
 @Immutable
 data class DebugLayoutReadoutState(
     val widthDp: Int,
     val heightDp: Int,
-    val formFactor: DebugFormFactor = DebugFormFactor.fromWindowDp(widthDp, heightDp)
-)
+    val formFactor: DebugFormFactor = DebugFormFactor.fromWindowDp(widthDp, heightDp),
+    val deviceRotation: DeviceRotation = DeviceRotation.Natural,
+    val windowRotation: DeviceRotation = DeviceRotation.Natural
+) {
+    /**
+     * Clockwise rotation in degrees needed inside the current window so that icons and overlays
+     * point upright against gravity.
+     */
+    val iconRotationDegrees: Int
+        get() = deviceRotation.toGravityRotationDegrees(windowRotation)
+}
 
 /**
- * Displays a compact single-line debug readout showing window container size in dp and the
- * calculated [DebugFormFactor] as individually tagged text blocks.
+ * Displays the debug layout and rotation readout as individually tagged rows for window container
+ * size, [DebugFormFactor], physical device rotation, OS window rotation, and derived in-window icon
+ * rotation.
  *
- * When [state] is `null`, window dimensions and form factor are derived live from
- * [LocalWindowInfo] and [LocalDensity].
+ * When [state] is `null`, window dimensions, form factor, and window rotation are derived live from
+ * [LocalWindowInfo], [LocalDensity], and [LocalView].
  *
- * @param state Explicit layout readout values to display, or `null` to use live window dimensions.
- * @param modifier Modifier applied to the outer readout row.
+ * @param state Explicit layout readout values to display, or `null` to use live window values.
+ * @param modifier Modifier applied to the outer readout container.
  */
 @Composable
 internal fun DebugLayoutReadout(
     state: DebugLayoutReadoutState? = null,
     modifier: Modifier = Modifier
 ) {
-    val resolvedState = state ?: with(LocalDensity.current) {
-        val containerSize = LocalWindowInfo.current.containerSize
-        DebugLayoutReadoutState(
-            widthDp = containerSize.width.toDp().value.roundToInt(),
-            heightDp = containerSize.height.toDp().value.roundToInt()
+    val resolvedState = state ?: run {
+        val view = LocalView.current
+        val liveWindowRotation = DeviceRotation.fromSurfaceRotation(
+            runCatching { view.display?.rotation }.getOrNull() ?: Surface.ROTATION_0
         )
+        with(LocalDensity.current) {
+            val containerSize = LocalWindowInfo.current.containerSize
+            DebugLayoutReadoutState(
+                widthDp = containerSize.width.toDp().value.roundToInt(),
+                heightDp = containerSize.height.toDp().value.roundToInt(),
+                deviceRotation = liveWindowRotation,
+                windowRotation = liveWindowRotation
+            )
+        }
     }
-    val separator = stringResource(R.string.debug_text_layout_separator)
     val formFactorText = stringResource(
         when (resolvedState.formFactor) {
             DebugFormFactor.COMPACT_SQUARE -> R.string.debug_text_form_factor_compact_square
@@ -200,25 +230,105 @@ internal fun DebugLayoutReadout(
             DebugFormFactor.UNKNOWN -> R.string.debug_text_form_factor_unknown
         }
     )
-    val valueBackgroundModifier = Modifier.background(Color.Black.copy(alpha = .4f))
-    Row(modifier = modifier.testTag(DEBUG_LAYOUT_READOUT_TAG)) {
-        Text(
-            modifier = Modifier.background(Color.Black.copy(alpha = .7f)),
-            text = stringResource(R.string.debug_text_layout_prefix)
-        )
-        Text(
-            modifier = valueBackgroundModifier.testTag(DEBUG_WINDOW_SIZE_TAG),
-            text = stringResource(
+    Column(modifier = modifier.testTag(DEBUG_LAYOUT_READOUT_TAG)) {
+        DebugTextBar(
+            title = stringResource(R.string.debug_text_layout_prefix),
+            value = stringResource(
                 R.string.debug_text_window_size,
                 resolvedState.widthDp,
                 resolvedState.heightDp
+            ),
+            tag = DEBUG_WINDOW_SIZE_TAG
+        )
+        DebugTextBar(
+            title = stringResource(R.string.debug_text_form_factor_prefix),
+            value = formFactorText,
+            tag = DEBUG_FORM_FACTOR_TAG
+        )
+        DebugTextBar(
+            title = stringResource(R.string.debug_text_device_rotation_prefix),
+            value = stringResource(
+                R.string.debug_text_rotation_degrees,
+                resolvedState.deviceRotation.toClockwiseRotationDegrees()
+            ),
+            tag = DEBUG_DEVICE_ROTATION_TAG
+        )
+        DebugTextBar(
+            title = stringResource(R.string.debug_text_window_rotation_prefix),
+            value = stringResource(
+                R.string.debug_text_rotation_degrees,
+                resolvedState.windowRotation.toClockwiseRotationDegrees()
+            ),
+            tag = DEBUG_WINDOW_ROTATION_TAG
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            DebugTextBar(
+                title = stringResource(R.string.debug_text_icon_rotation_prefix),
+                value = stringResource(
+                    R.string.debug_text_rotation_degrees,
+                    resolvedState.iconRotationDegrees
+                ),
+                tag = DEBUG_ICON_ROTATION_TAG
             )
-        )
-        Text(modifier = valueBackgroundModifier, text = separator)
-        Text(
-            modifier = valueBackgroundModifier.testTag(DEBUG_FORM_FACTOR_TAG),
-            text = formFactorText
-        )
+            DebugUpwardTriangleIndicator(
+                rotationDegrees = resolvedState.iconRotationDegrees,
+                modifier = Modifier.testTag(DEBUG_ICON_ROTATION_INDICATOR_TAG)
+            )
+        }
+    }
+}
+
+/**
+ * Draws an upward-pointing triangle rotated clockwise by [rotationDegrees] so its apex continuously
+ * points upward against physical gravity inside the current window.
+ */
+@Composable
+private fun DebugUpwardTriangleIndicator(
+    rotationDegrees: Int,
+    modifier: Modifier = Modifier
+) {
+    val targetAngle = rotationDegrees.toFloat()
+    var cumulativeTargetDegrees by remember { mutableFloatStateOf(targetAngle) }
+    val currentNormalized = ((cumulativeTargetDegrees % 360f) + 360f) % 360f
+    var delta = targetAngle - currentNormalized
+    if (delta > 180f) delta -= 360f
+    if (delta <= -180f) delta += 360f
+    if (delta != 0f) {
+        cumulativeTargetDegrees += delta
+    }
+    val animatedDegrees = animateFloatAsState(
+        targetValue = cumulativeTargetDegrees,
+        animationSpec = tween(durationMillis = 300),
+        label = "DebugUpwardTriangleRotation"
+    )
+    val triangleColor = LocalContentColor.current
+    val rotationDescription = stringResource(R.string.debug_text_rotation_degrees, rotationDegrees)
+
+    Box(
+        modifier = modifier
+            .background(Color.Black.copy(alpha = .4f))
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .size(14.dp)
+            .semantics {
+                stateDescription = rotationDescription
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier
+                .size(10.dp)
+                .graphicsLayer {
+                    rotationZ = animatedDegrees.value
+                }
+        ) {
+            val path = Path().apply {
+                moveTo(size.width / 2f, 0f)
+                lineTo(size.width, size.height)
+                lineTo(0f, size.height)
+                close()
+            }
+            drawPath(path = path, color = triangleColor)
+        }
     }
 }
 

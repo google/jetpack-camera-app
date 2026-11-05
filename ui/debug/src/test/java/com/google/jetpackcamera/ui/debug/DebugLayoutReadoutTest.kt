@@ -25,6 +25,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.TestPattern
 import org.junit.Rule
 import org.junit.Test
@@ -50,22 +51,36 @@ class DebugLayoutReadoutTest {
                     state = DebugLayoutReadoutState(
                         widthDp = 673,
                         heightDp = 841,
-                        formFactor = DebugFormFactor.FOLDABLE
+                        formFactor = DebugFormFactor.FOLDABLE,
+                        deviceRotation = DeviceRotation.Rotated270,
+                        windowRotation = DeviceRotation.Natural
                     )
                 )
             }
         }
 
         composeTestRule.onNodeWithText("Layout: ").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Form Factor: ").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Device Rotation: ").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Window Rotation: ").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Icon Rotation: ").assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_WINDOW_SIZE_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_FORM_FACTOR_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DEBUG_DEVICE_ROTATION_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DEBUG_WINDOW_ROTATION_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_INDICATOR_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("673x841dp")
         assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("FOLDABLE")
+        assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("270°")
+        assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_ICON_ROTATION_TAG)).isEqualTo("90°")
+        assertThat(readNodeStateDescription(DEBUG_ICON_ROTATION_INDICATOR_TAG)).isEqualTo("90°")
     }
 
     @Test
-    fun debugLayoutReadout_whenDefaultFormFactorUsed_derivesFormFactorFromDimensions() {
+    fun debugLayoutReadout_whenDefaultFormFactorUsed_derivesFormFactorAndDefaultRotations() {
         composeTestRule.setContent {
             MaterialTheme {
                 DebugLayoutReadout(
@@ -81,10 +96,13 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("412x915dp")
         assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT")
+        assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_ICON_ROTATION_TAG)).isEqualTo("0°")
     }
 
     @Test
-    fun debugLayoutReadout_appliesModifierOnlyToOuterRow_notChildTextNodes() {
+    fun debugLayoutReadout_appliesModifierOnlyToOuterContainer_notChildTextNodes() {
         composeTestRule.setContent {
             MaterialTheme {
                 DebugLayoutReadout(
@@ -126,6 +144,9 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("360x800dp")
         assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT")
+        assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_ICON_ROTATION_TAG)).isEqualTo("0°")
     }
 
     @Test
@@ -143,7 +164,9 @@ class DebugLayoutReadoutTest {
                     debugController = FakeDebugController(),
                     layoutReadoutState = DebugLayoutReadoutState(
                         widthDp = 800,
-                        heightDp = 1280
+                        heightDp = 1280,
+                        deviceRotation = DeviceRotation.Rotated90,
+                        windowRotation = DeviceRotation.Natural
                     )
                 )
             }
@@ -152,6 +175,10 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("800x1280dp")
         assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("TABLET")
+        assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("90°")
+        assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_ICON_ROTATION_TAG)).isEqualTo("270°")
+        assertThat(readNodeStateDescription(DEBUG_ICON_ROTATION_INDICATOR_TAG)).isEqualTo("270°")
     }
 
     @Test
@@ -176,6 +203,10 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(DEBUG_WINDOW_SIZE_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(DEBUG_FORM_FACTOR_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DEBUG_DEVICE_ROTATION_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DEBUG_WINDOW_ROTATION_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_INDICATOR_TAG).assertDoesNotExist()
     }
 
     @Test
@@ -236,6 +267,11 @@ class DebugLayoutReadoutTest {
         .fetchSemanticsNode()
         .config[SemanticsProperties.Text]
         .joinToString(separator = "") { it.text }
+
+    private fun readNodeStateDescription(tag: String): String = composeTestRule
+        .onNodeWithTag(tag)
+        .fetchSemanticsNode()
+        .config[SemanticsProperties.StateDescription]
 }
 
 private class FakeDebugController : DebugController {
