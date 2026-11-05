@@ -32,7 +32,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
-import com.google.jetpackcamera.settings.testing.FakeActiveCaptureSubModeRepository
 import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
 import com.google.jetpackcamera.settings.testing.FakeSettingsDataSource
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
@@ -66,7 +65,6 @@ class SettingsScreenTest {
         return SettingsViewModel(
             settingsRepository,
             constraintsRepository,
-            FakeActiveCaptureSubModeRepository(),
             Optional.of(FakeLocationProvider())
         )
     }
