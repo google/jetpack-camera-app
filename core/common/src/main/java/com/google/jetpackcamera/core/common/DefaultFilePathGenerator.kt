@@ -17,7 +17,6 @@ package com.google.jetpackcamera.core.common
 
 import android.os.Environment
 import java.io.File
-import java.util.Date
 
 /**
  * Default implementation of [FilePathGenerator] that stores captured media in a configurable
@@ -59,7 +58,7 @@ class DefaultFilePathGenerator(
             Environment.DIRECTORY_MOVIES
         )?.path ?: ""
 
-    private fun createTimestamp() = Date().time
+    private fun createTimestamp() = System.currentTimeMillis()
 
     /**
      * Constructs a filename string in the pattern:
