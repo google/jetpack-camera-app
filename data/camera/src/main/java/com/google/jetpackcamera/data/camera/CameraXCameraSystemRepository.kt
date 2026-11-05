@@ -21,7 +21,6 @@ import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.CameraXCameraSystem
 import com.google.jetpackcamera.model.CaptureSubModeId
-import com.google.jetpackcamera.settings.ActiveCaptureSubModeRepository
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -48,16 +47,15 @@ import kotlinx.coroutines.flow.map
 private const val TAG = "CameraXCameraSystemRepo"
 
 /**
- * Implementation of [CameraSystemRepository], [ConstraintsRepository], and
- * [ActiveCaptureSubModeRepository] that manages [CameraXCameraSystem] initialization and exposes
- * camera streams.
+ * Implementation of [CameraSystemRepository] and [ConstraintsRepository] that manages
+ * [CameraXCameraSystem] initialization and exposes camera streams.
  */
 class CameraXCameraSystemRepository(
     private val cameraXCameraSystemProvider: Provider<out CameraSystem>,
     private val settingsRepository: SettingsRepository,
     private val launchConfigProvider: CameraLaunchConfigProvider,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-) : CameraSystemRepository, ConstraintsRepository, ActiveCaptureSubModeRepository {
+) : CameraSystemRepository, ConstraintsRepository {
 
     constructor(
         cameraXCameraSystemProvider: Provider<out CameraSystem>,
