@@ -125,7 +125,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -1161,6 +1160,50 @@ private object IndicatorPillTokens {
 }
 
 /**
+ * A cutout-aware pill container that groups active camera status indicators into connected rounded
+ * pills and splits cleanly around any intersecting display cutout.
+ *
+ * Delegates to [VerticalIndicatorPill] when [isVertical] is `true` (side-rail layout) and to
+ * [HorizontalIndicatorPill] when [isVertical] is `false` (top-bar layout). Draws no pill segments
+ * when no indicators are active.
+ *
+ * @param modifier the [Modifier] to be applied to this pill container.
+ * @param isVertical whether the indicators stack vertically (`true`) or horizontally (`false`).
+ * @param cutoutRectsOverride optional list of cutout bounding rectangles in the container's local
+ *   pixel coordinate space, used for deterministic testing and previews.
+ * @param onPillSegmentsPlaced optional callback invoked with the physical local [IntRect] bounds
+ *   of each active pill segment after layout, used for testing.
+ * @param content the status indicator children.
+ */
+@SuppressLint("AvoidNullableCollections", "NullableCollection")
+@Composable
+fun IndicatorPill(
+    modifier: Modifier = Modifier,
+    isVertical: Boolean = false,
+    cutoutRectsOverride: List<IntRect>? = null,
+    onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    if (isVertical) {
+        VerticalIndicatorPill(
+            modifier = modifier,
+            cutoutRectsOverride = cutoutRectsOverride,
+            onPillSegmentsPlaced = onPillSegmentsPlaced
+        ) {
+            content()
+        }
+    } else {
+        HorizontalIndicatorPill(
+            modifier = modifier,
+            cutoutRectsOverride = cutoutRectsOverride,
+            onPillSegmentsPlaced = onPillSegmentsPlaced
+        ) {
+            content()
+        }
+    }
+}
+
+/**
  * A cutout-aware horizontal pill container that groups active top-bar status indicators into
  * connected rounded pills, splitting into separate pills on either side of any intersecting
  * display cutout.
@@ -1168,9 +1211,8 @@ private object IndicatorPillTokens {
  * Renders `40.dp`-tall pill segments (`6.dp` horizontal segment end-cap padding) with
  * `CameraControlBackgroundStyle.BLACK_60` background and `Color.White` content color. Provides
  * [LocalIndicatorPillOrientation] set to [Orientation.Horizontal] so child [IndicatorPillIcon]s
- * animate horizontally with `6x8.dp` item padding, and marks the container as a semantics
- * traversal group (`isTraversalGroup = true`). Draws no pill segments when no indicators are
- * active.
+ * animate horizontally with `6x8.dp` item padding, and inherits `isTraversalGroup = true` from
+ * [CutoutAwareRow]. Draws no pill segments when no indicators are active.
  *
  * @param modifier the [Modifier] to be applied to this horizontal pill container.
  * @param cutoutRectsOverride optional list of cutout bounding rectangles in the row's local
@@ -1181,7 +1223,7 @@ private object IndicatorPillTokens {
  */
 @SuppressLint("AvoidNullableCollections", "NullableCollection")
 @Composable
-fun IndicatorPill(
+fun HorizontalIndicatorPill(
     modifier: Modifier = Modifier,
     cutoutRectsOverride: List<IntRect>? = null,
     onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
@@ -1192,7 +1234,7 @@ fun IndicatorPill(
         LocalIndicatorPillOrientation provides Orientation.Horizontal
     ) {
         CutoutAwareRow(
-            modifier = modifier.semantics { isTraversalGroup = true },
+            modifier = modifier,
             horizontalSpacing = 0.dp,
             pillHorizontalPadding = IndicatorPillTokens.ContainerHorizontalPadding,
             pillMinHeight = IndicatorPillTokens.ContainerHeight,

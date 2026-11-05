@@ -732,8 +732,21 @@ class CutoutAwareColumnTest {
                 ) {
                     FlashModeIndicator(flashModeUiState = activeFlashUiState())
                 }
+                HorizontalIndicatorPill(
+                    modifier = Modifier.testTag("horizontal_pill_direct"),
+                    cutoutRectsOverride = emptyList()
+                ) {
+                    FlashModeIndicator(flashModeUiState = activeFlashUiState())
+                }
                 IndicatorPill(
                     modifier = Modifier.testTag("horizontal_pill"),
+                    cutoutRectsOverride = emptyList()
+                ) {
+                    FlashModeIndicator(flashModeUiState = activeFlashUiState())
+                }
+                IndicatorPill(
+                    modifier = Modifier.testTag("delegated_vertical_pill"),
+                    isVertical = true,
                     cutoutRectsOverride = emptyList()
                 ) {
                     FlashModeIndicator(flashModeUiState = activeFlashUiState())
@@ -745,7 +758,54 @@ class CutoutAwareColumnTest {
             SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true)
         composeTestRule.onNodeWithTag("cutout_column").assert(isTraversalGroupMatcher)
         composeTestRule.onNodeWithTag("vertical_pill").assert(isTraversalGroupMatcher)
+        composeTestRule.onNodeWithTag("horizontal_pill_direct").assert(isTraversalGroupMatcher)
         composeTestRule.onNodeWithTag("horizontal_pill").assert(isTraversalGroupMatcher)
+        composeTestRule.onNodeWithTag("delegated_vertical_pill").assert(isTraversalGroupMatcher)
+    }
+
+    @Test
+    fun indicatorPill_isVerticalFlag_delegatesToVerticalAndHorizontalLayouts() {
+        var isVertical by mutableStateOf(false)
+        var pillSegments: List<IntRect> = emptyList()
+
+        composeTestRule.setContent {
+            IndicatorPill(
+                isVertical = isVertical,
+                cutoutRectsOverride = emptyList(),
+                onPillSegmentsPlaced = { pillSegments = it }
+            ) {
+                FlashModeIndicator(
+                    flashModeUiState = activeFlashUiState(),
+                    modifier = Modifier.testTag("flash")
+                )
+                HdrIndicator(
+                    hdrUiState = activeHdrUiState(),
+                    modifier = Modifier.testTag("hdr")
+                )
+            }
+        }
+
+        // Horizontal (isVertical = false): 84x40dp pill, icons side-by-side at x=[6..42], [42..78].
+        assertThat(pillSegments).containsExactly(
+            IntRect(left = 0, top = 0, right = 84, bottom = 40)
+        )
+        assertThat(composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot().left)
+            .isEqualTo(6.dp)
+        assertThat(composeTestRule.onNodeWithTag("hdr").getUnclippedBoundsInRoot().left)
+            .isEqualTo(42.dp)
+
+        // Vertical (isVertical = true): 40x84dp pill centered at x=[4..44],
+        // icons stacked at y=[6..42], [42..78].
+        isVertical = true
+        composeTestRule.waitForIdle()
+
+        assertThat(pillSegments).containsExactly(
+            IntRect(left = 4, top = 0, right = 44, bottom = 84)
+        )
+        assertThat(composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot().top)
+            .isEqualTo(6.dp)
+        assertThat(composeTestRule.onNodeWithTag("hdr").getUnclippedBoundsInRoot().top)
+            .isEqualTo(42.dp)
     }
 
     @Test

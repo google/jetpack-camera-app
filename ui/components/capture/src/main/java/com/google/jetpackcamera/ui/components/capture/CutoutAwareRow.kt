@@ -208,6 +208,10 @@ fun CutoutAwareRow(
                 }
                 .sortedBy { it.first }
 
+            if (!isLookingAhead) {
+                lockedMinX.keys.removeAll { it >= placeables.size }
+            }
+
             val xPositions = IntArray(placeables.size)
             val isActive = BooleanArray(placeables.size)
             val startRelativePills = mutableListOf<IntRect>()

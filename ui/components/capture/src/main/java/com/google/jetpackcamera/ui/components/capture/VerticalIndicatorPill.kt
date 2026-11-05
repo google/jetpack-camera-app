@@ -19,7 +19,6 @@ import android.annotation.SuppressLint
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.defaultMinSize
@@ -32,7 +31,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -40,9 +38,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.model.FlashMode
@@ -126,32 +128,39 @@ fun VerticalIndicatorPill(
 }
 
 @Composable
-private fun VerticalIndicatorPillPreviewContent(cutoutRect: IntRect? = null) {
-    val colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
-    MaterialTheme(colorScheme = colorScheme) {
+private fun VerticalIndicatorPillPreviewContent(cutoutRectDp: DpRect? = null) {
+    val density = LocalDensity.current
+    val cutoutRectPx = cutoutRectDp?.let { rect ->
+        with(density) {
+            IntRect(
+                left = rect.left.roundToPx(),
+                top = rect.top.roundToPx(),
+                right = rect.right.roundToPx(),
+                bottom = rect.bottom.roundToPx()
+            )
+        }
+    }
+    MaterialTheme(colorScheme = darkColorScheme()) {
         Box(
             modifier = Modifier
                 .background(
                     Brush.verticalGradient(
-                        colors = if (isSystemInDarkTheme()) {
-                            listOf(Color.DarkGray, Color.Black)
-                        } else {
-                            listOf(Color.LightGray, Color.Gray)
-                        }
+                        colors = listOf(Color.DarkGray, Color.Black)
                     )
                 )
                 .padding(8.dp)
         ) {
-            if (cutoutRect != null) {
+            if (cutoutRectDp != null) {
                 Box(
                     modifier = Modifier
-                        .offset(x = cutoutRect.left.dp, y = cutoutRect.top.dp)
-                        .size(width = cutoutRect.width.dp, height = cutoutRect.height.dp)
+                        .offset(x = cutoutRectDp.left, y = cutoutRectDp.top)
+                        .size(width = cutoutRectDp.width, height = cutoutRectDp.height)
                         .background(Color.Black, CircleShape)
                 )
             }
-            VerticalIndicatorPill(
-                cutoutRectsOverride = listOfNotNull(cutoutRect)
+            IndicatorPill(
+                isVertical = true,
+                cutoutRectsOverride = listOfNotNull(cutoutRectPx)
             ) {
                 FlashModeIndicator(
                     flashModeUiState = FlashModeUiState.Available(
@@ -181,9 +190,15 @@ private fun VerticalIndicatorPillPreviewContent(cutoutRect: IntRect? = null) {
     }
 }
 
-@Preview(name = "Single Vertical Pill - Light", showBackground = true)
+private val PreviewCutoutBoundsDp = DpRect(
+    left = 4.dp,
+    top = 60.dp,
+    right = 44.dp,
+    bottom = 100.dp
+)
+
 @Preview(
-    name = "Single Vertical Pill - Dark",
+    name = "Single Vertical Pill",
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     showBackground = true
 )
@@ -192,17 +207,14 @@ private fun VerticalIndicatorPillSinglePreview() {
     VerticalIndicatorPillPreviewContent()
 }
 
-@Preview(name = "Cutout Split Vertical Pill - Light", showBackground = true)
 @Preview(
-    name = "Cutout Split Vertical Pill - Dark",
+    name = "Cutout Split Vertical Pill",
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     showBackground = true
 )
 @Composable
 private fun VerticalIndicatorPillCutoutSplitPreview() {
-    VerticalIndicatorPillPreviewContent(
-        cutoutRect = IntRect(left = 4, top = 56, right = 44, bottom = 96)
-    )
+    VerticalIndicatorPillPreviewContent(cutoutRectDp = PreviewCutoutBoundsDp)
 }
 
 @Preview(
@@ -213,7 +225,5 @@ private fun VerticalIndicatorPillCutoutSplitPreview() {
 )
 @Composable
 private fun VerticalIndicatorPillRtlPreview() {
-    VerticalIndicatorPillPreviewContent(
-        cutoutRect = IntRect(left = 4, top = 56, right = 44, bottom = 96)
-    )
+    VerticalIndicatorPillPreviewContent(cutoutRectDp = PreviewCutoutBoundsDp)
 }
