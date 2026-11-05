@@ -254,7 +254,7 @@ fun ToggleSwitch(
                     activeDrags.remove(interaction.start)
                     if (activeDrags.isEmpty() && dragState.isDragging) {
                         dragState.isDragging = false
-                        coroutineScope.launch {
+                        launch {
                             thumbProgress.syncToTarget(
                                 target = if (currentChecked) 1f else 0f,
                                 disableAnimations = currentDisableAnimations
