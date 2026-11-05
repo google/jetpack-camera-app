@@ -73,6 +73,7 @@ import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CameraErrorDialog
 import com.google.jetpackcamera.ui.components.capture.CaptureButton
+import com.google.jetpackcamera.ui.components.capture.CaptureModeCarousel
 import com.google.jetpackcamera.ui.components.capture.CaptureModeToggleButton
 import com.google.jetpackcamera.ui.components.capture.ELAPSED_TIME_TAG
 import com.google.jetpackcamera.ui.components.capture.ElapsedTimeText
@@ -84,6 +85,7 @@ import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
 import com.google.jetpackcamera.ui.components.capture.PreviewDisplay
 import com.google.jetpackcamera.ui.components.capture.PreviewLayout
+import com.google.jetpackcamera.ui.components.capture.PreviewPortraitDevices
 import com.google.jetpackcamera.ui.components.capture.ScreenFlashScreen
 import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
@@ -126,6 +128,9 @@ private const val TAG = "PreviewScreen"
 
 /**
  * Screen used for the Preview feature.
+ *
+ * @param onRequiresImmersiveChange invoked when the capture layout starts or stops requiring the
+ * navigation bar to be hidden. See [PreviewLayout].
  */
 @Composable
 fun PreviewScreen(
@@ -136,6 +141,7 @@ fun PreviewScreen(
     onRequestWindowColorMode: (Int) -> Unit = {},
     onFirstFrameCaptureCompleted: () -> Unit = {},
     onCloseCamera: () -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
     viewModel: PreviewViewModel = hiltViewModel()
 ) {
     Log.d(TAG, "PreviewScreen")
@@ -207,6 +213,7 @@ fun PreviewScreen(
         onRequestWindowColorMode = onRequestWindowColorMode,
         onNavigatePostCapture = onNavigateToPostCapture,
         onCloseCamera = onCloseCamera,
+        onRequiresImmersiveChange = onRequiresImmersiveChange,
         debugUiState = debugUiState,
         snackBarUiState = snackBarUiState,
         debugController = viewModel.debugController,
@@ -230,6 +237,7 @@ internal fun ContentScreen(
     onRequestWindowColorMode: (Int) -> Unit = {},
     onNavigatePostCapture: () -> Unit = {},
     onCloseCamera: () -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
     debugUiState: DebugUiState = DebugUiState.Disabled,
     snackBarUiState: SnackBarUiState = SnackBarUiState.Disabled,
     debugController: DebugController? = null,
@@ -602,6 +610,24 @@ internal fun ContentScreen(
         }
     }
 
+    val captureSubModeState = remember {
+        derivedStateOf { currentCaptureUiStateProvider().captureSubModeUiState }
+    }
+    val captureModeCarouselLambda = remember(
+        captureSubModeState,
+        quickSettingsController
+    ) {
+        @Composable { modifier: Modifier ->
+            CaptureModeCarousel(
+                uiState = captureSubModeState.value,
+                onSelectSubMode = { subModeId ->
+                    quickSettingsController?.setCaptureSubMode(subModeId)
+                },
+                modifier = modifier
+            )
+        }
+    }
+
     // TODO: When QuickSettingsUiState is Unavailable, coordinate with optional onNavigateToSettings
     //       if a direct navigation path to settings from the toggle button is desired.
     val quickSettingsButtonLambda = remember(
@@ -807,6 +833,7 @@ internal fun ContentScreen(
         quickSettingsButton = quickSettingsButtonLambda,
         audioToggleButton = audioToggleButtonLambda,
         captureModeToggle = captureModeToggleLambda,
+        captureModeCarousel = captureModeCarouselLambda,
         quickSettingsOverlay = quickSettingsOverlayLambda,
         debugOverlay = debugOverlayLambda,
         debugVisibilityWrapper = debugVisibilityWrapperLambda,
@@ -814,7 +841,8 @@ internal fun ContentScreen(
         snackBar = snackBarLambda,
         pauseToggleButton = pauseToggleButtonLambda,
         imageWell = imageWellLambda,
-        errorDialog = errorDialogLambda
+        errorDialog = errorDialogLambda,
+        onRequiresImmersiveChange = onRequiresImmersiveChange
     )
 }
 
@@ -888,6 +916,7 @@ private fun LayoutWrapper(
     pauseToggleButton: @Composable (modifier: Modifier) -> Unit,
     audioToggleButton: @Composable (modifier: Modifier) -> Unit,
     captureModeToggle: @Composable (modifier: Modifier) -> Unit,
+    captureModeCarousel: @Composable (modifier: Modifier) -> Unit,
     imageWell: @Composable (modifier: Modifier) -> Unit,
     quickSettingsOverlay: @Composable (modifier: Modifier) -> Unit,
     debugOverlay: @Composable (
@@ -897,7 +926,8 @@ private fun LayoutWrapper(
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
-    errorDialog: @Composable (modifier: Modifier) -> Unit = {}
+    errorDialog: @Composable (modifier: Modifier) -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {}
 ) {
     PreviewLayout(
         modifier = modifier,
@@ -911,6 +941,7 @@ private fun LayoutWrapper(
         elapsedTimeDisplay = elapsedTimeDisplay,
         quickSettingsButton = quickSettingsButton,
         captureModeToggle = captureModeToggle,
+        captureModeCarousel = captureModeCarousel,
         quickSettingsOverlay = quickSettingsOverlay,
         indicatorRow = { modifier ->
             if (!isErrorDialogShowing) {
@@ -937,10 +968,12 @@ private fun LayoutWrapper(
         debugVisibilityWrapper = debugVisibilityWrapper,
         screenFlashOverlay = screenFlashOverlay,
         snackBar = snackBar,
-        errorDialog = errorDialog
+        errorDialog = errorDialog,
+        onRequiresImmersiveChange = onRequiresImmersiveChange
     )
 }
 
+@PreviewPortraitDevices
 @Preview
 @Composable
 private fun ContentScreenPreview() {
