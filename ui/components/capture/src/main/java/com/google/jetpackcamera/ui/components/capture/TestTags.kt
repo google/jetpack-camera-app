@@ -35,6 +35,7 @@ const val IMAGE_WELL_TAG = "ImageWellTag"
 
 const val PREVIEW_DISPLAY = "PreviewDisplay"
 const val SCREEN_FLASH_OVERLAY = "ScreenFlashOverlay"
+const val VIDEO_SCREEN_TORCH_OVERLAY = "VideoScreenTorchOverlay"
 const val AUDIO_INPUT_TOGGLE = "AudioInputToggle"
 const val FOCUS_METERING_INDICATOR_TAG = "FocusMeteringIndicatorTag"
 

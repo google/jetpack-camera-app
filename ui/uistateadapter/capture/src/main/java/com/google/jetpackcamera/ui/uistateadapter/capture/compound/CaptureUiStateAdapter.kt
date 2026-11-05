@@ -20,6 +20,8 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ExternalCaptureMode
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
@@ -155,6 +157,15 @@ fun captureUiState(
             systemConstraints = systemConstraints,
             optionVisibility = effectiveFeaturePolicy?.flashMode?.visibility
         )
+        // Most front-facing cameras have no flash unit, so the screen itself illuminates the
+        // subject during video capture. Auto is treated like On, matching front photo screen flash.
+        val isVideoScreenTorchActive =
+            roundedVideoRecordingState !is VideoRecordingState.Inactive &&
+                cameraAppSettings.cameraLensFacing == LensFacing.FRONT &&
+                when (cameraAppSettings.flashMode) {
+                    FlashMode.ON, FlashMode.AUTO -> true
+                    else -> false
+                }
         focusMeteringUiState = focusMeteringUiState?.updateFrom(
             cameraState = roundedCameraState
         ) ?: FocusMeteringUiState.from(roundedCameraState)
@@ -230,6 +241,7 @@ fun captureUiState(
                 roundedVideoRecordingState
             ),
             screenFlashUiState = ScreenFlashUiState.from(trackedUiState),
+            isVideoScreenTorchActive = isVideoScreenTorchActive,
             cameraErrorUiState = CameraErrorUiState.from(roundedCameraState)
         )
     }

@@ -440,23 +440,25 @@ operation, offering specialized functionalities and enhanced capture modes.
 During image capture with a front-facing camera, this feature illuminates the subject by displaying
 a solid, bright overlay on the device's screen and maximizing screen brightness.
 
+During video capture with a front-facing camera, the screen acts as a continuous torch: the screen
+brightness is maximized and a white frame is drawn around the viewfinder, so the subject stays lit
+for the whole recording while the preview and controls remain usable.
+
 #### How to Enable / Use
 
 1. Open the camera app.
 2. Ensure a front-facing camera is selected by tapping on the “flip camera” button.
 3. Tap the flash icon to toggle between scene illumination mode. Screen flash will be selected if
    the “On” or “Auto” flash mode is selected.
-4. Take a photo.
+4. Take a photo or start a video recording.
 
 See the “Scene Illumination / Flash” feature for other methods of enabling screen flash.
 
 #### Constraints / Limitations
 
-* Screen flash will only be used for front-facing cameras.
-* Screen flash is currently limited to image capture only. There will be no additional illumination
-  for video capture.
-* In "Auto" mode, screen flash behaves equivalently to the "On" mode, regardless of ambient scene
-  lighting.
+* Screen flash and the video screen torch will only be used for front-facing cameras.
+* In "Auto" mode, screen flash and the video screen torch behave equivalently to the "On" mode,
+  regardless of ambient scene lighting.
 
 ---
 

@@ -73,6 +73,10 @@ sealed interface CaptureUiState {
      * @property zoomControlUiState The UI state for the zoom control buttons.
      * @property hdrUiState The UI state for the HDR setting.
      * @property focusMeteringUiState The UI state for focus and metering.
+     * @property isVideoScreenTorchActive Whether the screen should be used as a torch while
+     * recording video with the front-facing camera. When `true`, the screen is kept at maximum
+     * brightness and a white frame is drawn so that the subject is illuminated without hiding the
+     * preview or controls.
      * @property cameraErrorUiState The UI state for camera errors.
      */
     data class Ready(
@@ -101,6 +105,7 @@ sealed interface CaptureUiState {
         val hdrUiState: HdrUiState = HdrUiState.Unavailable,
         val focusMeteringUiState: FocusMeteringUiState = FocusMeteringUiState.Unspecified,
         val screenFlashUiState: ScreenFlashUiState = ScreenFlashUiState(),
+        val isVideoScreenTorchActive: Boolean = false,
         val cameraErrorUiState: CameraErrorUiState = CameraErrorUiState.Hidden
     ) : CaptureUiState
 

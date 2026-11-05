@@ -432,6 +432,83 @@ internal class CaptureUiStateAdapterTest {
         assertThat(videoOnlyState.videoQuality).isEqualTo(VideoQuality.FHD)
     }
 
+    @Test
+    fun captureUiState_frontVideoRecordingWithFlashOn_enablesVideoScreenTorch() = runTest {
+        assertVideoScreenTorchActive(
+            lensFacing = LensFacing.FRONT,
+            flashMode = FlashMode.ON,
+            videoRecordingState = ACTIVE_RECORDING_STATE,
+            expected = true
+        )
+    }
+
+    @Test
+    fun captureUiState_frontVideoRecordingWithFlashAuto_enablesVideoScreenTorch() = runTest {
+        assertVideoScreenTorchActive(
+            lensFacing = LensFacing.FRONT,
+            flashMode = FlashMode.AUTO,
+            videoRecordingState = ACTIVE_RECORDING_STATE,
+            expected = true
+        )
+    }
+
+    @Test
+    fun captureUiState_frontVideoRecordingWithFlashOff_disablesVideoScreenTorch() = runTest {
+        assertVideoScreenTorchActive(
+            lensFacing = LensFacing.FRONT,
+            flashMode = FlashMode.OFF,
+            videoRecordingState = ACTIVE_RECORDING_STATE,
+            expected = false
+        )
+    }
+
+    @Test
+    fun captureUiState_backVideoRecordingWithFlashOn_disablesVideoScreenTorch() = runTest {
+        assertVideoScreenTorchActive(
+            lensFacing = LensFacing.BACK,
+            flashMode = FlashMode.ON,
+            videoRecordingState = ACTIVE_RECORDING_STATE,
+            expected = false
+        )
+    }
+
+    @Test
+    fun captureUiState_frontCameraInactiveWithFlashOn_disablesVideoScreenTorch() = runTest {
+        assertVideoScreenTorchActive(
+            lensFacing = LensFacing.FRONT,
+            flashMode = FlashMode.ON,
+            videoRecordingState = VideoRecordingState.Inactive(),
+            expected = false
+        )
+    }
+
+    @Test
+    fun captureUiState_frontPausedRecordingWithFlashOn_enablesVideoScreenTorch() = runTest {
+        assertVideoScreenTorchActive(
+            lensFacing = LensFacing.FRONT,
+            flashMode = FlashMode.ON,
+            videoRecordingState = PAUSED_RECORDING_STATE,
+            expected = true
+        )
+    }
+
+    private suspend fun assertVideoScreenTorchActive(
+        lensFacing: LensFacing,
+        flashMode: FlashMode,
+        videoRecordingState: VideoRecordingState,
+        expected: Boolean
+    ) {
+        cameraSystem.setLensFacing(lensFacing)
+        cameraSystem.setFlashMode(flashMode)
+        cameraSystem.setCurrentCameraState(
+            CameraState(videoRecordingState = videoRecordingState)
+        )
+
+        val state = assertIsReady(createCaptureUiStateFlow().first())
+
+        assertThat(state.isVideoScreenTorchActive).isEqualTo(expected)
+    }
+
     private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready = when (uiState) {
         is CaptureUiState.Ready -> uiState
         else -> throw AssertionError(
@@ -442,5 +519,15 @@ internal class CaptureUiStateAdapterTest {
     private companion object {
         val TEST_SUB_MODE_ID = CaptureSubModeId("test_sub_mode")
         const val SUB_MODE_QUICK_SETTINGS_TITLE_RES_ID = 2001
+        val ACTIVE_RECORDING_STATE = VideoRecordingState.Active.Recording(
+            maxDurationMillis = 0L,
+            audioStreamState = AudioStreamState.Disabled,
+            elapsedTimeNanos = 0L
+        )
+        val PAUSED_RECORDING_STATE = VideoRecordingState.Active.Paused(
+            maxDurationMillis = 0L,
+            audioStreamState = AudioStreamState.Disabled,
+            elapsedTimeNanos = 0L
+        )
     }
 }

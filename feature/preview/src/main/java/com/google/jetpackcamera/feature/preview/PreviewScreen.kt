@@ -27,7 +27,9 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetScaffoldState
@@ -91,6 +93,7 @@ import com.google.jetpackcamera.ui.components.capture.StabilizationIcon
 import com.google.jetpackcamera.ui.components.capture.TestableSnackbar
 import com.google.jetpackcamera.ui.components.capture.VIDEO_QUALITY_TAG
 import com.google.jetpackcamera.ui.components.capture.VideoQualityIcon
+import com.google.jetpackcamera.ui.components.capture.VideoScreenTorchFrame
 import com.google.jetpackcamera.ui.components.capture.ZoomBar
 import com.google.jetpackcamera.ui.components.capture.ZoomStateManager
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
@@ -452,10 +455,16 @@ internal fun ContentScreen(
             currentCaptureUiStateProvider().focusMeteringUiState
         }
     }
+    val videoScreenTorchState = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().isVideoScreenTorchActive
+        }
+    }
     val viewfinderLambda = remember(
         isErrorDialogShowing,
         previewDisplayState,
         focusMeteringState,
+        videoScreenTorchState,
         onFlipCamera,
         onTapToFocusLambda,
         onScaleZoomLambda,
@@ -464,16 +473,21 @@ internal fun ContentScreen(
     ) {
         @Composable { modifier: Modifier ->
             if (!isErrorDialogShowing) {
-                PreviewDisplay(
-                    modifier = modifier,
-                    previewDisplayUiState = previewDisplayState.value,
-                    onFlipCamera = onFlipCamera,
-                    onTapToFocus = onTapToFocusLambda,
-                    onScaleZoom = { zoomRatio -> onScaleZoomLambda(zoomRatio) },
-                    surfaceRequest = surfaceRequest,
-                    onRequestWindowColorMode = onRequestWindowColorMode,
-                    focusMeteringUiState = focusMeteringState.value
-                )
+                Box(modifier) {
+                    PreviewDisplay(
+                        modifier = Modifier.fillMaxSize(),
+                        previewDisplayUiState = previewDisplayState.value,
+                        onFlipCamera = onFlipCamera,
+                        onTapToFocus = onTapToFocusLambda,
+                        onScaleZoom = { zoomRatio -> onScaleZoomLambda(zoomRatio) },
+                        surfaceRequest = surfaceRequest,
+                        onRequestWindowColorMode = onRequestWindowColorMode,
+                        focusMeteringUiState = focusMeteringState.value
+                    )
+                    if (videoScreenTorchState.value) {
+                        VideoScreenTorchFrame(Modifier.fillMaxSize())
+                    }
+                }
             }
         }
     }
@@ -729,13 +743,18 @@ internal fun ContentScreen(
             currentCaptureUiStateProvider().screenFlashUiState
         }
     }
-    val screenFlashOverlayLambda = remember(screenFlashState, screenFlashController) {
+    val screenFlashOverlayLambda = remember(
+        screenFlashState,
+        videoScreenTorchState,
+        screenFlashController
+    ) {
         @Composable { modifier: Modifier ->
             ScreenFlashScreen(
                 screenFlashUiState = screenFlashState.value,
                 onInitialBrightnessCalculated = {
                     screenFlashController?.setClearUiScreenBrightness(it)
-                }
+                },
+                isVideoScreenTorchEnabled = videoScreenTorchState.value
             )
         }
     }
