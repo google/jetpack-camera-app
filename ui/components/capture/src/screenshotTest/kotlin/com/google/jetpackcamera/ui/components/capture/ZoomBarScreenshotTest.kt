@@ -20,51 +20,58 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
 
+/** Horizontal zoom bar with the first stop selected. */
 @PreviewTest
 @Preview
 @Composable
-private fun ZoomBarHorizontalFirstStopScreenshotPreview() {
+internal fun ZoomBarHorizontalFirstStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 0.5f)
 }
 
+/** Horizontal zoom bar with a middle stop selected. */
 @PreviewTest
 @Preview
 @Composable
-private fun ZoomBarHorizontalMiddleStopScreenshotPreview() {
+internal fun ZoomBarHorizontalMiddleStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 1.0f)
 }
 
+/** Horizontal zoom bar with the last stop selected. */
 @PreviewTest
 @Preview
 @Composable
-private fun ZoomBarHorizontalLastStopScreenshotPreview() {
+internal fun ZoomBarHorizontalLastStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 5.0f)
 }
 
+/** Vertical zoom bar with the first stop selected. */
 @PreviewTest
 @Preview
 @Composable
-private fun ZoomBarVerticalFirstStopScreenshotPreview() {
+internal fun ZoomBarVerticalFirstStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 0.5f, orientation = Orientation.Vertical)
 }
 
+/** Vertical zoom bar with a middle stop selected. */
 @PreviewTest
 @Preview
 @Composable
-private fun ZoomBarVerticalMiddleStopScreenshotPreview() {
+internal fun ZoomBarVerticalMiddleStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 1.0f, orientation = Orientation.Vertical)
 }
 
+/** Vertical zoom bar with the last stop selected. */
 @PreviewTest
 @Preview
 @Composable
-private fun ZoomBarVerticalLastStopScreenshotPreview() {
+internal fun ZoomBarVerticalLastStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 5.0f, orientation = Orientation.Vertical)
 }
 
+/** Zoom bar with a single stop. */
 @PreviewTest
 @Preview
 @Composable
-private fun ZoomBarSingleStopScreenshotPreview() {
+internal fun ZoomBarSingleStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 1.0f, zoomLevels = listOf(1.0f), colors = ZoomBarDefaults.colors())
 }
