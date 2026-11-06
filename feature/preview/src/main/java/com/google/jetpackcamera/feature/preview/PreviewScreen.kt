@@ -20,25 +20,32 @@ import androidx.camera.core.SurfaceRequest
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tracing.Trace
 import com.google.jetpackcamera.model.CaptureEvent
+import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
+import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.VideoCaptureEvent
-import com.google.jetpackcamera.ui.components.capture.ContentScreen
+import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
+import com.google.jetpackcamera.ui.components.capture.CameraSessionEffect
+import com.google.jetpackcamera.ui.components.capture.CaptureControls
+import com.google.jetpackcamera.ui.components.capture.CaptureScaffold
+import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldDefaults
+import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldLayout
 import com.google.jetpackcamera.ui.components.capture.LOADING_CAPTURE_UI_STATE_SKELETON
-import com.google.jetpackcamera.ui.components.capture.PreviewLayout
-import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
+import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
+import com.google.jetpackcamera.ui.components.capture.rememberCaptureScaffoldState
 import com.google.jetpackcamera.ui.debug.DebugOverlay
 import com.google.jetpackcamera.ui.debug.DebugUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
+import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import kotlinx.coroutines.flow.transformWhile
 
@@ -48,7 +55,7 @@ private const val TAG = "PreviewScreen"
  * Screen used for the Preview feature.
  *
  * @param onRequiresImmersiveChange invoked when the capture layout starts or stops requiring the
- * navigation bar to be hidden. See [PreviewLayout].
+ * navigation bar to be hidden. See [CaptureScaffoldLayout].
  */
 @Composable
 fun PreviewScreen(
@@ -71,14 +78,12 @@ fun PreviewScreen(
     val surfaceRequest: SurfaceRequest?
         by viewModel.surfaceRequest.collectAsState()
 
-    LifecycleStartEffect(Unit) {
-        viewModel.cameraController.startCamera()
-        viewModel.startLocationUpdates()
-        onStopOrDispose {
-            viewModel.stopLocationUpdates()
-            viewModel.cameraController.stopCamera()
-        }
-    }
+    CameraSessionEffect(
+        cameraController = viewModel.cameraController,
+        enabled = true,
+        onSessionStarted = viewModel::startLocationUpdates,
+        onSessionStopped = viewModel::stopLocationUpdates
+    )
 
     val currentOnCaptureEvent by rememberUpdatedState(onCaptureEvent)
     LaunchedEffect(Unit) {
@@ -116,51 +121,98 @@ fun PreviewScreen(
         }
     }
 
-    val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        debouncedOrientationFlow(context).collect(
-            viewModel.cameraController::setDisplayRotation
-        )
-    }
-
+    val scaffoldState = rememberCaptureScaffoldState()
     val debugController = viewModel.debugController
     val currentDebugUiState = debugUiState
     val isDebugHidingComponents =
         (currentDebugUiState as? DebugUiState.Enabled)?.debugHidingComponents == true
-    val debugOverlay = remember(debugController, currentDebugUiState) {
-        @Composable {
-                overlayModifier: Modifier,
-                onChangeZoomRatio: (Float) -> Unit,
-                extraControls: Array<@Composable () -> Unit> ->
+
+    val externalCaptureModeState = remember {
+        derivedStateOf { readyStateProvider().externalCaptureMode }
+    }
+    val imageWellState = remember {
+        derivedStateOf { readyStateProvider().imageWellUiState }
+    }
+    val audioState = remember {
+        derivedStateOf { readyStateProvider().audioUiState }
+    }
+    val videoRecordingState = remember {
+        derivedStateOf { readyStateProvider().videoRecordingState }
+    }
+
+    CaptureScaffold(
+        captureUiState = readyStateProvider,
+        surfaceRequest = surfaceRequest,
+        modifier = modifier,
+        state = scaffoldState,
+        onNavigateToSettings = onNavigateToSettings,
+        onRequestWindowColorMode = onRequestWindowColorMode,
+        onRequiresImmersiveChange = onRequiresImmersiveChange,
+        controlsVisible = !isDebugHidingComponents,
+        snackBarUiState = snackBarUiState,
+        cameraController = viewModel.cameraController,
+        captureController = viewModel.captureController,
+        quickSettingsController = viewModel.quickSettingsController,
+        zoomController = viewModel.zoomController,
+        snackBarController = viewModel.snackBarController,
+        screenFlashController = viewModel.screenFlashController,
+        controls = { slotModifier ->
+            CaptureControls(
+                captureUiState = readyStateProvider,
+                modifier = slotModifier,
+                state = scaffoldState,
+                captureController = viewModel.captureController,
+                quickSettingsController = viewModel.quickSettingsController,
+                zoomController = viewModel.zoomController,
+                snackBarController = viewModel.snackBarController,
+                imageWell = { imageWellModifier ->
+                    if (externalCaptureModeState.value == ExternalCaptureMode.Standard) {
+                        CaptureScaffoldDefaults.ImageWell(
+                            uiState = imageWellState.value,
+                            onClick = onNavigateToPostCapture,
+                            modifier = imageWellModifier
+                        )
+                    }
+                }
+            )
+        },
+        errorDialog = { error, onDismiss ->
+            CaptureScaffoldDefaults.ErrorDialog(
+                error = error,
+                onDismiss = {
+                    onDismiss()
+                    onCloseCamera()
+                }
+            )
+        },
+        overlay = { slotModifier ->
             if (currentDebugUiState is DebugUiState.Enabled) {
                 DebugOverlay(
-                    modifier = overlayModifier,
+                    modifier = slotModifier,
+                    onChangeZoomRatio = { ratio ->
+                        setAbsoluteZoom(ratio, LensToZoom.PRIMARY)
+                    },
                     debugUiState = currentDebugUiState,
-                    onChangeZoomRatio = onChangeZoomRatio,
-                    extraControls = extraControls,
+                    {
+                        val currentAudioState = audioState.value
+                        AmplitudeToggleButton(
+                            audioUiState = currentAudioState,
+                            onToggleAudio = {
+                                viewModel.captureController.setAudioEnabled(
+                                    currentAudioState !is AudioUiState.Enabled.On
+                                )
+                            }
+                        )
+                    },
+                    {
+                        PauseResumeToggleButton(
+                            onSetPause = viewModel.captureController::setPaused,
+                            currentRecordingStateProvider = { videoRecordingState.value }
+                        )
+                    },
                     debugController = debugController
                 )
             }
         }
-    }
-
-    ContentScreen(
-        modifier = modifier,
-        captureUiStateProvider = readyStateProvider,
-        surfaceRequest = surfaceRequest,
-        onNavigateToSettings = onNavigateToSettings,
-        onRequestWindowColorMode = onRequestWindowColorMode,
-        onNavigatePostCapture = onNavigateToPostCapture,
-        onCloseCamera = onCloseCamera,
-        onRequiresImmersiveChange = onRequiresImmersiveChange,
-        isDebugHidingComponents = isDebugHidingComponents,
-        debugOverlay = debugOverlay,
-        snackBarUiState = snackBarUiState,
-        snackBarController = viewModel.snackBarController,
-        quickSettingsController = viewModel.quickSettingsController,
-        captureController = viewModel.captureController,
-        cameraController = viewModel.cameraController,
-        screenFlashController = viewModel.screenFlashController,
-        zoomController = viewModel.zoomController
     )
 }

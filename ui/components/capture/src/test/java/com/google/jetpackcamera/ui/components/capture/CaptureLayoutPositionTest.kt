@@ -68,7 +68,7 @@ class CaptureLayoutPositionTest {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun TestCaptureLayout(captureModeCarousel: @Composable (Modifier) -> Unit = {}) {
-        PreviewLayout(
+        CaptureScaffoldLayout(
             viewfinder = {},
             captureButton = {
                 Box(
@@ -91,12 +91,7 @@ class CaptureLayoutPositionTest {
             quickSettingsButton = {},
             indicatorRow = {},
             captureModeToggle = {},
-            captureModeCarousel = captureModeCarousel,
-            quickSettingsOverlay = {},
-            debugOverlay = {},
-            debugVisibilityWrapper = { it() },
-            screenFlashOverlay = {},
-            snackBar = { _, _ -> }
+            captureModeCarousel = captureModeCarousel
         )
     }
 
@@ -180,7 +175,7 @@ class CaptureLayoutPositionTest {
         var aspectRatio by mutableStateOf(3f / 4f)
 
         composeTestRule.setContent {
-            PreviewLayout(
+            CaptureScaffoldLayout(
                 viewfinder = { vfModifier ->
                     Box(
                         vfModifier
@@ -209,12 +204,7 @@ class CaptureLayoutPositionTest {
                 elapsedTimeDisplay = {},
                 quickSettingsButton = {},
                 indicatorRow = {},
-                captureModeToggle = {},
-                quickSettingsOverlay = {},
-                debugOverlay = {},
-                debugVisibilityWrapper = { it() },
-                screenFlashOverlay = {},
-                snackBar = { _, _ -> }
+                captureModeToggle = {}
             )
         }
         composeTestRule.waitForIdle()
@@ -252,7 +242,7 @@ class CaptureLayoutPositionTest {
         var aspectRatio by mutableStateOf(3f / 4f)
 
         composeTestRule.setContent {
-            PreviewLayout(
+            CaptureScaffoldLayout(
                 viewfinder = { vfModifier ->
                     Box(
                         vfModifier
@@ -281,12 +271,7 @@ class CaptureLayoutPositionTest {
                 elapsedTimeDisplay = {},
                 quickSettingsButton = {},
                 indicatorRow = {},
-                captureModeToggle = {},
-                quickSettingsOverlay = {},
-                debugOverlay = {},
-                debugVisibilityWrapper = { it() },
-                screenFlashOverlay = {},
-                snackBar = { _, _ -> }
+                captureModeToggle = {}
             )
         }
         composeTestRule.waitForIdle()
@@ -306,7 +291,7 @@ class CaptureLayoutPositionTest {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun TopSlotsTestLayout(viewfinder: @Composable (Modifier) -> Unit) {
-        PreviewLayout(
+        CaptureScaffoldLayout(
             viewfinder = viewfinder,
             topStartContent = { topStartModifier ->
                 Box(
@@ -329,12 +314,7 @@ class CaptureLayoutPositionTest {
             elapsedTimeDisplay = {},
             quickSettingsButton = {},
             indicatorRow = {},
-            captureModeToggle = {},
-            quickSettingsOverlay = {},
-            debugOverlay = {},
-            debugVisibilityWrapper = { it() },
-            screenFlashOverlay = {},
-            snackBar = { _, _ -> }
+            captureModeToggle = {}
         )
     }
 
@@ -404,7 +384,7 @@ class CaptureLayoutPositionTest {
         var topEndOverViewfinder: Boolean? = null
 
         composeTestRule.setContent {
-            PreviewLayout(
+            CaptureScaffoldLayout(
                 viewfinder = { vfModifier ->
                     // Reports the viewfinder bounds as the overlap target, as PreviewDisplay does.
                     val overlapTargetBounds = LocalOverlapTargetBounds.current
@@ -441,12 +421,7 @@ class CaptureLayoutPositionTest {
                 elapsedTimeDisplay = {},
                 quickSettingsButton = {},
                 indicatorRow = {},
-                captureModeToggle = {},
-                quickSettingsOverlay = {},
-                debugOverlay = {},
-                debugVisibilityWrapper = { it() },
-                screenFlashOverlay = {},
-                snackBar = { _, _ -> }
+                captureModeToggle = {}
             )
         }
         composeTestRule.waitForIdle()
@@ -504,7 +479,7 @@ class CaptureLayoutPositionTest {
         var aspectRatio by mutableStateOf(3f / 4f)
 
         composeTestRule.setContent {
-            PreviewLayout(
+            CaptureScaffoldLayout(
                 viewfinder = { vfModifier ->
                     Box(
                         vfModifier
@@ -534,12 +509,7 @@ class CaptureLayoutPositionTest {
                 elapsedTimeDisplay = {},
                 quickSettingsButton = {},
                 indicatorRow = {},
-                captureModeToggle = {},
-                quickSettingsOverlay = {},
-                debugOverlay = {},
-                debugVisibilityWrapper = { it() },
-                screenFlashOverlay = {},
-                snackBar = { _, _ -> }
+                captureModeToggle = {}
             )
         }
         composeTestRule.waitForIdle()
@@ -669,7 +639,7 @@ class CaptureLayoutPositionTest {
 
         composeTestRule.setContent {
             if (showLayout) {
-                PreviewLayout(
+                CaptureScaffoldLayout(
                     viewfinder = {},
                     captureButton = {},
                     imageWell = {},
@@ -679,11 +649,6 @@ class CaptureLayoutPositionTest {
                     quickSettingsButton = {},
                     indicatorRow = {},
                     captureModeToggle = {},
-                    quickSettingsOverlay = {},
-                    debugOverlay = {},
-                    debugVisibilityWrapper = { it() },
-                    screenFlashOverlay = {},
-                    snackBar = { _, _ -> },
                     onRequiresImmersiveChange = { reported += it }
                 )
             }
@@ -758,7 +723,7 @@ class CaptureLayoutPositionTest {
     @Test
     fun controlStack_onShort16By9Phone_matchesGoldenSolverPlacement() {
         composeTestRule.setContent {
-            PreviewLayout(
+            CaptureScaffoldLayout(
                 viewfinder = { vfModifier ->
                     Box(
                         vfModifier
@@ -794,12 +759,7 @@ class CaptureLayoutPositionTest {
                 elapsedTimeDisplay = {},
                 quickSettingsButton = {},
                 indicatorRow = {},
-                captureModeToggle = {},
-                quickSettingsOverlay = {},
-                debugOverlay = {},
-                debugVisibilityWrapper = { it() },
-                screenFlashOverlay = {},
-                snackBar = { _, _ -> }
+                captureModeToggle = {}
             )
         }
         composeTestRule.waitForIdle()
