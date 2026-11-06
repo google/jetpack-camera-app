@@ -17,18 +17,30 @@ package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.HorizontalAlignmentLine
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
+import com.google.jetpackcamera.ui.components.capture.layout.rememberCameraLayoutMode
+import com.google.jetpackcamera.ui.components.capture.layout.rememberIsFullScreenCompactPhone
 
 private object PreviewLayoutTokens {
     const val PREVIEW_VIEWFINDER_ASPECT_RATIO = 3f / 4f
@@ -36,6 +48,8 @@ private object PreviewLayoutTokens {
     val PreviewControlSize = 48.dp
     val PreviewElapsedHeight = 24.dp
     const val PREVIEW_HALF_WIDTH_FRACTION = 0.5f
+    val PreviewWideShortWidth = 800.dp
+    val PreviewWideShortHeight = 400.dp
 }
 
 /**
@@ -49,11 +63,18 @@ private object PreviewLayoutTokens {
 internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
 
 /**
- * The base layout for the camera capture screen.
+ * Adaptive orchestrator layout for the camera capture screen.
+ *
+ * Evaluates the available container geometry via [rememberCameraLayoutMode] with a `14.dp`
+ * (`±7.dp`) hysteresis deadband around `600.dp` width and `480.dp` height, provides the resolved
+ * [CameraLayoutMode] via [LocalCameraLayoutMode], wraps [viewfinder] in [movableContentOf] so the
+ * live camera surface is reparented across layout transitions without disposal, and delegates to
+ * [CompactPortraitLayout], [TwoSideRailLayout], or [WideShortLayout].
  *
  * @param modifier the modifier for this component
  * @param scaffoldState the bottom sheet scaffold state
  * @param onDismissQuickSettings callback to dismiss quick settings when clicking the drag handle
+ *   or scrim
  * @param viewfinder the viewfinder composable
  * @param captureButton the capture button composable
  * @param imageWell the image well composable
@@ -95,6 +116,9 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * [CameraSystemBarsPolicy.HideStatusAndNavigationBars] to [CameraSystemBarsEffect]. This layout
  * does not change the system bars itself.
  * @param errorDialog the camera error alert dialog composable
+ * @param slots optional [CaptureSlots] slot table for adaptive layouts; when `null`,
+ *   [CameraLayoutMode.COMPACT_PORTRAIT] uses the individual control composables and side-rail
+ *   modes fall back to [PlaceholderCaptureSlots] bridged with [snackBar] and [errorDialog].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,122 +145,269 @@ fun PreviewLayout(
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     topBarTrailingContent: @Composable (Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
+    errorDialog: @Composable (Modifier) -> Unit = {},
+    slots: CaptureSlots? = null
 ) {
-    CompactPortraitLayout(
-        modifier = modifier,
-        scaffoldState = scaffoldState,
-        onDismissQuickSettings = onDismissQuickSettings,
-        includeStatusBarsInTopBar = false,
-        viewfinder = viewfinder,
-        captureButton = captureButton,
-        imageWell = imageWell,
-        flipCameraButton = flipCameraButton,
-        zoomLevelDisplay = zoomLevelDisplay,
-        elapsedTimeDisplay = elapsedTimeDisplay,
-        quickSettingsButton = quickSettingsButton,
-        indicatorRow = indicatorRow,
-        captureModeToggle = captureModeToggle,
-        captureModeCarousel = captureModeCarousel,
-        quickSettingsOverlay = quickSettingsOverlay,
-        debugOverlay = debugOverlay,
-        debugVisibilityWrapper = debugVisibilityWrapper,
-        screenFlashOverlay = screenFlashOverlay,
-        snackBar = snackBar,
-        topStartContent = topStartContent,
-        viewfinderTopEndContent = viewfinderTopEndContent,
-        topBarTrailingContent = topBarTrailingContent,
-        onRequiresImmersiveChange = onRequiresImmersiveChange,
-        errorDialog = errorDialog
-    )
+    val movableViewfinder = remember(viewfinder) {
+        movableContentOf<Modifier> { vfModifier ->
+            viewfinder(vfModifier)
+        }
+    }
+
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        val isFullScreenCompactPhone = rememberIsFullScreenCompactPhone(maxWidth, maxHeight)
+        val layoutMode = rememberCameraLayoutMode(
+            widthDp = maxWidth,
+            heightDp = maxHeight,
+            isFullScreenCompactPhone = isFullScreenCompactPhone
+        )
+        val isQuickSettingsOpen = scaffoldState.bottomSheetState.isVisible ||
+            scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+
+        CompositionLocalProvider(LocalCameraLayoutMode provides layoutMode) {
+            when (layoutMode) {
+                CameraLayoutMode.COMPACT_PORTRAIT,
+                CameraLayoutMode.COMPACT_HORIZONTAL,
+                CameraLayoutMode.COMPACT_SLIM -> {
+                    if (slots != null) {
+                        CompactPortraitLayout(
+                            slots = slots,
+                            viewfinder = movableViewfinder,
+                            scaffoldState = scaffoldState,
+                            includeStatusBarsInTopBar = !isFullScreenCompactPhone,
+                            onDismissQuickSettings = onDismissQuickSettings,
+                            onRequiresImmersiveChange = onRequiresImmersiveChange,
+                            debugOverlay = debugOverlay,
+                            debugVisibilityWrapper = debugVisibilityWrapper,
+                            screenFlashOverlay = screenFlashOverlay
+                        )
+                    } else {
+                        CompactPortraitLayout(
+                            scaffoldState = scaffoldState,
+                            onDismissQuickSettings = onDismissQuickSettings,
+                            includeStatusBarsInTopBar = !isFullScreenCompactPhone,
+                            viewfinder = movableViewfinder,
+                            captureButton = captureButton,
+                            imageWell = imageWell,
+                            flipCameraButton = flipCameraButton,
+                            zoomLevelDisplay = zoomLevelDisplay,
+                            elapsedTimeDisplay = elapsedTimeDisplay,
+                            quickSettingsButton = quickSettingsButton,
+                            indicatorRow = indicatorRow,
+                            captureModeToggle = captureModeToggle,
+                            captureModeCarousel = captureModeCarousel,
+                            quickSettingsOverlay = quickSettingsOverlay,
+                            debugOverlay = debugOverlay,
+                            debugVisibilityWrapper = debugVisibilityWrapper,
+                            screenFlashOverlay = screenFlashOverlay,
+                            snackBar = snackBar,
+                            topStartContent = topStartContent,
+                            viewfinderTopEndContent = viewfinderTopEndContent,
+                            topBarTrailingContent = topBarTrailingContent,
+                            onRequiresImmersiveChange = onRequiresImmersiveChange,
+                            errorDialog = errorDialog
+                        )
+                    }
+                }
+
+                CameraLayoutMode.TWO_SIDE_RAIL -> {
+                    val effectiveSlots = slots ?: remember(snackBar, errorDialog) {
+                        PlaceholderCaptureSlots.default().copy(
+                            snackBar = snackBar,
+                            errorDialog = errorDialog
+                        )
+                    }
+                    TwoSideRailLayout(
+                        slots = effectiveSlots,
+                        viewfinder = movableViewfinder,
+                        snackbarHostState = scaffoldState.snackbarHostState,
+                        isQuickSettingsOpen = isQuickSettingsOpen,
+                        onDismissQuickSettings = onDismissQuickSettings,
+                        debugOverlay = debugOverlay,
+                        debugVisibilityWrapper = debugVisibilityWrapper,
+                        screenFlashOverlay = screenFlashOverlay
+                    )
+                }
+
+                CameraLayoutMode.COMPACT_SHORT,
+                CameraLayoutMode.COMPACT_SHORT_SLIM -> {
+                    val effectiveSlots = slots ?: remember(snackBar, errorDialog) {
+                        PlaceholderCaptureSlots.sideRail(isCompactHeight = true).copy(
+                            snackBar = snackBar,
+                            errorDialog = errorDialog
+                        )
+                    }
+                    WideShortLayout(
+                        slots = effectiveSlots,
+                        viewfinder = movableViewfinder,
+                        snackbarHostState = scaffoldState.snackbarHostState,
+                        isQuickSettingsOpen = isQuickSettingsOpen,
+                        onDismissQuickSettings = onDismissQuickSettings,
+                        debugOverlay = debugOverlay,
+                        debugVisibilityWrapper = debugVisibilityWrapper,
+                        screenFlashOverlay = screenFlashOverlay
+                    )
+                }
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AdaptivePreviewLayoutSample(
+    modifier: Modifier = Modifier,
+    slots: CaptureSlots? = null
+) {
+    MaterialTheme {
+        PreviewLayout(
+            modifier = modifier.background(Color.Black),
+            viewfinder = { vfModifier ->
+                if (slots != null) {
+                    PlaceholderViewfinder(modifier = vfModifier)
+                } else {
+                    Box(
+                        modifier = vfModifier
+                            .fillMaxWidth()
+                            .aspectRatio(PreviewLayoutTokens.PREVIEW_VIEWFINDER_ASPECT_RATIO)
+                            .background(Color.DarkGray)
+                    )
+                }
+            },
+            captureButton = { btnModifier ->
+                Box(
+                    modifier = btnModifier
+                        .size(PreviewLayoutTokens.PreviewCaptureButtonSize)
+                        .background(Color.White)
+                )
+            },
+            flipCameraButton = { btnModifier ->
+                Box(
+                    modifier = btnModifier
+                        .size(PreviewLayoutTokens.PreviewControlSize)
+                        .background(Color.Cyan)
+                )
+            },
+            imageWell = { wellModifier ->
+                Box(
+                    modifier = wellModifier
+                        .size(PreviewLayoutTokens.PreviewControlSize)
+                        .background(Color.Cyan)
+                )
+            },
+            zoomLevelDisplay = { zoomModifier ->
+                Box(
+                    modifier = zoomModifier
+                        .height(PreviewLayoutTokens.PreviewControlSize)
+                        .fillMaxWidth()
+                        .background(Color.Magenta)
+                )
+            },
+            elapsedTimeDisplay = { elapsedModifier ->
+                Box(
+                    modifier = elapsedModifier
+                        .height(PreviewLayoutTokens.PreviewElapsedHeight)
+                        .fillMaxWidth(PreviewLayoutTokens.PREVIEW_HALF_WIDTH_FRACTION)
+                        .background(Color.Red)
+                )
+            },
+            quickSettingsButton = { qsModifier ->
+                Box(
+                    modifier = qsModifier
+                        .size(PreviewLayoutTokens.PreviewControlSize)
+                        .background(Color.Yellow)
+                )
+            },
+            indicatorRow = { indModifier ->
+                Box(
+                    modifier = indModifier
+                        .height(PreviewLayoutTokens.PreviewControlSize)
+                        .fillMaxWidth()
+                        .background(Color.Green)
+                )
+            },
+            captureModeToggle = { toggleModifier ->
+                Box(
+                    modifier = toggleModifier
+                        .height(PreviewLayoutTokens.PreviewControlSize)
+                        .fillMaxWidth(PreviewLayoutTokens.PREVIEW_HALF_WIDTH_FRACTION)
+                        .background(Color.Blue)
+                )
+            },
+            quickSettingsOverlay = {},
+            debugOverlay = {},
+            screenFlashOverlay = {},
+            snackBar = { _, _ -> },
+            debugVisibilityWrapper = { content -> content() },
+            slots = slots
+        )
+    }
+}
+
 @PreviewPortraitDevices
 @Composable
 private fun CaptureLayoutPreview() {
-    PreviewLayout(
-        modifier = Modifier.background(Color.Black),
-        viewfinder = { modifier ->
-            Box(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .aspectRatio(PreviewLayoutTokens.PREVIEW_VIEWFINDER_ASPECT_RATIO)
-                    .background(Color.DarkGray)
-            )
-        },
-        captureButton = { modifier ->
-            Box(
-                modifier = modifier
-                    .size(PreviewLayoutTokens.PreviewCaptureButtonSize)
-                    .background(Color.White)
-            )
-        },
-        flipCameraButton = { modifier ->
-            Box(
-                modifier = modifier
-                    .size(PreviewLayoutTokens.PreviewControlSize)
-                    .background(Color.Cyan)
-            )
-        },
-        imageWell = { modifier ->
-            Box(
-                modifier = modifier
-                    .size(PreviewLayoutTokens.PreviewControlSize)
-                    .background(Color.Cyan)
-            )
-        },
-        zoomLevelDisplay = { modifier ->
-            Box(
-                modifier = modifier
-                    .height(PreviewLayoutTokens.PreviewControlSize)
-                    .fillMaxWidth()
-                    .background(Color.Magenta)
-            )
-        },
-        elapsedTimeDisplay = { modifier ->
-            Box(
-                modifier = modifier
-                    .height(PreviewLayoutTokens.PreviewElapsedHeight)
-                    .fillMaxWidth(PreviewLayoutTokens.PREVIEW_HALF_WIDTH_FRACTION)
-                    .background(Color.Red)
-            )
-        },
-        quickSettingsButton = { modifier ->
-            Box(
-                modifier = modifier
-                    .size(PreviewLayoutTokens.PreviewControlSize)
-                    .background(Color.Yellow)
-            )
-        },
-        indicatorRow = { modifier ->
-            Box(
-                modifier = modifier
-                    .height(PreviewLayoutTokens.PreviewControlSize)
-                    .fillMaxWidth()
-                    .background(Color.Green)
-            )
-        },
-        captureModeToggle = { modifier ->
-            Box(
-                modifier = modifier
-                    .height(PreviewLayoutTokens.PreviewControlSize)
-                    .fillMaxWidth(PreviewLayoutTokens.PREVIEW_HALF_WIDTH_FRACTION)
-                    .background(Color.Blue)
-            )
-        },
-        quickSettingsOverlay = {
-            // No-op for preview
-        },
-        debugOverlay = {
-            // No-op for preview
-        },
-        screenFlashOverlay = {
-            // No-op for preview
-        },
-        snackBar = { _, _ ->
-            // No-op for preview
-        },
-        debugVisibilityWrapper = { content -> content() }
+    AdaptivePreviewLayoutSample()
+}
+
+@Preview(
+    name = "PreviewLayout - COMPACT_PORTRAIT (412x915dp)",
+    device = "spec:width=412dp,height=915dp",
+    showBackground = true
+)
+@Composable
+private fun PreviewLayoutCompactPortraitPreview() {
+    AdaptivePreviewLayoutSample(
+        slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true)
+    )
+}
+
+@Preview(
+    name = "PreviewLayout - TWO_SIDE_RAIL (852x883dp)",
+    device = "spec:width=852dp,height=883dp",
+    showBackground = true
+)
+@Composable
+private fun PreviewLayoutTwoSideRailPreview() {
+    AdaptivePreviewLayoutSample(
+        slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true)
+    )
+}
+
+@Preview(
+    name = "PreviewLayout - WIDE_SHORT Split (800x400dp on sw600dp)",
+    device = "spec:width=800dp,height=600dp",
+    showBackground = true
+)
+@Composable
+private fun PreviewLayoutWideShortPreview() {
+    AdaptivePreviewLayoutSample(
+        modifier = Modifier.size(
+            width = PreviewLayoutTokens.PreviewWideShortWidth,
+            height = PreviewLayoutTokens.PreviewWideShortHeight
+        ),
+        slots = PlaceholderCaptureSlots.sideRail(
+            isCompactHeight = true,
+            includeElapsedTime = true
+        )
+    )
+}
+
+@Preview(
+    name = "PreviewLayout - COMPACT_SHORT (360x360dp)",
+    device = "spec:width=360dp,height=360dp",
+    showBackground = true
+)
+@Composable
+private fun PreviewLayoutCompactShortPreview() {
+    AdaptivePreviewLayoutSample(
+        slots = PlaceholderCaptureSlots.sideRail(
+            isCompactHeight = true,
+            includeElapsedTime = true
+        )
     )
 }

@@ -94,6 +94,7 @@ import com.google.jetpackcamera.ui.components.capture.VideoQualityIcon
 import com.google.jetpackcamera.ui.components.capture.ZoomBar
 import com.google.jetpackcamera.ui.components.capture.ZoomStateManager
 import com.google.jetpackcamera.ui.components.capture.debouncedOrientationFlow
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
@@ -705,7 +706,8 @@ internal fun ContentScreen(
                             scope.launch { zoomStateManager.absoluteZoom(f, LensToZoom.PRIMARY) }
                         },
                         extraControls = extraControls.orEmpty(),
-                        debugController = debugController
+                        debugController = debugController,
+                        cameraLayoutMode = LocalCameraLayoutMode.current.name
                     )
                 }
             }

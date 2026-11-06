@@ -155,7 +155,8 @@ fun DebugOverlay(
     onChangeZoomRatio: (Float) -> Unit,
     debugUiState: DebugUiState.Enabled,
     vararg extraControls: @Composable () -> Unit,
-    debugController: DebugController
+    debugController: DebugController,
+    cameraLayoutMode: String? = null
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(top = 100.dp)) {
@@ -167,7 +168,8 @@ fun DebugOverlay(
                 DebugConsole(
                     debugUiState = debugUiState,
                     onToggleDebugOverlay = debugController::toggleDebugOverlay,
-                    extraControls = extraControls
+                    extraControls = extraControls,
+                    cameraLayoutMode = cameraLayoutMode
                 )
             }
         }
@@ -200,7 +202,8 @@ private fun DebugConsole(
     debugUiState: DebugUiState.Enabled,
     onToggleDebugOverlay: () -> Unit,
     vararg extraControls: @Composable () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    cameraLayoutMode: String? = null
 ) {
     Column(modifier = modifier) {
         FlowRow(
@@ -217,6 +220,13 @@ private fun DebugConsole(
             modifier = Modifier,
             primaryZoomRatio = debugUiState.currentPrimaryZoomRatio
         )
+        cameraLayoutMode?.let { mode ->
+            DebugTextBar(
+                title = stringResource(R.string.debug_text_layout_mode_prefix),
+                value = mode,
+                tag = DEBUG_LAYOUT_MODE_TAG
+            )
+        }
     }
 }
 
