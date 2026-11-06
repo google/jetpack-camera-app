@@ -823,7 +823,11 @@ fun PreviewDisplay(
         contentAlignment = Alignment.TopCenter
     ) {
         val maxAspectRatio: Float = maxWidth / maxHeight
-        val aspectRatioFloat: Float = aspectRatio.toFloat()
+        val aspectRatioFloat: Float = if (maxWidth > maxHeight) {
+            aspectRatio.toLandscapeFloat()
+        } else {
+            aspectRatio.toFloat()
+        }
         val layoutSolution = LocalCameraLayoutSolution.current
         val solvedBand = if (maxHeight > maxWidth) {
             layoutSolution?.viewfinderBandFor(aspectRatioFloat)
