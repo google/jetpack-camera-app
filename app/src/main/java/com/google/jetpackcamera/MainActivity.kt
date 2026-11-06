@@ -18,6 +18,7 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.hardware.Camera
 import android.net.Uri
 import android.os.Build
@@ -31,6 +32,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -81,6 +83,26 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 private const val TAG = "MainActivity"
+private const val LARGE_SCREEN_MIN_WIDTH_DP = 600
+
+/**
+ * Resolves the Activity's [ActivityInfo] screen orientation policy for the current window posture.
+ *
+ * Full-screen compact handhelds (`!isInMultiWindowMode && smallestScreenWidthDp < 600`) lock the
+ * window to [ActivityInfo.SCREEN_ORIENTATION_NOSENSOR] so the UI counter-rotates via sensor
+ * gravity without triggering a system window rotation. Multi-window panes and large screens
+ * (`smallestScreenWidthDp >= 600`) use [ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED] so the OS
+ * does not apply 1:1 portrait compatibility letterboxing.
+ */
+@VisibleForTesting
+internal fun resolveRequestedOrientation(
+    isInMultiWindowMode: Boolean,
+    smallestScreenWidthDp: Int
+): Int = if (!isInMultiWindowMode && smallestScreenWidthDp < LARGE_SCREEN_MIN_WIDTH_DP) {
+    ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+} else {
+    ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+}
 
 /**
  * Activity for the JetpackCameraApp.
@@ -103,6 +125,7 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         )
         super.onCreate(savedInstanceState)
+        updateRequestedOrientation(resources.configuration)
         cameraLaunchConfigProvider.setIntent(intent)
         var uiState: MainActivityUiState by mutableStateOf(Loading)
 
@@ -191,6 +214,29 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        updateRequestedOrientation(newConfig)
+    }
+
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
+        updateRequestedOrientation(newConfig, isInMultiWindowMode)
+    }
+
+    private fun updateRequestedOrientation(
+        configuration: Configuration,
+        multiWindowMode: Boolean = isInMultiWindowMode
+    ) {
+        val targetOrientation = resolveRequestedOrientation(
+            isInMultiWindowMode = multiWindowMode,
+            smallestScreenWidthDp = configuration.smallestScreenWidthDp
+        )
+        if (requestedOrientation != targetOrientation) {
+            requestedOrientation = targetOrientation
         }
     }
 
