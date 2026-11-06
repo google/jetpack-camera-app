@@ -195,7 +195,9 @@ fun PreviewLayout(
                                 onRequiresImmersiveChange = onRequiresImmersiveChange,
                                 debugOverlay = debugOverlay,
                                 debugVisibilityWrapper = debugVisibilityWrapper,
-                                screenFlashOverlay = screenFlashOverlay
+                                screenFlashOverlay = screenFlashOverlay,
+                                deviceRotation = deviceRotation,
+                                windowRotation = windowRotation
                             )
                         } else {
                             CompactPortraitLayout(
@@ -221,7 +223,9 @@ fun PreviewLayout(
                                 viewfinderTopEndContent = viewfinderTopEndContent,
                                 topBarTrailingContent = topBarTrailingContent,
                                 onRequiresImmersiveChange = onRequiresImmersiveChange,
-                                errorDialog = errorDialog
+                                errorDialog = errorDialog,
+                                deviceRotation = deviceRotation,
+                                windowRotation = windowRotation
                             )
                         }
                     }

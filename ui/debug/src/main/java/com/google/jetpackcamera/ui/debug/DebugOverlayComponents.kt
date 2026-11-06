@@ -338,10 +338,7 @@ internal fun DebugLayoutReadout(
  * points upward against physical gravity inside the current window.
  */
 @Composable
-private fun DebugUpwardTriangleIndicator(
-    rotationDegrees: Int,
-    modifier: Modifier = Modifier
-) {
+private fun DebugUpwardTriangleIndicator(rotationDegrees: Int, modifier: Modifier = Modifier) {
     val targetAngle = rotationDegrees.toFloat()
     var cumulativeTargetDegrees by remember { mutableFloatStateOf(targetAngle) }
     val currentNormalized = ((cumulativeTargetDegrees % 360f) + 360f) % 360f

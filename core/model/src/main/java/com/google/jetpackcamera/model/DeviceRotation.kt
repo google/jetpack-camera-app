@@ -58,8 +58,10 @@ enum class DeviceRotation {
      */
     fun toGravityRotationDegrees(windowRotation: DeviceRotation): Int {
         val rawDelta =
-            ((windowRotation.toClockwiseRotationDegrees() - toClockwiseRotationDegrees()) %
-                360 + 360) % 360
+            (
+                (windowRotation.toClockwiseRotationDegrees() - toClockwiseRotationDegrees()) %
+                    360 + 360
+                ) % 360
         return if (rawDelta == 180) 0 else rawDelta
     }
 
