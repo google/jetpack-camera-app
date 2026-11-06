@@ -1431,19 +1431,6 @@ internal fun FocusMeteringIndicator(
         }
     }
 
-    // Map coordinates from surface coordinates back to screen coordinates
-    val tapCoords =
-        remember(
-            coordinateTransformer.transformMatrix,
-            activeState.surfaceCoordinates
-        ) {
-            Matrix().run {
-                setFrom(coordinateTransformer.transformMatrix)
-                invert()
-                map(activeState.surfaceCoordinates)
-            }
-        }
-
     AnimatedVisibility(
         visible = isVisible,
         enter = if (disableAnimations) {
@@ -1466,7 +1453,17 @@ internal fun FocusMeteringIndicator(
                 )
         },
         modifier = Modifier
-            .offset { tapCoords.round() }
+            .offset {
+                // The viewfinder updates the transform when it is placed, which happens after
+                // composition in the same frame. Map the surface coordinates back to screen
+                // coordinates during placement, so the indicator uses the transform of the frame
+                // it is placed in, e.g. right after a rotation.
+                Matrix().run {
+                    setFrom(coordinateTransformer.transformMatrix)
+                    invert()
+                    map(activeState.surfaceCoordinates)
+                }.round()
+            }
             .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
     ) {
         Box(
