@@ -1140,6 +1140,47 @@ class CameraXCameraSystemTest {
         }
 
     @Test
+    fun setLensFacing_inCaptureSubMode_keepsOverrideRecordWithRequestedValue(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy turns off the camera effect.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    cameraEffect = SettingConfig(NONE_EFFECT_ID, OptionVisibility.Hidden)
+                )
+            )
+        )
+        assume().withMessage("Both lenses are needed to flip.")
+            .that(cameraSystem.getSystemConstraints().value!!.availableLenses)
+            .containsAtLeast(LensFacing.BACK, LensFacing.FRONT)
+        cameraSystem.setLensFacing(LensFacing.BACK)
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+        // The policy blocks this, so it is only recorded to be restored when the sub-mode
+        // ends. No effect provider is registered, so this only exercises the settings.
+        val requestedEffect = CameraEffectId("requested_effect")
+        cameraSystem.setCameraEffect(requestedEffect)
+        val overridesBeforeFlip =
+            cameraSystem.getCurrentSettings().value!!.captureSubModeOverrides
+        assertThat(overridesBeforeFlip).isNotNull()
+
+        // Act. Flip the lens while the sub-mode is active.
+        cameraSystem.setLensFacing(LensFacing.FRONT)
+
+        // Assert. The sub-mode continues with the same override record.
+        var settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.activeCaptureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.selectedCameraEffect).isEqualTo(NONE_EFFECT_ID)
+        assertThat(settings.captureSubModeOverrides).isEqualTo(overridesBeforeFlip)
+
+        // Act. Leave the sub-mode.
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The effect requested during the sub-mode is restored.
+        settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.selectedCameraEffect).isEqualTo(requestedEffect)
+    }
+
+    @Test
     fun setCaptureSubMode_toDefault_restoredImageEffectTakesPrecedenceOverUltraHdr(): Unit =
         runBlocking {
             // Arrange. An effect applied to image capture, which can't be combined with Ultra HDR,
