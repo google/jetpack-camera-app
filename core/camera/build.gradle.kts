@@ -112,6 +112,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.rules)
+    androidTestImplementation(libs.androidx.exifinterface)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.truth)
     androidTestImplementation(project(":core:common:testing"))

@@ -103,6 +103,8 @@
 
     <!-- Toast (brief pop-up message at the bottom of the capture screen) shown when the Low Light Boost flash mode fails while the camera is running. "Low Light Boost" is a feature name; translate it consistently with flash_mode_selector_llb. [CHAR LIMIT=68] -->
     <string name="low_light_boost_error_toast_message">An error occurred when running Low Light Boost.</string>
+    <!-- Toast (brief pop-up message at the bottom of the capture screen) shown when a capture mode selected in the mode carousel, such as Night, fails to start and the camera returns to the default mode. "Capture mode" is a noun. [CHAR LIMIT=80] -->
+    <string name="capture_sub_mode_error_toast_message">An error occurred when activating the capture mode.</string>
     <!-- Subtitle under the "Capture Mode" row title in the Quick Settings bottom sheet on the capture screen, showing the current selection when hybrid mode is active (the options themselves are icon-only buttons). In hybrid mode a tap on the capture button takes a photo and a long press records a video. "Hybrid" means combined photo-and-video; "Capture" is a noun. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="quick_settings_text_capture_mode_standard">Hybrid Capture</string>
     <!-- Subtitle under the "Capture Mode" row title in the Quick Settings bottom sheet on the capture screen, showing the current selection when the camera can only record videos (no photos). "Only" restricts "Video"; "Video" is a noun. [CHAR LIMIT=NONE] -->
@@ -183,4 +185,42 @@
 
     <!-- Accessibility label for the close button (X icon) that dismisses a notification banner (snackbar) on the capture screen. "Dismiss" is an imperative verb meaning to close or hide the message. [CHAR LIMIT=NONE] -->
     <string name="snackbar_dismiss_content_description">Dismiss</string>
+
+    <!-- Accessibility action label for clicking a zoom stop button (read aloud by screen readers, e.g. "Double-tap to Zoom to 2×"). %1$s is the formatted zoom level number (e.g. "0.5", "1", "2"). [CHAR LIMIT=NONE] -->
+    <string name="zoom_stop_click_label">Zoom to <xliff:g id="zoom_level" example="2">%1$s</xliff:g>×</string>
+
+    <!-- Button label in the bottom-right of the camera error dialog on the preview screen that acknowledges the error and closes the camera. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_dialog_ok">OK</string>
+    <!-- Dialog title shown on the preview screen when the camera cannot be opened because another app is currently using it. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_in_use_title">Can\u2019t use camera</string>
+    <!-- Dialog body text shown under "Can't use camera" (camera_error_in_use_title) when another app has exclusive access to the camera. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_in_use_body">The camera is being used by another app</string>
+    <!-- Dialog title shown on the preview screen when the device has reached its limit of open cameras across apps. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_max_in_use_title">Can\u2019t use camera</string>
+    <!-- Dialog body text shown under "Can't use camera" (camera_error_max_in_use_title) instructing the user to close other apps that are using the camera. "Close" is an imperative verb; "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_max_in_use_body">Close one or more apps that are using the camera</string>
+    <!-- Dialog title shown on the preview screen when a temporary camera error occurs. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_recoverable_title">Can\u2019t use camera</string>
+    <!-- Dialog body text shown under "Can't use camera" (camera_error_recoverable_title) when a temporary camera error occurs, instructing the user to try opening the camera again later. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_recoverable_body">Try again later</string>
+    <!-- Dialog title shown on the preview screen when the camera streams cannot be configured. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_stream_config_title">Something went wrong</string>
+    <!-- Dialog body text shown under "Something went wrong" (camera_error_stream_config_title) when the camera cannot be configured. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_stream_config_body">Camera isn\u2019t available</string>
+    <!-- Dialog title shown on the preview screen when the device administrator (IT policy) has disabled camera access. "IT admin" means information technology administrator; "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_disabled_title">Camera blocked by your IT admin</string>
+    <!-- Dialog body text shown under "Camera blocked by your IT admin" (camera_error_disabled_title). "them" refers to the user's IT administrator mentioned in the title. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_disabled_body">Contact them if you have any questions</string>
+    <!-- Dialog title shown on the preview screen when the camera encounters an unrecoverable hardware or system error. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_fatal_title">Something went wrong</string>
+    <!-- Dialog body text shown under "Something went wrong" (camera_error_fatal_title) when the camera encounters an unrecoverable error. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_fatal_body">Camera isn\u2019t available</string>
+    <!-- Dialog title shown on the preview screen when the camera cannot be opened because Do Not Disturb is active. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_dnd_title">Can\u2019t use camera</string>
+    <!-- Dialog body text shown under "Can't use camera" (camera_error_dnd_title) instructing the user to disable Android's "Do Not Disturb" system setting and reopen the camera. Use the standard Android system term for "Do Not Disturb" in the target language. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_dnd_body">Turn off Do Not Disturb and open the camera again</string>
+    <!-- Dialog title shown on the preview screen when an external or removable camera has been disconnected. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_removed_title">Camera not found</string>
+    <!-- Dialog body text shown under "Camera not found" (camera_error_removed_title) instructing the user to check whether the camera is connected. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
+    <string name="camera_error_removed_body">Check if the camera is connected</string>
 </resources>

@@ -17,6 +17,8 @@ package com.google.jetpackcamera.ui.controller.impl
 
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.CameraZoomRatio
+import com.google.jetpackcamera.model.LensToZoom
+import com.google.jetpackcamera.model.ZoomStrategy
 import com.google.jetpackcamera.ui.controller.ZoomController
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import kotlin.coroutines.CoroutineContext
@@ -41,12 +43,35 @@ class ZoomControllerImpl(
 ) : ZoomController {
     private val job = Job(parent = coroutineContext[Job])
     private val scope = CoroutineScope(coroutineContext + job)
+    private var primaryZoomJob: Job? = null
+    private var secondaryZoomJob: Job? = null
 
     override fun setZoomRatio(zoomRatio: CameraZoomRatio) {
-        scope.launch {
-            cameraSystemProvider().changeZoomRatio(
-                newZoomState = zoomRatio
-            )
+        if (zoomRatio.changeType is ZoomStrategy.Absolute) {
+            when (zoomRatio.changeType.lensToZoom) {
+                LensToZoom.PRIMARY -> {
+                    // Drop pending zoom updates while the camera system is still initializing;
+                    // once cameraSystemProvider() resolves, launches on Dispatchers.Main.immediate
+                    // execute synchronously.
+                    primaryZoomJob?.cancel()
+                    primaryZoomJob = scope.launch {
+                        cameraSystemProvider().changeZoomRatio(newZoomState = zoomRatio)
+                    }
+                }
+                LensToZoom.SECONDARY -> {
+                    // Drop pending zoom updates while the camera system is still initializing.
+                    secondaryZoomJob?.cancel()
+                    secondaryZoomJob = scope.launch {
+                        cameraSystemProvider().changeZoomRatio(newZoomState = zoomRatio)
+                    }
+                }
+            }
+        } else {
+            scope.launch {
+                cameraSystemProvider().changeZoomRatio(
+                    newZoomState = zoomRatio
+                )
+            }
         }
     }
 

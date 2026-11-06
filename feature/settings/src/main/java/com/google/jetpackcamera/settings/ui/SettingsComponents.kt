@@ -66,6 +66,7 @@ import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
@@ -85,6 +86,7 @@ import com.google.jetpackcamera.settings.FpsUiState
 import com.google.jetpackcamera.settings.LocationUiState
 import com.google.jetpackcamera.settings.LowLightBoostPriorityUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
+import com.google.jetpackcamera.settings.MirrorModeUiState
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
@@ -293,6 +295,16 @@ fun FlashModeSetting(
     )
 }
 
+/**
+ * A setting item that opens a single-choice dialog for selecting the camera [AspectRatio].
+ *
+ * The row displays the currently selected ratio as its description, and the dialog presents
+ * the available aspect ratios (3:4, 1:1, 9:16) as radio button options.
+ *
+ * @param aspectRatioUiState The current [AspectRatioUiState] containing the selected aspect ratio.
+ * @param setAspectRatio Callback invoked when the user selects a new [AspectRatio].
+ * @param modifier [Modifier] to be applied to the setting row.
+ */
 @Composable
 fun AspectRatioSetting(
     aspectRatioUiState: AspectRatioUiState,
@@ -306,16 +318,16 @@ fun AspectRatioSetting(
         description =
         if (aspectRatioUiState is AspectRatioUiState.Enabled) {
             when (aspectRatioUiState.currentAspectRatio) {
-                AspectRatio.NINE_SIXTEEN -> stringResource(
-                    id = R.string.aspect_ratio_description_9_16
-                )
-
                 AspectRatio.THREE_FOUR -> stringResource(
                     id = R.string.aspect_ratio_description_3_4
                 )
 
                 AspectRatio.ONE_ONE -> stringResource(
                     id = R.string.aspect_ratio_description_1_1
+                )
+
+                AspectRatio.NINE_SIXTEEN -> stringResource(
+                    id = R.string.aspect_ratio_description_9_16
                 )
             }
         } else {
@@ -324,13 +336,6 @@ fun AspectRatioSetting(
         enabled = true,
         popupContents = {
             Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG),
-                    text = stringResource(id = R.string.aspect_ratio_selector_9_16),
-                    selected = aspectRatioUiState.currentAspectRatio == AspectRatio.NINE_SIXTEEN,
-                    enabled = true,
-                    onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
-                )
                 SingleChoiceSelector(
                     modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_3_4_TAG),
                     text = stringResource(id = R.string.aspect_ratio_selector_3_4),
@@ -344,6 +349,13 @@ fun AspectRatioSetting(
                     selected = aspectRatioUiState.currentAspectRatio == AspectRatio.ONE_ONE,
                     enabled = true,
                     onClick = { setAspectRatio(AspectRatio.ONE_ONE) }
+                )
+                SingleChoiceSelector(
+                    modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG),
+                    text = stringResource(id = R.string.aspect_ratio_selector_9_16),
+                    selected = aspectRatioUiState.currentAspectRatio == AspectRatio.NINE_SIXTEEN,
+                    enabled = true,
+                    onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
                 )
             }
         }
@@ -793,6 +805,43 @@ fun VideoQualitySetting(
                     }
             }
         }
+    )
+}
+
+/**
+ * A settings item that renders a toggle switch for mirroring front camera photos and videos.
+ *
+ * The switch is on for any [MirrorMode] other than [MirrorMode.OFF]. Turning it on selects
+ * [MirrorMode.ON_FRONT_ONLY].
+ *
+ * @param modifier Modifier to be applied to the setting layout.
+ * @param mirrorModeUiState The current [MirrorModeUiState].
+ * @param setMirrorMode Callback invoked with the selected [MirrorMode] when the user toggles the
+ *   switch.
+ */
+@Composable
+fun MirrorFrontCameraSetting(
+    modifier: Modifier = Modifier,
+    mirrorModeUiState: MirrorModeUiState,
+    setMirrorMode: (MirrorMode) -> Unit
+) {
+    val isMirrored = when (mirrorModeUiState) {
+        is MirrorModeUiState.Enabled -> mirrorModeUiState.currentMirrorMode != MirrorMode.OFF
+    }
+    SwitchSettingUI(
+        modifier = modifier.testTag(BTN_SWITCH_SETTING_MIRROR_FRONT_CAMERA_TAG),
+        title = stringResource(id = R.string.mirror_front_camera_title),
+        description = if (isMirrored) {
+            stringResource(R.string.mirror_front_camera_description_on)
+        } else {
+            stringResource(R.string.mirror_front_camera_description_off)
+        },
+        leadingIcon = null,
+        onSwitchChanged = { on ->
+            setMirrorMode(if (on) MirrorMode.ON_FRONT_ONLY else MirrorMode.OFF)
+        },
+        settingValue = isMirrored,
+        enabled = true
     )
 }
 

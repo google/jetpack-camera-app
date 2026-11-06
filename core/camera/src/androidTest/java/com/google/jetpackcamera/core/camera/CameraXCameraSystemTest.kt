@@ -37,6 +37,7 @@ import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
+import androidx.exifinterface.media.ExifInterface
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -67,6 +68,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -161,6 +163,65 @@ class CameraXCameraSystemTest {
         if (savedUri != null) {
             filesToDelete.add(savedUri)
         }
+    }
+
+    @Test
+    fun captureImage_frontCameraWithMirrorModeOnFrontOnly_isFlipped(): Unit = runBlocking {
+        assertCaptureFlipped(
+            lensFacing = LensFacing.FRONT,
+            mirrorMode = MirrorMode.ON_FRONT_ONLY,
+            expectedFlipped = true
+        )
+    }
+
+    @Test
+    fun captureImage_backCameraWithMirrorModeOnFrontOnly_isNotFlipped(): Unit = runBlocking {
+        assertCaptureFlipped(
+            lensFacing = LensFacing.BACK,
+            mirrorMode = MirrorMode.ON_FRONT_ONLY,
+            expectedFlipped = false
+        )
+    }
+
+    @Test
+    fun captureImage_frontCameraWithMirrorModeOff_isNotFlipped(): Unit = runBlocking {
+        assertCaptureFlipped(
+            lensFacing = LensFacing.FRONT,
+            mirrorMode = MirrorMode.OFF,
+            expectedFlipped = false
+        )
+    }
+
+    private suspend fun assertCaptureFlipped(
+        lensFacing: LensFacing,
+        mirrorMode: MirrorMode,
+        expectedFlipped: Boolean
+    ) {
+        // Arrange.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                cameraLensFacing = lensFacing,
+                mirrorMode = mirrorMode
+            )
+        )
+        val availableLenses = cameraSystem.getSystemConstraints().value?.availableLenses
+        assume().withMessage("No $lensFacing camera, skip the test.")
+            .that(availableLenses?.contains(lensFacing)).isTrue()
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        // Act.
+        val savedUri = cameraSystem.takePicture(
+            context.contentResolver,
+            SaveLocation.Default
+        ) {}.savedUri
+        assertThat(savedUri).isNotNull()
+        filesToDelete.add(savedUri!!)
+
+        // Assert.
+        val isFlipped = contentResolver.openInputStream(savedUri)!!.use { inputStream ->
+            ExifInterface(inputStream).isFlipped
+        }
+        assertThat(isFlipped).isEqualTo(expectedFlipped)
     }
 
     @Test
@@ -856,6 +917,28 @@ class CameraXCameraSystemTest {
         assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
         assertThat(settings.imageFormat).isEqualTo(ImageOutputFormat.JPEG)
         assertThat(settings.dynamicRange).isEqualTo(DynamicRange.SDR)
+    }
+
+    @Test
+    fun setMirrorMode_inCaptureSubMode_keepsPolicyValue(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks the mirror mode.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    mirrorMode = SettingConfig(MirrorMode.OFF, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act.
+        cameraSystem.setMirrorMode(MirrorMode.ON_FRONT_ONLY)
+
+        // Assert. The sub-mode stays active and its policy value is kept.
+        val settings = cameraSystem.getCurrentSettings().value!!
+        assertThat(settings.captureSubModeId).isEqualTo(FAKE_CAPTURE_SUB_MODE_ID)
+        assertThat(settings.mirrorMode).isEqualTo(MirrorMode.OFF)
     }
 
     @Test

@@ -19,6 +19,7 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.MirrorMode
 
 /**
  * Records the [CameraAppSettings] values that [CameraFeaturePolicy.enforceRestrictions] replaced,
@@ -26,7 +27,8 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  * leaves a capture sub-mode).
  *
  * The restored values are [CameraAppSettings.aspectRatio], [CameraAppSettings.flashMode],
- * [CameraAppSettings.imageFormat], and [CameraAppSettings.dynamicRange].
+ * [CameraAppSettings.imageFormat], [CameraAppSettings.dynamicRange], and
+ * [CameraAppSettings.mirrorMode].
  * [CameraAppSettings.captureMode] is not restored. A capture mode change ends a sub-mode rather
  * than being a value that the sub-mode overrides.
  *
@@ -37,7 +39,8 @@ data class PolicyOverrides private constructor(
     private val aspectRatio: OverriddenValue<AspectRatio>,
     private val flashMode: OverriddenValue<FlashMode>,
     private val imageFormat: OverriddenValue<ImageOutputFormat>,
-    private val dynamicRange: OverriddenValue<DynamicRange>
+    private val dynamicRange: OverriddenValue<DynamicRange>,
+    private val mirrorMode: OverriddenValue<MirrorMode>
 ) {
     /**
      * @param beforeEnforcement The settings before the policy was enforced.
@@ -50,7 +53,8 @@ data class PolicyOverrides private constructor(
         dynamicRange = OverriddenValue(
             beforeEnforcement.dynamicRange,
             afterEnforcement.dynamicRange
-        )
+        ),
+        mirrorMode = OverriddenValue(beforeEnforcement.mirrorMode, afterEnforcement.mirrorMode)
     ) {
         require(beforeEnforcement.captureMode == afterEnforcement.captureMode) {
             "PolicyOverrides does not support overriding captureMode; sub-mode feature policies " +
@@ -68,7 +72,8 @@ data class PolicyOverrides private constructor(
         aspectRatio = aspectRatio.restore(settings.aspectRatio),
         flashMode = flashMode.restore(settings.flashMode),
         imageFormat = imageFormat.restore(settings.imageFormat),
-        dynamicRange = dynamicRange.restore(settings.dynamicRange)
+        dynamicRange = dynamicRange.restore(settings.dynamicRange),
+        mirrorMode = mirrorMode.restore(settings.mirrorMode)
     )
 
     /** A setting's value before enforcement, and the value that the policy set. */

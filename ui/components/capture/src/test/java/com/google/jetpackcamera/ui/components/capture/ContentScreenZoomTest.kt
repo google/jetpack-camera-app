@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview
+package com.google.jetpackcamera.ui.components.capture
 
 import android.util.Range
 import androidx.compose.runtime.CompositionLocalProvider
@@ -28,8 +28,6 @@ import androidx.compose.ui.test.pinch
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
-import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
-import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
 import com.google.jetpackcamera.ui.controller.testing.FakeZoomController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState

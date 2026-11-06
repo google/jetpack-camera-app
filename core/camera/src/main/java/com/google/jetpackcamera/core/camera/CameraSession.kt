@@ -84,6 +84,7 @@ import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
@@ -124,9 +125,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraSession"
+
+// Ranges are matched against the short edge of the video resolution (orientation-invariant).
+// FHD intentionally extends up to 2159 so intermediate resolutions like 1440p (QHD) map to FHD
+// rather than falling into a gap and resolving to UNSPECIFIED.
 private val QUALITY_RANGE_MAP = mapOf(
     UHD to Range.create(2160, 4319),
-    FHD to Range.create(1080, 1439),
+    FHD to Range.create(1080, 2159),
     HD to Range.create(720, 1079),
     SD to Range.create(241, 719)
 )
@@ -137,7 +142,7 @@ internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     cameraConstraints: CameraConstraints?,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture) -> Unit = {}
+    onImageCaptureCreated: (ImageCapture, LensFacing) -> Unit = { _, _ -> }
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
     val initialCameraSelector = transientSettings.filterNotNull().first()
@@ -154,6 +159,7 @@ internal suspend fun runSingleCameraSession(
                     sessionSettings.stabilizationMode,
                     sessionSettings.dynamicRange,
                     sessionSettings.videoQuality,
+                    sessionSettings.mirrorMode,
                     backgroundDispatcher
                 )
             }
@@ -298,7 +304,9 @@ internal suspend fun runSingleCameraSession(
                         )
                     }.apply {
                         attachPreviewSurfaceProvider(surfaceRequests)
-                        getImageCapture()?.let(onImageCaptureCreated)
+                        getImageCapture()?.let { imageCapture ->
+                            onImageCaptureCreated(imageCapture, cameraInfo.appLensFacing)
+                        }
                     }
 
                     cameraProvider.runWith(
@@ -322,27 +330,36 @@ internal suspend fun runSingleCameraSession(
                             }
                         }
 
+                        applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
+
                         if (videoCaptureUseCase != null) {
+                            val resolutionInfo = videoCaptureUseCase.resolutionInfo
                             val videoQuality = getVideoQualityFromResolution(
-                                videoCaptureUseCase.resolutionInfo?.resolution
+                                resolutionInfo?.resolution
                             )
-                            if (videoQuality != sessionSettings.videoQuality) {
-                                Log.e(
+                            if (resolutionInfo != null &&
+                                sessionSettings.videoQuality != VideoQuality.UNSPECIFIED &&
+                                videoQuality != sessionSettings.videoQuality
+                            ) {
+                                Log.w(
                                     TAG,
-                                    "Failed to select video quality: " +
-                                        "$sessionSettings.videoQuality. Fallback: $videoQuality"
+                                    "Requested video quality ${sessionSettings.videoQuality} " +
+                                        "unavailable. Fallback: $videoQuality"
                                 )
                             }
+                            val rotationDegrees = resolutionInfo?.rotationDegrees ?: 0
                             launch {
                                 currentCameraState.update { old ->
                                     old.copy(
                                         videoQualityInfo = VideoQualityInfo(
                                             videoQuality,
                                             getWidthFromCropRect(
-                                                videoCaptureUseCase.resolutionInfo?.cropRect
+                                                resolutionInfo?.cropRect,
+                                                rotationDegrees
                                             ),
                                             getHeightFromCropRect(
-                                                videoCaptureUseCase.resolutionInfo?.cropRect
+                                                resolutionInfo?.cropRect,
+                                                rotationDegrees
                                             )
                                         )
                                     )
@@ -416,11 +433,14 @@ internal suspend fun runSingleCameraSession(
                                 .collectLatest { zoomState ->
                                     // TODO(b/405987189): remove checks after buggy zoomState is fixed
                                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                                        // Ignore the initial 1.0f zoomState emitted on camera bind
+                                        // unless 1.0f is the actual target zoom for this lens.
+                                        val targetZoomRatio =
+                                            (transientSettings.value ?: currentTransientSettings)
+                                                .zoomRatios[camera.cameraInfo.appLensFacing]
+                                                ?: 1.0f
                                         if (zoomState.zoomRatio != 1.0f ||
-                                            zoomState.zoomRatio == currentTransientSettings
-                                                .zoomRatios[
-                                                currentTransientSettings.primaryLensFacing
-                                            ]
+                                            zoomState.zoomRatio == targetZoomRatio
                                         ) {
                                             currentCameraState.update { old ->
                                                 old.copy(
@@ -447,7 +467,6 @@ internal suspend fun runSingleCameraSession(
                                 }
                         }
 
-                        applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
                         processTransientSettingEvents(
                             camera,
                             cameraConstraints,
@@ -574,6 +593,21 @@ internal suspend fun processTransientSettingEvents(
                     "${newTransientSettings.deviceRotation}"
             )
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
+            if (sessionSettings != null) {
+                useCaseGroup.getVideoCapture()?.let { videoCapture ->
+                    val resolutionInfo = videoCapture.resolutionInfo
+                    val rotationDegrees = resolutionInfo?.rotationDegrees ?: 0
+                    currentCameraState.update { old ->
+                        old.copy(
+                            videoQualityInfo = VideoQualityInfo(
+                                getVideoQualityFromResolution(resolutionInfo?.resolution),
+                                getWidthFromCropRect(resolutionInfo?.cropRect, rotationDegrees),
+                                getHeightFromCropRect(resolutionInfo?.cropRect, rotationDegrees)
+                            )
+                        )
+                    }
+                }
+            }
         }
 
         // setzoomratio when the primary zoom value changes.
@@ -727,13 +761,15 @@ internal fun createUseCaseGroup(
     imageFormat: ImageOutputFormat,
     captureMode: CaptureMode,
     effect: CameraEffect? = null,
-    captureResults: MutableStateFlow<TotalCaptureResult?>? = null
+    captureResults: MutableStateFlow<TotalCaptureResult?>? = null,
+    previewMirrorMode: Int = CX_SINGLE_CAMERA_PREVIEW_MIRROR_MODE
 ): UseCaseGroup {
     val previewUseCase =
         createPreviewUseCase(
             cameraInfo,
             aspectRatio,
             stabilizationMode,
+            previewMirrorMode,
             captureResults
         )
 
@@ -774,25 +810,46 @@ internal fun createUseCaseGroup(
     }.build()
 }
 
-private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
+/**
+ * Maps a given resolution [Size] to its corresponding [VideoQuality] based on the short edge.
+ *
+ * This classification is orientation-invariant, returning the same quality for both landscape and
+ * portrait orientations of the same resolution.
+ */
+internal fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
     resolution?.let { res ->
+        val shortEdge = minOf(res.width, res.height)
         QUALITY_RANGE_MAP.firstNotNullOfOrNull {
-            if (it.value.contains(res.height)) it.key else null
+            if (it.value.contains(shortEdge)) it.key else null
         }
     } ?: VideoQuality.UNSPECIFIED
 
-private fun getWidthFromCropRect(cropRect: Rect?): Int {
+/**
+ * Returns the upright width of [cropRect] after applying [rotationDegrees].
+ */
+internal fun getWidthFromCropRect(cropRect: Rect?, rotationDegrees: Int): Int {
     if (cropRect == null) {
         return 0
     }
-    return abs(cropRect.top - cropRect.bottom)
+    return if (rotationDegrees % 180 != 0) {
+        abs(cropRect.height())
+    } else {
+        abs(cropRect.width())
+    }
 }
 
-private fun getHeightFromCropRect(cropRect: Rect?): Int {
+/**
+ * Returns the upright height of [cropRect] after applying [rotationDegrees].
+ */
+internal fun getHeightFromCropRect(cropRect: Rect?, rotationDegrees: Int): Int {
     if (cropRect == null) {
         return 0
     }
-    return abs(cropRect.left - cropRect.right)
+    return if (rotationDegrees % 180 != 0) {
+        abs(cropRect.width())
+    } else {
+        abs(cropRect.height())
+    }
 }
 
 private fun createImageUseCase(
@@ -819,6 +876,7 @@ internal fun createVideoUseCase(
     stabilizationMode: StabilizationMode,
     dynamicRange: DynamicRange,
     videoQuality: VideoQuality,
+    mirrorMode: MirrorMode,
     backgroundDispatcher: CoroutineDispatcher
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
@@ -829,7 +887,8 @@ internal fun createVideoUseCase(
         .setExecutor(backgroundDispatcher.asExecutor())
         .apply {
             videoQuality.toQuality()?.let { quality ->
-                // No fallback strategy is used. The app will crash if the quality is unsupported
+                // Allow falling back to a lower or higher supported quality rather than crashing
+                // if the requested quality cannot be satisfied by the active stream combination.
                 setQualitySelector(
                     QualitySelector.from(
                         quality,
@@ -839,18 +898,20 @@ internal fun createVideoUseCase(
             }
         }.build()
 
-    return VideoCapture.Builder(recorder).apply {
-        // set video stabilization
-        if (stabilizationMode == StabilizationMode.HIGH_QUALITY) {
-            setVideoStabilizationEnabled(true)
-        }
-        // set target fps
-        if (targetFrameRate != TARGET_FPS_AUTO) {
-            setTargetFrameRate(Range(targetFrameRate, targetFrameRate))
-        }
+    return VideoCapture.Builder(recorder)
+        .setMirrorMode(mirrorMode.toCXMirrorMode())
+        .apply {
+            // set video stabilization
+            if (stabilizationMode == StabilizationMode.HIGH_QUALITY) {
+                setVideoStabilizationEnabled(true)
+            }
+            // set target fps
+            if (targetFrameRate != TARGET_FPS_AUTO) {
+                setTargetFrameRate(Range(targetFrameRate, targetFrameRate))
+            }
 
-        setDynamicRange(dynamicRange.toCXDynamicRange())
-    }.build()
+            setDynamicRange(dynamicRange.toCXDynamicRange())
+        }.build()
 }
 
 private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int =
@@ -875,6 +936,7 @@ private fun createPreviewUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     stabilizationMode: StabilizationMode,
+    previewMirrorMode: Int,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null
 ): Preview = Preview.Builder().apply {
     updateCameraStateWithCaptureResults(
@@ -917,6 +979,8 @@ private fun createPreviewUseCase(
     setResolutionSelector(
         getResolutionSelector(cameraInfo.sensorLandscapeRatio, aspectRatio)
     )
+
+    setMirrorMode(previewMirrorMode)
 }.build()
 
 /**
@@ -1491,9 +1555,28 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 ) {
                     // update camerastate with zoom ratio
                     val newZoomRatio = result.get(CaptureResult.CONTROL_ZOOM_RATIO)
+                    val targetZoomRatio =
+                        transientSettings.value?.zoomRatios?.get(targetCameraInfo.appLensFacing)
+                            ?: 1.0f
+                    val zoomState = targetCameraInfo.zoomState.value
+                    val minZoom = zoomState?.minZoomRatio ?: 1.0f
+                    val maxZoom = zoomState?.maxZoomRatio ?: 1.0f
+                    val clampedTarget = targetZoomRatio.coerceIn(minZoom, maxZoom)
+                    val isTargetEssentiallyOne = abs(clampedTarget - 1.0f) < 0.01f
                     currentCameraState.update { old ->
+                        val currentZoomRatio = old.zoomRatios[targetCameraInfo.appLensFacing]
+                        // When a lens is newly bound, initial capture results emit the hardware
+                        // default 1.0f before cameraControl.setZoomRatio(initialZoomRatio) takes
+                        // effect in the repeating request. Ignore those initial 1.0f frames if
+                        // the lens is restoring a non-1.0f target zoom so the UI doesn't flash 1x.
+                        val isInitialDefaultEmission =
+                            currentZoomRatio == null &&
+                                newZoomRatio != null &&
+                                abs(newZoomRatio - 1.0f) < 0.001f &&
+                                !isTargetEssentiallyOne
                         if (newZoomRatio != null &&
-                            old.zoomRatios[targetCameraInfo.appLensFacing] != newZoomRatio
+                            !isInitialDefaultEmission &&
+                            currentZoomRatio != newZoomRatio
                         ) {
                             old.copy(
                                 zoomRatios = old.zoomRatios

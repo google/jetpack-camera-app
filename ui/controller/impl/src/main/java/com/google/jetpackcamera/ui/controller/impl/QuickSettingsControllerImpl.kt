@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.controller.impl
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -78,6 +79,12 @@ class QuickSettingsControllerImpl(
     override fun setCaptureMode(captureMode: CaptureMode) {
         scope.launch {
             cameraSystemProvider().setCaptureMode(captureMode)
+        }
+    }
+
+    override fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {
+        scope.launch {
+            cameraSystemProvider().setCaptureSubMode(captureSubModeId)
         }
     }
 
