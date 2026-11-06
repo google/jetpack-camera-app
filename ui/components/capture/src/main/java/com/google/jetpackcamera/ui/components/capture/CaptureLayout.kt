@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -39,11 +40,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
@@ -52,7 +55,6 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -60,12 +62,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.takeOrElse
+import com.google.jetpackcamera.ui.components.TooltipIconButton
 
 /**
  * The base layout for the camera capture screen.
@@ -90,6 +95,9 @@ import androidx.compose.ui.unit.takeOrElse
  *   and display cutout areas
  * @param snackBar the snack bar composable for showing messages
  * @param topStartContent optional composable content aligned to the top-start of the viewfinder
+ * @param topBarLeadingContent optional composable content placed at the start of the top bar
+ *   directly adjacent to [indicatorRow]
+ * @param topBarTrailingContent optional composable content aligned to the end of the top bar
  * @param errorDialog the camera error alert dialog composable
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -119,6 +127,7 @@ fun PreviewLayout(
     screenFlashOverlay: @Composable (Modifier) -> Unit,
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     topStartContent: @Composable (Modifier) -> Unit = {},
+    topBarLeadingContent: (@Composable (Modifier) -> Unit)? = null,
     topBarTrailingContent: @Composable (Modifier) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
@@ -172,7 +181,10 @@ fun PreviewLayout(
                                 .padding(horizontal = 16.dp),
                             contentAlignment = Alignment.CenterStart
                         ) {
-                            indicatorRow(Modifier)
+                            TopBarLeadingAndIndicatorsRow(
+                                topBarLeadingContent = topBarLeadingContent,
+                                indicatorRow = indicatorRow
+                            )
                             topBarTrailingContent(Modifier.align(Alignment.CenterEnd))
                         }
                         Box {
@@ -235,6 +247,34 @@ fun PreviewLayout(
             // cutout areas.
             screenFlashOverlay(Modifier)
         }
+    }
+}
+
+@SuppressLint("AvoidNullableCollections", "NullableCollection")
+@Composable
+internal fun TopBarLeadingAndIndicatorsRow(
+    topBarLeadingContent: (@Composable (Modifier) -> Unit)?,
+    indicatorRow: @Composable (Modifier) -> Unit,
+    modifier: Modifier = Modifier,
+    cutoutRectsOverride: List<IntRect>? = null
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (topBarLeadingContent != null) {
+            CutoutAwareRow(
+                modifier = Modifier.wrapContentWidth(
+                    align = Alignment.Start,
+                    unbounded = true
+                ),
+                horizontalSpacing = 0.dp,
+                cutoutRectsOverride = cutoutRectsOverride
+            ) {
+                topBarLeadingContent(Modifier)
+            }
+        }
+        indicatorRow(Modifier)
     }
 }
 
@@ -413,6 +453,111 @@ private fun CaptureLayoutPreview() {
                     .fillMaxWidth()
                     .background(Color.Green)
             )
+        },
+        captureModeToggle = { modifier ->
+            Box(
+                modifier = modifier
+                    .height(48.dp)
+                    .fillMaxWidth(0.5f)
+                    .background(Color.Blue)
+            )
+        },
+        quickSettingsOverlay = {
+            // No-op for preview
+        },
+        debugOverlay = {
+            // No-op for preview
+        },
+        screenFlashOverlay = {
+            // No-op for preview
+        },
+        snackBar = { _, _ ->
+            // No-op for preview
+        },
+        debugVisibilityWrapper = { content -> content() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+private fun CaptureLayoutWithTooltipPreview() {
+    PreviewLayout(
+        modifier = Modifier.background(Color.Black),
+        viewfinder = { modifier ->
+            Box(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .height(600.dp)
+                    .background(Color.DarkGray)
+            )
+        },
+        captureButton = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(80.dp)
+                    .background(Color.White)
+            )
+        },
+        flipCameraButton = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(48.dp)
+                    .background(Color.Cyan)
+            )
+        },
+        imageWell = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(48.dp)
+                    .background(Color.Cyan)
+            )
+        },
+        zoomLevelDisplay = { modifier ->
+            Box(
+                modifier = modifier
+                    .height(48.dp)
+                    .fillMaxWidth()
+                    .background(Color.Magenta)
+            )
+        },
+        elapsedTimeDisplay = { modifier ->
+            Box(
+                modifier = modifier
+                    .height(24.dp)
+                    .fillMaxWidth(0.5f)
+                    .background(Color.Red)
+            )
+        },
+        quickSettingsButton = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(48.dp)
+                    .background(Color.Yellow)
+            )
+        },
+        topBarLeadingContent = { modifier ->
+            TooltipIconButton(
+                modifier = modifier,
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_info_filled),
+                        contentDescription = null
+                    )
+                },
+                tooltipText = "Camera information",
+                isOutlined = true
+            )
+        },
+        indicatorRow = { modifier ->
+            IndicatorPill(modifier = modifier.fillMaxWidth()) {
+                IndicatorPillIcon(visible = true) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_flash_on_filled),
+                        contentDescription = null
+                    )
+                }
+            }
         },
         captureModeToggle = { modifier ->
             Box(

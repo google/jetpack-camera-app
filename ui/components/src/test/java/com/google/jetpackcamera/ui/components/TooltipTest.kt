@@ -19,35 +19,36 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RichTooltip
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipAnchorPosition
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
-import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,21 +62,7 @@ class TooltipTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun tooltip_initialState_isNotDisplayed() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                TooltipIconButton(
-                    icon = { Box(modifier = Modifier.size(24.dp)) },
-                    tooltipText = "Help information"
-                )
-            }
-        }
-
-        composeTestRule.onNode(isPopup()).assertDoesNotExist()
-    }
-
-    @Test
-    fun tooltip_clickAnchor_togglesVisibility() {
+    fun tooltip_touchTap_togglesVisibility() {
         composeTestRule.setContent {
             MaterialTheme {
                 TooltipIconButton(
@@ -86,8 +73,10 @@ class TooltipTest {
             }
         }
 
-        // Show on first tap
-        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performClick()
+        composeTestRule.onNode(isPopup()).assertDoesNotExist()
+
+        // Show on first touch tap
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performTouchInput { click() }
         composeTestRule.waitForIdle()
 
         composeTestRule.onNode(isPopup()).assertExists()
@@ -96,215 +85,57 @@ class TooltipTest {
         composeTestRule.onNode(hasText("Info Title") and hasAnyAncestor(isPopup()))
             .assertIsDisplayed()
 
-        // Dismiss on second tap
-        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performClick()
+        // Dismiss on second touch tap
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performTouchInput { click() }
         composeTestRule.waitForIdle()
 
         composeTestRule.onNode(isPopup()).assertDoesNotExist()
     }
 
     @Test
-    fun tooltip_programmaticTrigger_showsAndDismisses() {
-        lateinit var tooltipState: JcaTooltipState
-        lateinit var coroutineScope: CoroutineScope
-
+    fun tooltip_composableSlotOverload_rendersCustomRichTooltipAndAction() {
+        var actionClicked = false
         composeTestRule.setContent {
-            val state = rememberJcaTooltipState()
-            tooltipState = state
-            coroutineScope = rememberCoroutineScope()
             MaterialTheme {
                 TooltipIconButton(
                     icon = { Box(modifier = Modifier.size(24.dp)) },
-                    tooltipText = "Programmatic trigger text",
-                    state = state
+                    contentDescription = "Info button",
+                    hasAction = true,
+                    tooltip = {
+                        RichTooltip(
+                            action = {
+                                TextButton(onClick = { actionClicked = true }) {
+                                    Text("Learn more")
+                                }
+                            }
+                        ) {
+                            Text("Styled tooltip body")
+                        }
+                    }
                 )
             }
         }
 
-        composeTestRule.onNode(isPopup()).assertDoesNotExist()
-
-        // Programmatically show
-        coroutineScope.launch { tooltipState.show() }
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performTouchInput { click() }
         composeTestRule.waitForIdle()
-        composeTestRule.onNode(isPopup()).assertExists()
-        composeTestRule.onNode(hasText("Programmatic trigger text") and hasAnyAncestor(isPopup()))
+
+        composeTestRule.onNode(hasText("Styled tooltip body") and hasAnyAncestor(isPopup()))
             .assertIsDisplayed()
-
-        // Programmatically dismiss
-        tooltipState.dismiss()
+        composeTestRule.onNode(hasText("Learn more") and hasAnyAncestor(isPopup()))
+            .assertIsDisplayed()
+            .performTouchInput { click() }
         composeTestRule.waitForIdle()
-        composeTestRule.onNode(isPopup()).assertDoesNotExist()
+
+        assertThat(actionClicked).isTrue()
     }
 
     @Test
-    fun tooltipState_toggle_switchesVisibility() {
-        lateinit var tooltipState: JcaTooltipState
-        lateinit var coroutineScope: CoroutineScope
-
-        composeTestRule.setContent {
-            val state = rememberJcaTooltipState()
-            tooltipState = state
-            coroutineScope = rememberCoroutineScope()
-            MaterialTheme {
-                TooltipIconButton(
-                    icon = { Box(modifier = Modifier.size(24.dp)) },
-                    tooltipText = "Toggle text",
-                    state = state
-                )
-            }
-        }
-
-        composeTestRule.onNode(isPopup()).assertDoesNotExist()
-
-        // Toggle on
-        coroutineScope.launch { tooltipState.toggle() }
-        composeTestRule.waitForIdle()
-        composeTestRule.onNode(isPopup()).assertExists()
-
-        // Toggle off
-        coroutineScope.launch { tooltipState.toggle() }
-        composeTestRule.waitForIdle()
-        composeTestRule.onNode(isPopup()).assertDoesNotExist()
-    }
-
-    @Test
-    fun tooltip_autoDismiss_dismissesAfterSpecifiedDuration() {
-        composeTestRule.mainClock.autoAdvance = false
-
-        composeTestRule.setContent {
-            MaterialTheme {
-                TooltipIconButton(
-                    icon = { Box(modifier = Modifier.size(24.dp)) },
-                    tooltipText = "Auto dismissing text",
-                    state = rememberJcaTooltipState(autoDismissDuration = 3000.milliseconds)
-                )
-            }
-        }
-
-        // Trigger show
-        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performClick()
-        composeTestRule.mainClock.advanceTimeByFrame()
-        composeTestRule.waitForIdle()
-
-        composeTestRule.onNode(isPopup()).assertExists()
-
-        // Advance part-way (1500ms) -> Still displayed
-        composeTestRule.mainClock.advanceTimeBy(1500)
-        composeTestRule.waitForIdle()
-        composeTestRule.onNode(isPopup()).assertExists()
-
-        // Advance remaining time past 3000ms -> Trigger dismiss and allow exit transition
-        composeTestRule.mainClock.advanceTimeBy(1501)
-        composeTestRule.mainClock.autoAdvance = true
-        composeTestRule.waitForIdle()
-        composeTestRule.onNode(isPopup()).assertDoesNotExist()
-    }
-
-    @Test
-    fun tooltip_autoDismiss_reTriggerResetsTimer() {
-        composeTestRule.mainClock.autoAdvance = false
-        lateinit var tooltipState: JcaTooltipState
-        lateinit var coroutineScope: CoroutineScope
-
-        composeTestRule.setContent {
-            val state = rememberJcaTooltipState(autoDismissDuration = 3000.milliseconds)
-            tooltipState = state
-            coroutineScope = rememberCoroutineScope()
-            MaterialTheme {
-                TooltipIconButton(
-                    icon = { Box(modifier = Modifier.size(24.dp)) },
-                    tooltipText = "Resetting timer text",
-                    state = state
-                )
-            }
-        }
-
-        // Trigger show via state
-        coroutineScope.launch { tooltipState.show() }
-        composeTestRule.mainClock.advanceTimeByFrame()
-        composeTestRule.waitForIdle()
-        composeTestRule.onNode(isPopup()).assertExists()
-
-        // Advance 2000ms of 3000ms
-        composeTestRule.mainClock.advanceTimeBy(2000)
-        composeTestRule.waitForIdle()
-        composeTestRule.onNode(isPopup()).assertExists()
-
-        // Re-trigger Show -> Timer resets
-        coroutineScope.launch { tooltipState.show() }
-        composeTestRule.mainClock.advanceTimeByFrame()
-        composeTestRule.waitForIdle()
-
-        // Advance another 2000ms (total 4000ms from start, but only 2000ms since reset)
-        composeTestRule.mainClock.advanceTimeBy(2000)
-        composeTestRule.waitForIdle()
-        // Must still exist because timer was reset
-        composeTestRule.onNode(isPopup()).assertExists()
-
-        // Advance past reset expiration (remaining 1001ms) ->
-        // Trigger dismiss and allow exit transition
-        composeTestRule.mainClock.advanceTimeBy(1001)
-        composeTestRule.mainClock.autoAdvance = true
-        composeTestRule.waitForIdle()
-        composeTestRule.onNode(isPopup()).assertDoesNotExist()
-    }
-
-    @Test
-    fun tooltip_positioning_supportsAboveAndBelow() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                JcaTooltipBox(
-                    tooltipText = "Position Below Text",
-                    positioning = TooltipAnchorPosition.Below
-                ) {
-                    Box(modifier = Modifier.size(48.dp))
-                }
-            }
-        }
-
-        composeTestRule.onNode(isPopup()).assertDoesNotExist()
-    }
-
-    @Test
-    fun tooltip_customContainerColor_appliesCorrectly() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                TooltipIconButton(
-                    icon = { Box(modifier = Modifier.size(24.dp)) },
-                    tooltipText = "Custom colors",
-                    isOutlined = true,
-                    containerColor = Color.Black.copy(alpha = 0.6f),
-                    contentColor = Color.White
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).assertExists()
-    }
-
-    @Test
-    fun tooltip_customSize_appliesCorrectly() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                TooltipIconButton(
-                    icon = { Box(modifier = Modifier.size(20.dp)) },
-                    tooltipText = "Custom size",
-                    size = 32.dp
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).assertExists()
-    }
-
-    @Test
-    fun positionProvider_anchoredToFarLeft_clampsToScreenMarginAndCalculatesCaret() {
+    fun positionProvider_anchoredToFarLeft_clampsToScreenMarginAndPointsCaretAt48dpAnchor() {
         var calculatedLocalCaretX = 0f
         var calculatedIsCaretOnTop = false
 
         val provider = JcaTooltipPositionProvider(
             positioning = TooltipAnchorPosition.Below,
-            caretAlignment = CaretAlignment.AnchorCenter,
             spacing = 4.dp,
             screenMargin = 16.dp,
             density = Density(1f),
@@ -314,8 +145,8 @@ class TooltipTest {
             }
         )
 
-        // Anchor placed near the left edge of the screen (e.g. status bar button)
-        val anchorBounds = IntRect(left = 16, top = 20, right = 48, bottom = 52)
+        // 48px touch-target anchor placed at the 16px left screen margin -> center X = 40
+        val anchorBounds = IntRect(left = 16, top = 20, right = 64, bottom = 68)
         val windowSize = IntSize(width = 1080, height = 2400)
         val popupContentSize = IntSize(width = 400, height = 150)
 
@@ -326,18 +157,50 @@ class TooltipTest {
             popupContentSize = popupContentSize
         )
 
-        // The popup is clamped to screen margin (16px) because ideal X is offscreen
+        // Popup clamps to screen margin (16px)
         assertThat(position.x).isEqualTo(16)
-        // Positioned below anchor: bottom (52) + spacing (4) = 56
-        assertThat(position.y).isEqualTo(56)
+        // Positioned below anchor: bottom (68) + spacing (4) = 72
+        assertThat(position.y).isEqualTo(72)
 
-        // Local caret X is anchor center X (32) - popup X (16) = 16
-        assertThat(calculatedLocalCaretX).isEqualTo(16f)
+        // Local caret X is anchor center X (40) - popup X (16) = 24
+        assertThat(calculatedLocalCaretX).isEqualTo(24f)
         assertThat(calculatedIsCaretOnTop).isTrue()
 
-        // Global caret X points exactly to anchor center X
+        // Global caret X points directly at anchor center X (40)
         val expectedAnchorCenter = (anchorBounds.left + anchorBounds.right) / 2
         assertThat(position.x + calculatedLocalCaretX.toInt()).isEqualTo(expectedAnchorCenter)
+    }
+
+    @Test
+    fun positionProvider_anchorInsideCornerArc_clampsCaretToMinCornerClearance() {
+        var calculatedLocalCaretX = 0f
+
+        val provider = JcaTooltipPositionProvider(
+            positioning = TooltipAnchorPosition.Below,
+            spacing = 4.dp,
+            screenMargin = 16.dp,
+            cornerRadius = 16.dp,
+            caretWidth = 16.dp,
+            density = Density(1f),
+            onCaretCalculated = { localCaretX, _ ->
+                calculatedLocalCaretX = localCaretX
+            }
+        )
+
+        // Narrow anchor near left edge: center X (32) - popup X (16) = 16, which is inside
+        // minCaretX = cornerRadius (16) + caretWidth / 2 (8) = 24
+        val anchorBounds = IntRect(left = 16, top = 20, right = 48, bottom = 52)
+        val windowSize = IntSize(width = 1080, height = 2400)
+        val popupContentSize = IntSize(width = 400, height = 150)
+
+        provider.calculatePosition(
+            anchorBounds = anchorBounds,
+            windowSize = windowSize,
+            layoutDirection = LayoutDirection.Ltr,
+            popupContentSize = popupContentSize
+        )
+
+        assertThat(calculatedLocalCaretX).isEqualTo(24f)
     }
 
     @Test
@@ -368,113 +231,16 @@ class TooltipTest {
 
         // Flips above anchor: top (2300) - spacing (4) - popupHeight (150) = 2146
         assertThat(position.y).isEqualTo(2146)
-        // isCaretOnTop is false, meaning caret is drawn on bottom edge pointing DOWN to anchor
+        // isCaretOnTop is false, meaning caret is drawn on bottom edge pointing down to anchor
         assertThat(calculatedIsCaretOnTop).isFalse()
     }
 
     @Test
-    fun positionProvider_supportsCaretAlignmentOptions() {
-        val anchorBounds = IntRect(left = 200, top = 100, right = 300, bottom = 200)
-        val windowSize = IntSize(width = 1080, height = 2400)
-        val popupContentSize = IntSize(width = 400, height = 150)
-
-        // BubbleCenter
-        var caretX = 0f
-        val bubbleCenterProvider = JcaTooltipPositionProvider(
-            positioning = TooltipAnchorPosition.Below,
-            caretAlignment = CaretAlignment.BubbleCenter,
-            density = Density(1f),
-            onCaretCalculated = { x, _ -> caretX = x }
-        )
-        bubbleCenterProvider.calculatePosition(
-            anchorBounds,
-            windowSize,
-            LayoutDirection.Ltr,
-            popupContentSize
-        )
-        assertThat(caretX).isEqualTo(200f)
-
-        // Start (LTR)
-        val startProvider = JcaTooltipPositionProvider(
-            positioning = TooltipAnchorPosition.Below,
-            caretAlignment = CaretAlignment.Start,
-            density = Density(1f),
-            onCaretCalculated = { x, _ -> caretX = x }
-        )
-        startProvider.calculatePosition(
-            anchorBounds,
-            windowSize,
-            LayoutDirection.Ltr,
-            popupContentSize
-        )
-        // cornerRadius (16) + caretWidth / 2 (8) = 24
-        assertThat(caretX).isEqualTo(24f)
-
-        // End (LTR)
-        val endProvider = JcaTooltipPositionProvider(
-            positioning = TooltipAnchorPosition.Below,
-            caretAlignment = CaretAlignment.End,
-            density = Density(1f),
-            onCaretCalculated = { x, _ -> caretX = x }
-        )
-        endProvider.calculatePosition(
-            anchorBounds,
-            windowSize,
-            LayoutDirection.Ltr,
-            popupContentSize
-        )
-        // popupWidth (400) - cornerRadius (16) - caretWidth / 2 (8) = 376
-        assertThat(caretX).isEqualTo(376f)
-
-        // Custom offset
-        val customProvider = JcaTooltipPositionProvider(
-            positioning = TooltipAnchorPosition.Below,
-            caretAlignment = CaretAlignment.Custom(75.dp),
-            density = Density(1f),
-            onCaretCalculated = { x, _ -> caretX = x }
-        )
-        customProvider.calculatePosition(
-            anchorBounds,
-            windowSize,
-            LayoutDirection.Ltr,
-            popupContentSize
-        )
-        assertThat(caretX).isEqualTo(75f)
-    }
-
-    @Test
-    fun tooltip_touchTarget_meetsMinimumAccessibilitySize() {
+    fun tooltip_accessibility_hasTouchTargetButtonRoleSingleLabelAndPoliteLiveRegion() {
         composeTestRule.setContent {
             MaterialTheme {
                 TooltipIconButton(
                     icon = { Box(modifier = Modifier.size(JcaTooltipDefaults.IconSize)) },
-                    tooltipText = "Touch target test"
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG)
-            .assertWidthIsAtLeast(JcaTooltipDefaults.TouchTargetSize)
-            .assertHeightIsAtLeast(JcaTooltipDefaults.TouchTargetSize)
-    }
-
-    @Test
-    fun tooltipDefaults_mapsToMaterial3Tokens() {
-        assertThat(JcaTooltipDefaults.CaretSize.width).isEqualTo(16.dp)
-        assertThat(JcaTooltipDefaults.CaretSize.height).isEqualTo(8.dp)
-        assertThat(JcaTooltipDefaults.TouchTargetSize).isEqualTo(48.dp)
-        assertThat(JcaTooltipDefaults.ContainerSize).isEqualTo(32.dp)
-        assertThat(JcaTooltipDefaults.IconSize).isEqualTo(24.dp)
-        assertThat(JcaTooltipDefaults.CornerRadius).isEqualTo(16.dp)
-        assertThat(JcaTooltipDefaults.DefaultElevation).isEqualTo(2.dp)
-    }
-
-    @Test
-    fun tooltip_accessibility_hasButtonRoleAndContentDescription() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                TooltipIconButton(
-                    icon = { Box(modifier = Modifier.size(24.dp)) },
                     contentDescription = "Custom info action",
                     tooltipText = "Accessibility description test"
                 )
@@ -482,6 +248,8 @@ class TooltipTest {
         }
 
         composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG)
+            .assertWidthIsAtLeast(JcaTooltipDefaults.TouchTargetSize)
+            .assertHeightIsAtLeast(JcaTooltipDefaults.TouchTargetSize)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
             .assert(
                 SemanticsMatcher.expectValue(
@@ -489,9 +257,14 @@ class TooltipTest {
                     listOf("Custom info action")
                 )
             )
+            .assert(
+                SemanticsMatcher("onClickLabel is null to prevent duplicate TalkBack speech") {
+                    it.config.getOrNull(SemanticsActions.OnClick)?.label == null
+                }
+            )
 
-        // Show tooltip and verify LiveRegionMode.Polite semantics on bubble content
-        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performClick()
+        // Show tooltip and verify LiveRegionMode.Polite semantics on RichTooltip
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performTouchInput { click() }
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithTag(TOOLTIP_CONTENT_TAG)

@@ -18,6 +18,8 @@ package com.google.jetpackcamera.ui.components.capture
 import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.Modifier
@@ -28,6 +30,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
@@ -161,6 +164,55 @@ class CaptureLayoutInsetsTest {
         assertThat(overlayBounds).isEqualTo(rootBounds)
     }
 
+    @Test
+    fun topBarLeadingContent_touchesIndicatorRowWithZeroGap() {
+        lateinit var view: View
+        composeTestRule.setContent {
+            view = LocalView.current
+            TestPreviewLayout(
+                topBarLeadingContent = {
+                    Box(it.size(48.dp).testTag(LEADING_BUTTON_TAG))
+                }
+            )
+        }
+
+        val leadingBounds = boundsOf(LEADING_BUTTON_TAG, view, statusBarVisible = false)
+        val indicatorBounds = boundsOf(INDICATOR_ROW_TAG, view, statusBarVisible = false)
+
+        assertThat(leadingBounds.left).isEqualTo(16.dp)
+        assertThat(leadingBounds.right).isEqualTo(64.dp)
+        assertThat(indicatorBounds.left).isEqualTo(leadingBounds.right)
+    }
+
+    @Test
+    fun topBarLeadingContent_shiftsPastLeftCornerCutoutAlongsideIndicatorRow() {
+        // Left-corner cutout occupying local [0, 40] with 8dp clearance -> keep-out [0, 48].
+        composeTestRule.setContent {
+            TopBarLeadingAndIndicatorsRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                topBarLeadingContent = {
+                    Box(it.size(48.dp).testTag(LEADING_BUTTON_TAG))
+                },
+                indicatorRow = {
+                    Box(it.size(40.dp).testTag(INDICATOR_ROW_TAG))
+                },
+                cutoutRectsOverride = listOf(IntRect(0, 0, 40, 48))
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        val leadingBounds = composeTestRule.onNodeWithTag(LEADING_BUTTON_TAG)
+            .getUnclippedBoundsInRoot()
+        val indicatorBounds = composeTestRule.onNodeWithTag(INDICATOR_ROW_TAG)
+            .getUnclippedBoundsInRoot()
+
+        assertThat(leadingBounds.left).isEqualTo(48.dp)
+        assertThat(leadingBounds.right).isEqualTo(96.dp)
+        assertThat(indicatorBounds.left).isEqualTo(leadingBounds.right)
+    }
+
     private fun boundsOf(
         tag: String,
         view: View,
@@ -208,11 +260,13 @@ class CaptureLayoutInsetsTest {
 }
 
 private const val INDICATOR_ROW_TAG = "TestIndicatorRow"
+private const val LEADING_BUTTON_TAG = "TestTopBarLeadingButton"
 private const val SCREEN_FLASH_OVERLAY_TAG = "TestScreenFlashOverlay"
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @androidx.compose.runtime.Composable
 private fun TestPreviewLayout(
+    topBarLeadingContent: (@androidx.compose.runtime.Composable (Modifier) -> Unit)? = null,
     screenFlashOverlay: @androidx.compose.runtime.Composable (Modifier) -> Unit = {
         Box(it.size(0.dp))
     }
@@ -226,6 +280,7 @@ private fun TestPreviewLayout(
         elapsedTimeDisplay = { Box(it.size(40.dp)) },
         quickSettingsButton = { Box(it.size(40.dp)) },
         indicatorRow = { Box(it.size(40.dp).testTag(INDICATOR_ROW_TAG)) },
+        topBarLeadingContent = topBarLeadingContent,
         captureModeToggle = { Box(it.size(40.dp)) },
         quickSettingsOverlay = { Box(it.size(40.dp)) },
         debugOverlay = { Box(it.size(0.dp)) },

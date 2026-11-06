@@ -120,6 +120,7 @@ dependencies {
 
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
+    implementation(project(":ui:components"))
     implementation(project(":ui:controller"))
     implementation(project(":core:camera"))
     implementation(project(":core:common"))

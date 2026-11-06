@@ -1,0 +1,118 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.google.jetpackcamera.ui.components
+
+import android.os.SystemClock
+import android.view.InputDevice
+import android.view.MotionEvent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isPopup
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@OptIn(ExperimentalMaterial3Api::class)
+@RunWith(AndroidJUnit4::class)
+class TooltipInstrumentedTest {
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    @Test
+    fun tooltipIconButton_realWindowTapOnAnchor_opensAndClosesTooltip() {
+        var anchorCenterOnScreen = Offset.Zero
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                Box(modifier = Modifier.fillMaxSize().padding(32.dp)) {
+                    TooltipIconButton(
+                        modifier = Modifier.onGloballyPositioned { coords ->
+                            val pos = coords.positionOnScreen()
+                            anchorCenterOnScreen = Offset(
+                                x = pos.x + coords.size.width / 2f,
+                                y = pos.y + coords.size.height / 2f
+                            )
+                        },
+                        icon = { Box(modifier = Modifier.size(24.dp)) },
+                        tooltipText = "Real tap toggle message"
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNode(isPopup()).assertDoesNotExist()
+
+        // First real window-level tap opens the tooltip
+        sendRealScreenTap(anchorCenterOnScreen)
+        composeTestRule.waitForIdle()
+        composeTestRule.onNode(hasText("Real tap toggle message") and hasAnyAncestor(isPopup()))
+            .assertIsDisplayed()
+
+        // Second real window-level tap on the anchor triggers Popup outside-touch dismissal on
+        // pointer-down and must leave the tooltip closed rather than reopening it on pointer-up
+        sendRealScreenTap(anchorCenterOnScreen)
+        composeTestRule.waitForIdle()
+        composeTestRule.onNode(isPopup()).assertDoesNotExist()
+    }
+
+    private fun sendRealScreenTap(screenPoint: Offset) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val downTime = SystemClock.uptimeMillis()
+        val downEvent = MotionEvent.obtain(
+            downTime,
+            downTime,
+            MotionEvent.ACTION_DOWN,
+            screenPoint.x,
+            screenPoint.y,
+            0
+        ).apply {
+            source = InputDevice.SOURCE_TOUCHSCREEN
+        }
+        val upEvent = MotionEvent.obtain(
+            downTime,
+            downTime + 50L,
+            MotionEvent.ACTION_UP,
+            screenPoint.x,
+            screenPoint.y,
+            0
+        ).apply {
+            source = InputDevice.SOURCE_TOUCHSCREEN
+        }
+        try {
+            instrumentation.sendPointerSync(downEvent)
+            instrumentation.sendPointerSync(upEvent)
+        } finally {
+            downEvent.recycle()
+            upEvent.recycle()
+        }
+    }
+}

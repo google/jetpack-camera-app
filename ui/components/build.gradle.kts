@@ -76,6 +76,8 @@ dependencies {
     implementation(libs.compose.material3)
 
     // Compose - Testing
+    androidTestImplementation(composeBom)
+    androidTestImplementation(libs.compose.junit)
     debugImplementation(libs.compose.test.manifest)
     // noinspection TestManifestGradleConfiguration: required for release build unit tests
     testImplementation(libs.compose.test.manifest)
@@ -84,9 +86,12 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    androidTestImplementation(libs.truth)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }
 
 // Allow references to generated code
