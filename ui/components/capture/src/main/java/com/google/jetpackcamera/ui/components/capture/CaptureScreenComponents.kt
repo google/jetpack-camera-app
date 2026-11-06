@@ -1431,6 +1431,9 @@ internal fun FocusMeteringIndicator(
         }
     }
 
+    // Reused to map the focus point during placement without allocating on every layout pass.
+    val surfaceToScreenMatrix = remember { Matrix() }
+
     AnimatedVisibility(
         visible = isVisible,
         enter = if (disableAnimations) {
@@ -1458,7 +1461,7 @@ internal fun FocusMeteringIndicator(
                 // composition in the same frame. Map the surface coordinates back to screen
                 // coordinates during placement, so the indicator uses the transform of the frame
                 // it is placed in, e.g. right after a rotation.
-                Matrix().run {
+                surfaceToScreenMatrix.run {
                     setFrom(coordinateTransformer.transformMatrix)
                     invert()
                     map(activeState.surfaceCoordinates)
