@@ -177,7 +177,10 @@ internal fun SideRailCaptureScaffold(
 
     BackHandler(enabled = isQuickSettingsOpen, onBack = onDismissQuickSettings)
 
-    CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
+    CompositionLocalProvider(
+        LocalOverlapTargetBounds provides overlapTargetBounds,
+        LocalGravityRotationState provides DefaultGravityRotationState
+    ) {
         Box(
             modifier = modifier
                 .fillMaxSize()

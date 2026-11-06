@@ -37,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,9 +56,18 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleStartEffect
 import com.google.jetpackcamera.model.DeviceRotation
+import kotlin.math.roundToInt
 
 private const val UI_ROTATION_DURATION_MS = 250
-private val DefaultGravityRotationState: State<Float> = mutableFloatStateOf(0f)
+private const val QUADRANT_DEGREES = 90
+private const val FULL_CIRCLE_DEGREES = 360
+
+/**
+ * Shared zero-degree (`0f`) gravity rotation [State] used as the default for
+ * [LocalGravityRotationState] and bound explicitly by adaptive side-rail layouts that stay
+ * naturally oriented with the OS window.
+ */
+internal val DefaultGravityRotationState: State<Float> = mutableFloatStateOf(0f)
 
 /**
  * Provides the current physical gravity [DeviceRotation] to descendant composables in the capture
@@ -187,42 +197,79 @@ fun Modifier.animateToUpright(rotationState: State<Float>? = null): Modifier = c
 }
 
 /**
+ * Snaps an arbitrary continuous clockwise [degrees] angle to the nearest 90-degree quadrant
+ * (`0`, `90`, `180`, or `270`).
+ */
+internal fun snapToQuadrantDegrees(degrees: Float): Int {
+    if (!degrees.isFinite()) return 0
+    val quadrants = (degrees / QUADRANT_DEGREES.toFloat()).roundToInt()
+    return ((quadrants * QUADRANT_DEGREES) % FULL_CIRCLE_DEGREES + FULL_CIRCLE_DEGREES) %
+        FULL_CIRCLE_DEGREES
+}
+
+/**
+ * Measures and places a rectangular composable with swapped width and height constraints when
+ * [LocalGravityRotationState] snaps to `90°` or `270°`, centering the rotated layer within the
+ * swapped layout box so rectangular overlays orient upright without clipping or misaligned hit
+ * targets.
+ *
+ * When [LocalGravityRotationState] snaps to `0°` (such as in portrait or in adaptive side-rail
+ * layouts), constraints and placement remain unrotated.
+ */
+fun Modifier.rotateLayoutToGravity(): Modifier = composed {
+    val gravityState = LocalGravityRotationState.current
+    val snappedDegrees by remember(gravityState) {
+        derivedStateOf { snapToQuadrantDegrees(gravityState.value) }
+    }
+    rotateLayoutToGravity(snappedDegrees)
+}
+
+/**
  * Measures and places a rectangular composable with swapped width and height constraints when
  * [rotationDegrees] is `90°` or `270°`, centering the rotated layer within the swapped layout box
  * so rectangular overlays orient upright without clipping or misaligned hit targets.
  */
 fun Modifier.rotateLayoutToGravity(rotationDegrees: Int): Modifier =
     layout { measurable, constraints ->
-        val normalized = ((rotationDegrees % 360) + 360) % 360
-        val swapAxes = normalized == 90 || normalized == 270
-        val childConstraints = if (swapAxes) {
-            val swappedMaxWidth = if (constraints.hasBoundedHeight) {
-                constraints.maxHeight
-            } else {
-                constraints.maxWidth
+        val normalized =
+            ((rotationDegrees % FULL_CIRCLE_DEGREES) + FULL_CIRCLE_DEGREES) % FULL_CIRCLE_DEGREES
+        if (normalized == 0) {
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) {
+                placeable.place(0, 0)
             }
-            val swappedMaxHeight = if (constraints.hasBoundedWidth) {
-                constraints.maxWidth
-            } else {
-                constraints.maxHeight
-            }
-            Constraints(
-                minWidth = constraints.minHeight.coerceAtMost(swappedMaxWidth),
-                maxWidth = swappedMaxWidth,
-                minHeight = constraints.minWidth.coerceAtMost(swappedMaxHeight),
-                maxHeight = swappedMaxHeight
-            )
         } else {
-            constraints
-        }
-        val placeable = measurable.measure(childConstraints)
-        val layoutWidth = if (swapAxes) placeable.height else placeable.width
-        val layoutHeight = if (swapAxes) placeable.width else placeable.height
-        layout(layoutWidth, layoutHeight) {
-            val offsetX = (layoutWidth - placeable.width) / 2
-            val offsetY = (layoutHeight - placeable.height) / 2
-            placeable.placeWithLayer(offsetX, offsetY) {
-                rotationZ = normalized.toFloat()
+            val swapAxes =
+                normalized == QUADRANT_DEGREES || normalized == QUADRANT_DEGREES * 3
+            val childConstraints = if (swapAxes) {
+                val swappedMaxWidth = if (constraints.hasBoundedHeight) {
+                    constraints.maxHeight
+                } else {
+                    constraints.maxWidth
+                }
+                val swappedMaxHeight = if (constraints.hasBoundedWidth) {
+                    constraints.maxWidth
+                } else {
+                    constraints.maxHeight
+                }
+                Constraints(
+                    minWidth = constraints.minHeight.coerceAtMost(swappedMaxWidth),
+                    maxWidth = swappedMaxWidth,
+                    minHeight = constraints.minWidth.coerceAtMost(swappedMaxHeight),
+                    maxHeight = swappedMaxHeight
+                )
+            } else {
+                constraints
+            }
+            val placeable = measurable.measure(childConstraints)
+            val layoutWidth = if (swapAxes) placeable.height else placeable.width
+            val layoutHeight = if (swapAxes) placeable.width else placeable.height
+            layout(layoutWidth, layoutHeight) {
+                val offsetX = (layoutWidth - placeable.width) / 2
+                val offsetY = (layoutHeight - placeable.height) / 2
+                placeable.placeWithLayer(offsetX, offsetY) {
+                    rotationZ = normalized.toFloat()
+                }
             }
         }
     }

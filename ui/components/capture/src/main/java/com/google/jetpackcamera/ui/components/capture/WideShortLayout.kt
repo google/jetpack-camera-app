@@ -112,55 +112,60 @@ fun WideShortLayout(
     val localeDirection = LocalLayoutDirection.current
     val safePadding = WindowInsets.systemBars.union(WindowInsets.displayCutout).asPaddingValues()
 
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val horizontalInsets = safePadding.calculateLeftPadding(localeDirection) +
-            safePadding.calculateRightPadding(localeDirection)
-        val verticalInsets = safePadding.calculateTopPadding() +
-            safePadding.calculateBottomPadding()
-        val availableWidth = (maxWidth - horizontalInsets).coerceAtLeast(WideShortTokens.ZeroSize)
-        val availableHeight = (maxHeight - verticalInsets).coerceAtLeast(WideShortTokens.ZeroSize)
+    CompositionLocalProvider(LocalGravityRotationState provides DefaultGravityRotationState) {
+        BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+            val horizontalInsets = safePadding.calculateLeftPadding(localeDirection) +
+                safePadding.calculateRightPadding(localeDirection)
+            val verticalInsets = safePadding.calculateTopPadding() +
+                safePadding.calculateBottomPadding()
+            val availableWidth =
+                (maxWidth - horizontalInsets).coerceAtLeast(WideShortTokens.ZeroSize)
+            val availableHeight =
+                (maxHeight - verticalInsets).coerceAtLeast(WideShortTokens.ZeroSize)
 
-        val railSlotMaxWidth = min(
-            CaptureSlotTokens.ModeToggleCompactWidth,
-            (availableWidth * WideShortTokens.RAIL_WIDTH_FRACTION)
-                .coerceAtLeast(WideShortTokens.MinRailSlotWidthFloor)
-        )
-        val estimatedRailFootprint = railSlotMaxWidth + WideShortTokens.RailHorizontalPaddingTotal
-        val condensedSlots = remember(slots, availableWidth, availableHeight) {
-            slots.withCondensedSizeCaps(
-                availableWidth = availableWidth,
-                availableHeight = availableHeight,
-                railSlotMaxWidth = railSlotMaxWidth,
-                estimatedRailFootprint = estimatedRailFootprint
+            val railSlotMaxWidth = min(
+                CaptureSlotTokens.ModeToggleCompactWidth,
+                (availableWidth * WideShortTokens.RAIL_WIDTH_FRACTION)
+                    .coerceAtLeast(WideShortTokens.MinRailSlotWidthFloor)
+            )
+            val estimatedRailFootprint =
+                railSlotMaxWidth + WideShortTokens.RailHorizontalPaddingTotal
+            val condensedSlots = remember(slots, availableWidth, availableHeight) {
+                slots.withCondensedSizeCaps(
+                    availableWidth = availableWidth,
+                    availableHeight = availableHeight,
+                    railSlotMaxWidth = railSlotMaxWidth,
+                    estimatedRailFootprint = estimatedRailFootprint
+                )
+            }
+            val cardMaxWidth = min(
+                WideShortTokens.QuickSettingsCardMaxWidth,
+                (availableWidth - WideShortTokens.CondensedChromePadding * 2)
+                    .coerceAtLeast(WideShortTokens.ZeroSize)
+            )
+            val cardMaxHeight = (availableHeight - WideShortTokens.CondensedChromePadding * 2)
+                .coerceAtLeast(WideShortTokens.ZeroSize)
+
+            SideRailCaptureScaffold(
+                slots = condensedSlots,
+                viewfinder = viewfinder,
+                modifier = Modifier.fillMaxSize(),
+                snackbarHostState = snackbarHostState,
+                isCompactHeight = true,
+                chromePadding = WideShortTokens.CondensedChromePadding,
+                topOverlayHorizontalClearance = estimatedRailFootprint,
+                quickSettingsCardMaxWidth = cardMaxWidth,
+                quickSettingsCardMaxHeight = cardMaxHeight,
+                isQuickSettingsOpen = isQuickSettingsOpen,
+                isRecording = isRecording,
+                isErrorDialogShowing = isErrorDialogShowing,
+                tagQuickSettingsCard = tagQuickSettingsCard,
+                onDismissQuickSettings = onDismissQuickSettings,
+                debugOverlay = debugOverlay,
+                debugVisibilityWrapper = debugVisibilityWrapper,
+                screenFlashOverlay = screenFlashOverlay
             )
         }
-        val cardMaxWidth = min(
-            WideShortTokens.QuickSettingsCardMaxWidth,
-            (availableWidth - WideShortTokens.CondensedChromePadding * 2)
-                .coerceAtLeast(WideShortTokens.ZeroSize)
-        )
-        val cardMaxHeight = (availableHeight - WideShortTokens.CondensedChromePadding * 2)
-            .coerceAtLeast(WideShortTokens.ZeroSize)
-
-        SideRailCaptureScaffold(
-            slots = condensedSlots,
-            viewfinder = viewfinder,
-            modifier = Modifier.fillMaxSize(),
-            snackbarHostState = snackbarHostState,
-            isCompactHeight = true,
-            chromePadding = WideShortTokens.CondensedChromePadding,
-            topOverlayHorizontalClearance = estimatedRailFootprint,
-            quickSettingsCardMaxWidth = cardMaxWidth,
-            quickSettingsCardMaxHeight = cardMaxHeight,
-            isQuickSettingsOpen = isQuickSettingsOpen,
-            isRecording = isRecording,
-            isErrorDialogShowing = isErrorDialogShowing,
-            tagQuickSettingsCard = tagQuickSettingsCard,
-            onDismissQuickSettings = onDismissQuickSettings,
-            debugOverlay = debugOverlay,
-            debugVisibilityWrapper = debugVisibilityWrapper,
-            screenFlashOverlay = screenFlashOverlay
-        )
     }
 }
 

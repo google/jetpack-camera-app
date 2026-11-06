@@ -15,12 +15,17 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -34,6 +39,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -56,15 +62,20 @@ import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
@@ -88,12 +99,28 @@ import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
 import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
 import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
+import kotlinx.coroutines.delay
 
 private object CompactPortraitTokens {
     val SheetPeekHeight = 0.dp
     val SheetTopCornerRadius = 28.dp
     val DefaultMinTouchTarget = 48.dp
     val ZeroInset = 0.dp
+
+    /** Maximum portrait-space height (landscape width) of the Quick Settings bottom sheet. */
+    val LandscapeMaxSheetHeight = 380.dp
+
+    /** Cross-fade duration when rotating the Quick Settings sheet while open. */
+    const val QUICK_SETTINGS_FADE_DURATION_MS = 150
+
+    /** Sheet container resize duration when rotating the Quick Settings sheet while open. */
+    const val QUICK_SETTINGS_RESIZE_DURATION_MS = 250
+
+    /** Clockwise gravity degrees corresponding to [DeviceRotation.Rotated270]. */
+    const val LANDSCAPE_CCW_GRAVITY_DEGREES = 90
+
+    /** Clockwise gravity degrees corresponding to [DeviceRotation.Rotated90]. */
+    const val LANDSCAPE_CW_GRAVITY_DEGREES = 270
 
     /**
      * Height of the shutter row (capture button, image well and flip camera button) as specified
@@ -465,6 +492,7 @@ fun CompactPortraitLayout(
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val localeDirection = LocalLayoutDirection.current
+    val disableAnimations = LocalDisableAnimations.current
     val dismissQuickSettingsLabel =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
     val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
@@ -508,6 +536,48 @@ fun CompactPortraitLayout(
             deviceRotation = effectiveDeviceRotation,
             windowRotation = containerFrameRotation
         )
+        val targetGravityDegrees =
+            effectiveDeviceRotation.toGravityRotationDegrees(containerFrameRotation)
+        val isLandscapeGravity =
+            targetGravityDegrees == CompactPortraitTokens.LANDSCAPE_CCW_GRAVITY_DEGREES ||
+                targetGravityDegrees == CompactPortraitTokens.LANDSCAPE_CW_GRAVITY_DEGREES
+
+        var displayedSheetGravityDegrees by remember { mutableIntStateOf(targetGravityDegrees) }
+        val sheetContentAlpha = remember { Animatable(1f) }
+        if (displayedSheetGravityDegrees != targetGravityDegrees &&
+            (!isSheetVisible || disableAnimations)
+        ) {
+            displayedSheetGravityDegrees = targetGravityDegrees
+        }
+
+        LaunchedEffect(targetGravityDegrees, isSheetVisible, disableAnimations) {
+            if (displayedSheetGravityDegrees != targetGravityDegrees) {
+                if (isSheetVisible && !disableAnimations) {
+                    sheetContentAlpha.animateTo(
+                        targetValue = 0f,
+                        animationSpec = tween(
+                            durationMillis = CompactPortraitTokens.QUICK_SETTINGS_FADE_DURATION_MS,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                    displayedSheetGravityDegrees = targetGravityDegrees
+                    delay(CompactPortraitTokens.QUICK_SETTINGS_RESIZE_DURATION_MS.toLong())
+                    sheetContentAlpha.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(
+                            durationMillis = CompactPortraitTokens.QUICK_SETTINGS_FADE_DURATION_MS,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                } else {
+                    displayedSheetGravityDegrees = targetGravityDegrees
+                    sheetContentAlpha.snapTo(1f)
+                }
+            } else if (sheetContentAlpha.value < 1f && (!isSheetVisible || disableAnimations)) {
+                sheetContentAlpha.snapTo(1f)
+            }
+        }
+        val sheetGravityRotationState = rememberUpdatedState(displayedSheetGravityDegrees.toFloat())
 
         CompositionLocalProvider(
             LocalOverlapTargetBounds provides overlapTargetBounds,
@@ -541,8 +611,56 @@ fun CompactPortraitLayout(
                     ),
                     sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                     sheetContent = {
-                        CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                            quickSettingsOverlay(Modifier)
+                        val isDisplayedSheetLandscape =
+                            displayedSheetGravityDegrees ==
+                                CompactPortraitTokens.LANDSCAPE_CCW_GRAVITY_DEGREES ||
+                                displayedSheetGravityDegrees ==
+                                CompactPortraitTokens.LANDSCAPE_CW_GRAVITY_DEGREES
+                        CompositionLocalProvider(
+                            LocalLayoutDirection provides localeDirection,
+                            LocalGravityRotationState provides sheetGravityRotationState
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .then(
+                                        if (disableAnimations) {
+                                            Modifier
+                                        } else {
+                                            Modifier.animateContentSize(
+                                                animationSpec = tween(
+                                                    durationMillis =
+                                                    CompactPortraitTokens
+                                                        .QUICK_SETTINGS_RESIZE_DURATION_MS,
+                                                    easing = FastOutSlowInEasing
+                                                )
+                                            )
+                                        }
+                                    )
+                                    .graphicsLayer {
+                                        alpha = sheetContentAlpha.value
+                                    }
+                            ) {
+                                if (isDisplayedSheetLandscape) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(
+                                                max = CompactPortraitTokens.LandscapeMaxSheetHeight
+                                            )
+                                            .rotateLayoutToGravity(displayedSheetGravityDegrees),
+                                        contentAlignment = Alignment.TopStart
+                                    ) {
+                                        CompositionLocalProvider(
+                                            LocalLayoutDirection provides localeDirection
+                                        ) {
+                                            quickSettingsOverlay(Modifier)
+                                        }
+                                    }
+                                } else {
+                                    quickSettingsOverlay(Modifier)
+                                }
+                            }
                         }
                     },
                     snackbarHost = {}
@@ -556,6 +674,23 @@ fun CompactPortraitLayout(
                         val isHandheldPortrait =
                             windowAspectRatio >=
                                 CompactPortraitTokens.PORTRAIT_ASPECT_RATIO_THRESHOLD
+                        val bottomElapsedTimeDisplay: @Composable (Modifier) -> Unit =
+                            if (isLandscapeGravity) {
+                                {}
+                            } else {
+                                elapsedTimeDisplay
+                            }
+                        val bottomSnackbarHost: @Composable (Modifier) -> Unit =
+                            if (isLandscapeGravity) {
+                                {}
+                            } else {
+                                { hostModifier ->
+                                    PillSnackbarHost(
+                                        snackbarHostState = scaffoldState.snackbarHostState,
+                                        modifier = hostModifier
+                                    )
+                                }
+                            }
                         if (isHandheldPortrait) {
                             AdaptivePortraitCaptureLayout(
                                 windowWidth = portraitWidth,
@@ -570,7 +705,7 @@ fun CompactPortraitLayout(
                                 onRequiresImmersiveChange = onRequiresImmersiveChange,
                                 indicatorRow = indicatorRow,
                                 topBarTrailingContent = topBarTrailingContent,
-                                elapsedTimeDisplay = elapsedTimeDisplay,
+                                elapsedTimeDisplay = bottomElapsedTimeDisplay,
                                 zoomControls = zoomLevelDisplay,
                                 imageWell = imageWell,
                                 captureButton = captureButton,
@@ -579,12 +714,7 @@ fun CompactPortraitLayout(
                                 quickSettingsToggleButton = quickSettingsButton,
                                 captureModeToggleSwitch = captureModeToggle,
                                 debugVisibilityWrapper = debugVisibilityWrapper,
-                                snackbarHost = { hostModifier ->
-                                    PillSnackbarHost(
-                                        snackbarHostState = scaffoldState.snackbarHostState,
-                                        modifier = hostModifier
-                                    )
-                                }
+                                snackbarHost = bottomSnackbarHost
                             )
                             Box(
                                 modifier = Modifier
@@ -596,6 +726,15 @@ fun CompactPortraitLayout(
                                             .toPortraitWindowInsets(effectiveWindowRotation)
                                     )
                             ) {
+                                if (isLandscapeGravity) {
+                                    LandscapeTopEdgeBanner(
+                                        targetGravityDegrees = targetGravityDegrees,
+                                        localeDirection = localeDirection,
+                                        snackbarHostState = scaffoldState.snackbarHostState,
+                                        elapsedTimeDisplay = elapsedTimeDisplay,
+                                        debugVisibilityWrapper = debugVisibilityWrapper
+                                    )
+                                }
                                 CompositionLocalProvider(
                                     LocalLayoutDirection provides localeDirection
                                 ) {
@@ -629,6 +768,7 @@ fun CompactPortraitLayout(
                                         Modifier
                                             .align(Alignment.TopStart)
                                             .suppressBackgroundForModal(isSheetVisible)
+                                            .animateToUpright()
                                     ) {
                                         topStartContent(Modifier)
                                     }
@@ -662,13 +802,17 @@ fun CompactPortraitLayout(
                                         captureModeToggleSwitch = captureModeToggle,
                                         captureModeCarousel = captureModeCarousel,
                                         zoomControls = zoomLevelDisplay,
+                                        elapsedTimeDisplay = bottomElapsedTimeDisplay,
+                                        snackbarHost = bottomSnackbarHost
+                                    )
+                                }
+                                if (isLandscapeGravity) {
+                                    LandscapeTopEdgeBanner(
+                                        targetGravityDegrees = targetGravityDegrees,
+                                        localeDirection = localeDirection,
+                                        snackbarHostState = scaffoldState.snackbarHostState,
                                         elapsedTimeDisplay = elapsedTimeDisplay,
-                                        snackbarHost = { hostModifier ->
-                                            PillSnackbarHost(
-                                                snackbarHostState = scaffoldState.snackbarHostState,
-                                                modifier = hostModifier
-                                            )
-                                        }
+                                        debugVisibilityWrapper = debugVisibilityWrapper
                                     )
                                 }
                                 CompositionLocalProvider(
@@ -707,6 +851,35 @@ fun CompactPortraitLayout(
         // Drawn last and outside of both the counter-rotated controls and the bottom sheet so the
         // flash covers the entire window, including system bar and display cutout areas.
         screenFlashOverlay(Modifier)
+    }
+}
+
+@Composable
+private fun BoxScope.LandscapeTopEdgeBanner(
+    targetGravityDegrees: Int,
+    localeDirection: LayoutDirection,
+    snackbarHostState: SnackbarHostState,
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    debugVisibilityWrapper: @Composable (@Composable () -> Unit) -> Unit
+) {
+    val landscapeTopAlignment =
+        if (targetGravityDegrees == CompactPortraitTokens.LANDSCAPE_CCW_GRAVITY_DEGREES) {
+            AbsoluteAlignment.CenterRight
+        } else {
+            AbsoluteAlignment.CenterLeft
+        }
+    debugVisibilityWrapper {
+        CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+            Column(
+                modifier = Modifier
+                    .align(landscapeTopAlignment)
+                    .rotateLayoutToGravity(targetGravityDegrees),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                PillSnackbarHost(snackbarHostState = snackbarHostState)
+                elapsedTimeDisplay(Modifier)
+            }
+        }
     }
 }
 
@@ -963,6 +1136,7 @@ internal fun AdaptivePortraitCaptureLayout(
                     modifier = Modifier
                         .layoutId(CaptureSlotId.TopStartContent)
                         .suppressBackgroundForModal(isSheetVisible)
+                        .animateToUpright()
                 ) {
                     OverlapAwareStyleProvider {
                         topStartContent(Modifier)

@@ -85,6 +85,7 @@ import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
+import com.google.jetpackcamera.ui.components.capture.animateToUpright
 import com.google.jetpackcamera.ui.components.capture.containerColor
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
@@ -138,6 +139,7 @@ fun ToggleQuickSettingsButton(
     IconButton(
         modifier = modifier
             .size(buttonSize)
+            .animateToUpright()
             .testTag(QUICK_SETTINGS_DROP_DOWN)
             .semantics {
                 testTag = QUICK_SETTINGS_DROP_DOWN
@@ -555,7 +557,9 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
         modifier = modifier
     ) {
         Icon(
-            modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+            modifier = Modifier
+                .size(IconButtonDefaults.smallIconSize)
+                .animateToUpright(),
             painter = CameraDynamicRange.HDR.getPainter(),
             contentDescription = stringResource(CameraDynamicRange.HDR.getDescriptionResId())
         )
@@ -600,7 +604,9 @@ private fun TopBarQuickSettingIcon(enum: QuickSettingsEnum, modifier: Modifier =
     Icon(
         painter = enum.getPainter(),
         contentDescription = stringResource(id = enum.getDescriptionResId()),
-        modifier = modifier.size(IconButtonDefaults.smallIconSize)
+        modifier = modifier
+            .size(IconButtonDefaults.smallIconSize)
+            .animateToUpright()
     )
 }
 

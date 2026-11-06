@@ -179,8 +179,20 @@ fun PreviewLayout(
             )
             val isQuickSettingsOpen = scaffoldState.bottomSheetState.isVisible ||
                 scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+            val isCompactPortraitBacked = layoutMode == CameraLayoutMode.COMPACT_PORTRAIT ||
+                layoutMode == CameraLayoutMode.COMPACT_HORIZONTAL ||
+                layoutMode == CameraLayoutMode.COMPACT_SLIM
+            val modeGravityRotationState =
+                if (isCompactPortraitBacked) {
+                    gravityRotationState
+                } else {
+                    DefaultGravityRotationState
+                }
 
-            CompositionLocalProvider(LocalCameraLayoutMode provides layoutMode) {
+            CompositionLocalProvider(
+                LocalCameraLayoutMode provides layoutMode,
+                LocalGravityRotationState provides modeGravityRotationState
+            ) {
                 when (layoutMode) {
                     CameraLayoutMode.COMPACT_PORTRAIT,
                     CameraLayoutMode.COMPACT_HORIZONTAL,
