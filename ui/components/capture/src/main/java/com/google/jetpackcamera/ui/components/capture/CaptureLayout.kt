@@ -51,6 +51,7 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -60,8 +61,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.AlignmentLine
@@ -69,9 +72,14 @@ import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -143,6 +151,14 @@ private const val PORTRAIT_ASPECT_RATIO_THRESHOLD = 16f / 9f - 0.01f
 /** Minimum bottom gesture inset floor used when solving the portrait control stack. */
 private val MIN_GESTURE_INSET = 32.dp
 
+private fun Modifier.suppressBackgroundForModal(isModalOpen: Boolean): Modifier = if (isModalOpen) {
+    this
+        .focusProperties { canFocus = false }
+        .clearAndSetSemantics {}
+} else {
+    this
+}
+
 /**
  * The top edge of the visible viewfinder, reported by a viewfinder that fills its slot and offsets
  * its own frame (such as [PreviewDisplay]).
@@ -200,6 +216,8 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * [CameraSystemBarsPolicy.HideStatusAndNavigationBars] to [CameraSystemBarsEffect]. This layout
  * does not change the system bars itself.
  * @param errorDialog the camera error alert dialog composable
+ * @param isErrorDialogShowing whether the camera error dialog is currently open so background
+ *   camera chrome can be synchronously hidden from focus and accessibility on frame 1
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Suppress("DEPRECATION")
@@ -232,7 +250,8 @@ fun PreviewLayout(
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     topBarTrailingContent: @Composable (Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
+    errorDialog: @Composable (Modifier) -> Unit = {},
+    isErrorDialogShowing: Boolean = false
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val dismissQuickSettingsLabel =
@@ -248,6 +267,7 @@ fun PreviewLayout(
                     BottomSheetDefaults.DragHandle(
                         modifier = Modifier
                             .testTag(QUICK_SETTINGS_DRAG_HANDLE)
+                            .minimumInteractiveComponentSize()
                             .clickable(
                                 role = Role.Button,
                                 onClickLabel = dismissQuickSettingsLabel,
@@ -263,6 +283,12 @@ fun PreviewLayout(
                 snackbarHost = {}
             ) {
                 BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                    val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
+                        scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+                    var isErrorDialogPlaced by remember { mutableStateOf(false) }
+                    val isErrorModalActive = isErrorDialogShowing || isErrorDialogPlaced
+                    val isModalOpen = isSheetVisible || isErrorModalActive
+
                     // The adaptive portrait solver targets portrait handhelds (16:9 and taller,
                     // where a full-width 9:16 frame fits inside the window). Squarer windows
                     // (landscape, foldable inner displays, or short split-screen panes like
@@ -289,6 +315,7 @@ fun PreviewLayout(
                             quickSettingsToggleButton = quickSettingsButton,
                             captureModeToggleSwitch = captureModeToggle,
                             debugVisibilityWrapper = debugVisibilityWrapper,
+                            modifier = Modifier.suppressBackgroundForModal(isModalOpen),
                             snackbarHost = { modifier ->
                                 PillSnackbarHost(
                                     snackbarHostState = scaffoldState.snackbarHostState,
@@ -303,11 +330,12 @@ fun PreviewLayout(
                                     WindowInsets.systemBarsIgnoringVisibility
                                         .union(WindowInsets.displayCutout)
                                 )
+                                .suppressBackgroundForModal(isModalOpen)
                         ) {
                             snackBar(Modifier, scaffoldState.snackbarHostState)
                         }
                     } else {
-                        Column {
+                        Column(modifier = Modifier.suppressBackgroundForModal(isModalOpen)) {
                             val cutoutTopInset =
                                 WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
                             val minTouchTarget =
@@ -346,6 +374,7 @@ fun PreviewLayout(
                                     WindowInsets.systemBarsIgnoringVisibility
                                         .union(WindowInsets.displayCutout)
                                 )
+                                .suppressBackgroundForModal(isModalOpen)
                         ) {
                             debugVisibilityWrapper {
                                 VerticalMaterialControls(
@@ -368,24 +397,32 @@ fun PreviewLayout(
                             snackBar(Modifier, scaffoldState.snackbarHostState)
                         }
                     }
-                    debugOverlay(Modifier)
+                    debugOverlay(Modifier.suppressBackgroundForModal(isModalOpen))
 
-                    val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
-                        scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
-                    if (isSheetVisible) {
+                    if (isSheetVisible && !isErrorModalActive) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .testTag(QUICK_SETTINGS_SCRIM)
+                                .semantics {
+                                    contentDescription = dismissQuickSettingsLabel
+                                    traversalIndex = 1f
+                                }
                                 .clickable(
-                                    onClickLabel = dismissQuickSettingsLabel,
+                                    role = Role.Button,
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
                                     onClick = onDismissQuickSettings
                                 )
                         )
                     }
-                    errorDialog(Modifier)
+                    Box(
+                        modifier = Modifier.onSizeChanged { size ->
+                            isErrorDialogPlaced = size.width > 0 && size.height > 0
+                        }
+                    ) {
+                        errorDialog(Modifier)
+                    }
                 }
             }
             // Drawn last and outside of both the inset-padded controls and the bottom sheet
@@ -428,6 +465,7 @@ private fun AdaptivePortraitCaptureLayout(
     quickSettingsToggleButton: @Composable (Modifier) -> Unit,
     captureModeToggleSwitch: @Composable (Modifier) -> Unit,
     debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
+    modifier: Modifier = Modifier,
     snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     val cutoutTopInset = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
@@ -478,7 +516,7 @@ private fun AdaptivePortraitCaptureLayout(
 
     CompositionLocalProvider(LocalCameraLayoutSolution provides solution) {
         Layout(
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
             content = {
                 Box(modifier = Modifier.layoutId(CaptureSlotId.Viewfinder)) {
                     viewfinder(Modifier)

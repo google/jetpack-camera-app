@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroupDefaults
@@ -51,7 +52,10 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
@@ -299,12 +303,14 @@ internal fun AspectRatioRow(
     aspectRatioUiState: AspectRatioUiState
 ) {
     if (aspectRatioUiState is AspectRatioUiState.Available) {
+        val currentAspectRatio = aspectRatioUiState.selectedAspectRatio.toCameraAspectRatio()
         QuickSettingsListRow(
             modifier = modifier.testTag(ROW_QUICK_SETTINGS_ASPECT_RATIO),
             title = stringResource(id = R.string.quick_settings_title_aspect_ratio),
             stateSubtitle = stringResource(
                 id = aspectRatioUiState.selectedAspectRatio.toSubtitleStringRes()
             ),
+            stateContentDescription = stringResource(currentAspectRatio.getDescriptionResId()),
             items = aspectRatioUiState.availableAspectRatios,
             selectedItem = aspectRatioUiState.selectedAspectRatio,
             onItemClick = onSetAspectRatio,
@@ -315,13 +321,7 @@ internal fun AspectRatioRow(
                     AspectRatio.ONE_ONE -> QUICK_SETTINGS_RATIO_1_1_BUTTON
                 }
             },
-            enumMapper = { ratio ->
-                when (ratio) {
-                    AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
-                    AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
-                    AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
-                }
-            }
+            enumMapper = AspectRatio::toCameraAspectRatio
         )
     }
 }
@@ -392,6 +392,7 @@ private fun <T> QuickSettingsListRow(
     enumMapper: (T) -> QuickSettingsEnum,
     testTagMapper: (T) -> String,
     modifier: Modifier = Modifier,
+    stateContentDescription: String? = null,
     isItemEnabled: (
         SingleSelectableUiState<T>
     ) -> Boolean = { it is SingleSelectableUiState.SelectableUi }
@@ -399,7 +400,8 @@ private fun <T> QuickSettingsListRow(
     SettingRow(
         modifier = modifier,
         title = title,
-        stateSubtitle = stateSubtitle
+        stateSubtitle = stateSubtitle,
+        stateContentDescription = stateContentDescription
     ) {
         items.forEachIndexed { index, selectableItem ->
             val value = selectableItem.value
@@ -433,19 +435,22 @@ private fun SettingRow(
     title: String,
     stateSubtitle: String,
     modifier: Modifier = Modifier,
+    stateContentDescription: String? = null,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(2.dp),
     buttons: @Composable RowScope.() -> Unit
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 16.dp),
+            .padding(vertical = 4.dp, horizontal = 16.dp)
+            .semantics { isTraversalGroup = true },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column(
             modifier = Modifier
                 .weight(1f)
+                .padding(end = 12.dp)
                 .semantics(mergeDescendants = true) {}
         ) {
             Text(
@@ -454,13 +459,19 @@ private fun SettingRow(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
+                modifier = if (stateContentDescription != null) {
+                    Modifier.semantics { contentDescription = stateContentDescription }
+                } else {
+                    Modifier
+                },
                 text = stateSubtitle,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primaryFixed
+                color = MaterialTheme.colorScheme.primary
             )
         }
 
         Row(
+            modifier = Modifier.selectableGroup(),
             horizontalArrangement = horizontalArrangement,
             verticalAlignment = Alignment.CenterVertically,
             content = buttons
@@ -513,15 +524,16 @@ private fun QuickSettingToggleSelectorButton(
 ) {
     ToggleButton(
         modifier = modifier
-            .minimumInteractiveComponentSize(),
+            .minimumInteractiveComponentSize()
+            .semantics { role = Role.RadioButton },
         checked = isSelected,
         enabled = enabled,
         onCheckedChange = { _ -> onClick() },
         shapes = shapes,
         colors = ToggleButtonDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.onSecondaryFixedVariant,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
             checkedContainerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onSurface,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
             checkedContentColor = MaterialTheme.colorScheme.onPrimary
         ),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
@@ -614,6 +626,12 @@ private fun FlashMode.toCameraFlashMode(isActive: Boolean) = when (this) {
             false -> CameraFlashMode.LOW_LIGHT_BOOST_INACTIVE
         }
     }
+}
+
+private fun AspectRatio.toCameraAspectRatio(): CameraAspectRatio = when (this) {
+    AspectRatio.THREE_FOUR -> CameraAspectRatio.THREE_FOUR
+    AspectRatio.NINE_SIXTEEN -> CameraAspectRatio.NINE_SIXTEEN
+    AspectRatio.ONE_ONE -> CameraAspectRatio.ONE_ONE
 }
 
 @StringRes
