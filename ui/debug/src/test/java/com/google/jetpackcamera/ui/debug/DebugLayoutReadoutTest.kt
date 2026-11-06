@@ -384,6 +384,22 @@ class DebugLayoutReadoutTest {
             .isEqualTo(DebugFormFactor.UNKNOWN)
     }
 
+    @Test
+    fun debugLayoutReadout_whenCameraLayoutModeProvided_displaysLayoutModeRow() {
+        composeTestRule.setContent {
+            DebugLayoutReadout(
+                state = DebugLayoutReadoutState(
+                    widthDp = 800,
+                    heightDp = 400,
+                    cameraLayoutMode = "COMPACT_HORIZONTAL"
+                )
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(readNodeText(DEBUG_LAYOUT_MODE_TAG)).isEqualTo("COMPACT_HORIZONTAL")
+    }
+
     private fun readNodeText(tag: String): String = composeTestRule
         .onNodeWithTag(tag)
         .fetchSemanticsNode()
