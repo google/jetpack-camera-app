@@ -45,14 +45,11 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -169,11 +166,14 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * [screenFlashOverlay], [snackBar], and [errorDialog] without depending on [CaptureUiState].
  *
  * @param modifier the [Modifier] for this layout.
- * @param scaffoldState the [BottomSheetScaffoldState] controlling the Quick Settings bottom sheet.
+ * @param state the [CaptureScaffoldState] controlling the Quick Settings bottom sheet and snackbar
+ *   host. Must match the state passed to [CaptureControls] when [CaptureControls] is used inside
+ *   [controls].
  * @param onDismissQuickSettings callback invoked when the user taps the sheet drag handle or scrim.
  * @param viewfinder the viewfinder composable.
  * @param topBar composable content placed in the top indicator/status bar region.
- * @param controls composable content for the camera control stack (typically [CaptureControls]).
+ * @param controls composable content for the camera control stack (typically [CaptureControls] or
+ *   [CaptureControlsLayout]).
  * @param controlsVisible whether the [controls] region should be composed and visible.
  * @param quickSettingsOverlay composable content inside the Quick Settings bottom sheet.
  * @param overlay optional overlay composable drawn above the viewfinder and controls.
@@ -193,12 +193,7 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
 @Composable
 fun CaptureScaffoldLayout(
     modifier: Modifier = Modifier,
-    scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            skipHiddenState = false
-        )
-    ),
+    state: CaptureScaffoldState = rememberCaptureScaffoldState(),
     onDismissQuickSettings: () -> Unit = {},
     viewfinder: @Composable (Modifier) -> Unit,
     topBar: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
@@ -214,219 +209,7 @@ fun CaptureScaffoldLayout(
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
-    CaptureScaffoldLayoutImpl(
-        modifier = modifier,
-        scaffoldState = scaffoldState,
-        onDismissQuickSettings = onDismissQuickSettings,
-        viewfinder = viewfinder,
-        topBar = topBar,
-        controls = controls,
-        controlsVisibilityWrapper = { content ->
-            if (controlsVisible) {
-                content()
-            }
-        },
-        quickSettingsOverlay = quickSettingsOverlay,
-        overlay = overlay,
-        screenFlashOverlay = screenFlashOverlay,
-        snackBar = snackBar,
-        topStartContent = topStartContent,
-        viewfinderTopEndContent = viewfinderTopEndContent,
-        topBarTrailingContent = topBarTrailingContent,
-        onRequiresImmersiveChange = onRequiresImmersiveChange,
-        errorDialog = errorDialog
-    )
-}
-
-/**
- * Per-control overload of [CaptureScaffoldLayout] that places individual control slots using
- * [CaptureControlsLayout].
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CaptureScaffoldLayout(
-    modifier: Modifier = Modifier,
-    scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            skipHiddenState = false
-        )
-    ),
-    onDismissQuickSettings: () -> Unit = {},
-    viewfinder: @Composable (Modifier) -> Unit,
-    captureButton: @Composable (Modifier) -> Unit,
-    imageWell: @Composable (Modifier) -> Unit,
-    flipCameraButton: @Composable (Modifier) -> Unit,
-    zoomLevelDisplay: @Composable (Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
-    quickSettingsButton: @Composable (Modifier) -> Unit,
-    indicatorRow: @Composable (Modifier) -> Unit,
-    captureModeToggle: @Composable (Modifier) -> Unit,
-    captureModeCarousel: @Composable (Modifier) -> Unit = {},
-    quickSettingsOverlay: @Composable (Modifier) -> Unit,
-    debugOverlay: @Composable (Modifier) -> Unit,
-    debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
-    screenFlashOverlay: @Composable (Modifier) -> Unit,
-    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
-    topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    topBarTrailingContent: @Composable (Modifier) -> Unit = {},
-    onRequiresImmersiveChange: (Boolean) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
-) {
-    CaptureScaffoldLayoutImpl(
-        modifier = modifier,
-        scaffoldState = scaffoldState,
-        onDismissQuickSettings = onDismissQuickSettings,
-        viewfinder = viewfinder,
-        topBar = { topBarModifier -> indicatorRow(topBarModifier) },
-        controls = { controlsModifier ->
-            CaptureControlsLayout(
-                modifier = controlsModifier,
-                captureButton = { captureButton(it) },
-                imageWell = { imageWell(it) },
-                flipCameraButton = { flipCameraButton(it) },
-                zoomControls = { zoomLevelDisplay(it) },
-                elapsedTimeDisplay = { elapsedTimeDisplay(it) },
-                quickSettingsButton = { quickSettingsButton(it) },
-                captureModeToggle = { captureModeToggle(it) },
-                captureModeCarousel = { captureModeCarousel(it) },
-                snackbarHost = { snackbarModifier ->
-                    PillSnackbarHost(
-                        snackbarHostState = scaffoldState.snackbarHostState,
-                        modifier = snackbarModifier
-                    )
-                }
-            )
-        },
-        controlsVisibilityWrapper = debugVisibilityWrapper,
-        quickSettingsOverlay = quickSettingsOverlay,
-        overlay = { overlayModifier -> debugOverlay(overlayModifier) },
-        screenFlashOverlay = screenFlashOverlay,
-        snackBar = snackBar,
-        topStartContent = topStartContent,
-        viewfinderTopEndContent = viewfinderTopEndContent,
-        topBarTrailingContent = { trailingModifier -> topBarTrailingContent(trailingModifier) },
-        onRequiresImmersiveChange = onRequiresImmersiveChange,
-        errorDialog = errorDialog
-    )
-}
-
-/**
- * The base layout for the camera capture screen.
- *
- * @see CaptureScaffoldLayout
- */
-@Deprecated(
-    message = "Renamed to CaptureScaffoldLayout",
-    replaceWith = ReplaceWith(
-        "CaptureScaffoldLayout(" +
-            "modifier = modifier, " +
-            "scaffoldState = scaffoldState, " +
-            "onDismissQuickSettings = onDismissQuickSettings, " +
-            "viewfinder = viewfinder, " +
-            "captureButton = captureButton, " +
-            "imageWell = imageWell, " +
-            "flipCameraButton = flipCameraButton, " +
-            "zoomLevelDisplay = zoomLevelDisplay, " +
-            "elapsedTimeDisplay = elapsedTimeDisplay, " +
-            "quickSettingsButton = quickSettingsButton, " +
-            "indicatorRow = indicatorRow, " +
-            "captureModeToggle = captureModeToggle, " +
-            "captureModeCarousel = captureModeCarousel, " +
-            "quickSettingsOverlay = quickSettingsOverlay, " +
-            "debugOverlay = debugOverlay, " +
-            "debugVisibilityWrapper = debugVisibilityWrapper, " +
-            "screenFlashOverlay = screenFlashOverlay, " +
-            "snackBar = snackBar, " +
-            "topStartContent = topStartContent, " +
-            "viewfinderTopEndContent = viewfinderTopEndContent, " +
-            "topBarTrailingContent = topBarTrailingContent, " +
-            "onRequiresImmersiveChange = onRequiresImmersiveChange, " +
-            "errorDialog = errorDialog" +
-            ")"
-    )
-)
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PreviewLayout(
-    modifier: Modifier = Modifier,
-    scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            skipHiddenState = false
-        )
-    ),
-    onDismissQuickSettings: () -> Unit = {},
-    viewfinder: @Composable (Modifier) -> Unit,
-    captureButton: @Composable (Modifier) -> Unit,
-    imageWell: @Composable (Modifier) -> Unit,
-    flipCameraButton: @Composable (Modifier) -> Unit,
-    zoomLevelDisplay: @Composable (Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
-    quickSettingsButton: @Composable (Modifier) -> Unit,
-    indicatorRow: @Composable (Modifier) -> Unit,
-    captureModeToggle: @Composable (Modifier) -> Unit,
-    captureModeCarousel: @Composable (Modifier) -> Unit = {},
-    quickSettingsOverlay: @Composable (Modifier) -> Unit,
-    debugOverlay: @Composable (Modifier) -> Unit,
-    debugVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
-    screenFlashOverlay: @Composable (Modifier) -> Unit,
-    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
-    topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    topBarTrailingContent: @Composable (Modifier) -> Unit = {},
-    onRequiresImmersiveChange: (Boolean) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
-) {
-    CaptureScaffoldLayout(
-        modifier = modifier,
-        scaffoldState = scaffoldState,
-        onDismissQuickSettings = onDismissQuickSettings,
-        viewfinder = viewfinder,
-        captureButton = captureButton,
-        imageWell = imageWell,
-        flipCameraButton = flipCameraButton,
-        zoomLevelDisplay = zoomLevelDisplay,
-        elapsedTimeDisplay = elapsedTimeDisplay,
-        quickSettingsButton = quickSettingsButton,
-        indicatorRow = indicatorRow,
-        captureModeToggle = captureModeToggle,
-        captureModeCarousel = captureModeCarousel,
-        quickSettingsOverlay = quickSettingsOverlay,
-        debugOverlay = debugOverlay,
-        debugVisibilityWrapper = debugVisibilityWrapper,
-        screenFlashOverlay = screenFlashOverlay,
-        snackBar = snackBar,
-        topStartContent = topStartContent,
-        viewfinderTopEndContent = viewfinderTopEndContent,
-        topBarTrailingContent = topBarTrailingContent,
-        onRequiresImmersiveChange = onRequiresImmersiveChange,
-        errorDialog = errorDialog
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Suppress("DEPRECATION")
-@Composable
-private fun CaptureScaffoldLayoutImpl(
-    modifier: Modifier = Modifier,
-    scaffoldState: BottomSheetScaffoldState,
-    onDismissQuickSettings: () -> Unit,
-    viewfinder: @Composable (Modifier) -> Unit,
-    topBar: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    controls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    controlsVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit),
-    quickSettingsOverlay: @Composable (Modifier) -> Unit,
-    overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    screenFlashOverlay: @Composable (Modifier) -> Unit,
-    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit,
-    topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    onRequiresImmersiveChange: (Boolean) -> Unit,
-    errorDialog: @Composable (Modifier) -> Unit
-) {
+    val scaffoldState = state.scaffoldState
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val dismissQuickSettingsLabel =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
@@ -477,7 +260,7 @@ private fun CaptureScaffoldLayoutImpl(
                             indicatorRow = topBar,
                             topBarTrailingContent = topBarTrailingContent,
                             controls = controls,
-                            controlsVisibilityWrapper = controlsVisibilityWrapper
+                            controlsVisible = controlsVisible
                         )
                         Box(
                             modifier = Modifier
@@ -534,7 +317,7 @@ private fun CaptureScaffoldLayoutImpl(
                                         .union(WindowInsets.displayCutout)
                                 )
                         ) {
-                            controlsVisibilityWrapper {
+                            if (controlsVisible) {
                                 OverlapAwareStyleProvider {
                                     controls(Modifier)
                                 }
@@ -572,6 +355,69 @@ private fun CaptureScaffoldLayoutImpl(
     }
 }
 
+/**
+ * Per-control overload of [CaptureScaffoldLayout] that places individual control slots using
+ * [CaptureControlsLayout].
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CaptureScaffoldLayout(
+    modifier: Modifier = Modifier,
+    state: CaptureScaffoldState = rememberCaptureScaffoldState(),
+    onDismissQuickSettings: () -> Unit = {},
+    viewfinder: @Composable (Modifier) -> Unit,
+    captureButton: @Composable (Modifier) -> Unit,
+    imageWell: @Composable (Modifier) -> Unit,
+    flipCameraButton: @Composable (Modifier) -> Unit,
+    zoomLevelDisplay: @Composable (Modifier) -> Unit,
+    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
+    quickSettingsButton: @Composable (Modifier) -> Unit,
+    indicatorRow: @Composable (Modifier) -> Unit,
+    captureModeToggle: @Composable (Modifier) -> Unit,
+    captureModeCarousel: @Composable (Modifier) -> Unit = {},
+    quickSettingsOverlay: @Composable (Modifier) -> Unit = {},
+    overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    controlsVisible: Boolean = true,
+    screenFlashOverlay: @Composable (Modifier) -> Unit = {},
+    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit = { _, _ -> },
+    topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    topBarTrailingContent: @Composable (Modifier) -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
+    errorDialog: @Composable (Modifier) -> Unit = {}
+) {
+    CaptureScaffoldLayout(
+        modifier = modifier,
+        state = state,
+        onDismissQuickSettings = onDismissQuickSettings,
+        viewfinder = viewfinder,
+        topBar = { topBarModifier -> indicatorRow(topBarModifier) },
+        controls = { controlsModifier ->
+            CaptureControlsLayout(
+                modifier = controlsModifier,
+                captureButton = { captureButton(it) },
+                imageWell = { imageWell(it) },
+                flipCameraButton = { flipCameraButton(it) },
+                zoomControls = { zoomLevelDisplay(it) },
+                elapsedTimeDisplay = { elapsedTimeDisplay(it) },
+                quickSettingsButton = { quickSettingsButton(it) },
+                captureModeToggle = { captureModeToggle(it) },
+                captureModeCarousel = { captureModeCarousel(it) }
+            )
+        },
+        controlsVisible = controlsVisible,
+        quickSettingsOverlay = quickSettingsOverlay,
+        overlay = overlay,
+        screenFlashOverlay = screenFlashOverlay,
+        snackBar = snackBar,
+        topStartContent = topStartContent,
+        viewfinderTopEndContent = viewfinderTopEndContent,
+        topBarTrailingContent = { trailingModifier -> topBarTrailingContent(trailingModifier) },
+        onRequiresImmersiveChange = onRequiresImmersiveChange,
+        errorDialog = errorDialog
+    )
+}
+
 private enum class CaptureSlotId {
     Viewfinder,
     TopStartContent,
@@ -600,7 +446,7 @@ private fun AdaptivePortraitCaptureLayout(
     indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     controls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    controlsVisibilityWrapper: (@Composable (@Composable () -> Unit) -> Unit)
+    controlsVisible: Boolean
 ) {
     val cutoutTopInset = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
     val navInset = WindowInsets.navigationBarsIgnoringVisibility
@@ -687,7 +533,7 @@ private fun AdaptivePortraitCaptureLayout(
                     }
                 }
 
-                controlsVisibilityWrapper {
+                if (controlsVisible) {
                     Box(modifier = Modifier.layoutId(CaptureSlotId.Controls)) {
                         OverlapAwareStyleProvider {
                             controls(Modifier)
@@ -783,18 +629,34 @@ private fun AdaptivePortraitCaptureLayout(
  * When a [LocalCameraLayoutSolution] is present (portrait handheld windows), each control row is
  * measured and placed against its solved band. Otherwise (landscape, square, or standalone
  * previews/tests), falls back to [VerticalMaterialControls].
+ *
+ * @param modifier the [Modifier] for this layout.
+ * @param captureButton composable for the primary capture / shutter button.
+ * @param imageWell composable for the post-capture thumbnail well placed to the start of the
+ *   shutter button.
+ * @param flipCameraButton composable for the lens flip button placed to the end of the shutter
+ *   button.
+ * @param zoomControls composable for the zoom bar placed above the shutter row.
+ * @param elapsedTimeDisplay composable for the recording elapsed-time readout placed above the
+ *   zoom bar.
+ * @param quickSettingsButton composable for the Quick Settings toggle button in the bottom toolbar.
+ * @param captureModeToggle composable for the capture mode toggle centered in the bottom toolbar.
+ * @param captureModeCarousel optional composable placed in the reserved mode-switcher slot between
+ *   the shutter row and the bottom toolbar.
+ * @param snackbarHost composable for rendering snackbars above the zoom bar; defaults to a
+ *   [PillSnackbarHost] bound to the enclosing [CaptureScaffoldLayout]'s [SnackbarHostState].
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun CaptureControlsLayout(
+fun CaptureControlsLayout(
     modifier: Modifier = Modifier,
     captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    flipCameraButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    quickSettingsButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    captureModeToggle: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    flipCameraButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    quickSettingsButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    captureModeToggle: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     captureModeCarousel: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     snackbarHost: @Composable (Modifier) -> Unit = { snackbarModifier ->
         LocalCaptureSnackbarHostState.current?.let { hostState ->
@@ -1217,19 +1079,6 @@ private fun CaptureLayoutPreview() {
                     .fillMaxWidth(0.5f)
                     .background(Color.Blue)
             )
-        },
-        quickSettingsOverlay = {
-            // No-op for preview
-        },
-        debugOverlay = {
-            // No-op for preview
-        },
-        screenFlashOverlay = {
-            // No-op for preview
-        },
-        snackBar = { _, _ ->
-            // No-op for preview
-        },
-        debugVisibilityWrapper = { content -> content() }
+        }
     )
 }

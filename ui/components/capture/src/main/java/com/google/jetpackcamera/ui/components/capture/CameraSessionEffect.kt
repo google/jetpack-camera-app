@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.ui.controller.CameraController
 
 /**
@@ -73,9 +73,10 @@ fun CameraSessionEffect(
         val context = LocalContext.current
         val lifecycleOwner = LocalLifecycleOwner.current
         LaunchedEffect(cameraController, context, lifecycleOwner) {
-            debouncedOrientationFlow(context)
-                .flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
-                .collect(cameraController::setDisplayRotation)
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                debouncedOrientationFlow(context)
+                    .collect(cameraController::setDisplayRotation)
+            }
         }
     }
 }

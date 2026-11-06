@@ -17,6 +17,8 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.graphics.Bitmap
 import android.net.Uri
+import android.util.Range
+import android.view.Surface
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
@@ -26,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -34,17 +37,27 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.AudioStreamState
+import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.ui.controller.testing.FakeCameraController
+import com.google.jetpackcamera.ui.controller.testing.FakeCaptureController
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.controller.testing.FakeSnackBarController
+import com.google.jetpackcamera.ui.controller.testing.FakeZoomController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
@@ -58,13 +71,16 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import java.util.LinkedList
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowDisplay
 
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "w411dp-h891dp")
@@ -249,12 +265,15 @@ class CaptureScaffoldTest {
 
         composeTestRule.setContent {
             CompositionLocalProvider(LocalDisableAnimations provides true) {
+                val scaffoldState = rememberCaptureScaffoldState()
                 CaptureScaffold(
                     captureUiState = { uiState },
                     surfaceRequest = null,
+                    state = scaffoldState,
                     controls = { slotModifier ->
                         CaptureControls(
                             captureUiState = { uiState },
+                            state = scaffoldState,
                             modifier = slotModifier,
                             imageWell = if (showImageWell) {
                                 { imageWellModifier ->
@@ -311,7 +330,10 @@ class CaptureScaffoldTest {
     fun captureScaffold_errorDialogBlocksPreviewAndSupportsCustomErrorStrings() {
         var dismissed = false
         val uiState = LOADING_CAPTURE_UI_STATE_SKELETON.copy(
-            cameraErrorUiState = CameraErrorUiState.Showing(CameraError.CameraInUse)
+            cameraErrorUiState = CameraErrorUiState.Showing(
+                error = CameraError.CameraInUse,
+                blocksPreview = true
+            )
         )
 
         composeTestRule.setContent {
@@ -353,6 +375,169 @@ class CaptureScaffoldTest {
     }
 
     @Test
+    fun captureScaffold_whenErrorDialogIsNull_hidesPreviewAndControlsWithoutShowingDialog() {
+        val uiState = LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+            cameraErrorUiState = CameraErrorUiState.Showing(
+                error = CameraError.CameraInUse,
+                blocksPreview = true
+            )
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                CaptureScaffold(
+                    captureUiState = { uiState },
+                    surfaceRequest = null,
+                    errorDialog = null
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAMERA_ERROR_DIALOG_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun captureScaffold_customControlsQuickSettingsButton_togglesScaffoldBottomSheet() {
+        val quickSettingsController = FakeQuickSettingsController()
+        val uiState = LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+            quickSettingsUiState = availableQuickSettingsUiState
+        )
+        lateinit var scaffoldState: CaptureScaffoldState
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                scaffoldState = rememberCaptureScaffoldState()
+                CaptureScaffold(
+                    captureUiState = { uiState },
+                    surfaceRequest = null,
+                    state = scaffoldState,
+                    quickSettingsController = quickSettingsController,
+                    controls = { slotModifier ->
+                        CaptureControls(
+                            captureUiState = { uiState },
+                            state = scaffoldState,
+                            modifier = slotModifier,
+                            quickSettingsController = quickSettingsController
+                        )
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).performClick()
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isTrue()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN)
+            .performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+    }
+
+    @Test
+    fun captureScaffold_restoresInitialRecordingSettingsAfterRecordingCompletesAcrossTicks() {
+        val restoredAudioEnabled = mutableListOf<Boolean>()
+        val restoredLensFacings = mutableListOf<LensFacing>()
+        val restoredZooms = mutableMapOf<LensToZoom, Float>()
+
+        val captureController = FakeCaptureController(
+            setAudioEnabledAction = { restoredAudioEnabled += it }
+        )
+        val quickSettingsController = FakeQuickSettingsController(
+            setLensFacingAction = { restoredLensFacings += it }
+        )
+        val zoomController = FakeZoomController(
+            setZoomRatioAction = { zoomRatio ->
+                restoredZooms[zoomRatio.changeType.lensToZoom] = zoomRatio.changeType.value
+            }
+        )
+
+        var captureUiState by mutableStateOf(
+            LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+                zoomUiState = ZoomUiState.Enabled(primaryZoomRange = Range(1f, 5f))
+            )
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null,
+                    captureController = captureController,
+                    quickSettingsController = quickSettingsController,
+                    zoomController = zoomController
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.runOnIdle {
+            captureUiState = captureUiState.copy(
+                videoRecordingState = VideoRecordingState.Starting(
+                    initialRecordingSettings = InitialRecordingSettings(
+                        isAudioEnabled = true,
+                        lensFacing = LensFacing.FRONT,
+                        zoomRatios = mapOf(
+                            LensFacing.FRONT to 1.5f,
+                            LensFacing.BACK to 2.5f
+                        )
+                    )
+                )
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        // Multiple active recording ticks (elapsed time + audio amplitude updates) must not clear
+        // or prematurely restore the saved initial settings.
+        composeTestRule.runOnIdle {
+            captureUiState = captureUiState.copy(
+                videoRecordingState = VideoRecordingState.Active.Recording(
+                    maxDurationMillis = 0L,
+                    audioStreamState = AudioStreamState.Active(0.2),
+                    elapsedTimeNanos = 1_000_000_000L
+                )
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.runOnIdle {
+            captureUiState = captureUiState.copy(
+                videoRecordingState = VideoRecordingState.Active.Recording(
+                    maxDurationMillis = 0L,
+                    audioStreamState = AudioStreamState.Active(0.8),
+                    elapsedTimeNanos = 2_000_000_000L
+                )
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(restoredAudioEnabled).isEmpty()
+        assertThat(restoredLensFacings).isEmpty()
+        assertThat(restoredZooms).isEmpty()
+
+        composeTestRule.runOnIdle {
+            captureUiState = captureUiState.copy(
+                videoRecordingState = VideoRecordingState.Inactive()
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(restoredAudioEnabled).containsExactly(true)
+        assertThat(restoredLensFacings).containsExactly(LensFacing.FRONT)
+        assertThat(restoredZooms[LensToZoom.PRIMARY]).isEqualTo(1.5f)
+        assertThat(restoredZooms[LensToZoom.SECONDARY]).isEqualTo(2.5f)
+    }
+
+    @Test
     fun cameraSessionEffect_startsAndStopsCameraWhenEnabledChanges() {
         var startCount = 0
         var stopCount = 0
@@ -390,6 +575,67 @@ class CaptureScaffoldTest {
 
         assertThat(stopCount).isEqualTo(1)
         assertThat(sessionStoppedCalls).isEqualTo(1)
+    }
+
+    @Test
+    fun cameraSessionEffect_restartsOnLifecycleStopAndStart_andForwardsRotation() {
+        var startCount = 0
+        var stopCount = 0
+        var sessionStartedCalls = 0
+        var sessionStoppedCalls = 0
+        val reportedRotations = mutableListOf<DeviceRotation>()
+        val cameraController = FakeCameraController(
+            startCameraAction = { startCount++ },
+            stopCameraAction = { stopCount++ },
+            setDisplayRotationAction = { reportedRotations += it }
+        )
+        val lifecycleOwner = object : LifecycleOwner {
+            val registry = LifecycleRegistry(this)
+            override val lifecycle: Lifecycle = registry
+        }
+        lifecycleOwner.registry.currentState = Lifecycle.State.STARTED
+
+        val shadowDisplay = shadowOf(ShadowDisplay.getDefaultDisplay())
+        shadowDisplay.setRotation(Surface.ROTATION_0)
+        try {
+            composeTestRule.setContent {
+                CompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
+                    CameraSessionEffect(
+                        cameraController = cameraController,
+                        enabled = true,
+                        onSessionStarted = { sessionStartedCalls++ },
+                        onSessionStopped = { sessionStoppedCalls++ }
+                    )
+                }
+            }
+            composeTestRule.waitForIdle()
+
+            assertThat(startCount).isEqualTo(1)
+            assertThat(sessionStartedCalls).isEqualTo(1)
+            assertThat(stopCount).isEqualTo(0)
+            assertThat(reportedRotations).containsExactly(DeviceRotation.Natural)
+
+            composeTestRule.runOnIdle {
+                lifecycleOwner.registry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+            }
+            composeTestRule.waitForIdle()
+
+            assertThat(stopCount).isEqualTo(1)
+            assertThat(sessionStoppedCalls).isEqualTo(1)
+
+            // Rotate the display while stopped; restarting must seed from the new display rotation.
+            shadowDisplay.setRotation(Surface.ROTATION_270)
+            composeTestRule.runOnIdle {
+                lifecycleOwner.registry.handleLifecycleEvent(Lifecycle.Event.ON_START)
+            }
+            composeTestRule.waitForIdle()
+
+            assertThat(startCount).isEqualTo(2)
+            assertThat(sessionStartedCalls).isEqualTo(2)
+            assertThat(reportedRotations.last()).isEqualTo(DeviceRotation.Rotated90)
+        } finally {
+            shadowDisplay.setRotation(Surface.ROTATION_0)
+        }
     }
 
     @Test

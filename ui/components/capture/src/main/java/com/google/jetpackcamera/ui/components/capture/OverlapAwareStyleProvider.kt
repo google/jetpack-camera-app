@@ -32,8 +32,8 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 
 /**
- * Receiver scope for [CaptureScaffoldLayout] and [PreviewLayout] slots whose content can be drawn
- * either over the viewfinder or over the background around it.
+ * Receiver scope for [CaptureScaffoldLayout] slots whose content can be drawn either over the
+ * viewfinder or over the background around it.
  *
  * Content can use [isOverViewfinder] to choose its own colors, or use
  * [cameraControlContainerColor] to match the built-in camera controls.

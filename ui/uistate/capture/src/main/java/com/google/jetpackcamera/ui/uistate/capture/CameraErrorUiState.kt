@@ -32,7 +32,7 @@ sealed interface CameraErrorUiState {
      */
     data class Showing(
         val error: CameraError,
-        val blocksPreview: Boolean = error != CameraError.CameraSensorPrivacyDisabled
+        val blocksPreview: Boolean
     ) : CameraErrorUiState
 
     companion object

@@ -902,7 +902,7 @@ fun PreviewDisplay(
         Box(
             modifier = Modifier
                 .padding(top = topOffset)
-                // Reports the top edge of the visible frame to PreviewLayout, which anchors
+                // Reports the top edge of the visible frame to CaptureScaffoldLayout, which anchors
                 // viewfinder-relative content to it.
                 .layout { measurable, frameConstraints ->
                     val placeable = measurable.measure(frameConstraints)

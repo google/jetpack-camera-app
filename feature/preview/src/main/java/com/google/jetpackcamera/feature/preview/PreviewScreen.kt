@@ -28,13 +28,11 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tracing.Trace
-import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.VideoCaptureEvent
-import com.google.jetpackcamera.model.ZoomStrategy
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CameraSessionEffect
 import com.google.jetpackcamera.ui.components.capture.CaptureControls
@@ -192,15 +190,7 @@ fun PreviewScreen(
                 DebugOverlay(
                     modifier = slotModifier,
                     onChangeZoomRatio = { ratio ->
-                        viewModel.zoomController.setZoomAnimationState(ratio)
-                        viewModel.zoomController.setZoomRatio(
-                            CameraZoomRatio(
-                                ZoomStrategy.Absolute(
-                                    value = ratio,
-                                    lensToZoom = LensToZoom.PRIMARY
-                                )
-                            )
-                        )
+                        setAbsoluteZoom(ratio, LensToZoom.PRIMARY)
                     },
                     debugUiState = currentDebugUiState,
                     {
