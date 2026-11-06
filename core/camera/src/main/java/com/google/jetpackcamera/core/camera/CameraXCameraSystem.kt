@@ -902,10 +902,9 @@ class CameraXCameraSystem(
         // or fallback to SDR mid-recording if supported by CameraX).
         currentSettings.update { old ->
             if (systemConstraints.availableLenses.contains(lensFacing)) {
-                old?.copy(
-                    cameraLensFacing = lensFacing,
-                    activeCaptureSubModeId = CaptureSubModeId.DEFAULT
-                )
+                // The active sub-mode is kept, so that if it is also supported on the new lens,
+                // tryApplyCaptureSubModeConstraints continues it and keeps its override record.
+                old?.copy(cameraLensFacing = lensFacing)
                     ?.tryApplyDynamicRangeConstraints()
                     ?.tryApplyImageFormatConstraints()
                     ?.tryApplyFlashModeConstraints()

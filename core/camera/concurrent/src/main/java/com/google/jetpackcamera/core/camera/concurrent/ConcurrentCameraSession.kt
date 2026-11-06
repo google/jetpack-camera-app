@@ -248,6 +248,11 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                                             mappedError != null -> mappedError
                                             bothOpen -> null
                                             else -> old.cameraError
+                                        },
+                                        captureSubModeState = if (bothOpen) {
+                                            CaptureSubModeState.Idle
+                                        } else {
+                                            old.captureSubModeState
                                         }
                                     )
                                 }
@@ -317,6 +322,9 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
 /**
  * Reports that the concurrent session failed, so the camera system switches back to the default
  * sub-mode and rebinds a single camera.
+ *
+ * A failure that is already reported is not reported again, because the camera states keep
+ * emitting the error while the cameras close, and each report would show another error message.
  */
 private fun CameraSessionContext.reportSubModeFailure(
     sessionSettings: PerpetualSessionSettings.CustomSession,
@@ -325,10 +333,11 @@ private fun CameraSessionContext.reportSubModeFailure(
     currentCameraState.update { old ->
         old.copy(
             isCameraRunning = false,
-            captureSubModeState = CaptureSubModeState.Error(
-                subModeId = sessionSettings.subModeKey.id,
-                error = error
-            )
+            captureSubModeState = old.captureSubModeState as? CaptureSubModeState.Error
+                ?: CaptureSubModeState.Error(
+                    subModeId = sessionSettings.subModeKey.id,
+                    error = error
+                )
         )
     }
 }
