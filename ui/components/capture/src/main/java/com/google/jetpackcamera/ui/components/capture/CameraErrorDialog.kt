@@ -45,6 +45,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
+private object CameraErrorDialogTokens {
+    val CardHorizontalMargin = 24.dp
+    val CardMinWidth = 280.dp
+    val CardMaxWidth = 560.dp
+    val ContentPadding = 24.dp
+    val IconSize = 24.dp
+    val SectionSpacing = 16.dp
+    val ButtonTopSpacing = 24.dp
+}
+
 /**
  * In-hierarchy dialog for camera errors. Callers provide the copy.
  *
@@ -85,8 +95,12 @@ fun CameraErrorDialog(
     ) {
         Surface(
             modifier = Modifier
-                .padding(horizontal = 24.dp)
-                .widthIn(min = 280.dp, max = 560.dp)
+                .rotateLayoutToGravity()
+                .padding(horizontal = CameraErrorDialogTokens.CardHorizontalMargin)
+                .widthIn(
+                    min = CameraErrorDialogTokens.CardMinWidth,
+                    max = CameraErrorDialogTokens.CardMaxWidth
+                )
                 .pointerInput(Unit) {
                     detectTapGestures { /* Consume taps on the dialog card */ }
                 },
@@ -95,16 +109,16 @@ fun CameraErrorDialog(
             tonalElevation = AlertDialogDefaults.TonalElevation
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(CameraErrorDialogTokens.ContentPadding),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_videocam_outline),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(CameraErrorDialogTokens.IconSize)
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(CameraErrorDialogTokens.SectionSpacing))
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineSmall,
@@ -115,7 +129,7 @@ fun CameraErrorDialog(
                         .testTag(CAMERA_ERROR_DIALOG_TITLE_TAG)
                 )
                 body?.let {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(CameraErrorDialogTokens.SectionSpacing))
                     Text(
                         text = it,
                         style = MaterialTheme.typography.bodyMedium,
@@ -125,7 +139,7 @@ fun CameraErrorDialog(
                             .testTag(CAMERA_ERROR_DIALOG_BODY_TAG)
                     )
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(CameraErrorDialogTokens.ButtonTopSpacing))
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.CenterEnd

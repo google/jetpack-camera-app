@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +39,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.ui.components.capture.LocalGravityRotationState
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
@@ -44,6 +47,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureMo
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
+import com.google.jetpackcamera.ui.components.capture.snapToQuadrantDegrees
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -52,6 +56,17 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+
+private object QuickSettingsScreenTokens {
+    val ZeroPadding = 0.dp
+    val LandscapeTopPadding = 24.dp
+    val BottomPadding = 24.dp
+    val HeaderHorizontalPadding = 16.dp
+    val HeaderBottomPadding = 8.dp
+    val MoreSettingsTopPadding = 12.dp
+    const val LANDSCAPE_CCW_GRAVITY_DEGREES = 90
+    const val LANDSCAPE_CW_GRAVITY_DEGREES = 270
+}
 
 /**
  * Agnostic content for the Quick Settings panel wrapped for a BottomSheetScaffold sheet.
@@ -72,12 +87,24 @@ fun QuickSettingsScaffoldContent(
     showMoreSettingsButton: Boolean = true
 ) {
     if (quickSettingsUiState is QuickSettingsUiState.Available) {
+        val gravityDegrees = snapToQuadrantDegrees(LocalGravityRotationState.current.value)
+        val isLandscapeSheet =
+            gravityDegrees == QuickSettingsScreenTokens.LANDSCAPE_CCW_GRAVITY_DEGREES ||
+                gravityDegrees == QuickSettingsScreenTokens.LANDSCAPE_CW_GRAVITY_DEGREES
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
-                .padding(bottom = 24.dp)
                 .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                .verticalScroll(rememberScrollState())
+                .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
+                .padding(
+                    top = if (isLandscapeSheet) {
+                        QuickSettingsScreenTokens.LandscapeTopPadding
+                    } else {
+                        QuickSettingsScreenTokens.ZeroPadding
+                    },
+                    bottom = QuickSettingsScreenTokens.BottomPadding
+                )
         ) {
             QuickSettingsContent(
                 quickSettingsUiState = quickSettingsUiState,
@@ -118,7 +145,11 @@ internal fun QuickSettingsContent(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            modifier = Modifier.padding(
+                start = QuickSettingsScreenTokens.HeaderHorizontalPadding,
+                end = QuickSettingsScreenTokens.HeaderHorizontalPadding,
+                bottom = QuickSettingsScreenTokens.HeaderBottomPadding
+            ),
             text = stringResource(id = titleRes),
             style = MaterialTheme.typography.titleLarge
         )
@@ -171,7 +202,7 @@ internal fun QuickSettingsContent(
         if (showMoreSettingsButton) {
             QuickNavSettings(
                 onNavigateToSettings = onNavigateToSettings,
-                modifier = Modifier.padding(top = 12.dp)
+                modifier = Modifier.padding(top = QuickSettingsScreenTokens.MoreSettingsTopPadding)
             )
         }
     }
