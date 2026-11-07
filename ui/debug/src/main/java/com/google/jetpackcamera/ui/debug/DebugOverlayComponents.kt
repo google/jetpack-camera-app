@@ -15,9 +15,14 @@
  */
 package com.google.jetpackcamera.ui.debug
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.util.Log
 import android.view.Surface
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -54,6 +59,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -66,6 +72,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -79,8 +87,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.MultiWindowModeChangedInfo
+import androidx.core.util.Consumer
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.TestPattern
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 private const val TAG = "DebugOverlayComponents"
@@ -123,41 +134,112 @@ private fun ZoomRatioText(modifier: Modifier = Modifier, primaryZoomRatio: Float
 }
 
 /**
- * Window form-factor bucket derived from available window container dimensions in `dp`.
+ * Window form-factor bucket derived from available window container dimensions in `dp`, matching
+ * the `360dp` / `480dp` / `600dp` adaptive capture layout mode classification.
  */
 enum class DebugFormFactor {
-    COMPACT_SQUARE,
+    COMPACT_PORTRAIT,
+    COMPACT_HORIZONTAL,
     COMPACT_SLIM,
-    COMPACT,
-    FOLDABLE,
-    TABLET,
+    COMPACT_SHORT,
+    COMPACT_SHORT_SLIM,
+    TWO_SIDE_RAIL,
     UNKNOWN;
 
     companion object {
-        private const val COMPACT_MIN_WIDTH_DP = 360
-        private const val MEDIUM_MIN_DIM_DP = 600
-        private const val TABLET_MAX_DIM_DP = 960
-        private const val COMPACT_SQUARE_MAX_RATIO = 1.5f
-        private const val FOLDABLE_MAX_RATIO = 1.45f
+        internal const val SLIM_BREAKPOINT_DP = 360
+        internal const val SHORT_BREAKPOINT_DP = 480
+        internal const val MEDIUM_WIDTH_BREAKPOINT_DP = 600
+        internal const val MIN_VALID_SMALLEST_SCREEN_WIDTH_DP = 1
+        internal const val FULL_SCREEN_DIMENSION_TOLERANCE_DP = 2
 
         /**
          * Classifies a window container of [widthDp] by [heightDp] into a [DebugFormFactor]
-         * bucket regardless of portrait or landscape orientation.
+         * bucket matching `CameraLayoutMode`'s breakpoint rules.
+         *
+         * @param widthDp Available capture container width in `dp`.
+         * @param heightDp Available capture container height in `dp`.
+         * @param isFullScreenCompactPhone Whether the container occupies a full-screen compact
+         *   phone window (`sw < 600dp`, not in multi-window mode, with long edge `>= 480dp`).
          */
-        fun fromWindowDp(widthDp: Int, heightDp: Int): DebugFormFactor {
+        fun fromWindowDp(
+            widthDp: Int,
+            heightDp: Int,
+            isFullScreenCompactPhone: Boolean = false
+        ): DebugFormFactor {
             if (widthDp <= 0 || heightDp <= 0) return UNKNOWN
             val minDim = minOf(widthDp, heightDp)
-            val maxDim = maxOf(widthDp, heightDp)
-            val ratio = maxDim.toFloat() / minDim.toFloat()
+            if (isFullScreenCompactPhone) {
+                return when {
+                    minDim < SLIM_BREAKPOINT_DP -> COMPACT_SLIM
+                    widthDp > heightDp -> COMPACT_HORIZONTAL
+                    else -> COMPACT_PORTRAIT
+                }
+            }
             return when {
-                maxDim < MEDIUM_MIN_DIM_DP && ratio < COMPACT_SQUARE_MAX_RATIO -> COMPACT_SQUARE
-                minDim < COMPACT_MIN_WIDTH_DP -> COMPACT_SLIM
-                minDim < MEDIUM_MIN_DIM_DP -> COMPACT
-                maxDim < TABLET_MAX_DIM_DP && ratio < FOLDABLE_MAX_RATIO -> FOLDABLE
-                else -> TABLET
+                widthDp >= MEDIUM_WIDTH_BREAKPOINT_DP && heightDp >= SHORT_BREAKPOINT_DP ->
+                    TWO_SIDE_RAIL
+                widthDp < SHORT_BREAKPOINT_DP && heightDp < SHORT_BREAKPOINT_DP ->
+                    if (minDim < SLIM_BREAKPOINT_DP) {
+                        COMPACT_SHORT_SLIM
+                    } else {
+                        COMPACT_SHORT
+                    }
+                minDim < SLIM_BREAKPOINT_DP -> COMPACT_SLIM
+                heightDp < SHORT_BREAKPOINT_DP -> COMPACT_HORIZONTAL
+                else -> COMPACT_PORTRAIT
             }
         }
     }
+}
+
+/**
+ * Remembers the live [DebugFormFactor] for [widthDp] and [heightDp], factoring in whether the
+ * host window is a full-screen compact phone (`sw < 600dp` and not in multi-window mode).
+ */
+@Composable
+fun rememberDebugFormFactor(widthDp: Int, heightDp: Int): DebugFormFactor {
+    val configuration = LocalConfiguration.current
+    val context = LocalContext.current
+    val activity = LocalActivity.current ?: remember(context) { context.findDebugActivity() }
+
+    var isInMultiWindowMode by remember(activity) {
+        mutableStateOf(activity?.isInMultiWindowMode ?: false)
+    }
+    DisposableEffect(activity) {
+        isInMultiWindowMode = activity?.isInMultiWindowMode ?: false
+        val componentActivity = activity as? ComponentActivity
+        val listener = Consumer<MultiWindowModeChangedInfo> { info ->
+            isInMultiWindowMode = info.isInMultiWindowMode
+        }
+        componentActivity?.addOnMultiWindowModeChangedListener(listener)
+        onDispose {
+            componentActivity?.removeOnMultiWindowModeChangedListener(listener)
+        }
+    }
+
+    val isFullScreenCompactPhone =
+        !(isInMultiWindowMode || activity?.isInMultiWindowMode == true) &&
+            configuration.smallestScreenWidthDp in
+            DebugFormFactor.MIN_VALID_SMALLEST_SCREEN_WIDTH_DP until
+            DebugFormFactor.MEDIUM_WIDTH_BREAKPOINT_DP &&
+            maxOf(widthDp, heightDp) >= DebugFormFactor.SHORT_BREAKPOINT_DP &&
+            abs(widthDp - configuration.screenWidthDp) <=
+            DebugFormFactor.FULL_SCREEN_DIMENSION_TOLERANCE_DP &&
+            abs(heightDp - configuration.screenHeightDp) <=
+            DebugFormFactor.FULL_SCREEN_DIMENSION_TOLERANCE_DP
+
+    return DebugFormFactor.fromWindowDp(
+        widthDp = widthDp,
+        heightDp = heightDp,
+        isFullScreenCompactPhone = isFullScreenCompactPhone
+    )
+}
+
+private tailrec fun Context.findDebugActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findDebugActivity()
+    else -> null
 }
 
 /**
@@ -191,35 +273,40 @@ data class DebugLayoutReadoutState(
     /**
      * Clockwise rotation in degrees that the capture layout is expected to apply to align its
      * primary axis with the window's dimensions:
-     * - [DebugFormFactor.FOLDABLE], [DebugFormFactor.TABLET], and [DebugFormFactor.UNKNOWN] always
-     *   remain upright (`0°`) in the window while their side rails adapt structurally.
-     * - [DebugFormFactor.COMPACT], [DebugFormFactor.COMPACT_SLIM], and
-     *   [DebugFormFactor.COMPACT_SQUARE] preserve the `9:16` portrait layout at `0°` when
-     *   `heightDp >= widthDp`, and rotate `90°` or `270°` when `widthDp > heightDp` so the `9:16`
-     *   layout aligns with the window's horizontal length instead of shrinking to a square.
+     * - [DebugFormFactor.TWO_SIDE_RAIL], [DebugFormFactor.COMPACT_PORTRAIT],
+     *   [DebugFormFactor.COMPACT_SHORT], [DebugFormFactor.COMPACT_SHORT_SLIM], and
+     *   [DebugFormFactor.UNKNOWN] remain upright (`0°`) in the window.
+     * - [DebugFormFactor.COMPACT_HORIZONTAL] rotates `90°` or `270°` so the portrait layout aligns
+     *   with the window's horizontal length.
+     * - [DebugFormFactor.COMPACT_SLIM] stays `0°` when `heightDp >= widthDp` and rotates `90°` or
+     *   `270°` when `widthDp > heightDp`.
      */
     val expectedLayoutRotationDegrees: Int
         get() = when (formFactor) {
-            DebugFormFactor.FOLDABLE,
-            DebugFormFactor.TABLET,
+            DebugFormFactor.TWO_SIDE_RAIL,
+            DebugFormFactor.COMPACT_PORTRAIT,
+            DebugFormFactor.COMPACT_SHORT,
+            DebugFormFactor.COMPACT_SHORT_SLIM,
             DebugFormFactor.UNKNOWN -> 0
-            DebugFormFactor.COMPACT,
-            DebugFormFactor.COMPACT_SLIM,
-            DebugFormFactor.COMPACT_SQUARE ->
+            DebugFormFactor.COMPACT_HORIZONTAL -> resolveHorizontalLayoutRotationDegrees()
+            DebugFormFactor.COMPACT_SLIM ->
                 if (heightDp >= widthDp) {
                     0
                 } else {
-                    val gravity = iconRotationDegrees
-                    val counter =
-                        ((windowRotation.toWindowCounterRotationDegrees().toInt() % 360) + 360) %
-                            360
-                    when {
-                        gravity == 90 || gravity == 270 -> gravity
-                        counter == 90 || counter == 270 -> counter
-                        else -> DEFAULT_WIDE_COMPACT_LAYOUT_ROTATION_DEGREES
-                    }
+                    resolveHorizontalLayoutRotationDegrees()
                 }
         }
+
+    private fun resolveHorizontalLayoutRotationDegrees(): Int {
+        val gravity = iconRotationDegrees
+        val counter =
+            ((windowRotation.toWindowCounterRotationDegrees().toInt() % 360) + 360) % 360
+        return when {
+            gravity == 90 || gravity == 270 -> gravity
+            counter == 90 || counter == 270 -> counter
+            else -> DEFAULT_WIDE_COMPACT_LAYOUT_ROTATION_DEGREES
+        }
+    }
 
     companion object {
         private const val DEFAULT_WIDE_COMPACT_LAYOUT_ROTATION_DEGREES = 270
@@ -242,28 +329,38 @@ internal fun DebugLayoutReadout(
     state: DebugLayoutReadoutState? = null,
     modifier: Modifier = Modifier
 ) {
-    val resolvedState = state ?: run {
+    val resolvedState = if (state != null) {
+        state
+    } else {
         val view = LocalView.current
         val liveWindowRotation = DeviceRotation.fromSurfaceRotation(
             runCatching { view.display?.rotation }.getOrNull() ?: Surface.ROTATION_0
         )
-        with(LocalDensity.current) {
+        val (liveWidthDp, liveHeightDp) = with(LocalDensity.current) {
             val containerSize = LocalWindowInfo.current.containerSize
-            DebugLayoutReadoutState(
-                widthDp = containerSize.width.toDp().value.roundToInt(),
-                heightDp = containerSize.height.toDp().value.roundToInt(),
-                deviceRotation = liveWindowRotation,
-                windowRotation = liveWindowRotation
-            )
+            containerSize.width.toDp().value.roundToInt() to
+                containerSize.height.toDp().value.roundToInt()
         }
+        val liveFormFactor = rememberDebugFormFactor(
+            widthDp = liveWidthDp,
+            heightDp = liveHeightDp
+        )
+        DebugLayoutReadoutState(
+            widthDp = liveWidthDp,
+            heightDp = liveHeightDp,
+            formFactor = liveFormFactor,
+            deviceRotation = liveWindowRotation,
+            windowRotation = liveWindowRotation
+        )
     }
     val formFactorText = stringResource(
         when (resolvedState.formFactor) {
-            DebugFormFactor.COMPACT_SQUARE -> R.string.debug_text_form_factor_compact_square
+            DebugFormFactor.COMPACT_PORTRAIT -> R.string.debug_text_form_factor_compact_portrait
+            DebugFormFactor.COMPACT_HORIZONTAL -> R.string.debug_text_form_factor_compact_horizontal
             DebugFormFactor.COMPACT_SLIM -> R.string.debug_text_form_factor_compact_slim
-            DebugFormFactor.COMPACT -> R.string.debug_text_form_factor_compact
-            DebugFormFactor.FOLDABLE -> R.string.debug_text_form_factor_foldable
-            DebugFormFactor.TABLET -> R.string.debug_text_form_factor_tablet
+            DebugFormFactor.COMPACT_SHORT -> R.string.debug_text_form_factor_compact_short
+            DebugFormFactor.COMPACT_SHORT_SLIM -> R.string.debug_text_form_factor_compact_short_slim
+            DebugFormFactor.TWO_SIDE_RAIL -> R.string.debug_text_form_factor_two_side_rail
             DebugFormFactor.UNKNOWN -> R.string.debug_text_form_factor_unknown
         }
     )
@@ -328,10 +425,7 @@ internal fun DebugLayoutReadout(
  * points upward against physical gravity inside the current window.
  */
 @Composable
-private fun DebugUpwardTriangleIndicator(
-    rotationDegrees: Int,
-    modifier: Modifier = Modifier
-) {
+private fun DebugUpwardTriangleIndicator(rotationDegrees: Int, modifier: Modifier = Modifier) {
     val targetAngle = rotationDegrees.toFloat()
     var cumulativeTargetDegrees by remember { mutableFloatStateOf(targetAngle) }
     val currentNormalized = ((cumulativeTargetDegrees % 360f) + 360f) % 360f

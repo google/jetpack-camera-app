@@ -51,7 +51,7 @@ class DebugLayoutReadoutTest {
                     state = DebugLayoutReadoutState(
                         widthDp = 673,
                         heightDp = 841,
-                        formFactor = DebugFormFactor.FOLDABLE,
+                        formFactor = DebugFormFactor.TWO_SIDE_RAIL,
                         deviceRotation = DeviceRotation.Rotated270,
                         windowRotation = DeviceRotation.Natural
                     )
@@ -74,7 +74,7 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_INDICATOR_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("673x841dp")
-        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("FOLDABLE")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("TWO_SIDE_RAIL")
         assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("270°")
         assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
@@ -98,7 +98,7 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithText("Layout: ").assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("412x915dp")
-        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT_PORTRAIT")
         assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
@@ -147,7 +147,7 @@ class DebugLayoutReadoutTest {
 
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("360x800dp")
-        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT_PORTRAIT")
         assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
@@ -179,7 +179,7 @@ class DebugLayoutReadoutTest {
 
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("800x1280dp")
-        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("TABLET")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("TWO_SIDE_RAIL")
         assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("90°")
         assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
@@ -258,7 +258,33 @@ class DebugLayoutReadoutTest {
             ).expectedLayoutRotationDegrees
         ).isEqualTo(270)
 
-        // Wide compact_square quadrant (433x346, Win 0°, Dev 0°) -> 270°
+        // Wide slim pane (883x276, Win 0°, Dev 0°) -> 270°; tall slim pane (276x883) -> 0°
+        assertThat(
+            DebugLayoutReadoutState(
+                widthDp = 883,
+                heightDp = 276,
+                deviceRotation = DeviceRotation.Natural,
+                windowRotation = DeviceRotation.Natural
+            ).expectedLayoutRotationDegrees
+        ).isEqualTo(270)
+        assertThat(
+            DebugLayoutReadoutState(
+                widthDp = 276,
+                heightDp = 883,
+                deviceRotation = DeviceRotation.Natural,
+                windowRotation = DeviceRotation.Natural
+            ).expectedLayoutRotationDegrees
+        ).isEqualTo(0)
+
+        // Compact short & compact short slim stay upright (0°) in WideShortLayout
+        assertThat(
+            DebugLayoutReadoutState(
+                widthDp = 412,
+                heightDp = 412,
+                deviceRotation = DeviceRotation.Natural,
+                windowRotation = DeviceRotation.Natural
+            ).expectedLayoutRotationDegrees
+        ).isEqualTo(0)
         assertThat(
             DebugLayoutReadoutState(
                 widthDp = 433,
@@ -266,9 +292,9 @@ class DebugLayoutReadoutTest {
                 deviceRotation = DeviceRotation.Natural,
                 windowRotation = DeviceRotation.Natural
             ).expectedLayoutRotationDegrees
-        ).isEqualTo(270)
+        ).isEqualTo(0)
 
-        // Wide compact window held at 90° CW with Win 0° -> follows gravity (270°) or 270° CCW (90°)
+        // Wide compact window held at 90° CW with Win 0° -> follows gravity (90°)
         assertThat(
             DebugLayoutReadoutState(
                 widthDp = 840,
@@ -278,7 +304,7 @@ class DebugLayoutReadoutTest {
             ).expectedLayoutRotationDegrees
         ).isEqualTo(90)
 
-        // Foldable and Tablet always remain upright (0°) regardless of widthDp vs heightDp
+        // TWO_SIDE_RAIL always remains upright (0°) regardless of widthDp vs heightDp
         assertThat(
             DebugLayoutReadoutState(
                 widthDp = 841,
@@ -298,52 +324,60 @@ class DebugLayoutReadoutTest {
     }
 
     @Test
-    fun debugFormFactor_fromWindowDp_classifiesAllFormFactorBuckets() {
-        assertThat(DebugFormFactor.fromWindowDp(412, 412))
-            .isEqualTo(DebugFormFactor.COMPACT_SQUARE)
-        assertThat(DebugFormFactor.fromWindowDp(500, 360))
-            .isEqualTo(DebugFormFactor.COMPACT_SQUARE)
-        assertThat(DebugFormFactor.fromWindowDp(433, 346))
-            .isEqualTo(DebugFormFactor.COMPACT_SQUARE)
-        assertThat(DebugFormFactor.fromWindowDp(346, 433))
-            .isEqualTo(DebugFormFactor.COMPACT_SQUARE)
+    fun debugFormFactor_fromWindowDp_classifiesAllCameraLayoutModeBuckets() {
+        // COMPACT_PORTRAIT (W < 600, H >= 480, min >= 360)
+        assertThat(DebugFormFactor.fromWindowDp(412, 915))
+            .isEqualTo(DebugFormFactor.COMPACT_PORTRAIT)
+        assertThat(DebugFormFactor.fromWindowDp(480, 760))
+            .isEqualTo(DebugFormFactor.COMPACT_PORTRAIT)
+        assertThat(DebugFormFactor.fromWindowDp(585, 602))
+            .isEqualTo(DebugFormFactor.COMPACT_PORTRAIT)
 
+        // COMPACT_HORIZONTAL (W >= 480, H < 480, min >= 360, or full-screen compact phone W > H)
+        assertThat(DebugFormFactor.fromWindowDp(840, 360))
+            .isEqualTo(DebugFormFactor.COMPACT_HORIZONTAL)
+        assertThat(DebugFormFactor.fromWindowDp(500, 360))
+            .isEqualTo(DebugFormFactor.COMPACT_HORIZONTAL)
+        assertThat(DebugFormFactor.fromWindowDp(800, 400))
+            .isEqualTo(DebugFormFactor.COMPACT_HORIZONTAL)
+        assertThat(DebugFormFactor.fromWindowDp(900, 500, isFullScreenCompactPhone = true))
+            .isEqualTo(DebugFormFactor.COMPACT_HORIZONTAL)
+
+        // COMPACT_SLIM (min < 360, max >= 480)
         assertThat(DebugFormFactor.fromWindowDp(276, 883))
             .isEqualTo(DebugFormFactor.COMPACT_SLIM)
         assertThat(DebugFormFactor.fromWindowDp(883, 276))
             .isEqualTo(DebugFormFactor.COMPACT_SLIM)
         assertThat(DebugFormFactor.fromWindowDp(250, 602))
             .isEqualTo(DebugFormFactor.COMPACT_SLIM)
+        assertThat(DebugFormFactor.fromWindowDp(320, 800, isFullScreenCompactPhone = true))
+            .isEqualTo(DebugFormFactor.COMPACT_SLIM)
 
-        assertThat(DebugFormFactor.fromWindowDp(412, 915))
-            .isEqualTo(DebugFormFactor.COMPACT)
-        assertThat(DebugFormFactor.fromWindowDp(840, 360))
-            .isEqualTo(DebugFormFactor.COMPACT)
-        assertThat(DebugFormFactor.fromWindowDp(512, 650))
-            .isEqualTo(DebugFormFactor.COMPACT)
-        assertThat(DebugFormFactor.fromWindowDp(566, 833))
-            .isEqualTo(DebugFormFactor.COMPACT)
-        assertThat(DebugFormFactor.fromWindowDp(494, 602))
-            .isEqualTo(DebugFormFactor.COMPACT)
-        assertThat(DebugFormFactor.fromWindowDp(383, 602))
-            .isEqualTo(DebugFormFactor.COMPACT)
-        assertThat(DebugFormFactor.fromWindowDp(585, 602))
-            .isEqualTo(DebugFormFactor.COMPACT)
-        assertThat(DebugFormFactor.fromWindowDp(480, 760))
-            .isEqualTo(DebugFormFactor.COMPACT)
+        // COMPACT_SHORT (W < 480, H < 480, min >= 360)
+        assertThat(DebugFormFactor.fromWindowDp(412, 412))
+            .isEqualTo(DebugFormFactor.COMPACT_SHORT)
+        assertThat(DebugFormFactor.fromWindowDp(360, 360))
+            .isEqualTo(DebugFormFactor.COMPACT_SHORT)
 
+        // COMPACT_SHORT_SLIM (W < 480, H < 480, min < 360)
+        assertThat(DebugFormFactor.fromWindowDp(433, 346))
+            .isEqualTo(DebugFormFactor.COMPACT_SHORT_SLIM)
+        assertThat(DebugFormFactor.fromWindowDp(346, 433))
+            .isEqualTo(DebugFormFactor.COMPACT_SHORT_SLIM)
+        assertThat(DebugFormFactor.fromWindowDp(320, 340))
+            .isEqualTo(DebugFormFactor.COMPACT_SHORT_SLIM)
+
+        // TWO_SIDE_RAIL (W >= 600, H >= 480, when not full-screen compact phone)
         assertThat(DebugFormFactor.fromWindowDp(673, 841))
-            .isEqualTo(DebugFormFactor.FOLDABLE)
+            .isEqualTo(DebugFormFactor.TWO_SIDE_RAIL)
         assertThat(DebugFormFactor.fromWindowDp(841, 673))
-            .isEqualTo(DebugFormFactor.FOLDABLE)
-        assertThat(DebugFormFactor.fromWindowDp(850, 900))
-            .isEqualTo(DebugFormFactor.FOLDABLE)
-
+            .isEqualTo(DebugFormFactor.TWO_SIDE_RAIL)
         assertThat(DebugFormFactor.fromWindowDp(800, 1280))
-            .isEqualTo(DebugFormFactor.TABLET)
+            .isEqualTo(DebugFormFactor.TWO_SIDE_RAIL)
         assertThat(DebugFormFactor.fromWindowDp(1280, 800))
-            .isEqualTo(DebugFormFactor.TABLET)
+            .isEqualTo(DebugFormFactor.TWO_SIDE_RAIL)
 
+        // UNKNOWN (W <= 0 || H <= 0)
         assertThat(DebugFormFactor.fromWindowDp(0, 800))
             .isEqualTo(DebugFormFactor.UNKNOWN)
         assertThat(DebugFormFactor.fromWindowDp(412, -1))

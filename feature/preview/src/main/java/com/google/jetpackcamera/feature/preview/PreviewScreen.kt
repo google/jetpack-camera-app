@@ -118,6 +118,7 @@ import com.google.jetpackcamera.ui.debug.DebugController
 import com.google.jetpackcamera.ui.debug.DebugLayoutReadoutState
 import com.google.jetpackcamera.ui.debug.DebugOverlay
 import com.google.jetpackcamera.ui.debug.DebugUiState
+import com.google.jetpackcamera.ui.debug.rememberDebugFormFactor
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
@@ -745,15 +746,21 @@ internal fun ContentScreen(
         @Composable { modifier: Modifier, extraControls: Array<@Composable () -> Unit>? ->
             if (debugUiState is DebugUiState.Enabled) {
                 debugController?.let { debugController ->
-                    val layoutReadoutState = with(LocalDensity.current) {
+                    val (windowWidthDp, windowHeightDp) = with(LocalDensity.current) {
                         val containerSize = LocalWindowInfo.current.containerSize
-                        DebugLayoutReadoutState(
-                            widthDp = containerSize.width.toDp().value.roundToInt(),
-                            heightDp = containerSize.height.toDp().value.roundToInt(),
-                            deviceRotation = currentDeviceRotation.value,
-                            windowRotation = currentWindowRotation.value
-                        )
+                        containerSize.width.toDp().value.roundToInt() to
+                            containerSize.height.toDp().value.roundToInt()
                     }
+                    val layoutReadoutState = DebugLayoutReadoutState(
+                        widthDp = windowWidthDp,
+                        heightDp = windowHeightDp,
+                        formFactor = rememberDebugFormFactor(
+                            widthDp = windowWidthDp,
+                            heightDp = windowHeightDp
+                        ),
+                        deviceRotation = currentDeviceRotation.value,
+                        windowRotation = currentWindowRotation.value
+                    )
                     DebugOverlay(
                         modifier = modifier,
                         debugUiState = debugUiState,
