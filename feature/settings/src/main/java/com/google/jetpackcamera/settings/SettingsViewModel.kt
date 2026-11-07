@@ -84,37 +84,49 @@ class SettingsViewModel @Inject constructor(
             constraintsRepository.systemConstraints.filterNotNull(),
             grantedPermissions
         ) { updatedSettings, constraints, grantedPerms ->
-            updatedSettings.videoQuality
+            val settingsWithVerifiedLens = updatedSettings.takeIf {
+                it.cameraLensFacing in constraints.availableLenses
+            } ?: constraints.availableLenses.firstOrNull()?.let {
+                updatedSettings.copy(cameraLensFacing = it)
+            } ?: updatedSettings
             SettingsUiState.Enabled(
-                aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
-                cameraEffectUiState = getCameraEffectUiState(updatedSettings, constraints),
-                maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
-                    updatedSettings.maxVideoDurationMillis
+                aspectRatioUiState = AspectRatioUiState.Enabled(
+                    settingsWithVerifiedLens.aspectRatio
                 ),
-                flashUiState = getFlashUiState(updatedSettings, constraints),
-                darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
+                cameraEffectUiState = getCameraEffectUiState(settingsWithVerifiedLens, constraints),
+                maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
+                    settingsWithVerifiedLens.maxVideoDurationMillis
+                ),
+                flashUiState = getFlashUiState(settingsWithVerifiedLens, constraints),
+                darkModeUiState = DarkModeUiState.Enabled(settingsWithVerifiedLens.darkMode),
                 audioUiState = getAudioUiState(
-                    updatedSettings.audioEnabled,
+                    settingsWithVerifiedLens.audioEnabled,
                     grantedPerms.contains(Manifest.permission.RECORD_AUDIO)
                 ),
                 locationUiState = if (locationProvider.isPresent) {
                     getLocationUiState(
-                        updatedSettings.locationEnabled,
+                        settingsWithVerifiedLens.locationEnabled,
                         Manifest.permission.ACCESS_FINE_LOCATION in grantedPerms ||
                             Manifest.permission.ACCESS_COARSE_LOCATION in grantedPerms
                     )
                 } else {
                     LocationUiState.Hidden
                 },
-                fpsUiState = getFpsUiState(constraints, updatedSettings),
-                lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
-                mirrorModeUiState = MirrorModeUiState.Enabled(updatedSettings.mirrorMode),
-                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
-                videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings),
-                lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
-                    updatedSettings.lowLightBoostPriority
+                fpsUiState = getFpsUiState(constraints, settingsWithVerifiedLens),
+                lensFlipUiState = getLensFlipUiState(constraints, settingsWithVerifiedLens),
+                mirrorModeUiState = MirrorModeUiState.Enabled(settingsWithVerifiedLens.mirrorMode),
+                stabilizationUiState = getStabilizationUiState(
+                    constraints,
+                    settingsWithVerifiedLens
                 ),
-                concurrentCameraUiState = getConcurrentCameraUiState(constraints, updatedSettings)
+                videoQualityUiState = getVideoQualityUiState(constraints, settingsWithVerifiedLens),
+                lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
+                    settingsWithVerifiedLens.lowLightBoostPriority
+                ),
+                concurrentCameraUiState = getConcurrentCameraUiState(
+                    constraints,
+                    settingsWithVerifiedLens
+                )
             )
         }.stateIn(
             scope = viewModelScope,
