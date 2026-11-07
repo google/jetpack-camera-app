@@ -108,8 +108,13 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(project(":data:settings:testing"))
     testImplementation(project(":core:location:testing"))
+    androidTestImplementation(project(":data:settings:testing"))
+    androidTestImplementation(project(":core:location:testing"))
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.accessibility)
+    androidTestImplementation(libs.compose.accessibility)
+    androidTestImplementation(libs.accessibility.test.framework)
     androidTestImplementation(libs.truth)
 
     implementation(libs.androidx.core.ktx)
@@ -136,4 +141,13 @@ dependencies {
 // Allow references to generated code
 kapt {
     correctErrorTypes = true
+}
+
+configurations.all {
+    resolutionStrategy {
+        // Exclude protobuf-lite to prevent DuplicateClassException conflicts with protobuf-javalite
+        // that is brought in by androidx.datastore, since accessibility-test-framework depends on
+        // protobuf-lite.
+        exclude(group = "com.google.protobuf", module = "protobuf-lite")
+    }
 }

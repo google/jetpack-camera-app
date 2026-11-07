@@ -37,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
@@ -1023,12 +1024,12 @@ fun BasicPopupSetting(
             modifier = Modifier.semantics { testTagsAsResourceId = true },
             onDismissRequest = { popupStatus.value = false },
             confirmButton = {
-                Text(
-                    text = "Close",
-                    modifier = Modifier
-                        .testTag(CLOSE_BUTTON)
-                        .clickable { popupStatus.value = false }
-                )
+                TextButton(
+                    onClick = { popupStatus.value = false },
+                    modifier = Modifier.testTag(CLOSE_BUTTON)
+                ) {
+                    Text(text = stringResource(R.string.dialog_close))
+                }
             },
             title = { Text(text = title) },
             text = {
@@ -1081,9 +1082,7 @@ fun SwitchSettingUI(
             Switch(
                 enabled = enabled,
                 checked = settingValue,
-                onCheckedChange = { value ->
-                    onSwitchChanged(value)
-                }
+                onCheckedChange = null
             )
         }
     )
@@ -1157,7 +1156,7 @@ fun SingleChoiceSelector(
             leadingIcon = {
                 RadioButton(
                     selected = selected,
-                    onClick = onClick,
+                    onClick = null,
                     enabled = enabled
                 )
             },

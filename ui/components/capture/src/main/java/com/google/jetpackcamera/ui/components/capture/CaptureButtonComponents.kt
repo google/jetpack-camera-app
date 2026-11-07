@@ -27,6 +27,7 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -36,7 +37,6 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -130,6 +130,10 @@ private const val LOCK_SWITCH_POSITION_OFF = 0f
 private const val MINIMUM_LOCK_THRESHOLD = .65F
 
 private const val LOCK_SWITCH_ALPHA = .37f
+private const val LOCK_ICON_HEIGHT_SCALE = .75f
+private val LOCK_ICON_TOUCH_TARGET_SIZE = 48.dp
+private val LOCK_ICON_MAX_VISUAL_SIZE = 32.dp
+private val LOCK_ICON_START_OFFSET = 4.dp
 
 private enum class CaptureSource {
     CAPTURE_BUTTON,
@@ -794,26 +798,25 @@ private fun LockSwitchCaptureButtonNucleus(
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .padding(start = 8.dp)
-                    .offset(x = -(switchWidth - pressedNucleusSize))
-                    .size(32.dp)
+                    .offset(x = -(switchWidth - pressedNucleusSize) + LOCK_ICON_START_OFFSET)
+                    .size(LOCK_ICON_TOUCH_TARGET_SIZE)
                     .semantics {
                         contentDescription = lockVideoRecordingDesc
-                        role = Role.Button
-                        onClick {
-                            onToggleSwitchPosition()
-                            true
-                        }
                     }
-                    .focusable()
-                    .pointerInput(Unit) {
-                        detectTapGestures {
-                            onToggleSwitchPosition()
-                        }
-                    }
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = Role.Button,
+                        onClick = onToggleSwitchPosition
+                    )
             ) {
                 Icon(
-                    modifier = Modifier.size(switchHeight * .75f).align(Alignment.Center),
+                    modifier = Modifier
+                        .size(
+                            (switchHeight * LOCK_ICON_HEIGHT_SCALE)
+                                .coerceAtMost(LOCK_ICON_MAX_VISUAL_SIZE)
+                        )
+                        .align(Alignment.Center),
                     tint = Color.White,
                     painter = if (shouldBeLocked()) {
                         painterResource(R.drawable.ic_lock)
