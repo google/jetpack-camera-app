@@ -84,14 +84,11 @@ class SettingsViewModel @Inject constructor(
             constraintsRepository.systemConstraints.filterNotNull(),
             grantedPermissions
         ) { updatedSettings, constraints, grantedPerms ->
-            val settingsWithVerifiedLens =
-                if (updatedSettings.cameraLensFacing !in constraints.availableLenses &&
-                    constraints.availableLenses.isNotEmpty()
-                ) {
-                    updatedSettings.copy(cameraLensFacing = constraints.availableLenses.first())
-                } else {
-                    updatedSettings
-                }
+            val settingsWithVerifiedLens = updatedSettings.takeIf {
+                it.cameraLensFacing in constraints.availableLenses
+            } ?: constraints.availableLenses.firstOrNull()?.let {
+                updatedSettings.copy(cameraLensFacing = it)
+            } ?: updatedSettings
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(
                     settingsWithVerifiedLens.aspectRatio
