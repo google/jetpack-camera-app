@@ -15,6 +15,8 @@
  */
 package com.google.jetpackcamera.feature.preview
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.util.Log
 import android.util.Range
 import androidx.activity.compose.BackHandler
@@ -39,6 +41,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -52,11 +55,16 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.tracing.Trace
 import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
@@ -64,6 +72,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureEvent
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageCaptureEvent
 import com.google.jetpackcamera.model.LensFacing
@@ -99,6 +108,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSetting
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
+import com.google.jetpackcamera.ui.components.capture.rememberWindowRotation
 import com.google.jetpackcamera.ui.controller.CameraController
 import com.google.jetpackcamera.ui.controller.CaptureController
 import com.google.jetpackcamera.ui.controller.ScreenFlashController
@@ -106,8 +116,10 @@ import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.ZoomController
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.debug.DebugController
+import com.google.jetpackcamera.ui.debug.DebugLayoutReadoutState
 import com.google.jetpackcamera.ui.debug.DebugOverlay
 import com.google.jetpackcamera.ui.debug.DebugUiState
+import com.google.jetpackcamera.ui.debug.rememberDebugFormFactor
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
@@ -120,6 +132,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformWhile
@@ -199,13 +212,6 @@ fun PreviewScreen(
         }
     }
 
-    val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        debouncedOrientationFlow(context).collect(
-            viewModel.cameraController::setDisplayRotation
-        )
-    }
-
     ContentScreen(
         modifier = modifier,
         captureUiStateProvider = readyStateProvider,
@@ -264,6 +270,45 @@ internal fun ContentScreen(
     val isVideoRecordingActive = remember {
         derivedStateOf {
             currentCaptureUiStateProvider().videoRecordingState is VideoRecordingState.Active
+        }
+    }
+    val isVideoRecordingInProgress = remember {
+        derivedStateOf {
+            currentCaptureUiStateProvider().videoRecordingState !is VideoRecordingState.Inactive
+        }
+    }
+
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val windowRotation = rememberWindowRotation()
+    var latestSensorRotation by remember { mutableStateOf(windowRotation) }
+    var deviceRotation by remember { mutableStateOf(windowRotation) }
+
+    LaunchedEffect(lifecycleOwner, context) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            debouncedOrientationFlow(context, initialRotation = windowRotation).collect {
+                latestSensorRotation = it
+            }
+        }
+    }
+
+    LaunchedEffect(isVideoRecordingInProgress.value, latestSensorRotation, cameraController) {
+        if (!isVideoRecordingInProgress.value) {
+            deviceRotation = latestSensorRotation
+            cameraController?.setDisplayRotation(latestSensorRotation)
+        }
+    }
+
+    val activity = context as? Activity
+    DisposableEffect(activity, isVideoRecordingInProgress.value) {
+        if (activity != null && isVideoRecordingInProgress.value) {
+            val previousOrientation = activity.requestedOrientation
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+            onDispose {
+                activity.requestedOrientation = previousOrientation
+            }
+        } else {
+            onDispose {}
         }
     }
 
@@ -473,7 +518,8 @@ internal fun ContentScreen(
                     onScaleZoom = { zoomRatio -> onScaleZoomLambda(zoomRatio) },
                     surfaceRequest = surfaceRequest,
                     onRequestWindowColorMode = onRequestWindowColorMode,
-                    focusMeteringUiState = focusMeteringState.value
+                    focusMeteringUiState = focusMeteringState.value,
+                    useLandscapeAspectRatio = true
                 )
             }
         }
@@ -695,10 +741,29 @@ internal fun ContentScreen(
         }
     }
 
+    val currentDeviceRotation = rememberUpdatedState(deviceRotation)
+    val currentWindowRotation = rememberUpdatedState(windowRotation)
     val debugOverlayLambda = remember(debugController, debugUiState) {
         @Composable { modifier: Modifier, extraControls: Array<@Composable () -> Unit>? ->
             if (debugUiState is DebugUiState.Enabled) {
                 debugController?.let { debugController ->
+                    val activeLayoutModeName = LocalCameraLayoutMode.current.name
+                    val (windowWidthDp, windowHeightDp) = with(LocalDensity.current) {
+                        val containerSize = LocalWindowInfo.current.containerSize
+                        containerSize.width.toDp().value.roundToInt() to
+                            containerSize.height.toDp().value.roundToInt()
+                    }
+                    val layoutReadoutState = DebugLayoutReadoutState(
+                        widthDp = windowWidthDp,
+                        heightDp = windowHeightDp,
+                        formFactor = rememberDebugFormFactor(
+                            widthDp = windowWidthDp,
+                            heightDp = windowHeightDp
+                        ),
+                        deviceRotation = currentDeviceRotation.value,
+                        windowRotation = currentWindowRotation.value,
+                        cameraLayoutMode = activeLayoutModeName
+                    )
                     DebugOverlay(
                         modifier = modifier,
                         debugUiState = debugUiState,
@@ -707,7 +772,7 @@ internal fun ContentScreen(
                         },
                         extraControls = extraControls.orEmpty(),
                         debugController = debugController,
-                        cameraLayoutMode = LocalCameraLayoutMode.current.name
+                        layoutReadoutState = layoutReadoutState
                     )
                 }
             }
@@ -844,7 +909,9 @@ internal fun ContentScreen(
         pauseToggleButton = pauseToggleButtonLambda,
         imageWell = imageWellLambda,
         errorDialog = errorDialogLambda,
-        onRequiresImmersiveChange = onRequiresImmersiveChange
+        onRequiresImmersiveChange = onRequiresImmersiveChange,
+        deviceRotation = deviceRotation,
+        windowRotation = windowRotation
     )
 }
 
@@ -929,7 +996,9 @@ private fun LayoutWrapper(
     screenFlashOverlay: @Composable (modifier: Modifier) -> Unit,
     snackBar: @Composable (modifier: Modifier, snackbarHostState: SnackbarHostState) -> Unit,
     errorDialog: @Composable (modifier: Modifier) -> Unit = {},
-    onRequiresImmersiveChange: (Boolean) -> Unit = {}
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
+    deviceRotation: DeviceRotation = DeviceRotation.Natural,
+    windowRotation: DeviceRotation = DeviceRotation.Natural
 ) {
     PreviewLayout(
         modifier = modifier,
@@ -945,6 +1014,8 @@ private fun LayoutWrapper(
         captureModeToggle = captureModeToggle,
         captureModeCarousel = captureModeCarousel,
         quickSettingsOverlay = quickSettingsOverlay,
+        deviceRotation = deviceRotation,
+        windowRotation = windowRotation,
         indicatorRow = { modifier ->
             if (!isErrorDialogShowing) {
                 IndicatorPill(

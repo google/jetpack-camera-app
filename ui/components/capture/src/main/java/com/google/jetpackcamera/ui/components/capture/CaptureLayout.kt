@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.rememberCameraLayoutMode
@@ -146,111 +147,123 @@ fun PreviewLayout(
     topBarTrailingContent: @Composable (Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {},
-    slots: CaptureSlots? = null
+    slots: CaptureSlots? = null,
+    deviceRotation: DeviceRotation = DeviceRotation.Natural,
+    windowRotation: DeviceRotation = rememberWindowRotation()
 ) {
     val movableViewfinder = remember(viewfinder) {
         movableContentOf<Modifier> { vfModifier ->
             viewfinder(vfModifier)
         }
     }
+    val gravityRotationState = rememberGravityRotationState(
+        deviceRotation = deviceRotation,
+        windowRotation = windowRotation
+    )
 
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black)
+    CompositionLocalProvider(
+        LocalDeviceRotation provides deviceRotation,
+        LocalWindowRotation provides windowRotation,
+        LocalGravityRotationState provides gravityRotationState
     ) {
-        val isFullScreenCompactPhone = rememberIsFullScreenCompactPhone(maxWidth, maxHeight)
-        val layoutMode = rememberCameraLayoutMode(
-            widthDp = maxWidth,
-            heightDp = maxHeight,
-            isFullScreenCompactPhone = isFullScreenCompactPhone
-        )
-        val isQuickSettingsOpen = scaffoldState.bottomSheetState.isVisible ||
-            scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+        BoxWithConstraints(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            val isFullScreenCompactPhone = rememberIsFullScreenCompactPhone(maxWidth, maxHeight)
+            val layoutMode = rememberCameraLayoutMode(
+                widthDp = maxWidth,
+                heightDp = maxHeight,
+                isFullScreenCompactPhone = isFullScreenCompactPhone
+            )
+            val isQuickSettingsOpen = scaffoldState.bottomSheetState.isVisible ||
+                scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
 
-        CompositionLocalProvider(LocalCameraLayoutMode provides layoutMode) {
-            when (layoutMode) {
-                CameraLayoutMode.COMPACT_PORTRAIT,
-                CameraLayoutMode.COMPACT_HORIZONTAL,
-                CameraLayoutMode.COMPACT_SLIM -> {
-                    if (slots != null) {
-                        CompactPortraitLayout(
-                            slots = slots,
+            CompositionLocalProvider(LocalCameraLayoutMode provides layoutMode) {
+                when (layoutMode) {
+                    CameraLayoutMode.COMPACT_PORTRAIT,
+                    CameraLayoutMode.COMPACT_HORIZONTAL,
+                    CameraLayoutMode.COMPACT_SLIM -> {
+                        if (slots != null) {
+                            CompactPortraitLayout(
+                                slots = slots,
+                                viewfinder = movableViewfinder,
+                                scaffoldState = scaffoldState,
+                                includeStatusBarsInTopBar = !isFullScreenCompactPhone,
+                                onDismissQuickSettings = onDismissQuickSettings,
+                                onRequiresImmersiveChange = onRequiresImmersiveChange,
+                                debugOverlay = debugOverlay,
+                                debugVisibilityWrapper = debugVisibilityWrapper,
+                                screenFlashOverlay = screenFlashOverlay
+                            )
+                        } else {
+                            CompactPortraitLayout(
+                                scaffoldState = scaffoldState,
+                                onDismissQuickSettings = onDismissQuickSettings,
+                                includeStatusBarsInTopBar = !isFullScreenCompactPhone,
+                                viewfinder = movableViewfinder,
+                                captureButton = captureButton,
+                                imageWell = imageWell,
+                                flipCameraButton = flipCameraButton,
+                                zoomLevelDisplay = zoomLevelDisplay,
+                                elapsedTimeDisplay = elapsedTimeDisplay,
+                                quickSettingsButton = quickSettingsButton,
+                                indicatorRow = indicatorRow,
+                                captureModeToggle = captureModeToggle,
+                                captureModeCarousel = captureModeCarousel,
+                                quickSettingsOverlay = quickSettingsOverlay,
+                                debugOverlay = debugOverlay,
+                                debugVisibilityWrapper = debugVisibilityWrapper,
+                                screenFlashOverlay = screenFlashOverlay,
+                                snackBar = snackBar,
+                                topStartContent = topStartContent,
+                                viewfinderTopEndContent = viewfinderTopEndContent,
+                                topBarTrailingContent = topBarTrailingContent,
+                                onRequiresImmersiveChange = onRequiresImmersiveChange,
+                                errorDialog = errorDialog
+                            )
+                        }
+                    }
+
+                    CameraLayoutMode.TWO_SIDE_RAIL -> {
+                        val effectiveSlots = slots ?: remember(snackBar, errorDialog) {
+                            PlaceholderCaptureSlots.default().copy(
+                                snackBar = snackBar,
+                                errorDialog = errorDialog
+                            )
+                        }
+                        TwoSideRailLayout(
+                            slots = effectiveSlots,
                             viewfinder = movableViewfinder,
-                            scaffoldState = scaffoldState,
-                            includeStatusBarsInTopBar = !isFullScreenCompactPhone,
+                            snackbarHostState = scaffoldState.snackbarHostState,
+                            isQuickSettingsOpen = isQuickSettingsOpen,
                             onDismissQuickSettings = onDismissQuickSettings,
-                            onRequiresImmersiveChange = onRequiresImmersiveChange,
                             debugOverlay = debugOverlay,
                             debugVisibilityWrapper = debugVisibilityWrapper,
                             screenFlashOverlay = screenFlashOverlay
                         )
-                    } else {
-                        CompactPortraitLayout(
-                            scaffoldState = scaffoldState,
-                            onDismissQuickSettings = onDismissQuickSettings,
-                            includeStatusBarsInTopBar = !isFullScreenCompactPhone,
+                    }
+
+                    CameraLayoutMode.COMPACT_SHORT,
+                    CameraLayoutMode.COMPACT_SHORT_SLIM -> {
+                        val effectiveSlots = slots ?: remember(snackBar, errorDialog) {
+                            PlaceholderCaptureSlots.sideRail(isCompactHeight = true).copy(
+                                snackBar = snackBar,
+                                errorDialog = errorDialog
+                            )
+                        }
+                        WideShortLayout(
+                            slots = effectiveSlots,
                             viewfinder = movableViewfinder,
-                            captureButton = captureButton,
-                            imageWell = imageWell,
-                            flipCameraButton = flipCameraButton,
-                            zoomLevelDisplay = zoomLevelDisplay,
-                            elapsedTimeDisplay = elapsedTimeDisplay,
-                            quickSettingsButton = quickSettingsButton,
-                            indicatorRow = indicatorRow,
-                            captureModeToggle = captureModeToggle,
-                            captureModeCarousel = captureModeCarousel,
-                            quickSettingsOverlay = quickSettingsOverlay,
+                            snackbarHostState = scaffoldState.snackbarHostState,
+                            isQuickSettingsOpen = isQuickSettingsOpen,
+                            onDismissQuickSettings = onDismissQuickSettings,
                             debugOverlay = debugOverlay,
                             debugVisibilityWrapper = debugVisibilityWrapper,
-                            screenFlashOverlay = screenFlashOverlay,
-                            snackBar = snackBar,
-                            topStartContent = topStartContent,
-                            viewfinderTopEndContent = viewfinderTopEndContent,
-                            topBarTrailingContent = topBarTrailingContent,
-                            onRequiresImmersiveChange = onRequiresImmersiveChange,
-                            errorDialog = errorDialog
+                            screenFlashOverlay = screenFlashOverlay
                         )
                     }
-                }
-
-                CameraLayoutMode.TWO_SIDE_RAIL -> {
-                    val effectiveSlots = slots ?: remember(snackBar, errorDialog) {
-                        PlaceholderCaptureSlots.default().copy(
-                            snackBar = snackBar,
-                            errorDialog = errorDialog
-                        )
-                    }
-                    TwoSideRailLayout(
-                        slots = effectiveSlots,
-                        viewfinder = movableViewfinder,
-                        snackbarHostState = scaffoldState.snackbarHostState,
-                        isQuickSettingsOpen = isQuickSettingsOpen,
-                        onDismissQuickSettings = onDismissQuickSettings,
-                        debugOverlay = debugOverlay,
-                        debugVisibilityWrapper = debugVisibilityWrapper,
-                        screenFlashOverlay = screenFlashOverlay
-                    )
-                }
-
-                CameraLayoutMode.COMPACT_SHORT,
-                CameraLayoutMode.COMPACT_SHORT_SLIM -> {
-                    val effectiveSlots = slots ?: remember(snackBar, errorDialog) {
-                        PlaceholderCaptureSlots.sideRail(isCompactHeight = true).copy(
-                            snackBar = snackBar,
-                            errorDialog = errorDialog
-                        )
-                    }
-                    WideShortLayout(
-                        slots = effectiveSlots,
-                        viewfinder = movableViewfinder,
-                        snackbarHostState = scaffoldState.snackbarHostState,
-                        isQuickSettingsOpen = isQuickSettingsOpen,
-                        onDismissQuickSettings = onDismissQuickSettings,
-                        debugOverlay = debugOverlay,
-                        debugVisibilityWrapper = debugVisibilityWrapper,
-                        screenFlashOverlay = screenFlashOverlay
-                    )
                 }
             }
         }

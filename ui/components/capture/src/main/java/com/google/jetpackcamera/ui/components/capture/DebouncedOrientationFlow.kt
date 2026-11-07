@@ -35,8 +35,13 @@ private const val ORIENTATION_HYSTERESIS = 5
  * A flow that emits the device's orientation, debounced to avoid rapid changes.
  *
  * @param context the application context
+ * @param initialRotation the initial [DeviceRotation] emitted before the first valid sensor reading
+ *   (and retained while the device is flat at [ORIENTATION_UNKNOWN]).
  */
-fun debouncedOrientationFlow(context: Context) = callbackFlow {
+fun debouncedOrientationFlow(
+    context: Context,
+    initialRotation: DeviceRotation = DeviceRotation.Natural
+) = callbackFlow {
     val orientationListener = object : OrientationEventListener(context) {
         override fun onOrientationChanged(orientation: Int) {
             trySend(orientation)
@@ -49,14 +54,17 @@ fun debouncedOrientationFlow(context: Context) = callbackFlow {
         orientationListener.disable()
     }
 }.buffer(capacity = CONFLATED)
-    .runningFold(initial = DeviceRotation.Natural) { prevSnap, newDegrees ->
-        if (
-            newDegrees != ORIENTATION_UNKNOWN &&
-            abs(prevSnap.toClockwiseRotationDegrees() - newDegrees).let { min(it, 360 - it) } >=
-            45 + ORIENTATION_HYSTERESIS
-        ) {
-            DeviceRotation.snapFrom(newDegrees)
-        } else {
+    .runningFold(initial = initialRotation) { prevSnap, newDegrees ->
+        if (newDegrees == ORIENTATION_UNKNOWN) {
             prevSnap
+        } else {
+            val candidate = DeviceRotation.snapFrom(newDegrees)
+            val distToCandidateCenter =
+                abs(candidate.toClockwiseRotationDegrees() - newDegrees).let { min(it, 360 - it) }
+            if (candidate != prevSnap && distToCandidateCenter <= 45 - ORIENTATION_HYSTERESIS) {
+                candidate
+            } else {
+                prevSnap
+            }
         }
     }.distinctUntilChanged()

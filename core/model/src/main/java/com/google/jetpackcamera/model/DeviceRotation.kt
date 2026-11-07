@@ -49,7 +49,68 @@ enum class DeviceRotation {
         }
     }
 
+    /**
+     * Returns the clockwise rotation in degrees needed inside a window at [windowRotation] so that
+     * UI elements remain oriented upright against physical gravity (`this` device rotation).
+     *
+     * An upside-down (`180°`) delta is mapped to `0` so camera controls and layouts never flip
+     * upside-down.
+     */
+    fun toGravityRotationDegrees(windowRotation: DeviceRotation): Int {
+        val rawDelta =
+            (
+                (windowRotation.toClockwiseRotationDegrees() - toClockwiseRotationDegrees()) %
+                    360 + 360
+                ) % 360
+        return if (rawDelta == 180) 0 else rawDelta
+    }
+
+    /**
+     * Returns the clockwise rotation in degrees needed to orient UI elements upright within a
+     * natural-portrait coordinate frame.
+     *
+     * [Rotated180] (reverse portrait) is mapped to `0f` so camera controls do not flip upside-down.
+     */
+    fun toUiRotationDegrees(): Float {
+        return when (this) {
+            Natural, Rotated180 -> 0f
+            Rotated90 -> -90f
+            Rotated270 -> 90f
+        }
+    }
+
+    /**
+     * Returns the clockwise rotation in degrees needed to counter-rotate a root container back to
+     * the device's natural portrait coordinate frame when the OS window is rotated to `this`
+     * orientation.
+     */
+    fun toWindowCounterRotationDegrees(): Float {
+        return when (this) {
+            Natural -> 0f
+            Rotated90 -> 90f
+            Rotated180 -> 180f
+            Rotated270 -> -90f
+        }
+    }
+
+    val isLandscape: Boolean
+        get() = this == Rotated90 || this == Rotated270
+
     companion object {
+        /**
+         * Maps an OS display [Surface] rotation constant (`Surface.ROTATION_*`) to the
+         * corresponding hardware-relative [DeviceRotation].
+         */
+        fun fromSurfaceRotation(surfaceRotation: Int): DeviceRotation {
+            return when (surfaceRotation) {
+                Surface.ROTATION_0 -> Natural
+                Surface.ROTATION_90 -> Rotated270
+                Surface.ROTATION_180 -> Rotated180
+                Surface.ROTATION_270 -> Rotated90
+                else -> Natural
+            }
+        }
+
         fun snapFrom(degrees: Int): DeviceRotation {
             check(degrees in 0..359) {
                 "Degrees must be in the range [0, 360)"
