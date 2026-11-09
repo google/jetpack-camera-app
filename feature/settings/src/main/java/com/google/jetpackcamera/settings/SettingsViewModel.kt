@@ -90,8 +90,13 @@ class SettingsViewModel @Inject constructor(
             constraintsRepository.systemConstraints.filterNotNull(),
             grantedPermissions,
             constraintsRepository.activeCaptureSubModeId
-        ) { updatedSettings, constraints, grantedPerms, activeCaptureSubModeId ->
-            updatedSettings.videoQuality
+        ) { storedSettings, constraints, grantedPerms, activeCaptureSubModeId ->
+            // Fall back to an available lens if the stored default doesn't exist on this device.
+            val updatedSettings = storedSettings.takeIf {
+                it.cameraLensFacing in constraints.availableLenses
+            } ?: constraints.availableLenses.firstOrNull()?.let {
+                storedSettings.copy(cameraLensFacing = it)
+            } ?: storedSettings
             val activeSubMode = constraints.activeCaptureSubMode(activeCaptureSubModeId)
             SettingsUiState.Enabled(
                 aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio)
