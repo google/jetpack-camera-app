@@ -83,50 +83,43 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.defaultCameraAppSettings,
             constraintsRepository.systemConstraints.filterNotNull(),
             grantedPermissions
-        ) { updatedSettings, constraints, grantedPerms ->
-            val settingsWithVerifiedLens = updatedSettings.takeIf {
+        ) { storedSettings, constraints, grantedPerms ->
+            // Fall back to an available lens if the stored default doesn't exist on this device.
+            val updatedSettings = storedSettings.takeIf {
                 it.cameraLensFacing in constraints.availableLenses
             } ?: constraints.availableLenses.firstOrNull()?.let {
-                updatedSettings.copy(cameraLensFacing = it)
-            } ?: updatedSettings
+                storedSettings.copy(cameraLensFacing = it)
+            } ?: storedSettings
             SettingsUiState.Enabled(
-                aspectRatioUiState = AspectRatioUiState.Enabled(
-                    settingsWithVerifiedLens.aspectRatio
-                ),
-                cameraEffectUiState = getCameraEffectUiState(settingsWithVerifiedLens, constraints),
+                aspectRatioUiState = AspectRatioUiState.Enabled(updatedSettings.aspectRatio),
+                cameraEffectUiState = getCameraEffectUiState(updatedSettings, constraints),
                 maxVideoDurationUiState = MaxVideoDurationUiState.Enabled(
-                    settingsWithVerifiedLens.maxVideoDurationMillis
+                    updatedSettings.maxVideoDurationMillis
                 ),
-                flashUiState = getFlashUiState(settingsWithVerifiedLens, constraints),
-                darkModeUiState = DarkModeUiState.Enabled(settingsWithVerifiedLens.darkMode),
+                flashUiState = getFlashUiState(updatedSettings, constraints),
+                darkModeUiState = DarkModeUiState.Enabled(updatedSettings.darkMode),
                 audioUiState = getAudioUiState(
-                    settingsWithVerifiedLens.audioEnabled,
+                    updatedSettings.audioEnabled,
                     grantedPerms.contains(Manifest.permission.RECORD_AUDIO)
                 ),
                 locationUiState = if (locationProvider.isPresent) {
                     getLocationUiState(
-                        settingsWithVerifiedLens.locationEnabled,
+                        updatedSettings.locationEnabled,
                         Manifest.permission.ACCESS_FINE_LOCATION in grantedPerms ||
                             Manifest.permission.ACCESS_COARSE_LOCATION in grantedPerms
                     )
                 } else {
                     LocationUiState.Hidden
                 },
-                fpsUiState = getFpsUiState(constraints, settingsWithVerifiedLens),
-                lensFlipUiState = getLensFlipUiState(constraints, settingsWithVerifiedLens),
-                mirrorModeUiState = MirrorModeUiState.Enabled(settingsWithVerifiedLens.mirrorMode),
-                stabilizationUiState = getStabilizationUiState(
-                    constraints,
-                    settingsWithVerifiedLens
-                ),
-                videoQualityUiState = getVideoQualityUiState(constraints, settingsWithVerifiedLens),
+                fpsUiState = getFpsUiState(constraints, updatedSettings),
+                lensFlipUiState = getLensFlipUiState(constraints, updatedSettings),
+                mirrorModeUiState = MirrorModeUiState.Enabled(updatedSettings.mirrorMode),
+                stabilizationUiState = getStabilizationUiState(constraints, updatedSettings),
+                videoQualityUiState = getVideoQualityUiState(constraints, updatedSettings),
                 lowLightBoostPriorityUiState = LowLightBoostPriorityUiState.Enabled(
-                    settingsWithVerifiedLens.lowLightBoostPriority
+                    updatedSettings.lowLightBoostPriority
                 ),
-                concurrentCameraUiState = getConcurrentCameraUiState(
-                    constraints,
-                    settingsWithVerifiedLens
-                )
+                concurrentCameraUiState = getConcurrentCameraUiState(constraints, updatedSettings)
             )
         }.stateIn(
             scope = viewModelScope,
