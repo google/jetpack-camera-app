@@ -63,8 +63,9 @@ data class CameraAppSettings(
      */
     val activeCaptureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
     /**
-     * The values replaced by the policy of [activeCaptureSubModeId], restored when that sub-mode
-     * ends. Managed in-memory by the camera system while a sub-mode is active.
+     * The values replaced by the policy of [activeCaptureSubModeId], or requested by the user
+     * while it was active, restored when that sub-mode ends. Managed in-memory by the camera
+     * system while a sub-mode is active.
      */
     val captureSubModeOverrides: PolicyOverrides? = null,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
