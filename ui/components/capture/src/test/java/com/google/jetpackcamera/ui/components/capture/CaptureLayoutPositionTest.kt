@@ -67,7 +67,9 @@ class CaptureLayoutPositionTest {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun TestCaptureLayout(captureModeCarousel: @Composable (Modifier) -> Unit = {}) {
+    private fun TestCaptureLayout(
+        captureModeCarousel: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {}
+    ) {
         CaptureScaffoldLayout(
             viewfinder = {},
             captureButton = {

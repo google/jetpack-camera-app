@@ -35,13 +35,11 @@ import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.VideoCaptureEvent
 import com.google.jetpackcamera.ui.components.capture.AmplitudeToggleButton
 import com.google.jetpackcamera.ui.components.capture.CameraSessionEffect
-import com.google.jetpackcamera.ui.components.capture.CaptureControls
 import com.google.jetpackcamera.ui.components.capture.CaptureScaffold
 import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldDefaults
 import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldLayout
 import com.google.jetpackcamera.ui.components.capture.LOADING_CAPTURE_UI_STATE_SKELETON
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
-import com.google.jetpackcamera.ui.components.capture.rememberCaptureScaffoldState
 import com.google.jetpackcamera.ui.debug.DebugOverlay
 import com.google.jetpackcamera.ui.debug.DebugUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
@@ -121,7 +119,6 @@ fun PreviewScreen(
         }
     }
 
-    val scaffoldState = rememberCaptureScaffoldState()
     val debugController = viewModel.debugController
     val currentDebugUiState = debugUiState
     val isDebugHidingComponents =
@@ -144,7 +141,6 @@ fun PreviewScreen(
         captureUiState = readyStateProvider,
         surfaceRequest = surfaceRequest,
         modifier = modifier,
-        state = scaffoldState,
         onNavigateToSettings = onNavigateToSettings,
         onRequestWindowColorMode = onRequestWindowColorMode,
         onRequiresImmersiveChange = onRequiresImmersiveChange,
@@ -156,25 +152,14 @@ fun PreviewScreen(
         zoomController = viewModel.zoomController,
         snackBarController = viewModel.snackBarController,
         screenFlashController = viewModel.screenFlashController,
-        controls = { slotModifier ->
-            CaptureControls(
-                captureUiState = readyStateProvider,
-                modifier = slotModifier,
-                state = scaffoldState,
-                captureController = viewModel.captureController,
-                quickSettingsController = viewModel.quickSettingsController,
-                zoomController = viewModel.zoomController,
-                snackBarController = viewModel.snackBarController,
-                imageWell = { imageWellModifier ->
-                    if (externalCaptureModeState.value == ExternalCaptureMode.Standard) {
-                        CaptureScaffoldDefaults.ImageWell(
-                            uiState = imageWellState.value,
-                            onClick = onNavigateToPostCapture,
-                            modifier = imageWellModifier
-                        )
-                    }
-                }
-            )
+        imageWell = { imageWellModifier ->
+            if (externalCaptureModeState.value == ExternalCaptureMode.Standard) {
+                CaptureScaffoldDefaults.ImageWell(
+                    uiState = imageWellState.value,
+                    onClick = onNavigateToPostCapture,
+                    modifier = imageWellModifier
+                )
+            }
         },
         errorDialog = { error, onDismiss ->
             CaptureScaffoldDefaults.ErrorDialog(

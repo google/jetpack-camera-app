@@ -55,7 +55,7 @@ class CaptureLayoutTest {
         modifier: Modifier = Modifier,
         state: CaptureScaffoldState = rememberCaptureScaffoldState(),
         onDismissQuickSettings: () -> Unit = {},
-        captureButton: @Composable (Modifier) -> Unit = {},
+        captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
         quickSettingsOverlay: @Composable (Modifier) -> Unit = {},
         viewfinder: @Composable (Modifier) -> Unit = {}
     ) {

@@ -50,10 +50,12 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -142,13 +144,6 @@ private const val PORTRAIT_ASPECT_RATIO_THRESHOLD = 16f / 9f - 0.01f
 private val MIN_GESTURE_INSET = 32.dp
 
 /**
- * Provides the enclosing [CaptureScaffoldLayout]'s [SnackbarHostState] to [CaptureControlsLayout]
- * so the pill snackbar host can be anchored above the zoom bar without requiring callers of
- * [CaptureControls] to thread [SnackbarHostState] manually.
- */
-internal val LocalCaptureSnackbarHostState = compositionLocalOf<SnackbarHostState?> { null }
-
-/**
  * The top edge of the visible viewfinder, reported by a viewfinder that fills its slot and offsets
  * its own frame (such as [PreviewDisplay]).
  *
@@ -159,48 +154,77 @@ internal val LocalCaptureSnackbarHostState = compositionLocalOf<SnackbarHostStat
 internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
 
 /**
- * Region-based adaptive layout for the camera capture experience.
+ * The base adaptive layout for the camera capture screen.
  *
- * Positions the [viewfinder], [topBar], [controls], [quickSettingsOverlay] bottom sheet,
+ * Positions the [viewfinder], individual control slots ([captureButton], [imageWell],
+ * [flipCameraButton], [zoomLevelDisplay], [elapsedTimeDisplay], [quickSettingsButton],
+ * [indicatorRow], [captureModeToggle], [captureModeCarousel]), [quickSettingsOverlay],
  * [topStartContent], [viewfinderTopEndContent], [topBarTrailingContent], [overlay],
  * [screenFlashOverlay], [snackBar], and [errorDialog] without depending on [CaptureUiState].
  *
- * @param modifier the [Modifier] for this layout.
- * @param state the [CaptureScaffoldState] controlling the Quick Settings bottom sheet and snackbar
- *   host. Must match the state passed to [CaptureControls] when [CaptureControls] is used inside
- *   [controls].
- * @param onDismissQuickSettings callback invoked when the user taps the sheet drag handle or scrim.
+ * @param modifier the [Modifier] for this component.
+ * @param state the mode-agnostic [CaptureScaffoldState] controlling Quick Settings visibility and
+ *   the [SnackbarHostState].
+ * @param onDismissQuickSettings callback invoked when Quick Settings is dismissed via the drag
+ *   handle or scrim.
  * @param viewfinder the viewfinder composable.
- * @param topBar composable content placed in the top indicator/status bar region.
- * @param controls composable content for the camera control stack (typically [CaptureControls] or
- *   [CaptureControlsLayout]).
- * @param controlsVisible whether the [controls] region should be composed and visible.
- * @param quickSettingsOverlay composable content inside the Quick Settings bottom sheet.
+ * @param captureButton the capture button composable.
+ * @param imageWell the image well composable.
+ * @param flipCameraButton the flip camera button composable.
+ * @param zoomLevelDisplay the zoom level display composable.
+ * @param elapsedTimeDisplay the elapsed time display composable.
+ * @param quickSettingsButton the quick settings button composable.
+ * @param indicatorRow the top indicator row composable.
+ * @param captureModeToggle the capture mode toggle composable.
+ * @param captureModeCarousel content for the fixed-height slot reserved between the shutter row
+ *   and the lower controls row. The slot is always reserved, so supplying or omitting content here
+ *   never moves the surrounding controls. The content is centered on the slot and may be taller
+ *   than it, for example to provide a larger touch target, extending equally into the gaps above
+ *   and below the slot without overlapping the neighboring rows.
+ * @param quickSettingsOverlay the quick settings overlay composable.
  * @param overlay optional overlay composable drawn above the viewfinder and controls.
- * @param screenFlashOverlay composable drawn above all other content (including the bottom sheet
- *   and system bar / display cutout areas) for screen flash.
- * @param snackBar composable for triggering snackbar messages against [SnackbarHostState].
+ * @param controlsVisible whether the camera controls should be composed and visible.
+ * @param screenFlashOverlay the screen flash overlay composable, drawn above all other content
+ *   (including the quick settings sheet) and across the entire window, including the system bar
+ *   and display cutout areas.
+ * @param snackBar the snack bar composable for showing messages against [SnackbarHostState].
  * @param topStartContent optional composable content placed at the top-start of the capture
- *   layout directly below the top bar, receiving a [PreviewOverlaySlotScope].
+ *   screen, at a fixed position directly below the top status/indicator bar. Because the viewfinder
+ *   can move below this content, the content receives a [PreviewOverlaySlotScope] that reports
+ *   whether it is currently over the viewfinder.
  * @param viewfinderTopEndContent optional composable content anchored to the top-end corner of the
- *   viewfinder, receiving a [PreviewOverlaySlotScope].
- * @param topBarTrailingContent optional composable content aligned to the end of the top bar.
+ *   viewfinder. While [topStartContent] is inside the viewfinder, this content shares its vertical
+ *   origin directly below the top bar, so both top slots stay aligned. When the viewfinder shifts
+ *   below [topStartContent], this content moves down with the top edge of the viewfinder while
+ *   [topStartContent] stays in place. Like [topStartContent], this content receives a
+ *   [PreviewOverlaySlotScope].
+ * @param topBarTrailingContent optional composable content aligned to the end of the top
+ *   status/indicator bar.
  * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
- *   tallest viewfinder to clear a persistent navigation bar, and `false` otherwise or on dispose.
- * @param errorDialog composable content for displaying a camera error dialog above the layout.
+ *   tallest viewfinder to clear a persistent navigation bar, and with `false` when it no longer is
+ *   or when the adaptive portrait layout leaves the composition.
+ * @param errorDialog the camera error alert dialog composable.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Suppress("DEPRECATION")
 @Composable
 fun CaptureScaffoldLayout(
     modifier: Modifier = Modifier,
     state: CaptureScaffoldState = rememberCaptureScaffoldState(),
     onDismissQuickSettings: () -> Unit = {},
     viewfinder: @Composable (Modifier) -> Unit,
-    topBar: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    controls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    controlsVisible: Boolean = true,
+    captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    flipCameraButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    zoomLevelDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    quickSettingsButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    captureModeToggle: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    captureModeCarousel: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     quickSettingsOverlay: @Composable (Modifier) -> Unit = {},
     overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    controlsVisible: Boolean = true,
     screenFlashOverlay: @Composable (Modifier) -> Unit = {},
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit = { _, _ -> },
     topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
@@ -209,15 +233,43 @@ fun CaptureScaffoldLayout(
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
-    val scaffoldState = state.scaffoldState
+    val bottomSheetState = rememberStandardBottomSheetState(
+        initialValue = if (state.isQuickSettingsOpen) SheetValue.Expanded else SheetValue.Hidden,
+        skipHiddenState = false,
+        confirmValueChange = { targetValue ->
+            if (targetValue == SheetValue.Hidden) {
+                state.dismissQuickSettings()
+            } else if (targetValue == SheetValue.Expanded) {
+                state.showQuickSettings()
+            }
+            true
+        }
+    )
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = bottomSheetState,
+        snackbarHostState = state.snackbarHostState
+    )
+    LaunchedEffect(state.isQuickSettingsOpen) {
+        if (state.isQuickSettingsOpen) {
+            if (bottomSheetState.targetValue != SheetValue.Expanded) {
+                bottomSheetState.expand()
+            }
+        } else {
+            if (bottomSheetState.isVisible || bottomSheetState.targetValue != SheetValue.Hidden) {
+                bottomSheetState.hide()
+            }
+        }
+    }
+
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val dismissQuickSettingsLabel =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
+    val handleDismissQuickSettings = {
+        state.dismissQuickSettings()
+        onDismissQuickSettings()
+    }
 
-    CompositionLocalProvider(
-        LocalOverlapTargetBounds provides overlapTargetBounds,
-        LocalCaptureSnackbarHostState provides scaffoldState.snackbarHostState
-    ) {
+    CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
         Box(modifier = modifier.fillMaxSize()) {
             BottomSheetScaffold(
                 modifier = Modifier.fillMaxSize(),
@@ -230,7 +282,7 @@ fun CaptureScaffoldLayout(
                             .clickable(
                                 role = Role.Button,
                                 onClickLabel = dismissQuickSettingsLabel,
-                                onClick = onDismissQuickSettings
+                                onClick = handleDismissQuickSettings
                             )
                     )
                 },
@@ -257,10 +309,23 @@ fun CaptureScaffoldLayout(
                             topStartContent = topStartContent,
                             viewfinderTopEndContent = viewfinderTopEndContent,
                             onRequiresImmersiveChange = onRequiresImmersiveChange,
-                            indicatorRow = topBar,
+                            indicatorRow = indicatorRow,
                             topBarTrailingContent = topBarTrailingContent,
-                            controls = controls,
-                            controlsVisible = controlsVisible
+                            elapsedTimeDisplay = elapsedTimeDisplay,
+                            zoomControls = zoomLevelDisplay,
+                            imageWell = imageWell,
+                            captureButton = captureButton,
+                            flipCameraButton = flipCameraButton,
+                            captureModeCarousel = captureModeCarousel,
+                            quickSettingsToggleButton = quickSettingsButton,
+                            captureModeToggleSwitch = captureModeToggle,
+                            controlsVisible = controlsVisible,
+                            snackbarHost = { snackbarModifier ->
+                                PillSnackbarHost(
+                                    snackbarHostState = state.snackbarHostState,
+                                    modifier = snackbarModifier
+                                )
+                            }
                         )
                         Box(
                             modifier = Modifier
@@ -270,7 +335,7 @@ fun CaptureScaffoldLayout(
                                         .union(WindowInsets.displayCutout)
                                 )
                         ) {
-                            snackBar(Modifier, scaffoldState.snackbarHostState)
+                            snackBar(Modifier, state.snackbarHostState)
                         }
                     } else {
                         Column {
@@ -292,7 +357,7 @@ fun CaptureScaffoldLayout(
                                 contentAlignment = Alignment.CenterStart
                             ) {
                                 OverlapAwareStyleProvider {
-                                    topBar(Modifier)
+                                    indicatorRow(Modifier)
                                 }
                                 OverlapAwareStyleProvider(Modifier.align(Alignment.CenterEnd)) {
                                     topBarTrailingContent(Modifier)
@@ -318,19 +383,33 @@ fun CaptureScaffoldLayout(
                                 )
                         ) {
                             if (controlsVisible) {
-                                OverlapAwareStyleProvider {
-                                    controls(Modifier)
-                                }
+                                VerticalMaterialControls(
+                                    captureButton = captureButton,
+                                    imageWell = imageWell,
+                                    flipCameraButton = flipCameraButton,
+                                    quickSettingsToggleButton = quickSettingsButton,
+                                    captureModeToggleSwitch = captureModeToggle,
+                                    captureModeCarousel = captureModeCarousel,
+                                    zoomControls = zoomLevelDisplay,
+                                    elapsedTimeDisplay = elapsedTimeDisplay,
+                                    snackbarHost = { snackbarModifier ->
+                                        PillSnackbarHost(
+                                            snackbarHostState = state.snackbarHostState,
+                                            modifier = snackbarModifier
+                                        )
+                                    }
+                                )
                             }
-                            snackBar(Modifier, scaffoldState.snackbarHostState)
+                            snackBar(Modifier, state.snackbarHostState)
                         }
                     }
                     OverlapAwareStyleProvider {
                         overlay(Modifier)
                     }
 
-                    val isSheetVisible = scaffoldState.bottomSheetState.isVisible ||
-                        scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+                    val isSheetVisible = state.isQuickSettingsOpen ||
+                        bottomSheetState.isVisible ||
+                        bottomSheetState.targetValue == SheetValue.Expanded
                     if (isSheetVisible) {
                         Box(
                             modifier = Modifier
@@ -340,7 +419,7 @@ fun CaptureScaffoldLayout(
                                     onClickLabel = dismissQuickSettingsLabel,
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
-                                    onClick = onDismissQuickSettings
+                                    onClick = handleDismissQuickSettings
                                 )
                         )
                     }
@@ -355,78 +434,11 @@ fun CaptureScaffoldLayout(
     }
 }
 
-/**
- * Per-control overload of [CaptureScaffoldLayout] that places individual control slots using
- * [CaptureControlsLayout].
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CaptureScaffoldLayout(
-    modifier: Modifier = Modifier,
-    state: CaptureScaffoldState = rememberCaptureScaffoldState(),
-    onDismissQuickSettings: () -> Unit = {},
-    viewfinder: @Composable (Modifier) -> Unit,
-    captureButton: @Composable (Modifier) -> Unit,
-    imageWell: @Composable (Modifier) -> Unit,
-    flipCameraButton: @Composable (Modifier) -> Unit,
-    zoomLevelDisplay: @Composable (Modifier) -> Unit,
-    elapsedTimeDisplay: @Composable (Modifier) -> Unit,
-    quickSettingsButton: @Composable (Modifier) -> Unit,
-    indicatorRow: @Composable (Modifier) -> Unit,
-    captureModeToggle: @Composable (Modifier) -> Unit,
-    captureModeCarousel: @Composable (Modifier) -> Unit = {},
-    quickSettingsOverlay: @Composable (Modifier) -> Unit = {},
-    overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    controlsVisible: Boolean = true,
-    screenFlashOverlay: @Composable (Modifier) -> Unit = {},
-    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit = { _, _ -> },
-    topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    topBarTrailingContent: @Composable (Modifier) -> Unit = {},
-    onRequiresImmersiveChange: (Boolean) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
-) {
-    CaptureScaffoldLayout(
-        modifier = modifier,
-        state = state,
-        onDismissQuickSettings = onDismissQuickSettings,
-        viewfinder = viewfinder,
-        topBar = { topBarModifier -> indicatorRow(topBarModifier) },
-        controls = { controlsModifier ->
-            CaptureControlsLayout(
-                modifier = controlsModifier,
-                captureButton = { captureButton(it) },
-                imageWell = { imageWell(it) },
-                flipCameraButton = { flipCameraButton(it) },
-                zoomControls = { zoomLevelDisplay(it) },
-                elapsedTimeDisplay = { elapsedTimeDisplay(it) },
-                quickSettingsButton = { quickSettingsButton(it) },
-                captureModeToggle = { captureModeToggle(it) },
-                captureModeCarousel = { captureModeCarousel(it) }
-            )
-        },
-        controlsVisible = controlsVisible,
-        quickSettingsOverlay = quickSettingsOverlay,
-        overlay = overlay,
-        screenFlashOverlay = screenFlashOverlay,
-        snackBar = snackBar,
-        topStartContent = topStartContent,
-        viewfinderTopEndContent = viewfinderTopEndContent,
-        topBarTrailingContent = { trailingModifier -> topBarTrailingContent(trailingModifier) },
-        onRequiresImmersiveChange = onRequiresImmersiveChange,
-        errorDialog = errorDialog
-    )
-}
-
 private enum class CaptureSlotId {
     Viewfinder,
     TopStartContent,
     ViewfinderTopEndContent,
     TopBar,
-    Controls
-}
-
-private enum class CaptureControlSlotId {
     ElapsedTime,
     ZoomBar,
     CaptureRow,
@@ -445,8 +457,16 @@ private fun AdaptivePortraitCaptureLayout(
     onRequiresImmersiveChange: (Boolean) -> Unit,
     indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    controls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    controlsVisible: Boolean
+    elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    flipCameraButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    captureModeCarousel: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    quickSettingsToggleButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    captureModeToggleSwitch: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    controlsVisible: Boolean,
+    snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     val cutoutTopInset = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
     val navInset = WindowInsets.navigationBarsIgnoringVisibility
@@ -534,10 +554,104 @@ private fun AdaptivePortraitCaptureLayout(
                 }
 
                 if (controlsVisible) {
-                    Box(modifier = Modifier.layoutId(CaptureSlotId.Controls)) {
+                    Column(
+                        modifier = Modifier.layoutId(CaptureSlotId.ElapsedTime),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        snackbarHost(Modifier)
                         OverlapAwareStyleProvider {
-                            controls(Modifier)
+                            elapsedTimeDisplay(Modifier)
                         }
+                    }
+
+                    Box(
+                        modifier = Modifier.layoutId(CaptureSlotId.ZoomBar),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        OverlapAwareStyleProvider {
+                            zoomControls(Modifier)
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .layoutId(CaptureSlotId.CaptureRow)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                OverlapAwareStyleProvider {
+                                    imageWell(Modifier)
+                                }
+                            }
+                        }
+
+                        OverlapAwareStyleProvider {
+                            captureButton(Modifier)
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            OverlapAwareStyleProvider {
+                                flipCameraButton(Modifier)
+                            }
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .layoutId(CaptureSlotId.ModeSwitcher)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        OverlapAwareStyleProvider {
+                            captureModeCarousel(Modifier)
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .layoutId(CaptureSlotId.BottomToolbar)
+                            .fillMaxWidth()
+                            .padding(horizontal = LOWER_SECTION_HORIZONTAL_PADDING),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            OverlapAwareStyleProvider {
+                                quickSettingsToggleButton(Modifier)
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            OverlapAwareStyleProvider {
+                                captureModeToggleSwitch(Modifier)
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {}
                     }
                 }
             }
@@ -545,15 +659,59 @@ private fun AdaptivePortraitCaptureLayout(
             val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
             val fullWidthLooseHeight = constraints.copy(minHeight = 0)
 
+            // Each control row is measured against the band the solver reserved for it, so a row's
+            // content can never push its neighbours around. The solver has already accounted for
+            // toolbar compaction, so BOTTOM_TOOLBAR's band is the compacted height where that
+            // applies.
+            fun bandOf(rowId: String) = solution.rowBands.getValue(rowId)
+
+            fun measureInBand(slot: CaptureSlotId, rowId: String): Pair<Placeable, Int>? {
+                val measurable = measurables.firstOrNull { it.layoutId == slot } ?: return null
+                val band = bandOf(rowId)
+                val placeable = measurable.measure(
+                    Constraints.fixed(constraints.maxWidth, band.height.roundToPx())
+                )
+                return placeable to band.top.roundToPx()
+            }
+
             val topBarPlaceable = measurables
                 .firstOrNull { it.layoutId == CaptureSlotId.TopBar }
                 ?.measure(fullWidthLooseHeight)
             val topStartPlaceable = measurables
                 .firstOrNull { it.layoutId == CaptureSlotId.TopStartContent }
                 ?.measure(looseConstraints)
-            val controlsPlaceable = measurables
-                .firstOrNull { it.layoutId == CaptureSlotId.Controls }
+            val elapsedTimePlaceable = measurables
+                .firstOrNull { it.layoutId == CaptureSlotId.ElapsedTime }
                 ?.measure(looseConstraints)
+
+            val zoomBar = measureInBand(CaptureSlotId.ZoomBar, CameraRowIds.ZOOM_BAR)
+            val captureRow = measureInBand(CaptureSlotId.CaptureRow, CameraRowIds.CAPTURE_ROW)
+            // The mode switcher's band is the switcher's reserved visual height. Its content may
+            // be taller, for example a carousel with a larger touch target, so it is measured up to
+            // the band plus the smaller of the two gaps around it, once on each side, and centered
+            // on the band. The content then never overlaps the neighboring rows and never moves
+            // them.
+            val modeSwitcher = measurables
+                .firstOrNull { it.layoutId == CaptureSlotId.ModeSwitcher }
+                ?.let { measurable ->
+                    val band = bandOf(CameraRowIds.MODE_SWITCHER)
+                    val clearance = min(
+                        band.top - bandOf(CameraRowIds.CAPTURE_ROW).bottom,
+                        bandOf(CameraRowIds.BOTTOM_TOOLBAR).top - band.bottom
+                    ).coerceAtLeast(0.dp)
+                    val bandHeightPx = band.height.roundToPx()
+                    val placeable = measurable.measure(
+                        Constraints(
+                            minWidth = constraints.maxWidth,
+                            maxWidth = constraints.maxWidth,
+                            minHeight = bandHeightPx,
+                            maxHeight = (band.height + clearance * 2).roundToPx()
+                        )
+                    )
+                    placeable to band.top.roundToPx() - (placeable.height - bandHeightPx) / 2
+                }
+            val bottomToolbar =
+                measureInBand(CaptureSlotId.BottomToolbar, CameraRowIds.BOTTOM_TOOLBAR)
 
             val viewfinderPlaceable = measurables
                 .firstOrNull { it.layoutId == CaptureSlotId.Viewfinder }
@@ -617,214 +775,7 @@ private fun AdaptivePortraitCaptureLayout(
                 }
 
                 topBarPlaceable?.placeRelative(0, 0)
-                controlsPlaceable?.placeRelative(0, 0)
-            }
-        }
-    }
-}
 
-/**
- * Adaptive control-rows layout used by [CaptureControls] and [CaptureScaffoldLayout].
- *
- * When a [LocalCameraLayoutSolution] is present (portrait handheld windows), each control row is
- * measured and placed against its solved band. Otherwise (landscape, square, or standalone
- * previews/tests), falls back to [VerticalMaterialControls].
- *
- * @param modifier the [Modifier] for this layout.
- * @param captureButton composable for the primary capture / shutter button.
- * @param imageWell composable for the post-capture thumbnail well placed to the start of the
- *   shutter button.
- * @param flipCameraButton composable for the lens flip button placed to the end of the shutter
- *   button.
- * @param zoomControls composable for the zoom bar placed above the shutter row.
- * @param elapsedTimeDisplay composable for the recording elapsed-time readout placed above the
- *   zoom bar.
- * @param quickSettingsButton composable for the Quick Settings toggle button in the bottom toolbar.
- * @param captureModeToggle composable for the capture mode toggle centered in the bottom toolbar.
- * @param captureModeCarousel optional composable placed in the reserved mode-switcher slot between
- *   the shutter row and the bottom toolbar.
- * @param snackbarHost composable for rendering snackbars above the zoom bar; defaults to a
- *   [PillSnackbarHost] bound to the enclosing [CaptureScaffoldLayout]'s [SnackbarHostState].
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun CaptureControlsLayout(
-    modifier: Modifier = Modifier,
-    captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    flipCameraButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    quickSettingsButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    captureModeToggle: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    captureModeCarousel: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
-    snackbarHost: @Composable (Modifier) -> Unit = { snackbarModifier ->
-        LocalCaptureSnackbarHostState.current?.let { hostState ->
-            PillSnackbarHost(
-                snackbarHostState = hostState,
-                modifier = snackbarModifier
-            )
-        }
-    }
-) {
-    val solution = LocalCameraLayoutSolution.current
-    if (solution != null) {
-        Layout(
-            modifier = modifier.fillMaxSize(),
-            content = {
-                Column(
-                    modifier = Modifier.layoutId(CaptureControlSlotId.ElapsedTime),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    snackbarHost(Modifier)
-                    OverlapAwareStyleProvider {
-                        elapsedTimeDisplay(Modifier)
-                    }
-                }
-
-                Box(
-                    modifier = Modifier.layoutId(CaptureControlSlotId.ZoomBar),
-                    contentAlignment = Alignment.Center
-                ) {
-                    OverlapAwareStyleProvider {
-                        zoomControls(Modifier)
-                    }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .layoutId(CaptureControlSlotId.CaptureRow)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            OverlapAwareStyleProvider {
-                                imageWell(Modifier)
-                            }
-                        }
-                    }
-
-                    OverlapAwareStyleProvider {
-                        captureButton(Modifier)
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        OverlapAwareStyleProvider {
-                            flipCameraButton(Modifier)
-                        }
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .layoutId(CaptureControlSlotId.ModeSwitcher)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    OverlapAwareStyleProvider {
-                        captureModeCarousel(Modifier)
-                    }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .layoutId(CaptureControlSlotId.BottomToolbar)
-                        .fillMaxWidth()
-                        .padding(horizontal = LOWER_SECTION_HORIZONTAL_PADDING),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        OverlapAwareStyleProvider {
-                            quickSettingsButton(Modifier)
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        OverlapAwareStyleProvider {
-                            captureModeToggle(Modifier)
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.CenterEnd
-                    ) {}
-                }
-            }
-        ) { measurables, constraints ->
-            val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
-
-            // Each control row is measured against the band the solver reserved for it, so a row's
-            // content can never push its neighbours around. The solver has already accounted for
-            // toolbar compaction, so BOTTOM_TOOLBAR's band is the compacted height where that
-            // applies.
-            fun bandOf(rowId: String) = solution.rowBands.getValue(rowId)
-
-            fun measureInBand(slot: CaptureControlSlotId, rowId: String): Pair<Placeable, Int>? {
-                val measurable = measurables.firstOrNull { it.layoutId == slot } ?: return null
-                val band = bandOf(rowId)
-                val placeable = measurable.measure(
-                    Constraints.fixed(constraints.maxWidth, band.height.roundToPx())
-                )
-                return placeable to band.top.roundToPx()
-            }
-
-            val elapsedTimePlaceable = measurables
-                .firstOrNull { it.layoutId == CaptureControlSlotId.ElapsedTime }
-                ?.measure(looseConstraints)
-
-            val zoomBar = measureInBand(CaptureControlSlotId.ZoomBar, CameraRowIds.ZOOM_BAR)
-            val captureRow =
-                measureInBand(CaptureControlSlotId.CaptureRow, CameraRowIds.CAPTURE_ROW)
-            // The mode switcher's band is the switcher's reserved visual height. Its content may
-            // be taller, for example a carousel with a larger touch target, so it is measured up to
-            // the band plus the smaller of the two gaps around it, once on each side, and centered
-            // on the band. The content then never overlaps the neighboring rows and never moves
-            // them.
-            val modeSwitcher = measurables
-                .firstOrNull { it.layoutId == CaptureControlSlotId.ModeSwitcher }
-                ?.let { measurable ->
-                    val band = bandOf(CameraRowIds.MODE_SWITCHER)
-                    val clearance = min(
-                        band.top - bandOf(CameraRowIds.CAPTURE_ROW).bottom,
-                        bandOf(CameraRowIds.BOTTOM_TOOLBAR).top - band.bottom
-                    ).coerceAtLeast(0.dp)
-                    val bandHeightPx = band.height.roundToPx()
-                    val placeable = measurable.measure(
-                        Constraints(
-                            minWidth = constraints.maxWidth,
-                            maxWidth = constraints.maxWidth,
-                            minHeight = bandHeightPx,
-                            maxHeight = (band.height + clearance * 2).roundToPx()
-                        )
-                    )
-                    placeable to band.top.roundToPx() - (placeable.height - bandHeightPx) / 2
-                }
-            val bottomToolbar =
-                measureInBand(CaptureControlSlotId.BottomToolbar, CameraRowIds.BOTTOM_TOOLBAR)
-
-            layout(constraints.maxWidth, constraints.maxHeight) {
                 // The elapsed time readout is not a solver row: it is an optional caption that
                 // hangs above the zoom bar, so it is placed relative to that band rather than
                 // reserving a band of its own.
@@ -841,19 +792,6 @@ fun CaptureControlsLayout(
                 bottomToolbar?.let { (placeable, top) -> placeable.placeRelative(0, top) }
             }
         }
-    } else {
-        VerticalMaterialControls(
-            modifier = modifier,
-            captureButton = captureButton,
-            imageWell = imageWell,
-            flipCameraButton = flipCameraButton,
-            quickSettingsToggleButton = quickSettingsButton,
-            captureModeToggleSwitch = captureModeToggle,
-            captureModeCarousel = captureModeCarousel,
-            zoomControls = zoomControls,
-            elapsedTimeDisplay = elapsedTimeDisplay,
-            snackbarHost = snackbarHost
-        )
     }
 }
 
@@ -1006,7 +944,6 @@ private fun VerticalMaterialControls(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @PreviewPortraitDevices
 @Composable
 private fun CaptureLayoutPreview() {

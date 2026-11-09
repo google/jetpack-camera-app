@@ -250,7 +250,7 @@ class CaptureScaffoldTest {
     }
 
     @Test
-    fun captureControls_omitsImageWellByDefault_andRendersWhenProvided() {
+    fun captureScaffold_omitsImageWellByDefault_andRendersWhenProvided() {
         val thumbnail = Bitmap.createBitmap(8, 8, Bitmap.Config.ARGB_8888)
         val imageWellContent = ImageWellUiState.Content(
             mediaDescriptor = MediaDescriptor.Content.Image(
@@ -265,28 +265,19 @@ class CaptureScaffoldTest {
 
         composeTestRule.setContent {
             CompositionLocalProvider(LocalDisableAnimations provides true) {
-                val scaffoldState = rememberCaptureScaffoldState()
                 CaptureScaffold(
                     captureUiState = { uiState },
                     surfaceRequest = null,
-                    state = scaffoldState,
-                    controls = { slotModifier ->
-                        CaptureControls(
-                            captureUiState = { uiState },
-                            state = scaffoldState,
-                            modifier = slotModifier,
-                            imageWell = if (showImageWell) {
-                                { imageWellModifier ->
-                                    CaptureScaffoldDefaults.ImageWell(
-                                        uiState = uiState.imageWellUiState,
-                                        onClick = {},
-                                        modifier = imageWellModifier
-                                    )
-                                }
-                            } else {
-                                null
-                            }
-                        )
+                    imageWell = if (showImageWell) {
+                        { imageWellModifier ->
+                            CaptureScaffoldDefaults.ImageWell(
+                                uiState = uiState.imageWellUiState,
+                                onClick = {},
+                                modifier = imageWellModifier
+                            )
+                        }
+                    } else {
+                        null
                     }
                 )
             }
@@ -400,7 +391,7 @@ class CaptureScaffoldTest {
     }
 
     @Test
-    fun captureScaffold_customControlsQuickSettingsButton_togglesScaffoldBottomSheet() {
+    fun captureScaffold_quickSettingsButton_togglesQuickSettingsStateAndBottomSheet() {
         val quickSettingsController = FakeQuickSettingsController()
         val uiState = LOADING_CAPTURE_UI_STATE_SKELETON.copy(
             quickSettingsUiState = availableQuickSettingsUiState
@@ -414,15 +405,7 @@ class CaptureScaffoldTest {
                     captureUiState = { uiState },
                     surfaceRequest = null,
                     state = scaffoldState,
-                    quickSettingsController = quickSettingsController,
-                    controls = { slotModifier ->
-                        CaptureControls(
-                            captureUiState = { uiState },
-                            state = scaffoldState,
-                            modifier = slotModifier,
-                            quickSettingsController = quickSettingsController
-                        )
-                    }
+                    quickSettingsController = quickSettingsController
                 )
             }
         }
@@ -441,6 +424,27 @@ class CaptureScaffoldTest {
         composeTestRule.waitForIdle()
 
         assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+    }
+
+    @Test
+    fun captureScaffoldState_isModeAgnosticWithoutMountedBottomSheet() {
+        val state = CaptureScaffoldState(isInitiallyExpanded = false)
+        assertThat(state.isQuickSettingsOpen).isFalse()
+
+        state.showQuickSettings()
+        assertThat(state.isQuickSettingsOpen).isTrue()
+
+        state.toggleQuickSettings()
+        assertThat(state.isQuickSettingsOpen).isFalse()
+
+        state.toggleQuickSettings()
+        assertThat(state.isQuickSettingsOpen).isTrue()
+
+        val restored = CaptureScaffoldState.Saver.restore(true)
+        assertThat(restored?.isQuickSettingsOpen).isTrue()
+
+        state.dismissQuickSettings()
+        assertThat(state.isQuickSettingsOpen).isFalse()
     }
 
     @Test
