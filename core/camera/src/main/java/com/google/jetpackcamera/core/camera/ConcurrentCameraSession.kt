@@ -141,6 +141,16 @@ internal suspend fun runConcurrentCameraSession(
             val primaryCamera = concurrentCamera.cameras.first {
                 it.cameraInfo.appLensFacing == sessionSettings.primaryCameraInfo.appLensFacing
             }
+            val isPreviewLandscape = useCaseGroup.getPreview()?.let { preview ->
+                isSensorOutputLandscape(
+                    sensorRotationDegrees =
+                    primaryCamera.cameraInfo.getSensorRotationDegrees(preview.targetRotation),
+                    sensorRect = primaryCamera.cameraInfo.sensorRect
+                )
+            }
+            currentCameraState.update { old ->
+                old.copy(isPreviewLandscape = isPreviewLandscape)
+            }
 
             launch {
                 processFocusMeteringEvents(

@@ -15,14 +15,20 @@
  */
 package com.google.jetpackcamera
 
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
 import androidx.compose.ui.test.doubleClick
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.LensFacing
@@ -100,6 +106,45 @@ class SwitchCameraTest {
             initialLensFacing.flip().flip()
         ).inOrder()
     }
+
+    @Test
+    fun flipCamera_updatesPreviewDisplayOrientationToMatchSensor() =
+        runFlipCameraTest(composeTestRule) {
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val cameraManager = context.getSystemService(CameraManager::class.java)
+
+            fun expectedIsLandscape(lensFacing: LensFacing): Boolean {
+                val targetFacing = when (lensFacing) {
+                    LensFacing.FRONT -> CameraCharacteristics.LENS_FACING_FRONT
+                    LensFacing.BACK -> CameraCharacteristics.LENS_FACING_BACK
+                }
+                val characteristics = cameraManager.cameraIdList
+                    .map { cameraManager.getCameraCharacteristics(it) }
+                    .first { it.get(CameraCharacteristics.LENS_FACING) == targetFacing }
+                val sensorOrientation =
+                    characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 0
+                val sensorRect =
+                    characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)!!
+                return (sensorOrientation % 180 == 0) == (sensorRect.width() >= sensorRect.height())
+            }
+
+            val initialLensFacing = composeTestRule.getCurrentLensFacing()
+            composeTestRule.waitForIdle()
+            val initialBounds =
+                composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+            assertThat(initialBounds.width > initialBounds.height)
+                .isEqualTo(expectedIsLandscape(initialLensFacing))
+
+            composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
+            val flippedLensFacing = composeTestRule.getCurrentLensFacing()
+            assertThat(flippedLensFacing).isEqualTo(initialLensFacing.flip())
+
+            composeTestRule.waitForIdle()
+            val flippedBounds =
+                composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+            assertThat(flippedBounds.width > flippedBounds.height)
+                .isEqualTo(expectedIsLandscape(flippedLensFacing))
+        }
 }
 
 inline fun runFlipCameraTest(

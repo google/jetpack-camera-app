@@ -21,6 +21,7 @@ import android.content.Context
 import android.graphics.ImageFormat
 import android.net.Uri
 import android.util.Size
+import android.view.Surface
 import androidx.camera.camera2.interop.cameraCharacteristics
 import androidx.camera.core.CameraFilter
 import androidx.camera.core.CameraInfo
@@ -62,6 +63,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
@@ -1760,6 +1762,56 @@ class CameraXCameraSystemTest {
 
             subModeStateChannel.cancel()
         }
+
+    @Test
+    fun runCamera_setsIsPreviewLandscapeMatchingSensorOrientation(): Unit = runBlocking {
+        val cameraProvider = ProcessCameraProvider.awaitInstance(context)
+        val cameraSystem = createAndInitCameraXCameraSystem()
+        val availableLenses =
+            cameraSystem.getSystemConstraints().value?.availableLenses.orEmpty()
+        assume().withMessage("No cameras available").that(availableLenses).isNotEmpty()
+
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        for (lensFacing in availableLenses) {
+            cameraSystem.setLensFacing(lensFacing)
+            val cameraInfo = cameraProvider.getCameraInfo(lensFacing.toCameraSelector())
+            val expectedIsLandscape = isSensorOutputLandscape(
+                sensorRotationDegrees = cameraInfo.getSensorRotationDegrees(Surface.ROTATION_0),
+                sensorRect = cameraInfo.sensorRect
+            )
+            val state = withTimeoutOrNull(CAMERA_START_TIMEOUT_MS) {
+                cameraSystem.getCurrentCameraState().first {
+                    it.isCameraRunning && it.isPreviewLandscape == expectedIsLandscape
+                }
+            }
+            assertWithMessage("Expected isPreviewLandscape=$expectedIsLandscape for $lensFacing")
+                .that(state)
+                .isNotNull()
+
+            // Verify physical device rotation and video recording keep isPreviewLandscape intact.
+            for (rotation in listOf(
+                DeviceRotation.Rotated90,
+                DeviceRotation.Rotated180,
+                DeviceRotation.Rotated270,
+                DeviceRotation.Natural
+            )) {
+                cameraSystem.setDeviceRotation(rotation)
+                assertThat(cameraSystem.getCurrentCameraState().value.isPreviewLandscape)
+                    .isEqualTo(expectedIsLandscape)
+            }
+
+            val recordingComplete = CompletableDeferred<Unit>()
+            cameraSystem.startRecording { event ->
+                when (event) {
+                    is OnVideoRecorded -> recordingComplete.complete(Unit)
+                    is OnVideoRecordError -> recordingComplete.completeExceptionally(event.error)
+                }
+            }
+            cameraSystem.stopVideoRecording()
+            recordingComplete.await()
+        }
+    }
 }
 
 object FakeImagePostProcessorFeatureKey : ImagePostProcessorFeatureKey

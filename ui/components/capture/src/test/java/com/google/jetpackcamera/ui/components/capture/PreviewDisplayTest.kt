@@ -24,10 +24,16 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolution
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
+import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
@@ -90,11 +96,66 @@ class PreviewDisplayTest {
         assertThat(bounds.height.value).isWithin(0.5f).of(360f)
     }
 
-    private fun setPreviewContent(selectedAspectRatioProvider: () -> AspectRatio) {
+    @Test
+    @Config(qualifiers = "w800dp-h360dp-land")
+    fun previewDisplay_landscapeWindow_portraitPreview_usesPortraitAspectRatio() {
+        var aspectRatio by mutableStateOf(AspectRatio.THREE_FOUR)
+        setPreviewContent(isPreviewLandscape = false) { aspectRatio }
+
+        var bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+        assertThat(bounds.width.value).isWithin(0.5f).of(270f)
+        assertThat(bounds.height.value).isWithin(0.5f).of(360f)
+
+        composeTestRule.runOnIdle { aspectRatio = AspectRatio.NINE_SIXTEEN }
+        composeTestRule.waitForIdle()
+        bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+        assertThat(bounds.width.value).isWithin(0.5f).of(202.5f)
+        assertThat(bounds.height.value).isWithin(0.5f).of(360f)
+
+        composeTestRule.runOnIdle { aspectRatio = AspectRatio.ONE_ONE }
+        composeTestRule.waitForIdle()
+        bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+        assertThat(bounds.width.value).isWithin(0.5f).of(360f)
+        assertThat(bounds.height.value).isWithin(0.5f).of(360f)
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h800dp")
+    fun previewDisplay_portraitWindow_landscapePreview_usesLandscapeAspectRatio() {
+        var aspectRatio by mutableStateOf(AspectRatio.THREE_FOUR)
+        val solution = CameraLayoutSolver.solve(
+            CameraLayoutDefaults.spec(),
+            CameraWindow(width = 360.dp, height = 800.dp, topInset = 48.dp, navInset = 24.dp)
+        )
+        setPreviewContent(isPreviewLandscape = true, layoutSolution = solution) { aspectRatio }
+
+        var bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+        assertThat(bounds.width.value).isWithin(0.5f).of(360f)
+        assertThat(bounds.height.value).isWithin(0.5f).of(270f)
+
+        composeTestRule.runOnIdle { aspectRatio = AspectRatio.NINE_SIXTEEN }
+        composeTestRule.waitForIdle()
+        bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+        assertThat(bounds.width.value).isWithin(0.5f).of(360f)
+        assertThat(bounds.height.value).isWithin(0.5f).of(202.5f)
+
+        composeTestRule.runOnIdle { aspectRatio = AspectRatio.ONE_ONE }
+        composeTestRule.waitForIdle()
+        bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+        assertThat(bounds.width.value).isWithin(0.5f).of(360f)
+        assertThat(bounds.height.value).isWithin(0.5f).of(360f)
+    }
+
+    private fun setPreviewContent(
+        isPreviewLandscape: Boolean? = null,
+        layoutSolution: CameraLayoutSolution? = null,
+        selectedAspectRatioProvider: () -> AspectRatio
+    ) {
         composeTestRule.setContent {
             CompositionLocalProvider(
                 LocalDisableAnimations provides true,
-                LocalOverlapTargetBounds provides remember { mutableStateOf(Rect.Zero) }
+                LocalOverlapTargetBounds provides remember { mutableStateOf(Rect.Zero) },
+                LocalCameraLayoutSolution provides layoutSolution
             ) {
                 val selected = selectedAspectRatioProvider()
                 PreviewDisplay(
@@ -106,7 +167,8 @@ class PreviewDisplayTest {
                                 SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
                                 SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
                             )
-                        )
+                        ),
+                        isPreviewLandscape = isPreviewLandscape
                     ),
                     onTapToFocus = { _, _ -> },
                     onFlipCamera = {},

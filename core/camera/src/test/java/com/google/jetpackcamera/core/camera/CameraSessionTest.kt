@@ -29,6 +29,26 @@ import org.robolectric.RobolectricTestRunner
 class CameraSessionTest {
 
     @Test
+    fun isSensorOutputLandscape_landscapeSensor_returnsExpectedOrientation() {
+        val landscapeSensorRect = Rect(0, 0, 4000, 3000)
+
+        assertThat(isSensorOutputLandscape(0, landscapeSensorRect)).isTrue()
+        assertThat(isSensorOutputLandscape(180, landscapeSensorRect)).isTrue()
+        assertThat(isSensorOutputLandscape(90, landscapeSensorRect)).isFalse()
+        assertThat(isSensorOutputLandscape(270, landscapeSensorRect)).isFalse()
+    }
+
+    @Test
+    fun isSensorOutputLandscape_portraitSensor_returnsExpectedOrientation() {
+        val portraitSensorRect = Rect(0, 0, 3000, 4000)
+
+        assertThat(isSensorOutputLandscape(0, portraitSensorRect)).isFalse()
+        assertThat(isSensorOutputLandscape(180, portraitSensorRect)).isFalse()
+        assertThat(isSensorOutputLandscape(90, portraitSensorRect)).isTrue()
+        assertThat(isSensorOutputLandscape(270, portraitSensorRect)).isTrue()
+    }
+
+    @Test
     fun getViewPortAspectRatio_landscapeSensorRotated90Or270_returnsPortraitAspectRatio() {
         val landscapeSensorRect = Rect(0, 0, 4000, 3000)
 

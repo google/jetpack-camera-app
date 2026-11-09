@@ -432,6 +432,26 @@ internal class CaptureUiStateAdapterTest {
         assertThat(videoOnlyState.videoQuality).isEqualTo(VideoQuality.FHD)
     }
 
+    @Test
+    fun captureUiState_isPreviewLandscape_propagatesFromCameraState() = runTest {
+        val uiStateFlow = createCaptureUiStateFlow()
+        val states = mutableListOf<CaptureUiState>()
+        backgroundScope.launch {
+            uiStateFlow.collect { states.add(it) }
+        }
+
+        runCurrent()
+        assertThat(assertIsReady(states.last()).previewDisplayUiState.isPreviewLandscape).isNull()
+
+        cameraSystem.setCurrentCameraState(CameraState(isPreviewLandscape = true))
+        runCurrent()
+        assertThat(assertIsReady(states.last()).previewDisplayUiState.isPreviewLandscape).isTrue()
+
+        cameraSystem.setCurrentCameraState(CameraState(isPreviewLandscape = false))
+        runCurrent()
+        assertThat(assertIsReady(states.last()).previewDisplayUiState.isPreviewLandscape).isFalse()
+    }
+
     private fun assertIsReady(uiState: CaptureUiState): CaptureUiState.Ready = when (uiState) {
         is CaptureUiState.Ready -> uiState
         else -> throw AssertionError(
