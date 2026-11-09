@@ -137,7 +137,6 @@ class NightCaptureSubModeProvider internal constructor(
     ): Boolean = super.isCompatibleWith(settings, systemConstraints, externalCaptureMode) &&
         externalCaptureMode != ExternalCaptureMode.VideoCapture
 
-    @Suppress("DEPRECATION")
     override val sessionBinding =
         CameraSessionBinding.SingleCamera { cameraProvider, baseSelector ->
             val extensionsManager = getExtensionsManager(cameraProvider)

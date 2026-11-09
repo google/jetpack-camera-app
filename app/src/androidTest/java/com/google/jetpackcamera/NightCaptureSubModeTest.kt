@@ -90,7 +90,7 @@ class NightCaptureSubModeTest {
     private fun selectNightSubMode(enabled: Boolean) = composeTestRule.selectCaptureSubMode(
         subModeId = NIGHT_SUB_MODE_ID,
         parentCaptureMode = CaptureMode.IMAGE_ONLY,
-        subModeName = "Night",
+        subModeName = getResString(NightR.string.capture_mode_night),
         enabled = enabled
     )
 }

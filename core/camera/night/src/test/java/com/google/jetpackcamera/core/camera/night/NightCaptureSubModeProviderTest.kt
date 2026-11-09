@@ -39,9 +39,11 @@ import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.settings.model.SettingConfig
 import java.lang.reflect.Proxy
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
@@ -195,7 +197,7 @@ class NightCaptureSubModeProviderTest {
 
         assertThat(provider.isSupported(context, cameraProvider, cameraInfo)).isFalse()
         assertThrows(IllegalStateException::class.java) {
-            kotlinx.coroutines.runBlocking {
+            runBlocking {
                 provider.sessionBinding.transformCameraSelector(
                     cameraProvider,
                     CameraSelector.DEFAULT_BACK_CAMERA
@@ -227,7 +229,7 @@ class NightCaptureSubModeProviderTest {
                 )
             ).isSameInstanceAs(nightSelector)
             assertThrows(IllegalStateException::class.java) {
-                kotlinx.coroutines.runBlocking {
+                runBlocking {
                     supportedProvider.sessionBinding.transformCameraSelector(
                         cameraProvider,
                         CameraSelector.DEFAULT_FRONT_CAMERA
@@ -251,7 +253,7 @@ class NightCaptureSubModeProviderTest {
                 throwingProvider.isSupported(context, cameraProvider, backCameraInfo)
             ).isFalse()
             assertThrows(IllegalStateException::class.java) {
-                kotlinx.coroutines.runBlocking {
+                runBlocking {
                     throwingProvider.sessionBinding.transformCameraSelector(
                         cameraProvider,
                         CameraSelector.DEFAULT_BACK_CAMERA
@@ -262,17 +264,17 @@ class NightCaptureSubModeProviderTest {
             val cancellingProvider = NightCaptureSubModeProvider(
                 applicationContext = context,
                 isNightAvailable = { _, _ ->
-                    throw kotlinx.coroutines.CancellationException("Cancelled")
+                    throw CancellationException("Cancelled")
                 },
                 enableNightSelector = { _, selector -> selector }
             )
-            assertThrows(kotlinx.coroutines.CancellationException::class.java) {
-                kotlinx.coroutines.runBlocking {
+            assertThrows(CancellationException::class.java) {
+                runBlocking {
                     cancellingProvider.isSupported(context, cameraProvider, backCameraInfo)
                 }
             }
-            assertThrows(kotlinx.coroutines.CancellationException::class.java) {
-                kotlinx.coroutines.runBlocking {
+            assertThrows(CancellationException::class.java) {
+                runBlocking {
                     cancellingProvider.sessionBinding.transformCameraSelector(
                         cameraProvider,
                         CameraSelector.DEFAULT_BACK_CAMERA
