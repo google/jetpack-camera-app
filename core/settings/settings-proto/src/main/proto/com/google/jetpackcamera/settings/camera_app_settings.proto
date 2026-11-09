@@ -38,7 +38,7 @@ message CameraAppSettings {
   // Camera settings
   com.google.jetpackcamera.model.proto.LensFacing default_lens_facing = 1;
   com.google.jetpackcamera.model.proto.FlashMode flash_mode = 2;
-  int32 target_frame_rate = 3;
+  optional int32 target_frame_rate = 3;
   com.google.jetpackcamera.model.proto.AspectRatio aspect_ratio = 4;
   com.google.jetpackcamera.model.proto.StabilizationMode stabilization_mode = 6;
   com.google.jetpackcamera.model.proto.DynamicRange dynamic_range = 8;

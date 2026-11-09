@@ -20,6 +20,7 @@ import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
@@ -32,6 +33,7 @@ import javax.inject.Provider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -125,6 +127,48 @@ class CameraXCameraSystemRepositoryTest {
         val constraints = repository.systemConstraints.filterNotNull().first()
         assertThat(testCamera.initializedSettings).isNotNull()
         assertThat(constraints).isEqualTo(testCamera.getSystemConstraints().value)
+    }
+
+    @Test
+    fun activeCaptureSubModeId_newCollectorReceivesCurrentValue() = testScope.runTest {
+        val testCamera = TestCameraSystem()
+        val subModeId = CaptureSubModeId("test_sub_mode")
+        testCamera.setCaptureSubMode(subModeId)
+        val repository = CameraXCameraSystemRepository(
+            cameraXCameraSystemProvider = Provider { testCamera },
+            settingsRepository = FakeSettingsRepository(),
+            launchConfig = CameraLaunchConfig(),
+            scope = backgroundScope
+        )
+
+        // A late collector receives the active sub-mode first, not a default.
+        assertThat(repository.activeCaptureSubModeId.first()).isEqualTo(subModeId)
+
+        testCamera.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+        assertThat(repository.activeCaptureSubModeId.first()).isEqualTo(CaptureSubModeId.DEFAULT)
+    }
+
+    @Test
+    fun activeCaptureSubModeId_emitsChangesToACollector() = testScope.runTest {
+        val testCamera = TestCameraSystem()
+        val repository = CameraXCameraSystemRepository(
+            cameraXCameraSystemProvider = Provider { testCamera },
+            settingsRepository = FakeSettingsRepository(),
+            launchConfig = CameraLaunchConfig(),
+            scope = backgroundScope
+        )
+        val subModeId = CaptureSubModeId("test_sub_mode")
+        val emitted = mutableListOf<CaptureSubModeId>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            repository.activeCaptureSubModeId.collect { emitted.add(it) }
+        }
+
+        testCamera.setCaptureSubMode(subModeId)
+        testCamera.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        assertThat(emitted)
+            .containsExactly(CaptureSubModeId.DEFAULT, subModeId, CaptureSubModeId.DEFAULT)
+            .inOrder()
     }
 
     @Test
