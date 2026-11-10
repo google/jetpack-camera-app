@@ -210,14 +210,13 @@ class CaptureLayoutInsetsTest {
 private const val INDICATOR_ROW_TAG = "TestIndicatorRow"
 private const val SCREEN_FLASH_OVERLAY_TAG = "TestScreenFlashOverlay"
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @androidx.compose.runtime.Composable
 private fun TestPreviewLayout(
     screenFlashOverlay: @androidx.compose.runtime.Composable (Modifier) -> Unit = {
         Box(it.size(0.dp))
     }
 ) {
-    PreviewLayout(
+    CaptureScaffoldLayout(
         viewfinder = { Box(it.fillMaxSize()) },
         captureButton = { Box(it.size(80.dp).testTag(CAPTURE_BUTTON)) },
         imageWell = { Box(it.size(40.dp)) },
@@ -228,9 +227,6 @@ private fun TestPreviewLayout(
         indicatorRow = { Box(it.size(40.dp).testTag(INDICATOR_ROW_TAG)) },
         captureModeToggle = { Box(it.size(40.dp)) },
         quickSettingsOverlay = { Box(it.size(40.dp)) },
-        debugOverlay = { Box(it.size(0.dp)) },
-        debugVisibilityWrapper = { content -> content() },
-        screenFlashOverlay = screenFlashOverlay,
-        snackBar = { _, _ -> }
+        screenFlashOverlay = screenFlashOverlay
     )
 }

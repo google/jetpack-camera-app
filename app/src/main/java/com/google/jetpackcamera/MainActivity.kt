@@ -126,6 +126,9 @@ class MainActivity : ComponentActivity() {
         )
         super.onCreate(savedInstanceState)
         updateRequestedOrientation(resources.configuration)
+        addOnMultiWindowModeChangedListener { info ->
+            updateRequestedOrientation(resources.configuration, info.isInMultiWindowMode)
+        }
         cameraLaunchConfigProvider.setIntent(intent)
         var uiState: MainActivityUiState by mutableStateOf(Loading)
 
@@ -220,11 +223,6 @@ class MainActivity : ComponentActivity() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         updateRequestedOrientation(newConfig)
-    }
-
-    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
-        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
-        updateRequestedOrientation(newConfig, isInMultiWindowMode)
     }
 
     private fun updateRequestedOrientation(
