@@ -35,6 +35,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
 import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assumeFlipCameraAvailable
 import com.google.jetpackcamera.utils.getCurrentLensFacing
@@ -139,11 +140,12 @@ class SwitchCameraTest {
             val flippedLensFacing = composeTestRule.getCurrentLensFacing()
             assertThat(flippedLensFacing).isEqualTo(initialLensFacing.flip())
 
-            composeTestRule.waitForIdle()
-            val flippedBounds =
-                composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
-            assertThat(flippedBounds.width > flippedBounds.height)
-                .isEqualTo(expectedIsLandscape(flippedLensFacing))
+            val expectedFlippedIsLandscape = expectedIsLandscape(flippedLensFacing)
+            composeTestRule.waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+                val bounds =
+                    composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+                (bounds.width > bounds.height) == expectedFlippedIsLandscape
+            }
         }
 }
 
