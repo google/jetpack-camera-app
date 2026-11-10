@@ -1515,6 +1515,12 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
 ): Preview.Builder {
     val isFirstFrameTimestampUpdated = atomic(false)
     val targetCameraLogicalId = Camera2CameraInfo.from(targetCameraInfo).cameraId
+    // The zoom range doesn't change while this camera is bound, so it is read once instead of
+    // on every frame. For a camera extension session, reading zoomState queries the extension's
+    // characteristics through the vendor extension service, which is too slow to do for each
+    // capture result and backs up the camera thread that also completes captures and opens and
+    // closes the camera.
+    var zoomRange: ClosedFloatingPointRange<Float>? = null
     Camera2Interop.Extender(this).setSessionCaptureCallback(
         object : CameraCaptureSession.CaptureCallback() {
             override fun onCaptureCompleted(
@@ -1558,10 +1564,11 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                     val targetZoomRatio =
                         transientSettings.value?.zoomRatios?.get(targetCameraInfo.appLensFacing)
                             ?: 1.0f
-                    val zoomState = targetCameraInfo.zoomState.value
-                    val minZoom = zoomState?.minZoomRatio ?: 1.0f
-                    val maxZoom = zoomState?.maxZoomRatio ?: 1.0f
-                    val clampedTarget = targetZoomRatio.coerceIn(minZoom, maxZoom)
+                    val range = zoomRange
+                        ?: targetCameraInfo.zoomState.value
+                            ?.let { it.minZoomRatio..it.maxZoomRatio }
+                            ?.also { zoomRange = it }
+                    val clampedTarget = targetZoomRatio.coerceIn(range ?: 1.0f..1.0f)
                     val isTargetEssentiallyOne = abs(clampedTarget - 1.0f) < 0.01f
                     currentCameraState.update { old ->
                         val currentZoomRatio = old.zoomRatios[targetCameraInfo.appLensFacing]
