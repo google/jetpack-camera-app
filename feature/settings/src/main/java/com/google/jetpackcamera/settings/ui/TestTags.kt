@@ -49,6 +49,7 @@ const val FIXED_FPS_ACTIVE_TAG = "FixedFpsActiveTag"
 const val FLASH_LLB_ACTIVE_TAG = "FlashLlbActiveTag"
 const val HDR_ACTIVE_TAG = "HdrActiveTag"
 const val ULTRA_HDR_ENABLED_TAG = "UltraHdrEnabledTag"
+const val CAPTURE_SUB_MODE_ACTIVE_TAG = "CaptureSubModeActiveTag"
 
 // Settings w/ no dialog
 const val BTN_SWITCH_SETTING_LENS_FACING_TAG = "btn_switch_setting_lens_facing_tag"

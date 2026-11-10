@@ -182,6 +182,41 @@ private val SnackbarIconSize = 24.dp
 private val SnackbarIconToTextSpacing = 10.dp
 private val SnackbarTextToActionSpacing = 8.dp
 private val SnackbarElevation = 6.dp
+private val CameraControlIconButtonSize = 40.dp
+
+/**
+ * A circular icon button styled for camera overlay controls.
+ *
+ * The container color automatically adapts to viewfinder overlap via
+ * [LocalCameraControlBackgroundStyle].
+ *
+ * @param onClick callback invoked when this button is clicked.
+ * @param modifier the [Modifier] to be applied to this button.
+ * @param enabled controls the enabled state of this button.
+ * @param content the icon content to display inside the button.
+ */
+@Composable
+fun CameraControlIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val backgroundStyle = LocalCameraControlBackgroundStyle.current
+    FilledIconButton(
+        onClick = onClick,
+        modifier = modifier.size(CameraControlIconButtonSize),
+        enabled = enabled,
+        shape = CircleShape,
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = backgroundStyle.containerColor,
+            contentColor = Color.White,
+            disabledContainerColor = backgroundStyle.disabledContainerColor,
+            disabledContentColor = Color.White.copy(alpha = 0.38f)
+        ),
+        content = content
+    )
+}
 
 /**
  * A custom [SnackbarHost] that displays snackbars with a rounded shape and a leading status icon.
@@ -871,7 +906,7 @@ fun PreviewDisplay(
         Box(
             modifier = Modifier
                 .padding(top = topOffset)
-                // Reports the top edge of the visible frame to PreviewLayout, which anchors
+                // Reports the top edge of the visible frame to CaptureScaffoldLayout, which anchors
                 // viewfinder-relative content to it.
                 .layout { measurable, frameConstraints ->
                     val placeable = measurable.measure(frameConstraints)
