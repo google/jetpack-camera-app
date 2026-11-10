@@ -19,8 +19,11 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.ImageFormat
+import android.hardware.display.DisplayManager
 import android.net.Uri
 import android.util.Size
+import android.view.Display
+import android.view.Surface
 import androidx.camera.camera2.interop.cameraCharacteristics
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraFilter
@@ -2469,6 +2472,46 @@ class CameraXCameraSystemTest {
 
             subModeStateChannel.cancel()
         }
+
+    @Test
+    fun runCamera_back_setsIsPreviewLandscapeMatchingSensorOrientation(): Unit = runBlocking {
+        assertIsPreviewLandscapeMatchesSensorOrientation(LensFacing.BACK)
+    }
+
+    @Test
+    fun runCamera_front_setsIsPreviewLandscapeMatchingSensorOrientation(): Unit = runBlocking {
+        assertIsPreviewLandscapeMatchesSensorOrientation(LensFacing.FRONT)
+    }
+
+    private suspend fun assertIsPreviewLandscapeMatchesSensorOrientation(lensFacing: LensFacing) {
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(cameraLensFacing = lensFacing)
+        )
+        val availableLenses = cameraSystem.getSystemConstraints().value?.availableLenses
+        assume().withMessage("No $lensFacing camera, skip the test.")
+            .that(availableLenses?.contains(lensFacing)).isTrue()
+        assertThat(cameraSystem.getCurrentCameraState().value.isPreviewLandscape).isNull()
+
+        cameraSystem.startCameraAndWaitUntilRunning()
+
+        val cameraProvider = ProcessCameraProvider.awaitInstance(context)
+        val cameraInfo = cameraProvider.getCameraInfo(lensFacing.toCameraSelector())
+        val displayRotation = context.getSystemService(DisplayManager::class.java)
+            .getDisplay(Display.DEFAULT_DISPLAY)?.rotation ?: Surface.ROTATION_0
+        val expectedIsLandscape = isSensorOutputLandscape(
+            sensorRotationDegrees = cameraInfo.getSensorRotationDegrees(displayRotation),
+            sensorRect = cameraInfo.sensorRect
+        )
+        val isPreviewLandscape = withTimeoutOrNull(CAMERA_START_TIMEOUT_MS) {
+            cameraSystem.getCurrentCameraState()
+                .map { it.isPreviewLandscape }
+                .filterNotNull()
+                .first()
+        }
+        assertWithMessage("Expected isPreviewLandscape=$expectedIsLandscape for $lensFacing")
+            .that(isPreviewLandscape)
+            .isEqualTo(expectedIsLandscape)
+    }
 }
 
 object FakeImagePostProcessorFeatureKey : ImagePostProcessorFeatureKey

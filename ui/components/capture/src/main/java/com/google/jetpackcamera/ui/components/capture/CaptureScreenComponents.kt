@@ -858,9 +858,16 @@ fun PreviewDisplay(
         contentAlignment = Alignment.TopCenter
     ) {
         val maxAspectRatio: Float = maxWidth / maxHeight
-        val aspectRatioFloat: Float = aspectRatio.toFloat()
+        // Orient the preview frame to match the camera output (and ViewPort crop). Fall back to
+        // the window shape only when the camera output orientation is not yet known.
+        val isPreviewLandscape = previewDisplayUiState.isPreviewLandscape ?: (maxWidth > maxHeight)
+        val aspectRatioFloat: Float = if (isPreviewLandscape) {
+            aspectRatio.toLandscapeFloat()
+        } else {
+            aspectRatio.toFloat()
+        }
         val layoutSolution = LocalCameraLayoutSolution.current
-        val solvedBand = if (maxHeight > maxWidth) {
+        val solvedBand = if (maxHeight > maxWidth && !isPreviewLandscape) {
             layoutSolution?.viewfinderBandFor(aspectRatioFloat)
         } else {
             null

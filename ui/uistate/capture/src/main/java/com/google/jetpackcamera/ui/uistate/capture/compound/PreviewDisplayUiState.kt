@@ -22,8 +22,11 @@ import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
  *
  * @param lastBlinkTimeStamp The timestamp of the most recent capture blink animation.
  * @param aspectRatioUiState The UI state for the aspect ratio of the preview.
+ * @param isPreviewLandscape Whether the camera preview output is landscape, or `null` before the
+ * camera output orientation is known.
  */
 data class PreviewDisplayUiState(
     val lastBlinkTimeStamp: Long = 0,
-    val aspectRatioUiState: AspectRatioUiState
+    val aspectRatioUiState: AspectRatioUiState,
+    val isPreviewLandscape: Boolean? = null
 )

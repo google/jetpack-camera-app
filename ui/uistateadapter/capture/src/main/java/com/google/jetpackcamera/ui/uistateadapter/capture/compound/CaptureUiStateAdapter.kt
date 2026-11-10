@@ -164,8 +164,9 @@ fun captureUiState(
             flipLensUiState = flipLensUiState,
             aspectRatioUiState = aspectRatioUiState,
             previewDisplayUiState = PreviewDisplayUiState(
-                trackedUiState.lastBlinkTimeStamp,
-                previewAspectRatioUiState
+                lastBlinkTimeStamp = trackedUiState.lastBlinkTimeStamp,
+                aspectRatioUiState = previewAspectRatioUiState,
+                isPreviewLandscape = roundedCameraState.isPreviewLandscape
             ),
             // TODO: add updateFrom() for all ui states to prevent re-updating if
             // values are the same

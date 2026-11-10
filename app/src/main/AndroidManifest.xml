@@ -67,6 +67,9 @@
         android:requestLegacyExternalStorage="true"
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="33">
+        <property
+            android:name="android.camera.PROPERTY_COMPAT_OVERRIDE_LANDSCAPE_TO_PORTRAIT"
+            android:value="false" />
         <profileable android:shell="true"/>
         <activity
             android:name=".MainActivity"
