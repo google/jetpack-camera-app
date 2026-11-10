@@ -98,10 +98,9 @@ enum class DeviceRotation {
 
     companion object {
         /**
-         * Maps an OS display [Surface] rotation constant (`Surface.ROTATION_*`) to the
-         * corresponding hardware-relative [DeviceRotation].
+         * Returns the [DeviceRotation] corresponding to a UI [Surface] rotation constant.
          */
-        fun fromSurfaceRotation(surfaceRotation: Int): DeviceRotation {
+        fun fromUiSurfaceRotation(surfaceRotation: Int): DeviceRotation {
             return when (surfaceRotation) {
                 Surface.ROTATION_0 -> Natural
                 Surface.ROTATION_90 -> Rotated270

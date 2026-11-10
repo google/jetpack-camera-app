@@ -16,10 +16,16 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture
 
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 
 /**
  * Maps [CameraState.cameraError] into a [CameraErrorUiState].
  */
 fun CameraErrorUiState.Companion.from(cameraState: CameraState): CameraErrorUiState =
-    cameraState.cameraError?.let { CameraErrorUiState.Showing(it) } ?: CameraErrorUiState.Hidden
+    cameraState.cameraError?.let { error ->
+        CameraErrorUiState.Showing(
+            error = error,
+            blocksPreview = error != CameraError.CameraSensorPrivacyDisabled
+        )
+    } ?: CameraErrorUiState.Hidden
