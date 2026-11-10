@@ -16,6 +16,8 @@
 package com.google.jetpackcamera.feature.preview
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.util.Log
 import android.util.Range
@@ -257,19 +259,21 @@ private fun ContentScreen(
     }
 
     val context = LocalContext.current
-    DisposableEffect(context) {
-        val activity = context as? Activity
-        onDispose {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+    DisposableEffect(context, isVideoRecordingInProgress.value) {
+        val activity = context.findActivity()
+        if (activity != null && isVideoRecordingInProgress.value) {
+            val previousOrientation = activity.requestedOrientation
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+            onDispose {
+                activity.requestedOrientation = previousOrientation
+            }
+        } else {
+            onDispose {}
         }
     }
 
     LaunchedEffect(isVideoRecordingInProgress.value, cameraController) {
-        val activity = context as? Activity
-        if (isVideoRecordingInProgress.value) {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-        } else {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+        if (!isVideoRecordingInProgress.value) {
             cameraController?.let { controller ->
                 debouncedOrientationFlow(context).collect(controller::setDisplayRotation)
             }
@@ -1060,3 +1064,9 @@ private val FAKE_PREVIEW_UI_STATE_LOCKED_RECORDING = FAKE_PREVIEW_UI_STATE_READY
     captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording,
     audioUiState = AudioUiState.Enabled.On(1.0, true)
 )
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}

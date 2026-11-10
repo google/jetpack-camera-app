@@ -58,18 +58,18 @@ class DeviceRotationTest {
     }
 
     @Test
-    fun fromSurfaceRotation_isInverseOfToUiSurfaceRotation() {
+    fun fromUiSurfaceRotation_isInverseOfToUiSurfaceRotation() {
         for (rotation in DeviceRotation.entries) {
             val surfaceRotation = rotation.toUiSurfaceRotation()
-            assertThat(DeviceRotation.fromSurfaceRotation(surfaceRotation)).isEqualTo(rotation)
+            assertThat(DeviceRotation.fromUiSurfaceRotation(surfaceRotation)).isEqualTo(rotation)
         }
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_0))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_0))
             .isEqualTo(DeviceRotation.Natural)
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_90))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_90))
             .isEqualTo(DeviceRotation.Rotated270)
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_180))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_180))
             .isEqualTo(DeviceRotation.Rotated180)
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_270))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_270))
             .isEqualTo(DeviceRotation.Rotated90)
     }
 }

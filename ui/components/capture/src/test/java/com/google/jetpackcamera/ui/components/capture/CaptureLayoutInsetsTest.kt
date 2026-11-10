@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -28,11 +29,13 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.DeviceRotation
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -159,6 +162,48 @@ class CaptureLayoutInsetsTest {
         val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
 
         assertThat(overlayBounds).isEqualTo(rootBounds)
+    }
+
+    @Test
+    fun counterRotateToPortrait_doesNotSwapConstraints_whenWindowIsPortraitShapedInLandscape() {
+        var measuredChildSize = IntSize.Zero
+        composeTestRule.setContent {
+            Box(
+                Modifier
+                    .size(width = 300.dp, height = 500.dp)
+                    .counterRotateToPortrait(DeviceRotation.Rotated270)
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .onSizeChanged { measuredChildSize = it }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(measuredChildSize).isEqualTo(IntSize(300, 500))
+    }
+
+    @Test
+    fun counterRotateToPortrait_swapsConstraints_whenWindowIsLandscapeShapedInLandscape() {
+        var measuredChildSize = IntSize.Zero
+        composeTestRule.setContent {
+            Box(
+                Modifier
+                    .size(width = 500.dp, height = 300.dp)
+                    .counterRotateToPortrait(DeviceRotation.Rotated270)
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .onSizeChanged { measuredChildSize = it }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(measuredChildSize).isEqualTo(IntSize(300, 500))
     }
 
     private fun boundsOf(

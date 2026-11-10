@@ -81,7 +81,8 @@ enum class DeviceRotation {
         get() = this == Rotated90 || this == Rotated270
 
     companion object {
-        fun fromSurfaceRotation(surfaceRotation: Int): DeviceRotation {
+        /** Returns the [DeviceRotation] corresponding to a UI [Surface] rotation constant. */
+        fun fromUiSurfaceRotation(surfaceRotation: Int): DeviceRotation {
             return when (surfaceRotation) {
                 Surface.ROTATION_0 -> Natural
                 Surface.ROTATION_90 -> Rotated270

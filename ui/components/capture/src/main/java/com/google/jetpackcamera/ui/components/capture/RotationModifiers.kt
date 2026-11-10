@@ -85,7 +85,7 @@ internal fun rememberWindowRotation(): DeviceRotation {
         }
     }
 
-    return DeviceRotation.fromSurfaceRotation(surfaceRotation)
+    return DeviceRotation.fromUiSurfaceRotation(surfaceRotation)
 }
 
 @Suppress("DEPRECATION")
@@ -104,11 +104,13 @@ private fun Context.currentDisplayRotation(): Int {
 
 /**
  * Counter-rotates the root phone camera layout back to the device's canonical Portrait (`0°`)
- * coordinate system whenever the OS window rotates.
+ * coordinate system whenever a landscape-shaped OS window (`width > height`) is rotated to a
+ * landscape orientation.
  */
 internal fun Modifier.counterRotateToPortrait(windowRotation: DeviceRotation): Modifier =
     layout { measurable, constraints ->
-        val isLandscape = windowRotation.isLandscape
+        val isLandscape =
+            windowRotation.isLandscape && constraints.maxWidth > constraints.maxHeight
         val placeable = measurable.measure(
             if (isLandscape) {
                 constraints.copy(
@@ -137,7 +139,11 @@ internal fun Modifier.counterRotateToPortrait(windowRotation: DeviceRotation): M
             val offsetX = (layoutWidth - placeable.width) / 2
             val offsetY = (layoutHeight - placeable.height) / 2
             placeable.placeWithLayer(offsetX, offsetY) {
-                rotationZ = windowRotation.toWindowCounterRotationDegrees()
+                rotationZ = if (isLandscape) {
+                    windowRotation.toWindowCounterRotationDegrees()
+                } else {
+                    0f
+                }
             }
         }
     }

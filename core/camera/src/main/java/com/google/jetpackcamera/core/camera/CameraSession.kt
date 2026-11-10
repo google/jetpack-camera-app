@@ -878,6 +878,12 @@ private fun createPreviewUseCase(
     stabilizationMode: StabilizationMode,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null
 ): Preview = Preview.Builder().apply {
+    // Phone landscape counter-rotates the UI and PreviewDisplay back into a canonical portrait
+    // (ROTATION_0) coordinate frame. Pin Preview's target rotation to ROTATION_0 so ViewPort crop
+    // rects and StreamSharing buffers remain aligned with the portrait viewfinder even when bound
+    // while the OS window is in landscape. Upright large-screen / multi-window layouts will drive
+    // Preview and ViewPort from a dedicated window/viewfinder rotation distinct from the sensor-
+    // based deviceRotation used for ImageCapture and VideoCapture EXIF orientation.
     setTargetRotation(Surface.ROTATION_0)
     updateCameraStateWithCaptureResults(
         targetCameraInfo = cameraInfo,
