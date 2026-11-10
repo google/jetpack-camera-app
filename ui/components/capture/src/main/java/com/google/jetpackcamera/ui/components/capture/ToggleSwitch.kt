@@ -88,6 +88,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
@@ -199,12 +201,23 @@ fun ToggleSwitch(
     iconSize: Dp = ToggleSwitchTokens.IconSize
 ) {
     // --- 1. Dimensions & Direction ---
+    // Scale uniformly when the adaptive layout solver compacts the bottom toolbar row so the
+    // rounded track edge stays aligned with the thumb. Apply only to standard horizontal switches
+    // so compact or vertical switches do not get shrunk twice.
+    val layoutSolution = LocalCameraLayoutSolution.current
+    val toolbarScale = if (orientation == Orientation.Horizontal && !compact) {
+        layoutSolution?.toolbarHeight?.let { toolbarHeight ->
+            (toolbarHeight / CameraLayoutDefaults.BottomToolbarHeight).coerceIn(0f, 1f)
+        } ?: 1f
+    } else {
+        1f
+    }
     val dims = rememberSwitchDimensions(
         orientation = orientation,
-        switchWidth = switchWidth,
-        switchHeight = switchHeight,
-        thumbDiameter = thumbDiameter,
-        iconSize = iconSize
+        switchWidth = switchWidth * toolbarScale,
+        switchHeight = switchHeight * toolbarScale,
+        thumbDiameter = thumbDiameter * toolbarScale,
+        iconSize = iconSize * toolbarScale
     )
     val isHorizontalRtl =
         orientation == Orientation.Horizontal &&
@@ -341,7 +354,13 @@ fun ToggleSwitch(
     // --- 6. Canvas Drawing ---
     Canvas(
         modifier = modifier
-            .minimumInteractiveComponentSize()
+            .then(
+                if (toolbarScale < 1f) {
+                    Modifier
+                } else {
+                    Modifier.minimumInteractiveComponentSize()
+                }
+            )
             .size(width = dims.switchWidthDp, height = dims.switchHeightDp)
             .clip(CircleShape)
             .indication(interactionSource, LocalIndication.current)

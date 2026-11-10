@@ -114,6 +114,7 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -140,6 +141,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.DisableRationale
@@ -179,6 +181,41 @@ private val SnackbarIconSize = 24.dp
 private val SnackbarIconToTextSpacing = 10.dp
 private val SnackbarTextToActionSpacing = 8.dp
 private val SnackbarElevation = 6.dp
+private val CameraControlIconButtonSize = 40.dp
+
+/**
+ * A circular icon button styled for camera overlay controls.
+ *
+ * The container color automatically adapts to viewfinder overlap via
+ * [LocalCameraControlBackgroundStyle].
+ *
+ * @param onClick callback invoked when this button is clicked.
+ * @param modifier the [Modifier] to be applied to this button.
+ * @param enabled controls the enabled state of this button.
+ * @param content the icon content to display inside the button.
+ */
+@Composable
+fun CameraControlIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val backgroundStyle = LocalCameraControlBackgroundStyle.current
+    FilledIconButton(
+        onClick = onClick,
+        modifier = modifier.size(CameraControlIconButtonSize),
+        enabled = enabled,
+        shape = CircleShape,
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = backgroundStyle.containerColor,
+            contentColor = Color.White,
+            disabledContainerColor = backgroundStyle.disabledContainerColor,
+            disabledContentColor = Color.White.copy(alpha = 0.38f)
+        ),
+        content = content
+    )
+}
 
 /**
  * A custom [SnackbarHost] that displays snackbars with a rounded shape and a leading status icon.
@@ -858,9 +895,21 @@ fun PreviewDisplay(
     ) {
         val maxAspectRatio: Float = maxWidth / maxHeight
         val aspectRatioFloat: Float = aspectRatio.toFloat()
+        val layoutSolution = LocalCameraLayoutSolution.current
+        val solvedBand = if (maxHeight > maxWidth) {
+            layoutSolution?.viewfinderBandFor(aspectRatioFloat)
+        } else {
+            null
+        }
         val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-        val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-        val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+        val width = if (solvedBand != null || shouldUseMaxWidth) {
+            maxWidth
+        } else {
+            maxHeight * aspectRatioFloat
+        }
+        val height = solvedBand?.height
+            ?: if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+        val topOffset = solvedBand?.top ?: 0.dp
         var imageVisible by remember { mutableStateOf(true) }
         val targetBoundsState = LocalOverlapTargetBounds.current
 
@@ -888,6 +937,19 @@ fun PreviewDisplay(
 
         Box(
             modifier = Modifier
+                .padding(top = topOffset)
+                // Reports the top edge of the visible frame to CaptureScaffoldLayout, which anchors
+                // viewfinder-relative content to it.
+                .layout { measurable, frameConstraints ->
+                    val placeable = measurable.measure(frameConstraints)
+                    layout(
+                        placeable.width,
+                        placeable.height,
+                        alignmentLines = mapOf(ViewfinderTopLine to 0)
+                    ) {
+                        placeable.place(0, 0)
+                    }
+                }
                 .testTag(PREVIEW_DISPLAY)
                 .onGloballyPositioned { coordinates ->
                     val bounds = coordinates.boundsInWindow()
