@@ -63,7 +63,6 @@ import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -86,9 +85,6 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlin.math.sin
-
-/** Test tag for the active zoom stop indicator pill inside [ZoomBar]. */
-internal const val ZOOM_BAR_INDICATOR_TAG = "box_zoom_bar_indicator"
 
 private object ZoomBarTokens {
     const val TENTHS_PER_UNIT_INT = 10
@@ -328,13 +324,31 @@ fun ZoomBar(
 
         val indicatorShape = MaterialTheme.shapes.medium
 
+        @Composable
+        fun ZoomStopItems() {
+            zoomLevels.forEachIndexed { index, value ->
+                ZoomBarItem(
+                    value = value,
+                    currentRatioProvider = currentRatioProvider,
+                    isSelected = index == validIndex,
+                    indicatorPositionProvider = { indicatorPosition },
+                    itemIndex = index,
+                    minZoom = minZoom,
+                    maxZoom = maxZoom,
+                    colors = colors,
+                    onChangeZoom = onChangeZoom,
+                    labelRotationProvider = labelRotationProvider
+                )
+            }
+        }
+
         Box(
             modifier = modifier
                 .wrapContentSize()
                 .background(color = colors.trackColor, shape = ZoomBarDefaults.TrackShape)
+                .testTag(ZOOM_BUTTON_ROW_TAG)
                 .semantics {
                     isTraversalGroup = true
-                    testTag = ZOOM_BUTTON_ROW_TAG
                 }
         ) {
             if (orientation == Orientation.Horizontal) {
@@ -368,20 +382,7 @@ fun ZoomBar(
                         .padding(horizontal = ZoomBarDefaults.Inset),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    zoomLevels.forEachIndexed { index, value ->
-                        ZoomBarItem(
-                            value = value,
-                            currentRatioProvider = currentRatioProvider,
-                            isSelected = index == validIndex,
-                            indicatorPositionProvider = { indicatorPosition },
-                            itemIndex = index,
-                            minZoom = minZoom,
-                            maxZoom = maxZoom,
-                            colors = colors,
-                            onChangeZoom = onChangeZoom,
-                            labelRotationProvider = labelRotationProvider
-                        )
-                    }
+                    ZoomStopItems()
                 }
             } else {
                 Box(
@@ -417,20 +418,7 @@ fun ZoomBar(
                         .padding(vertical = ZoomBarDefaults.Inset),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    zoomLevels.forEachIndexed { index, value ->
-                        ZoomBarItem(
-                            value = value,
-                            currentRatioProvider = currentRatioProvider,
-                            isSelected = index == validIndex,
-                            indicatorPositionProvider = { indicatorPosition },
-                            itemIndex = index,
-                            minZoom = minZoom,
-                            maxZoom = maxZoom,
-                            colors = colors,
-                            onChangeZoom = onChangeZoom,
-                            labelRotationProvider = labelRotationProvider
-                        )
-                    }
+                    ZoomStopItems()
                 }
             }
         }
@@ -538,18 +526,7 @@ private fun ZoomBarItem(
         )
     }
 
-    val labelText = remember(displayText) {
-        if (displayText.endsWith('×')) {
-            buildAnnotatedString {
-                append(displayText.dropLast(1))
-                pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
-                append('×')
-                pop()
-            }
-        } else {
-            AnnotatedString(displayText)
-        }
-    }
+    val labelText = remember(displayText) { buildZoomLabelAnnotatedString(displayText) }
 
     val accessibleZoomLabel = remember(value, locale) {
         formatAccessibleZoomLabel(value, locale)
@@ -560,50 +537,23 @@ private fun ZoomBarItem(
     )
     val onClickLabel = stringResource(R.string.zoom_stop_click_label, accessibleZoomLabel)
     val pinchedStateDescription = if (isSelected && !isExactStopSelected) {
-        val currentAccessibleRatio = formatZoomDecimal(
-            tenths = displayTenths,
-            keepLeadingZero = true,
-            locale = locale
-        )
         stringResource(
             R.string.zoom_stop_current_ratio_state_description,
-            currentAccessibleRatio
+            formatZoomDecimal(tenths = displayTenths, keepLeadingZero = true, locale = locale)
         )
     } else {
         null
     }
-
-    val stepInLabel = stringResource(R.string.zoom_action_step_in)
-    val stepOutLabel = stringResource(R.string.zoom_action_step_out)
-    val minZoomTenths = toTenths(minZoom)
-    val maxZoomTenths = toTenths(maxZoom)
     val fineZoomActions = if (isSelected) {
-        buildList {
-            if (displayTenths + ZoomBarTokens.FINE_STEP_TENTHS <= maxZoomTenths) {
-                add(
-                    CustomAccessibilityAction(label = stepInLabel) {
-                        val nextTenths =
-                            toTenths(currentRatioProvider()) + ZoomBarTokens.FINE_STEP_TENTHS
-                        val nextZoom = (nextTenths / ZoomBarTokens.TENTHS_PER_UNIT_FLOAT)
-                            .coerceAtMost(maxZoom)
-                        currentOnChangeZoom(nextZoom)
-                        true
-                    }
-                )
-            }
-            if (displayTenths - ZoomBarTokens.FINE_STEP_TENTHS >= minZoomTenths) {
-                add(
-                    CustomAccessibilityAction(label = stepOutLabel) {
-                        val nextTenths =
-                            toTenths(currentRatioProvider()) - ZoomBarTokens.FINE_STEP_TENTHS
-                        val nextZoom = (nextTenths / ZoomBarTokens.TENTHS_PER_UNIT_FLOAT)
-                            .coerceAtLeast(minZoom)
-                        currentOnChangeZoom(nextZoom)
-                        true
-                    }
-                )
-            }
-        }
+        buildFineZoomActions(
+            displayTenths = displayTenths,
+            minZoom = minZoom,
+            maxZoom = maxZoom,
+            stepInLabel = stringResource(R.string.zoom_action_step_in),
+            stepOutLabel = stringResource(R.string.zoom_action_step_out),
+            currentRatioProvider = currentRatioProvider,
+            onChangeZoom = { currentOnChangeZoom(it) }
+        )
     } else {
         emptyList()
     }
@@ -634,8 +584,8 @@ private fun ZoomBarItem(
                 indication = null,
                 onClick = { currentOnChangeZoom(value) }
             )
+            .testTag(getZoomButtonTestTag(value))
             .semantics {
-                testTag = getZoomButtonTestTag(value)
                 if (pinchedStateDescription != null) {
                     stateDescription = pinchedStateDescription
                 }
@@ -666,39 +616,84 @@ private fun ZoomBarItem(
                     .semantics {
                         contentDescription = stopContentDescription
                     }
-                    .graphicsLayer {
-                        val rotation = labelRotationProvider()
-                        rotationZ = rotation
-                        if (size.width > 0f) {
-                            val rotationRadians = Math.toRadians(rotation.toDouble())
-                            val unrotatedMaxSpanPx = (
-                                ZoomBarDefaults.SlotSize -
-                                    ZoomBarTokens.UnrotatedLabelPillMargin
-                                ).toPx()
-                            val rotatedMaxSpanPx = (
-                                ZoomBarDefaults.IndicatorHeight -
-                                    ZoomBarTokens.RotatedLabelPillMargin
-                                ).toPx()
-                            val maxSpanPx = lerp(
-                                unrotatedMaxSpanPx,
-                                rotatedMaxSpanPx,
-                                abs(sin(rotationRadians)).toFloat()
-                            )
-                            val scale = if (size.width > maxSpanPx) {
-                                (maxSpanPx / size.width)
-                                    .coerceAtLeast(ZoomBarTokens.MIN_LABEL_SCALE)
-                            } else {
-                                1f
-                            }
-                            scaleX = scale
-                            scaleY = scale
-                        }
-                    },
+                    .uprightScaledZoomLabel(labelRotationProvider),
                 softWrap = false
             )
         }
     }
 }
+
+private fun buildZoomLabelAnnotatedString(displayText: String): AnnotatedString =
+    if (displayText.endsWith('×')) {
+        buildAnnotatedString {
+            append(displayText.dropLast(1))
+            pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
+            append('×')
+            pop()
+        }
+    } else {
+        AnnotatedString(displayText)
+    }
+
+private fun buildFineZoomActions(
+    displayTenths: Int,
+    minZoom: Float,
+    maxZoom: Float,
+    stepInLabel: String,
+    stepOutLabel: String,
+    currentRatioProvider: () -> Float,
+    onChangeZoom: (Float) -> Unit
+): List<CustomAccessibilityAction> = buildList {
+    val minZoomTenths = toTenths(minZoom)
+    val maxZoomTenths = toTenths(maxZoom)
+    if (displayTenths + ZoomBarTokens.FINE_STEP_TENTHS <= maxZoomTenths) {
+        add(
+            CustomAccessibilityAction(label = stepInLabel) {
+                val nextTenths = toTenths(currentRatioProvider()) + ZoomBarTokens.FINE_STEP_TENTHS
+                val nextZoom = (nextTenths / ZoomBarTokens.TENTHS_PER_UNIT_FLOAT)
+                    .coerceAtMost(maxZoom)
+                onChangeZoom(nextZoom)
+                true
+            }
+        )
+    }
+    if (displayTenths - ZoomBarTokens.FINE_STEP_TENTHS >= minZoomTenths) {
+        add(
+            CustomAccessibilityAction(label = stepOutLabel) {
+                val nextTenths = toTenths(currentRatioProvider()) - ZoomBarTokens.FINE_STEP_TENTHS
+                val nextZoom = (nextTenths / ZoomBarTokens.TENTHS_PER_UNIT_FLOAT)
+                    .coerceAtLeast(minZoom)
+                onChangeZoom(nextZoom)
+                true
+            }
+        )
+    }
+}
+
+private fun Modifier.uprightScaledZoomLabel(labelRotationProvider: () -> Float): Modifier =
+    graphicsLayer {
+        val rotation = labelRotationProvider()
+        rotationZ = rotation
+        if (size.width > 0f) {
+            val rotationRadians = Math.toRadians(rotation.toDouble())
+            val unrotatedMaxSpanPx =
+                (ZoomBarDefaults.SlotSize - ZoomBarTokens.UnrotatedLabelPillMargin).toPx()
+            val rotatedMaxSpanPx =
+                (ZoomBarDefaults.IndicatorHeight - ZoomBarTokens.RotatedLabelPillMargin).toPx()
+            val maxSpanPx = lerp(
+                unrotatedMaxSpanPx,
+                rotatedMaxSpanPx,
+                abs(sin(rotationRadians)).toFloat()
+            )
+            val scale = if (size.width > maxSpanPx) {
+                (maxSpanPx / size.width).coerceAtLeast(ZoomBarTokens.MIN_LABEL_SCALE)
+            } else {
+                1f
+            }
+            scaleX = scale
+            scaleY = scale
+        }
+    }
 
 /**
  * A composable that displays a row of zoom buttons.
@@ -735,20 +730,6 @@ fun ZoomButtonRow(
         orientation = orientation,
         colors = colors
     )
-}
-
-private fun getZoomButtonTestTag(buttonValue: Float): String {
-    return if (buttonValue < 1 && buttonValue > 0) {
-        ZOOM_BUTTON_MIN_TAG
-    } else if (buttonValue == 1f) {
-        ZOOM_BUTTON_1_TAG
-    } else if (buttonValue == 2f) {
-        ZOOM_BUTTON_2_TAG
-    } else if (buttonValue == 5f) {
-        ZOOM_BUTTON_5_TAG
-    } else {
-        "ZoomButton_${buttonValue}Tag"
-    }
 }
 
 // ---------------------------------------------------------------------------

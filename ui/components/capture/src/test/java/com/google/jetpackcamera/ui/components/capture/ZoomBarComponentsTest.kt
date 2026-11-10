@@ -251,7 +251,7 @@ class ZoomBarComponentsTest {
 
     @Test
     fun formatAccessibleZoomLabel_roundsAndKeepsLeadingZero() {
-        // Pixel minimum zoom ~0.507 rounds to 0.5 with leading zero for speech
+        // Ultrawide minimum zoom ~0.507 rounds to 0.5 with leading zero for speech
         assertThat(formatAccessibleZoomLabel(0.50783783f, Locale.US)).isEqualTo("0.5")
         assertThat(formatAccessibleZoomLabel(1.0f, Locale.US)).isEqualTo("1")
         assertThat(formatAccessibleZoomLabel(2.0f, Locale.US)).isEqualTo("2")
@@ -443,71 +443,65 @@ class ZoomBarComponentsTest {
     }
 
     @Test
-    fun zoomBar_rtlBidiGlyphOrdering_keepsDecimalAndMultiplierLeftToRight() {
-        val previousLocale = Locale.getDefault()
-        Locale.setDefault(Locale.US)
-        try {
-            var currentRatio by mutableFloatStateOf(1.0f)
+    fun zoomBar_rtlBidiGlyphOrdering_keepsDecimalAndMultiplierLeftToRight() = withDefaultLocale {
+        var currentRatio by mutableFloatStateOf(1.0f)
 
-            composeTestRule.setContent {
-                CompositionLocalProvider(
-                    LocalLayoutDirection provides LayoutDirection.Rtl,
-                    LocalDisableAnimations provides true
-                ) {
-                    ZoomBar(
-                        zoomControlUiState = ZoomControlUiState.Enabled(
-                            zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
-                            primaryLensFacing = LensFacing.BACK,
-                            primaryZoomRatio = currentRatio
-                        ),
-                        onChangeZoom = {},
-                        orientation = Orientation.Horizontal
-                    )
-                }
+        composeTestRule.setContent {
+            CompositionLocalProvider(
+                LocalLayoutDirection provides LayoutDirection.Rtl,
+                LocalDisableAnimations provides true
+            ) {
+                ZoomBar(
+                    zoomControlUiState = ZoomControlUiState.Enabled(
+                        zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                        primaryLensFacing = LensFacing.BACK,
+                        primaryZoomRatio = currentRatio
+                    ),
+                    onChangeZoom = {},
+                    orientation = Orientation.Horizontal
+                )
             }
-
-            // Unselected 0.5x stop renders ".5" with '.' left of '5' under RTL layout direction.
-            val unselectedHalfLayout = fetchTextLayoutResult(ZOOM_BUTTON_MIN_TAG)
-            assertThat(unselectedHalfLayout.layoutInput.text.text).isEqualTo(".5")
-            assertThat(unselectedHalfLayout.getParagraphDirection(0))
-                .isEqualTo(ResolvedTextDirection.Ltr)
-            val dotBoxUnselected = unselectedHalfLayout.getBoundingBox(0)
-            val fiveBoxUnselected = unselectedHalfLayout.getBoundingBox(1)
-            assertWithMessage("'.' should sit left of '5' in unselected '.5' under RTL")
-                .that(dotBoxUnselected.left)
-                .isLessThan(fiveBoxUnselected.left)
-
-            // Selected 1.0x stop renders "1×" with '1' left of '×' under RTL layout direction.
-            val selectedOneLayout = fetchTextLayoutResult(ZOOM_BUTTON_1_TAG)
-            assertThat(selectedOneLayout.layoutInput.text.text).isEqualTo("1\u00D7")
-            assertThat(selectedOneLayout.getParagraphDirection(0))
-                .isEqualTo(ResolvedTextDirection.Ltr)
-            val oneBox = selectedOneLayout.getBoundingBox(0)
-            val timesBoxOnOne = selectedOneLayout.getBoundingBox(1)
-            assertWithMessage("'1' should sit left of '×' in selected '1×' under RTL")
-                .that(oneBox.left)
-                .isLessThan(timesBoxOnOne.left)
-
-            // Selected 0.5x stop renders ".5×" with '.' < '5' < '×' under RTL layout direction.
-            currentRatio = 0.5f
-            composeTestRule.waitForIdle()
-
-            val selectedHalfLayout = fetchTextLayoutResult(ZOOM_BUTTON_MIN_TAG)
-            assertThat(selectedHalfLayout.layoutInput.text.text).isEqualTo(".5\u00D7")
-            assertThat(selectedHalfLayout.getParagraphDirection(0))
-                .isEqualTo(ResolvedTextDirection.Ltr)
-            val dotBoxSelected = selectedHalfLayout.getBoundingBox(0)
-            val fiveBoxSelected = selectedHalfLayout.getBoundingBox(1)
-            val timesBoxOnHalf = selectedHalfLayout.getBoundingBox(2)
-            assertWithMessage("'.' should sit left of '5' in selected '.5×' under RTL")
-                .that(dotBoxSelected.left)
-                .isLessThan(fiveBoxSelected.left)
-            assertWithMessage("'5' should sit left of '×' in selected '.5×' under RTL")
-                .that(fiveBoxSelected.left)
-                .isLessThan(timesBoxOnHalf.left)
-        } finally {
-            Locale.setDefault(previousLocale)
         }
+
+        // Unselected 0.5x stop renders ".5" with '.' left of '5' under RTL layout direction.
+        val unselectedHalfLayout = fetchTextLayoutResult(ZOOM_BUTTON_MIN_TAG)
+        assertThat(unselectedHalfLayout.layoutInput.text.text).isEqualTo(".5")
+        assertThat(unselectedHalfLayout.getParagraphDirection(0))
+            .isEqualTo(ResolvedTextDirection.Ltr)
+        val dotBoxUnselected = unselectedHalfLayout.getBoundingBox(0)
+        val fiveBoxUnselected = unselectedHalfLayout.getBoundingBox(1)
+        assertWithMessage("'.' should sit left of '5' in unselected '.5' under RTL")
+            .that(dotBoxUnselected.left)
+            .isLessThan(fiveBoxUnselected.left)
+
+        // Selected 1.0x stop renders "1×" with '1' left of '×' under RTL layout direction.
+        val selectedOneLayout = fetchTextLayoutResult(ZOOM_BUTTON_1_TAG)
+        assertThat(selectedOneLayout.layoutInput.text.text).isEqualTo("1\u00D7")
+        assertThat(selectedOneLayout.getParagraphDirection(0))
+            .isEqualTo(ResolvedTextDirection.Ltr)
+        val oneBox = selectedOneLayout.getBoundingBox(0)
+        val timesBoxOnOne = selectedOneLayout.getBoundingBox(1)
+        assertWithMessage("'1' should sit left of '×' in selected '1×' under RTL")
+            .that(oneBox.left)
+            .isLessThan(timesBoxOnOne.left)
+
+        // Selected 0.5x stop renders ".5×" with '.' < '5' < '×' under RTL layout direction.
+        currentRatio = 0.5f
+        composeTestRule.waitForIdle()
+
+        val selectedHalfLayout = fetchTextLayoutResult(ZOOM_BUTTON_MIN_TAG)
+        assertThat(selectedHalfLayout.layoutInput.text.text).isEqualTo(".5\u00D7")
+        assertThat(selectedHalfLayout.getParagraphDirection(0))
+            .isEqualTo(ResolvedTextDirection.Ltr)
+        val dotBoxSelected = selectedHalfLayout.getBoundingBox(0)
+        val fiveBoxSelected = selectedHalfLayout.getBoundingBox(1)
+        val timesBoxOnHalf = selectedHalfLayout.getBoundingBox(2)
+        assertWithMessage("'.' should sit left of '5' in selected '.5×' under RTL")
+            .that(dotBoxSelected.left)
+            .isLessThan(fiveBoxSelected.left)
+        assertWithMessage("'5' should sit left of '×' in selected '.5×' under RTL")
+            .that(fiveBoxSelected.left)
+            .isLessThan(timesBoxOnHalf.left)
     }
 
     @Test
@@ -565,43 +559,37 @@ class ZoomBarComponentsTest {
     }
 
     @Test
-    fun zoomBar_pinchZoomRatio_updatesActiveStopLabelByTenths() {
-        val previousLocale = Locale.getDefault()
-        Locale.setDefault(Locale.US)
-        try {
-            var currentRatio by mutableFloatStateOf(1.0f)
+    fun zoomBar_pinchZoomRatio_updatesActiveStopLabelByTenths() = withDefaultLocale {
+        var currentRatio by mutableFloatStateOf(1.0f)
 
-            composeTestRule.setContent {
-                CompositionLocalProvider(LocalDisableAnimations provides true) {
-                    ZoomBar(
-                        zoomControlUiState = ZoomControlUiState.Enabled(
-                            zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
-                            primaryLensFacing = LensFacing.BACK,
-                            primaryZoomRatio = currentRatio
-                        ),
-                        onChangeZoom = {},
-                        orientation = Orientation.Horizontal
-                    )
-                }
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                ZoomBar(
+                    zoomControlUiState = ZoomControlUiState.Enabled(
+                        zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                        primaryLensFacing = LensFacing.BACK,
+                        primaryZoomRatio = currentRatio
+                    ),
+                    onChangeZoom = {},
+                    orientation = Orientation.Horizontal
+                )
             }
-
-            assertThat(fetchTextLayoutResult(ZOOM_BUTTON_1_TAG).layoutInput.text.text)
-                .isEqualTo("1\u00D7")
-
-            // Sub-tenth pinch jitter stays at 1.0 tenth ("1×").
-            currentRatio = 1.04f
-            composeTestRule.waitForIdle()
-            assertThat(fetchTextLayoutResult(ZOOM_BUTTON_1_TAG).layoutInput.text.text)
-                .isEqualTo("1\u00D7")
-
-            // Crossing tenth boundary updates rendered label to "1.4×".
-            currentRatio = 1.42f
-            composeTestRule.waitForIdle()
-            assertThat(fetchTextLayoutResult(ZOOM_BUTTON_1_TAG).layoutInput.text.text)
-                .isEqualTo("1.4\u00D7")
-        } finally {
-            Locale.setDefault(previousLocale)
         }
+
+        assertThat(fetchTextLayoutResult(ZOOM_BUTTON_1_TAG).layoutInput.text.text)
+            .isEqualTo("1\u00D7")
+
+        // Sub-tenth pinch jitter stays at 1.0 tenth ("1×").
+        currentRatio = 1.04f
+        composeTestRule.waitForIdle()
+        assertThat(fetchTextLayoutResult(ZOOM_BUTTON_1_TAG).layoutInput.text.text)
+            .isEqualTo("1\u00D7")
+
+        // Crossing tenth boundary updates rendered label to "1.4×".
+        currentRatio = 1.42f
+        composeTestRule.waitForIdle()
+        assertThat(fetchTextLayoutResult(ZOOM_BUTTON_1_TAG).layoutInput.text.text)
+            .isEqualTo("1.4\u00D7")
     }
 
     @Test
@@ -653,10 +641,8 @@ class ZoomBarComponentsTest {
     }
 
     @Test
-    fun zoomBar_semantics_exposesTraversalGroupRadioRoleContentDescriptionAndPassiveIndicator() {
-        val previousLocale = Locale.getDefault()
-        Locale.setDefault(Locale.US)
-        try {
+    fun zoomBar_semantics_exposesTraversalGroupRadioRoleContentDescriptionAndPassiveIndicator() =
+        withDefaultLocale {
             composeTestRule.setContent {
                 CompositionLocalProvider(LocalDisableAnimations provides true) {
                     ZoomBar(
@@ -698,16 +684,11 @@ class ZoomBarComponentsTest {
             // Verify GetTextLayoutResult remains accessible on the merged stop node.
             assertThat(fetchTextLayoutResult(ZOOM_BUTTON_MIN_TAG).layoutInput.text.text)
                 .isEqualTo(".5")
-        } finally {
-            Locale.setDefault(previousLocale)
         }
-    }
 
     @Test
-    fun zoomBar_pinchedOffStop_clearsSelectedSetsStateDescriptionAndAllowsClickReset() {
-        val previousLocale = Locale.getDefault()
-        Locale.setDefault(Locale.US)
-        try {
+    fun zoomBar_pinchedOffStop_clearsSelectedSetsStateDescriptionAndAllowsClickReset() =
+        withDefaultLocale {
             var lastRequestedZoom: Float? = null
 
             composeTestRule.setContent {
@@ -737,80 +718,71 @@ class ZoomBarComponentsTest {
                 .performSemanticsAction(SemanticsActions.OnClick)
 
             assertThat(lastRequestedZoom).isEqualTo(1.0f)
-        } finally {
-            Locale.setDefault(previousLocale)
         }
-    }
 
     @Test
-    fun zoomBar_activeStop_exposesFineZoomCustomActionsAndRespectsBounds() {
-        val previousLocale = Locale.getDefault()
-        Locale.setDefault(Locale.US)
-        try {
-            var currentRatio by mutableFloatStateOf(1.0f)
-            var lastRequestedZoom: Float? = null
+    fun zoomBar_activeStop_exposesFineZoomCustomActionsAndRespectsBounds() = withDefaultLocale {
+        var currentRatio by mutableFloatStateOf(1.0f)
+        var lastRequestedZoom: Float? = null
 
-            composeTestRule.setContent {
-                CompositionLocalProvider(LocalDisableAnimations provides true) {
-                    ZoomBar(
-                        zoomControlUiState = ZoomControlUiState.Enabled(
-                            zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
-                            primaryLensFacing = LensFacing.BACK,
-                            primaryZoomRatio = currentRatio
-                        ),
-                        onChangeZoom = {
-                            lastRequestedZoom = it
-                            currentRatio = it
-                        },
-                        orientation = Orientation.Horizontal
-                    )
-                }
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                ZoomBar(
+                    zoomControlUiState = ZoomControlUiState.Enabled(
+                        zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                        primaryLensFacing = LensFacing.BACK,
+                        primaryZoomRatio = currentRatio
+                    ),
+                    onChangeZoom = {
+                        lastRequestedZoom = it
+                        currentRatio = it
+                    },
+                    orientation = Orientation.Horizontal
+                )
             }
-
-            // Unselected stops do not expose fine-zoom custom actions.
-            assertThat(
-                composeTestRule.onNodeWithTag(ZOOM_BUTTON_MIN_TAG)
-                    .fetchSemanticsNode()
-                    .config
-                    .getOrNull(SemanticsActions.CustomActions)
-            ).isNull()
-
-            // Active 1.0x stop exposes both "Zoom in" and "Zoom out".
-            val actionsAtOne = composeTestRule.onNodeWithTag(ZOOM_BUTTON_1_TAG)
-                .fetchSemanticsNode()
-                .config[SemanticsActions.CustomActions]
-            assertThat(actionsAtOne.map { it.label })
-                .containsExactly("Zoom in", "Zoom out")
-
-            assertThat(actionsAtOne.first { it.label == "Zoom in" }.action()).isTrue()
-            composeTestRule.waitForIdle()
-            assertThat(lastRequestedZoom).isWithin(0.001f).of(1.1f)
-
-            val actionsAtOnePointOne = composeTestRule.onNodeWithTag(ZOOM_BUTTON_1_TAG)
-                .fetchSemanticsNode()
-                .config[SemanticsActions.CustomActions]
-            assertThat(actionsAtOnePointOne.first { it.label == "Zoom out" }.action()).isTrue()
-            composeTestRule.waitForIdle()
-            assertThat(lastRequestedZoom).isWithin(0.001f).of(1.0f)
-
-            // At minimum stop (0.5x), only "Zoom in" is exposed.
-            currentRatio = 0.5f
-            composeTestRule.waitForIdle()
-            val actionsAtMin = composeTestRule.onNodeWithTag(ZOOM_BUTTON_MIN_TAG)
-                .fetchSemanticsNode()
-                .config[SemanticsActions.CustomActions]
-            assertThat(actionsAtMin.map { it.label }).containsExactly("Zoom in")
-
-            // At maximum stop (5.0x), only "Zoom out" is exposed.
-            currentRatio = 5.0f
-            composeTestRule.waitForIdle()
-            val actionsAtMax = composeTestRule.onNodeWithTag(ZOOM_BUTTON_5_TAG)
-                .fetchSemanticsNode()
-                .config[SemanticsActions.CustomActions]
-            assertThat(actionsAtMax.map { it.label }).containsExactly("Zoom out")
-        } finally {
-            Locale.setDefault(previousLocale)
         }
+
+        // Unselected stops do not expose fine-zoom custom actions.
+        assertThat(
+            composeTestRule.onNodeWithTag(ZOOM_BUTTON_MIN_TAG)
+                .fetchSemanticsNode()
+                .config
+                .getOrNull(SemanticsActions.CustomActions)
+        ).isNull()
+
+        // Active 1.0x stop exposes both "Zoom in" and "Zoom out".
+        val actionsAtOne = composeTestRule.onNodeWithTag(ZOOM_BUTTON_1_TAG)
+            .fetchSemanticsNode()
+            .config[SemanticsActions.CustomActions]
+        assertThat(actionsAtOne.map { it.label })
+            .containsExactly("Zoom in", "Zoom out")
+
+        assertThat(actionsAtOne.first { it.label == "Zoom in" }.action()).isTrue()
+        composeTestRule.waitForIdle()
+        assertThat(lastRequestedZoom).isWithin(0.001f).of(1.1f)
+
+        val actionsAtOnePointOne = composeTestRule.onNodeWithTag(ZOOM_BUTTON_1_TAG)
+            .fetchSemanticsNode()
+            .config[SemanticsActions.CustomActions]
+        assertThat(actionsAtOnePointOne.first { it.label == "Zoom out" }.action()).isTrue()
+        composeTestRule.waitForIdle()
+        assertThat(lastRequestedZoom).isWithin(0.001f).of(1.0f)
+
+        // At minimum stop (0.5x), only "Zoom in" is exposed.
+        currentRatio = 0.5f
+        composeTestRule.waitForIdle()
+        val actionsAtMin = composeTestRule.onNodeWithTag(ZOOM_BUTTON_MIN_TAG)
+            .fetchSemanticsNode()
+            .config[SemanticsActions.CustomActions]
+        assertThat(actionsAtMin.map { it.label }).containsExactly("Zoom in")
+
+        // At maximum stop (5.0x), only "Zoom out" is exposed.
+        currentRatio = 5.0f
+        composeTestRule.waitForIdle()
+        val actionsAtMax = composeTestRule.onNodeWithTag(ZOOM_BUTTON_5_TAG)
+            .fetchSemanticsNode()
+            .config[SemanticsActions.CustomActions]
+        assertThat(actionsAtMax.map { it.label }).containsExactly("Zoom out")
     }
 
     @Test
@@ -959,7 +931,7 @@ class ZoomBarComponentsTest {
 
     @Test
     fun zoomBar_labelRotationDegrees_interpolatesAutoScaleSmoothlyAcrossAngles() {
-        val tenStopTag = "ZoomButton_10.0Tag"
+        val tenStopTag = getZoomButtonTestTag(10f)
         var rotationDegrees by mutableFloatStateOf(29f)
         var baseDensityValue = 1f
 
@@ -1003,6 +975,16 @@ class ZoomBarComponentsTest {
         // Across 29° -> 31° there should be no abrupt 10dp step jump in rendered label bounds.
         assertThat(abs(boundsAt31.width - boundsAt29.width)).isLessThan(2f * baseDensityValue)
         assertThat(abs(boundsAt31.height - boundsAt29.height)).isLessThan(2f * baseDensityValue)
+    }
+
+    private inline fun withDefaultLocale(locale: Locale = Locale.US, block: () -> Unit) {
+        val previousLocale = Locale.getDefault()
+        Locale.setDefault(locale)
+        try {
+            block()
+        } finally {
+            Locale.setDefault(previousLocale)
+        }
     }
 
     private fun assertConsistentNumeralScript(formatted: String) {
