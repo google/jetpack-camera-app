@@ -42,6 +42,7 @@ import com.google.jetpackcamera.core.camera.runWith
 import com.google.jetpackcamera.core.common.testing.FakeFilePathGenerator
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
@@ -348,6 +349,65 @@ class ConcurrentCameraSessionTest {
             }
         }
     }
+
+    @Test
+    fun runConcurrentCameraSession_whenAnEarlierErrorIsStillSet_reportsANewError(): Unit =
+        runBlocking {
+            val cameraProvider = ProcessCameraProvider.awaitInstance(context)
+            val backCameraInfo = cameraProvider.availableCameraInfos.firstOrNull {
+                it.appLensFacing == LensFacing.BACK
+            }
+            val frontCameraInfo = cameraProvider.availableCameraInfos.firstOrNull {
+                it.appLensFacing == LensFacing.FRONT
+            }
+            assume()
+                .withMessage("Both FRONT and BACK cameras required on device, skip the test.")
+                .that(backCameraInfo != null && frontCameraInfo != null)
+                .isTrue()
+
+            // An error from an earlier failure that the camera system hasn't cleared yet.
+            val earlierError = CaptureSubModeState.Error(
+                subModeId = CaptureSubModeId("earlier_sub_mode"),
+                error = IllegalStateException("Earlier failure")
+            )
+            val sessionContext = createTestSessionContext(cameraProvider)
+            sessionContext.currentCameraState.value =
+                CameraState(captureSubModeState = earlierError)
+            val sessionJob = launch(Dispatchers.Main) {
+                with(sessionContext) {
+                    runConcurrentCameraSession(
+                        sessionSettings = PerpetualSessionSettings.CustomSession(
+                            subModeKey = ConcurrentCameraSubModeKey,
+                            aspectRatio = AspectRatio.NINE_SIXTEEN,
+                            captureMode = CaptureMode.VIDEO_ONLY
+                        ),
+                        availableConcurrentCameraInfos = listOf(
+                            listOf(backCameraInfo!!, frontCameraInfo!!)
+                        ),
+                        bindConcurrentCameras = { _, _, _ ->
+                            throw IllegalArgumentException("Unsupported stream combination")
+                        }
+                    )
+                }
+            }
+
+            try {
+                val errorState = withTimeout(5_000) {
+                    sessionContext.currentCameraState.first {
+                        it.captureSubModeState != earlierError
+                    }
+                }
+                assertThat((errorState.captureSubModeState as CaptureSubModeState.Error).subModeId)
+                    .isEqualTo(CONCURRENT_SUB_MODE_ID)
+            } finally {
+                withContext(NonCancellable) {
+                    sessionJob.cancelAndJoin()
+                    withContext(Dispatchers.Main) {
+                        cameraProvider.unbindAll()
+                    }
+                }
+            }
+        }
 
     @SuppressLint("Recycle")
     private fun provideSurfaceForTest(surfaceRequest: androidx.camera.core.SurfaceRequest) {

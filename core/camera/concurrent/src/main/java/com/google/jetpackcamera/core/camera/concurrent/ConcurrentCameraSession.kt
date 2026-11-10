@@ -60,6 +60,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -212,6 +213,10 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
 
                     // Update CameraState to reflect when camera is running and any camera errors
                     launch {
+                        fun mappedErrorOf(states: Pair<CXCameraState, CXCameraState>) =
+                            (states.first.error ?: states.second.error)
+                                ?.let { mapCameraStateError(it) }
+
                         combine(
                             primaryCameraInfo.cameraState.asFlow().filterNotNull(),
                             secondaryCameraInfo.cameraState.asFlow().filterNotNull()
@@ -219,6 +224,12 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                             primaryState to secondaryState
                         }
                             .distinctUntilChanged()
+                            // Report a stream configuration failure once. The cameras keep
+                            // emitting the error while they close.
+                            .transformWhile { states ->
+                                emit(states)
+                                mappedErrorOf(states) != CameraError.StreamConfigError
+                            }
                             .onCompletion {
                                 currentCameraState.update { old ->
                                     old.copy(
@@ -226,9 +237,9 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                                     )
                                 }
                             }
-                            .collectLatest { (primaryState, secondaryState) ->
-                                val mappedError = (primaryState.error ?: secondaryState.error)
-                                    ?.let { mapCameraStateError(it) }
+                            .collectLatest { states ->
+                                val (primaryState, secondaryState) = states
+                                val mappedError = mappedErrorOf(states)
                                 if (mappedError == CameraError.StreamConfigError) {
                                     reportSubModeFailure(
                                         sessionSettings,
@@ -322,9 +333,6 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
 /**
  * Reports that the concurrent session failed, so the camera system switches back to the default
  * sub-mode and rebinds a single camera.
- *
- * A failure that is already reported is not reported again, because the camera states keep
- * emitting the error while the cameras close, and each report would show another error message.
  */
 private fun CameraSessionContext.reportSubModeFailure(
     sessionSettings: PerpetualSessionSettings.CustomSession,
@@ -333,11 +341,10 @@ private fun CameraSessionContext.reportSubModeFailure(
     currentCameraState.update { old ->
         old.copy(
             isCameraRunning = false,
-            captureSubModeState = old.captureSubModeState as? CaptureSubModeState.Error
-                ?: CaptureSubModeState.Error(
-                    subModeId = sessionSettings.subModeKey.id,
-                    error = error
-                )
+            captureSubModeState = CaptureSubModeState.Error(
+                subModeId = sessionSettings.subModeKey.id,
+                error = error
+            )
         )
     }
 }

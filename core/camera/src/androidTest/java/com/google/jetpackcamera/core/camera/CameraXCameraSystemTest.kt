@@ -1486,6 +1486,28 @@ class CameraXCameraSystemTest {
     }
 
     @Test
+    fun setMirrorMode_inCaptureSubMode_restoresTheUserChoiceOnExit(): Unit = runBlocking {
+        // Arrange. The sub-mode's policy locks mirror mode to OFF.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            captureSubModeProvider = FakeCaptureSubModeProvider(
+                CameraFeaturePolicy(
+                    mirrorMode = SettingConfig(MirrorMode.OFF, OptionVisibility.Hidden)
+                )
+            )
+        )
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+        cameraSystem.setMirrorMode(MirrorMode.ON_FRONT_ONLY)
+        cameraSystem.setCaptureSubMode(FAKE_CAPTURE_SUB_MODE_ID)
+
+        // Act. The user turns mirroring off while the sub-mode is active, then leaves it.
+        cameraSystem.setMirrorMode(MirrorMode.OFF)
+        cameraSystem.setCaptureSubMode(CaptureSubModeId.DEFAULT)
+
+        // Assert. The user's choice, not the value from before the sub-mode, is applied.
+        assertThat(cameraSystem.getCurrentSettings().value!!.mirrorMode).isEqualTo(MirrorMode.OFF)
+    }
+
+    @Test
     fun setImageFormat_inCaptureSubMode_restoresTheUserChoiceOnExit(): Unit = runBlocking {
         // Arrange. The sub-mode's policy locks the image format to JPEG.
         val cameraSystem = createAndInitCameraXCameraSystem(
