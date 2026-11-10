@@ -57,6 +57,16 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 
+private object VerticalIndicatorPillPreviewTokens {
+    val ContainerPadding = 8.dp
+    val CutoutBounds = DpRect(
+        left = 4.dp,
+        top = 60.dp,
+        right = 44.dp,
+        bottom = 100.dp
+    )
+}
+
 /**
  * Layout dimension tokens for [VerticalIndicatorPill] and vertically oriented [IndicatorPillIcon]
  * items.
@@ -72,8 +82,8 @@ internal object VerticalIndicatorPillTokens {
 
 /**
  * CompositionLocal specifying the axis along which [IndicatorPillIcon] expands, shrinks, and pads
- * its icon content (`Orientation.Horizontal` in [IndicatorPill], `Orientation.Vertical` in
- * [VerticalIndicatorPill]).
+ * its icon content ([Orientation.Horizontal] in [HorizontalIndicatorPill], [Orientation.Vertical]
+ * in [VerticalIndicatorPill]).
  */
 internal val LocalIndicatorPillOrientation = staticCompositionLocalOf { Orientation.Horizontal }
 
@@ -91,8 +101,8 @@ internal val LocalIndicatorPillOrientation = staticCompositionLocalOf { Orientat
  * indicators in the rail together. Draws no pill segments and collapses to `0.dp` height when no
  * indicators are active.
  *
- * TODO(UX): `Top -> Bottom` status icon stacking (`Flash -> HDR -> VideoQuality -> Stabilization`,
- * non-inverted in RTL) is pending final UX confirmation.
+ * Status icons stack top-to-bottom in declaration order (`Flash -> HDR -> VideoQuality ->
+ * Stabilization`, non-inverted in RTL).
  *
  * @param modifier the [Modifier] to be applied to this vertical pill container.
  * @param cutoutRectsOverride optional list of cutout bounding rectangles in the column's local
@@ -101,6 +111,7 @@ internal val LocalIndicatorPillOrientation = staticCompositionLocalOf { Orientat
  *   each active pill segment after layout, used for testing.
  * @param content the status indicator children, scoped to [ColumnScope].
  */
+// TODO: Confirm final vertical status indicator stacking order with UX.
 @SuppressLint("AvoidNullableCollections", "NullableCollection")
 @Composable
 fun VerticalIndicatorPill(
@@ -148,7 +159,7 @@ private fun VerticalIndicatorPillPreviewContent(cutoutRectDp: DpRect? = null) {
                         colors = listOf(Color.DarkGray, Color.Black)
                     )
                 )
-                .padding(8.dp)
+                .padding(VerticalIndicatorPillPreviewTokens.ContainerPadding)
         ) {
             if (cutoutRectDp != null) {
                 Box(
@@ -190,13 +201,6 @@ private fun VerticalIndicatorPillPreviewContent(cutoutRectDp: DpRect? = null) {
     }
 }
 
-private val PreviewCutoutBoundsDp = DpRect(
-    left = 4.dp,
-    top = 60.dp,
-    right = 44.dp,
-    bottom = 100.dp
-)
-
 @Preview(
     name = "Single Vertical Pill",
     uiMode = Configuration.UI_MODE_NIGHT_YES,
@@ -214,7 +218,9 @@ private fun VerticalIndicatorPillSinglePreview() {
 )
 @Composable
 private fun VerticalIndicatorPillCutoutSplitPreview() {
-    VerticalIndicatorPillPreviewContent(cutoutRectDp = PreviewCutoutBoundsDp)
+    VerticalIndicatorPillPreviewContent(
+        cutoutRectDp = VerticalIndicatorPillPreviewTokens.CutoutBounds
+    )
 }
 
 @Preview(
@@ -225,5 +231,7 @@ private fun VerticalIndicatorPillCutoutSplitPreview() {
 )
 @Composable
 private fun VerticalIndicatorPillRtlPreview() {
-    VerticalIndicatorPillPreviewContent(cutoutRectDp = PreviewCutoutBoundsDp)
+    VerticalIndicatorPillPreviewContent(
+        cutoutRectDp = VerticalIndicatorPillPreviewTokens.CutoutBounds
+    )
 }

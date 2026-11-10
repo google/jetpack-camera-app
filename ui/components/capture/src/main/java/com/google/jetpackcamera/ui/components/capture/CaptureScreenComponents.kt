@@ -1287,11 +1287,11 @@ fun HorizontalIndicatorPill(
  * animations and standard indicator pill item padding.
  *
  * Reads [LocalIndicatorPillOrientation] to animate horizontally with `6x8.dp` padding inside
- * [IndicatorPill] (`36x40.dp` around a `24.dp` icon) and vertically with `8x6.dp` padding inside
- * [VerticalIndicatorPill] (`40x36.dp` around a `24.dp` icon). Snaps immediately without animation
- * when [LocalDisableAnimations] is enabled, and clears descendant semantics immediately when
- * [visible] becomes `false` so exiting icons do not expose stale descriptions or low-opacity
- * contrast frames during shrink/fade-out transitions.
+ * [HorizontalIndicatorPill] (`36x40.dp` around a `24.dp` icon) and vertically with `8x6.dp`
+ * padding inside [VerticalIndicatorPill] (`40x36.dp` around a `24.dp` icon). Snaps immediately
+ * without animation when [LocalDisableAnimations] is enabled, and clears descendant semantics
+ * immediately when [visible] becomes `false` so exiting icons do not expose stale descriptions or
+ * low-opacity contrast frames during shrink/fade-out transitions.
  *
  * @param visible whether the status indicator is currently active and visible.
  * @param modifier the [Modifier] applied to the indicator wrapper.

@@ -49,7 +49,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import com.google.jetpackcamera.core.common.ignoreResult
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
+
+private object CutoutAwareColumnTokens {
+    val DefaultVerticalSpacing = 8.dp
+    val DefaultCutoutClearance = 8.dp
+}
 
 /**
  * A vertical column layout for side-rail status indicators that automatically flows items around
@@ -64,8 +70,8 @@ import kotlin.math.roundToInt
  * in RTL and [androidx.compose.ui.AbsoluteAlignment] values (`Left`/`Right`) remain pinned to
  * physical edges.
  *
- * TODO(UX): `Top -> Bottom` status icon stacking (`Flash -> HDR -> VideoQuality -> Stabilization`,
- * non-inverted in RTL) is pending final UX confirmation.
+ * Status icons stack top-to-bottom in declaration order (`Flash -> HDR -> VideoQuality ->
+ * Stabilization`, non-inverted in RTL).
  *
  * When [pillVerticalPadding] is positive, contiguous active items that do not cross a cutout are
  * grouped into a shared vertical pill segment with [pillVerticalPadding] at the top and bottom of
@@ -100,12 +106,13 @@ import kotlin.math.roundToInt
  *   each active pill segment after layout, used for testing.
  * @param content the column children, scoped to [ColumnScope].
  */
+// TODO: Confirm final vertical status indicator stacking order with UX.
 @SuppressLint("AvoidNullableCollections", "NullableCollection")
 @Composable
 fun CutoutAwareColumn(
     modifier: Modifier = Modifier,
-    verticalSpacing: Dp = 8.dp,
-    cutoutClearance: Dp = 8.dp,
+    verticalSpacing: Dp = CutoutAwareColumnTokens.DefaultVerticalSpacing,
+    cutoutClearance: Dp = CutoutAwareColumnTokens.DefaultCutoutClearance,
     pillVerticalPadding: Dp = 0.dp,
     pillMinWidth: Dp = 0.dp,
     pillBackgroundColor: Color = Color.Unspecified,
@@ -142,7 +149,7 @@ fun CutoutAwareColumn(
                     if (pillBackgroundColor != Color.Unspecified) {
                         for (segment in pillSegments) {
                             if (segment.width > 0 && segment.height > 0) {
-                                val radius = segment.width / 2f
+                                val radius = min(segment.width, segment.height) / 2f
                                 drawRoundRect(
                                     color = pillBackgroundColor,
                                     topLeft = Offset(
@@ -206,7 +213,7 @@ fun CutoutAwareColumn(
                 localCutoutRects
                     .filter { rect ->
                         rect.width > 0 && rect.height > 0 && rect.right > 0 &&
-                            rect.left < columnWidth
+                            rect.left < columnWidth && rect.bottom + clearancePx > 0
                     }
                     .map { rect ->
                         IntRange(
@@ -360,11 +367,20 @@ fun CutoutAwareColumn(
     }
 }
 
+/**
+ * Window-space anchor of a [CutoutAwareColumn], capturing horizontal bounds and top offset so
+ * vertical height animations do not invalidate cutout coordinate resolution.
+ */
 @Immutable
-private data class WindowAnchor(val left: Int, val top: Int, val width: Int)
+internal data class WindowAnchor(val left: Int, val top: Int, val width: Int)
 
+/**
+ * Resolves display cutout bounding rectangles into the column's local coordinate space, using
+ * [cutoutRectsOverride] when provided or offsetting [windowCutoutRects] by [windowAnchor], and
+ * mirroring horizontal coordinates in RTL while keeping vertical coordinates top-to-bottom.
+ */
 @SuppressLint("AvoidNullableCollections", "NullableCollection")
-private fun resolveColumnLocalCutoutRects(
+internal fun resolveColumnLocalCutoutRects(
     cutoutRectsOverride: List<IntRect>?,
     windowCutoutRects: List<android.graphics.Rect>,
     windowAnchor: WindowAnchor?,

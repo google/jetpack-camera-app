@@ -31,6 +31,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
@@ -920,6 +921,195 @@ class CutoutAwareColumnTest {
         }
         assertThat(observedMidVerticalShrink).isTrue()
         assertThat(observedMidHorizontalShrink).isTrue()
+    }
+
+    @Test
+    fun resolveColumnLocalCutoutRects_multipleWindowCutouts_transformsToLocalCoordinates() {
+        val windowCutoutRects = listOf(
+            android.graphics.Rect(0, 0, 48, 36),
+            android.graphics.Rect(20, 100, 52, 140),
+            android.graphics.Rect(300, 200, 360, 240)
+        )
+        val anchor = WindowAnchor(left = 12, top = 40, width = 48)
+
+        assertThat(
+            resolveColumnLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = windowCutoutRects,
+                windowAnchor = anchor,
+                isRtl = false,
+                rtlReferenceWidth = 48
+            )
+        ).containsExactly(
+            IntRect(left = -12, top = -40, right = 36, bottom = -4),
+            IntRect(left = 8, top = 60, right = 40, bottom = 100),
+            IntRect(left = 288, top = 160, right = 348, bottom = 200)
+        ).inOrder()
+
+        // In RTL with a resolved windowAnchor, horizontal coordinates mirror around anchor.width
+        // while vertical coordinates stay top-to-bottom.
+        assertThat(
+            resolveColumnLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = windowCutoutRects,
+                windowAnchor = anchor,
+                isRtl = true,
+                rtlReferenceWidth = 60
+            )
+        ).containsExactly(
+            IntRect(left = 12, top = -40, right = 60, bottom = -4),
+            IntRect(left = 8, top = 60, right = 40, bottom = 100),
+            IntRect(left = -300, top = 160, right = -240, bottom = 200)
+        ).inOrder()
+    }
+
+    @Test
+    fun resolveColumnLocalCutoutRects_nullAnchorAndOverride_handlesFallbackAndPrecedence() {
+        val windowCutoutRects = listOf(
+            android.graphics.Rect(4, 10, 44, 50),
+            android.graphics.Rect(10, 120, 38, 160)
+        )
+
+        // When windowAnchor is null, offsets default to (0, 0) and RTL mirrors around
+        // rtlReferenceWidth.
+        assertThat(
+            resolveColumnLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = windowCutoutRects,
+                windowAnchor = null,
+                isRtl = false,
+                rtlReferenceWidth = 48
+            )
+        ).containsExactly(
+            IntRect(left = 4, top = 10, right = 44, bottom = 50),
+            IntRect(left = 10, top = 120, right = 38, bottom = 160)
+        ).inOrder()
+
+        assertThat(
+            resolveColumnLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = windowCutoutRects,
+                windowAnchor = null,
+                isRtl = true,
+                rtlReferenceWidth = 60
+            )
+        ).containsExactly(
+            IntRect(left = 16, top = 10, right = 56, bottom = 50),
+            IntRect(left = 22, top = 120, right = 50, bottom = 160)
+        ).inOrder()
+
+        // When cutoutRectsOverride is provided, windowCutoutRects and windowAnchor are bypassed.
+        val overrideRects = listOf(
+            IntRect(left = 0, top = 20, right = 24, bottom = 60),
+            IntRect(left = 12, top = 110, right = 48, bottom = 150)
+        )
+        assertThat(
+            resolveColumnLocalCutoutRects(
+                cutoutRectsOverride = overrideRects,
+                windowCutoutRects = windowCutoutRects,
+                windowAnchor = WindowAnchor(left = 100, top = 100, width = 48),
+                isRtl = true,
+                rtlReferenceWidth = 60
+            )
+        ).containsExactly(
+            IntRect(left = 36, top = 20, right = 60, bottom = 60),
+            IntRect(left = 12, top = 110, right = 48, bottom = 150)
+        ).inOrder()
+    }
+
+    @Test
+    fun multipleCutouts_clampsKeepOutRangesAndSplitsIndicatorsAcrossThreePillSegments() {
+        // Cutouts in local coordinates with 8dp clearance:
+        // - [-60, -20] -> bottom + clearance = -12 <= 0 (completely above column, ignored)
+        // - [-20, 12]  -> [-28, 20] clamped to [0, 20], shifting first pill to y=20
+        // - [80, 116]  -> [72, 124], splitting Flash (pill [20, 68]) from HDR + VideoQuality
+        //                 (pill [124, 208])
+        // - [220, 256] -> [212, 264], splitting Stabilization into a third pill [264, 312]
+        var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
+        var pillSegments: List<IntRect> = emptyList()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                VerticalIndicatorPill(
+                    cutoutRectsOverride = listOf(
+                        IntRect(left = 0, top = 220, right = 48, bottom = 256),
+                        IntRect(left = 0, top = -60, right = 48, bottom = -20),
+                        IntRect(left = 0, top = 80, right = 48, bottom = 116),
+                        IntRect(left = 0, top = -20, right = 48, bottom = 12)
+                    ),
+                    onPillSegmentsPlaced = { pillSegments = it }
+                ) {
+                    FlashModeIndicator(
+                        flashModeUiState = activeFlashUiState(),
+                        modifier = Modifier.testTag("flash")
+                    )
+                    HdrIndicator(
+                        hdrUiState = activeHdrUiState(),
+                        modifier = Modifier.testTag("hdr")
+                    )
+                    VideoQualityIcon(
+                        videoQuality = VideoQuality.FHD,
+                        modifier = Modifier.testTag("vq")
+                    )
+                    StabilizationIcon(
+                        stabilizationUiState = activeStabilizationUiState(),
+                        modifier = Modifier.testTag("stab")
+                    )
+                }
+            }
+        }
+
+        for (direction in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
+            layoutDirection = direction
+            composeTestRule.waitForIdle()
+
+            assertWithMessage("Multi-cutout pill segments in $direction")
+                .that(pillSegments)
+                .containsExactly(
+                    IntRect(left = 4, top = 20, right = 44, bottom = 68),
+                    IntRect(left = 4, top = 124, right = 44, bottom = 208),
+                    IntRect(left = 4, top = 264, right = 44, bottom = 312)
+                )
+                .inOrder()
+            assertThat(composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot().top)
+                .isEqualTo(26.dp)
+            assertThat(composeTestRule.onNodeWithTag("hdr").getUnclippedBoundsInRoot().top)
+                .isEqualTo(130.dp)
+            assertThat(composeTestRule.onNodeWithTag("vq").getUnclippedBoundsInRoot().top)
+                .isEqualTo(166.dp)
+            assertThat(composeTestRule.onNodeWithTag("stab").getUnclippedBoundsInRoot().top)
+                .isEqualTo(270.dp)
+        }
+    }
+
+    @Test
+    fun cutoutAwareColumn_shortPillSegmentAndBoundedConstraints_clampsDimensionsCleanly() {
+        var pillSegments: List<IntRect> = emptyList()
+        composeTestRule.setContent {
+            CutoutAwareColumn(
+                modifier = Modifier
+                    .size(width = 36.dp, height = 14.dp)
+                    .testTag("bounded_col"),
+                verticalSpacing = 0.dp,
+                pillVerticalPadding = 4.dp,
+                pillMinWidth = 40.dp,
+                pillBackgroundColor = Color.Black,
+                cutoutRectsOverride = emptyList(),
+                onPillSegmentsPlaced = { pillSegments = it }
+            ) {
+                Box(Modifier.size(width = 24.dp, height = 8.dp).testTag("short_item"))
+            }
+        }
+
+        // Pill width clamps to bounded columnWidth (36dp); segment height is 4 + 8 + 4 = 16dp
+        // (< 36dp width, exercising min(width, height) / 2f corner radius clamping), while
+        // layout height clamps to bounded maxHeight (14dp).
+        assertThat(pillSegments).containsExactly(
+            IntRect(left = 0, top = 0, right = 36, bottom = 16)
+        )
+        val colBounds = composeTestRule.onNodeWithTag("bounded_col").getUnclippedBoundsInRoot()
+        assertThat(colBounds.width).isEqualTo(36.dp)
+        assertThat(colBounds.height).isEqualTo(14.dp)
     }
 
     private fun inactiveFlashUiState() = FlashModeUiState.Available(
