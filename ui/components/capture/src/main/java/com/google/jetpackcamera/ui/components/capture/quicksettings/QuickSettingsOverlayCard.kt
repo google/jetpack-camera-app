@@ -214,9 +214,7 @@ fun QuickSettingsOverlayCard(
     var hasScrimFocus by remember { mutableStateOf(false) }
 
     LaunchedEffect(inputModeManager.inputMode) {
-        if (!cardFocusRequester.requestFocus() && !scrimFocusRequester.requestFocus()) {
-            overlayFocusRequester.requestFocus()
-        }
+        overlayFocusRequester.requestFocus()
     }
 
     val heightCapModifier = if (maxCardHeight != Dp.Unspecified) {
