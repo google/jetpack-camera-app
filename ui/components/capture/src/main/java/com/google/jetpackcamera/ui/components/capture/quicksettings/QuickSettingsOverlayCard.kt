@@ -22,7 +22,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -31,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +53,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -59,6 +63,8 @@ import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -78,8 +84,10 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
-private object QuickSettingsOverlayCardTokens {
+internal object QuickSettingsOverlayCardTokens {
     val MaxCardWidth = 412.dp
+    val FoldableMaxCardWidth = 380.dp
+    val CompactShortMaxCardWidth = 320.dp
     val OuterPadding = 16.dp
     val ContentVerticalPadding = 20.dp
     val ScrimAlpha = 0.32f
@@ -92,7 +100,8 @@ private object QuickSettingsOverlayCardTokens {
  * [QuickSettingsUiState.Available]. While open, intercepts system back and hardware [Key.Escape]
  * presses, renders a full-screen scrim that dismisses on tap while blocking touch pass-through to
  * underlying camera controls, and displays [QuickSettingsContent] inside a vertically scrollable
- * Material 3 [Surface] with accessibility pane semantics and card-first traversal ordering.
+ * Material 3 [Surface] tagged with [QUICK_SETTINGS_OVERLAY_CARD_TAG] (while [QuickSettingsContent]
+ * retains `QUICK_SETTINGS_BOTTOM_SHEET` until a shared `QUICK_SETTINGS_CONTENT_TAG` is split out).
  *
  * @param isOpen Whether the Quick Settings overlay card is currently open.
  * @param onDismissRequest Callback invoked when the user taps the scrim or presses back/escape.
@@ -105,6 +114,13 @@ private object QuickSettingsOverlayCardTokens {
  * @param contentAlignment Alignment of the floating card within the overlay container.
  *   Defaults to [AbsoluteAlignment.BottomLeft] so the card's container placement remains static
  *   across LTR and RTL layouts while interior controls mirror for RTL.
+ * @param cardPadding Padding around the floating card surface (used by side-rail layouts to clear
+ *   measured start and end rail widths without shifting the full-screen scrim).
+ * @param maxCardWidth Maximum width cap applied to the floating card surface.
+ * @param maxCardHeight Optional maximum height cap applied to the floating card surface.
+ * @param cardContainerDirection Layout direction used to resolve [contentAlignment] and
+ *   [cardPadding] outside the card surface while restoring the caller's `LocalLayoutDirection`
+ *   inside the card content.
  */
 @Composable
 fun QuickSettingsOverlayCard(
@@ -115,17 +131,63 @@ fun QuickSettingsOverlayCard(
     modifier: Modifier = Modifier.fillMaxSize(),
     onNavigateToSettings: () -> Unit = {},
     showMoreSettingsButton: Boolean = false,
-    contentAlignment: Alignment = AbsoluteAlignment.BottomLeft
+    contentAlignment: Alignment = AbsoluteAlignment.BottomLeft,
+    cardPadding: PaddingValues = PaddingValues(QuickSettingsOverlayCardTokens.OuterPadding),
+    maxCardWidth: Dp = QuickSettingsOverlayCardTokens.MaxCardWidth,
+    maxCardHeight: Dp = Dp.Unspecified,
+    cardContainerDirection: LayoutDirection = LocalLayoutDirection.current
 ) {
     if (!isOpen || quickSettingsUiState !is QuickSettingsUiState.Available) {
         return
     }
 
+    QuickSettingsOverlayCard(
+        isOpen = true,
+        onDismissRequest = onDismissRequest,
+        modifier = modifier,
+        paneTitle = stringResource(quickSettingsTitleRes(quickSettingsUiState)),
+        contentAlignment = contentAlignment,
+        cardPadding = cardPadding,
+        maxCardWidth = maxCardWidth,
+        maxCardHeight = maxCardHeight,
+        cardContainerDirection = cardContainerDirection
+    ) {
+        QuickSettingsContent(
+            quickSettingsUiState = quickSettingsUiState,
+            quickSettingsController = quickSettingsController,
+            onNavigateToSettings = onNavigateToSettings,
+            showMoreSettingsButton = showMoreSettingsButton
+        )
+    }
+}
+
+/**
+ * Slot-based overload of [QuickSettingsOverlayCard] hosting arbitrary Quick Settings [content]
+ * (such as `CaptureScaffoldDefaults.QuickSettings`) inside the in-hierarchy floating card, scrim,
+ * focus group, and escape/back handlers.
+ */
+@Composable
+fun QuickSettingsOverlayCard(
+    isOpen: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier.fillMaxSize(),
+    paneTitle: String = stringResource(R.string.quick_settings_title_photo_and_video_settings),
+    contentAlignment: Alignment = AbsoluteAlignment.BottomLeft,
+    cardPadding: PaddingValues = PaddingValues(QuickSettingsOverlayCardTokens.OuterPadding),
+    maxCardWidth: Dp = QuickSettingsOverlayCardTokens.MaxCardWidth,
+    maxCardHeight: Dp = Dp.Unspecified,
+    cardContainerDirection: LayoutDirection = LocalLayoutDirection.current,
+    content: @Composable () -> Unit
+) {
+    if (!isOpen) {
+        return
+    }
+
     BackHandler(enabled = true, onBack = onDismissRequest)
 
+    val contentLayoutDirection = LocalLayoutDirection.current
     val dismissDescription =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
-    val overlayPaneTitle = stringResource(quickSettingsTitleRes(quickSettingsUiState))
     val inputModeManager = LocalInputModeManager.current
     val overlayFocusRequester = remember { FocusRequester() }
     val cardFocusRequester = remember { FocusRequester() }
@@ -143,77 +205,95 @@ fun QuickSettingsOverlayCard(
         }
     }
 
-    Box(
-        modifier = modifier
-            .onPreviewKeyEvent { event ->
-                if (event.key == Key.Escape) {
-                    if (event.type == KeyEventType.KeyUp) {
-                        onDismissRequest()
+    val heightCapModifier = if (maxCardHeight != Dp.Unspecified) {
+        Modifier.heightIn(max = maxCardHeight)
+    } else {
+        Modifier
+    }
+
+    CompositionLocalProvider(LocalLayoutDirection provides cardContainerDirection) {
+        Box(
+            modifier = modifier
+                .onPreviewKeyEvent { event ->
+                    if (event.key == Key.Escape) {
+                        if (event.type == KeyEventType.KeyUp) {
+                            onDismissRequest()
+                        }
+                        event.type == KeyEventType.KeyDown || event.type == KeyEventType.KeyUp
+                    } else {
+                        false
                     }
-                    event.type == KeyEventType.KeyDown || event.type == KeyEventType.KeyUp
-                } else {
-                    false
+                }
+                .focusRequester(overlayFocusRequester)
+                .focusProperties { canFocus = !hasCardFocus && !hasScrimFocus }
+                .focusTarget()
+                .semantics { isTraversalGroup = true },
+            contentAlignment = contentAlignment
+        ) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        MaterialTheme.colorScheme.scrim.copy(
+                            alpha = QuickSettingsOverlayCardTokens.ScrimAlpha
+                        )
+                    )
+                    .testTag(QUICK_SETTINGS_SCRIM)
+                    .semantics {
+                        contentDescription = dismissDescription
+                        traversalIndex = 1f
+                    }
+                    .onFocusChanged { hasScrimFocus = it.hasFocus }
+                    .focusRequester(scrimFocusRequester)
+                    .clickable(
+                        role = Role.Button,
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDismissRequest
+                    )
+            )
+
+            // Container tag reserved for the floating card surface (see TestTags.kt note on
+            // QUICK_SETTINGS_BOTTOM_SHEET vs. QUICK_SETTINGS_OVERLAY_CARD_TAG vs. future
+            // QUICK_SETTINGS_CONTENT_TAG).
+            Surface(
+                modifier = Modifier
+                    .padding(cardPadding)
+                    .widthIn(max = maxCardWidth)
+                    .then(heightCapModifier)
+                    .onFocusChanged { hasCardFocus = it.hasFocus }
+                    .focusRequester(cardFocusRequester)
+                    .focusGroup()
+                    .semantics {
+                        this.paneTitle = paneTitle
+                        traversalIndex = 0f
+                    }
+                    .testTag(QUICK_SETTINGS_OVERLAY_CARD_TAG),
+                shape = MaterialTheme.shapes.extraLarge,
+                color = MaterialTheme.colorScheme.surfaceContainerLow
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides contentLayoutDirection) {
+                    Box(
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState())
+                            .padding(
+                                vertical = QuickSettingsOverlayCardTokens.ContentVerticalPadding
+                            )
+                    ) {
+                        content()
+                    }
                 }
             }
-            .focusRequester(overlayFocusRequester)
-            .focusProperties { canFocus = !hasCardFocus && !hasScrimFocus }
-            .focusTarget()
-            .semantics { isTraversalGroup = true },
-        contentAlignment = contentAlignment
-    ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    MaterialTheme.colorScheme.scrim.copy(
-                        alpha = QuickSettingsOverlayCardTokens.ScrimAlpha
-                    )
-                )
-                .testTag(QUICK_SETTINGS_SCRIM)
-                .semantics {
-                    contentDescription = dismissDescription
-                    traversalIndex = 1f
-                }
-                .onFocusChanged { hasScrimFocus = it.hasFocus }
-                .focusRequester(scrimFocusRequester)
-                .clickable(
-                    role = Role.Button,
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDismissRequest
-                )
-        )
-
-        Surface(
-            modifier = Modifier
-                .padding(QuickSettingsOverlayCardTokens.OuterPadding)
-                .widthIn(max = QuickSettingsOverlayCardTokens.MaxCardWidth)
-                .onFocusChanged { hasCardFocus = it.hasFocus }
-                .focusRequester(cardFocusRequester)
-                .focusGroup()
-                .semantics {
-                    paneTitle = overlayPaneTitle
-                    traversalIndex = 0f
-                }
-                .testTag(QUICK_SETTINGS_OVERLAY_CARD_TAG),
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerLow
-        ) {
-            QuickSettingsContent(
-                quickSettingsUiState = quickSettingsUiState,
-                quickSettingsController = quickSettingsController,
-                onNavigateToSettings = onNavigateToSettings,
-                showMoreSettingsButton = showMoreSettingsButton,
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(vertical = QuickSettingsOverlayCardTokens.ContentVerticalPadding)
-            )
         }
     }
 }
 
 @Composable
-private fun QuickSettingsOverlayCardPreviewContent(showMoreSettingsButton: Boolean = false) {
+private fun QuickSettingsOverlayCardPreviewContent(
+    showMoreSettingsButton: Boolean = false,
+    cardPadding: PaddingValues = PaddingValues(QuickSettingsOverlayCardTokens.OuterPadding),
+    maxCardWidth: Dp = QuickSettingsOverlayCardTokens.MaxCardWidth
+) {
     MaterialTheme(
         colorScheme = darkColorScheme()
     ) {
@@ -260,9 +340,11 @@ private fun QuickSettingsOverlayCardPreviewContent(showMoreSettingsButton: Boole
                 )
             ),
             quickSettingsController = NoOpQuickSettingsController(),
-            modifier = Modifier,
+            modifier = Modifier.fillMaxSize(),
             onNavigateToSettings = {},
-            showMoreSettingsButton = showMoreSettingsButton
+            showMoreSettingsButton = showMoreSettingsButton,
+            cardPadding = cardPadding,
+            maxCardWidth = maxCardWidth
         )
     }
 }
@@ -277,13 +359,43 @@ private fun QuickSettingsOverlayCardPreviewContent(showMoreSettingsButton: Boole
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Preview(
-    name = "WideShort (360dp height)",
+    name = "CompactShort (360dp height)",
     heightDp = 360,
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
 private fun QuickSettingsOverlayCardPreview() {
     QuickSettingsOverlayCardPreviewContent(showMoreSettingsButton = false)
+}
+
+@Preview(
+    name = "Foldable Rail-Cleared (852x883dp)",
+    widthDp = 852,
+    heightDp = 883,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+private fun QuickSettingsOverlayCardFoldablePreview() {
+    QuickSettingsOverlayCardPreviewContent(
+        showMoreSettingsButton = true,
+        cardPadding = PaddingValues(start = 92.dp, end = 92.dp, top = 24.dp, bottom = 24.dp),
+        maxCardWidth = QuickSettingsOverlayCardTokens.FoldableMaxCardWidth
+    )
+}
+
+@Preview(
+    name = "Tablet Rail-Cleared (1280x800dp)",
+    widthDp = 1280,
+    heightDp = 800,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+private fun QuickSettingsOverlayCardTabletPreview() {
+    QuickSettingsOverlayCardPreviewContent(
+        showMoreSettingsButton = true,
+        cardPadding = PaddingValues(start = 100.dp, end = 100.dp, top = 24.dp, bottom = 28.dp),
+        maxCardWidth = QuickSettingsOverlayCardTokens.MaxCardWidth
+    )
 }
 
 @Preview(

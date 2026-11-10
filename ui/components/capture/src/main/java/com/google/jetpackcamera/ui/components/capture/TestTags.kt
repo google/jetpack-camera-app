@@ -63,6 +63,12 @@ const val VIDEO_QUALITY_TAG = "VideoQualityTag"
 const val QUICK_SETTINGS_DROP_DOWN = "QuickSettingsDropDown"
 const val SETTINGS_BUTTON = "SettingsButton"
 
+// Note on Quick Settings container vs. content tags:
+// - QUICK_SETTINGS_BOTTOM_SHEET is intended for the compact bottom-sheet container.
+// - QUICK_SETTINGS_OVERLAY_CARD_TAG is reserved for the adaptive floating card container.
+// - A shared QUICK_SETTINGS_CONTENT_TAG will identify QuickSettingsContent across both hosts once
+//   downstream UI and CameraITS tests migrate off expecting QUICK_SETTINGS_BOTTOM_SHEET on all
+//   form factors. Until then, QuickSettingsContent retains QUICK_SETTINGS_BOTTOM_SHEET.
 const val QUICK_SETTINGS_BOTTOM_SHEET = "QuickSettingsBottomSheet"
 const val QUICK_SETTINGS_DRAG_HANDLE = "QuickSettingsDragHandle"
 const val QUICK_SETTINGS_SCRIM = "QuickSettingsScrim"

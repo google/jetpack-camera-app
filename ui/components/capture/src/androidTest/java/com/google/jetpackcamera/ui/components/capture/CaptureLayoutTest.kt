@@ -22,18 +22,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.BottomSheetScaffoldState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +42,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -67,7 +62,6 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsOverlayCard
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -76,8 +70,6 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -144,26 +136,23 @@ class CaptureLayoutTest {
             )
         )
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun TestPreviewLayout(
+    private fun TestCaptureScaffoldLayout(
         modifier: Modifier = Modifier,
-        scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
-            bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-        ),
+        state: CaptureScaffoldState = rememberCaptureScaffoldState(),
         onDismissQuickSettings: () -> Unit = {},
-        captureButton: @Composable (Modifier) -> Unit = {},
-        flipCameraButton: @Composable (Modifier) -> Unit = {},
-        indicatorRow: @Composable (Modifier) -> Unit = {},
-        debugOverlay: @Composable (Modifier) -> Unit = {},
+        captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+        flipCameraButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+        indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+        overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
         quickSettingsOverlay: @Composable (Modifier) -> Unit = {},
         viewfinder: @Composable (Modifier) -> Unit = {},
         errorDialog: @Composable (Modifier) -> Unit = {},
         isErrorDialogShowing: Boolean = false
     ) {
-        PreviewLayout(
+        CaptureScaffoldLayout(
             modifier = modifier,
-            scaffoldState = scaffoldState,
+            state = state,
             onDismissQuickSettings = onDismissQuickSettings,
             viewfinder = viewfinder,
             captureButton = captureButton,
@@ -175,23 +164,17 @@ class CaptureLayoutTest {
             indicatorRow = indicatorRow,
             captureModeToggle = {},
             quickSettingsOverlay = quickSettingsOverlay,
-            debugOverlay = debugOverlay,
-            debugVisibilityWrapper = { it() },
-            screenFlashOverlay = {},
-            snackBar = { _, _ -> },
+            overlay = overlay,
             errorDialog = errorDialog,
             isErrorDialogShowing = isErrorDialogShowing
         )
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun previewLayout_dragHandle_hasButtonRoleAndAccessibilityLabel() {
+    fun captureScaffoldLayout_dragHandle_hasButtonRoleAndAccessibilityLabel() {
         composeTestRule.setContent {
-            val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded)
-            )
-            TestPreviewLayout(scaffoldState = scaffoldState)
+            val state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+            TestCaptureScaffoldLayout(state = state)
         }
 
         val targetDescription = getResString(
@@ -212,17 +195,14 @@ class CaptureLayoutTest {
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun previewLayout_clickDragHandle_callsOnDismissQuickSettings() {
+    fun captureScaffoldLayout_clickDragHandle_callsOnDismissQuickSettings() {
         var onDismissCalled = false
 
         composeTestRule.setContent {
-            val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded)
-            )
-            TestPreviewLayout(
-                scaffoldState = scaffoldState,
+            val state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+            TestCaptureScaffoldLayout(
+                state = state,
                 onDismissQuickSettings = { onDismissCalled = true }
             )
         }
@@ -231,20 +211,17 @@ class CaptureLayoutTest {
         assertThat(onDismissCalled).isTrue()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun previewLayout_scrim_displayedWhenExpanded_andClickCallsDismiss() {
+    fun captureScaffoldLayout_scrim_displayedWhenExpanded_andClickCallsDismiss() {
         var onDismissCalled = false
         val targetDescription = getResString(
             R.string.quick_settings_btn_close_expanded_settings_description
         )
 
         composeTestRule.setContent {
-            val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded)
-            )
-            TestPreviewLayout(
-                scaffoldState = scaffoldState,
+            val state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+            TestCaptureScaffoldLayout(
+                state = state,
                 onDismissQuickSettings = { onDismissCalled = true }
             )
         }
@@ -260,18 +237,15 @@ class CaptureLayoutTest {
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun previewLayout_scrim_interceptsTouchEventsFromUnderlyingControls() {
+    fun captureScaffoldLayout_scrim_interceptsTouchEventsFromUnderlyingControls() {
         var underlyingViewfinderClicked = false
         var onDismissCalled = false
 
         composeTestRule.setContent {
-            val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Expanded)
-            )
-            TestPreviewLayout(
-                scaffoldState = scaffoldState,
+            val state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+            TestCaptureScaffoldLayout(
+                state = state,
                 onDismissQuickSettings = { onDismissCalled = true },
                 viewfinder = {
                     Box(
@@ -289,14 +263,11 @@ class CaptureLayoutTest {
         assertThat(onDismissCalled).isTrue()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun previewLayout_scrim_doesNotExistWhenHidden() {
+    fun captureScaffoldLayout_scrim_doesNotExistWhenHidden() {
         composeTestRule.setContent {
-            val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-            )
-            TestPreviewLayout(scaffoldState = scaffoldState)
+            val state = rememberCaptureScaffoldState(isInitiallyExpanded = false)
+            TestCaptureScaffoldLayout(state = state)
         }
 
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
@@ -304,23 +275,18 @@ class CaptureLayoutTest {
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun previewLayout_whenQuickSettingsExpanded_prunesBackgroundControlsFromAccessibilityTree() {
-        lateinit var scaffoldState: BottomSheetScaffoldState
-        lateinit var scope: CoroutineScope
+    fun captureScaffoldLayout_whenQuickSettingsOpen_prunesBackgroundFromAccessibilityTree() {
+        lateinit var state: CaptureScaffoldState
         val capturePhotoLabel = getResString(R.string.capture_button_capture_photo)
         val backCameraLabel = getResString(R.string.quick_settings_back_camera_description)
         val hdQualityLabel = getResString(R.string.video_quality_description_hd)
 
         composeTestRule.setContent {
-            scope = rememberCoroutineScope()
-            scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-            )
+            state = rememberCaptureScaffoldState(isInitiallyExpanded = false)
             MaterialTheme(colorScheme = darkColorScheme()) {
-                TestPreviewLayout(
-                    scaffoldState = scaffoldState,
+                TestCaptureScaffoldLayout(
+                    state = state,
                     captureButton = { modifier ->
                         Box(
                             modifier = modifier
@@ -347,7 +313,7 @@ class CaptureLayoutTest {
                                 .semantics { contentDescription = hdQualityLabel }
                         )
                     },
-                    debugOverlay = { modifier ->
+                    overlay = { modifier ->
                         Box(
                             modifier = modifier
                                 .size(48.dp)
@@ -355,11 +321,11 @@ class CaptureLayoutTest {
                         )
                     },
                     quickSettingsOverlay = { modifier ->
-                        QuickSettingsScaffoldContent(
-                            modifier = modifier,
-                            quickSettingsUiState = sampleQuickSettingsUiState(),
+                        CaptureScaffoldDefaults.QuickSettings(
+                            uiState = sampleQuickSettingsUiState(),
+                            controller = FakeQuickSettingsController(),
                             onNavigateToSettings = {},
-                            quickSettingsController = FakeQuickSettingsController(),
+                            modifier = modifier,
                             showMoreSettingsButton = false
                         )
                     }
@@ -374,29 +340,31 @@ class CaptureLayoutTest {
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
 
         composeTestRule.runOnIdle {
-            scope.launch { scaffoldState.bottomSheetState.expand() }
+            state.showQuickSettings()
         }
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(VIDEO_QUALITY_TAG).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TEST_DEBUG_OVERLAY_TAG).assertDoesNotExist()
+        val hiddenFromA11yAncestor = hasAnyAncestor(
+            SemanticsMatcher.keyIsDefined(SemanticsProperties.HideFromAccessibility)
+        )
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assert(hiddenFromA11yAncestor)
+        composeTestRule.onNodeWithTag(VIDEO_QUALITY_TAG).assert(hiddenFromA11yAncestor)
+        composeTestRule.onNodeWithTag(TEST_DEBUG_OVERLAY_TAG).assert(hiddenFromA11yAncestor)
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun previewLayout_whenErrorDialogOpen_prunesBackgroundControlsAndKeepsDialogAccessible() {
+    fun captureScaffoldLayout_whenErrorDialogOpen_prunesBackgroundAndKeepsDialogAccessible() {
         var showError by mutableStateOf(false)
         val capturePhotoLabel = getResString(R.string.capture_button_capture_photo)
         val backCameraLabel = getResString(R.string.quick_settings_back_camera_description)
 
         composeTestRule.setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
-                TestPreviewLayout(
+                TestCaptureScaffoldLayout(
                     captureButton = { modifier ->
                         Box(
                             modifier = modifier
@@ -437,8 +405,11 @@ class CaptureLayoutTest {
         composeTestRule.runOnIdle { showError = true }
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
+        val hiddenFromA11yAncestor = hasAnyAncestor(
+            SemanticsMatcher.keyIsDefined(SemanticsProperties.HideFromAccessibility)
+        )
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assert(hiddenFromA11yAncestor)
         composeTestRule.onNodeWithTag(CAMERA_ERROR_DIALOG_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(CAMERA_ERROR_DIALOG_CONFIRM_BUTTON_TAG).assertIsDisplayed()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()

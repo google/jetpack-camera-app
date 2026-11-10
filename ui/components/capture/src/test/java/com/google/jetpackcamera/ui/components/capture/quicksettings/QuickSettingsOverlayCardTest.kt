@@ -21,15 +21,12 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.BottomSheetScaffoldState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,6 +78,8 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldDefaults
+import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldState
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_OVERLAY_CARD_TAG
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
@@ -91,6 +90,7 @@ import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
+import com.google.jetpackcamera.ui.components.capture.rememberCaptureScaffoldState
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -99,8 +99,6 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -444,7 +442,7 @@ class QuickSettingsOverlayCardTest {
 
     @Test
     @Config(qualifiers = "w840dp-h360dp")
-    fun quickSettingsOverlayCard_wideShortViewport_scrollsToBottomMoreSettingsButton() {
+    fun quickSettingsOverlayCard_compactShortViewport_scrollsToBottomMoreSettingsButton() {
         var navigatedToSettings = false
 
         composeTestRule.setContent {
@@ -469,89 +467,78 @@ class QuickSettingsOverlayCardTest {
     }
 
     @Test
-    fun quickSettingsHostState_openDismissAndToggle_updatesIsOpen() {
-        val state = QuickSettingsHostState()
-        assertThat(state.isOpen).isFalse()
-
-        state.open()
-        assertThat(state.isOpen).isTrue()
-
-        state.dismiss()
-        assertThat(state.isOpen).isFalse()
-
-        state.toggle()
-        assertThat(state.isOpen).isTrue()
-
-        state.toggle()
-        assertThat(state.isOpen).isFalse()
-    }
-
-    @Test
-    fun rememberQuickSettingsHostState_restoresStateAcrossSavedInstanceStateRecreation() {
+    fun rememberCaptureScaffoldState_restoresQuickSettingsStateAcrossSavedInstanceState() {
         val restorationTester = StateRestorationTester(composeTestRule)
-        var hostState: QuickSettingsHostState? = null
+        var scaffoldState: CaptureScaffoldState? = null
 
         restorationTester.setContent {
-            hostState = rememberQuickSettingsHostState()
+            scaffoldState = rememberCaptureScaffoldState()
         }
 
-        assertThat(hostState!!.isOpen).isFalse()
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isFalse()
 
         composeTestRule.runOnIdle {
-            hostState!!.open()
+            scaffoldState!!.showQuickSettings()
         }
-        assertThat(hostState!!.isOpen).isTrue()
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isTrue()
 
-        hostState = null
+        scaffoldState = null
         restorationTester.emulateSavedInstanceStateRestore()
-        assertThat(hostState!!.isOpen).isTrue()
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isTrue()
 
         composeTestRule.runOnIdle {
-            hostState!!.dismiss()
+            scaffoldState!!.dismissQuickSettings()
         }
-        hostState = null
+        scaffoldState = null
         restorationTester.emulateSavedInstanceStateRestore()
-        assertThat(hostState!!.isOpen).isFalse()
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isFalse()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun rememberQuickSettingsBottomSheetScaffoldState_supportsHiddenDefaultAndTransitions() {
-        lateinit var scaffoldState: BottomSheetScaffoldState
-        lateinit var scope: CoroutineScope
-
+    fun quickSettingsOverlayCard_slotOverload_clearsRailPaddingAndCapsMaxCardWidth() {
         composeTestRule.setContent {
-            scope = rememberCoroutineScope()
-            scaffoldState = rememberQuickSettingsBottomSheetScaffoldState()
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                MaterialTheme {
+                    QuickSettingsOverlayCard(
+                        isOpen = true,
+                        onDismissRequest = {},
+                        contentAlignment = Alignment.BottomStart,
+                        cardPadding = PaddingValues(
+                            start = 92.dp,
+                            end = 104.dp,
+                            top = 24.dp,
+                            bottom = 28.dp
+                        ),
+                        maxCardWidth = 380.dp,
+                        cardContainerDirection = LayoutDirection.Ltr
+                    ) {
+                        CaptureScaffoldDefaults.QuickSettings(
+                            uiState = sampleAvailableUiState,
+                            controller = fakeQuickSettingsController,
+                            onNavigateToSettings = {},
+                            showMoreSettingsButton = true
+                        )
+                    }
+                }
+            }
         }
 
-        assertThat(scaffoldState.bottomSheetState.currentValue).isEqualTo(SheetValue.Hidden)
+        val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+        val cardBounds = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+            .getUnclippedBoundsInRoot()
+        val flashOffBounds = composeTestRule
+            .onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF)
+            .getUnclippedBoundsInRoot()
+        val flashAutoBounds = composeTestRule
+            .onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO)
+            .getUnclippedBoundsInRoot()
 
-        composeTestRule.runOnIdle {
-            scope.launch { scaffoldState.bottomSheetState.expand() }
-        }
-        composeTestRule.waitForIdle()
-        assertThat(scaffoldState.bottomSheetState.currentValue).isEqualTo(SheetValue.Expanded)
-
-        composeTestRule.runOnIdle {
-            scope.launch { scaffoldState.bottomSheetState.hide() }
-        }
-        composeTestRule.waitForIdle()
-        assertThat(scaffoldState.bottomSheetState.currentValue).isEqualTo(SheetValue.Hidden)
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Test
-    fun rememberQuickSettingsBottomSheetScaffoldState_respectsInitialExpandedValue() {
-        lateinit var scaffoldState: BottomSheetScaffoldState
-
-        composeTestRule.setContent {
-            scaffoldState = rememberQuickSettingsBottomSheetScaffoldState(
-                initialValue = SheetValue.Expanded
-            )
-        }
-
-        assertThat(scaffoldState.bottomSheetState.currentValue).isEqualTo(SheetValue.Expanded)
+        assertThat(cardBounds.left).isEqualTo(92.dp)
+        assertThat(cardBounds.width).isAtMost(380.dp)
+        assertThat(cardBounds.bottom).isEqualTo(rootBounds.bottom - 28.dp)
+        // Card interior still respects ambient RTL direction even when container is pinned LTR.
+        assertThat(flashOffBounds.left).isGreaterThan(flashAutoBounds.left)
     }
 
     @Test
