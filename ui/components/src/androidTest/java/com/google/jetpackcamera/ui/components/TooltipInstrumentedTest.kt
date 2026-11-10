@@ -41,6 +41,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * Instrumented window-input tests verifying that real screen-level taps on [TooltipIconButton]
+ * cleanly toggle and dismiss the popup without outside-touch reopen races.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @RunWith(AndroidJUnit4::class)
 class TooltipInstrumentedTest {

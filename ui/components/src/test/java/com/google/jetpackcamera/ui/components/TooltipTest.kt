@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
@@ -65,6 +66,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+/**
+ * Robolectric unit tests for [TooltipIconButton], [rememberJcaTooltipCaret],
+ * [JcaTooltipPositionProvider], and [JcaTooltipBubbleShape].
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @RunWith(RobolectricTestRunner::class)
 class TooltipTest {
@@ -323,6 +328,17 @@ class TooltipTest {
         )
 
         assertThat(calculatedLocalCaretX).isEqualTo(24f)
+
+        // When bodyHeight (28 - 8 = 20) shrinks actualRadius to bodyHeight / 2 = 10,
+        // minCaretX tightens to 10 + 8 = 18 consistently with JcaTooltipBubbleShape.
+        provider.calculatePosition(
+            anchorBounds = IntRect(left = 16, top = 20, right = 40, bottom = 44),
+            windowSize = windowSize,
+            layoutDirection = LayoutDirection.Ltr,
+            popupContentSize = IntSize(width = 400, height = 28)
+        )
+
+        assertThat(calculatedLocalCaretX).isEqualTo(18f)
     }
 
     @Test
@@ -459,7 +475,7 @@ class TooltipTest {
 
         // Verify the tip at y = 0 moved from x = 60 to x = 140
         val probeAt140Tip = Path().apply {
-            addRect(androidx.compose.ui.geometry.Rect(Offset(139f, 1f), Size(2f, 2f)))
+            addRect(Rect(Offset(139f, 1f), Size(2f, 2f)))
         }
         val intersectAt140 = Path().apply {
             op(outlineAt140.path, probeAt140Tip, PathOperation.Intersect)
