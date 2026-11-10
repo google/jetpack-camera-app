@@ -22,7 +22,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -213,6 +216,35 @@ class CaptureLayoutInsetsTest {
         assertThat(indicatorBounds.left).isEqualTo(leadingBounds.right)
     }
 
+    @Test
+    fun topBarLeadingContent_receivesPreviewOverlaySlotScopeOverlapState() {
+        var leadingOverViewfinder: Boolean? = null
+        composeTestRule.setContent {
+            CaptureScaffoldLayout(
+                viewfinder = { vfModifier ->
+                    val overlapTargetBounds = LocalOverlapTargetBounds.current
+                    Box(
+                        vfModifier
+                            .fillMaxSize()
+                            .onGloballyPositioned { coordinates ->
+                                overlapTargetBounds.value = coordinates.boundsInWindow()
+                            }
+                    )
+                },
+                topBarLeadingContent = { leadingModifier ->
+                    leadingOverViewfinder = isOverViewfinder
+                    Box(leadingModifier.size(48.dp).testTag(LEADING_BUTTON_TAG))
+                },
+                indicatorRow = {
+                    Box(it.size(40.dp).testTag(INDICATOR_ROW_TAG))
+                }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(leadingOverViewfinder).isTrue()
+    }
+
     private fun boundsOf(
         tag: String,
         view: View,
@@ -263,15 +295,14 @@ private const val INDICATOR_ROW_TAG = "TestIndicatorRow"
 private const val LEADING_BUTTON_TAG = "TestTopBarLeadingButton"
 private const val SCREEN_FLASH_OVERLAY_TAG = "TestScreenFlashOverlay"
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-@androidx.compose.runtime.Composable
+@Composable
 private fun TestPreviewLayout(
-    topBarLeadingContent: (@androidx.compose.runtime.Composable (Modifier) -> Unit)? = null,
-    screenFlashOverlay: @androidx.compose.runtime.Composable (Modifier) -> Unit = {
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)? = null,
+    screenFlashOverlay: @Composable (Modifier) -> Unit = {
         Box(it.size(0.dp))
     }
 ) {
-    PreviewLayout(
+    CaptureScaffoldLayout(
         viewfinder = { Box(it.fillMaxSize()) },
         captureButton = { Box(it.size(80.dp).testTag(CAPTURE_BUTTON)) },
         imageWell = { Box(it.size(40.dp)) },
@@ -283,9 +314,6 @@ private fun TestPreviewLayout(
         topBarLeadingContent = topBarLeadingContent,
         captureModeToggle = { Box(it.size(40.dp)) },
         quickSettingsOverlay = { Box(it.size(40.dp)) },
-        debugOverlay = { Box(it.size(0.dp)) },
-        debugVisibilityWrapper = { content -> content() },
-        screenFlashOverlay = screenFlashOverlay,
-        snackBar = { _, _ -> }
+        screenFlashOverlay = screenFlashOverlay
     )
 }
