@@ -43,6 +43,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.ResolvedTextDirection
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
@@ -54,6 +55,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import java.util.Locale
+import kotlin.math.abs
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -256,6 +258,19 @@ class ZoomBarComponentsTest {
         assertThat(formatAccessibleZoomLabel(5.0f, Locale.US)).isEqualTo("5")
         // Respects locale decimal separator
         assertThat(formatAccessibleZoomLabel(0.50783783f, Locale.GERMANY)).isEqualTo("0,5")
+    }
+
+    @Test
+    fun endCapFraction_scalesWithDistanceToEndStop() {
+        assertThat(endCapFraction(distance = 0f)).isEqualTo(1f)
+        assertThat(endCapFraction(distance = 0.25f)).isEqualTo(0.75f)
+        assertThat(endCapFraction(distance = 1f)).isEqualTo(0f)
+        assertThat(endCapFraction(distance = 3f)).isEqualTo(0f)
+    }
+
+    @Test
+    fun endCapFraction_pastEndStop_staysFullyRounded() {
+        assertThat(endCapFraction(distance = -0.2f)).isEqualTo(1f)
     }
 
     @Test
@@ -529,7 +544,7 @@ class ZoomBarComponentsTest {
             val baselineStopBounds = tags.associateWith { stopBounds(it) }
             val baselineIndicatorBounds = stopBounds(ZOOM_BAR_INDICATOR_TAG)
 
-            for (angle in listOf(90f, 180f, 270f)) {
+            for (angle in listOf(30f, 45f, 90f, 180f, 270f)) {
                 rotationDegrees = angle
                 composeTestRule.waitForIdle()
 
@@ -853,6 +868,141 @@ class ZoomBarComponentsTest {
                     .of(activeStopBounds.centerY.value)
             }
         }
+    }
+
+    @Test
+    fun zoomBar_fontScale2x_clampsLabelFontScaleAndKeepsLabelsWithinStopBounds() {
+        val stops = listOf(0.5f, 1.0f, 2.0f, 5.0f)
+        val tags = listOf(
+            ZOOM_BUTTON_MIN_TAG,
+            ZOOM_BUTTON_1_TAG,
+            ZOOM_BUTTON_2_TAG,
+            ZOOM_BUTTON_5_TAG
+        )
+        var currentRatio by mutableFloatStateOf(1.0f)
+        var rotationDegrees by mutableFloatStateOf(0f)
+        var baseDensityValue = 1f
+
+        composeTestRule.setContent {
+            val baseDensity = LocalDensity.current
+            baseDensityValue = baseDensity.density
+            CompositionLocalProvider(
+                LocalDensity provides Density(density = baseDensity.density, fontScale = 2.0f),
+                LocalDisableAnimations provides true
+            ) {
+                ZoomBar(
+                    zoomControlUiState = ZoomControlUiState.Enabled(
+                        zoomLevels = stops,
+                        primaryLensFacing = LensFacing.BACK,
+                        primaryZoomRatio = currentRatio
+                    ),
+                    onChangeZoom = {},
+                    orientation = Orientation.Horizontal,
+                    labelRotationDegrees = rotationDegrees
+                )
+            }
+        }
+
+        for ((ratio, angle) in listOf(1.0f to 0f, 1.4f to 0f, 1.4f to 90f)) {
+            currentRatio = ratio
+            rotationDegrees = angle
+            composeTestRule.waitForIdle()
+
+            for (tag in tags) {
+                val itemBounds = stopBounds(tag)
+                assertThat(itemBounds.width).isEqualTo(ZoomBarDefaults.SlotSize)
+                assertThat(itemBounds.height).isEqualTo(ZoomBarDefaults.SlotSize)
+
+                val textLayout = fetchTextLayoutResult(tag)
+                assertThat(textLayout.layoutInput.density.fontScale)
+                    .isEqualTo(ZoomBarDefaults.MAX_LABEL_FONT_SCALE)
+                assertThat(textLayout.lineCount).isEqualTo(1)
+                assertThat(textLayout.didOverflowWidth).isFalse()
+                assertThat(textLayout.didOverflowHeight).isFalse()
+
+                val labelNode = composeTestRule
+                    .onNodeWithTag(tag, useUnmergedTree = true)
+                    .fetchSemanticsNode()
+                    .children
+                    .single()
+                val labelBoundsPx = labelNode.boundsInRoot
+                val itemBoundsPx = composeTestRule
+                    .onNodeWithTag(tag, useUnmergedTree = true)
+                    .fetchSemanticsNode()
+                    .boundsInRoot
+
+                assertWithMessage(
+                    "Label width <= slot width for $tag at ratio=$ratio, rotation=$angle"
+                )
+                    .that(labelBoundsPx.width)
+                    .isAtMost(itemBoundsPx.width + 0.5f * baseDensityValue)
+                assertWithMessage(
+                    "Label height <= slot height for $tag at ratio=$ratio, rotation=$angle"
+                )
+                    .that(labelBoundsPx.height)
+                    .isAtMost(itemBoundsPx.height + 0.5f * baseDensityValue)
+                assertWithMessage("Label left within $tag at ratio=$ratio, rotation=$angle")
+                    .that(labelBoundsPx.left)
+                    .isAtLeast(itemBoundsPx.left - 0.5f * baseDensityValue)
+                assertWithMessage("Label right within $tag at ratio=$ratio, rotation=$angle")
+                    .that(labelBoundsPx.right)
+                    .isAtMost(itemBoundsPx.right + 0.5f * baseDensityValue)
+                assertWithMessage("Label top within $tag at ratio=$ratio, rotation=$angle")
+                    .that(labelBoundsPx.top)
+                    .isAtLeast(itemBoundsPx.top - 0.5f * baseDensityValue)
+                assertWithMessage("Label bottom within $tag at ratio=$ratio, rotation=$angle")
+                    .that(labelBoundsPx.bottom)
+                    .isAtMost(itemBoundsPx.bottom + 0.5f * baseDensityValue)
+            }
+        }
+    }
+
+    @Test
+    fun zoomBar_labelRotationDegrees_interpolatesAutoScaleSmoothlyAcrossAngles() {
+        val tenStopTag = "ZoomButton_10.0Tag"
+        var rotationDegrees by mutableFloatStateOf(29f)
+        var baseDensityValue = 1f
+
+        composeTestRule.setContent {
+            val baseDensity = LocalDensity.current
+            baseDensityValue = baseDensity.density
+            CompositionLocalProvider(
+                LocalDensity provides Density(density = baseDensity.density, fontScale = 2.0f),
+                LocalDisableAnimations provides true
+            ) {
+                ZoomBar(
+                    zoomControlUiState = ZoomControlUiState.Enabled(
+                        zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f, 10.0f),
+                        primaryLensFacing = LensFacing.BACK,
+                        primaryZoomRatio = 10.5f
+                    ),
+                    onChangeZoom = {},
+                    orientation = Orientation.Horizontal,
+                    labelRotationDegrees = rotationDegrees
+                )
+            }
+        }
+
+        val boundsAt29 = composeTestRule
+            .onNodeWithTag(tenStopTag, useUnmergedTree = true)
+            .fetchSemanticsNode()
+            .children
+            .single()
+            .boundsInRoot
+
+        rotationDegrees = 31f
+        composeTestRule.waitForIdle()
+
+        val boundsAt31 = composeTestRule
+            .onNodeWithTag(tenStopTag, useUnmergedTree = true)
+            .fetchSemanticsNode()
+            .children
+            .single()
+            .boundsInRoot
+
+        // Across 29° -> 31° there should be no abrupt 10dp step jump in rendered label bounds.
+        assertThat(abs(boundsAt31.width - boundsAt29.width)).isLessThan(2f * baseDensityValue)
+        assertThat(abs(boundsAt31.height - boundsAt29.height)).isLessThan(2f * baseDensityValue)
     }
 
     private fun assertConsistentNumeralScript(formatted: String) {

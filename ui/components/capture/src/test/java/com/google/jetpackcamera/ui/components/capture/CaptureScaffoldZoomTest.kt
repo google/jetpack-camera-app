@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.feature.preview
+package com.google.jetpackcamera.ui.components.capture
 
 import android.util.Range
 import androidx.compose.runtime.CompositionLocalProvider
@@ -28,8 +28,6 @@ import androidx.compose.ui.test.pinch
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
-import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
-import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
 import com.google.jetpackcamera.ui.controller.testing.FakeZoomController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -43,12 +41,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Tests that pinch-to-zoom in [ContentScreen] uses the zoom range reported by the camera for the
+ * Tests that pinch-to-zoom in [CaptureScaffold] uses the zoom range reported by the camera for the
  * selected lens, including when the zoom state is temporarily unavailable.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "w411dp-h891dp")
-class ContentScreenZoomTest {
+class CaptureScaffoldZoomTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
@@ -100,8 +98,8 @@ class ContentScreenZoomTest {
     private fun setContent() {
         composeTestRule.setContent {
             CompositionLocalProvider(LocalDisableAnimations provides true) {
-                ContentScreen(
-                    captureUiStateProvider = { captureUiState },
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
                     surfaceRequest = null,
                     zoomController = zoomController
                 )

@@ -30,6 +30,8 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -43,7 +45,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
@@ -69,7 +74,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import java.math.BigDecimal
@@ -88,7 +95,6 @@ private object ZoomBarTokens {
     const val TENTHS_PER_UNIT_FLOAT = 10f
     const val HALF_UP_OFFSET = 0.5f
     const val FINE_STEP_TENTHS = 1
-    const val ROTATED_AXIS_SIN_THRESHOLD = 0.5
     const val MIN_LABEL_SCALE = 0.6f
     val LabelHorizontalPadding = 2.dp
     val RotatedLabelPillMargin = 6.dp
@@ -262,12 +268,8 @@ private fun ZoomControlUiState.Enabled.displayZoomRatio(): Float =
  * with a sliding indicator pill that smoothly tracks the active zoom stop.
  *
  * In [Orientation.Horizontal], stops follow the active layout direction (left-to-right in LTR and
- * mirrored right-to-left in RTL). In [Orientation.Vertical], stops remain ordered top-to-bottom
- * regardless of layout direction.
- *
- * TODO(UX): Confirm final [Orientation.Vertical] stop ordering (currently `0.5x` at top to `5x` at
- * bottom on `main`, non-inverted in RTL, vs. placing telephoto `5x` at the top so moving/dragging
- * up zooms in).
+ * mirrored right-to-left in RTL). In [Orientation.Vertical], stops are ordered top-to-bottom from
+ * lowest to highest magnification (e.g. `0.5x` at top to `5x` at bottom, non-inverted in RTL).
  *
  * @param zoomControlUiState The [ZoomControlUiState] providing available zoom levels and
  *   current ratio.
@@ -279,6 +281,8 @@ private fun ZoomControlUiState.Enabled.displayZoomRatio(): Float =
  * @param labelRotationDegrees Rotation in degrees applied to each stop's label in the draw phase to
  *   keep labels upright across device orientations without recomposing items or reordering stops.
  */
+// TODO: Confirm final vertical stop ordering with UX (e.g. telephoto at top so dragging up
+//  zooms in).
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ZoomBar(
@@ -322,6 +326,8 @@ fun ZoomBar(
             { currentZoomState.animatingToValue ?: currentZoomState.displayZoomRatio() }
         }
 
+        val indicatorShape = MaterialTheme.shapes.medium
+
         Box(
             modifier = modifier
                 .wrapContentSize()
@@ -343,7 +349,16 @@ fun ZoomBar(
                             )
                         }
                         .size(ZoomBarDefaults.SlotSize, ZoomBarDefaults.IndicatorHeight)
-                        .background(colors.selectedIndicatorColor, MaterialTheme.shapes.medium)
+                        .drawZoomIndicator(
+                            color = colors.selectedIndicatorColor,
+                            shape = indicatorShape,
+                            orientation = orientation,
+                            lastIndex = zoomLevels.lastIndex,
+                            // The indicator is inset equally from the track's ends and sides, so
+                            // its rounded ends are already concentric with the track's end caps.
+                            extendToTrackEnds = false,
+                            positionProvider = { indicatorPosition }
+                        )
                         .testTag(ZOOM_BAR_INDICATOR_TAG)
                 )
 
@@ -383,7 +398,16 @@ fun ZoomBar(
                             )
                         }
                         .size(ZoomBarDefaults.SlotSize, ZoomBarDefaults.IndicatorHeight)
-                        .background(colors.selectedIndicatorColor, MaterialTheme.shapes.medium)
+                        .drawZoomIndicator(
+                            color = colors.selectedIndicatorColor,
+                            shape = indicatorShape,
+                            orientation = orientation,
+                            lastIndex = zoomLevels.lastIndex,
+                            // The indicator is flush with the track's sides, so on the first and
+                            // last stops it extends to the ends of the track to fill the end caps.
+                            extendToTrackEnds = true,
+                            positionProvider = { indicatorPosition }
+                        )
                         .testTag(ZOOM_BAR_INDICATOR_TAG)
                 )
 
@@ -410,6 +434,76 @@ fun ZoomBar(
                 }
             }
         }
+    }
+}
+
+/**
+ * How far the indicator has moved onto an end stop that is [distance] stops away, from 0 (one or
+ * more stops away) to 1 (on or past the end stop).
+ */
+internal fun endCapFraction(distance: Float): Float = (1f - distance).coerceIn(0f, 1f)
+
+/**
+ * Draws the indicator pill behind the selected stop.
+ *
+ * As the indicator moves onto the first or last stop, the side facing the track's end cap morphs
+ * from the corner radius of [shape] to a fully rounded end so that it follows the curve of the end
+ * cap. When [extendToTrackEnds] is `true`, that side also extends to the exact pixel edge of the
+ * track's end cap, keeping the end cap completely filled across fractional screen densities when
+ * the indicator is flush with the track's sides. With a single stop, both sides are rounded.
+ */
+private fun Modifier.drawZoomIndicator(
+    color: Color,
+    shape: CornerBasedShape,
+    orientation: Orientation,
+    lastIndex: Int,
+    extendToTrackEnds: Boolean,
+    positionProvider: () -> Float
+): Modifier = drawBehind {
+    val position = positionProvider()
+    val startFraction = endCapFraction(distance = position)
+    val endFraction = endCapFraction(distance = lastIndex - position)
+    val isHorizontal = orientation == Orientation.Horizontal
+    val cornerRadius = shape.topStart.toPx(size, this)
+    val capRadius = (if (isHorizontal) size.height else size.width) / 2f
+    val startRadius = lerp(cornerRadius, capRadius, startFraction)
+    val endRadius = lerp(cornerRadius, capRadius, endFraction)
+    val startMaxExtensionPx: Float
+    val endMaxExtensionPx: Float
+    if (extendToTrackEnds) {
+        val insetPx = ZoomBarDefaults.Inset.roundToPx()
+        val slotSizePx = ZoomBarDefaults.SlotSize.roundToPx()
+        val indicatorHeightPx = ZoomBarDefaults.IndicatorHeight.roundToPx()
+        val leadingCenteringPx = (slotSizePx - indicatorHeightPx) / 2
+        val trailingCenteringPx = (slotSizePx - indicatorHeightPx) - leadingCenteringPx
+        startMaxExtensionPx = (insetPx + leadingCenteringPx).toFloat()
+        endMaxExtensionPx = (insetPx + trailingCenteringPx).toFloat()
+    } else {
+        startMaxExtensionPx = 0f
+        endMaxExtensionPx = 0f
+    }
+    val startExtension = startMaxExtensionPx * startFraction
+    val endExtension = endMaxExtensionPx * endFraction
+    // In a right-to-left row, the first stop is on the right.
+    val leadingExtension =
+        if (isHorizontal && layoutDirection == LayoutDirection.Rtl) endExtension else startExtension
+    // Corner radii are in the order topStart, topEnd, bottomEnd, bottomStart.
+    val pillShape = if (isHorizontal) {
+        RoundedCornerShape(startRadius, endRadius, endRadius, startRadius)
+    } else {
+        RoundedCornerShape(startRadius, startRadius, endRadius, endRadius)
+    }
+    val extension = startExtension + endExtension
+    val pillSize = if (isHorizontal) {
+        size.copy(width = size.width + extension)
+    } else {
+        size.copy(height = size.height + extension)
+    }
+    translate(
+        left = if (isHorizontal) -leadingExtension else 0f,
+        top = if (isHorizontal) 0f else -leadingExtension
+    ) {
+        drawOutline(pillShape.createOutline(pillSize, layoutDirection, this), color)
     }
 }
 
@@ -466,12 +560,11 @@ private fun ZoomBarItem(
     )
     val onClickLabel = stringResource(R.string.zoom_stop_click_label, accessibleZoomLabel)
     val pinchedStateDescription = if (isSelected && !isExactStopSelected) {
-        val currentAccessibleRatio = remember(displayTenths, locale) {
-            formatAccessibleZoomLabel(
-                displayTenths / ZoomBarTokens.TENTHS_PER_UNIT_FLOAT,
-                locale
-            )
-        }
+        val currentAccessibleRatio = formatZoomDecimal(
+            tenths = displayTenths,
+            keepLeadingZero = true,
+            locale = locale
+        )
         stringResource(
             R.string.zoom_stop_current_ratio_state_description,
             currentAccessibleRatio
@@ -569,6 +662,7 @@ private fun ZoomBarItem(
                 },
                 modifier = Modifier
                     .wrapContentSize(unbounded = true)
+                    .padding(horizontal = ZoomBarTokens.LabelHorizontalPadding)
                     .semantics {
                         contentDescription = stopContentDescription
                     }
@@ -577,16 +671,19 @@ private fun ZoomBarItem(
                         rotationZ = rotation
                         if (size.width > 0f) {
                             val rotationRadians = Math.toRadians(rotation.toDouble())
-                            val isRotatedCrossAxis = abs(sin(rotationRadians)) >
-                                ZoomBarTokens.ROTATED_AXIS_SIN_THRESHOLD
-                            val maxAllowedSpan = if (isRotatedCrossAxis) {
-                                ZoomBarDefaults.IndicatorHeight -
-                                    ZoomBarTokens.RotatedLabelPillMargin
-                            } else {
+                            val unrotatedMaxSpanPx = (
                                 ZoomBarDefaults.SlotSize -
                                     ZoomBarTokens.UnrotatedLabelPillMargin
-                            }
-                            val maxSpanPx = maxAllowedSpan.toPx()
+                                ).toPx()
+                            val rotatedMaxSpanPx = (
+                                ZoomBarDefaults.IndicatorHeight -
+                                    ZoomBarTokens.RotatedLabelPillMargin
+                                ).toPx()
+                            val maxSpanPx = lerp(
+                                unrotatedMaxSpanPx,
+                                rotatedMaxSpanPx,
+                                abs(sin(rotationRadians)).toFloat()
+                            )
                             val scale = if (size.width > maxSpanPx) {
                                 (maxSpanPx / size.width)
                                     .coerceAtLeast(ZoomBarTokens.MIN_LABEL_SCALE)
@@ -596,8 +693,7 @@ private fun ZoomBarItem(
                             scaleX = scale
                             scaleY = scale
                         }
-                    }
-                    .padding(horizontal = ZoomBarTokens.LabelHorizontalPadding),
+                    },
                 softWrap = false
             )
         }
@@ -659,9 +755,18 @@ private fun getZoomButtonTestTag(buttonValue: Float): String {
 // Previews
 // ---------------------------------------------------------------------------
 
-@Preview(name = "Horizontal 60% Black (Overlapping Viewfinder)", showBackground = true)
+/**
+ * Renders a [ZoomBar] on a dark background, at [zoomRatio] with the given [zoomLevels], for
+ * previews and screenshot tests.
+ */
 @Composable
-private fun ZoomBarHorizontalDarkPreview() {
+internal fun ZoomBarPreview(
+    zoomRatio: Float,
+    orientation: Orientation = Orientation.Horizontal,
+    zoomLevels: List<Float> = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+    colors: ZoomBarColors = ZoomBarDefaults.black60Colors(),
+    labelRotationDegrees: Float = 0f
+) {
     Box(
         modifier = Modifier
             .background(Color(0xFF2B2B2B))
@@ -670,212 +775,98 @@ private fun ZoomBarHorizontalDarkPreview() {
     ) {
         ZoomBar(
             zoomControlUiState = ZoomControlUiState.Enabled(
-                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
+                zoomLevels = zoomLevels,
                 primaryLensFacing = LensFacing.BACK,
-                primaryZoomRatio = 1.0f
+                primaryZoomRatio = zoomRatio
             ),
             onChangeZoom = {},
-            orientation = Orientation.Horizontal,
-            colors = ZoomBarDefaults.black60Colors()
+            orientation = orientation,
+            colors = colors,
+            labelRotationDegrees = labelRotationDegrees
         )
     }
+}
+
+@Preview(name = "Horizontal 60% Black (Overlapping Viewfinder)", showBackground = true)
+@Composable
+private fun ZoomBarHorizontalDarkPreview() {
+    ZoomBarPreview(zoomRatio = 1.0f)
 }
 
 @Preview(name = "Horizontal 20% White (Not Overlapping Viewfinder)", showBackground = true)
 @Composable
 private fun ZoomBarHorizontalTranslucentPreview() {
-    Box(
-        modifier = Modifier
-            .background(Color(0xFF2B2B2B))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        ZoomBar(
-            zoomControlUiState = ZoomControlUiState.Enabled(
-                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
-                primaryLensFacing = LensFacing.BACK,
-                primaryZoomRatio = 1.0f
-            ),
-            onChangeZoom = {},
-            orientation = Orientation.Horizontal,
-            colors = ZoomBarDefaults.white20Colors()
-        )
-    }
+    ZoomBarPreview(zoomRatio = 1.0f, colors = ZoomBarDefaults.white20Colors())
 }
 
 @Preview(name = "Horizontal - Fraction (.5x Selected)", showBackground = true)
 @Composable
 private fun ZoomBarHorizontalFractionPreview() {
-    Box(
-        modifier = Modifier
-            .background(Color(0xFF2B2B2B))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        ZoomBar(
-            zoomControlUiState = ZoomControlUiState.Enabled(
-                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
-                primaryLensFacing = LensFacing.BACK,
-                primaryZoomRatio = 0.5f
-            ),
-            onChangeZoom = {},
-            orientation = Orientation.Horizontal,
-            colors = ZoomBarDefaults.black60Colors()
-        )
-    }
+    ZoomBarPreview(zoomRatio = 0.5f)
+}
+
+@Preview(name = "Horizontal - Last Stop (5x Selected)", showBackground = true)
+@Composable
+private fun ZoomBarHorizontalLastStopPreview() {
+    ZoomBarPreview(zoomRatio = 5.0f)
 }
 
 @Preview(name = "Vertical 60% Black - Flush Sides", showBackground = true)
 @Composable
 private fun ZoomBarVerticalDarkPreview() {
-    Box(
-        modifier = Modifier
-            .background(Color(0xFF2B2B2B))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        ZoomBar(
-            zoomControlUiState = ZoomControlUiState.Enabled(
-                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
-                primaryLensFacing = LensFacing.BACK,
-                primaryZoomRatio = 1.0f
-            ),
-            onChangeZoom = {},
-            orientation = Orientation.Vertical,
-            colors = ZoomBarDefaults.black60Colors()
-        )
-    }
+    ZoomBarPreview(zoomRatio = 1.0f, orientation = Orientation.Vertical)
+}
+
+@Preview(name = "Vertical - First Stop (.5x Selected)", showBackground = true)
+@Composable
+private fun ZoomBarVerticalFirstStopPreview() {
+    ZoomBarPreview(zoomRatio = 0.5f, orientation = Orientation.Vertical)
+}
+
+@Preview(name = "Vertical - Last Stop (5x Selected)", showBackground = true)
+@Composable
+private fun ZoomBarVerticalLastStopPreview() {
+    ZoomBarPreview(zoomRatio = 5.0f, orientation = Orientation.Vertical)
 }
 
 @Preview(name = "Single Stop (1x Only)", showBackground = true)
 @Composable
 private fun ZoomBarSingleStopPreview() {
-    Box(
-        modifier = Modifier
-            .background(Color(0xFF2B2B2B))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        ZoomBar(
-            zoomControlUiState = ZoomControlUiState.Enabled(
-                zoomLevels = listOf(1.0f),
-                primaryLensFacing = LensFacing.BACK,
-                primaryZoomRatio = 1.0f
-            ),
-            onChangeZoom = {},
-            orientation = Orientation.Horizontal
-        )
-    }
+    ZoomBarPreview(zoomRatio = 1.0f, zoomLevels = listOf(1.0f), colors = ZoomBarDefaults.colors())
 }
 
 @Preview(name = "Extended Telephoto Range (2x Selected)", showBackground = true)
 @Composable
 private fun ZoomBarExtendedRangePreview() {
-    Box(
-        modifier = Modifier
-            .background(Color(0xFF2B2B2B))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        ZoomBar(
-            zoomControlUiState = ZoomControlUiState.Enabled(
-                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f, 10.0f),
-                primaryLensFacing = LensFacing.BACK,
-                primaryZoomRatio = 2.0f
-            ),
-            onChangeZoom = {},
-            orientation = Orientation.Horizontal
-        )
-    }
+    ZoomBarPreview(
+        zoomRatio = 2.0f,
+        zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f, 10.0f),
+        colors = ZoomBarDefaults.colors()
+    )
 }
 
 @Preview(name = "Horizontal RTL - 1x Selected", locale = "ar", showBackground = true)
 @Composable
 private fun ZoomBarHorizontalRtlPreview() {
-    Box(
-        modifier = Modifier
-            .background(Color(0xFF2B2B2B))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        ZoomBar(
-            zoomControlUiState = ZoomControlUiState.Enabled(
-                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
-                primaryLensFacing = LensFacing.BACK,
-                primaryZoomRatio = 1.0f
-            ),
-            onChangeZoom = {},
-            orientation = Orientation.Horizontal,
-            colors = ZoomBarDefaults.black60Colors()
-        )
-    }
+    ZoomBarPreview(zoomRatio = 1.0f)
 }
 
 @Preview(name = "Horizontal RTL - Fraction (.5x Selected)", locale = "ar", showBackground = true)
 @Composable
 private fun ZoomBarHorizontalRtlFractionPreview() {
-    Box(
-        modifier = Modifier
-            .background(Color(0xFF2B2B2B))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        ZoomBar(
-            zoomControlUiState = ZoomControlUiState.Enabled(
-                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
-                primaryLensFacing = LensFacing.BACK,
-                primaryZoomRatio = 0.5f
-            ),
-            onChangeZoom = {},
-            orientation = Orientation.Horizontal,
-            colors = ZoomBarDefaults.black60Colors()
-        )
-    }
+    ZoomBarPreview(zoomRatio = 0.5f)
 }
 
 @Preview(name = "Vertical RTL - Flush Sides", locale = "ar", showBackground = true)
 @Composable
 private fun ZoomBarVerticalRtlPreview() {
-    Box(
-        modifier = Modifier
-            .background(Color(0xFF2B2B2B))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        ZoomBar(
-            zoomControlUiState = ZoomControlUiState.Enabled(
-                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
-                primaryLensFacing = LensFacing.BACK,
-                primaryZoomRatio = 1.0f
-            ),
-            onChangeZoom = {},
-            orientation = Orientation.Vertical,
-            colors = ZoomBarDefaults.black60Colors()
-        )
-    }
+    ZoomBarPreview(zoomRatio = 1.0f, orientation = Orientation.Vertical)
 }
 
 @Preview(name = "Horizontal - Rotated Labels (90 deg)", showBackground = true)
 @Composable
 private fun ZoomBarHorizontalRotatedLabelsPreview() {
-    Box(
-        modifier = Modifier
-            .background(Color(0xFF2B2B2B))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        ZoomBar(
-            zoomControlUiState = ZoomControlUiState.Enabled(
-                zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f),
-                primaryLensFacing = LensFacing.BACK,
-                primaryZoomRatio = 1.0f
-            ),
-            onChangeZoom = {},
-            orientation = Orientation.Horizontal,
-            colors = ZoomBarDefaults.black60Colors(),
-            labelRotationDegrees = 90f
-        )
-    }
+    ZoomBarPreview(zoomRatio = 1.0f, labelRotationDegrees = 90f)
 }
 
 @Preview(name = "Legacy Delegate - One Selected", showBackground = true)

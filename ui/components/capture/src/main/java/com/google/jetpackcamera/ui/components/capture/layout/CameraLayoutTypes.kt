@@ -308,5 +308,5 @@ data class CameraLayoutSolution(
 /**
  * Provides the active [CameraLayoutSolution] to descendants such as the viewfinder display.
  */
-val LocalCameraLayoutSolution: ProvidableCompositionLocal<CameraLayoutSolution?> =
+internal val LocalCameraLayoutSolution: ProvidableCompositionLocal<CameraLayoutSolution?> =
     compositionLocalOf { null }
