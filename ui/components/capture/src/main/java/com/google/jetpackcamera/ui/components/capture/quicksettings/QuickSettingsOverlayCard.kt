@@ -84,10 +84,9 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
-internal object QuickSettingsOverlayCardTokens {
+private object QuickSettingsOverlayCardTokens {
     val MaxCardWidth = 412.dp
     val FoldableMaxCardWidth = 380.dp
-    val CompactShortMaxCardWidth = 320.dp
     val OuterPadding = 16.dp
     val ContentVerticalPadding = 20.dp
     val ScrimAlpha = 0.32f
@@ -166,6 +165,24 @@ fun QuickSettingsOverlayCard(
  * Slot-based overload of [QuickSettingsOverlayCard] hosting arbitrary Quick Settings [content]
  * (such as `CaptureScaffoldDefaults.QuickSettings`) inside the in-hierarchy floating card, scrim,
  * focus group, and escape/back handlers.
+ *
+ * Renders nothing when [isOpen] is `false`.
+ *
+ * @param isOpen Whether the Quick Settings overlay card is currently open.
+ * @param onDismissRequest Callback invoked when the user taps the scrim or presses back/escape.
+ * @param modifier The [Modifier] applied to the full-size overlay container.
+ * @param paneTitle Accessibility pane title announced for the floating card surface.
+ * @param contentAlignment Alignment of the floating card within the overlay container.
+ *   Defaults to [AbsoluteAlignment.BottomLeft] so the card's container placement remains static
+ *   across LTR and RTL layouts while interior controls mirror for RTL.
+ * @param cardPadding Padding around the floating card surface (used by side-rail layouts to clear
+ *   measured start and end rail widths without shifting the full-screen scrim).
+ * @param maxCardWidth Maximum width cap applied to the floating card surface.
+ * @param maxCardHeight Optional maximum height cap applied to the floating card surface.
+ * @param cardContainerDirection Layout direction used to resolve [contentAlignment] and
+ *   [cardPadding] outside the card surface while restoring the caller's `LocalLayoutDirection`
+ *   inside the card content.
+ * @param content Composable Quick Settings content rendered inside the scrollable card surface.
  */
 @Composable
 fun QuickSettingsOverlayCard(

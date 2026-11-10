@@ -104,4 +104,8 @@ const val CAMERA_ERROR_DIALOG_TITLE_TAG = "text_camera_error_title"
 const val CAMERA_ERROR_DIALOG_BODY_TAG = "text_camera_error_body"
 const val CAMERA_ERROR_DIALOG_CONFIRM_BUTTON_TAG = "btn_camera_error_confirm"
 
+/**
+ * Test tag for the adaptive Quick Settings floating overlay card surface on medium and expanded
+ * layouts.
+ */
 const val QUICK_SETTINGS_OVERLAY_CARD_TAG = "card_quick_settings_overlay"

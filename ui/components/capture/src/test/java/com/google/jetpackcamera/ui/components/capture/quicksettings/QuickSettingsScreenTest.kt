@@ -79,6 +79,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+private const val BOX_SCAFFOLD_WRAPPER_TAG = "box_scaffold_wrapper"
+
 @RunWith(RobolectricTestRunner::class)
 class QuickSettingsScreenTest {
 
@@ -255,7 +257,7 @@ class QuickSettingsScreenTest {
     fun quickSettingsContent_decouplesBottomSheetPaddingFromInnerColumn() {
         composeTestRule.setContent {
             MaterialTheme {
-                Box(modifier = Modifier.testTag("box_scaffold_wrapper")) {
+                Box(modifier = Modifier.testTag(BOX_SCAFFOLD_WRAPPER_TAG)) {
                     QuickSettingsScaffoldContent(
                         quickSettingsUiState = sampleAvailableUiState,
                         onNavigateToSettings = {},
@@ -266,7 +268,7 @@ class QuickSettingsScreenTest {
         }
 
         val wrapperHeight = composeTestRule
-            .onNodeWithTag("box_scaffold_wrapper")
+            .onNodeWithTag(BOX_SCAFFOLD_WRAPPER_TAG)
             .getUnclippedBoundsInRoot()
             .height
         val contentHeight = composeTestRule

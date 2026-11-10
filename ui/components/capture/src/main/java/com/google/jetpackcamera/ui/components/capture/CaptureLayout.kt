@@ -157,6 +157,9 @@ private const val PORTRAIT_ASPECT_RATIO_THRESHOLD = 16f / 9f - 0.01f
 /** Minimum bottom gesture inset floor used when solving the portrait control stack. */
 private val MIN_GESTURE_INSET = 32.dp
 
+/** Bottom padding inside the Quick Settings bottom sheet content container. */
+private val QUICK_SETTINGS_SHEET_BOTTOM_PADDING = 24.dp
+
 private fun Modifier.suppressBackgroundForModal(isModalOpen: Boolean): Modifier = if (isModalOpen) {
     this
         .focusProperties { canFocus = false }
@@ -328,7 +331,7 @@ fun CaptureScaffoldLayout(
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState())
                             .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
-                            .padding(bottom = 24.dp)
+                            .padding(bottom = QUICK_SETTINGS_SHEET_BOTTOM_PADDING)
                     ) {
                         quickSettingsOverlay(Modifier)
                     }
