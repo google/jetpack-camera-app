@@ -1023,7 +1023,12 @@ internal class CameraAppSettingsViewModelTest {
                 availableLenses = listOf(LensFacing.FRONT),
                 perLensConstraints = mapOf(
                     LensFacing.FRONT to
-                        STABILIZATION_SUPPORTED_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!.copy(
+                            supportedStabilizationModes = setOf(
+                                StabilizationMode.OFF,
+                                StabilizationMode.ON
+                            )
+                        )
                 )
             )
             val customViewModel = createViewModelWithConstraints(
@@ -1056,7 +1061,12 @@ internal class CameraAppSettingsViewModelTest {
                 availableLenses = listOf(LensFacing.BACK),
                 perLensConstraints = mapOf(
                     LensFacing.BACK to
-                        STABILIZATION_SUPPORTED_CONSTRAINTS.perLensConstraints[LensFacing.BACK]!!
+                        TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints[LensFacing.BACK]!!.copy(
+                            supportedStabilizationModes = setOf(
+                                StabilizationMode.OFF,
+                                StabilizationMode.ON
+                            )
+                        )
                 )
             )
             val customViewModel = createViewModelWithConstraints(
