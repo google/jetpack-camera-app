@@ -22,20 +22,20 @@ import org.junit.Test
 class DeviceRotationTest {
 
     @Test
-    fun fromSurfaceRotation_mapsAllSurfaceRotationsAndIsInverseOfToUiSurfaceRotation() {
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_0))
+    fun fromUiSurfaceRotation_mapsAllSurfaceRotationsAndIsInverseOfToUiSurfaceRotation() {
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_0))
             .isEqualTo(DeviceRotation.Natural)
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_90))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_90))
             .isEqualTo(DeviceRotation.Rotated270)
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_180))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_180))
             .isEqualTo(DeviceRotation.Rotated180)
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_270))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_270))
             .isEqualTo(DeviceRotation.Rotated90)
-        assertThat(DeviceRotation.fromSurfaceRotation(-1))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(-1))
             .isEqualTo(DeviceRotation.Natural)
 
         for (rotation in DeviceRotation.entries) {
-            assertThat(DeviceRotation.fromSurfaceRotation(rotation.toUiSurfaceRotation()))
+            assertThat(DeviceRotation.fromUiSurfaceRotation(rotation.toUiSurfaceRotation()))
                 .isEqualTo(rotation)
         }
     }
