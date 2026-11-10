@@ -104,6 +104,10 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 
+private object Tokens {
+    val SettingRowLabelEndPadding = 12.dp
+}
+
 // ////////////////////////////////////////////////////
 //
 // quick settings navigation components
@@ -450,7 +454,7 @@ private fun SettingRow(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = 12.dp)
+                .padding(end = Tokens.SettingRowLabelEndPadding)
                 .semantics(mergeDescendants = true) {}
         ) {
             Text(

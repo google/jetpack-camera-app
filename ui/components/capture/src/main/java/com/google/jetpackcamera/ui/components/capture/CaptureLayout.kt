@@ -64,6 +64,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
@@ -93,6 +94,9 @@ import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
 import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
 import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.first
 
 /**
  * Height of the shutter row (capture button, image well and flip camera button) as specified by
@@ -183,8 +187,8 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * @param modifier the [Modifier] for this component.
  * @param state the mode-agnostic [CaptureScaffoldState] controlling Quick Settings visibility and
  *   the [SnackbarHostState].
- * @param onDismissQuickSettings callback invoked when Quick Settings is dismissed via the drag
- *   handle or scrim.
+ * @param onDismissQuickSettings callback invoked when Quick Settings is dismissed via swipe
+ *   gesture, drag handle, or scrim.
  * @param viewfinder the viewfinder composable.
  * @param captureButton the capture button composable.
  * @param imageWell the image well composable.
@@ -253,26 +257,40 @@ fun CaptureScaffoldLayout(
     errorDialog: @Composable (Modifier) -> Unit = {},
     isErrorDialogShowing: Boolean = false
 ) {
+    val enabledSheetValues = remember { setOf(SheetValue.Hidden, SheetValue.Expanded) }
+    val confirmSheetValueChange: (SheetValue) -> Boolean = remember {
+        { it != SheetValue.PartiallyExpanded }
+    }
     val bottomSheetState = rememberBottomSheetState(
         initialValue = if (state.isQuickSettingsOpen) SheetValue.Expanded else SheetValue.Hidden,
-        confirmValueChange = { targetValue ->
-            if (targetValue == SheetValue.Hidden) {
-                state.dismissQuickSettings()
-            } else if (targetValue == SheetValue.Expanded) {
-                state.showQuickSettings()
-            }
-            true
-        }
+        enabledValues = enabledSheetValues,
+        confirmValueChange = confirmSheetValueChange
     )
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = bottomSheetState,
         snackbarHostState = state.snackbarHostState
     )
-    LaunchedEffect(state.isQuickSettingsOpen) {
+    val currentOnDismissQuickSettings by rememberUpdatedState(onDismissQuickSettings)
+    val handleDismissQuickSettings = {
+        state.dismissQuickSettings()
+        currentOnDismissQuickSettings()
+    }
+    LaunchedEffect(state, state.isQuickSettingsOpen) {
         if (state.isQuickSettingsOpen) {
-            if (bottomSheetState.targetValue != SheetValue.Expanded) {
-                bottomSheetState.expand()
+            if (bottomSheetState.currentValue != SheetValue.Expanded) {
+                try {
+                    bottomSheetState.expand()
+                } catch (_: CancellationException) {
+                    coroutineContext.ensureActive()
+                }
             }
+            snapshotFlow {
+                bottomSheetState.currentValue == SheetValue.Hidden &&
+                    bottomSheetState.targetValue == SheetValue.Hidden &&
+                    !bottomSheetState.isVisible &&
+                    !bottomSheetState.isAnimationRunning
+            }.first { it }
+            handleDismissQuickSettings()
         } else {
             if (bottomSheetState.isVisible || bottomSheetState.targetValue != SheetValue.Hidden) {
                 bottomSheetState.hide()
@@ -283,10 +301,6 @@ fun CaptureScaffoldLayout(
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val dismissQuickSettingsLabel =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
-    val handleDismissQuickSettings = {
-        state.dismissQuickSettings()
-        onDismissQuickSettings()
-    }
 
     CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
         Box(modifier = modifier.fillMaxSize()) {

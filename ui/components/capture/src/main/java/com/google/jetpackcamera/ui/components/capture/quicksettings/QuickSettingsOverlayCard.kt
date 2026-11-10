@@ -50,7 +50,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -97,11 +97,12 @@ internal object QuickSettingsOverlayCardTokens {
  * In-hierarchy floating card overlay for Quick Settings on adaptive medium and expanded layouts.
  *
  * Renders nothing when [isOpen] is `false` or [quickSettingsUiState] is not
- * [QuickSettingsUiState.Available]. While open, intercepts system back and hardware [Key.Escape]
- * presses, renders a full-screen scrim that dismisses on tap while blocking touch pass-through to
- * underlying camera controls, and displays [QuickSettingsContent] inside a vertically scrollable
- * Material 3 [Surface] tagged with [QUICK_SETTINGS_OVERLAY_CARD_TAG] (while [QuickSettingsContent]
- * retains `QUICK_SETTINGS_BOTTOM_SHEET` until a shared `QUICK_SETTINGS_CONTENT_TAG` is split out).
+ * [QuickSettingsUiState.Available]. While open, intercepts system back and unhandled hardware
+ * [Key.Escape] presses, renders a full-screen scrim that dismisses on tap while blocking touch
+ * pass-through to underlying camera controls, and displays [QuickSettingsContent] inside a
+ * vertically scrollable Material 3 [Surface] tagged with [QUICK_SETTINGS_OVERLAY_CARD_TAG] (while
+ * [QuickSettingsContent] retains `QUICK_SETTINGS_BOTTOM_SHEET` until a shared
+ * `QUICK_SETTINGS_CONTENT_TAG` is split out).
  *
  * @param isOpen Whether the Quick Settings overlay card is currently open.
  * @param onDismissRequest Callback invoked when the user taps the scrim or presses back/escape.
@@ -128,7 +129,7 @@ fun QuickSettingsOverlayCard(
     onDismissRequest: () -> Unit,
     quickSettingsUiState: QuickSettingsUiState,
     quickSettingsController: QuickSettingsController,
-    modifier: Modifier = Modifier.fillMaxSize(),
+    modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     showMoreSettingsButton: Boolean = false,
     contentAlignment: Alignment = AbsoluteAlignment.BottomLeft,
@@ -170,7 +171,7 @@ fun QuickSettingsOverlayCard(
 fun QuickSettingsOverlayCard(
     isOpen: Boolean,
     onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier.fillMaxSize(),
+    modifier: Modifier = Modifier,
     paneTitle: String = stringResource(R.string.quick_settings_title_photo_and_video_settings),
     contentAlignment: Alignment = AbsoluteAlignment.BottomLeft,
     cardPadding: PaddingValues = PaddingValues(QuickSettingsOverlayCardTokens.OuterPadding),
@@ -196,11 +197,7 @@ fun QuickSettingsOverlayCard(
     var hasScrimFocus by remember { mutableStateOf(false) }
 
     LaunchedEffect(inputModeManager.inputMode) {
-        cardFocusRequester.requestFocus()
-        if (!hasCardFocus) {
-            scrimFocusRequester.requestFocus()
-        }
-        if (!hasCardFocus && !hasScrimFocus) {
+        if (!cardFocusRequester.requestFocus() && !scrimFocusRequester.requestFocus()) {
             overlayFocusRequester.requestFocus()
         }
     }
@@ -214,7 +211,8 @@ fun QuickSettingsOverlayCard(
     CompositionLocalProvider(LocalLayoutDirection provides cardContainerDirection) {
         Box(
             modifier = modifier
-                .onPreviewKeyEvent { event ->
+                .fillMaxSize()
+                .onKeyEvent { event ->
                     if (event.key == Key.Escape) {
                         if (event.type == KeyEventType.KeyUp) {
                             onDismissRequest()
@@ -340,7 +338,6 @@ private fun QuickSettingsOverlayCardPreviewContent(
                 )
             ),
             quickSettingsController = NoOpQuickSettingsController(),
-            modifier = Modifier.fillMaxSize(),
             onNavigateToSettings = {},
             showMoreSettingsButton = showMoreSettingsButton,
             cardPadding = cardPadding,

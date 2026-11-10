@@ -20,9 +20,11 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -32,8 +34,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -790,5 +797,132 @@ class QuickSettingsOverlayCardTest {
             .performClick()
 
         assertThat(navigatedToSettings).isTrue()
+    }
+
+    @Test
+    fun quickSettingsOverlayCard_customModifier_preservesFullViewportAndScrimBounds() {
+        var useSlotOverload by mutableStateOf(false)
+        var dismissCount = 0
+        var underlyingClicked = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { underlyingClicked = true }
+                    )
+                    if (!useSlotOverload) {
+                        QuickSettingsOverlayCard(
+                            isOpen = true,
+                            onDismissRequest = { dismissCount++ },
+                            quickSettingsUiState = sampleAvailableUiState,
+                            quickSettingsController = fakeQuickSettingsController,
+                            modifier = Modifier.testTag(BOX_QUICK_SETTINGS_CUSTOM_HOST_TAG)
+                        )
+                    } else {
+                        QuickSettingsOverlayCard(
+                            isOpen = true,
+                            onDismissRequest = { dismissCount++ },
+                            modifier = Modifier.testTag(BOX_QUICK_SETTINGS_CUSTOM_HOST_TAG)
+                        ) {
+                            CaptureScaffoldDefaults.QuickSettings(
+                                uiState = sampleAvailableUiState,
+                                controller = fakeQuickSettingsController,
+                                onNavigateToSettings = {},
+                                showMoreSettingsButton = false
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+
+        listOf(false, true).forEachIndexed { index, slotMode ->
+            if (index > 0) {
+                composeTestRule.runOnIdle { useSlotOverload = slotMode }
+                composeTestRule.waitForIdle()
+            }
+
+            val hostBounds = composeTestRule
+                .onNodeWithTag(BOX_QUICK_SETTINGS_CUSTOM_HOST_TAG)
+                .getUnclippedBoundsInRoot()
+            val scrimBounds = composeTestRule
+                .onNodeWithTag(QUICK_SETTINGS_SCRIM)
+                .getUnclippedBoundsInRoot()
+            val cardBounds = composeTestRule
+                .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+                .getUnclippedBoundsInRoot()
+
+            assertThat(hostBounds).isEqualTo(rootBounds)
+            assertThat(scrimBounds).isEqualTo(rootBounds)
+            assertThat(cardBounds.width).isAtMost(412.dp)
+
+            // Tap the scrim near the top-right corner outside the floating card bounds.
+            composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
+                .performTouchInput {
+                    click(Offset(width - 8f, 8f))
+                }
+        }
+
+        assertThat(dismissCount).isEqualTo(2)
+        assertThat(underlyingClicked).isFalse()
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun quickSettingsOverlayCard_focusedChildConsumingEscape_doesNotDismissUntilUnhandled() {
+        var childConsumesEscape by mutableStateOf(true)
+        var childEscapeCount = 0
+        var dismissCount = 0
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsOverlayCard(
+                    isOpen = true,
+                    onDismissRequest = { dismissCount++ }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag(BOX_FOCUSABLE_CHILD_TAG)
+                            .onKeyEvent { event ->
+                                if (childConsumesEscape && event.key == Key.Escape) {
+                                    if (event.type == KeyEventType.KeyUp) {
+                                        childEscapeCount++
+                                    }
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                            .focusable()
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag(BOX_FOCUSABLE_CHILD_TAG)
+            .performKeyInput { pressKey(Key.Escape) }
+
+        assertThat(childEscapeCount).isEqualTo(1)
+        assertThat(dismissCount).isEqualTo(0)
+
+        composeTestRule.runOnIdle { childConsumesEscape = false }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(BOX_FOCUSABLE_CHILD_TAG)
+            .performKeyInput { pressKey(Key.Escape) }
+
+        assertThat(childEscapeCount).isEqualTo(1)
+        assertThat(dismissCount).isEqualTo(1)
+    }
+
+    private companion object {
+        const val BOX_QUICK_SETTINGS_CUSTOM_HOST_TAG = "box_quick_settings_custom_host"
+        const val BOX_FOCUSABLE_CHILD_TAG = "box_focusable_child"
     }
 }
