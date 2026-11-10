@@ -88,8 +88,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Height of [CaptureModeCarousel], and of the slot that [PreviewLayout] reserves for it so that
- * showing or hiding the carousel does not move the surrounding controls.
+ * Height of [CaptureModeCarousel], and of the slot that [CaptureScaffoldLayout] reserves for it so
+ * that showing or hiding the carousel does not move the surrounding controls.
  */
 internal val CaptureModeCarouselHeight = 50.dp
 private val PillHeight = 32.dp

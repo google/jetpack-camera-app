@@ -41,12 +41,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Tests that pinch-to-zoom in [ContentScreen] uses the zoom range reported by the camera for the
+ * Tests that pinch-to-zoom in [CaptureScaffold] uses the zoom range reported by the camera for the
  * selected lens, including when the zoom state is temporarily unavailable.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "w411dp-h891dp")
-class ContentScreenZoomTest {
+class CaptureScaffoldZoomTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
@@ -98,8 +98,8 @@ class ContentScreenZoomTest {
     private fun setContent() {
         composeTestRule.setContent {
             CompositionLocalProvider(LocalDisableAnimations provides true) {
-                ContentScreen(
-                    captureUiStateProvider = { captureUiState },
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
                     surfaceRequest = null,
                     zoomController = zoomController
                 )
