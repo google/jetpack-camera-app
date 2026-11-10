@@ -1568,7 +1568,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         ?: targetCameraInfo.zoomState.value
                             ?.let { it.minZoomRatio..it.maxZoomRatio }
                             ?.also { zoomRange = it }
-                    val clampedTarget = targetZoomRatio.coerceIn(range ?: 1.0f..1.0f)
+                    val clampedTarget = range?.let { targetZoomRatio.coerceIn(it) } ?: 1.0f
                     val isTargetEssentiallyOne = abs(clampedTarget - 1.0f) < 0.01f
                     currentCameraState.update { old ->
                         val currentZoomRatio = old.zoomRatios[targetCameraInfo.appLensFacing]
