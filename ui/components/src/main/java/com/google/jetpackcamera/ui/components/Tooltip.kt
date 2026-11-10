@@ -24,6 +24,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -87,7 +88,10 @@ import androidx.compose.ui.window.PopupPositionProvider
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
+/** Test tag applied to the interactive anchor button inside [TooltipIconButton]. */
 const val TOOLTIP_ANCHOR_BUTTON_TAG = "tooltip_anchor_button"
+
+/** Test tag applied to the default [RichTooltip] surface rendered by [TooltipIconButton]. */
 const val TOOLTIP_CONTENT_TAG = "tooltip_content"
 
 /*
@@ -119,7 +123,11 @@ private object TooltipTokens {
 object JcaTooltipDefaults {
     /** Default caret dimensions matching Material 3 [TooltipDefaults.caretSize] (16dp x 8dp). */
     val CaretSize: DpSize = TooltipDefaults.caretSize
+
+    /** Default base width of the tooltip caret (16dp). */
     val CaretWidth: Dp get() = CaretSize.width
+
+    /** Default height of the tooltip caret extending from the bubble body (8dp). */
     val CaretHeight: Dp get() = CaretSize.height
 
     /** Default spacing between the tooltip bubble and calling anchor. */
@@ -147,11 +155,8 @@ object JcaTooltipDefaults {
     val MaxWidth: Dp = 296.dp
 }
 
-/**
- * State holder for dynamic caret coordinates computed synchronously during popup placement.
- */
 @Stable
-class CaretPositionState(
+private class CaretPositionState(
     initialCaretX: Float = 0f,
     initialIsCaretOnTop: Boolean = true
 ) {
@@ -160,11 +165,99 @@ class CaretPositionState(
 }
 
 /**
+ * Coordinates edge-aware tooltip placement, caret padding, and bubble shape rendering for a
+ * [TooltipIconButton] or [TooltipBox].
+ *
+ * Create an instance via [rememberJcaTooltipCaret], pass [positionProvider] to [TooltipIconButton]
+ * (or [TooltipBox]), apply [caretPadding] to the tooltip content so it clears the caret triangle,
+ * and pass [bubbleShape] to [RichTooltip]'s `shape` parameter with `caretShape = null`.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Stable
+class JcaTooltipCaret internal constructor(
+    positioning: TooltipAnchorPosition,
+    density: Density,
+    private val caretWidth: Dp = JcaTooltipDefaults.CaretWidth,
+    private val caretHeight: Dp = JcaTooltipDefaults.CaretHeight
+) {
+    private val caretPositionState = CaretPositionState(
+        initialIsCaretOnTop = positioning == TooltipAnchorPosition.Below
+    )
+    private val localCaretXProvider: () -> Float = { caretPositionState.localCaretX }
+    private val topCaretPadding = PaddingValues(top = caretHeight)
+    private val bottomCaretPadding = PaddingValues(bottom = caretHeight)
+
+    /**
+     * [PopupPositionProvider] that clamps popup placement within safe screen margins and updates
+     * the caret coordinates during layout before the first draw frame.
+     */
+    val positionProvider: PopupPositionProvider = JcaTooltipPositionProvider(
+        positioning = positioning,
+        caretWidth = caretWidth,
+        density = density,
+        onCaretCalculated = { localCaretX, isCaretOnTop ->
+            caretPositionState.localCaretX = localCaretX
+            caretPositionState.isCaretOnTop = isCaretOnTop
+        }
+    )
+
+    /**
+     * Padding that reserves [caretHeight] on the edge of the bubble where the caret is drawn
+     * (top when positioned below the anchor, bottom when positioned above).
+     */
+    val caretPadding: PaddingValues
+        get() = if (caretPositionState.isCaretOnTop) topCaretPadding else bottomCaretPadding
+
+    /**
+     * Returns a [Shape] combining a rounded rectangle of [cornerRadius] with a caret pointing
+     * toward the anchor. The horizontal caret offset is read during [Shape.createOutline] in the
+     * draw phase so Frame 0 renders at the exact anchor X without an extra recomposition.
+     */
+    fun bubbleShape(cornerRadius: Dp = JcaTooltipDefaults.CornerRadius): Shape =
+        JcaTooltipBubbleShape(
+            localCaretXProvider = localCaretXProvider,
+            isCaretOnTop = caretPositionState.isCaretOnTop,
+            cornerRadius = cornerRadius,
+            caretWidth = caretWidth,
+            caretHeight = caretHeight
+        )
+}
+
+/**
+ * Remembers a [JcaTooltipCaret] keyed on [positioning] for pairing edge-clamped popup placement
+ * with [JcaTooltipCaret.bubbleShape] and [JcaTooltipCaret.caretPadding].
+ *
+ * @param positioning preferred anchor placement ([TooltipAnchorPosition.Below] or
+ *   [TooltipAnchorPosition.Above]); flips automatically when vertical window space is constrained.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun rememberJcaTooltipCaret(
+    positioning: TooltipAnchorPosition = TooltipAnchorPosition.Below
+): JcaTooltipCaret {
+    val density = LocalDensity.current
+    return remember(positioning, density) {
+        JcaTooltipCaret(
+            positioning = positioning,
+            density = density
+        )
+    }
+}
+
+/**
  * Shape that unions a rounded rectangle bubble body with a triangular caret pointing toward the
  * anchor.
+ *
+ * @param localCaretXProvider deferred provider for the caret center X in local popup coordinates,
+ *   evaluated inside [createOutline] during the draw phase after popup placement has run.
+ * @param isCaretOnTop `true` when the caret is along the top edge pointing up at the anchor, or
+ *   `false` when along the bottom edge pointing down.
+ * @param cornerRadius corner radius of the rounded rectangle bubble body.
+ * @param caretWidth base width of the triangular caret.
+ * @param caretHeight height of the triangular caret extending from the bubble body.
  */
 class JcaTooltipBubbleShape(
-    val localCaretX: Float,
+    val localCaretXProvider: () -> Float,
     val isCaretOnTop: Boolean,
     val cornerRadius: Dp = JcaTooltipDefaults.CornerRadius,
     val caretWidth: Dp = JcaTooltipDefaults.CaretWidth,
@@ -192,7 +285,7 @@ class JcaTooltipBubbleShape(
         // Clamp caret base so the triangle never bleeds into the corner radius arcs
         val minCaretX = actualRadius + cw / 2f
         val maxCaretX = (w - actualRadius - cw / 2f).coerceAtLeast(minCaretX)
-        val clampedCaretX = localCaretX.coerceIn(minCaretX, maxCaretX)
+        val clampedCaretX = localCaretXProvider().coerceIn(minCaretX, maxCaretX)
 
         val bodyOutline = RoundedCornerShape(cornerRadius).createOutline(
             size = Size(w, bodyHeight),
@@ -226,7 +319,7 @@ class JcaTooltipBubbleShape(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is JcaTooltipBubbleShape) return false
-        return localCaretX == other.localCaretX &&
+        return localCaretXProvider == other.localCaretXProvider &&
             isCaretOnTop == other.isCaretOnTop &&
             cornerRadius == other.cornerRadius &&
             caretWidth == other.caretWidth &&
@@ -234,7 +327,7 @@ class JcaTooltipBubbleShape(
     }
 
     override fun hashCode(): Int {
-        var result = localCaretX.hashCode()
+        var result = localCaretXProvider.hashCode()
         result = 31 * result + isCaretOnTop.hashCode()
         result = 31 * result + cornerRadius.hashCode()
         result = 31 * result + caretWidth.hashCode()
@@ -245,7 +338,8 @@ class JcaTooltipBubbleShape(
 
 /**
  * Position provider for the tooltip popup that clamps popup coordinates to safe screen margins and
- * derives the corner-clamped local caret offset relative to the popup's top-left corner before draw.
+ * derives the corner-clamped local caret offset relative to the popup's top-left corner before
+ * draw.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class JcaTooltipPositionProvider(
@@ -317,8 +411,7 @@ class JcaTooltipPositionProvider(
  * An icon button that toggles a styled [RichTooltip] when tapped.
  *
  * Uses Material 3's [TooltipBox] and [RichTooltip] for animations, focus, shadow, and state
- * management, paired with [JcaTooltipPositionProvider] and [JcaTooltipBubbleShape] for edge-aware
- * caret placement.
+ * management, paired with [rememberJcaTooltipCaret] for edge-aware caret placement.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -338,29 +431,14 @@ fun TooltipIconButton(
     onClick: () -> Unit = {},
     onDismissRequest: (() -> Unit)? = null
 ) {
-    val density = LocalDensity.current
-    val caretPositionState = remember {
-        CaretPositionState(
-            initialIsCaretOnTop = positioning == TooltipAnchorPosition.Below
-        )
-    }
-    val positionProvider = remember(positioning, density) {
-        JcaTooltipPositionProvider(
-            positioning = positioning,
-            density = density,
-            onCaretCalculated = { localCaretX, isCaretOnTop ->
-                caretPositionState.localCaretX = localCaretX
-                caretPositionState.isCaretOnTop = isCaretOnTop
-            }
-        )
-    }
+    val caret = rememberJcaTooltipCaret(positioning)
 
     TooltipIconButton(
         icon = icon,
-        modifier = modifier,
         contentDescription = contentDescription ?: tooltipTitle ?: tooltipText,
+        modifier = modifier,
         state = state,
-        positionProvider = positionProvider,
+        positionProvider = caret.positionProvider,
         isOutlined = isOutlined,
         containerColor = containerColor,
         contentColor = contentColor,
@@ -369,15 +447,9 @@ fun TooltipIconButton(
         onClick = onClick,
         onDismissRequest = onDismissRequest,
         tooltip = {
-            val isCaretOnTop = caretPositionState.isCaretOnTop
-            val bubbleShape = remember(caretPositionState.localCaretX, isCaretOnTop) {
-                JcaTooltipBubbleShape(
-                    localCaretX = caretPositionState.localCaretX,
-                    isCaretOnTop = isCaretOnTop
-                )
-            }
-            val caretTopPadding = if (isCaretOnTop) JcaTooltipDefaults.CaretHeight else 0.dp
-            val caretBottomPadding = if (!isCaretOnTop) JcaTooltipDefaults.CaretHeight else 0.dp
+            val caretPadding = caret.caretPadding
+            val caretTopPadding = caretPadding.calculateTopPadding()
+            val caretBottomPadding = caretPadding.calculateBottomPadding()
 
             RichTooltip(
                 modifier = Modifier
@@ -399,7 +471,7 @@ fun TooltipIconButton(
                 },
                 caretShape = null,
                 maxWidth = JcaTooltipDefaults.MaxWidth,
-                shape = bubbleShape,
+                shape = caret.bubbleShape(),
                 colors = TooltipDefaults.richTooltipColors(
                     containerColor = MaterialTheme.colorScheme.secondaryFixed,
                     contentColor = MaterialTheme.colorScheme.onSecondaryFixed,
@@ -436,18 +508,23 @@ fun TooltipIconButton(
  * An icon button that toggles custom tooltip content scoped to [TooltipScope] when tapped.
  *
  * Allows callers to supply custom [RichTooltip] content (such as actions or styled text) while
- * sharing the camera overlay button styling and pointer-down toggle handling.
+ * sharing camera overlay button styling and pointer-down toggle handling.
+ *
+ * Callers must explicitly pass an accessible [contentDescription] for the anchor button (or `null`
+ * only if the button's description is supplied elsewhere). To render an edge-clamped bubble with a
+ * caret pointing at the anchor, hoist `val caret = rememberJcaTooltipCaret(positioning)`, pass
+ * `positionProvider = caret.positionProvider`, configure `RichTooltip(shape = caret.bubbleShape(),
+ * caretShape = null)`, and apply `Modifier.padding(caret.caretPadding)` to the inner content.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TooltipIconButton(
     icon: @Composable () -> Unit,
     tooltip: @Composable TooltipScope.() -> Unit,
+    contentDescription: String?,
     modifier: Modifier = Modifier,
-    contentDescription: String? = null,
     state: TooltipState = rememberTooltipState(isPersistent = true),
-    positionProvider: PopupPositionProvider =
-        TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Below),
+    positionProvider: PopupPositionProvider = rememberJcaTooltipCaret().positionProvider,
     hasAction: Boolean = false,
     isOutlined: Boolean = false,
     containerColor: Color = Color.Transparent,
@@ -462,17 +539,20 @@ fun TooltipIconButton(
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
     var wasVisibleAtDown by remember { mutableStateOf(false) }
 
+    val dismissTooltip = {
+        val wasAlreadyDismissing = !state.transition.targetState
+        state.dismiss()
+        if (!wasAlreadyDismissing) {
+            currentOnDismissRequest?.invoke()
+        }
+    }
+
     TooltipBox(
         positionProvider = positionProvider,
         tooltip = tooltip,
         state = state,
         modifier = modifier,
-        onDismissRequest = onDismissRequest?.let {
-            {
-                state.dismiss()
-                currentOnDismissRequest?.invoke()
-            }
-        },
+        onDismissRequest = onDismissRequest?.let { dismissTooltip },
         enableUserInput = false,
         hasAction = hasAction
     ) {
@@ -502,8 +582,7 @@ fun TooltipIconButton(
                     val wasVisible = wasVisibleAtDown || state.isVisible
                     wasVisibleAtDown = false
                     if (wasVisible) {
-                        state.dismiss()
-                        currentOnDismissRequest?.invoke()
+                        dismissTooltip()
                     } else {
                         scope.launch { state.show() }
                     }
@@ -527,7 +606,7 @@ fun TooltipIconButton(
                         Modifier.border(
                             border = BorderStroke(
                                 TooltipTokens.BorderWidth,
-                                Color.White.copy(alpha = TooltipTokens.BORDER_ALPHA)
+                                contentColor.copy(alpha = TooltipTokens.BORDER_ALPHA)
                             ),
                             shape = CircleShape
                         )

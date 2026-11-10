@@ -32,10 +32,11 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isPopup
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,6 +51,7 @@ class TooltipInstrumentedTest {
     @Test
     fun tooltipIconButton_realWindowTapOnAnchor_opensAndClosesTooltip() {
         var anchorCenterOnScreen = Offset.Zero
+        var dismissCount = 0
 
         composeTestRule.setContent {
             MaterialTheme {
@@ -63,7 +65,8 @@ class TooltipInstrumentedTest {
                             )
                         },
                         icon = { Box(modifier = Modifier.size(24.dp)) },
-                        tooltipText = "Real tap toggle message"
+                        tooltipText = "Real tap toggle message",
+                        onDismissRequest = { dismissCount++ }
                     )
                 }
             }
@@ -76,12 +79,15 @@ class TooltipInstrumentedTest {
         composeTestRule.waitForIdle()
         composeTestRule.onNode(hasText("Real tap toggle message") and hasAnyAncestor(isPopup()))
             .assertIsDisplayed()
+        assertThat(dismissCount).isEqualTo(0)
 
         // Second real window-level tap on the anchor triggers Popup outside-touch dismissal on
-        // pointer-down and must leave the tooltip closed rather than reopening it on pointer-up
+        // pointer-down and must leave the tooltip closed rather than reopening it on pointer-up,
+        // while invoking onDismissRequest exactly once.
         sendRealScreenTap(anchorCenterOnScreen)
         composeTestRule.waitForIdle()
         composeTestRule.onNode(isPopup()).assertDoesNotExist()
+        assertThat(dismissCount).isEqualTo(1)
     }
 
     private fun sendRealScreenTap(screenPoint: Offset) {

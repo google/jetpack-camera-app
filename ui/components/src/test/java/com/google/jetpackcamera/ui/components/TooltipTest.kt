@@ -16,6 +16,8 @@
 package com.google.jetpackcamera.ui.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -23,9 +25,17 @@ import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipState
+import androidx.compose.material3.rememberTooltipState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
@@ -42,6 +52,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
@@ -127,6 +138,117 @@ class TooltipTest {
         composeTestRule.waitForIdle()
 
         assertThat(actionClicked).isTrue()
+    }
+
+    @Test
+    fun rememberJcaTooltipCaret_providesCaretPaddingAndBubbleShape_andKeysOnPositioning() {
+        var positioning by mutableStateOf(TooltipAnchorPosition.Below)
+        var observedPadding: PaddingValues? = null
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                val caret = rememberJcaTooltipCaret(positioning)
+                observedPadding = caret.caretPadding
+                TooltipIconButton(
+                    icon = { Box(modifier = Modifier.size(24.dp)) },
+                    contentDescription = "Caret slot button",
+                    positionProvider = caret.positionProvider,
+                    tooltip = {
+                        RichTooltip(
+                            caretShape = null,
+                            shape = caret.bubbleShape()
+                        ) {
+                            Text(
+                                text = "Custom caret body",
+                                modifier = Modifier.padding(caret.caretPadding)
+                            )
+                        }
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(observedPadding?.calculateTopPadding()).isEqualTo(JcaTooltipDefaults.CaretHeight)
+        assertThat(observedPadding?.calculateBottomPadding()).isEqualTo(0.dp)
+
+        // Changing positioning re-keys rememberJcaTooltipCaret and flips initial caret padding edge
+        composeTestRule.runOnIdle {
+            positioning = TooltipAnchorPosition.Above
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(observedPadding?.calculateTopPadding()).isEqualTo(0.dp)
+        assertThat(observedPadding?.calculateBottomPadding())
+            .isEqualTo(JcaTooltipDefaults.CaretHeight)
+
+        // Opening the custom slot tooltip renders the bubble shape and body cleanly
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performTouchInput { click() }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNode(hasText("Custom caret body") and hasAnyAncestor(isPopup()))
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun tooltip_onDismissRequest_invokedExactlyOnceWhenClosingAnchor() {
+        var dismissCount = 0
+        lateinit var tooltipState: TooltipState
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                tooltipState = rememberTooltipState(isPersistent = true)
+                TooltipIconButton(
+                    icon = { Box(modifier = Modifier.size(24.dp)) },
+                    tooltipText = "Dismiss count test",
+                    state = tooltipState,
+                    onDismissRequest = { dismissCount++ }
+                )
+            }
+        }
+
+        // 1. Open and close via touch tap on anchor
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performTouchInput { click() }
+        composeTestRule.waitForIdle()
+        assertThat(dismissCount).isEqualTo(0)
+
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performTouchInput { click() }
+        composeTestRule.waitForIdle()
+        assertThat(dismissCount).isEqualTo(1)
+        composeTestRule.onNode(isPopup()).assertDoesNotExist()
+
+        // 2. Open and close via semantics performClick()
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performClick()
+        composeTestRule.waitForIdle()
+        assertThat(dismissCount).isEqualTo(1)
+
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performClick()
+        composeTestRule.waitForIdle()
+        assertThat(dismissCount).isEqualTo(2)
+        composeTestRule.onNode(isPopup()).assertDoesNotExist()
+
+        // 3. Simulate real-window touch sequence where Popup outside-touch dismisses on ACTION_DOWN
+        // (setting transition.targetState = false) before clickable runs on ACTION_UP:
+        // clickable must NOT invoke onDismissRequest a second time.
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performTouchInput { click() }
+        composeTestRule.waitForIdle()
+        assertThat(dismissCount).isEqualTo(2)
+
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performTouchInput {
+            down(center)
+        }
+        composeTestRule.runOnIdle {
+            // Simulate TooltipBox.onDismissRequest having already fired on ACTION_DOWN
+            tooltipState.dismiss()
+            dismissCount++
+        }
+        composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performTouchInput {
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(dismissCount).isEqualTo(3)
+        composeTestRule.onNode(isPopup()).assertDoesNotExist()
     }
 
     @Test
@@ -283,7 +405,7 @@ class TooltipTest {
 
         // Shape with extreme negative caret X
         val shapeNegative = JcaTooltipBubbleShape(
-            localCaretX = -100f,
+            localCaretXProvider = { -100f },
             isCaretOnTop = true
         )
         val outlineNegative = shapeNegative.createOutline(size, LayoutDirection.Ltr, density)
@@ -293,12 +415,55 @@ class TooltipTest {
 
         // Shape with extreme positive caret X
         val shapeOverflow = JcaTooltipBubbleShape(
-            localCaretX = 1000f,
+            localCaretXProvider = { 1000f },
             isCaretOnTop = false
         )
         val outlineOverflow = shapeOverflow.createOutline(size, LayoutDirection.Ltr, density)
         assertThat(outlineOverflow).isInstanceOf(Outline.Generic::class.java)
         assertThat(outlineOverflow.bounds.width).isEqualTo(400f)
         assertThat(outlineOverflow.bounds.height).isEqualTo(150f)
+    }
+
+    @Test
+    fun bubbleShape_defersCaretXProviderReadUntilCreateOutline() {
+        var providerReads = 0
+        var dynamicCaretX = 60f
+        val shape = JcaTooltipBubbleShape(
+            localCaretXProvider = {
+                providerReads++
+                dynamicCaretX
+            },
+            isCaretOnTop = true
+        )
+
+        // Constructing the shape during composition must not evaluate localCaretXProvider
+        assertThat(providerReads).isEqualTo(0)
+
+        val density = Density(1f)
+        val size = Size(200f, 100f)
+        val outlineAt60 =
+            shape.createOutline(size, LayoutDirection.Ltr, density) as Outline.Generic
+        assertThat(providerReads).isEqualTo(1)
+
+        // Updating dynamicCaretX during layout before draw produces a shifted caret outline
+        // from the same JcaTooltipBubbleShape instance without recomposing
+        dynamicCaretX = 140f
+        val outlineAt140 =
+            shape.createOutline(size, LayoutDirection.Ltr, density) as Outline.Generic
+        assertThat(providerReads).isEqualTo(2)
+
+        val xorDiff = Path().apply {
+            op(outlineAt60.path, outlineAt140.path, PathOperation.Xor)
+        }
+        assertThat(xorDiff.isEmpty).isFalse()
+
+        // Verify the tip at y = 0 moved from x = 60 to x = 140
+        val probeAt140Tip = Path().apply {
+            addRect(androidx.compose.ui.geometry.Rect(Offset(139f, 1f), Size(2f, 2f)))
+        }
+        val intersectAt140 = Path().apply {
+            op(outlineAt140.path, probeAt140Tip, PathOperation.Intersect)
+        }
+        assertThat(intersectAt140.isEmpty).isFalse()
     }
 }
