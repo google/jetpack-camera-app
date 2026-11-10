@@ -1015,6 +1015,72 @@ internal class CameraAppSettingsViewModelTest {
         }
         mirrorSwitch.assertIsOn()
     }
+
+    @Test
+    fun settingsUiState_frontOnlyDeviceWithDefaultBackLens_fallsBackToFrontLens() =
+        runTest(StandardTestDispatcher()) {
+            val frontOnlyConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                availableLenses = listOf(LensFacing.FRONT),
+                perLensConstraints = mapOf(
+                    LensFacing.FRONT to
+                        STABILIZATION_SUPPORTED_CONSTRAINTS.perLensConstraints[LensFacing.FRONT]!!
+                )
+            )
+            val customViewModel = createViewModelWithConstraints(
+                systemConstraints = frontOnlyConstraints,
+                initialSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    cameraLensFacing = LensFacing.BACK
+                )
+            )
+            advanceUntilIdle()
+
+            val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            val enabledState = assertIsEnabled(uiState)
+
+            assertThat(enabledState.lensFlipUiState)
+                .isInstanceOf(FlipLensUiState.Disabled::class.java)
+            assertThat(enabledState.lensFlipUiState.currentLensFacing)
+                .isEqualTo(LensFacing.FRONT)
+            assertThat(enabledState.flashUiState)
+                .isInstanceOf(FlashUiState.Enabled::class.java)
+            assertThat(enabledState.stabilizationUiState)
+                .isInstanceOf(StabilizationUiState.Enabled::class.java)
+            assertThat(enabledState.fpsUiState)
+                .isInstanceOf(FpsUiState.Enabled::class.java)
+        }
+
+    @Test
+    fun settingsUiState_backOnlyDeviceWithDefaultFrontLens_fallsBackToBackLens() =
+        runTest(StandardTestDispatcher()) {
+            val backOnlyConstraints = TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                availableLenses = listOf(LensFacing.BACK),
+                perLensConstraints = mapOf(
+                    LensFacing.BACK to
+                        STABILIZATION_SUPPORTED_CONSTRAINTS.perLensConstraints[LensFacing.BACK]!!
+                )
+            )
+            val customViewModel = createViewModelWithConstraints(
+                systemConstraints = backOnlyConstraints,
+                initialSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
+                    cameraLensFacing = LensFacing.FRONT
+                )
+            )
+            advanceUntilIdle()
+
+            val uiState = customViewModel.settingsUiState.first { it is SettingsUiState.Enabled }
+            val enabledState = assertIsEnabled(uiState)
+
+            assertThat(enabledState.lensFlipUiState)
+                .isInstanceOf(FlipLensUiState.Disabled::class.java)
+            assertThat(enabledState.lensFlipUiState.currentLensFacing)
+                .isEqualTo(LensFacing.BACK)
+            assertThat(enabledState.flashUiState)
+                .isInstanceOf(FlashUiState.Enabled::class.java)
+            assertThat(enabledState.stabilizationUiState)
+                .isInstanceOf(StabilizationUiState.Enabled::class.java)
+            assertThat(enabledState.fpsUiState)
+                .isInstanceOf(FpsUiState.Enabled::class.java)
+        }
 }
 
 private fun assertIsEnabled(settingsUiState: SettingsUiState): SettingsUiState.Enabled =
