@@ -638,8 +638,8 @@ fun AmplitudeToggleButton(
  * determined by [LocalCameraControlBackgroundStyle], so that the toggle remains legible when drawn
  * over the viewfinder.
  *
- * TODO(UX): Confirm final [Orientation.Vertical] ordering (currently Photo at top to Video at
- *   bottom with downward drag, non-inverted in RTL).
+ * In [Orientation.Vertical], Photo sits at the top and Video sits at the bottom with a downward
+ * drag to switch to video, and this top-to-bottom order is not inverted in RTL.
  *
  * @param uiState the [CaptureModeToggleUiState.Available] for this component.
  * @param onChangeCaptureMode the callback for changing the capture mode.
@@ -651,6 +651,7 @@ fun AmplitudeToggleButton(
  * @param compact whether to render the compact track dimensions (`92x48.dp` or `48x92.dp`).
  * @param iconRotationDegrees clockwise rotation in degrees applied around each icon's center.
  */
+// TODO: Confirm final vertical ordering with UX.
 @Composable
 fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
@@ -709,7 +710,7 @@ fun CaptureModeToggleButton(
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
             onChangeCaptureMode(newCaptureMode)
         },
-        onToggleWhenDisabled = if (hasDisabledRationaleAction && disabledReason != null) {
+        onToggleWhenDisabled = if (hasDisabledRationaleAction) {
             { currentOnToggleWhenDisabled?.invoke(disabledReason) }
         } else {
             null

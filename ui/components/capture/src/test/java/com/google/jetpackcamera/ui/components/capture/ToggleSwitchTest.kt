@@ -56,6 +56,10 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
+import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
@@ -67,11 +71,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 private const val SWITCH_TAG = "switch_test_target"
+private const val BOUNDS_TOLERANCE_DP = 0.5f
 
 /**
  * Unit tests for [ToggleSwitch] and [CaptureModeToggleButton] covering tap gestures, stale-callback
  * guards, accessibility semantics, directional drag handling across LTR/RTL and
- * horizontal/vertical orientations, and standard vs. compact track dimensions.
+ * horizontal/vertical orientations, standard vs. compact track dimensions, adaptive toolbar
+ * compaction scaling, and drag cancel/settle behavior.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "w360dp-h800dp")
@@ -973,6 +979,249 @@ class ToggleSwitchTest {
         assertThat(inertLockedConfig.getOrNull(SemanticsActions.OnClick)?.label).isNull()
         assertThat(inertLockedConfig.getOrNull(SemanticsProperties.StateDescription))
             .isEqualTo("Photo mode only")
+    }
+
+    @Test
+    fun dragCancel_afterDraggingPastMidpoint_doesNotToggleAndSettlesThumbBack() {
+        var checked by mutableStateOf(false)
+        var callbackCount = 0
+
+        composeTestRule.setContent {
+            ToggleSwitch(
+                checked = checked,
+                onCheckedChange = {
+                    checked = it
+                    callbackCount++
+                },
+                modifier = Modifier.testTag(SWITCH_TAG)
+            )
+        }
+
+        val node = composeTestRule.onNodeWithTag(SWITCH_TAG)
+
+        // Drag well past midpoint to the right, then cancel the pointer stream.
+        node.performTouchInput {
+            down(center)
+            moveBy(Offset(80f, 0f))
+            cancel()
+        }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isFalse()
+        assertThat(callbackCount).isEqualTo(0)
+
+        // Probe with a sub-midpoint (+20px) drag: because DragInteraction.Cancel settled the thumb
+        // back to 0f, +20px stays below 0.5f and must not toggle checked to true.
+        node.performTouchInput {
+            down(center)
+            moveBy(Offset(20f, 0f))
+            up()
+        }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isFalse()
+        assertThat(callbackCount).isEqualTo(0)
+
+        // Verify cancelling a leftward drag from checked = true also settles back to 1f.
+        checked = true
+        composeTestRule.waitForIdle()
+
+        node.performTouchInput {
+            down(center)
+            moveBy(Offset(-80f, 0f))
+            cancel()
+        }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isTrue()
+        assertThat(callbackCount).isEqualTo(0)
+
+        node.performTouchInput {
+            down(center)
+            moveBy(Offset(-20f, 0f))
+            up()
+        }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isTrue()
+        assertThat(callbackCount).isEqualTo(0)
+    }
+
+    @Test
+    fun toolbarCompaction_scalesStandardHorizontalSwitch_andDoesNotShrinkCompactOrVertical() {
+        val compactBandWindow = CameraWindow(
+            width = 460.dp,
+            height = 920.dp,
+            topInset = 42.dp,
+            navInset = 48.dp,
+            gestureInset = 48.dp
+        )
+        val compactSolution = CameraLayoutSolver.solve(
+            spec = CameraLayoutDefaults.spec(),
+            window = compactBandWindow
+        )
+        assertThat(compactSolution.toolbarHeight.value).isWithin(BOUNDS_TOLERANCE_DP).of(46f)
+
+        var orientation by mutableStateOf(Orientation.Horizontal)
+        var compact by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalCameraLayoutSolution provides compactSolution) {
+                ToggleSwitch(
+                    checked = false,
+                    onCheckedChange = {},
+                    orientation = orientation,
+                    compact = compact,
+                    modifier = Modifier.testTag(SWITCH_TAG)
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // Standard Horizontal scales proportionally with compacted toolbarHeight (46 / 64).
+        val expectedScale = 46f / 64f
+        val horizontalStandardBounds =
+            composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
+        assertThat(horizontalStandardBounds.width.value)
+            .isWithin(BOUNDS_TOLERANCE_DP)
+            .of(116f * expectedScale)
+        assertThat(horizontalStandardBounds.height.value)
+            .isWithin(BOUNDS_TOLERANCE_DP)
+            .of(64f * expectedScale)
+
+        // Compact Horizontal keeps 92 x 48 without double-shrinking.
+        compact = true
+        composeTestRule.waitForIdle()
+        val horizontalCompactBounds =
+            composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
+        assertThat(horizontalCompactBounds.width).isEqualTo(92.dp)
+        assertThat(horizontalCompactBounds.height).isEqualTo(48.dp)
+
+        // Standard Vertical keeps 64 x 116 without toolbar shrinking.
+        orientation = Orientation.Vertical
+        compact = false
+        composeTestRule.waitForIdle()
+        val verticalStandardBounds =
+            composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
+        assertThat(verticalStandardBounds.width).isEqualTo(64.dp)
+        assertThat(verticalStandardBounds.height).isEqualTo(116.dp)
+
+        // Compact Vertical keeps 48 x 92 without double-shrinking.
+        compact = true
+        composeTestRule.waitForIdle()
+        val verticalCompactBounds =
+            composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
+        assertThat(verticalCompactBounds.width).isEqualTo(48.dp)
+        assertThat(verticalCompactBounds.height).isEqualTo(92.dp)
+    }
+
+    @Test
+    fun dragPastMidpoint_withNoOpOnCheckedChange_settlesBackToOriginalCheckedSide() {
+        var checked by mutableStateOf(false)
+        var useNoOpCallback by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            ToggleSwitch(
+                checked = checked,
+                onCheckedChange = if (useNoOpCallback) {
+                    {}
+                } else {
+                    { checked = it }
+                },
+                modifier = Modifier.testTag(SWITCH_TAG)
+            )
+        }
+
+        val node = composeTestRule.onNodeWithTag(SWITCH_TAG)
+
+        // Drag past midpoint while onCheckedChange = {}; after 1 frame + settle animation, thumb
+        // returns to the unchecked (0f) side.
+        node.performTouchInput { swipeRight() }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isFalse()
+
+        // Enable state updates and verify a sub-midpoint (+20px) drag stays below 0.5f, proving
+        // the thumb settled back to 0f rather than staying stranded at 1f.
+        useNoOpCallback = false
+        composeTestRule.waitForIdle()
+
+        node.performTouchInput {
+            down(center)
+            moveBy(Offset(20f, 0f))
+            up()
+        }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isFalse()
+
+        // Verify the symmetric case from checked = true with a no-op callback.
+        checked = true
+        useNoOpCallback = true
+        composeTestRule.waitForIdle()
+
+        node.performTouchInput { swipeLeft() }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isTrue()
+
+        useNoOpCallback = false
+        composeTestRule.waitForIdle()
+
+        node.performTouchInput {
+            down(center)
+            moveBy(Offset(-20f, 0f))
+            up()
+        }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isTrue()
+    }
+
+    @Test
+    fun dragPastMidpoint_whenAsyncUpdateArrivesNextFrame_doesNotBounceOnReleaseFrame() {
+        var checked by mutableStateOf(false)
+        val requestedValues = mutableListOf<Boolean>()
+
+        composeTestRule.mainClock.autoAdvance = false
+        try {
+            composeTestRule.setContent {
+                val scope = rememberCoroutineScope()
+                CompositionLocalProvider(LocalDisableAnimations provides true) {
+                    ToggleSwitch(
+                        checked = checked,
+                        onCheckedChange = { requested ->
+                            requestedValues.add(requested)
+                            scope.launch {
+                                withFrameNanos {}
+                                checked = requested
+                            }
+                        },
+                        modifier = Modifier.testTag(SWITCH_TAG)
+                    )
+                }
+            }
+            composeTestRule.mainClock.advanceTimeByFrame()
+
+            val node = composeTestRule.onNodeWithTag(SWITCH_TAG)
+
+            // Drag all the way to 1f and release; checked has not updated yet because the clock
+            // has not advanced to the next frame.
+            node.performTouchInput {
+                down(centerLeft)
+                moveBy(Offset(80f, 0f))
+                up()
+            }
+            assertThat(requestedValues).containsExactly(true)
+            assertThat(checked).isFalse()
+
+            // Probe immediately before advancing the frame clock: if the thumb had bounced back to
+            // 0f on release, a -20px drag would stay at 0f and would not request `true`. Staying
+            // at 1f means 1f - 20/52 > 0.5f, so `true` is requested again.
+            node.performTouchInput {
+                down(center)
+                moveBy(Offset(-20f, 0f))
+                up()
+            }
+            assertThat(requestedValues).containsExactly(true, true)
+
+            composeTestRule.mainClock.advanceTimeByFrame()
+            assertThat(checked).isTrue()
+        } finally {
+            composeTestRule.mainClock.autoAdvance = true
+        }
     }
 }
 

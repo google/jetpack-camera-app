@@ -32,6 +32,7 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -54,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
@@ -113,6 +115,34 @@ private object ToggleSwitchTokens {
 private class SwitchDragState {
     var isDragging: Boolean = false
     var progress: Float = 0f
+    var gestureId: Int = 0
+}
+
+/**
+ * Delegating [MutableInteractionSource] that records synchronously whether a drag ended via
+ * [DragInteraction.Cancel] before `Modifier.draggable` invokes `onDragStopped`.
+ */
+private class DragCancelTrackingInteractionSource(
+    private val delegate: MutableInteractionSource = MutableInteractionSource()
+) : MutableInteractionSource by delegate {
+    var lastDragCancelled: Boolean = false
+
+    override suspend fun emit(interaction: Interaction) {
+        record(interaction)
+        delegate.emit(interaction)
+    }
+
+    override fun tryEmit(interaction: Interaction): Boolean {
+        record(interaction)
+        return delegate.tryEmit(interaction)
+    }
+
+    private fun record(interaction: Interaction) {
+        when (interaction) {
+            is DragInteraction.Start, is DragInteraction.Stop -> lastDragCancelled = false
+            is DragInteraction.Cancel -> lastDragCancelled = true
+        }
+    }
 }
 
 /**
@@ -125,8 +155,12 @@ private class SwitchDragState {
  * [onToggleWhenDisabled] so callers can explain why toggling is unavailable; when `null`, the
  * switch exposes disabled semantics and is non-focusable.
  *
- * TODO(UX): Confirm final [Orientation.Vertical] ordering (currently [startIcon]/Photo at top to
- *   [endIcon]/Video at bottom with downward drag, non-inverted in RTL).
+ * Standard horizontal switches (`orientation == Orientation.Horizontal && !compact`) scale
+ * uniformly when [LocalCameraLayoutSolution] compacts the bottom toolbar; compact and vertical
+ * switches preserve their explicit dimensions so they are not shrunk twice.
+ *
+ * In [Orientation.Vertical], [startIcon] (unchecked) sits at the top and [endIcon] (checked) sits
+ * at the bottom with a downward drag to check, and this top-to-bottom order is not inverted in RTL.
  *
  * @param checked Whether the switch is currently checked (`true` selects [endIcon]).
  * @param onCheckedChange Callback invoked when the user toggles the switch while [enabled].
@@ -156,6 +190,7 @@ private class SwitchDragState {
  * @param thumbDiameter Diameter of the circular thumb.
  * @param iconSize Rendered width and height of [startIcon] and [endIcon].
  */
+// TODO: Confirm final vertical ordering with UX.
 @Composable
 fun ToggleSwitch(
     checked: Boolean,
@@ -238,13 +273,14 @@ fun ToggleSwitch(
     val thumbProgress = remember { Animatable(if (checked) 1f else 0f) }
     val coroutineScope = rememberCoroutineScope()
     val dragState = remember { SwitchDragState() }
-    val dragInteractionSource = remember { MutableInteractionSource() }
+    val dragInteractionSource = remember { DragCancelTrackingInteractionSource() }
     var dragSettleCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(enabled, orientation, isHorizontalRtl) {
         val target = if (currentChecked) 1f else 0f
         if (!enabled || dragState.isDragging) {
             dragState.isDragging = false
+            dragState.gestureId++
             thumbProgress.syncToTarget(
                 target = target,
                 disableAnimations = currentDisableAnimations
@@ -266,7 +302,9 @@ fun ToggleSwitch(
                 is DragInteraction.Cancel -> {
                     activeDrags.remove(interaction.start)
                     if (activeDrags.isEmpty() && dragState.isDragging) {
+                        dragInteractionSource.lastDragCancelled = false
                         dragState.isDragging = false
+                        dragState.gestureId++
                         launch {
                             thumbProgress.syncToTarget(
                                 target = if (currentChecked) 1f else 0f,
@@ -338,6 +376,7 @@ fun ToggleSwitch(
         if (currentEnabled && dimsSnapshot.dragRange > 0f) {
             if (!dragState.isDragging) {
                 dragState.isDragging = true
+                dragState.gestureId++
                 dragState.progress = thumbProgress.value
             }
             val nextProgress =
@@ -432,21 +471,41 @@ fun ToggleSwitch(
                 onDragStarted = {
                     if (currentEnabled) {
                         dragState.isDragging = true
+                        dragState.gestureId++
                         dragState.progress = thumbProgress.value
                     }
                 },
                 onDragStopped = {
                     val wasDragging = dragState.isDragging
+                    val wasCancelled = dragInteractionSource.lastDragCancelled
+                    dragInteractionSource.lastDragCancelled = false
                     val finalProgress =
                         if (wasDragging) dragState.progress else thumbProgress.value
                     dragState.isDragging = false
-                    if (wasDragging && currentEnabled) {
+                    val settledGestureId = ++dragState.gestureId
+                    if (wasDragging && !wasCancelled && currentEnabled) {
                         val newCheckedState = finalProgress > 0.5f
                         if (newCheckedState != currentChecked) {
                             currentOnCheckedChange(newCheckedState)
+                            // Defer reverting for one frame so an asynchronous StateFlow/ViewModel
+                            // update to `checked` can arrive without a 1-frame backward bounce,
+                            // while still settling back if the caller declines the change.
+                            coroutineScope.launch {
+                                withFrameNanos {}
+                                if (
+                                    dragState.gestureId == settledGestureId &&
+                                    !dragState.isDragging &&
+                                    currentChecked != newCheckedState
+                                ) {
+                                    dragSettleCount++
+                                }
+                            }
+                        } else {
+                            dragSettleCount++
                         }
+                    } else {
+                        dragSettleCount++
                     }
-                    dragSettleCount++
                 }
             )
     ) {
